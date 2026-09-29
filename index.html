@@ -3300,6 +3300,29 @@ html.cs-escuro #csGrupoTop{color:#E8ECF3}
 #csCalc .ck button.z{grid-column:span 2}#csCalc .ck button.op{background:#EFF4FD;color:#1B4F9C}#csCalc .ck button.fn{background:#E9E7E1;color:#545C69;font-size:20px}
 #csCalc .ck button.ig{background:#15803D;color:#fff}
 #csCalc .cz{width:100%;margin-top:10px;height:40px;border-radius:12px;background:none;border:1px solid #E4E2DC;color:#545C69;font-weight:600}
+
+/* ===== v285 · WhatsApp ===== */
+.wa-bol{background:#E7FCE3;border:1px solid #C6EFC0;border-radius:12px;padding:12px 14px;font-size:13px;line-height:1.45;margin:6px 0 12px;white-space:normal}
+#waLote{position:fixed;inset:0;z-index:3000;background:rgba(14,27,51,.45);display:grid;place-items:center}
+#waLote .wl{width:min(520px,94vw);background:#fff;border-radius:16px;padding:16px;box-shadow:0 24px 60px rgba(0,0,0,.3)}
+#waLote .wlt{display:flex;justify-content:space-between;align-items:center;font-size:14px;margin-bottom:8px}#waLote .wlt span{color:var(--ink3);font-size:12px}
+#waLote .wlb{height:8px;border-radius:999px;background:#F1F0EC;overflow:hidden}#waLote .wlb i{display:block;height:100%;background:#15803D;transition:width .2s}
+#waLote .wll{max-height:46vh;overflow:auto;margin-top:10px}#waLote .wll div{display:flex;justify-content:space-between;gap:10px;font-size:12.5px;padding:6px 0;border-bottom:1px solid #F1F0EC}
+#waLote .wll em{font-style:normal;color:var(--ink3)}#waLote .wll em.ok{color:#15803D;font-weight:700}#waLote .wll em.er{color:var(--danger);font-weight:600;text-align:right}
+
+/* ===== v286 ===== */
+.od2sel{display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:3px 9px;border-radius:999px;white-space:nowrap}
+.od2sel.concluida{background:#E6EFFD;color:#1B4F9C}
+.od2sel.programada{background:#F1F0EC;color:#6B7280}
+.od2sel.atrasada{background:#FDECEC;color:#B3261E}
+.od2sel.producao{background:#E6F6EC;color:#15803D}
+.od2sel.pendente{background:#FFF4E5;color:#B45309}
+/* envase: concluídas mais apagadas e guardadas */
+.cs-fimtg{display:flex;align-items:center;gap:6px;width:100%;background:none;border:0;cursor:pointer;text-align:left;font:inherit}
+.cs-fimtg .sa{display:inline-block;transition:transform .18s;font-size:14px;color:var(--ink3)}.cs-fimtg.ab .sa{transform:rotate(90deg)}
+.cs-fimtg em{margin-left:auto;font-style:normal;font-size:10.5px;color:#1D6FE8;font-weight:600;text-transform:none;letter-spacing:0}
+.cs-fimls .bat.st-concluido,.bat.st-concluido{background:#F4F4F2!important;border-color:#E4E2DC!important;filter:grayscale(.85);opacity:.72}
+.cs-fimls .bat.st-concluido:hover{opacity:1;filter:grayscale(.3)}
 </style>
 </head>
 <body>
@@ -4850,7 +4873,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v284';
+const VERSAO_APP='v286';
 let DRAG=null;
 function render(){
   recomporTudo();
@@ -5068,8 +5091,9 @@ function colunaMaq(m,data,conf,estreita){
     +(_fila.length?_sec('Próximas na fila',_fila.length)
       +_fila.map(x=>cardFila(x.o,conf,estreita)).join(''):'')
     +_livre
-    +(_fim.length?_sec('Concluídas hoje',_fim.length)
-      +_fim.map(x=>cardFila(x.o,conf,estreita)).join(''):'');
+    +(_fim.length?(()=>{const ab=(window.CS_FIM_AB||[]).includes(m+'|'+data);
+      return `<button class="cs-sec cs-fimtg${ab?' ab':''}" data-fimtg="${escAttr(m+'|'+data)}"><span class="sa">›</span>Concluídas hoje <b>(${_fim.length})</b><em>${ab?'guardar':'mostrar'}</em></button>`
+        +(ab?`<div class="cs-fimls">${_fim.map(x=>cardFila(x.o,conf,estreita)).join('')}</div>`:'');})():'');
 
   return `<div class="tqcol cs-maq est-${est}" style="width:306px">
     <div class="tqh">
@@ -14399,6 +14423,12 @@ const OD2_ABAS=[['todas','Todas','#1A1D23'],['programada','Programadas','#545C69
   ['concluida','Concluídas','#15803D'],['pendente','Pendentes','#C2410C'],['excluidas','Excluídas','#B3261E']];
 const cxPrev0=o=>{try{const v=+caixasPrev(o);return isFinite(v)?v:0;}catch(e){return 0;}};
 const od2Sit=o=>{const s=sit(o);if(s==='programada')return 'programada';if(['preparacao','producao','finalizado'].includes(s))return 'producao';if(s==='concluida')return 'concluida';return 'pendente';};
+/* selo da situação: concluída azul, programada cinza, atrasada vermelha, produção verde */
+function od2Selo(o){const s=sit(o);let k=od2Sit(o),r=ST[s]||s;
+  if(k==='programada'){let atr=false;try{atr=atrasada(o);}catch(e){}if(atr){k='atrasada';r='Atrasada';}}
+  if(k==='producao')r=s==='preparacao'?'Em setup':s==='finalizado'?'Finalizando':'Em produção';
+  if(k==='concluida')r='Concluída';if(k==='programada')r='Programada';
+  return `<span class="od2sel ${k}">${r}</span>`;}
 function od2Periodo(){return perFaixa(OD2.p);}
 function od2Linhas(){
   const {de}=od2Periodo();
@@ -14442,7 +14472,7 @@ function gradeOrdens(){
         return `<tr class="${ab?'aberta':''} ${OD2.sel.has(o.id)?'sel':''}" data-odrow="${o.id}"><td><span class="od2ck ${OD2.sel.has(o.id)?'on':''}" data-odck="${o.id}"></span></td>
         <td><button class="od2dots" data-odmenu="${o.id}">&#8943;</button></td><td class="m"><b>${escAttr(String(o.lote||b.lote||'—'))}</b></td><td class="m">${dCurto(o.data||b.data)}</td>
         <td><b>${nomeCurto(o.codigo)}</b><small>${fmt}</small></td><td class="m">${escAttr(String(b.lote||'—'))}</td><td>${o.maq||'—'}</td><td>${b.tanque||'—'}</td><td class="m">${od2Hora(o)}</td>
-        <td><span class="stq ${sit(o)}">${ST[sit(o)]||sit(o)}</span></td>
+        <td>${od2Selo(o)}</td>
         <td><span class="od2itg">${est?'<i class="e" title="estoque lançado">E</i>':''}${pend?'<i class="x" title="ajuste de estoque pendente no Tiny">&#8645;</i>':est?`<i class="t" title="enviado ao Tiny em ${escAttr(o.tinyEnviado.em)}">&#8645;</i>`:''}${!est&&!pend?'<span class="k">—</span>':''}</span></td>
         <td>${(o.marcadores||[]).map(n=>{const m=odMarcadores().find(x=>x.nome===n);return `<span class="od2mk" style="--c:${m?m.cor:'#8B93A1'}"><i></i>${escAttr(n)}</span>`;}).join('')}</td></tr>
         ${ab?`<tr class="od2xp"><td></td><td colspan="11"><div class="od2xc">
@@ -14777,6 +14807,70 @@ function abrirCfgProd(){
     M('rgA').onclick=()=>{const c=M('rgC').value.trim();if(!c)return;G.regras.push({cat:c,grupo:M('rgG').value,sub:M('rgS').value.trim()});agendarSalvar();des();};};
   des();M('mF').innerHTML='<div style="flex:1"></div><button class="btn" id="cgF">Fechar</button>';M('cgF').onclick=()=>fecharModal();abrirMask();
 }
+
+
+/* ===== v285: Integração WhatsApp (API oficial da Meta) ===== */
+let WA_MODELO={modelo:'',idioma:'pt_BR',campos:[]};
+const WA_CAMPOS=[['nome','Nome do cliente'],['qtd','Quantidade de títulos'],['total','Valor total em aberto'],['dias','Dias de atraso (o maior)'],['titulos','Lista dos títulos (nº, vencimento e valor)'],['empresa','Empresa da cobrança'],['vendedor','Vendedor'],['hoje','Data de hoje']];
+let WACFG={aba:'con'};
+function waVars(body){const m=String(body||'').match(/\{\{(\d+)\}\}/g)||[];return [...new Set(m.map(x=>+x.replace(/\D/g,'')))].sort((a,b)=>a-b);}
+async function abrirWaCfg(){
+  if(M('mAcao'))M('mAcao').innerHTML='';M('modal').classList.add('wide');M('mTit').textContent='Integração com o WhatsApp';M('mSub').hidden=true;
+  M('mF').innerHTML='<div style="flex:1"></div><button class="btn" id="waF">Fechar</button>';M('waF').onclick=()=>fecharModal();
+  M('mB').innerHTML=`<div class="cptabs">${[['con','Conexão'],['mod','Modelo da cobrança'],['log','Relatório de envios']].map(([k,r])=>`<button data-wa="${k}" class="${WACFG.aba===k?'on':''}">${r}</button>`).join('')}</div><div id="waC"><div class="vazioc">Carregando…</div></div>`;
+  M('mB').querySelectorAll('[data-wa]').forEach(b=>b.onclick=()=>{WACFG.aba=b.dataset.wa;abrirWaCfg();});abrirMask();
+  const c=M('waC');const pode=(typeof souMestreAqui==='function'&&souMestreAqui())||(MEU_ACESSO&&MEU_ACESSO.master);
+  if(WACFG.aba==='con'){
+    let st={};try{st=await chamarTiny({acao:'wa_status'});}catch(e){c.innerHTML=`<div class="alert red">${escAttr(e.message)}${/erp_config|wa_log|42P01/.test(e.message)?'<br>Rode o <b>supabase-integracao.sql</b> no Supabase.':''}</div>`;return;}
+    c.innerHTML=`${st.tem&&!st.erro?`<div class="alert green">Conectado: <b>${escAttr(st.numero||'')}</b> · ${escAttr(st.nome||'')}${st.qualidade?` · qualidade <b>${escAttr(st.qualidade)}</b>`:''}</div>`:st.erro?`<div class="alert red">A Meta recusou: ${escAttr(st.erro)}</div>`:'<div class="alert red">WhatsApp ainda não conectado.</div>'}
+      <p class="adp">No <b>Meta for Developers</b>, no app de cobrança: <b>WhatsApp › Configuração da API</b> mostra o <b>ID do número de telefone</b> e o <b>ID da conta do WhatsApp Business</b>. O token deve ser <b>permanente</b> (Configurações do negócio › Usuários do sistema › gerar token com as permissões <i>whatsapp_business_messaging</i> e <i>whatsapp_business_management</i>). O token fica no banco e só a função do servidor lê.</p>
+      ${pode?`<div class="cpgrid"><div class="fld"><label>ID do número de telefone</label><input id="waPh" value="${escAttr(st.phone||'')}" inputmode="numeric"></div>
+        <div class="fld"><label>ID da conta do WhatsApp Business (WABA)</label><input id="waWb" value="${escAttr(st.waba||'')}" inputmode="numeric"></div>
+        <div class="fld" style="grid-column:1/-1"><label>Token permanente ${st.final?`(hoje termina em …${escAttr(st.final)})`:''}</label><input id="waTk" type="password" placeholder="${st.tem?'deixe em branco para manter o atual':'cole o token aqui'}" autocomplete="off"></div></div>
+        <button class="btn pri" id="waSal">Salvar e testar</button>`:'<p class="adp"><b>Só o gestor principal troca a conexão.</b></p>'}
+      <div id="waRes" style="margin-top:10px"></div>`;
+    if(M('waSal'))M('waSal').onclick=async()=>{M('waSal').disabled=true;try{await chamarTiny({acao:'wa_salvar',token:M('waTk').value.trim(),phoneId:M('waPh').value.trim(),wabaId:M('waWb').value.trim()});WACFG.aba='con';abrirWaCfg();}
+      catch(e){M('waRes').innerHTML=`<div class="alert red">${escAttr(e.message)}</div>`;M('waSal').disabled=false;}};
+    return;
+  }
+  if(WACFG.aba==='mod'){
+    let d;try{d=await chamarTiny({acao:'wa_modelos'});}catch(e){c.innerHTML=`<div class="alert red">${escAttr(e.message)}</div>`;return;}
+    const ms=(d.modelos||[]);const aprov=ms.filter(m=>m.status==='APPROVED');
+    const atual=ms.find(m=>m.name===WA_MODELO.modelo&&(m.language===WA_MODELO.idioma||!WA_MODELO.idioma));
+    const corpo=atual?((atual.components||[]).find(x=>x.type==='BODY')||{}).text||'':'';const vs=waVars(corpo);
+    c.innerHTML=`<p class="adp">Para cobrar pelo WhatsApp a Meta exige um <b>modelo de mensagem aprovado</b> (categoria Utilidade). Crie no Gerenciador do WhatsApp › Modelos de mensagem; depois de aprovado, ele aparece aqui. Cada <b>{{1}}</b>, <b>{{2}}</b>… do modelo recebe um dado da cobrança.</p>
+      <div class="fld"><label>Modelo usado nas cobranças</label><select id="waMd"><option value="">— escolha —</option>${aprov.map(m=>`<option value="${escAttr(m.name)}|${escAttr(m.language)}" ${atual===m?'selected':''}>${escAttr(m.name)} · ${escAttr(m.language)} · ${escAttr(m.category||'')}</option>`).join('')}</select></div>
+      ${ms.filter(m=>m.status!=='APPROVED').length?`<div class="adp">Aguardando ou recusados: ${ms.filter(m=>m.status!=='APPROVED').map(m=>`${escAttr(m.name)} (${escAttr(m.status)})`).join(', ')}</div>`:''}
+      ${atual?`<div class="st">Texto do modelo</div><div class="wa-bol">${escAttr(corpo).replace(/\{\{(\d+)\}\}/g,'<b>{{$1}}</b>').replace(/\n/g,'<br>')}</div>
+        <div class="st">O que vai em cada variável</div>${vs.map((n,i)=>`<div class="fld"><label>{{${n}}}</label><select data-wv="${i}">${WA_CAMPOS.map(([k,r])=>`<option value="${k}" ${(WA_MODELO.campos[i]||WA_CAMPOS[i]&&WA_CAMPOS[i][0])===k?'selected':''}>${r}</option>`).join('')}</select></div>`).join('')}
+        <button class="btn pri" id="waMs">Salvar modelo</button>`:(aprov.length?'':'<div class="alert red">Nenhum modelo aprovado ainda.</div>')}
+      <div id="waRes" style="margin-top:10px"></div>`;
+    M('waMd').onchange=e=>{const [n,l]=e.target.value.split('|');WA_MODELO.modelo=n||'';WA_MODELO.idioma=l||'pt_BR';WA_MODELO.campos=[];agendarSalvar();abrirWaCfg();};
+    if(M('waMs'))M('waMs').onclick=()=>{WA_MODELO.campos=[...M('waC').querySelectorAll('[data-wv]')].map(s=>s.value);WA_MODELO.n=vs.length;agendarSalvar();M('waRes').innerHTML='<div class="alert green">Modelo salvo. As cobranças aprovadas já podem ser enviadas.</div>';};
+    return;
+  }
+  let d;try{d=await chamarTiny({acao:'wa_log',limite:300});}catch(e){c.innerHTML=`<div class="alert red">${escAttr(e.message)}</div>`;return;}
+  const L=d.linhas||[];
+  c.innerHTML=`<div style="max-height:56vh;overflow:auto;border:1px solid var(--line);border-radius:10px"><table class="od2t"><thead><tr><th>Quando</th><th>Cliente</th><th>Telefone</th><th>Modelo</th><th>Quem</th><th>Resultado</th></tr></thead><tbody>
+    ${L.map(x=>`<tr><td class="m">${new Date(x.em).toLocaleString('pt-BR')}</td><td>${escAttr(x.cliente||'')}</td><td class="m">${escAttr(x.para||'')}</td><td>${escAttr(x.modelo||'')}</td><td>${escAttr(x.quem||'')}</td><td>${x.ok?'<b style="color:#15803D">enviado</b>':`<b style="color:var(--danger)">erro</b> ${escAttr(x.erro||'')}`}</td></tr>`).join('')||'<tr><td colspan="6" class="vazioc">Nenhum envio ainda.</td></tr>'}</tbody></table></div>`;
+}
+/* chamado pela Gestão de Cobranças: envia a lista e mostra o andamento */
+window.csWaPronto=()=>!!WA_MODELO.modelo;
+window.csWaEnviarLote=async function(lista){
+  if(!WA_MODELO.modelo){alert('Escolha o modelo da cobrança em Configurações › Integração WhatsApp › Modelo da cobrança.');return null;}
+  const res=[];const v=document.createElement('div');v.id='waLote';document.body.appendChild(v);
+  const pinta=(fim)=>{v.innerHTML=`<div class="wl"><div class="wlt"><b>Enviando cobranças pelo WhatsApp</b><span>${res.length} de ${lista.length}</span></div><div class="wlb"><i style="width:${lista.length?res.length/lista.length*100:0}%"></i></div>
+    <div class="wll">${lista.map((x,i)=>{const r=res[i];return `<div><span>${escAttr(x.cliente)}</span><em class="${r?(r.ok?'ok':'er'):''}">${r?(r.ok?'enviado':escAttr(r.erro||'erro')):'…'}</em></div>`;}).join('')}</div>
+    ${fim?`<button class="btn pri" id="wlOk" style="width:100%;justify-content:center;margin-top:10px">Fechar · ${res.filter(r=>r.ok).length} enviadas, ${res.filter(r=>!r.ok).length} com erro</button>`:''}</div>`;
+    if(fim)M('wlOk').onclick=()=>v.remove();};
+  pinta(false);
+  for(const x of lista){
+    const params=(WA_MODELO.campos||[]).map(k=>x.vars[k]!=null?String(x.vars[k]):'-');
+    let r;try{r=await chamarTiny({acao:'wa_enviar',para:x.telefone,cliente:x.cliente,modelo:WA_MODELO.modelo,idioma:WA_MODELO.idioma,params});}catch(e){r={ok:false,erro:e.message};}
+    res.push(r);pinta(false);await new Promise(ok=>setTimeout(ok,350));
+  }
+  pinta(true);return res;
+};
 
 /* ===== v273: meu perfil · foto, dados, tema e sair ===== */
 function csFotoDe(email){try{return localStorage.getItem('erp.foto.'+norMail(email||''))||'';}catch(e){return '';}}
@@ -16955,7 +17049,7 @@ function estadoAtual(){
     ordens:ORDENS,aponta:APONTA,saldos:SALDOS,sopro:SOPRO,
     ocorrencias:OCORRENCIAS,
     cadastro:{produtos:PRODUTOS,insumos:INSUMOS,calendario:CALENDARIO,alertasParada:ALERTAS_PARADA,
-      paradasDesde:PARADAS_DESDE,marcoAplicado:MARCO_APLICADO,exigeLiberacao:EXIGE_LIBERACAO,proxLote:PROX_LOTE,formulas:FORMULAS,funcoes:FUNCOES,validade:VALIDADE,rt:RT,operadores:OPERADORES,espec:ESPEC,ensaios:ENSAIOS,quali:QUALI,modulosErp:MODULOS_ERP,fotosProd:FOTOS_PROD,fotosAju:FOTOS_AJU,preformas:PREFORMAS,prefProd:PREF_PROD,recursos:RECURSOS,gruposMaq:GRUPOS_MAQ,mkOp:CAD_MK_OP,formVers:FORM_VERS,grupos:CAD_GRUPOS,mod272:true,mod275:true,mod278:true,motivos:MOTIVOS,tolerancia:TOLERANCIA,quebraL:QUEBRA_L,tempos:TEMPOS,setupEnv:SETUP_ENV,tempoGranel:TEMPO_GRANEL,frascos:FRASCOS,sopradoras:SOPRADORAS,tanques:TANQUES,
+      paradasDesde:PARADAS_DESDE,marcoAplicado:MARCO_APLICADO,exigeLiberacao:EXIGE_LIBERACAO,proxLote:PROX_LOTE,formulas:FORMULAS,funcoes:FUNCOES,validade:VALIDADE,rt:RT,operadores:OPERADORES,espec:ESPEC,ensaios:ENSAIOS,quali:QUALI,modulosErp:MODULOS_ERP,fotosProd:FOTOS_PROD,fotosAju:FOTOS_AJU,preformas:PREFORMAS,prefProd:PREF_PROD,recursos:RECURSOS,gruposMaq:GRUPOS_MAQ,mkOp:CAD_MK_OP,formVers:FORM_VERS,grupos:CAD_GRUPOS,waModelo:WA_MODELO,mod272:true,mod275:true,mod278:true,motivos:MOTIVOS,tolerancia:TOLERANCIA,quebraL:QUEBRA_L,tempos:TEMPOS,setupEnv:SETUP_ENV,tempoGranel:TEMPO_GRANEL,frascos:FRASCOS,sopradoras:SOPRADORAS,tanques:TANQUES,
       jornada:JORNADA,frascoProd:FRASCO_PROD,usuarios:USUARIOS,proxOp:PROX_OP,
       gruposMotivo:GRUPOS_MOTIVO,semana:SEMANA_PADRAO,tolAtraso:TOL_ATRASO},
     estoque:{saldos:ESTOQUE,em:ESTOQUE_EM,d:ESTOQUE_D},
@@ -17057,6 +17151,7 @@ function aplicarEstado(txt){
   if(Array.isArray(cad.mkOp))CAD_MK_OP=cad.mkOp;
   if(cad.formVers&&typeof cad.formVers==='object')FORM_VERS=cad.formVers;
   if(cad.grupos&&typeof cad.grupos==='object')CAD_GRUPOS=cad.grupos;
+  if(cad.waModelo&&typeof cad.waModelo==='object')WA_MODELO=cad.waModelo;
   /* v272: Compras, Estoque, Transportadores e Vendas passam a vir ligados */
   if(!cad.mod278)['financeiro','compras','estoque','transportadores','vendas','cadastros'].forEach(k=>{if(MODULOS_ERP[k])MODULOS_ERP[k].estado='ativo';});
   /* O grupo salvo no banco é anterior à cadência da envasadora e vem sem ela —
@@ -18787,6 +18882,7 @@ const CS_MOD=[
    {n:'Produtos · grupos',acao:'cfgprod',ic:'tag'},
    {n:'PCP',acao:'cfgpcp',ic:'maq'},
    {n:'Integração Tiny',acao:'tinycfg',ic:'int'},
+   {n:'Integração WhatsApp',acao:'wacfg',ic:'int'},
    {n:'Compras',mod:'compras',fin:'config',perm:'compras.cfg',ic:'car'},
    {n:'Carga do Tiny',mod:'vendas',fin:'carga',perm:'vendas.carga',ic:'dad'},
    {n:'Dados e versão',page:'admin',aba:'dados',ic:'dad'}]},
@@ -18879,6 +18975,7 @@ function csIr(p){
   if(p.grupo)return;
   if(p.acao==='cfgpcp'){CS_ABERTO='';try{csPintar();}catch(e){}return abrirCfgPCP();}
   if(p.acao==='cfgprod'){CS_ABERTO='';try{csPintar();}catch(e){}return abrirCfgProd();}
+  if(p.acao==='wacfg'){CS_ABERTO='';try{csPintar();}catch(e){}return abrirWaCfg();}
   if(p.acao==='tinycfg'){CS_ABERTO='';try{csPintar();}catch(e){}return abrirTinyCfg();}
   if(p.fin){
     /* em breve: não faz nada, como combinado */
@@ -21229,7 +21326,7 @@ window.csNucleo=(function(){
     VERS[id]=l[0].versao;return {ok:true};
   }
   return {
-    versao:'v284',
+    versao:'v286',
     logo:()=>LOGO,
     teste:!temNuvem(),
     usuario:()=>{try{return (MEU_ACESSO&&MEU_ACESSO.nome)||(EU&&EU.nome)||emailDaSessao()||'Teste';}catch(e){return 'Teste';}},
@@ -21739,6 +21836,13 @@ function csCalc(){
   csMenuOperador=function(){const r=_m.apply(this,arguments);try{const m=document.getElementById('csOpMenu');const cab=m&&m.querySelector('.cab');
     if(cab&&!cab.querySelector('.calcb')){const b=document.createElement('button');b.className='calcb';b.innerHTML='<span>🧮</span> Calculadora';
       b.onclick=ev=>{ev.stopPropagation();csCalc();};const x=cab.querySelector('.x');cab.insertBefore(b,x);}}catch(e){}return r;};})();
+</script>
+<script>
+/* v286: abrir e guardar as concluídas de cada máquina (fica lembrado neste aparelho) */
+try{window.CS_FIM_AB=JSON.parse(localStorage.getItem('erp.fimAb')||'[]');}catch(e){window.CS_FIM_AB=[];}
+document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.closest('[data-fimtg]');if(!b)return;ev.stopPropagation();
+  const k=b.dataset.fimtg;const L=window.CS_FIM_AB;const i=L.indexOf(k);if(i>=0)L.splice(i,1);else L.push(k);
+  try{localStorage.setItem('erp.fimAb',JSON.stringify(L.slice(-30)));}catch(e){}try{render();}catch(e){}},true);
 </script>
 <div style="position:fixed;right:14px;bottom:10px;z-index:300;background:#C2410C;color:#fff;font:700 11px Inter,sans-serif;letter-spacing:.04em;padding:5px 10px;border-radius:999px;box-shadow:0 4px 12px rgba(0,0,0,.2)" title="Lê a produção do PCP ao vivo e grava tudo à parte: nada chega ao PCP antigo">MODO TESTE · grava à parte</div>
 </body>
