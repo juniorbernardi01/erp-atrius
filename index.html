@@ -3323,6 +3323,42 @@ html.cs-escuro #csGrupoTop{color:#E8ECF3}
 .cs-fimtg em{margin-left:auto;font-style:normal;font-size:10.5px;color:#1D6FE8;font-weight:600;text-transform:none;letter-spacing:0}
 .cs-fimls .bat.st-concluido,.bat.st-concluido{background:#F4F4F2!important;border-color:#E4E2DC!important;filter:grayscale(.85);opacity:.72}
 .cs-fimls .bat.st-concluido:hover{opacity:1;filter:grayscale(.3)}
+
+/* ===== v287 ===== */
+/* situação: setup ciano, pausa amarela, a apontar roxo — iguais no Envase e nas Ordens */
+.od2sel.setup{background:#E0F4F8;color:#0E7490}
+.od2sel.pausa{background:#FEF3C7;color:#854D0E}
+.od2sel.apontar{background:#F1EAFE;color:#5B21B6}
+body.comcasca .cs-maq.est-setup .tqh{background:#0E7490}
+body.comcasca .cs-maq.est-pausa .tqh{background:#A16207}
+body.comcasca .bat.cs-set{border-left-color:#0891B2}
+body.comcasca .bat.cs-pau{border-left-color:#CA8A04;background:#FEFCE8}
+body.comcasca .cs-flag.pau{background:#FEF3C7;color:#854D0E;border:1px solid #FDE68A}
+.cs-oper .pausado{background:#FEF3C7!important;color:#854D0E!important;border:1px solid #FDE68A}
+/* integração: o que falta enviar chama atenção */
+.od2tg{font:inherit;font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:999px;border:1px solid;cursor:pointer;white-space:nowrap;background:transparent}
+.od2tg.q{color:#A16207;border-color:#EAB308;background:#FEFCE8}
+.od2tg.x{color:#B3261E;border-color:#F3B4AE;background:#FDECEC}
+.od2ord{font-size:11.5px;color:var(--ink3);white-space:nowrap}
+.od2ord.b{background:none;border:1px solid #1D6FE8;color:#1D6FE8;border-radius:9px;padding:6px 10px;cursor:pointer;font:inherit;font-size:11.5px;font-weight:600}
+/* Fixar menu: o pino fica sempre no pé do trilho */
+body .cs-rail #csFix{display:flex!important}
+body:not(.cs-fixo) .cs-rail #csFix .cs-sw{display:none}
+.cs-rail #csFix.on .ic{color:#6EA8FF}
+body.cs-fixo .cs-rail{width:196px!important}
+body.cs-fixo .cs-rail .lb{display:block!important}
+body.cs-fixo .cs-rail .sa{display:inline!important}
+body.cs-fixo .cs-rail .tip{display:none!important}
+body.cs-fixo .cs-fly.on{position:absolute;left:196px!important;top:0;bottom:0;z-index:54}
+@media (max-width:900px){
+  body.cs-fixo .cs-rail{width:52px!important}
+  body.cs-fixo .cs-rail .lb,body.cs-fixo .cs-rail .sa{display:none!important}
+  body.cs-fixo .cs-fly.on{left:52px!important}
+}
+
+/* ===== v288 ===== */
+/* as abas da OP (Ordem, Embalagem, Formulação, Análise) voltam: só a faixa de Configurações sai */
+#mB .adabas{display:flex!important}
 </style>
 </head>
 <body>
@@ -4873,7 +4909,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v286';
+const VERSAO_APP='v288';
 let DRAG=null;
 function render(){
   recomporTudo();
@@ -5055,9 +5091,10 @@ function colunaMaq(m,data,conf,estreita){
      rodando, então uma coluna cheia de OPs programadas aparecia como
      "Livre" — o que não é verdade: ela tem trabalho, só não começou. */
   const _stVez=_da_vez?sit(_da_vez.o):null;
-  const est=!_da_vez?'livre':_stVez==='producao'?'rod'
+  const est=!_da_vez?'livre':(_da_vez.o&&_da_vez.o.csPausa)?'pausa':_stVez==='producao'?'rod'
     :_stVez==='finalizado'?'cont':_stVez==='programada'?'prog':'setup';
   const rotEst=!_da_vez?(_fim.length?'Dia encerrado':'Sem programação')
+    :(_da_vez.o&&_da_vez.o.csPausa)?'Pausada'
     :_stVez==='producao'?'Envasando'
     :_stVez==='finalizado'?'A apontar'
     :_stVez==='programada'?'A iniciar':'Em setup';
@@ -12308,6 +12345,7 @@ function interromper(o){
     const envTotal=o.envase,fr=prev?feito/prev:0,litrosSobra=resta*lcx;
     o.litros=feito*lcx;o.caixas=feito;o.iniReal=i;o.fimReal=f;
     o.envase=Math.max(5,Math.round(envTotal*fr/5)*5);o.status='concluida';
+    csTinyAoConcluir(o);
     registrar(o,'OP interrompida',null,`${i}–${f} · ${nf(feito)} cx · ${motivo}`);
     if(o.tanque){
       /* o que sobrou volta ao tanque como litros do granel, não como caixas de um formato */
@@ -12666,16 +12704,22 @@ function concluir(o){
       <button class="btn blue" id="cOK">Confirmar conclusão</button>`;
     ligarOlhos();
     M('cPin').addEventListener('input',()=>{
-      const s=quemPorCredencial(cv('cPin').trim());
-      M('cQuem').innerHTML=s?`<b>${s.nome}</b> conclui esta OP.`
-        :'É o nome que fica no histórico e no relatório.';});
+      const c=cv('cPin').trim();const v=csPinConclusao(c);
+      M('cQuem').innerHTML=(c.length<4&&!v.s)?'É o nome que fica no histórico e no relatório.':v.txt;
+      M('cQuem').style.color=v.ok||c.length<4?'':'#B3261E';});
     M('cV').onclick=()=>montar({fim:d.fim,cx:d.cx,obs:d.obs});
     M('cOK').onclick=()=>{
       const cred=cv('cPin').trim();
       if(!cred){toast('Informe o PIN.',true);M('cPin').focus();return;}
-      const quem=quemPorCredencial(cred);
-      if(!quem){toast('PIN ou senha não confere.',true);M('cPin').focus();return;}
-      gravar(quem);
+      const segue=v=>{
+        if(!v.ok){M('cQuem').innerHTML=v.txt;M('cQuem').style.color='#B3261E';
+          toast(v.s?`${v.s.nome} não tem permissão para concluir OP.`:'PIN ou senha não encontrado.',true);M('cPin').focus();return;}
+        gravar(v.s);};
+      const v=csPinConclusao(cred);
+      /* PIN trocado em outro computador só chega aqui relendo o cadastro */
+      if(!v.s&&temNuvem()&&typeof SESSAO!=='undefined'&&SESSAO){
+        lerAcessos().then(()=>segue(csPinConclusao(cred))).catch(()=>segue(v));return;}
+      segue(v);
     };
   };
 
@@ -12729,6 +12773,7 @@ function concluir(o){
     }
 
     agendarSalvar();
+    csTinyAoConcluir(o);
     fecharModal();render();
     toast(mudou.length
       ? `OP concluída · ${mudou.length} OP${mudou.length>1?'s':''} reajustada${mudou.length>1?'s':''} em ${delta>0?'+':''}${delta} min.`
@@ -14418,7 +14463,7 @@ document.addEventListener('click',ev=>{const p=document.getElementById('perPop')
    pontinhos (abrir na fila, impressões, histórico, marcadores) e o
    totalizador no rodapé. Clicar na linha abre os detalhes embaixo.
    ===================================================================== */
-const OD2={p:(()=>{const x=perNovo('int');x.de=perAdd(perHoje(),-30);x.ate=perAdd(perHoje(),10);x.campo='prog';return x;})(),sort:{k:'data',dir:-1},sel:new Set(),menu:null};
+const OD2={p:(()=>{const x=perNovo('int');x.de=perAdd(perHoje(),-30);x.ate=perAdd(perHoje(),10);x.campo='prog';return x;})(),sort:{k:'alt',dir:-1},sel:new Set(),menu:null};
 const OD2_ABAS=[['todas','Todas','#1A1D23'],['programada','Programadas','#545C69'],['producao','Em produção','#1D6FE8'],
   ['concluida','Concluídas','#15803D'],['pendente','Pendentes','#C2410C'],['excluidas','Excluídas','#B3261E']];
 const cxPrev0=o=>{try{const v=+caixasPrev(o);return isFinite(v)?v:0;}catch(e){return 0;}};
@@ -14426,7 +14471,13 @@ const od2Sit=o=>{const s=sit(o);if(s==='programada')return 'programada';if(['pre
 /* selo da situação: concluída azul, programada cinza, atrasada vermelha, produção verde */
 function od2Selo(o){const s=sit(o);let k=od2Sit(o),r=ST[s]||s;
   if(k==='programada'){let atr=false;try{atr=atrasada(o);}catch(e){}if(atr){k='atrasada';r='Atrasada';}}
-  if(k==='producao')r=s==='preparacao'?'Em setup':s==='finalizado'?'Finalizando':'Em produção';
+  /* v287: cada situação com a cor do Envase — setup ciano, pausa amarela,
+     a apontar roxo. Antes as três vinham no mesmo verde da produção. */
+  if(k==='producao'){
+    if(o.csPausa){k='pausa';r='Pausada';}
+    else if(s==='preparacao'){k='setup';r='Em setup';}
+    else if(s==='finalizado'){k='apontar';r='A apontar';}
+    else r='Em produção';}
   if(k==='concluida')r='Concluída';if(k==='programada')r='Programada';
   return `<span class="od2sel ${k}">${r}</span>`;}
 function od2Periodo(){return perFaixa(OD2.p);}
@@ -14446,7 +14497,7 @@ function od2Filtra(l){
 }
 const od2Hora=o=>{const i=o.inicio!=null?hhmm(o.iniReal?hm(o.iniReal):o.inicio):'';let f='';try{f=hhmm(fimEfetivo(o));}catch(e){}return i?`${i} – ${f}`:'—';};
 const OD2_SORT={num:x=>+(x.o.lote||x.b.lote||0),data:x=>x.o.data||x.b.data,prod:x=>nomeCurto(x.o.codigo),lote:x=>+(x.b.lote||0),maq:x=>x.o.maq||'',tq:x=>x.b.tanque||'',
-  hora:x=>x.o.inicio??9999,sit:x=>['programada','producao','concluida','pendente'].indexOf(od2Sit(x.o))};
+  alt:x=>csUltAlt(x.o),sit:x=>['programada','producao','concluida','pendente'].indexOf(od2Sit(x.o))};
 const OD_MK_CORES=['#B3261E','#1D6FE8','#D97706','#15803D','#6B21A8','#0E7490','#BE185D','#4B5563'];
 const odMarcadores=()=>(typeof CAD_MK_OP!=='undefined'&&CAD_MK_OP.length?CAD_MK_OP:[]);
 function gradeOrdens(){
@@ -14463,21 +14514,22 @@ function gradeOrdens(){
     <div class="od2top"><h2>Ordens de produção</h2></div>
     <div class="od2bar"><input type="text" id="odB" class="busca" placeholder="Nº da OP, produto ou lote" value="${escAttr(OD_BUSCA)}">
       ${perBotao('odPer',OD2.p)}
+      ${OD2.sort.k==='alt'?'<span class="od2ord">últimas alteradas no topo</span>':'<button class="od2ord b" id="odAlt" type="button">&#8634; últimas alteradas no topo</button>'}
       <span style="flex:1"></span><button class="btn pri" id="odNova">+ Nova OP</button></div>
     <div class="od2abas">${OD2_ABAS.map(([k,r,c])=>`<button data-odab="${k}" class="${k===OD_ABA?'on':''}" style="--cor:${c}">${r}<b>${nf(conta(k))}</b></button>`).join('')}</div>
     ${l.length?`<div class="od2rol"><table class="od2t"><thead><tr><th style="width:30px"><span class="od2ck ${l.length&&l.every(x=>OD2.sel.has(x.o.id))?'on':''}" id="odCkT"></span></th><th style="width:34px"></th>
-      ${col('num','Nº OP')}${col('data','Data')}${col('prod','Produto')}${col('lote','Lote')}${col('maq','Máquina')}${col('tq','Tanque')}${col('hora','Hora início – fim')}${col('sit','Situação')}<th>Integração</th><th>Marcadores</th></tr></thead><tbody>
+      ${col('num','Nº OP')}${col('data','Data')}${col('prod','Produto')}${col('lote','Lote')}${col('maq','Máquina')}${col('tq','Tanque')}${col('sit','Situação')}<th>Integração</th><th>Marcadores</th></tr></thead><tbody>
       ${l.map(({o,b})=>{const ab=OD_ABERTO===o.id;const ap=APONTA[b.chave]||{};const est=o.tinyEnviado&&o.tinyEnviado.em;const pend=o.tinyAjuste&&!o.tinyAjuste.em;
         const p=prodOf(o.codigo);const fmt=p?`${fmtLit(p.litragem)} · ${nf(o.caixas!=null?o.caixas:cxPrev0(o))} ${und(o)}`:'';
         return `<tr class="${ab?'aberta':''} ${OD2.sel.has(o.id)?'sel':''}" data-odrow="${o.id}"><td><span class="od2ck ${OD2.sel.has(o.id)?'on':''}" data-odck="${o.id}"></span></td>
         <td><button class="od2dots" data-odmenu="${o.id}">&#8943;</button></td><td class="m"><b>${escAttr(String(o.lote||b.lote||'—'))}</b></td><td class="m">${dCurto(o.data||b.data)}</td>
-        <td><b>${nomeCurto(o.codigo)}</b><small>${fmt}</small></td><td class="m">${escAttr(String(b.lote||'—'))}</td><td>${o.maq||'—'}</td><td>${b.tanque||'—'}</td><td class="m">${od2Hora(o)}</td>
+        <td><b>${nomeCurto(o.codigo)}</b><small>${fmt}</small></td><td class="m">${escAttr(String(b.lote||'—'))}</td><td>${o.maq||'—'}</td><td>${b.tanque||'—'}</td>
         <td>${od2Selo(o)}</td>
-        <td><span class="od2itg">${est?'<i class="e" title="estoque lançado">E</i>':''}${pend?'<i class="x" title="ajuste de estoque pendente no Tiny">&#8645;</i>':est?`<i class="t" title="enviado ao Tiny em ${escAttr(o.tinyEnviado.em)}">&#8645;</i>`:''}${!est&&!pend?'<span class="k">—</span>':''}</span></td>
+        <td>${csItg(o)}</td>
         <td>${(o.marcadores||[]).map(n=>{const m=odMarcadores().find(x=>x.nome===n);return `<span class="od2mk" style="--c:${m?m.cor:'#8B93A1'}"><i></i>${escAttr(n)}</span>`;}).join('')}</td></tr>
-        ${ab?`<tr class="od2xp"><td></td><td colspan="11"><div class="od2xc">
+        ${ab?`<tr class="od2xp"><td></td><td colspan="10"><div class="od2xc">
           <div><span>Granel</span><b>${nf(+b.volume||0)} L · ${b.tanque||'sem tanque'}${b.lote?' · lote '+b.lote:''}</b></div>
-          <div><span>Envase</span><b>${fmt} · ${o.maq||'—'} · ${od2Hora(o)}</b></div>
+          <div><span>Envase</span><b>${fmt} · ${o.maq||'—'}</b></div>
           <div><span>Produzido</span><b>${o.caixas!=null?`${nf(o.caixas)} ${und(o)}${cxPrev0(o)-o.caixas>0?` · ${nf(cxPrev0(o)-o.caixas)} de perda`:''}`:'ainda não apontado'}</b></div>
           <div><span>Liberação</span><b>${ap.liberadoEm?`liberado ${ap.liberadoEm}${ap.liberadoPor?' por '+ap.liberadoPor:''}`:'lote ainda não liberado'}</b></div>
           <div><span>Tiny</span><b>${pend?'ajuste pendente':est?'enviado '+o.tinyEnviado.em:'ainda não enviado'}</b></div>
@@ -14506,17 +14558,20 @@ function ligaOrdens(el,l){
   M('odNova').onclick=()=>abrirOrdem(null);
   el.querySelectorAll('[data-odab]').forEach(b=>b.onclick=()=>{OD_ABA=b.dataset.odab;OD2.sel.clear();gradeOrdens();});
   el.querySelectorAll('[data-ods]').forEach(h=>h.onclick=()=>{const k=h.dataset.ods;OD2.sort=OD2.sort.k===k?{k,dir:-OD2.sort.dir}:{k,dir:['prod','maq','tq'].includes(k)?1:-1};gradeOrdens();});
-  el.querySelectorAll('[data-odrow]').forEach(r=>r.onclick=ev=>{if(ev.target.closest('[data-odck],[data-odmenu]'))return;OD_ABERTO=OD_ABERTO===r.dataset.odrow?null:r.dataset.odrow;gradeOrdens();});
+  el.querySelectorAll('[data-odrow]').forEach(r=>r.onclick=ev=>{if(ev.target.closest('[data-odck],[data-odmenu],[data-odtiny]'))return;OD_ABERTO=OD_ABERTO===r.dataset.odrow?null:r.dataset.odrow;gradeOrdens();});
   el.querySelectorAll('[data-odck]').forEach(c=>c.onclick=ev=>{ev.stopPropagation();const id=c.dataset.odck;OD2.sel.has(id)?OD2.sel.delete(id):OD2.sel.add(id);gradeOrdens();});
   if(M('odCkT'))M('odCkT').onclick=()=>{const t=l.every(x=>OD2.sel.has(x.o.id));l.forEach(x=>t?OD2.sel.delete(x.o.id):OD2.sel.add(x.o.id));gradeOrdens();};
   if(M('odDes'))M('odDes').onclick=()=>{OD2.sel.clear();gradeOrdens();};
+  if(M('odAlt'))M('odAlt').onclick=()=>{OD2.sort={k:'alt',dir:-1};gradeOrdens();};
+  el.querySelectorAll('[data-odtiny]').forEach(b=>b.onclick=ev=>{ev.stopPropagation();const o=ORDENS.find(x=>x.id===b.dataset.odtiny);if(o)movimentoDaOP(o);});
   if(M('odPer'))M('odPer').onclick=ev=>{ev.stopPropagation();abrirPeriodo(ev.currentTarget,OD2.p,{campos:[['prog','programada para'],['conc','concluída em']]},st=>{OD2.p=st;gradeOrdens();});};
   el.querySelectorAll('[data-odmenu]').forEach(b=>b.onclick=ev=>{ev.stopPropagation();const x=l.find(y=>y.o.id===b.dataset.odmenu);if(x)menuOP(x,b);});
 }
 function menuOP(x,botao){
   const old=document.getElementById('od2m');if(old){const mesmo=old.dataset.id===x.o.id;old.remove();if(mesmo)return;}
   const {o,b}=x;const m=document.createElement('div');m.className='od2m';m.id='od2m';m.dataset.id=o.id;
-  const itens=[['Abrir OP','abrir'],'sep',['&#9113; OP do tanque (PDF)','tq'],['&#9113; OP de envase (PDF)','env'],['&#9781; Etiquetas','etq'],['Certificado (PDF)','cert'],'sep',['&#9776; Histórico','hist'],['Marcadores','mk']];
+  const itens=[['Abrir OP','abrir'],'sep',['&#9113; OP do tanque (PDF)','tq'],['&#9113; OP de envase (PDF)','env'],['&#9781; Etiquetas','etq'],['Certificado (PDF)','cert'],'sep',['&#9776; Histórico','hist'],['Marcadores','mk'],
+    ...(sit(o)==='concluida'?['sep',[(o.tinyEnviado&&o.tinyEnviado.em&&!(o.tinyAjuste&&!o.tinyAjuste.em))?'&#8645; Ver envio ao Tiny':'&#8645; Enviar ao Tiny','tiny']]:[])];
   m.innerHTML=`<div class="mh">OP ${escAttr(String(o.lote||b.lote||''))} · ${nomeCurto(o.codigo)}</div>`+itens.map(i=>i==='sep'?'<div class="sep"></div>':`<button data-oda="${i[1]}">${i[0]}</button>`).join('');
   document.body.appendChild(m);
   const r=botao.getBoundingClientRect();m.style.left=(r.left)+'px';m.style.top=(r.bottom+4)+'px';
@@ -14528,10 +14583,10 @@ function menuOP(x,botao){
     else if(a==='env')imprimirOPEnvase(o);
     else if(a==='etq')imprimirEtiqueta(o);
     else if(a==='cert')abrirLote(b);
-    else if(a==='hist'){if(M('mAcao'))M('mAcao').innerHTML='';M('modal').classList.remove('wide');M('mTit').textContent=`Histórico · ${nomeCurto(o.codigo)}`;M('mSub').hidden=false;
-      M('mSub').textContent=`OP ${o.lote||b.lote||''} · ${dCurto(o.data||b.data)}`;M('mB').innerHTML=`<div class="hist">${historicoHTML(o)||'<div class="vazioc">Sem registros.</div>'}</div>`;
-      M('mF').innerHTML='<div style="flex:1"></div><button class="btn" id="odHF">Fechar</button>';M('odHF').onclick=()=>fecharModal();abrirMask();}
-    else if(a==='mk')marcadoresOP(o,botao);});
+    /* v287: o mesmo relatório do Envase — previsto × realizado e a linha do tempo */
+    else if(a==='hist')csHistorico(o);
+    else if(a==='mk')marcadoresOP(o,botao);
+    else if(a==='tiny')movimentoDaOP(o);});
 }
 function marcadoresOP(o,ancora){
   const lista=odMarcadores();
@@ -15195,7 +15250,9 @@ function estornarTiny(o,porQue){
     .map(x=>({id:x.tiny,tipo:'E',qtd:x.qtd}));    /* embalagem volta */
   const p=prodOf(o.codigo);
   const t=p?tinyDe(p):'';
-  if(t&&cx)movs.push({id:t,tipo:'S',qtd:cx*p.un_cx});  /* acabado sai */
+  /* acabado sai na mesma unidade em que entrou: caixa, ou unidade se foi
+     enviado antes da v288 */
+  if(t&&cx)movs.push({id:t,tipo:'S',qtd:env.unid==='cx'?cx:cx*p.un_cx});
   if(!movs.length)return false;
 
   enfileirar({chave,origem:`OP ${rotuloOP(o)}`,
@@ -15436,6 +15493,7 @@ function gradeEstoque(){
                       :'Ainda não foi lido.'}</p></div>
       <div style="display:flex;gap:8px;align-items:center">
         <input type="text" id="esBusca" class="busca" placeholder="Buscar" value="${escAttr(ES_BUSCA)}">
+        ${(()=>{const n=csPendentesTiny().length;return n?`<button class="btn sm" id="esPend" style="border-color:#1D6FE8;color:#1D6FE8">Enviar as ${n} que não foram</button>`:'';})()}
         <button class="btn pri sm" id="esLer">Atualizar do Tiny</button>
         ${(()=>{const pd=filaPendente().length,fl=filaFalhou().length;
           return `<button class="btn sm ${fl?'del':''}" id="esFila">Fila de envio${
@@ -15453,13 +15511,13 @@ function gradeEstoque(){
         <th class="n">Produzido hoje</th></tr></thead><tbody>
       ${acab.map(p=>{
         const feito=opsHoje.filter(o=>o.codigo===p.codigo&&o.caixas!=null)
-          .reduce((s,o)=>s+o.caixas*p.un_cx,0);
+          .reduce((s,o)=>s+o.caixas,0);
         return `<tr>
           <td class="mono">${p.codigo}</td>
           <td>${p.descricao}</td>
           <td class="mono ${p.tiny?'k':'w'}">${p.tiny||'falta'}</td>
-          <td class="n mono">${linhaSaldo(tinyDe(p),null,'un')}</td>
-          <td class="n mono">${feito?`<b>${nf(feito)}</b> un`:'—'}</td>
+          <td class="n mono">${linhaSaldo(tinyDe(p),null,und(p))}</td>
+          <td class="n mono">${feito?`<b>${nf(feito)}</b> ${und(p)}`:'—'}</td>
         </tr>`;}).join('')}
       </tbody></table>`
     :ES_ABA==='insumo'?`
@@ -15476,8 +15534,9 @@ function gradeEstoque(){
       </tbody></table>`
     :`
       <p class="adp">Cada OP do dia gera dois movimentos: a <b>baixa</b> do que ela
-        consumiu e a <b>entrada</b> do produto acabado. Nada é enviado sozinho —
-        você confere e confirma.</p>
+        consumiu e a <b>entrada</b> do produto acabado, em caixas ou fardos. Tudo vai ao
+        Tiny sozinho na conclusão da OP: esta página é para <b>acompanhar e corrigir</b>
+        o que não foi.</p>
       ${opsHoje.length?`<table class="tb"><thead><tr>
         <th>OP</th><th>Produto</th><th>Máquina</th><th class="n">Produzido</th>
         <th>Situação</th><th></th></tr></thead><tbody>
@@ -15488,15 +15547,18 @@ function gradeEstoque(){
           <td>${nomeCurto(o.codigo)}${o.lote?` · lote ${o.lote}`:''}</td>
           <td class="k">${o.maq||'—'}</td>
           <td class="n mono">${o.caixas!=null?`${nf(o.caixas)} ${und(o)}`:'—'}</td>
-          <td>${(o.tinyAjuste&&!o.tinyAjuste.em)
+          <td>${csUnErrada(o)?`<span class="pill bad">foi em unidades</span>`
+                :(o.tinyAjuste&&!o.tinyAjuste.em)
                 ?`<span class="pill bad">ajuste pendente</span>`
-                :env.em?`<span class="pill ok">enviado ${env.em}</span>`
-                :sit(o)==='concluida'?'<span class="pill med">a enviar</span>'
-                :'<span class="k">aguarda conclusão</span>'}</td>
-          <td class="n">${(o.tinyAjuste&&!o.tinyAjuste.em)
+                :env.em?`<span class="pill ok">enviado ${env.em}${env.auto?' · na conclusão':''}</span>`
+                :(()=>{const f=naFila(`op|${o.id}|emb`);return f&&f.estado!=='enviado'?`<span class="pill ${f.estado==='falhou'?'bad':'med'}" title="${escAttr(f.erro||'')}">${f.estado==='falhou'?'falhou':'na fila'}</span>`:'';})()
+                ||(sit(o)==='concluida'?'<span class="pill med">não foi</span>':'<span class="k">aguarda conclusão</span>')}</td>
+          <td class="n">${csUnErrada(o)
+            ?`<button class="btn del sm" data-esun="${o.id}">Corrigir no Tiny</button>`
+            :(o.tinyAjuste&&!o.tinyAjuste.em)
             ?`<button class="btn warn sm" data-esop="${o.id}">Enviar o ajuste</button>`
             :sit(o)==='concluida'&&!env.em
-            ?`<button class="btn sm" data-esop="${o.id}">Conferir e enviar</button>`
+            ?`<button class="btn sm" data-esop="${o.id}">Conferir e reenviar</button>`
             :env.em?`<button class="ordb" data-esop="${o.id}" title="Ver o que foi enviado">&#8250;</button>`:''}</td>
         </tr>`;}).join('')}
       </tbody></table>`:'<div class="vazioc" style="padding:20px">Nenhuma OP hoje.</div>'}`}`;
@@ -15507,6 +15569,8 @@ function gradeEstoque(){
   el.querySelectorAll('[data-esop]').forEach(b=>b.onclick=()=>
     movimentoDaOP(ORDENS.find(o=>o.id===b.dataset.esop)));
   if(M('esFila'))M('esFila').onclick=telaFilaTiny;
+  el.querySelectorAll('[data-esun]').forEach(b=>b.onclick=()=>csCorrigirUnidade(ORDENS.find(o=>o.id===b.dataset.esun)));
+  if(M('esPend'))M('esPend').onclick=csEnviarPendentes;
   M('esLer').onclick=()=>{
     const ids=ES_ABA==='insumo'?ins.map(tinyDe):acab.map(tinyDe);
     lerEstoque(ids,M('esLer'));
@@ -15527,9 +15591,10 @@ function movimentoDaOP(o){
      estoque de la conta a producao duas vezes. */
   const ajuste=(o.tinyAjuste&&!o.tinyAjuste.em)?o.tinyAjuste:null;
   const cons=ajuste?difConsumo(o,ajuste.de,ajuste.para):consumoDaOP(o);
+  /* v288: o acabado entra na unidade do Tiny, que é a caixa/fardo da filha */
   const unProd=ajuste
-    ? ((ajuste.para||0)-(ajuste.de||0))*p.un_cx
-    : (o.caixas||0)*p.un_cx;
+    ? ((ajuste.para||0)-(ajuste.de||0))
+    : (o.caixas||0);
   const tinyProd=tinyDe(p);
   const semCod=cons.filter(x=>!x.tiny).length+(tinyProd?0:1);
   if(M('mAcao'))M('mAcao').innerHTML='';
@@ -15548,7 +15613,7 @@ function movimentoDaOP(o){
     :env.em?`<div class="alert">Enviado em <b>${env.em}</b> por <b>${env.por||'—'}</b>.
       Reenviar duplicaria o movimento no Tiny.</div>`:''}
     ${!tinyProd?`<div class="alert mau"><b>O produto acabado não tem código do Tiny.</b>
-      A embalagem vai baixar normalmente, mas <b>a entrada de ${nf(Math.abs(unProd))} un
+      A embalagem vai baixar normalmente, mas <b>a entrada de ${nf(Math.abs(unProd))} ${und(o)}
       de ${escAttr(nomeCurto(o.codigo))} não vai acontecer</b> — o Tiny vai registrar o
       consumo de uma produção que nunca entrou no estoque dele.<br>
       Cadastre o código em Configurações, aba Produtos, antes de enviar.</div>`:''}
@@ -15560,7 +15625,7 @@ function movimentoDaOP(o){
       <th class="n">Entrada</th><th class="n">Saldo hoje</th></tr></thead><tbody>
       <tr><td><b>${p.descricao}</b></td>
         <td class="mono ${tinyProd?'k':'w'}">${tinyProd||'falta'}</td>
-        <td class="n mono"><b>${unProd<0?'−':'+'}${nf(Math.abs(unProd))}</b> un</td>
+        <td class="n mono"><b>${unProd<0?'−':'+'}${nf(Math.abs(unProd))}</b> ${und(o)}</td>
         <td class="n mono k">${tinyProd&&ESTOQUE[tinyProd]!==undefined?nf(ESTOQUE[tinyProd]):'—'}</td></tr>
     </tbody></table>
     <div class="st2" style="margin-top:14px">Baixa · o que a OP consumiu</div>
@@ -15613,13 +15678,13 @@ function movimentoDaOP(o){
         itens:movs.length,falhas:falhas,
         /* fica gravado com quantas caixas o Tiny foi movimentado: sem isso
            nao ha como calcular a diferenca se as caixas forem corrigidas */
-        caixas:(ajuste?ajuste.para:o.caixas)};
+        caixas:(ajuste?ajuste.para:o.caixas),unid:'cx'};
       if(ajuste)o.tinyAjuste=null;
       registrar(o,ajuste?'Ajuste de estoque enviado ao Tiny':'Estoque enviado ao Tiny',null,
         `${movs.length} movimento${movs.length>1?'s':''}`
         +`${it.erro?` · ${it.erro}`:''}`
         +(ajuste?` · diferença de ${nf(ajuste.para-ajuste.de)} ${und(o)}`
-                :` · entrada ${nf(unProd)} un`));
+                :` · entrada ${nf(unProd)} ${und(o)}`));
       agendarSalvar();fecharModal();gradeEstoque();
       toast(it.erro?`Enviado com ressalva — ${it.erro}.`:'Estoque atualizado no Tiny.',!!it.erro);
     }else{
@@ -17582,7 +17647,8 @@ const PERM_MODS=[
   {id:'inicio',nome:'Início',itens:[{k:'inicio',n:'Visão do dia'}]},
   {id:'pcp',nome:'PCP',itens:[
     {k:'envase',n:'Envase',acoes:true,
-      extra:[{k:'telaop',n:'Abrir a tela do operador (gestor)'}]},
+      extra:[{k:'telaop',n:'Abrir a tela do operador (gestor)'},
+        {k:'envase.concluir',n:'Concluir OP e assinar a quebra com o PIN'}]},
     {k:'tanques',n:'Tanques',acoes:true,
       extra:[{k:'liberar',n:'Liberar lote para envase (Qualidade)'}]},
     {k:'ordens',n:'Ordens de produção',acoes:true},
@@ -17805,7 +17871,9 @@ function csUsuAbaAcesso(){
         value="${escP(r.pin)}" placeholder="4 dígitos" autocomplete="off">
         <button type="button" class="olho" data-olho="usPin" title="Mostrar">&#128065;</button>
         <button type="button" class="btn sm" id="usGeraPin">Gerar</button></div></div>`,
-      'Curto, digitado na fábrica para assinar etapa, pausa e liberação. É diferente da senha.')}
+      'Curto, digitado na fábrica para assinar etapa, pausa e liberação. É diferente da senha. '
+      +'Para concluir OP a pessoa precisa, além do PIN, da permissão <b>Concluir OP</b> (aba Permissões › PCP › Envase); o master conclui sempre.'
+      +(csPinSemColuna()?'<br><b style="color:#B3261E">Atenção: a tabela pcp_acesso do banco não tem a coluna pin. Nenhum PIN está sendo gravado — rode o supabase-integracao.sql.</b>':''))}
     <div class="cs-usust">Cadastro, nível e situação</div>
     ${linha(`<div class="fld"><label>Cadastrar como <b>*</b></label>
       <select id="usTipo">${[['adm','Administrador'],['usu','Usuário'],['op','Operador'],
@@ -17851,7 +17919,7 @@ function csUsuAbaPerm(){
       ${i.acoes?`<div class="cs-psub">
         ${cx(v>=2||mestre,`data-pk="${i.k}" data-pn="2"`,'Permissão para editar e lançar')}
         ${cx(v>=3||mestre,`data-pk="${i.k}" data-pn="3"`,'Permissão para excluir')}
-        ${(i.extra||[]).map(x=>cx(RANKN(p[x.k])>=2||mestre,
+        ${(i.extra||[]).map(x=>cx(csExtraOn(r,x.k)||mestre,
           `data-pk="${x.k}" data-pn="2" data-extra="1"`,escP(x.n))).join('')}
       </div>`:''}</div>`;
   };
@@ -17887,7 +17955,8 @@ function csUsuAbaPerm(){
     const pai=itens.find(i=>i.k===k)||itens.find(i=>(i.extra||[]).some(x=>x.k===k));
     if(extra){
       if(c.checked){p[k]='editar';if(pai&&RANKN(p[pai.k])<1)p[pai.k]='ver';}
-      else delete p[k];
+      /* concluir sem marca segue o Envase; desmarcado precisa ficar gravado como 'não' */
+      else if(k==='envase.concluir')p[k]='nao'; else delete p[k];
       return csUsuAbaPerm();
     }
     /* marcar uma ação marca o que vem antes dela; desmarcar tira o que vem
@@ -18844,7 +18913,6 @@ const CS_MOD=[
  {id:'inicio',nome:'Início',ic:'casa',pgs:[
    {n:'Início',page:'home',ic:'casa',todos:true}]},
  {id:'pcp',nome:'PCP',ic:'pcp',pgs:[
-   {n:'Visão do dia',page:'inicio',ic:'dia',todos:true},
    {n:'Ordens de produção',page:'ordens',ic:'op'},
    {n:'Envase e tanques',page:'envase',ic:'tq'},
    {n:'Sopro',page:'sopro',ic:'sop'},
@@ -19145,7 +19213,9 @@ function csPintar(){
     if(ab)CS_FFECH.push(k);else CS_FEXP.push(k);csPintar();});
   document.getElementById('csTapa').className='cs-tapa'
     +(!CS_FIX&&document.body.classList.contains('cs-peek')?' on':'');
-  CS_FIX=false;document.body.classList.remove('cs-peek','cs-rx');
+  /* v287: o Fixar voltou — fixo, o trilho fica aberto com os nomes */
+  document.body.classList.remove('cs-peek');document.body.classList.toggle('cs-rx',CS_FIX);
+  document.body.classList.toggle('cs-fixo',CS_FIX);
   const adm=document.getElementById('csBtAdm');
   if(adm){adm.classList.toggle('atual',S.page==='admin');adm.classList.toggle('aberto',CS_ABERTO==='config');
     adm.style.display=csPode({page:'admin'})?'':'none';}
@@ -21326,7 +21396,7 @@ window.csNucleo=(function(){
     VERS[id]=l[0].versao;return {ok:true};
   }
   return {
-    versao:'v286',
+    versao:'v288',
     logo:()=>LOGO,
     teste:!temNuvem(),
     usuario:()=>{try{return (MEU_ACESSO&&MEU_ACESSO.nome)||(EU&&EU.nome)||emailDaSessao()||'Teste';}catch(e){return 'Teste';}},
@@ -21843,6 +21913,190 @@ try{window.CS_FIM_AB=JSON.parse(localStorage.getItem('erp.fimAb')||'[]');}catch(
 document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.closest('[data-fimtg]');if(!b)return;ev.stopPropagation();
   const k=b.dataset.fimtg;const L=window.CS_FIM_AB;const i=L.indexOf(k);if(i>=0)L.splice(i,1);else L.push(k);
   try{localStorage.setItem('erp.fimAb',JSON.stringify(L.slice(-30)));}catch(e){}try{render();}catch(e){}},true);
+</script>
+<script>
+/* ===================== v287 ===================== */
+/* Quem pode concluir OP. O master e o operador sempre: é o trabalho dele.
+   Para os outros vale a caixa "Concluir OP" do Envase; quem nunca teve a
+   caixa decidida segue o nível do Envase (editar e lançar), para ninguém
+   que já concluía ficar travado no dia da troca. */
+function csConcluiPorPerm(a){
+  if(!a)return false;
+  if(a.master||nivelDe(a)==='master')return true;
+  if((a.tipo||csTipoDe(a))==='op')return true;
+  const p=a.perm||{},v=p['envase.concluir'];
+  if(v==='nao')return false;
+  if(RANKN(v)>=2)return true;
+  return RANKN(p.envase)>=2||nivelDe(a)==='gestor';
+}
+function csExtraOn(r,k){return k==='envase.concluir'?csConcluiPorPerm(r):RANKN(((r&&r.perm)||{})[k])>=2;}
+function csPodeConcluir(q){
+  if(!q)return false;
+  if(q.master||q.nivel==='master'||q.tipo==='operador')return true;
+  const a=(typeof ACESSOS!=='undefined'?ACESSOS:[]).find(x=>norMail(x.email)===norMail(q.email));
+  return csConcluiPorPerm(a);
+}
+/* A tabela do banco pode não ter a coluna do PIN: aí ele era descartado ao
+   gravar, e só a senha (outra coluna) conferia. É isso que se vê aqui. */
+function csPinSemColuna(){
+  try{return temNuvem()&&ACESSOS.length>0&&!ACESSOS.some(a=>Object.prototype.hasOwnProperty.call(a,'pin'));}catch(e){return false;}
+}
+function csPinConclusao(cred){
+  const s=quemPorCredencial(cred);
+  if(!s)return {ok:false,txt:csPinSemColuna()
+    ?'<b>PIN não encontrado.</b> Os PINs não estão gravados no banco (falta a coluna pin na tabela pcp_acesso). Use a senha por enquanto.'
+    :'<b>PIN ou senha não encontrado</b> no cadastro de pessoas. Confira em Configurações › Pessoas e permissões.'};
+  if(!csPodeConcluir(s))return {ok:false,s,txt:`<b>${s.nome}</b> não tem permissão para concluir OP. Libere em Pessoas e permissões › Permissões › PCP › Envase › Concluir OP.`};
+  return {ok:true,s,txt:`<b>${s.nome}</b> conclui esta OP${s.master?' (master)':''}.`};
+}
+
+/* Última alteração feita por uma pessoa. Os ajustes que a fila faz sozinha
+   (empurrar, puxar, reajustar) não contam: cada conclusão mexe em várias
+   OPs e a lista não pararia quieta. */
+function csUltAlt(o){
+  const l=(o&&o.log)||[];
+  for(let i=l.length-1;i>=0;i--){const x=l[i];
+    if(typeof EV_SISTEMA!=='undefined'&&EV_SISTEMA.includes(x.e))continue;
+    return `${x.d||o.data||''} ${x.t||''}`;}
+  return `${(o&&o.data)||''} 00:00`;
+}
+
+/* A coluna Integração diz em que pé está o Tiny de cada OP concluída */
+function csItg(o){
+  const est=o.tinyEnviado&&o.tinyEnviado.em,pend=o.tinyAjuste&&!o.tinyAjuste.em;
+  if(pend)return `<button class="od2tg x" data-odtiny="${o.id}" title="as caixas mudaram depois do envio">ajuste pendente</button>`;
+  if(est)return `<span class="od2itg"><i class="e" title="estoque lançado">E</i><i class="t" title="enviado ao Tiny em ${escAttr(String(o.tinyEnviado.em))}${o.tinyEnviado.por?' por '+escAttr(String(o.tinyEnviado.por)):''}">&#8645;</i></span>`;
+  if(sit(o)!=='concluida')return '<span class="k">—</span>';
+  const f=typeof naFila==='function'?naFila(`op|${o.id}|emb`):null;
+  if(f&&f.estado!=='enviado')return `<button class="od2tg ${f.estado==='falhou'?'x':'q'}" data-odtiny="${o.id}" title="${escAttr(f.erro||'')}">${f.estado==='falhou'?'falhou':'na fila'}</button>`;
+  let semCod=false;try{const p=prodOf(o.codigo);semCod=!p||!tinyDe(p);}catch(e){}
+  return `<button class="od2tg q" data-odtiny="${o.id}">${semCod?'falta código':'a enviar'}</button>`;
+}
+
+/* Concluiu, vai ao Tiny: baixa da embalagem e entrada do acabado, pela mesma
+   fila da conferência manual — se a rede cair, fica pendente e reenvia, e a
+   chave impede duplicar. Só o aparelho que concluiu envia. Sem banco (TESTE)
+   ou sem código do Tiny, fica "a enviar" nas Ordens e em Estoque. */
+function csTinyAoConcluir(o){
+  setTimeout(async()=>{
+    try{
+      if(!o||sit(o)!=='concluida'||(o.tinyEnviado&&o.tinyEnviado.em))return;
+      if(!temNuvem()||typeof SESSAO==='undefined'||!SESSAO)return;
+      const p=prodOf(o.codigo);if(!p)return;
+      const tinyProd=tinyDe(p);
+      if(!tinyProd){registrar(o,'Envio ao Tiny não foi',null,'produto acabado sem código do Tiny');agendarSalvar();
+        toast('OP concluída, mas o produto não tem código do Tiny: o estoque não foi.',true);return;}
+      const unProd=(o.caixas||0),movs=[];
+      if(unProd)movs.push({id:tinyProd,tipo:'E',qtd:unProd});
+      consumoDaOP(o).forEach(x=>{if(x.tiny&&x.qtd)movs.push({id:x.tiny,tipo:'S',qtd:x.qtd});});
+      if(!movs.length)return;
+      const chave=`op|${o.id}|emb`;
+      enfileirar({chave,origem:`OP ${rotuloOP(o)}`,rotulo:'Baixa de embalagem e entrada de acabado',
+        movs,obs:`OP ${rotuloOP(o)} · lote ${o.lote||''}`});
+      const it=await enviarDaFila(chave);
+      if(it&&it.estado==='enviado'){
+        o.tinyEnviado={em:relogio(),d:ymd(new Date()),por:quemAssina(),itens:movs.length,
+          falhas:it.erro?1:0,caixas:o.caixas,auto:true,unid:'cx'};
+        registrar(o,'Estoque enviado ao Tiny',null,`${movs.length} movimento${movs.length>1?'s':''} · ao concluir · entrada ${nf(unProd)} ${und(o)}${it.erro?' · '+it.erro:''}`);
+        toast(it.erro?`Tiny recebeu com ressalva — ${it.erro}.`:'Estoque lançado no Tiny.',!!it.erro);
+      }else{
+        registrar(o,'Envio ao Tiny na fila',null,(it&&it.erro)||'aguardando reenvio');
+        toast(`OP concluída; o Tiny não recebeu agora (${(it&&it.erro)||'sem resposta'}). Ficou na fila.`,true);
+      }
+      agendarSalvar();
+      try{if(S.page==='ordens')gradeOrdens();}catch(e){}
+    }catch(e){console.warn('envio ao Tiny na conclusão:',e);}
+  },400);
+}
+/* depois de conferir e enviar pelas Ordens, a lista mostra o novo estado */
+try{const _ge=gradeEstoque;gradeEstoque=function(){try{_ge.apply(this,arguments);}catch(e){}
+  try{if(S.page==='ordens')gradeOrdens();}catch(e){}};}catch(e){}
+
+/* o Fixar sai do "só aberto" e mora no pé do trilho, visível sempre */
+(function csPoeFix(n){
+  const f=document.getElementById('csFix'),fim=f&&f.closest('.fim');
+  if(!f||!fim){if((n||0)<40)setTimeout(()=>csPoeFix((n||0)+1),150);return;}
+  if(f.parentElement!==fim)fim.appendChild(f);
+  if(!f.querySelector('.tip'))f.insertAdjacentHTML('beforeend','<span class="tip">Fixar menu</span>');
+  f.classList.add('cs-rmod');
+  try{csPintar();}catch(e){}
+})();
+</script>
+<script>
+/* ===================== v288 ===================== */
+/* OP enviada antes da v288: o acabado entrou em unidades (caixas × un/cx) */
+function csUnErrada(o){
+  const env=o&&o.tinyEnviado;if(!env||!env.em||env.unid==='cx'||env.unCorrigida)return false;
+  const p=prodOf(o.codigo);return !!(p&&(+p.un_cx||1)>1&&tinyDe(p));
+}
+/* Corrige a entrada: tira do Tiny o que entrou a mais. Pergunta antes,
+   porque se alguém já acertou à mão lá, enviar de novo tiraria em dobro. */
+function csCorrigirUnidade(o){
+  if(!o||!csUnErrada(o))return;
+  const p=prodOf(o.codigo),env=o.tinyEnviado,cx=env.caixas!=null?env.caixas:o.caixas;
+  const foi=cx*p.un_cx,certo=cx,sai=foi-certo,u=und(o);
+  if(M('mAcao'))M('mAcao').innerHTML='';M('modal').classList.remove('wide');
+  M('mTit').textContent='Corrigir a entrada no Tiny';M('mSub').hidden=false;
+  M('mSub').textContent=`${nomeCurto(o.codigo)} · lote ${o.lote||'—'} · OP ${rotuloOP(o)}`;
+  M('mB').innerHTML=`<div class="alert q">Esta OP foi ao Tiny com <b>${nf(foi)}</b> de entrada, contando unidades.
+    O certo são <b>${nf(certo)} ${u}</b>. A correção tira <b>${nf(sai)}</b> de <b>${escAttr(p.descricao)}</b> no Tiny.
+    As embalagens estavam certas e não mudam.</div>
+    <p class="adp" style="margin-top:10px">Se você já acertou isso direto no Tiny, use <b>Já corrigi no Tiny</b>: o ERP só anota, sem mexer lá.</p>`;
+  M('mF').innerHTML=`<div style="flex:1"></div><button class="btn" id="unFe">Fechar</button>
+    <button class="btn" id="unJa">Já corrigi no Tiny</button><button class="btn pri" id="unOk">Tirar ${nf(sai)} no Tiny</button>`;
+  M('unFe').onclick=fecharModal;
+  M('unJa').onclick=()=>{env.unCorrigida=`${ymd(new Date())} ${relogio()}`;env.unid='cx';
+    registrar(o,'Unidade do Tiny corrigida à mão',null,`entrada ${nf(foi)} → ${nf(certo)} ${u}`);agendarSalvar();fecharModal();gradeEstoque();};
+  M('unOk').onclick=async()=>{const k=M('unOk');k.disabled=true;k.textContent='Enviando…';
+    const chave=`op|${o.id}|unfix`;
+    enfileirar({chave,origem:`OP ${rotuloOP(o)}`,rotulo:`Correção de unidade · ${nf(foi)}→${nf(certo)} ${u}`,
+      movs:[{id:tinyDe(p),tipo:'S',qtd:sai}],obs:`CORREÇÃO OP ${rotuloOP(o)} · lote ${o.lote||''} · entrada em ${u}, não em un`});
+    const it=await enviarDaFila(chave);
+    if(it&&it.estado==='enviado'){env.unCorrigida=`${ymd(new Date())} ${relogio()}`;env.unid='cx';
+      registrar(o,'Unidade do Tiny corrigida',null,`saída de ${nf(sai)} · entrada fica ${nf(certo)} ${u}`);
+      agendarSalvar();fecharModal();gradeEstoque();toast(`Corrigido: ficou ${nf(certo)} ${u} no Tiny.`);}
+    else{agendarSalvar();fecharModal();gradeEstoque();toast(`Não foi agora: ${(it&&it.erro)||'sem resposta'}. Ficou na fila.`,true);}};
+  abrirMask();
+}
+/* concluídas que não chegaram ao Tiny: nunca enviadas, ou paradas na fila */
+function csPendentesTiny(){
+  const ini=ymd(addD(new Date(),-7));
+  return ORDENS.filter(o=>naGrade(o)&&sit(o)==='concluida'&&String(o.data||'')>=ini&&!(o.tinyEnviado&&o.tinyEnviado.em)
+    &&(()=>{try{const p=prodOf(o.codigo);return p&&tinyDe(p);}catch(e){return false;}})());
+}
+async function csEnviarPendentes(){
+  const l=csPendentesTiny();if(!l.length)return;
+  if(!window.confirm(`Enviar ao Tiny as ${l.length} OPs concluídas que ainda não foram?\n\nCada uma manda a entrada do acabado (em caixas/fardos) e a baixa da embalagem.`))return;
+  const b=M('esPend');if(b){b.disabled=true;b.textContent='Enviando…';}
+  let ok=0;
+  for(const o of l){await csTinyAgora(o);if(o.tinyEnviado&&o.tinyEnviado.em)ok++;}
+  agendarSalvar();gradeEstoque();
+  toast(ok===l.length?`${ok} OPs lançadas no Tiny.`:`${ok} de ${l.length} lançadas; as outras ficaram na fila.`,ok!==l.length);
+}
+/* o envio de uma OP, sem esperar: o mesmo da conclusão */
+async function csTinyAgora(o){
+  try{
+    if(!o||sit(o)!=='concluida'||(o.tinyEnviado&&o.tinyEnviado.em))return;
+    if(!temNuvem()||typeof SESSAO==='undefined'||!SESSAO)return;
+    const p=prodOf(o.codigo);const tp=p&&tinyDe(p);if(!tp)return;
+    const movs=[];if(o.caixas)movs.push({id:tp,tipo:'E',qtd:o.caixas});
+    consumoDaOP(o).forEach(x=>{if(x.tiny&&x.qtd)movs.push({id:x.tiny,tipo:'S',qtd:x.qtd});});
+    if(!movs.length)return;
+    const chave=`op|${o.id}|emb`;
+    enfileirar({chave,origem:`OP ${rotuloOP(o)}`,rotulo:'Baixa de embalagem e entrada de acabado',movs,obs:`OP ${rotuloOP(o)} · lote ${o.lote||''}`});
+    const it=await enviarDaFila(chave);
+    if(it&&it.estado==='enviado'){
+      o.tinyEnviado={em:relogio(),d:ymd(new Date()),por:quemAssina(),itens:movs.length,falhas:it.erro?1:0,caixas:o.caixas,unid:'cx'};
+      registrar(o,'Estoque enviado ao Tiny',null,`${movs.length} movimentos · entrada ${nf(o.caixas)} ${und(o)}${it.erro?' · '+it.erro:''}`);
+    }else registrar(o,'Envio ao Tiny na fila',null,(it&&it.erro)||'aguardando reenvio');
+  }catch(e){console.warn('envio ao Tiny:',e);}
+}
+/* abrir o envio de uma OP que foi em unidades leva direto à correção */
+try{const _mv=movimentoDaOP;movimentoDaOP=function(o){if(csUnErrada(o))return csCorrigirUnidade(o);return _mv.apply(this,arguments);};}catch(e){}
+/* a coluna Integração das Ordens também mostra o que foi em unidades */
+try{const _itg=csItg;csItg=function(o){
+  if(csUnErrada(o))return `<button class="od2tg x" data-odtiny="${o.id}" title="o acabado foi ao Tiny em unidades — abra Estoque › Movimentos para corrigir">em unidades</button>`;
+  return _itg(o);};}catch(e){}
 </script>
 <div style="position:fixed;right:14px;bottom:10px;z-index:300;background:#C2410C;color:#fff;font:700 11px Inter,sans-serif;letter-spacing:.04em;padding:5px 10px;border-radius:999px;box-shadow:0 4px 12px rgba(0,0,0,.2)" title="Lê a produção do PCP ao vivo e grava tudo à parte: nada chega ao PCP antigo">MODO TESTE · grava à parte</div>
 </body>
