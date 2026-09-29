@@ -331,13 +331,23 @@ function render(){
 /* =====================================================================
    SALDOS · uma aba por tag, com o que está prometido e o que sobra
    ===================================================================== */
-const SAL={tag:'__acabado',q:'',so:false};
+/* a aba escolhida fica guardada: sair e voltar não perde o lugar */
+const SAL={tag:(()=>{try{return localStorage.getItem('erp.est.tag')||'__acabado';}catch(e){return '__acabado';}})(),q:'',so:false};
+/* lê tudo (produtos e insumos) de uma vez, pelo ERP; sem ele, só esta aba */
+async function lerTudo(ids){if(N.lerTudo)return N.lerTudo();return N.lerSaldos(ids);}
+let AUTO_LEU=false;
+function quando(){const em=N.saldosEm();if(!em)return 'ainda não lido do Tiny';
+  const d=N.saldosDia?N.saldosDia():'',hoje=new Date().toISOString().slice(0,10);
+  const i=N.saldosIdade?N.saldosIdade():null;
+  return 'lido do Tiny '+(d&&d!==hoje?'em '+d.split('-').reverse().slice(0,2).join('/')+' ':'')+'às '+esc(em)+(i!=null&&i<24*60?(i<1?' · agora':' · há '+(i<60?i+' min':Math.floor(i/60)+'h'+String(i%60).padStart(2,'0'))):'');}
 function itensSaldo(){
   const s=N.saldos(),res=N.reservado();
   if(SAL.tag==='__acabado'){
     const ap=N.aProduzir();
     return N.produtos().map(p=>{const t=String(p.tiny||'').replace(/\D/g,'');const fis=t&&s[t]!==undefined?+s[t]:null;
-      return {cod:p.codigo,nome:p.descricao,tiny:t,un:'un',fis,res:0,prod:(ap[p.codigo]||{}).un||0,ops:(ap[p.codigo]||{}).ops||0,min:0,disp:fis};});
+      /* o acabado no Tiny é a filha "CX C/6 UN"/"FD C/4 UN": conta em caixas ou fardos */
+      const u=/\bFD\b|FARDO/i.test(p.descricao||'')?'fd':'cx',a=ap[p.codigo]||{};
+      return {cod:p.codigo,nome:p.descricao,tiny:t,un:u,fis,res:0,prod:Math.round((a.un||0)/(+p.un_cx||1)),ops:a.ops||0,min:0,disp:fis};});
   }
   return N.insumos().filter(x=>x.tipo===SAL.tag).map(x=>{const t=String(x.tiny||'').replace(/\D/g,'');const fis=t&&s[t]!==undefined?+s[t]:null;
     const r=res[x.sku]||res[x.nome]||{qtd:0,ops:0};const min=+MINIMOS[x.sku]||0;
@@ -345,18 +355,19 @@ function itensSaldo(){
 }
 function telaSaldos(){
   const tags=[...new Set(N.insumos().map(x=>x.tipo))].sort();
+  if(SAL.tag!=='__acabado'&&!tags.includes(SAL.tag))SAL.tag='__acabado';
   const all=itensSaldo(),q=SAL.q.toLowerCase();
   const l=all.filter(i=>(!q||(i.cod+' '+i.nome).toLowerCase().includes(q))&&(!SAL.so||(i.disp!=null&&i.disp<i.min)||(i.disp!=null&&i.disp<0)));
   const aca=SAL.tag==='__acabado';
   const lidos=all.filter(i=>i.fis!=null).length,comT=all.filter(i=>i.tiny).length;
   $('app').innerHTML=`<div class="migalha">Estoque › Saldos</div>
-  <div class="topo"><h1>Saldos</h1><span class="salvo">${N.saldosEm()?'lido do Tiny às '+esc(N.saldosEm()):'ainda não lido do Tiny'}</span>
-    <button class="btn pri" id="bLer">↻ Atualizar do Tiny</button></div>
+  <div class="topo"><h1>Saldos</h1><span class="salvo">${quando()}</span>
+    <button class="btn pri" id="bLer">↻ Atualizar tudo do Tiny</button></div>
   <div class="sts">${[['__acabado','Produto acabado',N.produtos().length],...tags.map(t=>[t,t,N.insumos().filter(x=>x.tipo===t).length])].map(([k,r,n])=>
     `<button data-tg="${esc(k)}" class="${SAL.tag===k?'on':''}">${esc(r)}<b>${n}</b></button>`).join('')}</div>
   <div class="barra" style="margin-top:12px"><div class="busca">⌕<input id="sq" placeholder="Buscar" value="${esc(SAL.q)}"></div>
     <button class="chip ${SAL.so?'on':''}" id="sSo">${aca?'Só sem saldo':'Abaixo do mínimo ou negativo'}</button></div>
-  ${lidos<comT?`<div class="aviso">⚠ <div>${lidos?`${lidos} de ${comT} itens desta aba têm saldo lido.`:'Os saldos desta aba ainda não foram lidos do Tiny.'} Clique em Atualizar do Tiny.</div></div>`:''}
+  ${lidos<comT?`<div class="aviso">⚠ <div>${lidos?`${lidos} de ${comT} itens desta aba têm saldo lido.`:'Os saldos desta aba ainda não foram lidos do Tiny.'} Clique em Atualizar tudo do Tiny.</div></div>`:''}
   <div class="caixa rolx"><table style="min-width:860px"><thead><tr><th>Código</th><th>Item</th><th>Tiny</th><th class="n">Físico</th>
     ${aca?'<th class="n">A produzir</th>':'<th class="n">Reservado pelas OPs</th><th class="n">Disponível</th><th class="n">Mínimo</th>'}<th>Situação</th></tr></thead><tbody>
     ${l.map(i=>{const sit=!i.tiny?'<span class="pill p-can">sem código do Tiny</span>':i.fis==null?'<span style="color:var(--ink3)">não lido</span>'
@@ -364,20 +375,23 @@ function telaSaldos(){
       :i.disp<0?'<span class="pill p-can">reservado maior que o físico</span>':i.disp<i.min?'<span class="pill p-par">abaixo do mínimo</span>':'<span class="pill p-con">ok</span>';
       return `<tr><td class="n" style="text-align:left">${esc(i.cod)}</td><td><b>${esc(i.nome)}</b></td><td class="n" style="text-align:left;color:var(--ink3)">${esc(i.tiny||'—')}</td>
       <td class="n">${i.fis==null?'—':nq(i.fis)+' '+i.un}</td>
-      ${aca?`<td class="n">${i.prod?nq(i.prod)+' un':'—'}${i.ops?`<span class="mini">${i.ops} OP${i.ops>1?'s':''}</span>`:''}</td>`
+      ${aca?`<td class="n">${i.prod?nq(i.prod)+' '+i.un:'—'}${i.ops?`<span class="mini">${i.ops} OP${i.ops>1?'s':''}</span>`:''}</td>`
         :`<td class="n">${i.res?nq(i.res):'—'}${i.ops?`<span class="mini">${i.ops} OP${i.ops>1?'s':''} e tanques</span>`:''}</td>
           <td class="n ${i.disp!=null&&i.disp<0?'neg':''}">${i.disp==null?'—':nq(i.disp)}</td><td class="n">${i.min?nq(i.min):'—'}</td>`}
       <td>${sit}</td></tr>`;}).join('')||`<tr><td colspan="8" class="vazio">Nenhum item.</td></tr>`}</tbody></table></div>
   <div class="leg"><b>Físico</b> é o saldo do Tiny. <b>Reservado</b> é o que as OPs já geradas vão consumir. <b>Mínimo</b> vem da Necessidade
   de compra, onde ele é digitado. Os pedidos de venda do Tiny entram como reserva do produto acabado quando a leitura de pedidos for ligada.</div>
   <div class="rodfix"><div><b>${l.length}</b><span>itens na lista</span></div><div><b>${l.filter(i=>i.disp!=null&&(i.disp<0||i.disp<i.min)).length}</b><span>abaixo do mínimo</span></div></div>`;
-  document.querySelectorAll('[data-tg]').forEach(b=>b.onclick=()=>{SAL.tag=b.dataset.tg;telaSaldos();});
+  document.querySelectorAll('[data-tg]').forEach(b=>b.onclick=()=>{SAL.tag=b.dataset.tg;try{localStorage.setItem('erp.est.tag',SAL.tag);}catch(e){}telaSaldos();});
   $('sq').oninput=e=>{SAL.q=e.target.value;clearTimeout(window._ts);window._ts=setTimeout(()=>{telaSaldos();const i=$('sq');i.focus();i.setSelectionRange(i.value.length,i.value.length);},250);};
   $('sSo').onclick=()=>{SAL.so=!SAL.so;telaSaldos();};
   $('bLer').onclick=async()=>{const ids=all.map(i=>i.tiny).filter(Boolean);
     if(N.teste)return toast('Versão de teste: a leitura do Tiny está desligada.',true);
-    $('bLer').disabled=true;$('bLer').textContent='Lendo o Tiny…';
-    try{await N.lerSaldos(ids);toast('Saldos lidos.');}catch(e){toast('Tiny: '+e.message,true);}telaSaldos();};
+    $('bLer').disabled=true;$('bLer').textContent='Lendo todas as abas…';
+    try{await lerTudo(ids);toast('Saldos de todas as abas lidos.');}catch(e){toast('Tiny: '+e.message,true);}telaSaldos();};
+  /* ao abrir: nunca lido, ou com mais de 1 h, lê tudo sozinho uma vez */
+  if(!AUTO_LEU&&!N.teste){const i=N.saldosIdade?N.saldosIdade():null;
+    if(!N.saldosEm()||i==null||i>60){AUTO_LEU=true;setTimeout(()=>{const b=$('bLer');if(b&&!b.disabled)b.click();},300);}else AUTO_LEU=true;}
 }
 
 /* =====================================================================

@@ -4909,7 +4909,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v288';
+const VERSAO_APP='v289';
 let DRAG=null;
 function render(){
   recomporTudo();
@@ -13675,6 +13675,9 @@ function etapaLote(b,qual){
             obs:`PREPARO ${b.tanque||''} lote ${b.lote||''} · ${b.produto}`});
           b.ordens.forEach(o=>registrar(o,'Matéria-prima na fila do Tiny',null,
             `${cons.length} item${cons.length>1?'ns':''} · ${nf(b.volume)} L`));
+          /* v289: a baixa ia para a fila e ninguém a mandava — só o botão da
+             tela da fila fazia isso. Agora sai na hora. */
+          try{csMandaMP(b);}catch(e){}
         }
       }
       b.ordens.forEach(o=>registrar(o,
@@ -14571,7 +14574,8 @@ function menuOP(x,botao){
   const old=document.getElementById('od2m');if(old){const mesmo=old.dataset.id===x.o.id;old.remove();if(mesmo)return;}
   const {o,b}=x;const m=document.createElement('div');m.className='od2m';m.id='od2m';m.dataset.id=o.id;
   const itens=[['Abrir OP','abrir'],'sep',['&#9113; OP do tanque (PDF)','tq'],['&#9113; OP de envase (PDF)','env'],['&#9781; Etiquetas','etq'],['Certificado (PDF)','cert'],'sep',['&#9776; Histórico','hist'],['Marcadores','mk'],
-    ...(sit(o)==='concluida'?['sep',[(o.tinyEnviado&&o.tinyEnviado.em&&!(o.tinyAjuste&&!o.tinyAjuste.em))?'&#8645; Ver envio ao Tiny':'&#8645; Enviar ao Tiny','tiny']]:[])];
+    ...(sit(o)==='concluida'?['sep',[(o.tinyEnviado&&o.tinyEnviado.em&&!(o.tinyAjuste&&!o.tinyAjuste.em))?'&#8645; Ver envio ao Tiny':'&#8645; Enviar ao Tiny','tiny']]:[]),
+    ...((typeof csNoTinyOP==='function'&&(Object.keys(csNoTinyOP(o)).length||(csLoteDaOP(o)&&Object.keys(csLiquido(`lote|${csLoteDaOP(o).chave}|`)).length)))?[['&#8617; Estornar no Tiny','estornar']]:[])];
   m.innerHTML=`<div class="mh">OP ${escAttr(String(o.lote||b.lote||''))} · ${nomeCurto(o.codigo)}</div>`+itens.map(i=>i==='sep'?'<div class="sep"></div>':`<button data-oda="${i[1]}">${i[0]}</button>`).join('');
   document.body.appendChild(m);
   const r=botao.getBoundingClientRect();m.style.left=(r.left)+'px';m.style.top=(r.bottom+4)+'px';
@@ -14586,7 +14590,8 @@ function menuOP(x,botao){
     /* v287: o mesmo relatório do Envase — previsto × realizado e a linha do tempo */
     else if(a==='hist')csHistorico(o);
     else if(a==='mk')marcadoresOP(o,botao);
-    else if(a==='tiny')movimentoDaOP(o);});
+    else if(a==='tiny')movimentoDaOP(o);
+    else if(a==='estornar')csTelaEstorno(o);});
 }
 function marcadoresOP(o,ancora){
   const lista=odMarcadores();
@@ -15493,7 +15498,7 @@ function gradeEstoque(){
                       :'Ainda não foi lido.'}</p></div>
       <div style="display:flex;gap:8px;align-items:center">
         <input type="text" id="esBusca" class="busca" placeholder="Buscar" value="${escAttr(ES_BUSCA)}">
-        ${(()=>{const n=csPendentesTiny().length;return n?`<button class="btn sm" id="esPend" style="border-color:#1D6FE8;color:#1D6FE8">Enviar as ${n} que não foram</button>`:'';})()}
+        ${(()=>{const n=csPendentesTiny().length+(typeof csFilaParada==='function'?csFilaParada().filter(x=>!/^op\|[^|]+\|emb$/.test(x.chave)).length:0);return n?`<button class="btn sm" id="esPend" style="border-color:#1D6FE8;color:#1D6FE8">Enviar o que não foi (${n})</button>`:'';})()}
         <button class="btn pri sm" id="esLer">Atualizar do Tiny</button>
         ${(()=>{const pd=filaPendente().length,fl=filaFalhou().length;
           return `<button class="btn sm ${fl?'del':''}" id="esFila">Fila de envio${
@@ -15551,6 +15556,7 @@ function gradeEstoque(){
                 :(o.tinyAjuste&&!o.tinyAjuste.em)
                 ?`<span class="pill bad">ajuste pendente</span>`
                 :env.em?`<span class="pill ok">enviado ${env.em}${env.auto?' · na conclusão':''}</span>`
+                :o.tinyEstornado?`<span class="pill" title="${escAttr(o.tinyEstornado.motivo||'')}">estornado ${o.tinyEstornado.em}</span>`
                 :(()=>{const f=naFila(`op|${o.id}|emb`);return f&&f.estado!=='enviado'?`<span class="pill ${f.estado==='falhou'?'bad':'med'}" title="${escAttr(f.erro||'')}">${f.estado==='falhou'?'falhou':'na fila'}</span>`:'';})()
                 ||(sit(o)==='concluida'?'<span class="pill med">não foi</span>':'<span class="k">aguarda conclusão</span>')}</td>
           <td class="n">${csUnErrada(o)
@@ -15559,7 +15565,7 @@ function gradeEstoque(){
             ?`<button class="btn warn sm" data-esop="${o.id}">Enviar o ajuste</button>`
             :sit(o)==='concluida'&&!env.em
             ?`<button class="btn sm" data-esop="${o.id}">Conferir e reenviar</button>`
-            :env.em?`<button class="ordb" data-esop="${o.id}" title="Ver o que foi enviado">&#8250;</button>`:''}</td>
+            :env.em?`<button class="btn sm" data-esest="${o.id}" title="Lança o contrário no Tiny e no ERP">Estornar</button> <button class="ordb" data-esop="${o.id}" title="Ver o que foi enviado">&#8250;</button>`:''}</td>
         </tr>`;}).join('')}
       </tbody></table>`:'<div class="vazioc" style="padding:20px">Nenhuma OP hoje.</div>'}`}`;
 
@@ -15571,6 +15577,7 @@ function gradeEstoque(){
   if(M('esFila'))M('esFila').onclick=telaFilaTiny;
   el.querySelectorAll('[data-esun]').forEach(b=>b.onclick=()=>csCorrigirUnidade(ORDENS.find(o=>o.id===b.dataset.esun)));
   if(M('esPend'))M('esPend').onclick=csEnviarPendentes;
+  el.querySelectorAll('[data-esest]').forEach(b=>b.onclick=()=>csTelaEstorno(ORDENS.find(o=>o.id===b.dataset.esest)));
   M('esLer').onclick=()=>{
     const ids=ES_ABA==='insumo'?ins.map(tinyDe):acab.map(tinyDe);
     lerEstoque(ids,M('esLer'));
@@ -17423,7 +17430,10 @@ async function nuvemLer(){
   if(!pcp)return erp||null;
   const dados=Object.assign({},pcp.dados||{});
   try{const c=Object.assign({},dados.cadastro||{}),e=(erp&&erp.dados&&erp.dados.cadastro)||{};Object.keys(e).forEach(k=>{if(!(k in c))c[k]=e[k];});dados.cadastro=c;
-    Object.keys((erp&&erp.dados)||{}).forEach(k=>{if(!(k in dados))dados[k]=erp.dados[k];});}catch(x){}
+    Object.keys((erp&&erp.dados)||{}).forEach(k=>{if(!(k in dados))dados[k]=erp.dados[k];});
+    /* v289: o que só o ERP mexe (saldo lido do Tiny e fila de envio) vem da linha de teste,
+       senão cada leitura voltava ao que o PCP antigo tinha e a leitura do estoque sumia */
+    ['estoque','filaTiny'].forEach(k=>{if(erp&&erp.dados&&erp.dados[k])dados[k]=erp.dados[k];});}catch(x){}
   return {dados,versao:pcp.versao,atualizado_em:pcp.atualizado_em,atualizado_por:pcp.atualizado_por};
 }
 async function nuvemVersao(){
@@ -18747,9 +18757,12 @@ try{
 }catch(e){}
 if(M('assina'))M('assina').onclick=trocarOperador;
 try{
-  const r0=lerRota(location.hash);
+  /* sem endereço (voltou pelo ícone, login...), vale a última tela desta aba */
+  let r0=lerRota(location.hash);
+  if(!r0&&!/^#op/.test(location.hash)){try{r0=lerRota(sessionStorage.getItem('erp.rota')||'');}catch(e){}}
   if(r0&&!MODO_TV){
     S.page=r0.page;
+    if(r0.mod){MOD_ATUAL=r0.mod;if(r0.fin)FIN_PAG=r0.fin;}
     if(r0.page==='admin'&&r0.aba)ABA_ADMIN=r0.aba;
     if(r0.page==='relatorio'&&r0.aba)ABA_REP=r0.aba;
     if(r0.page==='envase'&&r0.aba)S.view=r0.aba;
@@ -18768,6 +18781,8 @@ setInterval(()=>{if(!M('mask').classList.contains('on')&&!DRAG&&!ARR&&!FDRAG&&!S
 let VOLTANDO=false;                       /* mudou por causa do botão voltar */
 
 function rotaAtual(){
+  /* v289: os módulos (Estoque, Compras, Vendas...) também viram endereço */
+  if(S.page==='financeiro')return '#m/'+MOD_ATUAL+'/'+(FIN_PAG||'');
   let r=S.page;
   if(S.page==='admin'&&typeof ABA_ADMIN!=='undefined')r+='/'+ABA_ADMIN;
   if(S.page==='relatorio'&&typeof ABA_REP!=='undefined')r+='/'+ABA_REP;
@@ -18776,7 +18791,8 @@ function rotaAtual(){
 }
 function lerRota(h){
   const p=String(h||'').replace(/^#/,'').split('/');
-  if(!ROTAS.includes(p[0]))return null;
+  if(p[0]==='m'&&p[1])return {page:'financeiro',mod:p[1],fin:p[2]||''};
+  if(!ROTAS.includes(p[0])&&!['home','cadprod','oee'].includes(p[0]))return null;
   return {page:p[0],aba:p[1]||null};
 }
 /* troca a tela sem empurrar no histórico de novo */
@@ -18785,6 +18801,7 @@ function aplicarRota(r){
   /* módulo guardado: o endereço não leva a ele */
   if(!moduloLigado(r.page)){S.page='envase';S.view='dia';
     try{render();}catch(e){}return;}
+  if(r.mod){if(!moduloPublicado(r.mod))return;MOD_ATUAL=r.mod;if(r.fin)FIN_PAG=r.fin;}
   VOLTANDO=true;
   S.page=r.page;
   if(r.page==='admin'&&r.aba&&typeof ABA_ADMIN!=='undefined')ABA_ADMIN=r.aba;
@@ -18794,6 +18811,7 @@ function aplicarRota(r){
 }
 /* chamado no fim de cada render: só empurra quando o endereço mudou */
 function marcarRota(){
+  try{if(!MODO_TV&&!/^#op/.test(location.hash))sessionStorage.setItem('erp.rota',rotaAtual());}catch(e){}
   if(MODO_TV||VOLTANDO)return;
   try{
     const alvo=rotaAtual();
@@ -21396,7 +21414,7 @@ window.csNucleo=(function(){
     VERS[id]=l[0].versao;return {ok:true};
   }
   return {
-    versao:'v288',
+    versao:'v289',
     logo:()=>LOGO,
     teste:!temNuvem(),
     usuario:()=>{try{return (MEU_ACESSO&&MEU_ACESSO.nome)||(EU&&EU.nome)||emailDaSessao()||'Teste';}catch(e){return 'Teste';}},
@@ -21407,6 +21425,9 @@ window.csNucleo=(function(){
     saldos:()=>({...ESTOQUE}),
     saldosEm:()=>ESTOQUE_EM,
     lerSaldos:async ids=>{await lerEstoque(ids,null);return {...ESTOQUE};},
+    lerTudo:async()=>{await csLerTudoTiny();return {...ESTOQUE};},
+    saldosIdade:()=>idadeEstoque(),
+    saldosDia:()=>ESTOQUE_D,
     tiny:corpo=>chamarTiny(corpo),
     reservado, consumo, aProduzir, diasUteis, hoje, explodir,
     produto:c=>{const p=prodOf(c);return p?{...p}:null;},
@@ -21426,6 +21447,7 @@ window.csFinAtual=function(id){
   if(!id||id===FIN_PAG)return;
   /* só o módulo que está na moldura pode trocar a página marcada no menu */
   FIN_PAG=id;try{csPintar();}catch(e){}
+  try{marcarRota();}catch(e){}
 };
 function csFinMostrar(){
   const w=M('finwrap');if(!w)return;
@@ -22097,6 +22119,197 @@ try{const _mv=movimentoDaOP;movimentoDaOP=function(o){if(csUnErrada(o))return cs
 try{const _itg=csItg;csItg=function(o){
   if(csUnErrada(o))return `<button class="od2tg x" data-odtiny="${o.id}" title="o acabado foi ao Tiny em unidades — abra Estoque › Movimentos para corrigir">em unidades</button>`;
   return _itg(o);};}catch(e){}
+</script>
+<script>
+/* ===================== v289 ===================== */
+/* Cada aparelho tem um nome: a fila é do banco (todos veem), mas quem reenvia
+   sozinho é só o aparelho que criou o envio — dois reenviando o mesmo item
+   lançariam em dobro no Tiny. */
+const CS_DEV=(()=>{try{let d=localStorage.getItem('erp.dev');if(!d){d='d'+Math.random().toString(36).slice(2,9);localStorage.setItem('erp.dev',d);}return d;}catch(e){return 'd0';}})();
+try{const _enf=enfileirar;enfileirar=function(x){const it=_enf(x);if(it&&!it.dev)it.dev=CS_DEV;return it;};}catch(e){}
+/* O saldo do ERP acompanha o que foi ao Tiny, sem esperar a próxima leitura:
+   entrada soma, saída tira. Só nos itens que já têm saldo lido. */
+try{const _edf=enviarDaFila;enviarDaFila=async function(ch){
+  const a=naFila(ch),era=a&&a.estado;const it=await _edf(ch);
+  try{if(it&&it.estado==='enviado'&&era!=='enviado'&&!it.saldoAplicado){
+    (it.movs||[]).forEach(m=>{const k=String(m.id);if(ESTOQUE[k]!==undefined)ESTOQUE[k]=+ESTOQUE[k]+(m.tipo==='E'?1:-1)*(+m.qtd||0);});
+    it.saldoAplicado=true;agendarSalvar();}}catch(e){}
+  return it;};}catch(e){}
+
+/* ---------- o que de fato está no Tiny, pelo registro da fila ---------- */
+/* Soma com sinal tudo o que foi enviado com aquele começo de chave, estornos
+   incluídos. É o registro do que foi, não uma conta nova: vale também para os
+   envios antigos que foram em unidades. */
+function csLiquido(pref){
+  const m={};
+  FILA_TINY.filter(x=>x.estado==='enviado'&&String(x.chave).startsWith(pref)).forEach(x=>
+    (x.movs||[]).forEach(v=>{const k=String(v.id);m[k]=(m[k]||0)+(v.tipo==='E'?1:-1)*(+v.qtd||0);}));
+  Object.keys(m).forEach(k=>{m[k]=Math.round(m[k]*1000)/1000;if(!m[k])delete m[k];});
+  return m;
+}
+function csNomeTiny(id){
+  id=String(id);
+  const p=PRODUTOS.find(x=>String(tinyDe(x))===id);if(p)return {nome:p.descricao,un:und(p)};
+  const i=(typeof INSUMOS!=='undefined'?INSUMOS:[]).find(x=>String(tinyDe(x))===id);
+  if(i)return {nome:i.nome,un:/mat[ée]ria|corante|fragr/i.test(i.tipo||'')?'kg':'un'};
+  return {nome:'item '+id,un:''};
+}
+function csNoTinyOP(o){
+  let m=csLiquido(`op|${o.id}|`);
+  /* sem registro na fila (aparelho antigo): refaz pelo que ficou marcado na OP */
+  if(!Object.keys(m).length&&o.tinyEnviado&&o.tinyEnviado.em){
+    const p=prodOf(o.codigo),env=o.tinyEnviado,cx=env.caixas!=null?env.caixas:o.caixas;
+    if(p&&tinyDe(p)&&cx)m[String(tinyDe(p))]=env.unid==='cx'?cx:cx*p.un_cx;
+    consumoDaOP(o,cx).forEach(x=>{if(x.tiny&&x.qtd)m[String(x.tiny)]=(m[String(x.tiny)]||0)-x.qtd;});
+  }
+  return m;
+}
+
+/* ---------- estorno ---------- */
+function csEstornoExec(o,motivo,quem,comLote){
+  const n=(o.tinyEstornos||0)+1,pref=`op|${o.id}|`;
+  const liq=csNoTinyOP(o),movs=Object.entries(liq).map(([id,q])=>({id,tipo:q>0?'S':'E',qtd:Math.abs(q)}));
+  /* as chaves antigas mudam de nome: assim a OP pode ser enviada de novo,
+     já certa, sem a fila achar que ela "já foi" */
+  FILA_TINY.forEach(x=>{if(String(x.chave).startsWith(pref)&&!/\|x\d+$/.test(x.chave))x.chave+=`|x${n}`;});
+  const ch=`${pref}estorno${n}`;let ok=false;
+  if(movs.length){enfileirar({chave:ch,origem:`OP ${rotuloOP(o)}`,rotulo:`Estorno · ${motivo}`,movs,
+      obs:`ESTORNO OP ${rotuloOP(o)} · lote ${o.lote||''} · ${motivo}`});ok=true;}
+  o.tinyEstornos=n;o.tinyEnviado=null;o.tinyAjuste=null;
+  o.tinyEstornado={em:relogio(),d:ymd(new Date()),por:(quem&&quem.nome)||quemAssina(),motivo,n};
+  registrar(o,'Estoque estornado no Tiny',quem||null,`${movs.length} movimento${movs.length>1?'s':''} · ${motivo}`);
+  let chL=null;
+  const b=comLote?csLoteDaOP(o):null;
+  if(b){const pl=`lote|${b.chave}|`,ml=csLiquido(pl),mv=Object.entries(ml).map(([id,q])=>({id,tipo:q>0?'S':'E',qtd:Math.abs(q)}));
+    FILA_TINY.forEach(x=>{if(String(x.chave).startsWith(pl)&&!/\|x\d+$/.test(x.chave))x.chave+=`|x${n}o${o.id}`;});
+    if(mv.length){chL=`${pl}estorno${n}o${o.id}`;enfileirar({chave:chL,origem:`Lote ${b.lote||b.produto}`,rotulo:`Estorno de matéria-prima · ${motivo}`,movs:mv,
+      obs:`ESTORNO PREPARO ${b.tanque||''} lote ${b.lote||''} · ${motivo}`});
+      b.ordens.forEach(x=>registrar(x,'Matéria-prima estornada no Tiny',quem||null,motivo));ok=true;}}
+  agendarSalvar();
+  const envia=async()=>{const r=[];if(movs.length)r.push(await enviarDaFila(ch));if(chL)r.push(await enviarDaFila(chL));
+    agendarSalvar();const falhou=r.filter(x=>!x||x.estado!=='enviado');
+    toast(falhou.length?`Estorno na fila: ${(falhou[0]&&falhou[0].erro)||'sem resposta'}. Ele tenta de novo.`:'Estornado no Tiny e no saldo do ERP.',!!falhou.length);
+    try{gradeEstoque();}catch(e){}};
+  envia();
+  return ok;
+}
+/* a exclusão e a reabertura de OP usam o mesmo estorno, pelo que foi de fato */
+try{estornarTiny=function(o,porQue){if(!Object.keys(csNoTinyOP(o)).length)return false;return csEstornoExec(o,porQue,null,false);};}catch(e){}
+
+function csTelaEstorno(o){
+  if(!o)return;
+  const liq=csNoTinyOP(o),b=csLoteDaOP(o),lq=b?csLiquido(`lote|${b.chave}|`):{};
+  if(!Object.keys(liq).length&&!Object.keys(lq).length){toast('Nada desta OP está no Tiny para estornar.',true);return;}
+  const lin=m=>Object.entries(m).map(([id,q])=>{const n=csNomeTiny(id);
+    return `<tr><td>${escAttr(n.nome)}</td><td class="mono k">${id}</td><td class="n mono"><b>${q>0?'−':'+'}${nf(Math.abs(q))}</b> ${n.un}</td></tr>`;}).join('');
+  if(M('mAcao'))M('mAcao').innerHTML='';M('modal').classList.add('wide');
+  M('mTit').textContent='Estornar no Tiny';M('mSub').hidden=false;
+  M('mSub').textContent=`${nomeCurto(o.codigo)} · lote ${o.lote||'—'} · OP ${rotuloOP(o)}`;
+  M('mB').innerHTML=`<div class="alert q">O Tiny não deixa apagar um lançamento pela integração. O estorno lança o
+      <b>contrário</b> do que foi, na mesma quantidade: o saldo volta ao que era, no Tiny e no ERP. No histórico do Tiny
+      ficam as duas linhas.</div>
+    ${Object.keys(liq).length?`<div class="st2" style="margin-top:12px">Desta OP · volta assim</div>
+    <table class="tb"><thead><tr><th>Item</th><th>Tiny</th><th class="n">Estorno</th></tr></thead><tbody>${lin(liq)}</tbody></table>`:''}
+    ${Object.keys(lq).length?`<label class="chk" style="margin-top:12px"><input type="checkbox" id="esLt">
+      <span><b>Estornar também a matéria-prima do tanque</b> (lote ${escAttr(b.lote||'—')}, ${nf(+b.volume||0)} L) — ela é do lote inteiro,
+      vale para todas as OPs dele.</span></label>
+      <table class="tb" id="esLtT" style="display:none;margin-top:6px"><tbody>${lin(lq)}</tbody></table>`:''}
+    <div class="fld" style="margin-top:12px"><label>Motivo <b>*</b></label>
+      <textarea id="esMot" placeholder="Ex.: produção já lançada pela OP do Tiny; enviado com a quantidade errada"></textarea></div>`;
+  M('mF').innerHTML=`<div style="flex:1"></div><button class="btn" id="esX">Fechar</button><button class="btn del" id="esOk">Estornar</button>`;
+  if(M('esLt'))M('esLt').onchange=()=>{M('esLtT').style.display=M('esLt').checked?'':'none';};
+  M('esX').onclick=fecharModal;
+  M('esOk').onclick=()=>{const mot=cv('esMot').trim(),lt=!!(M('esLt')&&M('esLt').checked);
+    if(mot.length<3){toast('Escreva o motivo.',true);M('esMot').focus();return;}
+    if(!Object.keys(liq).length&&!lt){toast('Marque a matéria-prima do tanque: é o que está no Tiny.',true);return;}
+    pedirPin('Estornar no Tiny',`<b>${escAttr(nomeCurto(o.codigo))}</b> · lote ${escAttr(o.lote||'—')}: o estoque volta no Tiny e no ERP. Assina gestor ou master.`,
+      quem=>{fecharModal();csEstornoExec(o,mot,quem,lt);try{render();}catch(e){}},
+      q=>['master','gestor'].includes(q.nivel));};
+  abrirMask();
+}
+
+/* ---------- matéria-prima do tanque ---------- */
+function csMandaMP(b){
+  if(!b||!temNuvem()||typeof SESSAO==='undefined'||!SESSAO)return;
+  const ch=`lote|${b.chave}|mp`;const f=naFila(ch);if(!f||f.estado==='enviado')return;
+  enviarDaFila(ch).then(it=>{
+    if(it&&it.estado==='enviado')b.ordens.forEach(o=>registrar(o,'Matéria-prima enviada ao Tiny',null,`${(it.movs||[]).length} item(ns) · ${nf(+b.volume||0)} L`));
+    else toast(`A matéria-prima do ${b.tanque||'tanque'} ficou na fila: ${(it&&it.erro)||'sem resposta'}.`,true);
+    agendarSalvar();});
+}
+/* Se o preparo não foi marcado como concluído, a matéria-prima sai junto com
+   o primeiro envase do lote — senão ela nunca baixaria no Tiny. */
+function csMPDoLote(o){
+  try{
+    const b=csLoteDaOP(o);if(!b)return;
+    const ch=`lote|${b.chave}|mp`;
+    /* já existe: só manda se parado. Estornado (chave renomeada) volta a sair num reenvio */
+    if(FILA_TINY.some(x=>x.chave===ch))return csMandaMP(b);
+    const cons=consumoDoLote(b).filter(x=>x.tiny&&x.qtd>0);if(!cons.length)return;
+    enfileirar({chave:ch,origem:`Lote ${b.lote||b.produto}`,rotulo:`Baixa de matéria-prima · ${nf(b.volume)} L`,
+      movs:cons.map(x=>({id:x.tiny,tipo:'S',qtd:x.qtd})),obs:`PREPARO ${b.tanque||''} lote ${b.lote||''} · ${b.produto}`});
+    b.ordens.forEach(x=>registrar(x,'Matéria-prima na fila do Tiny',null,`${cons.length} item(ns) · ${nf(b.volume)} L · junto com o envase`));
+    agendarSalvar();csMandaMP(b);
+  }catch(e){console.warn('matéria-prima do lote:',e);}
+}
+try{const _ac=csTinyAoConcluir;csTinyAoConcluir=function(o){_ac(o);setTimeout(()=>{if(o&&sit(o)==='concluida')csMPDoLote(o);},1500);};}catch(e){}
+try{const _ag=csTinyAgora;csTinyAgora=async function(o){await _ag(o);if(o&&sit(o)==='concluida')csMPDoLote(o);};}catch(e){}
+
+/* ---------- a OP sabe o que a fila já mandou ---------- */
+/* A marca "enviado" mora na OP e o registro do envio na fila. Se a OP perdeu
+   a marca (outro aparelho gravou por cima, versão de teste), a fila ainda sabe
+   — e a OP não pode aparecer como "não foi" e ser mandada em dobro. */
+function csSincFila(){
+  ORDENS.forEach(o=>{
+    if(o.tinyEnviado&&o.tinyEnviado.em)return;
+    const it=naFila(`op|${o.id}|emb`);if(!it||it.estado!=='enviado')return;
+    const p=prodOf(o.codigo),e=(it.movs||[]).find(m=>p&&String(m.id)===String(tinyDe(p))&&m.tipo==='E');
+    o.tinyEnviado={em:String(it.enviadoEm||'').slice(11)||'—',d:String(it.enviadoEm||'').slice(0,10),por:'',caixas:o.caixas,
+      unid:e&&+e.qtd===+o.caixas?'cx':undefined,daFila:true};});
+}
+try{const _go=gradeOrdens;gradeOrdens=function(){try{csSincFila();}catch(e){}return _go.apply(this,arguments);};}catch(e){}
+try{const _ge2=gradeEstoque;gradeEstoque=function(){try{csSincFila();}catch(e){}return _ge2.apply(this,arguments);};}catch(e){}
+
+/* pendentes: nem OP estornada, nem o que a fila já mandou */
+try{const _pd=csPendentesTiny;csPendentesTiny=function(){try{csSincFila();}catch(e){}return _pd().filter(o=>!o.tinyEstornado);};}catch(e){}
+/* o botão também empurra o que estiver parado na fila (matéria-prima inclusive) */
+function csFilaParada(){return FILA_TINY.filter(x=>x.estado!=='enviado');}
+try{const _ep=csEnviarPendentes;csEnviarPendentes=async function(){
+  const l=csPendentesTiny();const f=csFilaParada().filter(x=>!l.some(o=>x.chave===`op|${o.id}|emb`));
+  if(!l.length&&f.length){if(!window.confirm(`Enviar ao Tiny os ${f.length} movimentos parados na fila?`))return;}
+  if(l.length)await _ep();
+  for(const x of f){x.tentativas=0;await enviarDaFila(x.chave);}
+  agendarSalvar();try{gradeEstoque();}catch(e){}};}catch(e){}
+
+/* Reenvio sozinho do que este aparelho deixou pendente (queda de rede) */
+setInterval(async()=>{
+  try{
+    if(!temNuvem()||typeof SESSAO==='undefined'||!SESSAO||MODO_TV||(navigator.onLine===false))return;
+    for(const x of FILA_TINY.filter(y=>y.estado==='pendente'&&y.tentativas<3&&y.dev===CS_DEV)){await enviarDaFila(x.chave);}
+  }catch(e){}
+},3*60000);
+
+/* ---------- a integração mostra estorno ---------- */
+try{const _itg2=csItg;csItg=function(o){
+  if(o.tinyEstornado&&!(o.tinyEnviado&&o.tinyEnviado.em))
+    return `<button class="od2tg" data-odtiny="${o.id}" style="color:var(--ink3);border-color:var(--line)" title="estornado por ${escAttr(o.tinyEstornado.por||'')} · ${escAttr(o.tinyEstornado.motivo||'')}">estornado</button>`;
+  return _itg2(o);};}catch(e){}
+
+/* ---------- ler todos os saldos de uma vez ---------- */
+let CS_LENDO=null;
+function csLerTudoTiny(){
+  if(CS_LENDO)return CS_LENDO;
+  const ids=[...PRODUTOS.map(p=>tinyDe(p)),...(typeof INSUMOS!=='undefined'?INSUMOS:[]).map(x=>tinyDe(x))]
+    .map(x=>String(x||'').replace(/\D/g,'')).filter(Boolean);
+  CS_LENDO=lerEstoque(ids,null).finally(()=>{CS_LENDO=null;});
+  return CS_LENDO;
+}
+/* ao abrir o sistema: se a leitura é de outro dia ou tem mais de 2 h, lê tudo
+   em segundo plano (fora da tela do operador e da TV) */
+setTimeout(()=>{try{
+  if(!temNuvem()||typeof SESSAO==='undefined'||!SESSAO||MODO_TV||/^#op/.test(location.hash))return;
+  const i=idadeEstoque();if(i==null||i>120)csLerTudoTiny();
+}catch(e){}},12000);
 </script>
 <div style="position:fixed;right:14px;bottom:10px;z-index:300;background:#C2410C;color:#fff;font:700 11px Inter,sans-serif;letter-spacing:.04em;padding:5px 10px;border-radius:999px;box-shadow:0 4px 12px rgba(0,0,0,.2)" title="Lê a produção do PCP ao vivo e grava tudo à parte: nada chega ao PCP antigo">MODO TESTE · grava à parte</div>
 </body>
