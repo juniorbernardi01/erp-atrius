@@ -3148,7 +3148,18 @@ document.getElementById('backupArquivo').addEventListener('change',async()=>{
     const quando=pacote.gerado?new Date(pacote.gerado).toLocaleString('pt-BR'):'data desconhecida';
     if(!confirm(`Restaurar ${ks.length} registro(s) do backup de ${quando}?\n\nOs dados atuais deste navegador ser\u00e3o substitu\u00eddos. Se quiser guardar os atuais, cancele e exporte um backup antes.`))return;
     chavesDoPainel().forEach(k=>localStorage.removeItem(k));
-    ks.forEach(k=>localStorage.setItem(k,dados[k]));
+    const gravaTudo=()=>ks.forEach(k=>localStorage.setItem(k,dados[k]));
+    try{gravaTudo();}
+    catch(e1){
+      if(!/quota|exceeded|QuotaExceeded/i.test(String(e1&&(e1.name+' '+e1.message))))throw e1;
+      /* libera o que o ERP consegue recuperar do banco e tenta de novo */
+      const livre=[];for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&(/^pcp-atrius-v/.test(k)||/^cs-mod-/.test(k)||/^erp-cache/.test(k)))livre.push(k);}
+      livre.forEach(k=>localStorage.removeItem(k));
+      try{gravaTudo();}
+      catch(e2){const tam=Math.round(ks.reduce((s,k)=>s+String(dados[k]||'').length,0)/1024);
+        chavesDoPainel().forEach(k=>localStorage.removeItem(k));
+        alert('O navegador n\u00e3o tem espa\u00e7o para este backup ('+tam+' KB). Feche outras abas do ERP e tente de novo; se continuar, me avise.');return;}
+    }
     alert(`${ks.length} registro(s) restaurados. O painel vai recarregar.`);
     location.reload();
   }catch(e){alert('N\u00e3o foi poss\u00edvel ler o backup: '+e.message)}
