@@ -752,7 +752,7 @@ const tiposT=c=>Array.isArray(c.tiposTiny)?c.tiposTiny:null;
    sem nada, o palpite: quem aparece nas ordens de compra é fornecedor.
    Transportador é antes de tudo fornecedor (de frete) e só compra da gente
    se alguém marcar "Cliente" no cadastro dele. */
-const PAPEIS=['Cliente','Fornecedor','Transportador'];
+const PAPEIS=['Cliente','Fornecedor','Transportador','Funcionário'];
 const nomeN=s=>semAc(String(s||'')).replace(/[^a-z0-9]+/g,' ').trim();
 function papeisDe(c){
   if(Array.isArray(c.papeis)&&c.papeis.length)return c.papeis;
@@ -819,7 +819,7 @@ function telaClientes(){
   <div class="barra"><div class="busca">⌕<input id="q" placeholder="Nome, CNPJ, cidade, vendedor ou grupo econômico" value="${esc(S2.q)}"></div><span style="flex:1"></span>${S2.aba!=='grupos'?colsBotao('bCols'):''}</div>
   ${ed&&S2.sel.size?`<div class="selbar"><b>${nf(S2.sel.size)} selecionado${S2.sel.size>1?'s':''}</b>
     ${S2.lista&&S2.lista.length>S2.sel.size?`<button class="btn sm lk" id="selTudo">marcar todos os ${nf(S2.lista.length)} desta lista</button>`:''}
-    <span style="flex:1"></span><button class="btn sm pri" id="selTipo">Mudar o tipo…</button><button class="btn sm" id="selLimpa">Desmarcar</button></div>`:''}
+    <span style="flex:1"></span>${pode('cad.func','editar')?'<button class="btn sm" id="selFunc">Mandar para Funcionários</button>':''}<button class="btn sm pri" id="selTipo">Mudar o tipo…</button><button class="btn sm" id="selLimpa">Desmarcar</button></div>`:''}
   <div class="sts">${abas.map(([k,r,c])=>`<button data-a="${k}" class="${S2.aba===k?'on':''}" style="--cor:${c}">${r}<b>${nf(conta[k])}</b></button>`).join('')}</div>
   <div class="rolx">${corpo}</div>${rodape([[nf(S2.aba==='grupos'?DB.grupos.length:conta[S2.aba]),S2.aba==='grupos'?'grupos':'contatos']])}`;
   $('q').oninput=e=>{S2.q=e.target.value;clearTimeout(window._t);window._t=setTimeout(()=>{telaClientes();const i=$('q');i.focus();i.setSelectionRange(i.value.length,i.value.length);},250);};
@@ -833,6 +833,7 @@ function telaClientes(){
   if($('selTudo'))$('selTudo').onclick=()=>{(S2.lista||[]).forEach(c=>S2.sel.add(c.id));telaClientes();};
   if($('selLimpa'))$('selLimpa').onclick=()=>{S2.sel.clear();telaClientes();};
   if($('selTipo'))$('selTipo').onclick=mudarTiposEmLote;
+  if($('selFunc'))$('selFunc').onclick=()=>{const l=DB.contatos.filter(c=>S2.sel.has(c.id));mandarParaFuncionarios(l);S2.sel.clear();telaClientes();};
   document.querySelectorAll('[data-cm]').forEach(b=>b.onclick=ev=>{ev.stopPropagation();const c=DB.contatos.find(x=>x.id===b.dataset.cm);
     menu3(b,c.nome,[['Abrir',()=>fichaContato(c.id)],...(ed?[['Grupo econômico…',()=>fichaContato(c.id)],'-',[c.ativo===false?'Reativar':'Inativar no ERP',()=>{c.ativo=c.ativo===false;salvar();telaClientes();},c.ativo!==false]]:[])]);});
   document.querySelectorAll('[data-g]').forEach(r=>r.onclick=ev=>{if(ev.target.closest('.dots'))return;S2.grupo=r.dataset.g;telaClientes();});
@@ -962,6 +963,35 @@ function mudarTiposEmLote(){
     telaClientes();toast(`${nf(l.length)} contato${l.length>1?'s':''} com o tipo novo.`);
   };
 }
+/* Contatos que são gente da casa: viram funcionários (a lista de onde saem os
+   operadores de máquina) e deixam de aparecer como clientes. */
+function mandarParaFuncionarios(l){
+  if(!l.length)return;let novos=0;
+  l.forEach(c=>{const ja=DB.funcionarios.find(f=>(f.contatoId&&f.contatoId===c.id)||(c.tinyId&&String(f.tinyId||'')===String(c.tinyId))||semAc(f.nome||'')===semAc(c.nome||''));
+    if(!ja){DB.funcionarios.push({id:uid(),nome:c.nome,cpf:c.doc||'',fone:c.fone||'',ativo:true,contatoId:c.id,tinyId:c.tinyId||''});novos++;}
+    else if(ja.ativo===false)ja.ativo=true;
+    c.tipo='Funcionário';c.papeis=['Funcionário'];});
+  salvar();
+  try{N.logCarga&&N.logCarga('Funcionários',{lidos:l.length,novos,det:'mandados dos Cadastros'});}catch(e){}
+  toast(`${nf(l.length)} pessoa(s) em Funcionários${novos<l.length?` (${nf(l.length-novos)} já estavam)`:''}. Saíram das listas de clientes.`);
+}
+function buscarNoCadastro(){
+  let q='',sel=new Set();
+  const des=()=>{const k=semAc(q),d=q.replace(/\D/g,'');
+    const l=k.length<2?[]:DB.contatos.filter(c=>c.ativo!==false&&!papeisDe(c).includes('Funcionário')&&(semAc(c.nome+' '+(c.fantasia||'')).includes(k)||(d.length>=4&&String(c.doc||'').replace(/\D/g,'').includes(d)))).slice(0,80);
+    gaveta(`<div class="gt"><h2>Buscar no cadastro</h2><button class="btn sm" id="gX" style="margin-left:auto">Fechar ✕</button></div>
+      <p class="k">Os contatos que vieram do Tiny. Marque as pessoas da casa e mande para Funcionários.</p>
+      <div class="busca" style="margin-top:10px">⌕<input id="bcQ" placeholder="Nome ou CPF" value="${esc(q)}"></div>
+      <div class="rolx" style="margin-top:10px">${l.length?`<table class="tv"><tbody>${l.map(c=>`<tr><td style="width:34px"><input type="checkbox" data-bc="${c.id}" ${sel.has(c.id)?'checked':''}></td><td><b>${esc(c.nome)}</b><small>${esc(tipoDe(c))}</small></td><td class="m">${esc(c.doc||'—')}</td><td>${esc([c.cidade,c.uf].filter(Boolean).join(' · ')||'—')}</td></tr>`).join('')}</tbody></table>`
+        :`<div class="vazio">${k.length<2?'Digite o nome ou o CPF.':'Ninguém com essa busca.'}</div>`}</div>
+      <div class="gr"><button class="btn" id="gC">Cancelar</button><button class="btn pri" id="gOk">Mandar ${sel.size||''} para Funcionários</button></div>`);
+    $('gX').onclick=$('gC').onclick=()=>gaveta(null);
+    const i=$('bcQ');i.focus();i.setSelectionRange(i.value.length,i.value.length);
+    i.oninput=()=>{q=i.value;clearTimeout(window._bcT);window._bcT=setTimeout(des,200);};
+    document.querySelectorAll('[data-bc]').forEach(b=>b.onchange=()=>{if(b.checked)sel.add(b.dataset.bc);else sel.delete(b.dataset.bc);$('gOk').textContent=`Mandar ${sel.size||''} para Funcionários`;});
+    $('gOk').onclick=()=>{if(!sel.size)return toast('Marque pelo menos uma pessoa.',true);mandarParaFuncionarios(DB.contatos.filter(c=>sel.has(c.id)));gaveta(null);telaFuncionarios();};};
+  des();
+}
 function testeTipos(l){const t={};l.forEach(c=>{t[String(c.tinyId)]=/POLO|CLIENTE/i.test(c.nome)?['Cliente']:['Fornecedor'];});return {tipos:t};}
 function testeContatos(p){
   if(p>3)return {contatos:[],paginas:3};
@@ -1038,7 +1068,7 @@ function telaFuncionarios(){
   const base=DB.funcionarios.filter(f=>!q||semAc([f.nome,f.funcao,f.setor].join(' ')).includes(q));
   const l=ordena(base.filter(f=>S2.faba==='ativos'?f.ativo!==false:f.ativo===false),(f,k)=>semAc(f[k]||''));
   $('app').innerHTML=`<div class="migalha">Cadastros › Funcionários</div>
-  <div class="topo"><h1>Funcionários</h1><span class="salvo"></span>${ed?'<button class="btn pri" id="bNf">＋ Novo funcionário</button>':''}</div>
+  <div class="topo"><h1>Funcionários</h1><span class="salvo"></span>${ed?'<button class="btn" id="bBc">⌕ Buscar no cadastro</button><button class="btn pri" id="bNf">＋ Novo funcionário</button>':''}</div>
   <div class="barra"><div class="busca">⌕<input id="q" placeholder="Nome, função ou setor" value="${esc(S2.q)}"></div></div>
   <div class="sts"><button data-fa="ativos" class="${S2.faba==='ativos'?'on':''}" style="--cor:#15803D">Ativos<b>${base.filter(f=>f.ativo!==false).length}</b></button><button data-fa="desl" class="${S2.faba==='desl'?'on':''}" style="--cor:#8B93A1">Desligados<b>${base.filter(f=>f.ativo===false).length}</b></button></div>
   <div class="rolx">${l.length?`<table class="tv"><thead><tr><th style="width:34px"></th>${th('nome','Nome')}${th('funcao','Função')}${th('setor','Setor')}${th('turno','Turno')}${th('admissao','Admissão')}<th>Telefone</th></tr></thead><tbody>
@@ -1047,6 +1077,7 @@ function telaFuncionarios(){
   <div class="leg">Aqui é só o cadastro das pessoas da Atrius. O acesso ao sistema continua em <b>Configurações › Pessoas e permissões</b>, que escolhe a pessoa a partir desta lista.</div>${rodape([[nf(l.length),'funcionários']])}`;
   $('q').oninput=e=>{S2.q=e.target.value;telaFuncionarios();const i=$('q');i.focus();i.setSelectionRange(i.value.length,i.value.length);};
   document.querySelectorAll('[data-fa]').forEach(b=>b.onclick=()=>{S2.faba=b.dataset.fa;telaFuncionarios();});ligaOrdem(telaFuncionarios);
+  if($('bBc'))$('bBc').onclick=buscarNoCadastro;
   document.querySelectorAll('[data-f]').forEach(r=>r.onclick=ev=>{if(ev.target.closest('.dots'))return;fichaSimples('func',r.dataset.f);});
   document.querySelectorAll('[data-fm]').forEach(b=>b.onclick=ev=>{ev.stopPropagation();const f=DB.funcionarios.find(x=>x.id===b.dataset.fm);
     menu3(b,f.nome,[['Abrir',()=>fichaSimples('func',f.id)],...(ed?['-',[f.ativo===false?'Readmitir':'Desligar',()=>{f.ativo=f.ativo===false;salvar();telaFuncionarios();},f.ativo!==false]]:[])]);});
