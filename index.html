@@ -5182,7 +5182,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v303';
+const VERSAO_APP='v304';
 let DRAG=null;
 function render(){
   recomporTudo();
@@ -21699,7 +21699,7 @@ window.csNucleo=(function(){
     VERS[id]=l[0].versao;return {ok:true};
   }
   return {
-    versao:'v303',
+    versao:'v304',
     logo:()=>LOGO,
     teste:!temNuvem(),
     usuario:()=>{try{return (MEU_ACESSO&&MEU_ACESSO.nome)||(EU&&EU.nome)||emailDaSessao()||'Teste';}catch(e){return 'Teste';}},
@@ -22638,7 +22638,7 @@ function csMPNaLiberacao(b){
 /* Envase concluído sem liberação (a exigência pode estar desligada): a baixa
    sai junto, para não ficar para trás. Só em lote do ERP (de 30/09 em diante):
    os de antes foram produzidos pelo PCP antigo e baixados pela OP do Tiny. */
-const CS_CORTE_MP='2026-09-30';
+const CS_CORTE_MP='2026-10-01';   /* v304: virada — antes disso o estoque foi acertado no Tiny à mão */
 try{csMPDoLote=function(o){
   try{const b=csLoteDaOP(o);if(!b||String(b.data||'')<CS_CORTE_MP)return;
     if(!FILA_TINY.some(x=>x.chave===`lote|${b.chave}|mp`))return csMPNaLiberacao(b);
@@ -22826,7 +22826,7 @@ function csMovLinhas(){
     if(!casa(`${rotuloOP(o)} ${nomeCurto(o.codigo)} ${o.lote||''} ${o.maq||''}`))return;
     const conc=sit(o)==='concluida',l=csFilaDe(`op|${o.id}|`);
     const antes=String(o.data)<CS_CORTE_MP&&!l.length&&!(o.tinyEnviado&&o.tinyEnviado.em);
-    let s=csSitEnvio(l,conc?(antes?{k:'',t:'pelo PCP antigo',d:'antes da troca: o estoque foi pela OP do Tiny'}:{k:'med',t:'não foi',d:''}):{k:'',t:'aguarda conclusão',d:''});
+    let s=csSitEnvio(l,conc?(antes?{k:'',t:'antes da virada',d:'até 30/09 o estoque foi acertado direto no Tiny'}:{k:'med',t:'não foi',d:''}):{k:'',t:'aguarda conclusão',d:''});
     if(!l.length&&o.tinyEnviado&&o.tinyEnviado.em)s={k:'ok',t:'enviado '+(o.tinyEnviado.d?dCurto(o.tinyEnviado.d)+' ':'')+o.tinyEnviado.em,d:''};
     if(o.tinyEstornado&&!(o.tinyEnviado&&o.tinyEnviado.em)&&!l.some(x=>x.estado!=='enviado'))s={k:'',t:'estornado '+(o.tinyEstornado.em||''),d:o.tinyEstornado.motivo||''};
     const liq=csNoTinyOP(o),tp=String(tinyDe(p)||'');
@@ -22847,8 +22847,8 @@ function csMovLinhas(){
         if(!casa(`${b.lote||''} ${b.produto||''} ${b.tanque||''}`))return;
         const a=APONTA[b.chave]||{},l=csFilaDe(`lote|${b.chave}|`);
         const antes=String(b.data)<CS_CORTE_MP&&!l.length;
-        const s=csSitEnvio(l,a.liberadoEm?(antes?{k:'',t:'pelo PCP antigo',d:''}:{k:'med',t:'não foi',d:''})
-          :antes?{k:'',t:'pelo PCP antigo',d:''}:{k:'',t:'aguarda liberação',d:''});
+        const s=csSitEnvio(l,a.liberadoEm?(antes?{k:'',t:'antes da virada',d:''}:{k:'med',t:'não foi',d:''})
+          :antes?{k:'',t:'antes da virada',d:''}:{k:'',t:'aguarda liberação',d:''});
         const ja=csMPJa(b),alvo=(()=>{try{return csMPAlvo(b);}catch(e){return {};}})();
         const n=Object.keys(ja).filter(k=>ja[k]>0).length,kg=Object.values(ja).reduce((x,v)=>x+Math.max(0,v),0);
         const na=Object.keys(alvo).length,kga=Object.values(alvo).reduce((x,v)=>x+v,0);
@@ -23249,7 +23249,7 @@ async function csSrvTrazer(avisa){
       const k=await chamarTiny({acao:'srv_dados',job:'contatos'});
       if(k&&k.em&&k.itens){
         const cad=(await csNucleo.ler('cadastros'))||{};cad.contatos=Array.isArray(cad.contatos)?cad.contatos:[];cad.sync=cad.sync||{};
-        if(!cad.sync.srvEm||new Date(k.em)>new Date(cad.sync.srvEm)){
+        if(!cad.sync.srvEm||new Date(k.em)>new Date(cad.sync.srvEm)||!cad.contatos.length){
           const porId=new Map(cad.contatos.map(c=>[String(c.tinyId),c]));let novos=0,n=0;
           Object.values(k.itens).forEach(x=>{const tid=String(x.id||'');if(!tid)return;
             const d={tinyId:tid,codigo:x.codigo||'',nome:x.nome||'',fantasia:x.fantasia||'',doc:x.cpf_cnpj||'',ie:x.ie||'',endereco:x.endereco||'',numero:x.numero||'',bairro:x.bairro||'',cep:x.cep||'',
@@ -23596,6 +23596,46 @@ function csQuiosqueSegura(){
 window.addEventListener('hashchange',()=>{setTimeout(csQuiosqueSegura,0);});
 window.addEventListener('popstate',()=>{if(csQuiosque()){try{history.pushState({q:1},'',location.pathname+'#op'+csQuiosque());}catch(e){}setTimeout(csQuiosqueSegura,0);}});
 setTimeout(()=>{try{if(csQuiosque()){csQuiosqueSegura();for(let i=0;i<3;i++)history.pushState({q:1},'',location.pathname+'#op'+csQuiosque());}}catch(e){}},600);
+</script>
+<script>
+/* ===================== v304 · envios ao Tiny só a partir da virada ===================== */
+/* Até 30/09 o estoque foi acertado à mão no Tiny. Então: nada é lançado lá antes
+   de 01/10 00:00, e o que foi criado antes disso (OP concluída, lote, fila) não
+   vai nunca — nem depois da meia-noite. Ler do Tiny continua valendo sempre. */
+const CS_VIRADA=CS_CORTE_MP;
+const csEnviosLiberados=()=>ymd(new Date())>=CS_VIRADA;
+const CS_MSG_VIRADA='Os envios ao Tiny começam em 01/10, à meia-noite.';
+/* trava geral: nenhum lançamento de estoque sai antes da virada */
+try{const _ct4=chamarTiny;chamarTiny=async function(c){
+  if(c&&c.acao==='movimentar'&&!csEnviosLiberados())throw new Error(CS_MSG_VIRADA);
+  return _ct4.apply(this,arguments);};}catch(e){}
+/* a fila: item criado antes da virada é cancelado, não fica "na fila" esperando */
+try{const _edf4=enviarDaFila;enviarDaFila=async function(ch){
+  const it=naFila(ch);
+  if(it&&it.estado!=='enviado'&&String(it.criado||'').slice(0,10)<CS_VIRADA){
+    it.estado='cancelado';it.erro='antes da virada: não vai ao Tiny';try{agendarSalvar();}catch(e){}return it;}
+  return _edf4.apply(this,arguments);};}catch(e){}
+function csFilaLimpaVirada(){let n=0;
+  FILA_TINY.forEach(x=>{if(x.estado!=='enviado'&&x.estado!=='cancelado'&&String(x.criado||'').slice(0,10)<CS_VIRADA){x.estado='cancelado';x.erro='antes da virada: não vai ao Tiny';n++;}});
+  if(n)try{agendarSalvar();}catch(e){}return n;}
+setTimeout(()=>{try{csFilaLimpaVirada();}catch(e){}},3000);
+/* concluir OP e liberar lote antes da virada: só anota, sem tentar mandar */
+const csSoAnota=(o,oque)=>{try{if(!(o.log||[]).some(l=>/envios começam em 01\/10/.test(l.m||'')))registrar(o,oque,null,'envios ao Tiny começam em 01/10');agendarSalvar();}catch(e){}};
+try{const _ac4=csTinyAoConcluir;csTinyAoConcluir=function(o){
+  if(!csEnviosLiberados()){csSoAnota(o,'Estoque não enviado ao Tiny');return;}
+  if(o&&String(o.data||'')<CS_VIRADA&&!(o.log||[]).some(l=>(l.d||'')>=CS_VIRADA&&/OP concluída/.test(l.e||'')))return;
+  return _ac4.apply(this,arguments);};}catch(e){}
+try{const _ag4=csTinyAgora;csTinyAgora=async function(o){if(!csEnviosLiberados()||String((o&&o.data)||'')<CS_VIRADA)return;return _ag4.apply(this,arguments);};}catch(e){}
+try{const _ml4=csMPNaLiberacao;csMPNaLiberacao=function(b){
+  if(!b)return;
+  if(!csEnviosLiberados()){(b.ordens||[]).forEach(o=>csSoAnota(o,'Matéria-prima não enviada ao Tiny'));return;}
+  if(String(b.data||'')<CS_VIRADA)return;          /* tanque de antes da virada: já está no acerto do Tiny */
+  return _ml4.apply(this,arguments);};}catch(e){}
+try{const _mv4=movimentoDaOP;movimentoDaOP=function(o){
+  if(!csEnviosLiberados())return toast(CS_MSG_VIRADA+' Até lá o ERP só lê do Tiny.');
+  if(o&&String(o.data||'')<CS_VIRADA&&!(o.tinyEnviado&&o.tinyEnviado.em))return toast('OP de antes da virada: o estoque dela já está no acerto feito no Tiny.');
+  return _mv4.apply(this,arguments);};}catch(e){}
+try{const _ep4=csEnviarPendentes;csEnviarPendentes=async function(){if(!csEnviosLiberados())return toast(CS_MSG_VIRADA);return _ep4.apply(this,arguments);};}catch(e){}
 </script>
 </body>
 </html>
