@@ -3359,6 +3359,109 @@ body.cs-fixo .cs-fly.on{position:absolute;left:196px!important;top:0;bottom:0;z-
 /* ===== v288 ===== */
 /* as abas da OP (Ordem, Embalagem, Formulação, Análise) voltam: só a faixa de Configurações sai */
 #mB .adabas{display:flex!important}
+
+/* ===== v290 ===== */
+/* tempo livre da máquina: bloco verde no cabeçalho, com o "+" para programar */
+body.comcasca .cs-livre{display:inline-flex;align-items:center;gap:6px;margin-left:8px;background:#DCFCE7;color:#166534;
+  border:1px solid #86EFAC;border-radius:999px;padding:3px 4px 3px 10px;font:inherit;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap}
+body.comcasca .cs-livre i{font-style:normal;width:18px;height:18px;border-radius:50%;background:#16A34A;color:#fff;display:grid;place-items:center;font-size:14px;line-height:1}
+body.comcasca .cs-livre:hover{background:#BBF7D0}
+/* faixas das listas: cada uma com a sua cor, para separar de longe */
+body.comcasca .cs-secp,body.comcasca .cs-fimtg{padding:7px 10px!important;border-radius:8px;margin-top:10px!important;letter-spacing:.07em}
+body.comcasca .cs-secp::after,body.comcasca .cs-fimtg::after{display:none}
+body.comcasca .cs-secp{background:#E8EEF7;color:#334155;border-left:4px solid #475569}
+body.comcasca .cs-secp b{color:#1E293B}
+body.comcasca .cs-fimtg{background:#E6EFFD;color:#1B4F9C!important;border-left:4px solid #1D6FE8}
+body.comcasca .cs-fimtg b{color:#1B4F9C}
+
+/* ===== v291 ===== */
+/* sinal no cabeçalho: OP que vai passar do fim do dia */
+body.comcasca .cs-estoura{margin-left:8px;background:#FDECEC;color:#B3261E;border:1px solid #F3B4AE;border-radius:999px;
+  padding:3px 9px;font:inherit;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap}
+body.comcasca .cs-estoura:hover{background:#FBD5D2}
+.cs-est-it{border:1px solid var(--line);border-left:4px solid #B3261E;border-radius:10px;padding:11px 13px;margin-bottom:10px}
+.cs-est-it .h{font-size:13.5px}
+.cs-est-it .t{margin-top:5px;font-size:13px;line-height:1.5}
+.cs-est-it .t .x{color:#B3261E;font-weight:600}
+.cs-est-it .c{margin-top:7px;font-size:12.5px;color:var(--ink2)}
+.cs-est-it .c span{color:var(--ink3);font-size:11px;text-transform:uppercase;letter-spacing:.06em;font-weight:700}
+.cs-est-it .c ul{margin:4px 0 0 18px;padding:0}
+.cs-est-it .a{margin-top:9px;display:flex;align-items:center;gap:10px;font-size:12px;color:var(--ink3);flex-wrap:wrap}
+
+/* ===== v292 ===== */
+.colbt{display:inline-grid;place-items:center;width:34px;height:34px;border:1px solid #E4E2DC;border-radius:9px;background:#fff;color:#545C69;cursor:pointer;flex:none}
+.colbt:hover{border-color:#1D6FE8;color:#1D6FE8}
+.colsv{position:fixed;inset:0;background:rgba(20,24,33,.18);z-index:590}
+.colsp{position:fixed;top:0;right:0;bottom:0;width:340px;max-width:100vw;background:#FBFAF8;z-index:600;display:flex;flex-direction:column;padding:22px 22px 18px;border-left:1px solid #E4E2DC;font-family:inherit;color:#1A1D23}
+.colsp *{box-sizing:border-box}
+.colsp .ch{display:flex;align-items:center;gap:10px}.colsp .ch b{font-size:17px;flex:1}
+.colsp .x{background:none;border:0;color:#545C69;font:inherit;font-size:12.5px;cursor:pointer}
+.colsp p{font-size:13px;color:#6B7280;margin:14px 0 10px;line-height:1.45}
+.colsp .cl{flex:1;overflow:auto}
+.colsp label{display:flex;align-items:center;gap:12px;padding:9px 2px;border-bottom:1px solid #EFEEE9;font-size:13.5px;cursor:pointer}
+.colsp label.fx{color:#9AA1AD;cursor:default}
+.colsp .sw{width:30px;height:17px;border-radius:999px;background:#D5D8DE;position:relative;flex:none;transition:background .15s}
+.colsp .sw::after{content:'';position:absolute;top:2px;left:2px;width:13px;height:13px;border-radius:50%;background:#fff;transition:left .15s}
+.colsp .sw.on{background:#5B8DEF}.colsp .sw.on::after{left:15px}
+.colsp label.fx .sw{opacity:.5}
+.colsp .cf{display:flex;gap:8px;padding-top:14px;flex-wrap:wrap}
+.colsp .btn.lk{background:none;border:0;text-decoration:underline}
+
+/* o calendário de produção agora abre pelo "Ir para o dia" */
+#calAbre{display:none!important}
+/* Estoque › Movimentos */
+.csmov-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:12px 0 4px}
+.csmov-bar .sw{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;background:#fff}
+.csmov-bar .sw button{border:0;background:none;padding:7px 12px;font:inherit;font-size:12.5px;cursor:pointer;color:var(--ink2)}
+.csmov-bar .sw button.on{background:#0E1B33;color:#fff}
+.csmov-bar input[type=date]{height:34px;border:1px solid var(--line);border-radius:9px;padding:0 8px;font:inherit;font-size:12.5px}
+.csmov-bar .chip.on{background:#FEFCE8;border-color:#EAB308;color:#A16207}
+table.csmov td small{display:block;color:var(--ink3);font-size:11px;margin-top:2px}
+.csmt{display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:3px 8px;border-radius:999px;white-space:nowrap}
+.csmt.env{background:#E6EFFD;color:#1B4F9C}
+.csmt.tq{background:#F1EAFE;color:#5B21B6}
+.csmov-rod{display:flex;gap:18px;justify-content:flex-end;font-size:12.5px;color:var(--ink3);padding:10px 4px}
+.csmov-rod b{color:var(--ink);font-size:14px}
+
+/* ===== v293 ===== */
+.cfgh{max-width:900px;margin:8px auto 0;padding:10px 4px 40px}
+.cfgh h1{font-size:20px;font-weight:700;margin:0 0 16px;color:var(--ink)}
+.cfgq{position:relative;max-width:420px}
+.cfgq input{width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:10px;padding:10px 36px 10px 14px;font:inherit;font-size:14px;background:var(--card,#fff);color:var(--ink)}
+.cfgq span{position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--ink3)}
+.cfgab{display:flex;gap:4px;flex-wrap:wrap;border-bottom:1px solid var(--line);margin-top:20px}
+.cfgab button{background:none;border:0;border-bottom:2px solid transparent;padding:8px 10px;font:inherit;font-size:14px;color:var(--ink2);cursor:pointer;margin-bottom:-1px}
+.cfgab button.on{color:var(--ink);border-bottom-color:var(--ink);font-weight:600}
+.cfgres{margin-top:20px;font-size:13px;color:var(--ink3);border-bottom:1px solid var(--line);padding-bottom:8px}
+.cfgl{margin-top:6px}
+.cfgi{display:flex;align-items:baseline;gap:14px;width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--line);padding:13px 4px;font:inherit;cursor:pointer;color:var(--ink)}
+.cfgi:hover{background:rgba(29,111,232,.05)}
+.cfgi b{font-size:14.5px;font-weight:500;min-width:230px}
+.cfgi span{font-size:12.5px;color:var(--ink3);flex:1}
+.cfgi em{font-style:normal;font-size:11px;color:var(--ink3);border:1px solid var(--line);border-radius:999px;padding:1px 8px}
+.cfgv{padding:24px 4px;color:var(--ink3)}
+.cfgvolta{background:none;border:0;color:#1D6FE8;font:inherit;font-size:13px;cursor:pointer;padding:0 0 8px}
+@media (max-width:700px){.cfgi{flex-direction:column;gap:3px}.cfgi b{min-width:0}}
+
+/* ===== v294 ===== */
+.tpg{max-width:1100px;margin:0 auto;padding:4px 4px 40px}
+.tpg h1{font-size:20px;margin:0 0 6px}
+.tpi{color:var(--ink2);font-size:13px;max-width:820px;line-height:1.5;margin:0 0 14px}
+.tps{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+.tpc{border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:var(--card,#fff)}
+.tpc.v3{background:#F8FAFC;border-style:dashed}
+.tph{display:flex;align-items:center;gap:8px}
+.tph b{font-size:14.5px}
+.tph span{margin-left:auto;font-size:11.5px;color:var(--ink3)}
+.tph span.ok{color:#15803D}.tph span.x{color:#B3261E}
+.tpc p{font-size:12.5px;color:var(--ink2);margin:6px 0 8px;line-height:1.45}
+.tpn{display:flex;gap:14px;flex-wrap:wrap}
+.tpn div b{display:block;font-size:17px}.tpn div span{font-size:11px;color:var(--ink3)}
+.tpb{margin-top:10px;display:flex;gap:8px}
+
+/* ===== v295 ===== */
+.tpc.srv{border-color:#BFDBFE;background:#F8FBFF}
+.tpc select{font:inherit;font-size:12px;border:1px solid var(--line);border-radius:8px;padding:4px 6px}
 </style>
 </head>
 <body>
@@ -4512,7 +4615,42 @@ const dvEnvase=o=>{const t=envaseReal(o);return t==null?null:t-o.envase;};
 const badge=v=>(v==null||v===0)?'':` <b style="color:${v>0?'var(--danger)':'var(--run)'}">${v>0?'+':''}${v}</b>`;
 /* Fim previsto do PLANEJAMENTO: parte do horário programado. É o que monta a
    agenda, calcula sobreposição e diz quanto as OPs seguintes andam. */
-const fimPrev=o=>o.inicio+total(o);
+const fimPrev=o=>csFimComPausa(o.maq,o.inicio,total(o));
+/* v291: empurrão que cai dentro do almoço começa no fim do intervalo */
+function csForaDaPausa(maq,t){
+  try{((PAUSAS&&PAUSAS[maq])||[]).forEach(p=>{const a=hm(p.de),b=hm(p.ate);if(b>a&&t>=a&&t<b)t=b;});}catch(e){}
+  return t;
+}
+/* Fim previsto que pula o almoço: a OP que começa antes do intervalo para
+   nele (o operador pausa) e termina depois, somando o tempo do almoço. */
+function csFimComPausa(maq,ini,dur){
+  if(ini==null||isNaN(ini))return ini+dur;
+  let ps=[];
+  try{ps=((PAUSAS&&PAUSAS[maq])||[]).map(p=>[hm(p.de),hm(p.ate)]).filter(x=>x[1]>x[0]).sort((a,b)=>a[0]-b[0]);}catch(e){ps=[];}
+  let t=ini,r=+dur||0;
+  for(const [a,b] of ps){
+    if(b<=t)continue;          /* intervalo já passou */
+    if(a>=t+r)break;           /* termina antes do intervalo */
+    if(a>t){r-=(a-t);t=a;}     /* trabalha até o intervalo */
+    t=b;                       /* e volta depois dele */
+  }
+  return t+r;
+}
+
+/* A fórmula saiu do estoque? Só quando a baixa chegou ao Tiny. Sem banco
+   (TESTE), vale a liberação. Lote com todas as OPs concluídas também não
+   segura mais nada. */
+function csMPSaiu(b){
+  if(!b)return true;
+  try{
+    const pl=`lote|${b.chave}|`;
+    if(FILA_TINY.some(x=>x.estado==='enviado'&&String(x.chave).startsWith(pl)&&!/estorno/.test(x.chave)))return true;
+    if((b.ordens||[]).length&&b.ordens.every(o=>['concluida','cancelada'].includes(sit(o))))return true;
+    if(!temNuvem()){const a=APONTA[b.chave]||{};return !!a.liberadoEm;}
+  }catch(e){}
+  return false;
+}
+
 /* Fim esperado DESTA OP, ancorado no que já aconteceu.
    Uma OP que entrou às 14:30 porque a anterior quebrou não é uma OP atrasada:
    ela tem os 180 min dela a contar de quando de fato começou. Cada OP responde
@@ -4909,7 +5047,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v289';
+const VERSAO_APP='v295';
 let DRAG=null;
 function render(){
   recomporTudo();
@@ -5102,7 +5240,7 @@ function colunaMaq(m,data,conf,estreita){
   /* Tempo disponível depois da última OP da fila, até o fim da jornada.
      Hoje, conta a partir de agora; o almoço cadastrado corta o vão em dois.
      Usa o vao() do próprio sistema, que já abre a programação ao tocar. */
-  let _livre='';
+  let _livre='',_livreTot=0,_livreIni=null;
   if(!estreita){
     const _hoje=data===ymd(new Date());
     const _agora=_hoje?hm(relogio()):(data<ymd(new Date())?24*60:0);
@@ -5118,6 +5256,7 @@ function colunaMaq(m,data,conf,estreita){
     });
     _pedacos=_pedacos.filter(x=>x.ate-x.de>=SNAP);
     const _tot=_pedacos.reduce((t,x)=>t+(x.ate-x.de),0);
+    if(_pedacos.length){_livreTot=_tot;_livreIni=_pedacos[0].de;}
     if(_pedacos.length)_livre=`<div class="cs-sec cs-secl">Tempo disponível <b>${hmm(_tot)}</b></div>`
       +_pedacos.map(x=>vao(m,data,x.de,x.ate,false)).join('');
   }
@@ -5125,16 +5264,15 @@ function colunaMaq(m,data,conf,estreita){
     +_out.map(x=>cardTurno(x,estreita)).join('')
     +(_viva.length?'':(data===ymd(new Date())
         ? '<div class="cs-vazio">Nenhuma OP na linha agora</div>' : ''))
-    +(_fila.length?_sec('Próximas na fila',_fila.length)
+    +(_fila.length?`<div class="cs-sec cs-secp">Próximas na fila <b>(${_fila.length})</b></div>`
       +_fila.map(x=>cardFila(x.o,conf,estreita)).join(''):'')
-    +_livre
     +(_fim.length?(()=>{const ab=(window.CS_FIM_AB||[]).includes(m+'|'+data);
       return `<button class="cs-sec cs-fimtg${ab?' ab':''}" data-fimtg="${escAttr(m+'|'+data)}"><span class="sa">›</span>Concluídas hoje <b>(${_fim.length})</b><em>${ab?'guardar':'mostrar'}</em></button>`
         +(ab?`<div class="cs-fimls">${_fim.map(x=>cardFila(x.o,conf,estreita)).join('')}</div>`:'');})():'');
 
   return `<div class="tqcol cs-maq est-${est}" style="width:306px">
     <div class="tqh">
-      <div class="n"><b>${m}</b><em class="cs-est">${rotEst}</em></div>
+      <div class="n"><b>${m}</b>${(()=>{try{const n=csEstouros(data).filter(e=>e.o.maq===m).length;return n?`<button type="button" class="cs-estoura" data-estoura="${data}" title="Ver o aviso">${n} OP${n>1?"s":""} passa${n>1?"m":""} do dia</button>`:"";}catch(e){return "";}})()}${_livreTot?`<button type="button" class="cs-livre" data-gd="${data}" data-gm="${m}" data-gi="${_livreIni}" title="Programar a partir das ${hhmm(_livreIni)}. Pode passar do almoço e do fim do dia: a OP continua depois.">${hmm(_livreTot)} livres<i>+</i></button>`:''}<em class="cs-est">${rotEst}</em></div>
       <div class="s">${seq.length?`${seq.length} OP${seq.length>1?'s':''}`:'Sem programação'}
         · ${(()=>{const j=jornDia(m,data);
              return j?`${hhmm(j[0])}–${hhmm(j[1])}`:'não roda hoje';})()}${
@@ -11559,13 +11697,13 @@ function calc(){
   }
   if(!el)return;
   const dur=f.setup+f.envase;
-  const fp=M('fFimP');if(fp&&f.inicio!=null)fp.textContent=hhmm(f.inicio+dur);
+  const fp=M('fFimP');if(fp&&f.inicio!=null)fp.textContent=hhmm(csFimComPausa(f.maq,f.inicio,dur));
   const pl=M('fPrevLin');
   if(pl){
     if(f.inicio==null)pl.innerHTML='<div class="ph">Previsto</div>'
       +'<div class="pl"><span class="pe">—</span><span class="pt">informe o início</span></div>';
     else{
-      const i0=f.inicio,i1=f.inicio+f.setup,i2=f.inicio+dur;
+      const i0=f.inicio,i1=csFimComPausa(f.maq,f.inicio,f.setup),i2=csFimComPausa(f.maq,f.inicio,dur);
       /* =====================================================================
          Enquanto a OP não começou, o previsto com horário é o plano do dia e
          é o que interessa. Depois que ela começa, cada turno passa a mostrar
@@ -11597,7 +11735,8 @@ function calc(){
             <span class="pd">${f.envase} min do cadastro</span></div>
           <div class="pl fim"><span class="pe">Fim</span>
             <span class="pt">${hhmm(i2)}</span>
-            <span class="pd">${dur} min no total</span></div>`;
+            <span class="pd">${dur} min no total${i2-i0>dur?` + ${i2-i0-dur} min de almoço`:''}</span></div>
+          ${(()=>{try{const jf=jorn(f.maq)[1];return i2>jf?`<div class="pl"><span class="pe"></span><span class="pt" style="color:#A16207">passa das ${hhmm(jf)}</span><span class="pd">continua no dia seguinte, na abertura da máquina</span></div>`:'';}catch(e){return '';}})()}`;
     }
   }
   const t=(f.iniReal&&f.fimReal)?Math.max(0,hm(f.fimReal)-hm(f.iniReal)):null;
@@ -11808,7 +11947,7 @@ function recomporDia(maq,data){
       /* quem ainda não começou cola no cursor nos dois sentidos: se a anterior
          atrasou, empurra; se terminou cedo, puxa e fecha o buraco */
       const partida=x.iniReal||x.envIni;
-      const alvo=Math.min(Math.max(Math.round(cursor),ji),jf-SNAP);
+      const alvo=csForaDaPausa(maq,Math.min(Math.max(Math.round(cursor),ji),24*60-SNAP));
       if(partida&&!x.inicioManual){
         /* já começou: quem manda é a hora real, senão o buraco mostrado mente.
            A exceção é o gestor ter fixado o horário à mão na tela de correção —
@@ -11823,6 +11962,10 @@ function recomporDia(maq,data){
         x.inicio=alvo;
       }
       cursor=Math.max(cursor,fimPrev(x),x.iniReal?hm(x.iniReal)+total(x):0);
+      /* v291: rodando e já passou do previsto — a máquina só libera depois de
+         agora, então as seguintes andam junto, minuto a minuto (sem histórico:
+         o registro sai quando ela termina) */
+      if(data===hoje&&partida&&!x.fimReal){const ag=agoraMin();if(ag>cursor)cursor=ag;}
     });
 }
 function recomporTudo(){
@@ -13524,6 +13667,7 @@ function modalAjuste(b){
     const nova=bateladas(b.data).find(x=>x.chave===b.chave);
     abrirLote(nova||b);
     toast(`${nome} acrescentado ao lote.`);
+    try{if((APONTA[b.chave]||{}).liberadoEm)csMPNaLiberacao(nova||b);}catch(e){}
   };
   abrirMask();
 }
@@ -13665,20 +13809,10 @@ function etapaLote(b,qual){
       if(qual==='iniciar')APONTA[b.chave]={...at,fabIni:{data:dia,hora:hr}};
       else{
         APONTA[b.chave]={...at,fabFim:{data:dia,hora:hr}};
-        /* a matéria-prima sai do almoxarifado agora, pelo volume do tanque —
-           e a reserva que estava separada vira consumo */
-        const cons=consumoDoLote(b).filter(x=>x.tiny);
-        if(cons.length){
-          enfileirar({chave:`lote|${b.chave}|mp`,origem:`Lote ${b.lote||b.produto}`,
-            rotulo:`Baixa de matéria-prima · ${nf(b.volume)} L`,
-            movs:cons.map(x=>({id:x.tiny,tipo:'S',qtd:x.qtd})),
-            obs:`PREPARO ${b.tanque||''} lote ${b.lote||''} · ${b.produto}`});
-          b.ordens.forEach(o=>registrar(o,'Matéria-prima na fila do Tiny',null,
-            `${cons.length} item${cons.length>1?'ns':''} · ${nf(b.volume)} L`));
-          /* v289: a baixa ia para a fila e ninguém a mandava — só o botão da
-             tela da fila fazia isso. Agora sai na hora. */
-          try{csMandaMP(b);}catch(e){}
-        }
+        /* v290: a matéria-prima não sai mais aqui. No fim do preparo ainda
+           faltam a análise e os ajustes que ela pede; a baixa vai ao Tiny na
+           liberação do lote, já com tudo o que entrou no tanque. Até lá a
+           fórmula continua reservada. */
       }
       b.ordens.forEach(o=>registrar(o,
         qual==='iniciar'?'Preparo iniciado':'Preparo concluído',null,
@@ -13902,6 +14036,8 @@ function abrirLote(b){
           quem,`${b.tanque} · ${b.produto}`));
         agendarSalvar();fecharModal();render();
         toast(`Lote liberado por ${quem.nome}.`);
+        /* liberou: a matéria-prima do tanque (fórmula + ajustes) baixa no Tiny */
+        try{csMPNaLiberacao(bateladas(b.data).find(y=>y.chave===b.chave)||b);}catch(e){}
       },
       /* quem confirma precisa da permissão de liberar, não basta ter um PIN */
       q=>{
@@ -13958,7 +14094,8 @@ function abrirLote(b){
     APONTA[b.chave]={...at,mpExtra:l};
     b.ordens.forEach(o=>registrar(o,'Ajuste removido',null,`${fora.nome} · ${nf1(fora.kg)} ${fora.un}`));
     agendarSalvar();abrirLote(bateladas(b.data).find(y=>y.chave===b.chave)||b);
-    toast('Ajuste removido.');});
+    toast('Ajuste removido.');
+    try{if((APONTA[b.chave]||{}).liberadoEm)csMPNaLiberacao(bateladas(b.data).find(y=>y.chave===b.chave)||b);}catch(e){}});
   if(M('lOP'))M('lOP').onclick=()=>imprimirOPTanque(b);
   if(M('lPdf'))M('lPdf').onclick=()=>imprimirCertificado(b);
   abrirMask();
@@ -15194,6 +15331,10 @@ function consumoDoLote(b){
    sair, então sobrevive a fechar o navegador e nunca entra duas vezes.
    ===================================================================== */
 const FILA_TINY=[];
+/* v293: razão de estoque do ERP — cada movimento que foi ao Tiny, item por item */
+const CS_ELOG=[];
+/* v294: histórico das leituras do Tiny (carga e atualizações) */
+const CS_TLOG=[];
 
 function naFila(chave){return FILA_TINY.find(x=>x.chave===chave)||null;}
 
@@ -15326,7 +15467,7 @@ function precisaDaOP(o){
   const b=batDe(o);
   const dono=b&&b.ordens.length?b.ordens.slice()
     .sort((x,y)=>String(x.id).localeCompare(String(y.id)))[0]:null;
-  if(b&&dono&&dono.id===o.id&&!fabFimDe(b)){
+  if(b&&dono&&dono.id===o.id&&!csMPSaiu(b)){
     /* mpDoLote no lugar de consumoMP: a reserva de estoque ignorava a
        substituição e continuava segurando o insumo original, deixando o
        substituto sem reserva nenhuma. Quem trocou a fragrância via o
@@ -15507,7 +15648,7 @@ function gradeEstoque(){
     </div>
     <div class="subabas">
       ${[['acabado','Produto acabado'],['insumo','Matérias-primas e embalagens'],
-         ['mov','Movimentos do dia']].map(([k,r])=>
+         ['mov','Movimentos']].map(([k,r])=>
         `<button class="subaba ${k===ES_ABA?'on':''}" data-esaba="${k}">${r}</button>`).join('')}
     </div>
     ${ES_ABA==='acabado'?`
@@ -17125,7 +17266,7 @@ function estadoAtual(){
       jornada:JORNADA,frascoProd:FRASCO_PROD,usuarios:USUARIOS,proxOp:PROX_OP,
       gruposMotivo:GRUPOS_MOTIVO,semana:SEMANA_PADRAO,tolAtraso:TOL_ATRASO},
     estoque:{saldos:ESTOQUE,em:ESTOQUE_EM,d:ESTOQUE_D},
-    filaTiny:FILA_TINY,revisaoMotivo:REVISAO_MOTIVO});
+    filaTiny:FILA_TINY,revisaoMotivo:REVISAO_MOTIVO,estoqueLog:CS_ELOG,tinyLog:CS_TLOG});
 }
 function aplicarEstado(txt){
   const d=JSON.parse(txt);
@@ -17162,6 +17303,8 @@ function aplicarEstado(txt){
      abrir o sistema mostrava "ainda não foi lido hoje" mesmo minutos depois
      de uma leitura. Agora ele volta com a hora em que foi lido. */
   FILA_TINY.length=0;(d.filaTiny||[]).forEach(x=>FILA_TINY.push(x));
+  CS_ELOG.length=0;(d.estoqueLog||[]).forEach(x=>CS_ELOG.push(x));
+  CS_TLOG.length=0;(d.tinyLog||[]).forEach(x=>CS_TLOG.push(x));
   REVISAO_MOTIVO.length=0;(d.revisaoMotivo||[]).forEach(x=>REVISAO_MOTIVO.push(x));
   if(d.estoque){
     Object.keys(ESTOQUE).forEach(k=>delete ESTOQUE[k]);
@@ -18959,6 +19102,7 @@ const CS_MOD=[
    {n:'Relatórios',mod:'compras',fin:'relatorios',perm:'compras.rel',ic:'rel'}]},
   /* Configurações: o que se mexe uma vez e fica. */
  {id:'config',nome:'Configurações',ic:'cfg',pgs:[
+   {n:'Todas as configurações',page:'admin',aba:'hub',ic:'cfg'},
    {n:'Calendário',page:'admin',aba:'calendario',ic:'cal'},
    {n:'Máquinas e tanques',page:'admin',aba:'maquinas',ic:'maq'},
    {n:'Sopro e preformas',page:'admin',aba:'sopro',ic:'pref'},
@@ -18967,10 +19111,9 @@ const CS_MOD=[
    {n:'Pessoas e permissões',page:'admin',aba:'pessoas',ic:'pes'},
    {n:'Produtos · grupos',acao:'cfgprod',ic:'tag'},
    {n:'PCP',acao:'cfgpcp',ic:'maq'},
-   {n:'Integração Tiny',acao:'tinycfg',ic:'int'},
+   {n:'Integração Tiny',page:'admin',aba:'tiny',ic:'int'},
    {n:'Integração WhatsApp',acao:'wacfg',ic:'int'},
    {n:'Compras',mod:'compras',fin:'config',perm:'compras.cfg',ic:'car'},
-   {n:'Carga do Tiny',mod:'vendas',fin:'carga',perm:'vendas.carga',ic:'dad'},
    {n:'Dados e versão',page:'admin',aba:'dados',ic:'dad'}]},
 /* Financeiro é um título: abre embaixo dele, no próprio menu, os
     submódulos. Cada submódulo abre as páginas dele no painel ao lado. */
@@ -20171,7 +20314,8 @@ function csIrDia(){
     <div class="calsem">${['seg','ter','qua','qui','sex','sáb','dom']
       .map(x=>`<span>${x}</span>`).join('')}</div>
     <div class="csirg">${cels.join('')}</div>`;
-  M('mF').innerHTML='<div style="flex:1"></div><button class="btn" id="irC">Fechar</button>';
+  M('mF').innerHTML='<button class="btn" id="irCal" title="Liberar sábado ou feriado, dia de folga, jornada">Sábados, feriados e jornada…</button><div style="flex:1"></div><button class="btn" id="irC">Fechar</button>';
+  M('irCal').onclick=()=>{const d=ymd(S.page==='envase'?S.ref:S.refTq);CS_IR_MES=null;CAL_MES=new Date(d+'T00:00:00');csCalendarioModal();};
   M('irC').onclick=()=>{CS_IR_MES=null;fecharModal();};
   M('irAnt').onclick=()=>{CS_IR_MES=new Date(ano,mes-1,1);csIrDia();};
   M('irProx').onclick=()=>{CS_IR_MES=new Date(ano,mes+1,1);csIrDia();};
@@ -21331,7 +21475,7 @@ window.csNucleo=(function(){
     const dias=o.tanques?[...new Set(ORDENS.filter(o=>naGrade(o)).map(o=>o.data))].filter(d=>d>=ymd(new Date(Date.now()-7*864e5))):[];
     dias.forEach(d=>{
       try{bateladas(d).forEach(b=>{
-        const a=APONTA[b.chave]||{};if(a.fabFim)return;
+        if(csMPSaiu(b))return;
         mpDoLote(b).forEach(x=>soma(x.sku,x.nome,+x.kg||0,'Tanque '+(b.lote||b.produto)));
       });}catch(e){}
     });
@@ -21414,7 +21558,7 @@ window.csNucleo=(function(){
     VERS[id]=l[0].versao;return {ok:true};
   }
   return {
-    versao:'v289',
+    versao:'v295',
     logo:()=>LOGO,
     teste:!temNuvem(),
     usuario:()=>{try{return (MEU_ACESSO&&MEU_ACESSO.nome)||(EU&&EU.nome)||emailDaSessao()||'Teste';}catch(e){return 'Teste';}},
@@ -22310,6 +22454,682 @@ setTimeout(()=>{try{
   if(!temNuvem()||typeof SESSAO==='undefined'||!SESSAO||MODO_TV||/^#op/.test(location.hash))return;
   const i=idadeEstoque();if(i==null||i>120)csLerTudoTiny();
 }catch(e){}},12000);
+</script>
+<script>
+/* ===================== v290 ===================== */
+/* o que o tanque consumiu, por código do Tiny: fórmula (com trocas) + ajustes */
+function csMPAlvo(b){
+  const m={};
+  consumoDoLote(b).filter(x=>x.tiny&&x.qtd>0).forEach(x=>{const k=String(x.tiny);m[k]=Math.round(((m[k]||0)+x.qtd)*1000)/1000;});
+  return m;
+}
+/* tudo o que já foi para a fila deste lote, enviado ou ainda a caminho */
+function csMPJa(b){
+  const pl=`lote|${b.chave}|`,m={};
+  FILA_TINY.filter(x=>String(x.chave).startsWith(pl)&&!/\|x\d+/.test(x.chave)).forEach(x=>(x.movs||[]).forEach(v=>{
+    const k=String(v.id);m[k]=(m[k]||0)+(v.tipo==='S'?1:-1)*(+v.qtd||0);}));
+  return m;
+}
+/* Liberação: manda a baixa de tudo. Chamado de novo (ajuste depois da
+   liberação), manda só a diferença — nunca o lote inteiro outra vez. */
+function csMPNaLiberacao(b){
+  if(!b||!temNuvem()||typeof SESSAO==='undefined'||!SESSAO)return;
+  const alvo=csMPAlvo(b),ja=csMPJa(b),movs=[];
+  new Set([...Object.keys(alvo),...Object.keys(ja)]).forEach(id=>{
+    const d=Math.round(((alvo[id]||0)-(ja[id]||0))*1000)/1000;
+    if(d)movs.push({id,tipo:d>0?'S':'E',qtd:Math.abs(d)});});
+  if(!movs.length){csMandaMP(b);return;}
+  const pl=`lote|${b.chave}|`,primeira=!FILA_TINY.some(x=>x.chave===`${pl}mp`);
+  const ch=primeira?`${pl}mp`:`${pl}aj${Date.now().toString(36)}`;
+  enfileirar({chave:ch,origem:`Lote ${b.lote||b.produto}`,
+    rotulo:primeira?`Baixa de matéria-prima · liberação · ${nf(b.volume)} L`:'Ajuste de matéria-prima depois da liberação',
+    movs,obs:`PREPARO ${b.tanque||''} lote ${b.lote||''} · ${b.produto}${primeira?'':' · ajuste'}`});
+  (b.ordens||[]).forEach(o=>registrar(o,primeira?'Matéria-prima na fila do Tiny':'Ajuste de matéria-prima na fila do Tiny',null,
+    `${movs.length} item(ns) · ${nf(+b.volume||0)} L${primeira?' · na liberação':''}`));
+  agendarSalvar();
+  enviarDaFila(ch).then(it=>{
+    if(it&&it.estado==='enviado'){(b.ordens||[]).forEach(o=>registrar(o,'Matéria-prima enviada ao Tiny',null,`${movs.length} item(ns)`));
+      toast(`Matéria-prima do ${b.tanque||'tanque'} baixada no Tiny.`);}
+    else toast(`A matéria-prima do ${b.tanque||'tanque'} ficou na fila: ${(it&&it.erro)||'sem resposta'}.`,true);
+    agendarSalvar();});
+}
+/* Envase concluído sem liberação (a exigência pode estar desligada): a baixa
+   sai junto, para não ficar para trás. Só em lote do ERP (de 30/09 em diante):
+   os de antes foram produzidos pelo PCP antigo e baixados pela OP do Tiny. */
+const CS_CORTE_MP='2026-09-30';
+try{csMPDoLote=function(o){
+  try{const b=csLoteDaOP(o);if(!b||String(b.data||'')<CS_CORTE_MP)return;
+    if(!FILA_TINY.some(x=>x.chave===`lote|${b.chave}|mp`))return csMPNaLiberacao(b);
+    csMandaMP(b);}catch(e){console.warn('matéria-prima do lote:',e);}
+};}catch(e){}
+</script>
+<script>
+/* ===================== v291 ===================== */
+/* OPs programadas que, empurradas pela fila, terminam depois do fim da
+   jornada daquele dia. */
+function csEstouros(data){
+  const out=[];
+  ORDENS.filter(x=>x.data===data&&naGrade(x)&&x.maq&&sit(x)==='programada').forEach(x=>{
+    const j=(typeof jornDia==='function'?jornDia(x.maq,data):null)||jorn(x.maq);if(!j)return;
+    const fim=fimPrev(x);if(fim<=j[1])return;
+    out.push({o:x,fim,jf:j[1],orig:x.inicioOriginal!=null?x.inicioOriginal:x.inicio,causas:csCausas(x)});
+  });
+  return out.sort((a,b)=>a.o.maq.localeCompare(b.o.maq)||a.o.inicio-b.o.inicio);
+}
+/* quem atrasou antes dela na mesma máquina, e quanto */
+function csCausas(x){
+  const hoje=ymd(new Date()),ag=agoraMin(),c=[];
+  ORDENS.filter(y=>y.maq===x.maq&&y.data===x.data&&naGrade(y)&&y.id!==x.id&&y.inicio<x.inicio)
+    .sort((a,b)=>a.inicio-b.inicio).forEach(y=>{
+      const ini=y.iniReal?hm(y.iniReal):(y.envIni?hm(y.envIni):null);
+      const rot=`${nomeCurto(y.codigo)}${y.lote?` · lote ${y.lote}`:''}`;
+      if(y.csPausa){c.push(`${rot} — pausada desde ${y.csPausa.desde}${y.csPausa.motivo?` (${y.csPausa.motivo})`:''}`);return;}
+      if(ini==null){
+        if(x.data===hoje&&ag>y.inicio+5&&sit(y)==='programada')c.push(`${rot} — ainda não começou (era para ${hhmm(y.inicio)})`);
+        return;}
+      const prev=csFimComPausa(y.maq,ini,total(y));
+      if(y.fimReal){const d=hm(y.fimReal)-prev;if(d>=5)c.push(`${rot} — terminou ${hmm(d)} depois do previsto`);}
+      else if(x.data===hoje&&ag-prev>=5)c.push(`${rot} — em andamento, ${hmm(ag-prev)} além do previsto`);
+      const orig=y.inicioOriginal;if(orig!=null&&ini-orig>=15&&!c.some(s=>s.startsWith(rot)))c.push(`${rot} — começou ${hmm(ini-orig)} depois do programado`);
+    });
+  return c;
+}
+function csProxUtil(data){
+  const d=new Date(data+'T12:00:00');
+  for(let i=0;i<14;i++){d.setDate(d.getDate()+1);try{if(diaUtil(ymd(d)))return ymd(d);}catch(e){return ymd(d);}}
+  return ymd(d);
+}
+/* passa para a abertura do próximo dia útil, antes das que já estão lá */
+function csPassaDia(o){
+  const nd=csProxUtil(o.data),j=(typeof jornDia==='function'?jornDia(o.maq,nd):null)||jorn(o.maq);
+  const de=`${dCurto(o.data)} ${hhmm(o.inicio)}`;
+  const la=ORDENS.filter(y=>y.maq===o.maq&&y.data===nd&&naGrade(y)&&y.id!==o.id);
+  const ini=Math.min(j[0],...la.map(y=>y.inicio));
+  o.data=nd;o.inicio=Math.max(0,ini-1);o.inicioOriginal=null;o.inicioManual=false;
+  registrar(o,'Reprogramada na fila',null,`${de} → ${dCurto(nd)} na abertura · não cabia no dia`);
+  agendarSalvar();
+}
+/* guardado por aparelho: o aviso volta se a OP estourar mais meia hora */
+const csAckLer=()=>{try{return JSON.parse(localStorage.getItem('erp.estouro')||'{}');}catch(e){return {};}};
+const csAckGravar=m=>{try{localStorage.setItem('erp.estouro',JSON.stringify(m));}catch(e){}};
+function csAvisoEstouro(data,forcar){
+  const l=csEstouros(data);if(!l.length){if(forcar)toast('Nenhuma OP passa do fim do dia.');return;}
+  const ack=csAckLer();
+  const novas=l.filter(e=>{const k=`${e.o.id}|${data}`;return forcar||ack[k]==null||e.fim>ack[k]+30;});
+  if(!novas.length)return;
+  const u=forcar?l:novas;
+  if(M('mAcao'))M('mAcao').innerHTML='';M('modal').classList.add('wide');
+  M('mTit').textContent=u.length>1?`${u.length} OPs vão passar do fim do dia`:'Uma OP vai passar do fim do dia';
+  M('mSub').hidden=false;M('mSub').textContent=`${dCurto(data)} · por causa de atrasos na fila`;
+  M('mB').innerHTML=u.map(e=>{const o=e.o;return `<div class="cs-est-it">
+    <div class="h"><b>${escAttr(nomeCurto(o.codigo))}</b>${o.lote?` · lote ${escAttr(o.lote)}`:''} · <b>${o.maq}</b></div>
+    <div class="t">Programada originalmente para <b>${hhmm(e.orig)}</b>. Agora entra às <b>${hhmm(o.inicio)}</b> e termina às
+      <b>${hhmm(e.fim)}</b> — <span class="x">${hmm(e.fim-e.jf)} depois do fim da jornada (${hhmm(e.jf)})</span>.</div>
+    ${e.causas.length?`<div class="c"><span>Por causa de</span><ul>${e.causas.map(c=>`<li>${escAttr(c)}</li>`).join('')}</ul></div>`
+      :'<div class="c"><span>Nenhuma OP anterior atrasou: ela já estava programada além do horário.</span></div>'}
+    <div class="a"><button class="btn sm" data-passa="${o.id}">Passar para ${dCurto(csProxUtil(o.data))}</button>
+      <span>ou deixe hoje, se a máquina vai estender o horário</span></div></div>`;}).join('');
+  M('mF').innerHTML=`<div style="flex:1"></div>${u.length>1?'<button class="btn" id="esTodas">Passar todas para o próximo dia</button>':''}
+    <button class="btn pri" id="esCiente">Ciente</button>`;
+  const fecha=()=>{const a=csAckLer();l.forEach(e=>{a[`${e.o.id}|${data}`]=e.fim;});csAckGravar(a);fecharModal();};
+  M('esCiente').onclick=fecha;
+  if(M('esTodas'))M('esTodas').onclick=()=>{u.forEach(e=>csPassaDia(e.o));fecharModal();render();toast(`${u.length} OPs passaram para ${dCurto(csProxUtil(data))}.`);};
+  M('mB').querySelectorAll('[data-passa]').forEach(b=>b.onclick=()=>{const o=ORDENS.find(x=>x.id===b.dataset.passa);if(!o)return;
+    const nd=csProxUtil(o.data);csPassaDia(o);fecharModal();render();toast(`${nomeCurto(o.codigo)} → ${dCurto(nd)} na abertura.`);
+    setTimeout(()=>csAvisoEstouro(data,false),300);});
+  abrirMask();
+}
+/* olha depois de cada desenho: só para quem programa, fora da tela do
+   operador e da TV, e nunca por cima de outra janela aberta */
+let CS_EST_T=null;
+try{const _rd=render;render=function(){const r=_rd.apply(this,arguments);
+  try{document.querySelectorAll('[data-estoura]').forEach(b=>b.onclick=ev=>{ev.stopPropagation();csAvisoEstouro(b.dataset.estoura,true);});}catch(e){}
+  clearTimeout(CS_EST_T);CS_EST_T=setTimeout(()=>{try{
+    if(MODO_TV||/^#op/.test(location.hash)||document.body.classList.contains('cs-operon'))return;
+    if(M('mask').classList.contains('on'))return;
+    if(!['envase','ordens','home','tanques'].includes(S.page))return;
+    if(!podeEditar('envase'))return;
+    csAvisoEstouro(ymd(new Date()),false);}catch(e){}},700);
+  return r;};}catch(e){}
+</script>
+<script>
+/* ===================== v292 ===================== */
+/* =====================================================================
+   COLUNAS VISÍVEIS · o botão do Tiny que escolhe o que aparece na lista
+   Cada lista tem uma chave (vendas, compras, ordens...). A escolha fica
+   guardada no aparelho, por lista. Funciona olhando o cabeçalho da tabela:
+   não precisa mexer em quem desenha a lista — some a coluna com o título
+   que a pessoa desligou. Coluna sem título (marcar, três pontinhos) fica.
+   ===================================================================== */
+const COLS_SVG='<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 4v16M12 4v16M18 4v16"/><circle cx="6" cy="9" r="2" fill="#fff"/><circle cx="12" cy="15" r="2" fill="#fff"/><circle cx="18" cy="8" r="2" fill="#fff"/></svg>';
+const colsNorm=s=>String(s||'').replace(/[↑↓▲▼⇅]/g,'').replace(/\s+/g,' ').trim();
+function colsOcultas(k,pad){try{const v=JSON.parse(localStorage.getItem('erp.cols.'+k)||'null');return Array.isArray(v)?v:(pad||[]);}catch(e){return pad||[];}}
+function colsGravar(k,l){try{localStorage.setItem('erp.cols.'+k,JSON.stringify(l));}catch(e){}}
+function colsBotao(id){return `<button type="button" class="colbt" id="${id}" title="Escolher as colunas que aparecem">${COLS_SVG}</button>`;}
+/* painel: lista de rótulos com chave liga/desliga; fixas não desligam */
+function colsPainel(k,rotulos,pad,fixas,aoAplicar){
+  const velho=document.getElementById('colsP');if(velho){velho.remove();document.getElementById('colsV')&&document.getElementById('colsV').remove();}
+  const oc=new Set(colsOcultas(k,pad));fixas=fixas||[];
+  const v=document.createElement('div');v.id='colsV';v.className='colsv';
+  const p=document.createElement('div');p.id='colsP';p.className='colsp';
+  const lin=()=>rotulos.map(r=>`<label class="${fixas.includes(r)?'fx':''}"><span class="sw ${oc.has(r)?'':'on'}" data-cr="${r.replace(/"/g,'&quot;')}"></span>${r}</label>`).join('');
+  p.innerHTML=`<div class="ch"><b>Informações visíveis</b><button type="button" class="x" id="colsX">fechar ✕</button></div>
+    <p>Escolha as colunas que aparecem nesta lista. Fica guardado neste aparelho.</p>
+    <div class="cl" id="colsL">${lin()}</div>
+    <div class="cf"><button type="button" class="btn pri" id="colsOk">Aplicar</button><button type="button" class="btn" id="colsPad">Voltar ao padrão</button><button type="button" class="btn lk" id="colsC">Cancelar</button></div>`;
+  document.body.appendChild(v);document.body.appendChild(p);
+  const fecha=()=>{p.remove();v.remove();};
+  const liga=()=>p.querySelectorAll('[data-cr]').forEach(s=>s.onclick=()=>{const r=s.dataset.cr;if(fixas.includes(r))return;oc.has(r)?oc.delete(r):oc.add(r);s.classList.toggle('on',!oc.has(r));});
+  liga();v.onclick=fecha;p.querySelector('#colsX').onclick=fecha;p.querySelector('#colsC').onclick=fecha;
+  p.querySelector('#colsPad').onclick=()=>{oc.clear();(pad||[]).forEach(r=>oc.add(r));p.querySelector('#colsL').innerHTML=lin();liga();};
+  p.querySelector('#colsOk').onclick=()=>{colsGravar(k,[...oc]);fecha();if(aoAplicar)aoAplicar();};
+}
+/* tabela <table>: some a coluna pelo título do cabeçalho */
+function colsTabela(tab,k,pad){
+  if(!tab)return [];
+  const oc=new Set(colsOcultas(k,pad)),ths=[...tab.querySelectorAll('thead tr:first-child > th')];
+  const rot=ths.map(t=>colsNorm(t.textContent));const esc=[];
+  rot.forEach((r,i)=>{if(r&&oc.has(r))esc.push(i);});
+  ths.forEach((t,i)=>t.style.display=esc.includes(i)?'none':'');
+  tab.querySelectorAll('tbody > tr').forEach(tr=>{const tds=[...tr.children];if(tds.length!==ths.length)return;
+    tds.forEach((td,i)=>td.style.display=esc.includes(i)?'none':'');});
+  return rot.filter(Boolean);
+}
+/* lista em grade (div.h + div.r): some a coluna e refaz as trilhas */
+function colsGrade(caixa,k,trilhas,pad){
+  if(!caixa)return [];
+  const h=caixa.querySelector('.h');if(!h)return [];
+  const oc=new Set(colsOcultas(k,pad)),cel=[...h.children],rot=cel.map(c=>colsNorm(c.textContent));
+  const esc=[];rot.forEach((r,i)=>{if(r&&oc.has(r))esc.push(i);});
+  const tpl=trilhas.filter((t,i)=>!esc.includes(i)).join(' ');
+  [h,...caixa.querySelectorAll('.r')].forEach(r=>{if(r.children.length!==cel.length)return;
+    r.style.gridTemplateColumns=tpl;[...r.children].forEach((c,i)=>c.style.display=esc.includes(i)?'none':'');});
+  return rot.filter(Boolean);
+}
+
+/* ---------- o que é do ERP ---------- */
+/* Antes de 30/09 quem produzia era o PCP antigo e o estoque ia pela OP do
+   Tiny: mandar essas OPs daqui dobraria o estoque. */
+try{const _pd2=csPendentesTiny;csPendentesTiny=function(){return _pd2().filter(o=>String(o.data||'')>=CS_CORTE_MP);};}catch(e){}
+try{csFilaParada=function(){return FILA_TINY.filter(x=>x.estado!=='enviado'&&String(x.criado||'').slice(0,10)>=CS_CORTE_MP);};}catch(e){}
+
+/* ---------- Estoque › Movimentos ---------- */
+const CS_MOV={per:'hoje',dia:null,tipo:'todos',so:false};
+function csMovFaixa(){
+  const h=ymd(new Date());
+  if(CS_MOV.per==='ontem'){const d=ymd(addD(new Date(),-1));return [d,d];}
+  if(CS_MOV.per==='7')return [ymd(addD(new Date(),-6)),h];
+  if(CS_MOV.per==='30')return [ymd(addD(new Date(),-29)),h];
+  if(CS_MOV.per==='dia'&&CS_MOV.dia)return [CS_MOV.dia,CS_MOV.dia];
+  return [h,h];
+}
+const csDH=s=>{s=String(s||'');const d=s.slice(0,10),h=s.slice(11,16);return d?`${dCurto(d)}${h?' '+h:''}`:'';};
+function csFilaDe(pref){return FILA_TINY.filter(x=>String(x.chave).startsWith(pref));}
+function csSitEnvio(l,base){
+  /* l: entradas da fila deste objeto; base: o que dizer quando não há nenhuma */
+  const est=l.find(x=>/estorno/.test(x.chave)&&x.estado==='enviado');
+  const ativos=l.filter(x=>!/\|x\d+/.test(x.chave)&&!/estorno/.test(x.chave));
+  const env=ativos.filter(x=>x.estado==='enviado'),par=l.filter(x=>x.estado!=='enviado');
+  if(par.some(x=>x.estado==='falhou'))return {k:'bad',t:'falhou',d:(par.find(x=>x.estado==='falhou')||{}).erro||''};
+  if(par.length)return {k:'med',t:'na fila',d:(par[0]||{}).erro||'aguardando envio'};
+  if(env.length){const u=env.map(x=>x.enviadoEm||'').sort().pop();return {k:'ok',t:'enviado '+csDH(u),d:env.length>1?`${env.length} envios (com ajustes)`:''};}
+  if(est)return {k:'',t:'estornado '+csDH(est.enviadoEm),d:''};
+  return base;
+}
+function csMovLinhas(){
+  const [de,ate]=csMovFaixa(),q=(ES_BUSCA||'').trim().toLowerCase(),out=[];
+  const casa=s=>!q||String(s).toLowerCase().includes(q);
+  if(CS_MOV.tipo!=='tq')ORDENS.filter(o=>naGrade(o)&&o.data>=de&&o.data<=ate).forEach(o=>{
+    const p=prodOf(o.codigo);if(!p)return;
+    if(!casa(`${rotuloOP(o)} ${nomeCurto(o.codigo)} ${o.lote||''} ${o.maq||''}`))return;
+    const conc=sit(o)==='concluida',l=csFilaDe(`op|${o.id}|`);
+    const antes=String(o.data)<CS_CORTE_MP&&!l.length&&!(o.tinyEnviado&&o.tinyEnviado.em);
+    let s=csSitEnvio(l,conc?(antes?{k:'',t:'pelo PCP antigo',d:'antes da troca: o estoque foi pela OP do Tiny'}:{k:'med',t:'não foi',d:''}):{k:'',t:'aguarda conclusão',d:''});
+    if(!l.length&&o.tinyEnviado&&o.tinyEnviado.em)s={k:'ok',t:'enviado '+(o.tinyEnviado.d?dCurto(o.tinyEnviado.d)+' ':'')+o.tinyEnviado.em,d:''};
+    if(o.tinyEstornado&&!(o.tinyEnviado&&o.tinyEnviado.em)&&!l.some(x=>x.estado!=='enviado'))s={k:'',t:'estornado '+(o.tinyEstornado.em||''),d:o.tinyEstornado.motivo||''};
+    const liq=csNoTinyOP(o),tp=String(tinyDe(p)||'');
+    const ent=liq[tp]||0,baixas=Object.keys(liq).filter(k=>k!==tp&&liq[k]<0).length;
+    let mov='';
+    if(ent||baixas)mov=`${ent?`<b>+${nf(ent)} ${und(o)}</b>`:''}${baixas?` · baixa de ${baixas} ${baixas>1?'itens':'item'}`:''}`;
+    else if(conc&&!antes){const b2=consumoDaOP(o).filter(x=>x.tiny).length;mov=`<span class="k">prevê +${nf(o.caixas||0)} ${und(o)} · baixa de ${b2} ${b2>1?'itens':'item'}</span>`;}
+    else mov='<span class="k">—</span>';
+    out.push({tipo:'env',o,d:o.data,ord:`${o.data} ${o.fimReal||hhmm(o.inicio||0)}`,
+      num:rotuloOP(o),prod:nomeCurto(o.codigo),sub:o.lote?`lote ${o.lote}`:'',onde:o.maq||'—',
+      ev:conc?`concluída ${o.fimReal||''}`:({programada:'programada',preparacao:'em setup',producao:'envasando',finalizado:'a apontar'}[sit(o)]||sit(o)),
+      mov,s,naTiny:!!(ent||baixas),parado:l.some(x=>x.estado!=='enviado'),pode:conc&&!antes});
+  });
+  if(CS_MOV.tipo!=='env'){
+    const dias=[];for(let d=new Date(de+'T12:00:00');ymd(d)<=ate;d=addD(d,1))dias.push(ymd(d));
+    dias.forEach(dd=>{let bs=[];try{bs=bateladas(dd);}catch(e){}
+      bs.forEach(b=>{
+        if(!casa(`${b.lote||''} ${b.produto||''} ${b.tanque||''}`))return;
+        const a=APONTA[b.chave]||{},l=csFilaDe(`lote|${b.chave}|`);
+        const antes=String(b.data)<CS_CORTE_MP&&!l.length;
+        const s=csSitEnvio(l,a.liberadoEm?(antes?{k:'',t:'pelo PCP antigo',d:''}:{k:'med',t:'não foi',d:''})
+          :antes?{k:'',t:'pelo PCP antigo',d:''}:{k:'',t:'aguarda liberação',d:''});
+        const ja=csMPJa(b),alvo=(()=>{try{return csMPAlvo(b);}catch(e){return {};}})();
+        const n=Object.keys(ja).filter(k=>ja[k]>0).length,kg=Object.values(ja).reduce((x,v)=>x+Math.max(0,v),0);
+        const na=Object.keys(alvo).length,kga=Object.values(alvo).reduce((x,v)=>x+v,0);
+        const aj=(a.mpExtra||[]).length;
+        const mov=n?`baixa de <b>${n} ${n>1?'itens':'item'}</b> · ${nf1(kg)} kg${aj?` · ${aj} ajuste${aj>1?'s':''}`:''}`
+          :na&&!antes?`<span class="k">prevê baixa de ${na} ${na>1?'itens':'item'} · ${nf1(kga)} kg${aj?` · ${aj} ajuste${aj>1?'s':''}`:''}</span>`:'<span class="k">—</span>';
+        const ev=a.liberadoEm?`liberado ${a.liberadoEm}${a.liberadoPor?' · '+a.liberadoPor:''}`:a.fabFim?`preparo concluído ${a.fabFim.hora||''}`:a.fabIni?'em preparo':'programado';
+        out.push({tipo:'tq',b,d:b.data,ord:`${b.data} ${a.liberadoEm||''}`,num:b.lote?`lote ${b.lote}`:'—',prod:b.produto||'—',
+          sub:`${b.tanque||''}${b.volume?' · '+nf(+b.volume)+' L':''}`,onde:b.tanque||'—',ev,mov,s,naTiny:n>0,parado:l.some(x=>x.estado!=='enviado'),
+          pode:!antes&&(!!a.liberadoEm||(b.ordens||[]).some(o=>sit(o)==='concluida'))});
+      });});
+  }
+  return out.filter(r=>!CS_MOV.so||['med','bad'].includes(r.s.k)).sort((x,y)=>y.ord.localeCompare(x.ord));
+}
+function csMovHTML(){
+  const ls=csMovLinhas(),[de,ate]=csMovFaixa();
+  const per=[['hoje','Hoje'],['ontem','Ontem'],['7','7 dias'],['30','30 dias']];
+  const cont={env:ls.filter(r=>r.tipo==='env').length,tq:ls.filter(r=>r.tipo==='tq').length};
+  return `<div class="csmov-bar">
+      <div class="sw">${per.map(([k,r])=>`<button class="${CS_MOV.per===k?'on':''}" data-mvp="${k}">${r}</button>`).join('')}</div>
+      <input type="date" id="mvDia" value="${CS_MOV.per==='dia'&&CS_MOV.dia?CS_MOV.dia:''}" title="Um dia">
+      <div class="sw">${[['todos','Tudo'],['env','OP de envase'],['tq','OP de tanque']].map(([k,r])=>`<button class="${CS_MOV.tipo===k?'on':''}" data-mvt="${k}">${r}</button>`).join('')}</div>
+      <button class="chip ${CS_MOV.so?'on':''}" id="mvSo">Só o que não foi</button>
+      <span style="flex:1"></span>${colsBotao('mvCols')}</div>
+    <p class="adp">${de===ate?dCurto(de):`${dCurto(de)} a ${dCurto(ate)}`} · <b>OP de tanque</b>: a matéria-prima baixa no Tiny na liberação do lote, com os ajustes.
+      <b>OP de envase</b>: na conclusão, baixa a embalagem e entra o acabado em caixas ou fardos. Tudo vai sozinho: aqui é para acompanhar e corrigir.</p>
+    ${ls.length?`<div class="rolx"><table class="tb csmov" id="mvTab"><thead><tr><th>Tipo</th><th>Nº</th><th>Produto</th><th>Máquina ou tanque</th><th>Data</th><th>Andamento</th><th>Movimento no Tiny</th><th>Situação</th><th></th></tr></thead><tbody>
+    ${ls.map((r,i)=>`<tr>
+      <td><span class="csmt ${r.tipo}">${r.tipo==='env'?'Envase':'Tanque'}</span></td>
+      <td class="mono"><b>${escAttr(r.num)}</b></td>
+      <td>${escAttr(r.prod)}${r.sub?`<small>${escAttr(r.sub)}</small>`:''}</td>
+      <td>${escAttr(r.onde)}</td><td class="mono">${dCurto(r.d)}</td><td>${escAttr(r.ev)}</td><td>${r.mov}</td>
+      <td><span class="pill ${r.s.k}" title="${escAttr(r.s.d||'')}">${escAttr(r.s.t)}</span>${r.s.d?`<small>${escAttr(r.s.d)}</small>`:''}</td>
+      <td class="n" style="white-space:nowrap">
+        ${r.parado?`<button class="btn sm" data-mvr="${i}">Reenviar</button>`:''}
+        ${r.tipo==='env'&&r.pode&&!r.naTiny&&!r.parado?`<button class="btn sm" data-mvc="${i}">Conferir e enviar</button>`:''}
+        ${r.tipo==='tq'&&r.pode&&!r.naTiny&&!r.parado?`<button class="btn sm" data-mve="${i}">Enviar agora</button>`:''}
+        ${r.naTiny?`<button class="btn sm" data-mvx="${i}">Estornar</button>`:''}
+        <button class="ordb" data-mvv="${i}" title="Ver o detalhe">&#8250;</button></td></tr>`).join('')}
+    </tbody></table></div>
+    <div class="csmov-rod"><span><b>${cont.tq}</b> OP de tanque</span><span><b>${cont.env}</b> OP de envase</span>
+      <span><b>${ls.filter(r=>['med','bad'].includes(r.s.k)).length}</b> a corrigir</span></div>`
+    :'<div class="vazioc" style="padding:20px">Nada neste período.</div>'}`;
+}
+function csMovLigar(el){
+  const ls=csMovLinhas();
+  el.querySelectorAll('[data-mvp]').forEach(b=>b.onclick=()=>{CS_MOV.per=b.dataset.mvp;gradeEstoque();});
+  el.querySelectorAll('[data-mvt]').forEach(b=>b.onclick=()=>{CS_MOV.tipo=b.dataset.mvt;gradeEstoque();});
+  if(M('mvDia'))M('mvDia').onchange=e=>{if(e.target.value){CS_MOV.per='dia';CS_MOV.dia=e.target.value;gradeEstoque();}};
+  if(M('mvSo'))M('mvSo').onclick=()=>{CS_MOV.so=!CS_MOV.so;gradeEstoque();};
+  const R=i=>ls[+i];
+  el.querySelectorAll('[data-mvc]').forEach(b=>b.onclick=()=>movimentoDaOP(R(b.dataset.mvc).o));
+  el.querySelectorAll('[data-mve]').forEach(b=>b.onclick=()=>{const r=R(b.dataset.mve);if(!window.confirm(`Baixar no Tiny a matéria-prima do ${r.b.tanque||'tanque'} (lote ${r.b.lote||'—'})?`))return;csMPNaLiberacao(r.b);setTimeout(()=>gradeEstoque(),600);});
+  el.querySelectorAll('[data-mvr]').forEach(b=>b.onclick=async()=>{const r=R(b.dataset.mvr);b.disabled=true;b.textContent='Enviando…';
+    const pref=r.tipo==='env'?`op|${r.o.id}|`:`lote|${r.b.chave}|`;
+    for(const x of FILA_TINY.filter(y=>String(y.chave).startsWith(pref)&&y.estado!=='enviado')){x.tentativas=0;await enviarDaFila(x.chave);}
+    agendarSalvar();gradeEstoque();});
+  el.querySelectorAll('[data-mvx]').forEach(b=>b.onclick=()=>{const r=R(b.dataset.mvx);r.tipo==='env'?csTelaEstorno(r.o):csTelaEstornoLote(r.b);});
+  el.querySelectorAll('[data-mvv]').forEach(b=>b.onclick=()=>{const r=R(b.dataset.mvv);r.tipo==='env'?movimentoDaOP(r.o):csVerLote(r.b);});
+  colsTabela(M('mvTab'),'movimentos',[]);
+  if(M('mvCols'))M('mvCols').onclick=()=>colsPainel('movimentos',['Tipo','Nº','Produto','Máquina ou tanque','Data','Andamento','Movimento no Tiny','Situação'],[],['Tipo','Nº'],gradeEstoque);
+}
+try{const _ge3=gradeEstoque;gradeEstoque=function(){
+  const r=_ge3.apply(this,arguments);
+  try{if(ES_ABA!=='mov')return r;const el=M('esgrid');const sub=el&&el.querySelector('.subabas');if(!sub)return r;
+    while(sub.nextSibling)sub.parentNode.removeChild(sub.nextSibling);
+    const c=document.createElement('div');c.className='csmov';c.innerHTML=csMovHTML();sub.after(c);csMovLigar(c);}catch(e){console.warn('movimentos:',e);}
+  return r;};}catch(e){}
+
+/* ---------- lote: ver e estornar ---------- */
+function csVerLote(b){
+  const a=APONTA[b.chave]||{},l=csFilaDe(`lote|${b.chave}|`),alvo=(()=>{try{return csMPAlvo(b);}catch(e){return {};}})();
+  const lin=Object.entries(alvo).map(([id,q])=>{const n=csNomeTiny(id);return `<tr><td>${escAttr(n.nome)}</td><td class="mono k">${id}</td><td class="n mono">${nf1(q)} ${n.un||'kg'}</td></tr>`;}).join('');
+  if(M('mAcao'))M('mAcao').innerHTML='';M('modal').classList.add('wide');
+  M('mTit').textContent='OP de tanque';M('mSub').hidden=false;
+  M('mSub').textContent=`${b.tanque||''} · ${b.produto||''} · lote ${b.lote||'—'} · ${nf(+b.volume||0)} L`;
+  M('mB').innerHTML=`<div class="st2" style="margin-top:0">O que o tanque consumiu · fórmula e ajustes</div>
+    ${lin?`<table class="tb"><thead><tr><th>Matéria-prima</th><th>Tiny</th><th class="n">Quantidade</th></tr></thead><tbody>${lin}</tbody></table>`:'<div class="vazioc">Sem matéria-prima com código do Tiny.</div>'}
+    <div class="st2">Envios ao Tiny</div>
+    ${l.length?`<table class="tb"><thead><tr><th>O quê</th><th>Criado</th><th>Enviado</th><th>Situação</th></tr></thead><tbody>${l.map(x=>`<tr><td>${escAttr(x.rotulo||'')}<small>${(x.movs||[]).length} movimento(s)</small></td>
+      <td class="mono">${csDH(x.criado)}</td><td class="mono">${csDH(x.enviadoEm)||'—'}</td><td>${x.estado==='enviado'?'enviado':x.estado==='falhou'?`falhou · ${escAttr(x.erro||'')}`:'na fila'}${/\|x\d+/.test(x.chave)?' · estornado depois':''}</td></tr>`).join('')}</tbody></table>`
+      :`<div class="vazioc">${a.liberadoEm?'Liberado, mas nada foi ao Tiny ainda.':'Ainda não foi ao Tiny: sai na liberação do lote.'}</div>`}`;
+  M('mF').innerHTML='<div style="flex:1"></div><button class="btn" id="vlF">Fechar</button>';M('vlF').onclick=fecharModal;
+  abrirMask();
+}
+function csTelaEstornoLote(b){
+  const lq=csLiquido(`lote|${b.chave}|`);if(!Object.keys(lq).length){toast('Nada deste lote está no Tiny para estornar.',true);return;}
+  const lin=Object.entries(lq).map(([id,q])=>{const n=csNomeTiny(id);return `<tr><td>${escAttr(n.nome)}</td><td class="mono k">${id}</td><td class="n mono"><b>${q>0?'−':'+'}${nf1(Math.abs(q))}</b> ${n.un||'kg'}</td></tr>`;}).join('');
+  if(M('mAcao'))M('mAcao').innerHTML='';M('modal').classList.add('wide');
+  M('mTit').textContent='Estornar a OP de tanque';M('mSub').hidden=false;M('mSub').textContent=`${b.tanque||''} · ${b.produto||''} · lote ${b.lote||'—'}`;
+  M('mB').innerHTML=`<div class="alert q">A matéria-prima que baixou volta ao estoque, no Tiny e no ERP, na mesma quantidade. Se o lote for liberado de novo, a baixa sai outra vez.</div>
+    <table class="tb" style="margin-top:10px"><thead><tr><th>Item</th><th>Tiny</th><th class="n">Estorno</th></tr></thead><tbody>${lin}</tbody></table>
+    <div class="fld" style="margin-top:12px"><label>Motivo <b>*</b></label><textarea id="elMot" placeholder="Ex.: baixa já feita pela OP do Tiny; lote descartado"></textarea></div>`;
+  M('mF').innerHTML='<div style="flex:1"></div><button class="btn" id="elX">Fechar</button><button class="btn del" id="elOk">Estornar</button>';
+  M('elX').onclick=fecharModal;
+  M('elOk').onclick=()=>{const mot=cv('elMot').trim();if(mot.length<3){toast('Escreva o motivo.',true);M('elMot').focus();return;}
+    pedirPin('Estornar a matéria-prima',`<b>${escAttr(b.tanque||'')} · lote ${escAttr(b.lote||'—')}</b>: a matéria-prima volta no Tiny e no ERP. Assina gestor ou master.`,
+      quem=>{fecharModal();csEstornoLoteExec(b,mot,quem);},q=>['master','gestor'].includes(q.nivel));};
+  abrirMask();
+}
+function csEstornoLoteExec(b,motivo,quem){
+  const at=APONTA[b.chave]||{},n=(at.mpEstornos||0)+1,pl=`lote|${b.chave}|`;
+  const ml=csLiquido(pl),mv=Object.entries(ml).map(([id,q])=>({id,tipo:q>0?'S':'E',qtd:Math.abs(q)}));
+  if(!mv.length)return;
+  FILA_TINY.forEach(x=>{if(String(x.chave).startsWith(pl)&&!/\|x\d+/.test(x.chave))x.chave+=`|x${n}L`;});
+  APONTA[b.chave]={...at,mpEstornos:n};
+  const ch=`${pl}estornoL${n}`;
+  enfileirar({chave:ch,origem:`Lote ${b.lote||b.produto}`,rotulo:`Estorno de matéria-prima · ${motivo}`,movs:mv,obs:`ESTORNO PREPARO ${b.tanque||''} lote ${b.lote||''} · ${motivo}`});
+  (b.ordens||[]).forEach(o=>registrar(o,'Matéria-prima estornada no Tiny',quem||null,motivo));
+  agendarSalvar();
+  enviarDaFila(ch).then(it=>{agendarSalvar();toast(it&&it.estado==='enviado'?'Matéria-prima estornada no Tiny e no ERP.':`Estorno na fila: ${(it&&it.erro)||'sem resposta'}.`,!(it&&it.estado==='enviado'));try{gradeEstoque();}catch(e){}});
+}
+
+/* ---------- Ordens de produção: colunas visíveis ---------- */
+try{const _go2=gradeOrdens;gradeOrdens=function(){const r=_go2.apply(this,arguments);
+  try{const g=M('odgrid');if(!g)return r;const tab=g.querySelector('table');
+    const rot=colsTabela(tab,'ordens',[]);
+    if(!M('odCols')){const alvo=g.querySelector('.od2ord')||g.querySelector('#odPer');const bar=alvo&&alvo.parentElement;
+      if(bar){bar.insertAdjacentHTML('beforeend',colsBotao('odCols'));}}
+    if(M('odCols'))M('odCols').onclick=()=>colsPainel('ordens',rot,[],['Nº OP','Produto'],gradeOrdens);
+  }catch(e){console.warn('colunas das ordens:',e);}
+  return r;};}catch(e){}
+</script>
+<script>
+/* ===================== v293 ===================== */
+/* ---------- RAZÃO DE ESTOQUE ----------
+   O estoque é controlado no ERP; o Tiny recebe e consome. Cada movimento que
+   sai daqui fica registrado: quando, de onde (OP, lote, compra, inventário,
+   estorno), entrada ou saída, quanto e quem. Os últimos 6.000 ficam no banco. */
+function csElogPor(it,movs,origem,obs,quem){
+  const em=`${ymd(new Date())} ${relogio()}`;
+  (movs||[]).forEach(m=>CS_ELOG.push({em,id:String(m.id),tipo:m.tipo,qtd:+m.qtd||0,origem:origem||'',obs:obs||'',
+    quem:quem||(typeof quemAssina==='function'?quemAssina():''),chave:it||''}));
+  if(CS_ELOG.length>6000)CS_ELOG.splice(0,CS_ELOG.length-6000);
+  try{agendarSalvar();}catch(e){}
+}
+/* o que foi pela fila (OPs, lotes, estornos) */
+try{const _edf3=enviarDaFila;enviarDaFila=async function(ch){
+  const a=naFila(ch),era=a&&a.estado;const it=await _edf3(ch);
+  try{if(it&&it.estado==='enviado'&&era!=='enviado'&&!it.noRazao){it.noRazao=true;
+    csElogPor(it.chave,it.movs,it.origem||'',it.obs||it.rotulo||'');}}catch(e){}
+  return it;};}catch(e){}
+/* o que os módulos mandam direto (Compras, Inventário): entra no razão e mexe
+   no saldo do ERP na hora, como os envios da fila */
+try{const _nt=csNucleo.tiny;csNucleo.tiny=async function(c){
+  const r=await _nt(c);
+  try{if(c&&c.acao==='movimentar'){
+    const fal=new Set(((r&&r.falhas)||[]).map(f=>String(f.id||f.idProduto||'')));
+    const ok=(c.movimentos||[]).filter(m=>!fal.has(String(m.id)));
+    const obs=String(c.obs||'');
+    const origem=/^OC |Estorno da OC/.test(obs)?'Compra':/Invent[áa]rio/.test(obs)?'Inventário':'ERP';
+    ok.forEach(m=>{const k=String(m.id);if(ESTOQUE[k]!==undefined)ESTOQUE[k]=+ESTOQUE[k]+(m.tipo==='E'?1:-1)*(+m.qtd||0);});
+    csElogPor('',ok,origem,obs);}}catch(e){}
+  return r;};}catch(e){}
+/* o que já tinha ido pela fila antes do razão existir entra uma vez */
+function csElogCarga(){
+  if(CS_ELOG.length)return;
+  FILA_TINY.filter(x=>x.estado==='enviado').forEach(x=>{x.noRazao=true;
+    const em=String(x.enviadoEm||x.criado||'').slice(0,16);
+    (x.movs||[]).forEach(m=>CS_ELOG.push({em,id:String(m.id),tipo:m.tipo,qtd:+m.qtd||0,origem:x.origem||'',obs:x.obs||x.rotulo||'',quem:'',chave:x.chave}));});
+  CS_ELOG.sort((a,b)=>String(a.em).localeCompare(String(b.em)));
+}
+setTimeout(()=>{try{csElogCarga();}catch(e){}},4000);
+/* o núcleo entrega o razão de um item aos módulos */
+try{csNucleo.movimentosDe=function(id){
+  id=String(id||'');
+  const l=CS_ELOG.filter(x=>x.id===id).slice().reverse();
+  /* e o que ainda está a caminho do Tiny */
+  const fila=FILA_TINY.filter(x=>x.estado!=='enviado').flatMap(x=>(x.movs||[]).filter(m=>String(m.id)===id)
+    .map(m=>({em:String(x.criado||'').slice(0,16),id,tipo:m.tipo,qtd:+m.qtd||0,origem:x.origem||'',obs:x.obs||x.rotulo||'',pend:x.estado,erro:x.erro||''})));
+  return {itens:[...fila,...l],saldo:ESTOQUE[id],lidoEm:ESTOQUE_EM,lidoDia:ESTOQUE_D};
+};}catch(e){}
+
+/* ---------- CONFIGURAÇÕES NO JEITO DO TINY ----------
+   Uma página só: busca no topo, abas por assunto e cada configuração numa
+   linha com a sua explicação. Clicar abre a mesma tela de antes. */
+const CS_CFG_ABAS=[['geral','Geral'],['producao','Produção'],['cadastros','Cadastros'],['suprimentos','Suprimentos'],['vendas','Vendas'],['financas','Finanças'],['integracoes','Integrações']];
+const CS_CFG_INFO={
+  'Calendário':['producao','Dias de trabalho, sábados e feriados liberados, jornada de cada máquina no dia','sábado feriado folga jornada horário'],
+  'Máquinas e tanques':['producao','Máquinas de envase, tanques, capacidade, jornada e intervalo de almoço','almoço pausa capacidade maq tq'],
+  'Sopro e preformas':['producao','Sopradoras, preformas e o que cada uma produz','frasco sopro'],
+  'Motivos de desvio':['producao','Motivos de parada, perda e quebra que o operador escolhe','parada quebra perda vazamento'],
+  'Qualidade':['producao','Critérios de análise do lote e limites de aprovação','análise laudo ph densidade liberação'],
+  'PCP':['producao','Marcadores das OPs, tela do operador e regras do envase','marcador operador tablet'],
+  'Pessoas e permissões':['geral','Quem acessa o sistema, o que cada um pode fazer e o PIN da fábrica','usuário senha pin acesso permissão'],
+  'Dados e versão':['geral','Versão no ar, módulos publicados e cópia de segurança dos dados','backup versão módulo'],
+  'Produtos · grupos':['cadastros','Grupos e subgrupos dos produtos e a regra de nome do Tiny','grupo subgrupo família'],
+  'Compras':['suprimentos','Aprovação, categorias, prazos e o que a ordem de compra pede','oc aprovação fornecedor'],
+  'Carga do Tiny':['vendas','Trazer o histórico de pedidos de venda do Tiny para o ERP','pedidos histórico importar'],
+  'Integração Tiny':['integracoes','Token da API do Tiny e teste da conexão','token api'],
+  'Integração WhatsApp':['integracoes','Número, token e modelo de mensagem da cobrança pelo WhatsApp','meta whatsapp cobrança modelo'],
+};
+const CS_CFG={aba:'geral',q:''};
+function csCfgItens(){
+  const m=CS_MOD.find(x=>x.id==='config');
+  return ((m&&m.pgs)||[]).filter(p=>p.aba!=='hub'&&!p.grupo&&!p.sep&&csPode(p)).map(p=>{
+    const i=CS_CFG_INFO[p.n]||['geral','',''];return {p,aba:i[0],desc:i[1],kw:i[2]};});
+}
+function csCfgHub(){
+  const el=M('adgrid');if(!el)return;
+  const q=CS_CFG.q.trim().toLowerCase(),todos=csCfgItens();
+  const bate=x=>(x.p.n+' '+x.desc+' '+x.kw).toLowerCase().includes(q);
+  const abas=CS_CFG_ABAS.filter(([k])=>todos.some(x=>x.aba===k));
+  if(!abas.some(([k])=>k===CS_CFG.aba)&&abas.length)CS_CFG.aba=abas[0][0];
+  const lista=q?todos.filter(bate):todos.filter(x=>x.aba===CS_CFG.aba);
+  el.innerHTML=`<div class="cfgh">
+    <h1>Configurações do Sistema ERP</h1>
+    <div class="cfgq"><input id="cfgQ" placeholder="Busque pela funcionalidade ou dúvida" value="${escAttr(CS_CFG.q)}"><span>&#8981;</span></div>
+    ${q?`<div class="cfgres">${lista.length} resultado${lista.length===1?'':'s'} para “${escAttr(CS_CFG.q)}”</div>`
+      :`<div class="cfgab">${abas.map(([k,r])=>`<button data-cfgab="${k}" class="${CS_CFG.aba===k?'on':''}">${r}</button>`).join('')}</div>`}
+    <div class="cfgl">${lista.map((x,i)=>`<button class="cfgi" data-cfgi="${todos.indexOf(x)}"><b>${escAttr(x.p.n)}</b>${x.desc?`<span>${escAttr(x.desc)}</span>`:''}${q?`<em>${escAttr((CS_CFG_ABAS.find(a=>a[0]===x.aba)||[])[1]||'')}</em>`:''}</button>`).join('')
+      ||'<div class="cfgv">Nada encontrado. Tente outra palavra.</div>'}</div></div>`;
+  const i=M('cfgQ');
+  i.oninput=()=>{CS_CFG.q=i.value;clearTimeout(window._cfgT);window._cfgT=setTimeout(()=>{csCfgHub();const n=M('cfgQ');n.focus();n.setSelectionRange(n.value.length,n.value.length);},200);};
+  el.querySelectorAll('[data-cfgab]').forEach(b=>b.onclick=()=>{CS_CFG.aba=b.dataset.cfgab;csCfgHub();});
+  el.querySelectorAll('[data-cfgi]').forEach(b=>b.onclick=()=>{const x=todos[+b.dataset.cfgi];if(x)csIr(x.p);});
+}
+try{const _ga=gradeAdmin;gradeAdmin=function(){
+  if(ABA_ADMIN==='hub')return csCfgHub();
+  const r=_ga.apply(this,arguments);
+  /* dentro de uma configuração, o caminho de volta para a lista */
+  try{if(areaDaAba(ABA_ADMIN)!=='cad'&&M('adgrid')&&!M('cfgVolta'))
+    M('adgrid').insertAdjacentHTML('afterbegin','<button class="cfgvolta" id="cfgVolta">&#8249; Todas as configurações</button>');
+    if(M('cfgVolta'))M('cfgVolta').onclick=()=>csIr({page:'admin',aba:'hub'});}catch(e){}
+  return r;};}catch(e){}
+/* a engrenagem do menu abre direto a página, como no Tiny */
+document.addEventListener('click',ev=>{
+  const b=ev.target.closest&&ev.target.closest('[data-csrmod="config"]');if(!b)return;
+  ev.stopPropagation();ev.preventDefault();
+  try{CS_ABERTO='';csIr({page:'admin',aba:'hub'});}catch(e){}
+},true);
+</script>
+<script>
+/* ===================== v294 ===================== */
+/* Quem lê do Tiny deixa registrado aqui: a página mostra o andamento. */
+function csTlog(oque,dados){
+  CS_TLOG.push({em:`${ymd(new Date())} ${relogio()}`,oque,quem:(typeof quemAssina==='function'?quemAssina():''),...(dados||{})});
+  if(CS_TLOG.length>400)CS_TLOG.splice(0,CS_TLOG.length-400);
+  try{agendarSalvar();}catch(e){}
+  try{if(S.page==='admin'&&ABA_ADMIN==='tiny')csTinyPag();}catch(e){}
+}
+try{csNucleo.logCarga=(oque,dados)=>csTlog(oque,dados);}catch(e){}
+/* a leitura geral do estoque também entra no histórico */
+try{const _lt=csLerTudoTiny;csLerTudoTiny=function(){
+  const ja=!!CS_LENDO,p=_lt();
+  if(!ja)p.then(()=>csTlog('Estoque',{lidos:Object.keys(ESTOQUE).length,det:'saldo atual de produtos e insumos'}))
+    .catch(e=>csTlog('Estoque',{erro:String(e&&e.message||e)}));
+  return p;};}catch(e){}
+
+const CS_TP={st:null,lendo:false};
+async function csTinyStatus(){
+  if(CS_TP.lendo)return;CS_TP.lendo=true;
+  const st={};
+  try{const c=await csNucleo.ler('cadastros');const l=(c&&c.contatos)||[];
+    const t=x=>Array.isArray(x.tiposTiny)?x.tiposTiny:[],pap=x=>Array.isArray(x.papeis)?x.papeis:[];
+    const tem=(x,r)=>pap(x).includes(r)||t(x).some(y=>new RegExp(r.slice(0,6),'i').test(y))||x.tipo===r;
+    st.cad={total:l.length,cli:l.filter(x=>tem(x,'Cliente')).length,forn:l.filter(x=>tem(x,'Fornecedor')).length,
+      tr:l.filter(x=>tem(x,'Transportador')).length,semTipo:l.filter(x=>!t(x).length&&!pap(x).length&&!x.tipo).length,
+      vend:((c&&c.vendedores)||[]).length,ult:c&&c.sync&&c.sync.ultima};}catch(e){st.cad={erro:e.message};}
+  try{const c=await csNucleo.ler('compras');const o=(c&&c.ocs)||[];
+    st.oc={total:o.length,tiny:o.filter(x=>x.origem==='Tiny').length,abertas:o.filter(x=>['env','rec'].includes(x.sit)).length};}catch(e){st.oc={erro:e.message};}
+  try{if(temNuvem()&&typeof SESSAO!=='undefined'&&SESSAO){const v=await chamarTiny({acao:'vendas_status'});const e=v.estado||{};
+    st.ped={total:v.total||0,pend:v.pendentes||0,fase:e.fase||'',ativo:!!e.ativo};}}catch(e){st.ped={erro:e.message};}
+  st.est={itens:Object.keys(ESTOQUE).length,em:ESTOQUE_EM,d:ESTOQUE_D};
+  CS_TP.st=st;CS_TP.lendo=false;
+  if(S.page==='admin'&&ABA_ADMIN==='tiny')csTinyPag();
+}
+function csTinyPag(){
+  const el=M('adgrid');if(!el)return;
+  const s=CS_TP.st;if(!s&&!CS_TP.lendo)csTinyStatus();
+  const nfx=v=>v==null?'—':nf(v);
+  const ult=o=>{const l=CS_TLOG.filter(x=>x.oque===o);return l.length?l[l.length-1]:null;};
+  const card=(k,tit,desc,linhas,bts)=>{const u=ult(tit);return `<div class="tpc">
+    <div class="tph"><b>${tit}</b>${u?`<span class="${u.erro?'x':'ok'}">${u.erro?'falhou':'lido'} ${csDH?csDH(u.em):u.em}</span>`:'<span>ainda não lido</span>'}</div>
+    <p>${desc}</p><div class="tpn">${linhas}</div><div class="tpb">${bts}</div></div>`;};
+  const n=(v,r)=>`<div><b>${v}</b><span>${r}</span></div>`;
+  const c=(s&&s.cad)||{},o=(s&&s.oc)||{},p=(s&&s.ped)||{},e=(s&&s.est)||{};
+  el.innerHTML=`<button class="cfgvolta" id="cfgVolta">&#8249; Todas as configurações</button>
+  <div class="tpg"><h1>Integração Tiny</h1>
+  <p class="tpi">Na virada, o ERP traz do Tiny uma vez os cadastros, o estoque e as ordens de compra abertas. Daí em diante quem movimenta é o
+    ERP e o Tiny recebe; do Tiny o ERP continua lendo só os pedidos de venda que entram e as saídas de produto acabado.</p>
+  <div class="tps">
+    <div class="tpc"><div class="tph"><b>Conexão</b><span id="tpTok">conferindo…</span></div>
+      <p>Token da API v2: é por ele que o ERP lê e lança no Tiny hoje.</p><div class="tpb"><button class="btn sm" id="tpTokB">Trocar o token</button></div></div>
+    <div class="tpc v3"><div class="tph"><b>API v3 (ordens de compra)</b><span>próximo passo</span></div>
+      <p>A consulta de ordens de compra só existe na API nova do Tiny, que usa um aplicativo com client_id e client_secret.
+      Enquanto isso, as OCs entram pela planilha exportada do Tiny.</p></div>
+  </div>
+  ${csSrvHTML()}
+  <div class="st2" style="margin-top:18px">Carga inicial</div>
+  <div class="tps">
+    ${card('cad','Contatos','Clientes, fornecedores e transportadores, com o tipo de cada um lido do cadastro do Tiny.',
+      n(nfx(c.total),'contatos')+n(nfx(c.cli),'clientes')+n(nfx(c.forn),'fornecedores')+n(nfx(c.tr),'transportadores')+(c.semTipo?n(nfx(c.semTipo),'sem tipo'):''),
+      `<button class="btn sm" data-tpir="cadastros|clientes">Abrir e importar</button>`)}
+    ${card('ven','Vendedores','Os vendedores que aparecem nos contatos do Tiny.',n(nfx(c.vend),'vendedores'),`<button class="btn sm" data-tpir="cadastros|vendedores">Abrir</button>`)}
+    ${card('est','Estoque','Saldo atual de cada produto e insumo com código do Tiny.',
+      n(nfx(e.itens),'itens lidos')+n(e.em?(e.d&&e.d!==ymd(new Date())?dCurto(e.d)+' ':'')+e.em:'—','última leitura'),
+      `<button class="btn sm pri" id="tpEst">Ler agora</button>`)}
+    ${card('ped','Pedidos de venda','Histórico e os que vão entrando; roda no servidor, mesmo com o computador desligado.',
+      p.erro?`<div class="k">${escAttr(p.erro)}</div>`:n(nfx(p.total),'pedidos')+n(nfx(p.pend),'sem itens ainda')+n(p.fase==='ok'?'concluída':p.ativo?'andando':'parada','carga'),
+      `<button class="btn sm" data-tpir="vendas|carga">Abrir a carga</button>`)}
+    ${card('oc','Ordens de compra','As abertas e as programadas, trazidas da planilha do Tiny, com os itens casados com os insumos.',
+      n(nfx(o.tiny),'vindas do Tiny')+n(nfx(o.abertas),'abertas no ERP'),`<button class="btn sm" data-tpir="compras|ordens">Abrir e importar</button>`)}
+  </div>
+  <div class="st2" style="margin-top:18px">Histórico das leituras <button class="btn sm lk" id="tpAtu" style="float:right">${CS_TP.lendo?'conferindo…':'&#8635; conferir de novo'}</button></div>
+  <div class="rolx"><table class="tb"><thead><tr><th>Quando</th><th>O que</th><th class="n">Lidos</th><th class="n">Novos</th><th class="n">Falhas</th><th>Detalhe</th><th>Quem</th></tr></thead><tbody>
+  ${csHistTudo().slice(0,150).map(x=>`<tr><td class="mono">${escAttr(csDH?csDH(x.em):x.em)}</td><td><b>${escAttr(x.oque)}</b></td>
+    <td class="n">${x.lidos!=null?nf(x.lidos):'—'}</td><td class="n">${x.novos!=null?nf(x.novos):'—'}</td><td class="n" style="${x.falhas?'color:#B3261E':''}">${x.falhas?nf(x.falhas):'—'}</td>
+    <td>${x.erro?`<span style="color:#B3261E">${escAttr(x.erro)}</span>`:escAttr(x.det||'')}</td><td class="k">${escAttr(x.srv?'servidor':(x.quem||''))}</td></tr>`).join('')
+    ||'<tr><td colspan="7" class="k" style="padding:16px">Nenhuma leitura registrada ainda. A partir de agora cada carga fica aqui.</td></tr>'}</tbody></table></div></div>`;
+  M('cfgVolta').onclick=()=>csIr({page:'admin',aba:'hub'});
+  M('tpTokB').onclick=()=>abrirTinyCfg();
+  M('tpAtu').onclick=()=>{csTinyStatus();csSrvStatus();};
+  try{csSrvLiga();}catch(e){}
+  M('tpEst').onclick=()=>{if(!temNuvem())return toast('Sem banco (versão de teste): a leitura do Tiny está desligada.',true);
+    M('tpEst').disabled=true;M('tpEst').textContent='Lendo…';csLerTudoTiny().finally(()=>csTinyStatus());};
+  el.querySelectorAll('[data-tpir]').forEach(b=>b.onclick=()=>{const [m,f]=b.dataset.tpir.split('|');csIr({mod:m,fin:f});});
+  if(temNuvem()&&typeof SESSAO!=='undefined'&&SESSAO&&!CS_TP.tok){CS_TP.tok=1;
+    chamarTiny({acao:'tiny_token_status'}).then(r=>{CS_TP.tok=r&&r.tem?`ativo · final ${r.final}`:'sem token';if(M('tpTok'))M('tpTok').textContent=CS_TP.tok;})
+      .catch(e=>{CS_TP.tok='sem resposta';if(M('tpTok'))M('tpTok').textContent=CS_TP.tok;});}
+  else if(M('tpTok'))M('tpTok').textContent=typeof CS_TP.tok==='string'?CS_TP.tok:(temNuvem()?'—':'versão de teste');
+}
+try{const _ga2=gradeAdmin;gradeAdmin=function(){if(ABA_ADMIN==='tiny')return csTinyPag();return _ga2.apply(this,arguments);};}catch(e){}
+try{CS_CFG_INFO['Integração Tiny']=['integracoes','Conexão, carga inicial (contatos, vendedores, estoque, pedidos, ordens de compra) e o histórico de cada leitura','token api carga importar histórico pedidos'];}catch(e){}
+</script>
+<script>
+/* ===================== v295 ===================== */
+/* CARGAS NO SERVIDOR: contatos e estoque andam no agendador do Supabase, com o
+   computador desligado. A página liga, para e mostra o andamento; o ERP traz o
+   resultado para os dados dele sozinho. */
+const csHM=d=>`${p2(d.getHours())}:${p2(d.getMinutes())}`;
+const CS_SRV={st:null,lendo:false,erro:''};
+const csSrvOk=()=>temNuvem()&&typeof SESSAO!=='undefined'&&!!SESSAO;
+async function csSrvStatus(){
+  if(!csSrvOk()||CS_SRV.lendo)return;CS_SRV.lendo=true;
+  try{CS_SRV.st=await chamarTiny({acao:'srv_status'});CS_SRV.erro='';}
+  catch(e){CS_SRV.erro=/desconhecid|acao|unknown/i.test(String(e.message))?'A função do Tiny no Supabase ainda é a antiga: publique o supabase-funcao-tiny.ts novo.':String(e.message||e);}
+  CS_SRV.lendo=false;
+  if(S.page==='admin'&&ABA_ADMIN==='tiny')csTinyPag();
+}
+const csIsoDH=s=>{if(!s)return '';const d=new Date(s);return `${dCurto(ymd(d))} ${csHM(d)}`;};
+function csHistTudo(){
+  const srv=((CS_SRV.st&&CS_SRV.st.log)||[]).map(x=>({...x,em:`${ymd(new Date(x.em))} ${csHM(new Date(x.em))}`,srv:true}));
+  return [...CS_TLOG,...srv].sort((a,b)=>String(b.em).localeCompare(String(a.em)));
+}
+function csSrvHTML(){
+  if(!csSrvOk())return `<div class="st2" style="margin-top:18px">No servidor</div><div class="tpc"><p>Na versão de teste não há servidor: as cargas no servidor só rodam com o banco.</p></div>`;
+  if(!CS_SRV.st&&!CS_SRV.lendo&&!CS_SRV.erro)setTimeout(csSrvStatus,0);
+  const st=CS_SRV.st||{},jobs=st.jobs||{};
+  const rep=(k)=>{const v=(jobs[k]&&jobs[k].repetirMin)||(k==='estoque'?60:360);
+    return `<select id="srvRep_${k}">${[[0,'uma vez'],[30,'a cada 30 min'],[60,'a cada 1 h'],[120,'a cada 2 h'],[360,'a cada 6 h'],[720,'a cada 12 h'],[1440,'uma vez por dia']].map(([m,r])=>`<option value="${m}" ${+m===+v?'selected':''}>${r}</option>`).join('')}</select>`;};
+  const andamento=k=>{const j=jobs[k];if(!j)return 'desligado';
+    if(j.ativo){if(k==='estoque')return `lendo · ${nf(Math.min(j.idx||0,j.total||0))} de ${nf(j.total||0)}`;
+      return j.fase==='lista'?`lendo a lista · página ${nf((j.pagina||1)-1)} de ${nf(j.paginas||0)||'?'}`:`lendo o tipo · faltam ${nf((st.contatos||{}).semTipo||0)}`;}
+    return j.proximo?`próxima às ${csIsoDH(j.proximo)}`:(j.ultimo?'concluído':'parado');};
+  const card=(k,tit,desc,extra)=>{const j=jobs[k];return `<div class="tpc srv">
+    <div class="tph"><b>${tit}</b><span class="${j&&j.ativo?'ok':''}">${andamento(k)}</span></div>
+    <p>${desc}</p><div class="tpn">${extra}</div>
+    <div class="tpb">${j&&(j.ativo||j.repetirMin)?`<button class="btn sm" data-srvpara="${k}">Parar</button>`:`${rep(k)}<button class="btn sm pri" data-srvliga="${k}">Ligar no servidor</button>`}</div></div>`;};
+  const e=st.estoque||{},c=st.contatos||{};
+  return `<div class="st2" style="margin-top:18px">No servidor · roda com o computador desligado</div>
+  ${CS_SRV.erro?`<div class="alert q" style="margin-bottom:10px">${escAttr(CS_SRV.erro)}</div>`:''}
+  <div class="tps">
+    ${card('contatos','Contatos','Lista do Tiny e o tipo de cada contato (cliente, fornecedor, transportador). Ao terminar, o ERP traz para os Cadastros.',
+      `<div><b>${nf(c.n||0)}</b><span>no servidor</span></div><div><b>${nf(c.semTipo||0)}</b><span>sem tipo ainda</span></div><div><b>${c.em?csIsoDH(c.em):'—'}</b><span>última completa</span></div>`)}
+    ${card('estoque','Estoque','Saldo de cada produto e insumo com código do Tiny. O ERP usa o que for mais novo: o dele ou o do servidor.',
+      `<div><b>${nf(e.n||0)}</b><span>itens</span></div><div><b>${e.em?csIsoDH(e.em):'—'}</b><span>última completa</span></div>`)}
+    <div class="tpc srv"><div class="tph"><b>Pedidos de venda</b><span class="ok">já roda no servidor</span></div>
+      <p>A carga do histórico e a leitura do que mudou, a cada 10 minutos, já andam sozinhas no agendador.</p></div>
+  </div>
+  <div class="tpb" style="margin-top:8px"><button class="btn sm" id="srvTraz">&#8615; Trazer agora para o ERP</button>
+    <span class="k" style="align-self:center">${CS_SRV.traz?escAttr(CS_SRV.traz):'O ERP traz sozinho quando abre e a cada 10 minutos.'}</span></div>`;
+}
+function csSrvLiga(){
+  document.querySelectorAll('[data-srvliga]').forEach(b=>b.onclick=async()=>{const k=b.dataset.srvliga;b.disabled=true;b.textContent='Ligando…';
+    const ids=k==='estoque'?[...PRODUTOS.map(p=>tinyDe(p)),...(typeof INSUMOS!=='undefined'?INSUMOS:[]).map(x=>tinyDe(x))].map(x=>String(x||'').replace(/\D/g,'')).filter(Boolean):[];
+    const rep=+((M('srvRep_'+k)||{}).value||0);
+    try{await chamarTiny({acao:'srv_ligar',job:k,ids,repetirMin:rep});toast(`${k==='estoque'?'Estoque':'Contatos'} ligado no servidor. Pode fechar o computador.`);}
+    catch(e){toast('Servidor: '+e.message,true);}
+    csSrvStatus();});
+  document.querySelectorAll('[data-srvpara]').forEach(b=>b.onclick=async()=>{const k=b.dataset.srvpara;
+    try{await chamarTiny({acao:'srv_parar',job:k});}catch(e){toast('Servidor: '+e.message,true);}csSrvStatus();});
+  if(M('srvTraz'))M('srvTraz').onclick=async()=>{M('srvTraz').disabled=true;await csSrvTrazer(true);csSrvStatus();};
+}
+/* Traz do servidor o que estiver mais novo que o ERP. */
+let CS_TRAZENDO=false;
+async function csSrvTrazer(avisa){
+  if(!csSrvOk()||CS_TRAZENDO)return;CS_TRAZENDO=true;const msg=[];
+  try{
+    const e=await chamarTiny({acao:'srv_dados',job:'estoque'});
+    if(e&&e.em&&e.saldos){const t=new Date(e.em),meu=ESTOQUE_D&&ESTOQUE_EM?new Date(`${ESTOQUE_D}T${ESTOQUE_EM}:00`):new Date(0);
+      if(t>meu){const n=Object.keys(e.saldos).length;Object.assign(ESTOQUE,e.saldos);ESTOQUE_EM=csHM(t);ESTOQUE_D=ymd(t);agendarSalvar();
+        csTlog('Estoque',{lidos:n,det:`trazido do servidor · leitura de ${csIsoDH(e.em)}`});msg.push(`estoque de ${csIsoDH(e.em)}`);}}
+  }catch(x){if(avisa)msg.push('estoque: '+x.message);}
+  try{
+    /* com os Cadastros abertos na tela, espera: os dois gravando juntos perderiam um lado */
+    if(!(S.page==='financeiro'&&MOD_ATUAL==='cadastros')){
+      const k=await chamarTiny({acao:'srv_dados',job:'contatos'});
+      if(k&&k.em&&k.itens){
+        const cad=(await csNucleo.ler('cadastros'))||{};cad.contatos=Array.isArray(cad.contatos)?cad.contatos:[];cad.sync=cad.sync||{};
+        if(!cad.sync.srvEm||new Date(k.em)>new Date(cad.sync.srvEm)){
+          const porId=new Map(cad.contatos.map(c=>[String(c.tinyId),c]));let novos=0,n=0;
+          Object.values(k.itens).forEach(x=>{const tid=String(x.id||'');if(!tid)return;
+            const d={tinyId:tid,codigo:x.codigo||'',nome:x.nome||'',fantasia:x.fantasia||'',doc:x.cpf_cnpj||'',ie:x.ie||'',endereco:x.endereco||'',numero:x.numero||'',bairro:x.bairro||'',cep:x.cep||'',
+              cidade:x.cidade||'',uf:x.uf||'',fone:x.fone||'',email:x.email||'',vendedor:x.nome_vendedor||'',situacaoTiny:x.situacao||''};
+            if(Array.isArray(x.tipos))d.tiposTiny=x.tipos;
+            const a=porId.get(tid);if(a)Object.assign(a,d);else{cad.contatos.push({id:uid(),...d,ativo:true});novos++;}n++;});
+          cad.sync.srvEm=k.em;cad.sync.ultima=k.em;
+          await csNucleo.gravar('cadastros',cad);
+          csTlog('Contatos',{lidos:n,novos,det:`trazido do servidor · lista de ${csIsoDH(k.em)}`});msg.push(`${nf(n)} contatos (${nf(novos)} novos)`);}
+      }
+    }
+  }catch(x){if(avisa)msg.push('contatos: '+x.message);}
+  CS_TRAZENDO=false;
+  CS_SRV.traz=msg.length?`Trazido: ${msg.join(' · ')}.`:'Nada mais novo no servidor.';
+  if(avisa)toast(CS_SRV.traz);
+  if(S.page==='admin'&&ABA_ADMIN==='tiny')csTinyPag();
+}
+/* ao abrir e a cada 10 minutos, fora da tela do operador e da TV */
+const csSrvVez=()=>{try{if(!csSrvOk()||MODO_TV||/^#op/.test(location.hash))return;csSrvTrazer(false);}catch(e){}};
+setTimeout(csSrvVez,15000);setInterval(csSrvVez,10*60000);
+/* na página, o andamento se atualiza sozinho enquanto ela está aberta */
+setInterval(()=>{try{if(S.page==='admin'&&ABA_ADMIN==='tiny'&&document.visibilityState==='visible')csSrvStatus();}catch(e){}},30000);
 </script>
 <div style="position:fixed;right:14px;bottom:10px;z-index:300;background:#C2410C;color:#fff;font:700 11px Inter,sans-serif;letter-spacing:.04em;padding:5px 10px;border-radius:999px;box-shadow:0 4px 12px rgba(0,0,0,.2)" title="Lê a produção do PCP ao vivo e grava tudo à parte: nada chega ao PCP antigo">MODO TESTE · grava à parte</div>
 </body>

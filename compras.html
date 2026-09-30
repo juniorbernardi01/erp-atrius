@@ -391,6 +391,23 @@ select.st-h,select.st-a,select.st-b{border-radius:999px;font-weight:600}
 .rodfix{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid #E4E2DC;display:flex;justify-content:flex-end;align-items:flex-end;gap:22px;padding:6px 18px;z-index:20}
 .rodfix div{line-height:1.15;white-space:nowrap}.rodfix b{display:block;font-size:13px;font-weight:600}.rodfix span{font-size:10.5px;color:#8B93A1}.rodfix .sel b{color:#1D6FE8}
 #app{padding-bottom:56px}
+.colbt{display:inline-grid;place-items:center;width:34px;height:34px;border:1px solid #E4E2DC;border-radius:9px;background:#fff;color:#545C69;cursor:pointer;flex:none}
+.colbt:hover{border-color:#1D6FE8;color:#1D6FE8}
+.colsv{position:fixed;inset:0;background:rgba(20,24,33,.18);z-index:590}
+.colsp{position:fixed;top:0;right:0;bottom:0;width:340px;max-width:100vw;background:#FBFAF8;z-index:600;display:flex;flex-direction:column;padding:22px 22px 18px;border-left:1px solid #E4E2DC;font-family:inherit;color:#1A1D23}
+.colsp *{box-sizing:border-box}
+.colsp .ch{display:flex;align-items:center;gap:10px}.colsp .ch b{font-size:17px;flex:1}
+.colsp .x{background:none;border:0;color:#545C69;font:inherit;font-size:12.5px;cursor:pointer}
+.colsp p{font-size:13px;color:#6B7280;margin:14px 0 10px;line-height:1.45}
+.colsp .cl{flex:1;overflow:auto}
+.colsp label{display:flex;align-items:center;gap:12px;padding:9px 2px;border-bottom:1px solid #EFEEE9;font-size:13.5px;cursor:pointer}
+.colsp label.fx{color:#9AA1AD;cursor:default}
+.colsp .sw{width:30px;height:17px;border-radius:999px;background:#D5D8DE;position:relative;flex:none;transition:background .15s}
+.colsp .sw::after{content:'';position:absolute;top:2px;left:2px;width:13px;height:13px;border-radius:50%;background:#fff;transition:left .15s}
+.colsp .sw.on{background:#5B8DEF}.colsp .sw.on::after{left:15px}
+.colsp label.fx .sw{opacity:.5}
+.colsp .cf{display:flex;gap:8px;padding-top:14px;flex-wrap:wrap}
+.colsp .btn.lk{background:none;border:0;text-decoration:underline}
 
 </style></head><body>
 <div class="app" id="app"><div class="vazio">Carregando…</div></div>
@@ -550,6 +567,59 @@ function abrirPeriodo(botao,estado,opts,aplicar){
   des();
 }
 document.addEventListener('click',ev=>{const p=document.getElementById('perPop');if(p&&!p.contains(ev.target)&&ev.target!==p._dono&&!(p._dono&&p._dono.contains(ev.target)))p.remove();});
+
+/* =====================================================================
+   COLUNAS VISÍVEIS · o botão do Tiny que escolhe o que aparece na lista
+   Cada lista tem uma chave (vendas, compras, ordens...). A escolha fica
+   guardada no aparelho, por lista. Funciona olhando o cabeçalho da tabela:
+   não precisa mexer em quem desenha a lista — some a coluna com o título
+   que a pessoa desligou. Coluna sem título (marcar, três pontinhos) fica.
+   ===================================================================== */
+const COLS_SVG='<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 4v16M12 4v16M18 4v16"/><circle cx="6" cy="9" r="2" fill="#fff"/><circle cx="12" cy="15" r="2" fill="#fff"/><circle cx="18" cy="8" r="2" fill="#fff"/></svg>';
+const colsNorm=s=>String(s||'').replace(/[↑↓▲▼⇅]/g,'').replace(/\s+/g,' ').trim();
+function colsOcultas(k,pad){try{const v=JSON.parse(localStorage.getItem('erp.cols.'+k)||'null');return Array.isArray(v)?v:(pad||[]);}catch(e){return pad||[];}}
+function colsGravar(k,l){try{localStorage.setItem('erp.cols.'+k,JSON.stringify(l));}catch(e){}}
+function colsBotao(id){return `<button type="button" class="colbt" id="${id}" title="Escolher as colunas que aparecem">${COLS_SVG}</button>`;}
+/* painel: lista de rótulos com chave liga/desliga; fixas não desligam */
+function colsPainel(k,rotulos,pad,fixas,aoAplicar){
+  const velho=document.getElementById('colsP');if(velho){velho.remove();document.getElementById('colsV')&&document.getElementById('colsV').remove();}
+  const oc=new Set(colsOcultas(k,pad));fixas=fixas||[];
+  const v=document.createElement('div');v.id='colsV';v.className='colsv';
+  const p=document.createElement('div');p.id='colsP';p.className='colsp';
+  const lin=()=>rotulos.map(r=>`<label class="${fixas.includes(r)?'fx':''}"><span class="sw ${oc.has(r)?'':'on'}" data-cr="${r.replace(/"/g,'&quot;')}"></span>${r}</label>`).join('');
+  p.innerHTML=`<div class="ch"><b>Informações visíveis</b><button type="button" class="x" id="colsX">fechar ✕</button></div>
+    <p>Escolha as colunas que aparecem nesta lista. Fica guardado neste aparelho.</p>
+    <div class="cl" id="colsL">${lin()}</div>
+    <div class="cf"><button type="button" class="btn pri" id="colsOk">Aplicar</button><button type="button" class="btn" id="colsPad">Voltar ao padrão</button><button type="button" class="btn lk" id="colsC">Cancelar</button></div>`;
+  document.body.appendChild(v);document.body.appendChild(p);
+  const fecha=()=>{p.remove();v.remove();};
+  const liga=()=>p.querySelectorAll('[data-cr]').forEach(s=>s.onclick=()=>{const r=s.dataset.cr;if(fixas.includes(r))return;oc.has(r)?oc.delete(r):oc.add(r);s.classList.toggle('on',!oc.has(r));});
+  liga();v.onclick=fecha;p.querySelector('#colsX').onclick=fecha;p.querySelector('#colsC').onclick=fecha;
+  p.querySelector('#colsPad').onclick=()=>{oc.clear();(pad||[]).forEach(r=>oc.add(r));p.querySelector('#colsL').innerHTML=lin();liga();};
+  p.querySelector('#colsOk').onclick=()=>{colsGravar(k,[...oc]);fecha();if(aoAplicar)aoAplicar();};
+}
+/* tabela <table>: some a coluna pelo título do cabeçalho */
+function colsTabela(tab,k,pad){
+  if(!tab)return [];
+  const oc=new Set(colsOcultas(k,pad)),ths=[...tab.querySelectorAll('thead tr:first-child > th')];
+  const rot=ths.map(t=>colsNorm(t.textContent));const esc=[];
+  rot.forEach((r,i)=>{if(r&&oc.has(r))esc.push(i);});
+  ths.forEach((t,i)=>t.style.display=esc.includes(i)?'none':'');
+  tab.querySelectorAll('tbody > tr').forEach(tr=>{const tds=[...tr.children];if(tds.length!==ths.length)return;
+    tds.forEach((td,i)=>td.style.display=esc.includes(i)?'none':'');});
+  return rot.filter(Boolean);
+}
+/* lista em grade (div.h + div.r): some a coluna e refaz as trilhas */
+function colsGrade(caixa,k,trilhas,pad){
+  if(!caixa)return [];
+  const h=caixa.querySelector('.h');if(!h)return [];
+  const oc=new Set(colsOcultas(k,pad)),cel=[...h.children],rot=cel.map(c=>colsNorm(c.textContent));
+  const esc=[];rot.forEach((r,i)=>{if(r&&oc.has(r))esc.push(i);});
+  const tpl=trilhas.filter((t,i)=>!esc.includes(i)).join(' ');
+  [h,...caixa.querySelectorAll('.r')].forEach(r=>{if(r.children.length!==cel.length)return;
+    r.style.gridTemplateColumns=tpl;[...r.children].forEach((c,i)=>c.style.display=esc.includes(i)?'none':'');});
+  return rot.filter(Boolean);
+}
 
 const PAGINA_INICIAL='ordens';
 /* situações da ordem, na ordem em que ela anda. "rec" é a mercadoria que já
@@ -836,7 +906,7 @@ function telaOrdens(){
   const p=LST.per,nsel=[...LST.sel].filter(id=>DB.ocs.some(o=>o.id===id)).length;
   const col=(k,r,st)=>`<span class="so ${s.k===k?(s.dir>0?'asc':'desc'):''}" data-sort="${k}" style="${st||''}">${r}<i></i></span>`;
   $('app').innerHTML=`<div class="migalha">Compras › Ordens de compra</div>
-  <div class="topo"><h1>Ordens de compra</h1><span class="salvo"></span>${pode('compras.oc','editar')?'<button class="btn pri" id="bNova">＋ Nova ordem de compra</button>':''}</div>
+  <div class="topo"><h1>Ordens de compra</h1><span class="salvo"></span>${pode('compras.oc','editar')?'<button class="btn" id="bImpT">⤓ Importar OCs do Tiny</button><button class="btn pri" id="bNova">＋ Nova ordem de compra</button>':''}</div>
   <div class="barra"><div class="busca">⌕<input id="q" placeholder="Pesquise por fornecedor, Nº OC, NF, item ou marcador" value="${esc(LST.q)}"></div>
     ${perBotao('bPer',LST.per)}
     ${falhas.length?`<button class="pend" id="bPend"><i></i>${falhas.length} ${falhas.length>1?'ordens':'ordem'} com envio ao Tiny pendente · revisar</button>`:''}
@@ -847,7 +917,7 @@ function telaOrdens(){
         <div style="display:flex;gap:8px;margin-top:12px"><button class="btn" id="fLimpa">Limpar</button><button class="btn pri" id="fOk">Filtrar</button></div></div></div>
   </div>
   <div class="sts">${[['todas','Todas','#1A1D23'],['ras','Rascunho'],['env','Enviada ao fornecedor'],['rec','Recebida · a conferir'],['con','Concluída'],['can','Cancelada']].map(([k,r,c])=>
-    `<button data-sit="${k}" class="${LST.sit===k?'on':''}" style="--cor:${c||COR[k]}">${r}<b>${nf(cont(k))}</b></button>`).join('')}</div>
+    `<button data-sit="${k}" class="${LST.sit===k?'on':''}" style="--cor:${c||COR[k]}">${r}<b>${nf(cont(k))}</b></button>`).join('')}<span style="flex:1"></span>${colsBotao('bCols')}</div>
   <div class="bl"><span class="cont">${nsel?nsel+(nsel>1?' ordens marcadas':' ordem marcada'):'Marque as ordens para imprimir, salvar ou pôr marcadores em várias de uma vez'}</span><span style="flex:1"></span>
     <button class="btn ${nsel?'':'des'}" id="bLImp">⎙ Imprimir</button><button class="btn ${nsel?'':'des'}" id="bLPdf">⤓ Salvar PDF</button><button class="btn ${nsel?'':'des'}" id="bLMk">🏷 Marcadores</button></div>
   <div class="lo">${lista.length?`<div class="h"><span></span><span></span>${col('num','Nº OC')}${col('data','Data')}${col('prev','Previsão')}${col('forn','Fornecedor')}${col('tot','Total','justify-content:flex-end')}${col('sit','Situação')}<span>Marcadores</span>${col('nf','NF')}<span>Integração</span></div>
@@ -863,10 +933,15 @@ function telaOrdens(){
   <b>E</b> aparece quando o estoque foi lançado e <b>C</b> quando as contas foram lançadas. Clique no título das colunas para ordenar.</div>
   <div class="rodfix">${nsel?`<div class="sel"><b>${nf(DB.ocs.filter(o=>LST.sel.has(o.id)).reduce((s,o)=>s+contaOC(o).total,0),2)}</b><span>selecionadas (R$)</span></div>`:''}<div><b>${nf(lista.length)}</b><span>ordens</span></div><div><b>${nf(lista.reduce((s,o)=>s+contaOC(o).total,0),2)}</b><span>valor total (R$)</span></div></div>`;
   ligaLista(lista);
+  /* colunas visíveis, como no Tiny: a grade encolhe junto */
+  colsGrade(document.querySelector('.lo'),'compras',COLS_C_TRILHAS,[]);
+  if($('bCols'))$('bCols').onclick=()=>colsPainel('compras',['Nº OC','Data','Previsão','Fornecedor','Total','Situação','Marcadores','NF','Integração'],[],['Nº OC','Fornecedor'],telaOrdens);
 }
+const COLS_C_TRILHAS=['40px','26px','70px','88px','96px','minmax(200px,1fr)','104px','170px','130px','70px','84px'];
 function ligaLista(lista){
   const re=()=>telaOrdens();
   if($('bNova'))$('bNova').onclick=()=>novaOC();
+  if($('bImpT'))$('bImpT').onclick=importarOCsTiny;
   $('q').oninput=e=>{LST.q=e.target.value;clearTimeout(window._tq);window._tq=setTimeout(()=>{re();const i=$('q');i.focus();i.setSelectionRange(i.value.length,i.value.length);},250);};
   document.querySelectorAll('[data-sit]').forEach(b=>b.onclick=()=>{LST.sit=b.dataset.sit;re();});
   document.querySelectorAll('[data-sort]').forEach(h=>h.onclick=()=>{const k=h.dataset.sort;LST.sort=LST.sort.k===k?{k,dir:-LST.sort.dir}:{k,dir:['forn'].includes(k)?1:-1};re();});
@@ -2114,6 +2189,83 @@ function itemNovo(sku,forn,qtd,preco){
   const v=vinculo(fid,sku);
   if(v){if(v.nome)it.nomeForn=v.nome;if(v.cod)it.codForn=v.cod;if(v.modo==='cx'&&+v.cx>0){it.modo='cx';it.cx=+v.cx;it.qtdCx=Math.ceil(it.qtd/it.cx);it.qtd=r3(it.qtdCx*it.cx);}}
   return it;
+}
+
+/* =====================================================================
+   IMPORTAR OCs DO TINY (planilha exportada em Suprimentos › Ordens de compra)
+   Cada OC vem com o número do Tiny, fornecedor, datas e itens. O item vem
+   só com o nome: casa com o insumo pelo nome, e o que não casar a pessoa
+   escolhe na conferência. OC que já foi importada (mesmo número) fica de fora.
+   ===================================================================== */
+const nImp=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+const dmyY=s=>{if(typeof s==='number'&&s>20000){const d=new Date(Math.round((s-25569)*864e5));return d.toISOString().slice(0,10);}s=String(s||'').trim();const m=s.match(/^(\d{2})\/(\d{2})\/(\d{4})/);return m?`${m[3]}-${m[2]}-${m[1]}`:'';};
+function insPorNomeImp(nome){
+  const k=nImp(nome),l=N?N.insumos():[];
+  return l.find(x=>nImp(x.nome)===k)||l.find(x=>nImp(x.nome).startsWith(k)||k.startsWith(nImp(x.nome)))||null;
+}
+async function importarOCsTiny(){
+  const inp=document.createElement('input');inp.type='file';inp.accept='.xls,.xlsx,.csv';
+  inp.onchange=async()=>{
+    const arq=inp.files&&inp.files[0];if(!arq)return;
+    try{await carregaScript('https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js');}catch(e){return toast('Não consegui abrir o leitor de planilha.',true);}
+    let rows;
+    try{const wb=window.XLSX.read(await arq.arrayBuffer(),{type:'array'});rows=window.XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,defval:''});}
+    catch(e){return toast('Não consegui ler a planilha: '+e.message,true);}
+    conferirOCsTiny(rows,arq.name);
+  };
+  inp.click();
+}
+function lerOCsTiny(rows){
+  const cab=(rows[0]||[]).map(nImp),col=re=>cab.findIndex(c=>re.test(c));
+  const C={num:col(/^ordem de compra/),nf:col(/^n.*no fornecedor/),data:col(/^data$/),prev:col(/^data prevista/),forn:col(/^fornecedor$/),
+    item:col(/^item$/),qtd:col(/^quantidade/),val:col(/^valor produto/),desc:col(/^desconto/),frete:col(/^frete/),ipi:col(/^valor ipi/),tot:col(/^total/)};
+  if(C.num<0||C.item<0||C.qtd<0)throw new Error('a planilha não tem as colunas da exportação de ordens de compra do Tiny');
+  const num=v=>{if(typeof v==='number')return v;const s=String(v||'').replace(/\./g,'').replace(',','.');return +s||0;};
+  const ocs=new Map();
+  rows.slice(1).forEach(r=>{const n=String(r[C.num]||'').trim();if(!n)return;
+    const o=ocs.get(n)||{num:n,data:dmyY(r[C.data]),prev:dmyY(r[C.prev]),forn:String(r[C.forn]||'').trim(),numForn:C.nf>=0?String(r[C.nf]||'').replace(/^-$/,'').trim():'',itens:[],frete:0,desc:0};
+    const q=num(r[C.qtd]),v=num(r[C.val]);
+    o.itens.push({nome:String(r[C.item]||'').trim(),qtd:q,valor:v,preco:q?v/q:0,ipi:num(r[C.ipi]),total:num(r[C.tot])});
+    o.frete+=num(r[C.frete]);o.desc+=num(r[C.desc]);ocs.set(n,o);});
+  return [...ocs.values()];
+}
+function conferirOCsTiny(rows,nome){
+  let l;try{l=lerOCsTiny(rows);}catch(e){return toast(e.message,true);}
+  const ja=new Set(DB.ocs.filter(o=>o.origem==='Tiny'||o.numTiny).map(o=>String(o.numTiny||o.num)));
+  l.forEach(o=>{o.ja=ja.has(o.num);o.itens.forEach(i=>{const x=insPorNomeImp(i.nome);i.sku=x?x.sku:'';});});
+  const novas=l.filter(o=>!o.ja),semCasa=novas.reduce((a,o)=>a+o.itens.filter(i=>!i.sku).length,0);
+  const ins=(N?N.insumos():[]).slice().sort((a,b)=>a.nome.localeCompare(b.nome,'pt-BR'));
+  const opt=sel=>`<option value="">— escolha o insumo —</option>`+ins.map(x=>`<option value="${esc(x.sku)}" ${x.sku===sel?'selected':''}>${esc(x.nome)}</option>`).join('');
+  gaveta(`<div class="gt"><h2>Importar OCs do Tiny</h2><button class="btn sm" id="gX" style="margin-left:auto">Fechar ✕</button></div>
+    <p class="k">${esc(nome||'')} · ${l.length} OC(s) na planilha · <b>${novas.length} para importar</b>${l.length-novas.length?` · ${l.length-novas.length} já estão no ERP`:''}${semCasa?` · <b style="color:#B3261E">${semCasa} item(ns) para escolher</b>`:''}</p>
+    ${l.map((o,oi)=>`<div class="caixa" style="padding:10px 12px;margin-top:10px;${o.ja?'opacity:.55':''}">
+      <div style="display:flex;gap:8px;align-items:baseline"><b>OC ${esc(o.num)}</b><span>${esc(o.forn)}</span><span class="k" style="margin-left:auto">${o.data?br(o.data):''}${o.prev?' · prevista '+br(o.prev):' · sem previsão'}${o.ja?' · já importada':''}</span></div>
+      <table class="tv" style="margin-top:6px"><tbody>${o.itens.map((i,ii)=>`<tr><td>${esc(i.nome)}</td><td class="n">${nf(i.qtd)}</td><td class="n">R$ ${nf(i.valor,2)}</td>
+        <td>${o.ja?'':i.sku&&insumo(i.sku)&&nImp(insumo(i.sku).nome)===nImp(i.nome)?`<span class="k">✓ ${esc(insumo(i.sku).nome)}</span>`:`<select data-oi="${oi}" data-ii="${ii}" style="max-width:260px">${opt(i.sku)}</select>`}</td></tr>`).join('')}</tbody></table></div>`).join('')}
+    <div class="gr"><button class="btn" id="gC">Cancelar</button><button class="btn pri" id="gOk" ${novas.length?'':'disabled'}>Importar ${novas.length} OC(s)</button></div>`);
+  $('gX').onclick=$('gC').onclick=()=>gaveta(null);
+  document.querySelectorAll('[data-oi]').forEach(s=>s.onchange=()=>{l[+s.dataset.oi].itens[+s.dataset.ii].sku=s.value;});
+  $('gOk').onclick=()=>{
+    const falta=novas.flatMap(o=>o.itens.filter(i=>!i.sku));
+    if(falta.length&&!confirm(`${falta.length} item(ns) sem insumo escolhido ficam de fora das OCs. Importar assim mesmo?`))return;
+    let n=0,it=0;
+    novas.forEach(o=>{
+      let f=DB.fornecedores.find(x=>nImp(x.nome)===nImp(o.forn));
+      if(!f){f={id:uid(),nome:o.forn};DB.fornecedores.push(f);}
+      const oc=Object.assign(ocVazia(),{num:o.num,numTiny:o.num,data:o.data||hojeY(),prev:o.prev||'',sit:'env',forn:{...f},origem:'Tiny',nf:'',
+        obsInt:[o.numForn?'Nº no fornecedor: '+o.numForn:'',o.desc?'Desconto no Tiny: R$ '+nf(o.desc,2):''].filter(Boolean).join(' · ')});
+      o.itens.filter(i=>i.sku).forEach(i=>{const x=itemNovo(i.sku,f,i.qtd,i.preco);if(!x)return;
+        if(i.valor&&i.ipi)x.ipi=Math.round(i.ipi/i.valor*10000)/100;oc.itens.push(x);it++;});
+      if(o.frete)oc.frete.valor=Math.round(o.frete*100)/100;
+      try{oc.pag.categoria=categoriaSugerida(oc);}catch(e){}
+      try{gerarParcelas(oc,oc.pag.cond);}catch(e){}
+      hist(oc,'Importada do Tiny',`OC ${o.num} · ${o.itens.length} item(ns) na planilha`);
+      DB.ocs.push(oc);n++;});
+    DB.seq=Math.max(DB.seq||0,...DB.ocs.map(x=>+x.num||0));
+    salvar();gaveta(null);render();
+    try{N.logCarga&&N.logCarga('Ordens de compra',{lidos:l.length,novos:n,falhas:falta.length,det:`planilha ${nome||''} · ${it} itens`});}catch(e){}
+    toast(`${n} OC(s) importadas do Tiny${falta.length?` · ${falta.length} item(ns) ficaram de fora`:''}.`);
+  };
 }
 
 /* =====================================================================

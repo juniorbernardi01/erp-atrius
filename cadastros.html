@@ -396,6 +396,14 @@ input.sel4{width:120px;font-family:'JetBrains Mono',monospace}
 .nparm select,.nparm input:not([type=checkbox]){height:34px;border:1px solid var(--line);border-radius:8px;padding:0 8px;font:inherit;font-size:12.5px;background:#fff}
 .chk3{display:inline-flex!important;gap:5px;align-items:center;font-size:12.5px!important;color:var(--ink)!important;margin:0!important}
 .tv td small{display:block;font-size:10.5px;color:var(--ink3)}
+
+/* três pontinhos da lista de pedidos */
+.dots{width:28px;height:28px;border-radius:7px;display:grid;place-items:center;color:var(--ink2);font-weight:700;background:none;font-size:16px;border:1px solid transparent;cursor:pointer}
+.dots:hover{border-color:var(--line);background:#fff}
+.m3{position:fixed;z-index:80;width:240px;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 14px 36px rgba(20,24,33,.16);padding:6px 0}
+.m3 .mh{padding:9px 14px;border-bottom:1px solid var(--line2);font-size:12.5px;font-weight:600}.m3 button{display:block;width:100%;text-align:left;padding:8px 14px;font-size:13px;background:none;border:0;cursor:pointer;font:inherit}
+.m3 button:hover{background:var(--line3)}.m3 .sep{height:1px;background:var(--line2);margin:4px 0}
+.sts{align-items:center}
 .dots{width:28px;height:28px;border-radius:7px;display:grid;place-items:center;color:var(--ink2);font-weight:700;background:none;font-size:16px;cursor:pointer}.dots:hover{background:var(--line3)}
 .m3{position:fixed;z-index:80;width:240px;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 14px 36px rgba(20,24,33,.16);padding:6px 0}
 .m3 .mh{padding:9px 14px;border-bottom:1px solid var(--line2);font-size:12.5px;font-weight:600}.m3 button{display:block;width:100%;text-align:left;padding:8px 14px;font-size:13px;background:none}
@@ -415,6 +423,8 @@ input.sel4{width:120px;font-family:'JetBrains Mono',monospace}
 .sts button{position:relative}.sts button::after{content:'';position:absolute;left:8px;right:8px;bottom:-1px;height:3px;border-radius:3px;background:transparent}
 .sts button:hover::after,.sts button.on::after{background:var(--cor,#1A1D23)}
 @media (max-width:720px){.rodfix{justify-content:space-between}.tabsg{overflow-x:auto}}
+
+.pps{display:flex;gap:14px;flex-wrap:wrap;margin-top:4px}.pp{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:400}
 .perb2{display:inline-flex;align-items:center;gap:7px;height:36px;padding:0 14px;border:1.5px solid #9DB8E8;border-radius:999px;background:#fff;color:#1D6FE8;font-weight:600;font-size:13px;cursor:pointer;white-space:nowrap}
 .perb2:hover{border-color:#1D6FE8}.perb2.ativo{background:#EFF4FD}
 .perpop{position:fixed;z-index:500;width:560px;max-width:calc(100vw - 16px);background:#fff;border:1px solid #E4E2DC;border-radius:16px;box-shadow:0 14px 36px rgba(20,24,33,.18);display:grid;grid-template-columns:170px 1fr;overflow:hidden;font-family:inherit;color:#1A1D23}
@@ -448,6 +458,23 @@ input.sel4{width:120px;font-family:'JetBrains Mono',monospace}
 .rodfix{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid #E4E2DC;display:flex;justify-content:flex-end;align-items:flex-end;gap:22px;padding:6px 18px;z-index:20}
 .rodfix div{line-height:1.15;white-space:nowrap}.rodfix b{display:block;font-size:13px;font-weight:600}.rodfix span{font-size:10.5px;color:#8B93A1}.rodfix .sel b{color:#1D6FE8}
 #app{padding-bottom:56px}
+.colbt{display:inline-grid;place-items:center;width:34px;height:34px;border:1px solid #E4E2DC;border-radius:9px;background:#fff;color:#545C69;cursor:pointer;flex:none}
+.colbt:hover{border-color:#1D6FE8;color:#1D6FE8}
+.colsv{position:fixed;inset:0;background:rgba(20,24,33,.18);z-index:590}
+.colsp{position:fixed;top:0;right:0;bottom:0;width:340px;max-width:100vw;background:#FBFAF8;z-index:600;display:flex;flex-direction:column;padding:22px 22px 18px;border-left:1px solid #E4E2DC;font-family:inherit;color:#1A1D23}
+.colsp *{box-sizing:border-box}
+.colsp .ch{display:flex;align-items:center;gap:10px}.colsp .ch b{font-size:17px;flex:1}
+.colsp .x{background:none;border:0;color:#545C69;font:inherit;font-size:12.5px;cursor:pointer}
+.colsp p{font-size:13px;color:#6B7280;margin:14px 0 10px;line-height:1.45}
+.colsp .cl{flex:1;overflow:auto}
+.colsp label{display:flex;align-items:center;gap:12px;padding:9px 2px;border-bottom:1px solid #EFEEE9;font-size:13.5px;cursor:pointer}
+.colsp label.fx{color:#9AA1AD;cursor:default}
+.colsp .sw{width:30px;height:17px;border-radius:999px;background:#D5D8DE;position:relative;flex:none;transition:background .15s}
+.colsp .sw::after{content:'';position:absolute;top:2px;left:2px;width:13px;height:13px;border-radius:50%;background:#fff;transition:left .15s}
+.colsp .sw.on{background:#5B8DEF}.colsp .sw.on::after{left:15px}
+.colsp label.fx .sw{opacity:.5}
+.colsp .cf{display:flex;gap:8px;padding-top:14px;flex-wrap:wrap}
+.colsp .btn.lk{background:none;border:0;text-decoration:underline}
 
 </style></head><body>
 <div class="app" id="app"><div class="vazio">Carregando…</div></div>
@@ -608,6 +635,59 @@ function abrirPeriodo(botao,estado,opts,aplicar){
 }
 document.addEventListener('click',ev=>{const p=document.getElementById('perPop');if(p&&!p.contains(ev.target)&&ev.target!==p._dono&&!(p._dono&&p._dono.contains(ev.target)))p.remove();});
 
+/* =====================================================================
+   COLUNAS VISÍVEIS · o botão do Tiny que escolhe o que aparece na lista
+   Cada lista tem uma chave (vendas, compras, ordens...). A escolha fica
+   guardada no aparelho, por lista. Funciona olhando o cabeçalho da tabela:
+   não precisa mexer em quem desenha a lista — some a coluna com o título
+   que a pessoa desligou. Coluna sem título (marcar, três pontinhos) fica.
+   ===================================================================== */
+const COLS_SVG='<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 4v16M12 4v16M18 4v16"/><circle cx="6" cy="9" r="2" fill="#fff"/><circle cx="12" cy="15" r="2" fill="#fff"/><circle cx="18" cy="8" r="2" fill="#fff"/></svg>';
+const colsNorm=s=>String(s||'').replace(/[↑↓▲▼⇅]/g,'').replace(/\s+/g,' ').trim();
+function colsOcultas(k,pad){try{const v=JSON.parse(localStorage.getItem('erp.cols.'+k)||'null');return Array.isArray(v)?v:(pad||[]);}catch(e){return pad||[];}}
+function colsGravar(k,l){try{localStorage.setItem('erp.cols.'+k,JSON.stringify(l));}catch(e){}}
+function colsBotao(id){return `<button type="button" class="colbt" id="${id}" title="Escolher as colunas que aparecem">${COLS_SVG}</button>`;}
+/* painel: lista de rótulos com chave liga/desliga; fixas não desligam */
+function colsPainel(k,rotulos,pad,fixas,aoAplicar){
+  const velho=document.getElementById('colsP');if(velho){velho.remove();document.getElementById('colsV')&&document.getElementById('colsV').remove();}
+  const oc=new Set(colsOcultas(k,pad));fixas=fixas||[];
+  const v=document.createElement('div');v.id='colsV';v.className='colsv';
+  const p=document.createElement('div');p.id='colsP';p.className='colsp';
+  const lin=()=>rotulos.map(r=>`<label class="${fixas.includes(r)?'fx':''}"><span class="sw ${oc.has(r)?'':'on'}" data-cr="${r.replace(/"/g,'&quot;')}"></span>${r}</label>`).join('');
+  p.innerHTML=`<div class="ch"><b>Informações visíveis</b><button type="button" class="x" id="colsX">fechar ✕</button></div>
+    <p>Escolha as colunas que aparecem nesta lista. Fica guardado neste aparelho.</p>
+    <div class="cl" id="colsL">${lin()}</div>
+    <div class="cf"><button type="button" class="btn pri" id="colsOk">Aplicar</button><button type="button" class="btn" id="colsPad">Voltar ao padrão</button><button type="button" class="btn lk" id="colsC">Cancelar</button></div>`;
+  document.body.appendChild(v);document.body.appendChild(p);
+  const fecha=()=>{p.remove();v.remove();};
+  const liga=()=>p.querySelectorAll('[data-cr]').forEach(s=>s.onclick=()=>{const r=s.dataset.cr;if(fixas.includes(r))return;oc.has(r)?oc.delete(r):oc.add(r);s.classList.toggle('on',!oc.has(r));});
+  liga();v.onclick=fecha;p.querySelector('#colsX').onclick=fecha;p.querySelector('#colsC').onclick=fecha;
+  p.querySelector('#colsPad').onclick=()=>{oc.clear();(pad||[]).forEach(r=>oc.add(r));p.querySelector('#colsL').innerHTML=lin();liga();};
+  p.querySelector('#colsOk').onclick=()=>{colsGravar(k,[...oc]);fecha();if(aoAplicar)aoAplicar();};
+}
+/* tabela <table>: some a coluna pelo título do cabeçalho */
+function colsTabela(tab,k,pad){
+  if(!tab)return [];
+  const oc=new Set(colsOcultas(k,pad)),ths=[...tab.querySelectorAll('thead tr:first-child > th')];
+  const rot=ths.map(t=>colsNorm(t.textContent));const esc=[];
+  rot.forEach((r,i)=>{if(r&&oc.has(r))esc.push(i);});
+  ths.forEach((t,i)=>t.style.display=esc.includes(i)?'none':'');
+  tab.querySelectorAll('tbody > tr').forEach(tr=>{const tds=[...tr.children];if(tds.length!==ths.length)return;
+    tds.forEach((td,i)=>td.style.display=esc.includes(i)?'none':'');});
+  return rot.filter(Boolean);
+}
+/* lista em grade (div.h + div.r): some a coluna e refaz as trilhas */
+function colsGrade(caixa,k,trilhas,pad){
+  if(!caixa)return [];
+  const h=caixa.querySelector('.h');if(!h)return [];
+  const oc=new Set(colsOcultas(k,pad)),cel=[...h.children],rot=cel.map(c=>colsNorm(c.textContent));
+  const esc=[];rot.forEach((r,i)=>{if(r&&oc.has(r))esc.push(i);});
+  const tpl=trilhas.filter((t,i)=>!esc.includes(i)).join(' ');
+  [h,...caixa.querySelectorAll('.r')].forEach(r=>{if(r.children.length!==cel.length)return;
+    r.style.gridTemplateColumns=tpl;[...r.children].forEach((c,i)=>c.style.display=esc.includes(i)?'none':'');});
+  return rot.filter(Boolean);
+}
+
 const deBR=s=>{const m=String(s||'').trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);if(!m)return '';
   const a=m[3].length===2?'20'+m[3]:m[3];const d=new Date(+a,+m[2]-1,+m[1]);
   if(d.getDate()!==+m[1]||d.getMonth()!==+m[2]-1)return '';return ymd(d);};
@@ -650,13 +730,40 @@ const soNum=s=>String(s||'').replace(/\D/g,'');
 const semAc=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
 const S2={aba:'todos',q:'',ord:{k:'nome',d:1},grupo:null,vaba:'dados',faba:'ativos'};
 let FORN_CNPJ=null;
+let FORN_NOMES=null;
 async function fornecedoresCompras(){
-  if(FORN_CNPJ)return FORN_CNPJ;FORN_CNPJ=new Set();
-  try{const c=await N.ler('compras');((c&&c.ocs)||[]).forEach(o=>{const d=soNum(o.fornCnpj||o.cnpj||(o.fornecedor&&o.fornecedor.cnpj));if(d)FORN_CNPJ.add(d);});
+  if(FORN_CNPJ)return FORN_CNPJ;FORN_CNPJ=new Set();FORN_NOMES=new Set();
+  try{const c=await N.ler('compras');((c&&c.ocs)||[]).forEach(o=>{const d=soNum(o.fornCnpj||o.cnpj||(o.fornecedor&&o.fornecedor.cnpj)||(o.forn&&o.forn.cnpj));if(d)FORN_CNPJ.add(d);if(o.forn&&o.forn.nome)FORN_NOMES.add(nomeN(o.forn.nome));});
+    ((c&&c.fornecedores)||[]).forEach(f=>{const d=soNum(f.cnpj);if(d)FORN_CNPJ.add(d);if(f.nome)FORN_NOMES.add(nomeN(f.nome));});
     ((c&&c.hom)||[]).forEach(h=>{const d=soNum(h.cnpj);if(d)FORN_CNPJ.add(d);});}catch(e){}
   return FORN_CNPJ;
 }
-const tipoDe=c=>c.tipo||(FORN_CNPJ&&FORN_CNPJ.has(soNum(c.doc))?'Fornecedor':'Cliente');
+/* O tipo vem do cadastro do Tiny (Cliente, Fornecedor, Transportador...),
+   que a busca de contatos não traz: ele é lido um a um, depois da importação.
+   Escolhido à mão no ERP, vale o que foi escolhido. Sem nada, o palpite antigo:
+   quem aparece nas compras é fornecedor. */
+const tiposT=c=>Array.isArray(c.tiposTiny)?c.tiposTiny:null;
+/* Papéis: um contato pode ser cliente, fornecedor e transportador ao mesmo
+   tempo. Escolhidos no ERP, valem os escolhidos; sem isso, o que o Tiny diz;
+   sem nada, o palpite: quem aparece nas ordens de compra é fornecedor.
+   Transportador é antes de tudo fornecedor (de frete) e só compra da gente
+   se alguém marcar "Cliente" no cadastro dele. */
+const PAPEIS=['Cliente','Fornecedor','Transportador'];
+const nomeN=s=>semAc(String(s||'')).replace(/[^a-z0-9]+/g,' ').trim();
+function papeisDe(c){
+  if(Array.isArray(c.papeis)&&c.papeis.length)return c.papeis;
+  const t=tiposT(c),out=new Set();
+  if(t&&t.length){t.forEach(x=>{if(/client/i.test(x))out.add('Cliente');if(/fornec/i.test(x))out.add('Fornecedor');if(/transp/i.test(x)){out.add('Transportador');out.add('Fornecedor');}});}
+  if(FORN_CNPJ&&(FORN_CNPJ.has(soNum(c.doc))||(FORN_NOMES&&FORN_NOMES.has(nomeN(c.nome)))))out.add('Fornecedor');
+  if(c.tipo)out.add(c.tipo);
+  if(!out.size)out.add('Cliente');
+  return [...out];
+}
+const ehCli=c=>papeisDe(c).includes('Cliente');
+const ehForn=c=>papeisDe(c).includes('Fornecedor');
+const ehTransp=c=>papeisDe(c).includes('Transportador');
+const principalDe=c=>c.tipo||(ehTransp(c)?'Fornecedor':papeisDe(c)[0]);
+const tipoDe=c=>{const p=principalDe(c),o=papeisDe(c).filter(x=>x!==p);return p+(o.length?' · '+o.join(', ').toLowerCase():'');};
 const grupoDe=c=>DB.grupos.find(g=>g.id===c.grupo);
 function ordena(l,f){const {k,d}=S2.ord;return l.slice().sort((a,b)=>{const x=f(a,k),y=f(b,k);return (x>y?1:x<y?-1:0)*d;});}
 function th(k,r,st){return `<th class="so2 ${S2.ord.k===k?(S2.ord.d>0?'asc':'desc'):''}" data-o="${k}" style="${st||''}">${r}</th>`;}
@@ -678,9 +785,9 @@ function telaClientes(){
   const q=semAc(S2.q);
   const casa=c=>!q||semAc([c.nome,c.fantasia,c.doc,c.cidade,c.vendedor,(grupoDe(c)||{}).nome].join(' ')).includes(q);
   const base=DB.contatos.filter(casa);
-  const conta={todos:base.filter(c=>c.ativo!==false).length,cli:base.filter(c=>c.ativo!==false&&tipoDe(c)==='Cliente').length,
-    forn:base.filter(c=>c.ativo!==false&&tipoDe(c)==='Fornecedor').length,grupos:DB.grupos.length,ina:base.filter(c=>c.ativo===false).length};
-  const abas=[['todos','Todos','#1A1D23'],['cli','Clientes','#1D6FE8'],['forn','Fornecedores','#B45309'],['grupos','Grupos econômicos','#6B21A8'],['ina','Inativos','#8B93A1']];
+  const conta={todos:base.filter(c=>c.ativo!==false).length,cli:base.filter(c=>c.ativo!==false&&ehCli(c)).length,
+    forn:base.filter(c=>c.ativo!==false&&ehForn(c)).length,tr:base.filter(c=>c.ativo!==false&&ehTransp(c)).length,grupos:DB.grupos.length,ina:base.filter(c=>c.ativo===false).length};
+  const abas=[['todos','Todos','#1A1D23'],['cli','Clientes','#1D6FE8'],['forn','Fornecedores','#B45309'],['tr','Transportadores','#0E7490'],['grupos','Grupos econômicos','#6B21A8'],['ina','Inativos','#8B93A1']];
   const ult=DB.sync.ultima?new Date(DB.sync.ultima).toLocaleString('pt-BR'):null;
   let corpo='';
   if(S2.aba==='grupos'){
@@ -692,24 +799,25 @@ function telaClientes(){
       ||'<tr><td colspan="5" class="vazio">Nenhum grupo ainda. Use “＋ Novo grupo econômico”.</td></tr>'}</tbody></table>`;
   }else{
     let l=base.filter(c=>S2.aba==='ina'?c.ativo===false:c.ativo!==false);
-    if(S2.aba==='cli')l=l.filter(c=>tipoDe(c)==='Cliente');if(S2.aba==='forn')l=l.filter(c=>tipoDe(c)==='Fornecedor');
+    if(S2.aba==='cli')l=l.filter(ehCli);if(S2.aba==='forn')l=l.filter(ehForn);if(S2.aba==='tr')l=l.filter(ehTransp);
     l=ordena(l,(c,k)=>k==='g'?semAc((grupoDe(c)||{}).nome||'~'):semAc(k==='t'?tipoDe(c):c[k]||''));
     const mostra=l.slice(0,500);
-    corpo=l.length?`<table class="tv"><thead><tr><th style="width:34px"></th>${th('nome','Nome')}${th('doc','CNPJ ou CPF')}${th('cidade','Cidade')}${th('t','Tipo')}${th('vendedor','Vendedor')}${th('g','Grupo econômico')}</tr></thead><tbody>
+    corpo=l.length?`<table class="tv" id="tabC"><thead><tr><th style="width:34px"></th>${th('nome','Nome')}${th('doc','CNPJ ou CPF')}${th('cidade','Cidade')}${th('t','Tipo')}${th('vendedor','Vendedor')}${th('g','Grupo econômico')}</tr></thead><tbody>
       ${mostra.map(c=>{const g=grupoDe(c);return `<tr data-c="${c.id}"><td><button class="dots" data-cm="${c.id}">⋯</button></td><td><b>${esc(c.nome)}</b>${c.fantasia&&c.fantasia!==c.nome?`<small>${esc(c.fantasia)}</small>`:''}</td>
         <td class="m">${esc(c.doc||'—')}</td><td>${esc([c.cidade,c.uf].filter(Boolean).join(' · ')||'—')}</td><td>${tipoDe(c)}</td><td>${esc(c.vendedor||'—')}</td><td>${g?`<span class="tgr">${esc(g.nome)}</span>`:'<span class="k">—</span>'}</td></tr>`;}).join('')}</tbody></table>
       ${l.length>500?`<div class="leg">Mostrando 500 de ${nf(l.length)}. Use a busca para achar os outros.</div>`:''}`
       :`<div class="vazio">${DB.contatos.length?'Nenhum contato com essa busca.':'Nenhum contato ainda. Clique em <b>⤓ Importar do Tiny</b> para trazer todos.'}</div>`;
   }
   $('app').innerHTML=`<div class="migalha">Cadastros › Clientes e fornecedores</div>
-  <div class="topo"><h1>Clientes e fornecedores</h1><span class="salvo"></span>${ed&&S2.aba==='grupos'?'<button class="btn pri" id="bNg">＋ Novo grupo econômico</button>':''}${ed?'<button class="btn" id="bImp">⤓ Importar do Tiny</button>':''}</div>
+  <div class="topo"><h1>Clientes e fornecedores</h1><span class="salvo"></span>${ed&&S2.aba==='grupos'?'<button class="btn pri" id="bNg">＋ Novo grupo econômico</button>':''}${ed&&DB.contatos.length?`<button class="btn" id="bTip">↻ Tipos do Tiny${(()=>{const n=DB.contatos.filter(c=>!tiposT(c)).length;return n?` (${nf(n)} sem tipo)`:'';})()}</button>`:''}${ed?'<button class="btn" id="bImp">⤓ Importar do Tiny</button>':''}</div>
   <div class="sync"><b>Vem do Tiny.</b> ${nf(DB.contatos.length)} contatos${ult?' · última importação '+ult:''}. Por enquanto os contatos só vêm do Tiny; criar contato pelo ERP fica para depois.</div>
-  <div class="barra"><div class="busca">⌕<input id="q" placeholder="Nome, CNPJ, cidade, vendedor ou grupo econômico" value="${esc(S2.q)}"></div></div>
+  <div class="barra"><div class="busca">⌕<input id="q" placeholder="Nome, CNPJ, cidade, vendedor ou grupo econômico" value="${esc(S2.q)}"></div><span style="flex:1"></span>${S2.aba!=='grupos'?colsBotao('bCols'):''}</div>
   <div class="sts">${abas.map(([k,r,c])=>`<button data-a="${k}" class="${S2.aba===k?'on':''}" style="--cor:${c}">${r}<b>${nf(conta[k])}</b></button>`).join('')}</div>
   <div class="rolx">${corpo}</div>${rodape([[nf(S2.aba==='grupos'?DB.grupos.length:conta[S2.aba]),S2.aba==='grupos'?'grupos':'contatos']])}`;
   $('q').oninput=e=>{S2.q=e.target.value;clearTimeout(window._t);window._t=setTimeout(()=>{telaClientes();const i=$('q');i.focus();i.setSelectionRange(i.value.length,i.value.length);},250);};
   document.querySelectorAll('[data-a]').forEach(b=>b.onclick=()=>{S2.aba=b.dataset.a;S2.grupo=null;telaClientes();});
   ligaOrdem(telaClientes);
+  if($('tabC')){const rot=colsTabela($('tabC'),'cadastros',[]);if($('bCols'))$('bCols').onclick=()=>colsPainel('cadastros',rot,[],['Nome'],telaClientes);}
   document.querySelectorAll('[data-c]').forEach(r=>r.onclick=ev=>{if(ev.target.closest('.dots'))return;fichaContato(r.dataset.c);});
   document.querySelectorAll('[data-cm]').forEach(b=>b.onclick=ev=>{ev.stopPropagation();const c=DB.contatos.find(x=>x.id===b.dataset.cm);
     menu3(b,c.nome,[['Abrir',()=>fichaContato(c.id)],...(ed?[['Grupo econômico…',()=>fichaContato(c.id)],'-',[c.ativo===false?'Reativar':'Inativar no ERP',()=>{c.ativo=c.ativo===false;salvar();telaClientes();},c.ativo!==false]]:[])]);});
@@ -719,6 +827,7 @@ function telaClientes(){
       ['Apagar grupo',()=>{if(!confirm(`Apagar o grupo ${g.nome}? As lojas continuam cadastradas, só saem do grupo.`))return;DB.contatos.forEach(c=>{if(c.grupo===g.id)delete c.grupo;});DB.grupos=DB.grupos.filter(x=>x!==g);salvar();telaClientes();},true]]:[])]);});
   if($('bNg'))$('bNg').onclick=()=>{const n=prompt('Nome do grupo econômico (ex.: Rede Polo):');if(!n||!n.trim())return;const g={id:uid(),nome:n.trim()};DB.grupos.push(g);salvar();S2.grupo=g.id;telaClientes();};
   if($('bImp'))$('bImp').onclick=importarContatos;
+  if($('bTip'))$('bTip').onclick=()=>buscarTipos(true);
 }
 function telaGrupo(id){
   const g=DB.grupos.find(x=>x.id===id);if(!g){S2.grupo=null;return telaClientes();}
@@ -749,13 +858,15 @@ function fichaContato(id){
     <div><span>Telefone</span><b>${esc(c.fone||'—')}</b></div><div><span>E-mail</span><b>${esc(c.email||'—')}</b></div><div><span>Vendedor no Tiny</span><b>${esc(c.vendedor||'—')}</b></div><div><span>Código no Tiny</span><b>${esc(c.tinyId||'—')}</b></div></div></div>
   <div class="caixa" style="padding:14px"><div class="st2">Do ERP</div><div class="campos">
     <div class="l2"><label>Grupo econômico</label><select id="cG" ${ed?'':'disabled'}><option value="">— sem grupo —</option>${DB.grupos.slice().sort((a,b)=>a.nome.localeCompare(b.nome,'pt-BR')).map(g=>`<option value="${g.id}" ${c.grupo===g.id?'selected':''}>${esc(g.nome)}</option>`).join('')}<option value="__novo">＋ novo grupo…</option></select></div>
-    <div><label>Tipo</label><select id="cT" ${ed?'':'disabled'}><option value="">automático (${tipoDe({...c,tipo:''})})</option><option ${c.tipo==='Cliente'?'selected':''}>Cliente</option><option ${c.tipo==='Fornecedor'?'selected':''}>Fornecedor</option></select></div>
+    <div><label>Tipo principal</label><select id="cT" ${ed?'':'disabled'}>${PAPEIS.map(p=>`<option ${principalDe(c)===p?'selected':''}>${p}</option>`).join('')}</select></div>
+    <div class="l2"><label>Também é</label><div class="pps">${PAPEIS.map(p=>`<label class="pp"><input type="checkbox" data-pp="${p}" ${papeisDe(c).includes(p)?'checked':''} ${ed?'':'disabled'}> ${p==='Cliente'?'Cliente (pode comprar da gente)':p}</label>`).join('')}</div>
+      <small class="k">${Array.isArray(c.papeis)&&c.papeis.length?'Escolhido no ERP.':tiposT(c)&&tiposT(c).length?'Veio do Tiny: '+esc(tiposT(c).join(', '))+'.':'Palpite do ERP (compras e cadastro).'}</small></div>
     <div class="l2"><label>Observação interna</label><textarea id="cO" rows="3" ${ed?'':'disabled'}>${esc(c.obs||'')}</textarea></div></div></div></div>
   ${ed?'<div class="gr"><button class="btn" id="gC">Cancelar</button><button class="btn pri" id="gS">Salvar</button></div>':''}`);
   $('gX').onclick=()=>gaveta(null);if($('gC'))$('gC').onclick=()=>gaveta(null);
   if($('cG'))$('cG').onchange=e=>{if(e.target.value==='__novo'){const n=prompt('Nome do novo grupo econômico:');if(n&&n.trim()){const g={id:uid(),nome:n.trim()};DB.grupos.push(g);
     e.target.insertAdjacentHTML('afterbegin',`<option value="${g.id}">${esc(g.nome)}</option>`);e.target.value=g.id;}else e.target.value=c.grupo||'';}};
-  if($('gS'))$('gS').onclick=()=>{const g=$('cG').value;if(g)c.grupo=g;else delete c.grupo;const t=$('cT').value;if(t)c.tipo=t;else delete c.tipo;c.obs=$('cO').value.trim();salvar();gaveta(null);render();toast('Contato salvo.');};
+  if($('gS'))$('gS').onclick=()=>{const g=$('cG').value;if(g)c.grupo=g;else delete c.grupo;const t=$('cT').value;c.tipo=t;const pp=[...document.querySelectorAll('[data-pp]')].filter(x=>x.checked).map(x=>x.dataset.pp);if(!pp.includes(t))pp.unshift(t);c.papeis=PAPEIS.filter(p=>pp.includes(p));c.obs=$('cO').value.trim();salvar();gaveta(null);render();toast('Contato salvo.');};
 }
 async function importarContatos(){
   if(!confirm('Trazer todos os contatos do Tiny agora? Os que já existem são atualizados pelo código do Tiny; o grupo econômico e as observações do ERP ficam como estão.'))return;
@@ -772,14 +883,51 @@ async function importarContatos(){
       const s=document.querySelector('.sync');if(s)s.innerHTML=`<b>Importando do Tiny…</b> página ${pag} de ${paginas||'?'} · ${nf(n)} contatos lidos`;
       pag++;
     }
-    DB.sync.ultima=new Date().toISOString();await salvar();toast(`${nf(n)} contatos lidos do Tiny (${nf(novos)} novos).`);
-  }catch(e){toast('Tiny: '+e.message,true);await salvar();}
+    DB.sync.ultima=new Date().toISOString();await salvar();toast(`${nf(n)} contatos lidos do Tiny (${nf(novos)} novos). Agora o tipo de cada um…`);
+    try{N.logCarga&&N.logCarga('Contatos',{lidos:n,novos,det:`${nf(paginas)} página(s) do Tiny`});}catch(e){}
+    await buscarTipos(false);
+  }catch(e){toast('Tiny: '+e.message,true);try{N.logCarga&&N.logCarga('Contatos',{lidos:n,erro:e.message});}catch(x){}await salvar();}
   render();
 }
+/* Lê o tipo de cada contato no Tiny (cliente, fornecedor...), 20 por vez.
+   Só os que ainda não têm, a não ser que peça para refazer tudo. Pode parar
+   no meio: o que já foi lido fica gravado e a próxima rodada continua dali. */
+let LENDO_TIPOS=false;
+async function buscarTipos(pergunta){
+  if(LENDO_TIPOS)return;
+  let alvo=DB.contatos.filter(c=>c.tinyId&&!tiposT(c));
+  if(pergunta){
+    const tudo=!alvo.length||confirm(alvo.length?`${nf(alvo.length)} contatos ainda sem tipo.\n\nOK: ler só esses.\nCancelar: reler o tipo de todos (${nf(DB.contatos.length)}).`:'');
+    if(!tudo||!alvo.length){if(!confirm(`Reler o tipo de todos os ${nf(DB.contatos.length)} contatos no Tiny? Leva alguns minutos.`))return;alvo=DB.contatos.filter(c=>c.tinyId);}
+  }
+  if(!alvo.length)return;
+  LENDO_TIPOS=true;let feitos=0,falhas=0;const t0=Date.now();
+  const mostra=()=>{const s=document.querySelector('.sync');if(s)s.innerHTML=`<b>Lendo o tipo no Tiny…</b> ${nf(feitos)} de ${nf(alvo.length)} contatos${falhas?` · ${nf(falhas)} sem resposta`:''}. Pode continuar usando o sistema.`;};
+  try{
+    for(let i=0;i<alvo.length;i+=20){
+      const lote=alvo.slice(i,i+20);
+      const r=N.teste?testeTipos(lote):await N.tiny({acao:'contato_tipos',ids:lote.map(c=>c.tinyId)});
+      const tp=(r&&r.tipos)||{};
+      lote.forEach(c=>{const v=tp[String(c.tinyId)];if(Array.isArray(v)){c.tiposTiny=v;feitos++;}else falhas++;});
+      mostra();if((i/20)%5===4)await salvar();
+    }
+    await salvar();
+    const f=DB.contatos.filter(ehForn).length;
+    try{N.logCarga&&N.logCarga('Contatos',{lidos:feitos,falhas,det:`tipo de cada contato · ${nf(f)} fornecedores · ${nf(DB.contatos.filter(ehTransp).length)} transportadores`});}catch(e){}
+    toast(`Tipo lido em ${nf(feitos)} contatos · ${nf(f)} fornecedores${falhas?` · ${nf(falhas)} sem resposta (clique em Tipos do Tiny para tentar de novo)`:''}.`,!!falhas);
+  }catch(e){
+    await salvar();
+    toast(/desconhecid|n[ãa]o existe|unknown|acao/i.test(String(e.message))
+      ?'A função do Tiny no Supabase ainda é a antiga: publique o supabase-funcao-tiny.ts novo e clique em Tipos do Tiny.'
+      :'Tiny: '+e.message,true);
+  }
+  LENDO_TIPOS=false;render();
+}
+function testeTipos(l){const t={};l.forEach(c=>{t[String(c.tinyId)]=/POLO|CLIENTE/i.test(c.nome)?['Cliente']:['Fornecedor'];});return {tipos:t};}
 function testeContatos(p){
   if(p>3)return {contatos:[],paginas:3};
   const cid=['Porto Alegre','Canoas','Novo Hamburgo','Gravataí','São Leopoldo'];
-  return {paginas:3,contatos:Array.from({length:20},(_,i)=>{const k=(p-1)*20+i;return {id:String(7000+k),nome:k<6?`SUPERMERCADOS POLO LTDA · LOJA ${k+1}`:`CLIENTE TESTE ${k}`,fantasia:k<6?`Polo ${k+1}`:'',
+  return {paginas:3,contatos:Array.from({length:20},(_,i)=>{const k=(p-1)*20+i;return {id:String(7000+k),nome:k<6?`SUPERMERCADOS POLO LTDA · LOJA ${k+1}`:k>=50?`EMBALAGENS FORNECEDORA ${k}`:`CLIENTE TESTE ${k}`,fantasia:k<6?`Polo ${k+1}`:'',
     cpf_cnpj:`${String(10+k).padStart(2,'0')}.345.678/0001-${String(k%99).padStart(2,'0')}`,cidade:cid[k%5],uf:'RS',nome_vendedor:['Carlos','Marta','Polo'][k%3],fone:'(51) 9 0000-0000'};})};
 }
 
@@ -803,7 +951,7 @@ function telaVendedores(){
   if($('bNv'))$('bNv').onclick=()=>{const v={id:uid(),nome:'',tipo:'Representante PJ',ativo:true,cobertura:{modo:'regiao',cidades:[],clientes:[]}};fichaVendedor(v.id,v);};
   if($('bTv'))$('bTv').onclick=()=>{const nomes=[...new Set(DB.contatos.map(c=>c.vendedor).filter(Boolean))];let n=0;
     nomes.forEach(nm=>{if(!DB.vendedores.some(v=>semAc(v.nome)===semAc(nm))){DB.vendedores.push({id:uid(),nome:nm,tipo:'Representante PJ',ativo:true,cobertura:{modo:'regiao',cidades:[],clientes:[]}});n++;}});
-    salvar();telaVendedores();toast(n?`${n} vendedor(es) trazidos dos contatos do Tiny.`:(DB.contatos.length?'Todos os vendedores do Tiny já estão aqui.':'Importe os contatos do Tiny primeiro, em Clientes e fornecedores.'),!n&&!DB.contatos.length);};
+    salvar();try{N.logCarga&&N.logCarga('Vendedores',{lidos:nomes.length,novos:n,det:'dos contatos do Tiny'});}catch(e){}telaVendedores();toast(n?`${n} vendedor(es) trazidos dos contatos do Tiny.`:(DB.contatos.length?'Todos os vendedores do Tiny já estão aqui.':'Importe os contatos do Tiny primeiro, em Clientes e fornecedores.'),!n&&!DB.contatos.length);};
 }
 function fichaVendedor(id,novo,rasc){
   const v0=novo||DB.vendedores.find(x=>x.id===id);if(!v0)return;const ed=pode('cad.vend','editar');
