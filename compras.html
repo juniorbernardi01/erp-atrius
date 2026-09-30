@@ -1173,8 +1173,8 @@ function ligaOC(){
   $('prev').onchange=e=>{const y=deBR(e.target.value);if(y){oc.prev=y;}else if(e.target.value.trim())toast('Data inválida. Use dd/mm/aaaa.',true);re();};
   /* fornecedor */
   if($('fTroca'))$('fTroca').onclick=()=>{oc.forn=null;re();};
-  if($('fBusca'))buscaLista($('fBusca'),q=>DB.fornecedores.filter(f=>(f.nome+' '+(f.cnpj||'')).toLowerCase().includes(q)).slice(0,12).map(f=>({t:f.nome,s:[f.cnpj,f.cidade].filter(Boolean).join(' · '),v:f})),
-    f=>{oc.forn={...f};oc.itens.forEach(it=>aplicaVinculo(oc,it));if(!oc.pag.categoria)oc.pag.categoria=categoriaSugerida(oc);re();});
+  if($('fBusca'))buscaLista($('fBusca'),q=>buscaFornecedores(q),
+    f=>{f=fornDoContato(f);oc.forn={...f};oc.itens.forEach(it=>aplicaVinculo(oc,it));if(!oc.pag.categoria)oc.pag.categoria=categoriaSugerida(oc);re();});
   if($('fNovo'))$('fNovo').onclick=()=>formForn(null,f=>{oc.forn={...f};re();});
   if($('fTiny'))$('fTiny').onclick=()=>buscaTinyContato(($('fBusca')||{}).value||'',f=>{oc.forn={...f};re();},'fornecedor');
   /* itens */
@@ -1382,6 +1382,34 @@ function formForn(f,feito){
   $('gOk').onclick=()=>{document.querySelectorAll('[data-ff]').forEach(i=>f[i.dataset.ff]=i.value.trim());
     if(!f.nome)return toast('Falta a razão social.',true);
     const i=DB.fornecedores.findIndex(x=>x.id===f.id);if(i>=0)DB.fornecedores[i]=f;else DB.fornecedores.push(f);salvar();gaveta(null);feito&&feito(f);};
+}
+/* Fornecedor na OC: primeiro os do Compras, depois os contatos dos Cadastros
+   (todos os do Tiny, com o tipo de cada um). Quem é fornecedor ou transportador
+   vem antes; cliente só aparece se nenhum fornecedor bater. Sem acento e sem
+   diferença de maiúscula; o CNPJ vale com ou sem pontuação. */
+let CAD_CONT=[];
+async function carregaContatosCad(){try{const c=await N.ler('cadastros');CAD_CONT=((c&&c.contatos)||[]).filter(x=>x.ativo!==false);}catch(e){CAD_CONT=[];}}
+const nBus=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+const papCad=c=>{if(Array.isArray(c.papeis)&&c.papeis.length)return c.papeis;const t=Array.isArray(c.tiposTiny)?c.tiposTiny:[],o=[];
+  t.forEach(x=>{if(/client/i.test(x))o.push('Cliente');if(/fornec|transp/i.test(x))o.push('Fornecedor');});if(c.tipo)o.push(c.tipo);return o;};
+function buscaFornecedores(q){
+  const k=nBus(q).trim(),d=k.replace(/\D/g,'');if(!k)return [];
+  const bate=(nome,doc,cid)=>{const t=nBus(nome+' '+(cid||''));return k.split(/\s+/).every(p=>t.includes(p))||(d.length>=4&&String(doc||'').replace(/\D/g,'').includes(d));};
+  const out=DB.fornecedores.filter(f=>bate(f.nome,f.cnpj,f.cidade)).slice(0,8).map(f=>({t:f.nome,s:[f.cnpj,f.cidade].filter(Boolean).join(' · '),v:f}));
+  const ja=new Set(DB.fornecedores.map(f=>String(f.tinyId||'')).filter(Boolean)),jd=new Set(DB.fornecedores.map(f=>String(f.cnpj||'').replace(/\D/g,'')).filter(Boolean));
+  const cad=CAD_CONT.filter(c=>!ja.has(String(c.tinyId||''))&&!jd.has(String(c.doc||'').replace(/\D/g,''))&&bate(c.nome+' '+(c.fantasia||''),c.doc,c.cidade));
+  const forn=cad.filter(c=>papCad(c).includes('Fornecedor'));
+  const lista=forn.length?forn:(out.length?[]:cad);
+  lista.slice(0,12-out.length).forEach(c=>out.push({t:c.nome,s:[c.doc,[c.cidade,c.uf].filter(Boolean).join('/'),forn.length?'do cadastro':'cadastrado como cliente'].filter(Boolean).join(' · '),v:{_cad:c}}));
+  return out;
+}
+/* escolhido um contato dos Cadastros, ele vira fornecedor do Compras */
+function fornDoContato(f){
+  if(!f||!f._cad)return f;const c=f._cad;
+  let x=DB.fornecedores.find(y=>y.tinyId&&String(y.tinyId)===String(c.tinyId))||DB.fornecedores.find(y=>c.doc&&y.cnpj===c.doc);
+  const d={tinyId:c.tinyId||'',nome:c.nome,cnpj:c.doc||'',ie:c.ie||'',end:[c.endereco,c.numero,c.bairro].filter(Boolean).join(', '),cidade:c.cidade||'',uf:c.uf||'',email:c.email||'',fone:c.fone||''};
+  if(x)Object.assign(x,d);else{x={id:uid(),...d};DB.fornecedores.push(x);}
+  salvar();return x;
 }
 async function buscaTinyContato(q,feito){
   q=(q||'').trim();
@@ -2413,6 +2441,8 @@ function render(){
 (async function(){
   if(!N){render();return;}
   try{DB=normaliza(await N.ler(MOD_ID));}catch(e){DB=normaliza(null);toast('Não consegui ler Compras do banco: '+e.message,true);}
+  /* os contatos dos Cadastros (vindos do Tiny) também servem de fornecedor na OC */
+  carregaContatosCad();
   try{const t=await N.ler('transportadores');TRANSP=(t&&t.lista)||[];}catch(e){TRANSP=[];}
   render();
 })();

@@ -425,6 +425,10 @@ input.sel4{width:120px;font-family:'JetBrains Mono',monospace}
 @media (max-width:720px){.rodfix{justify-content:space-between}.tabsg{overflow-x:auto}}
 
 .pps{display:flex;gap:14px;flex-wrap:wrap;margin-top:4px}.pp{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:400}
+
+.selbar{display:flex;align-items:center;gap:10px;background:#EAF1FD;border:1px solid #BFD4F6;border-radius:10px;padding:8px 12px;margin:8px 0}
+tr.sel td{background:#F1F6FE}
+#tabC input[type=checkbox]{vertical-align:middle;cursor:pointer}
 .perb2{display:inline-flex;align-items:center;gap:7px;height:36px;padding:0 14px;border:1.5px solid #9DB8E8;border-radius:999px;background:#fff;color:#1D6FE8;font-weight:600;font-size:13px;cursor:pointer;white-space:nowrap}
 .perb2:hover{border-color:#1D6FE8}.perb2.ativo{background:#EFF4FD}
 .perpop{position:fixed;z-index:500;width:560px;max-width:calc(100vw - 16px);background:#fff;border:1px solid #E4E2DC;border-radius:16px;box-shadow:0 14px 36px rgba(20,24,33,.18);display:grid;grid-template-columns:170px 1fr;overflow:hidden;font-family:inherit;color:#1A1D23}
@@ -728,7 +732,7 @@ function normaliza(d){
 }
 const soNum=s=>String(s||'').replace(/\D/g,'');
 const semAc=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
-const S2={aba:'todos',q:'',ord:{k:'nome',d:1},grupo:null,vaba:'dados',faba:'ativos'};
+const S2={aba:'todos',q:'',ord:{k:'nome',d:1},grupo:null,vaba:'dados',faba:'ativos',sel:new Set()};
 let FORN_CNPJ=null;
 let FORN_NOMES=null;
 async function fornecedoresCompras(){
@@ -802,8 +806,9 @@ function telaClientes(){
     if(S2.aba==='cli')l=l.filter(ehCli);if(S2.aba==='forn')l=l.filter(ehForn);if(S2.aba==='tr')l=l.filter(ehTransp);
     l=ordena(l,(c,k)=>k==='g'?semAc((grupoDe(c)||{}).nome||'~'):semAc(k==='t'?tipoDe(c):c[k]||''));
     const mostra=l.slice(0,500);
-    corpo=l.length?`<table class="tv" id="tabC"><thead><tr><th style="width:34px"></th>${th('nome','Nome')}${th('doc','CNPJ ou CPF')}${th('cidade','Cidade')}${th('t','Tipo')}${th('vendedor','Vendedor')}${th('g','Grupo econômico')}</tr></thead><tbody>
-      ${mostra.map(c=>{const g=grupoDe(c);return `<tr data-c="${c.id}"><td><button class="dots" data-cm="${c.id}">⋯</button></td><td><b>${esc(c.nome)}</b>${c.fantasia&&c.fantasia!==c.nome?`<small>${esc(c.fantasia)}</small>`:''}</td>
+    S2.lista=l;
+    corpo=l.length?`<table class="tv" id="tabC"><thead><tr><th style="width:62px">${ed?`<input type="checkbox" id="selT" title="Marcar os que estão na tela" ${mostra.length&&mostra.every(c=>S2.sel.has(c.id))?'checked':''}>`:''}</th>${th('nome','Nome')}${th('doc','CNPJ ou CPF')}${th('cidade','Cidade')}${th('t','Tipo')}${th('vendedor','Vendedor')}${th('g','Grupo econômico')}</tr></thead><tbody>
+      ${mostra.map(c=>{const g=grupoDe(c);return `<tr data-c="${c.id}"${S2.sel.has(c.id)?' class="sel"':''}><td>${ed?`<input type="checkbox" data-sc="${c.id}" ${S2.sel.has(c.id)?'checked':''}> `:''}<button class="dots" data-cm="${c.id}">⋯</button></td><td><b>${esc(c.nome)}</b>${c.fantasia&&c.fantasia!==c.nome?`<small>${esc(c.fantasia)}</small>`:''}</td>
         <td class="m">${esc(c.doc||'—')}</td><td>${esc([c.cidade,c.uf].filter(Boolean).join(' · ')||'—')}</td><td>${tipoDe(c)}</td><td>${esc(c.vendedor||'—')}</td><td>${g?`<span class="tgr">${esc(g.nome)}</span>`:'<span class="k">—</span>'}</td></tr>`;}).join('')}</tbody></table>
       ${l.length>500?`<div class="leg">Mostrando 500 de ${nf(l.length)}. Use a busca para achar os outros.</div>`:''}`
       :`<div class="vazio">${DB.contatos.length?'Nenhum contato com essa busca.':'Nenhum contato ainda. Clique em <b>⤓ Importar do Tiny</b> para trazer todos.'}</div>`;
@@ -812,13 +817,22 @@ function telaClientes(){
   <div class="topo"><h1>Clientes e fornecedores</h1><span class="salvo"></span>${ed&&S2.aba==='grupos'?'<button class="btn pri" id="bNg">＋ Novo grupo econômico</button>':''}${ed&&DB.contatos.length?`<button class="btn" id="bTip">↻ Tipos do Tiny${(()=>{const n=DB.contatos.filter(c=>!tiposT(c)).length;return n?` (${nf(n)} sem tipo)`:'';})()}</button>`:''}${ed?'<button class="btn" id="bImp">⤓ Importar do Tiny</button>':''}</div>
   <div class="sync"><b>Vem do Tiny.</b> ${nf(DB.contatos.length)} contatos${ult?' · última importação '+ult:''}. Por enquanto os contatos só vêm do Tiny; criar contato pelo ERP fica para depois.</div>
   <div class="barra"><div class="busca">⌕<input id="q" placeholder="Nome, CNPJ, cidade, vendedor ou grupo econômico" value="${esc(S2.q)}"></div><span style="flex:1"></span>${S2.aba!=='grupos'?colsBotao('bCols'):''}</div>
+  ${ed&&S2.sel.size?`<div class="selbar"><b>${nf(S2.sel.size)} selecionado${S2.sel.size>1?'s':''}</b>
+    ${S2.lista&&S2.lista.length>S2.sel.size?`<button class="btn sm lk" id="selTudo">marcar todos os ${nf(S2.lista.length)} desta lista</button>`:''}
+    <span style="flex:1"></span><button class="btn sm pri" id="selTipo">Mudar o tipo…</button><button class="btn sm" id="selLimpa">Desmarcar</button></div>`:''}
   <div class="sts">${abas.map(([k,r,c])=>`<button data-a="${k}" class="${S2.aba===k?'on':''}" style="--cor:${c}">${r}<b>${nf(conta[k])}</b></button>`).join('')}</div>
   <div class="rolx">${corpo}</div>${rodape([[nf(S2.aba==='grupos'?DB.grupos.length:conta[S2.aba]),S2.aba==='grupos'?'grupos':'contatos']])}`;
   $('q').oninput=e=>{S2.q=e.target.value;clearTimeout(window._t);window._t=setTimeout(()=>{telaClientes();const i=$('q');i.focus();i.setSelectionRange(i.value.length,i.value.length);},250);};
   document.querySelectorAll('[data-a]').forEach(b=>b.onclick=()=>{S2.aba=b.dataset.a;S2.grupo=null;telaClientes();});
   ligaOrdem(telaClientes);
   if($('tabC')){const rot=colsTabela($('tabC'),'cadastros',[]);if($('bCols'))$('bCols').onclick=()=>colsPainel('cadastros',rot,[],['Nome'],telaClientes);}
-  document.querySelectorAll('[data-c]').forEach(r=>r.onclick=ev=>{if(ev.target.closest('.dots'))return;fichaContato(r.dataset.c);});
+  document.querySelectorAll('[data-c]').forEach(r=>r.onclick=ev=>{if(ev.target.closest('.dots')||ev.target.closest('[data-sc]'))return;fichaContato(r.dataset.c);});
+  /* seleção para mudar o tipo de vários de uma vez */
+  document.querySelectorAll('[data-sc]').forEach(b=>b.onclick=ev=>{ev.stopPropagation();if(b.checked)S2.sel.add(b.dataset.sc);else S2.sel.delete(b.dataset.sc);telaClientes();});
+  if($('selT'))$('selT').onclick=ev=>{ev.stopPropagation();const vis=(S2.lista||[]).slice(0,500);if($('selT').checked)vis.forEach(c=>S2.sel.add(c.id));else vis.forEach(c=>S2.sel.delete(c.id));telaClientes();};
+  if($('selTudo'))$('selTudo').onclick=()=>{(S2.lista||[]).forEach(c=>S2.sel.add(c.id));telaClientes();};
+  if($('selLimpa'))$('selLimpa').onclick=()=>{S2.sel.clear();telaClientes();};
+  if($('selTipo'))$('selTipo').onclick=mudarTiposEmLote;
   document.querySelectorAll('[data-cm]').forEach(b=>b.onclick=ev=>{ev.stopPropagation();const c=DB.contatos.find(x=>x.id===b.dataset.cm);
     menu3(b,c.nome,[['Abrir',()=>fichaContato(c.id)],...(ed?[['Grupo econômico…',()=>fichaContato(c.id)],'-',[c.ativo===false?'Reativar':'Inativar no ERP',()=>{c.ativo=c.ativo===false;salvar();telaClientes();},c.ativo!==false]]:[])]);});
   document.querySelectorAll('[data-g]').forEach(r=>r.onclick=ev=>{if(ev.target.closest('.dots'))return;S2.grupo=r.dataset.g;telaClientes();});
@@ -922,6 +936,31 @@ async function buscarTipos(pergunta){
       :'Tiny: '+e.message,true);
   }
   LENDO_TIPOS=false;render();
+}
+/* Mudar o tipo de vários contatos de uma vez: o principal e, para cada
+   papel, manter como está, marcar ou tirar. Grava como escolhido no ERP. */
+function mudarTiposEmLote(){
+  const l=DB.contatos.filter(c=>S2.sel.has(c.id));if(!l.length)return;
+  const conta=p=>l.filter(c=>papeisDe(c).includes(p)).length;
+  gaveta(`<div class="gt"><h2>Mudar o tipo de ${nf(l.length)} contato${l.length>1?'s':''}</h2><button class="btn sm" id="gX" style="margin-left:auto">Fechar ✕</button></div>
+    <p class="k">Vale só no ERP: o cadastro no Tiny não muda. Depois disso, o tipo que vier do Tiny não passa por cima.</p>
+    <div class="fld" style="margin-top:12px"><label>Tipo principal</label><select id="lT"><option value="">manter o de cada um</option>${PAPEIS.map(p=>`<option>${p}</option>`).join('')}</select></div>
+    <table class="tv" style="margin-top:12px"><thead><tr><th>Papel</th><th class="n">Hoje</th><th>Manter</th><th>Marcar</th><th>Tirar</th></tr></thead><tbody>
+    ${PAPEIS.map(p=>`<tr><td><b>${p==='Cliente'?'Cliente (pode comprar da gente)':p}</b></td><td class="n">${nf(conta(p))} de ${nf(l.length)}</td>
+      ${['','+','-'].map(v=>`<td><input type="radio" name="lp_${p}" value="${v}" ${v===''?'checked':''}></td>`).join('')}</tr>`).join('')}</tbody></table>
+    <div class="leg" style="margin-top:10px">Exemplo: quem está como transportador no Tiny porque é cliente que retira a mercadoria —
+      principal <b>Cliente</b>, marcar <b>Cliente</b> e tirar <b>Transportador</b>.</div>
+    <div class="gr"><button class="btn" id="gC">Cancelar</button><button class="btn pri" id="gOk">Aplicar em ${nf(l.length)}</button></div>`);
+  $('gX').onclick=$('gC').onclick=()=>gaveta(null);
+  $('gOk').onclick=()=>{
+    const pri=$('lT').value,mud={};PAPEIS.forEach(p=>{const r=document.querySelector(`[name="lp_${p}"]:checked`);mud[p]=r?r.value:'';});
+    if(!pri&&PAPEIS.every(p=>!mud[p]))return toast('Escolha o que mudar.',true);
+    l.forEach(c=>{const s=new Set(papeisDe(c));PAPEIS.forEach(p=>{if(mud[p]==='+')s.add(p);if(mud[p]==='-')s.delete(p);});
+      const t=pri||(s.has(principalDe(c))?principalDe(c):[...s][0]||'Cliente');s.add(t);c.tipo=t;c.papeis=PAPEIS.filter(p=>s.has(p));});
+    salvar();gaveta(null);S2.sel.clear();
+    try{N.logCarga&&N.logCarga('Contatos',{lidos:l.length,det:`tipo mudado em lote no ERP${pri?' · principal '+pri:''}${PAPEIS.filter(p=>mud[p]).map(p=>` · ${mud[p]==='+'?'marca':'tira'} ${p}`).join('')}`});}catch(e){}
+    telaClientes();toast(`${nf(l.length)} contato${l.length>1?'s':''} com o tipo novo.`);
+  };
 }
 function testeTipos(l){const t={};l.forEach(c=>{t[String(c.tinyId)]=/POLO|CLIENTE/i.test(c.nome)?['Cliente']:['Fornecedor'];});return {tipos:t};}
 function testeContatos(p){
