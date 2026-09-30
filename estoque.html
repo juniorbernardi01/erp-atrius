@@ -115,7 +115,10 @@ tr.clic{cursor:pointer}tr.clic:hover td{background:#F8FAFE}
 #imp{display:none}
 @media print{body.imprimindo .app,body.imprimindo .gaveta,body.imprimindo .veu,body.imprimindo .toast{display:none!important}
 body.imprimindo #imp{display:block}.gaveta,.veu{display:none!important}}
-.btn.ic.on{background:var(--sel);border-color:#CFDDF6;color:var(--selt)}.perb2{display:inline-flex;align-items:center;gap:7px;height:36px;padding:0 14px;border:1.5px solid #9DB8E8;border-radius:999px;background:#fff;color:#1D6FE8;font-weight:600;font-size:13px;cursor:pointer;white-space:nowrap}
+.btn.ic.on{background:var(--sel);border-color:#CFDDF6;color:var(--selt)}
+.rzt{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px}.rzt>div{flex:1;min-width:140px;border:1px solid var(--line);border-radius:10px;padding:9px 12px}
+.rzt span{display:block;font-size:11px;color:var(--ink3);text-transform:uppercase;letter-spacing:.05em}.rzt b{font-size:18px}.rzt small{display:block;color:var(--ink3);font-size:11px}
+#tabS tbody tr[data-it]:hover{background:rgba(29,111,232,.05)}.perb2{display:inline-flex;align-items:center;gap:7px;height:36px;padding:0 14px;border:1.5px solid #9DB8E8;border-radius:999px;background:#fff;color:#1D6FE8;font-weight:600;font-size:13px;cursor:pointer;white-space:nowrap}
 .perb2:hover{border-color:#1D6FE8}.perb2.ativo{background:#EFF4FD}
 .perpop{position:fixed;z-index:500;width:560px;max-width:calc(100vw - 16px);background:#fff;border:1px solid #E4E2DC;border-radius:16px;box-shadow:0 14px 36px rgba(20,24,33,.18);display:grid;grid-template-columns:170px 1fr;overflow:hidden;font-family:inherit;color:#1A1D23}
 .perpop *{box-sizing:border-box}
@@ -148,6 +151,23 @@ body.imprimindo #imp{display:block}.gaveta,.veu{display:none!important}}
 .rodfix{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid #E4E2DC;display:flex;justify-content:flex-end;align-items:flex-end;gap:22px;padding:6px 18px;z-index:20}
 .rodfix div{line-height:1.15;white-space:nowrap}.rodfix b{display:block;font-size:13px;font-weight:600}.rodfix span{font-size:10.5px;color:#8B93A1}.rodfix .sel b{color:#1D6FE8}
 #app{padding-bottom:56px}
+.colbt{display:inline-grid;place-items:center;width:34px;height:34px;border:1px solid #E4E2DC;border-radius:9px;background:#fff;color:#545C69;cursor:pointer;flex:none}
+.colbt:hover{border-color:#1D6FE8;color:#1D6FE8}
+.colsv{position:fixed;inset:0;background:rgba(20,24,33,.18);z-index:590}
+.colsp{position:fixed;top:0;right:0;bottom:0;width:340px;max-width:100vw;background:#FBFAF8;z-index:600;display:flex;flex-direction:column;padding:22px 22px 18px;border-left:1px solid #E4E2DC;font-family:inherit;color:#1A1D23}
+.colsp *{box-sizing:border-box}
+.colsp .ch{display:flex;align-items:center;gap:10px}.colsp .ch b{font-size:17px;flex:1}
+.colsp .x{background:none;border:0;color:#545C69;font:inherit;font-size:12.5px;cursor:pointer}
+.colsp p{font-size:13px;color:#6B7280;margin:14px 0 10px;line-height:1.45}
+.colsp .cl{flex:1;overflow:auto}
+.colsp label{display:flex;align-items:center;gap:12px;padding:9px 2px;border-bottom:1px solid #EFEEE9;font-size:13.5px;cursor:pointer}
+.colsp label.fx{color:#9AA1AD;cursor:default}
+.colsp .sw{width:30px;height:17px;border-radius:999px;background:#D5D8DE;position:relative;flex:none;transition:background .15s}
+.colsp .sw::after{content:'';position:absolute;top:2px;left:2px;width:13px;height:13px;border-radius:50%;background:#fff;transition:left .15s}
+.colsp .sw.on{background:#5B8DEF}.colsp .sw.on::after{left:15px}
+.colsp label.fx .sw{opacity:.5}
+.colsp .cf{display:flex;gap:8px;padding-top:14px;flex-wrap:wrap}
+.colsp .btn.lk{background:none;border:0;text-decoration:underline}
 
 </style></head><body>
 <div class="app" id="app"><div class="vazio">Carregando…</div></div>
@@ -308,6 +328,59 @@ function abrirPeriodo(botao,estado,opts,aplicar){
 }
 document.addEventListener('click',ev=>{const p=document.getElementById('perPop');if(p&&!p.contains(ev.target)&&ev.target!==p._dono&&!(p._dono&&p._dono.contains(ev.target)))p.remove();});
 
+/* =====================================================================
+   COLUNAS VISÍVEIS · o botão do Tiny que escolhe o que aparece na lista
+   Cada lista tem uma chave (vendas, compras, ordens...). A escolha fica
+   guardada no aparelho, por lista. Funciona olhando o cabeçalho da tabela:
+   não precisa mexer em quem desenha a lista — some a coluna com o título
+   que a pessoa desligou. Coluna sem título (marcar, três pontinhos) fica.
+   ===================================================================== */
+const COLS_SVG='<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 4v16M12 4v16M18 4v16"/><circle cx="6" cy="9" r="2" fill="#fff"/><circle cx="12" cy="15" r="2" fill="#fff"/><circle cx="18" cy="8" r="2" fill="#fff"/></svg>';
+const colsNorm=s=>String(s||'').replace(/[↑↓▲▼⇅]/g,'').replace(/\s+/g,' ').trim();
+function colsOcultas(k,pad){try{const v=JSON.parse(localStorage.getItem('erp.cols.'+k)||'null');return Array.isArray(v)?v:(pad||[]);}catch(e){return pad||[];}}
+function colsGravar(k,l){try{localStorage.setItem('erp.cols.'+k,JSON.stringify(l));}catch(e){}}
+function colsBotao(id){return `<button type="button" class="colbt" id="${id}" title="Escolher as colunas que aparecem">${COLS_SVG}</button>`;}
+/* painel: lista de rótulos com chave liga/desliga; fixas não desligam */
+function colsPainel(k,rotulos,pad,fixas,aoAplicar){
+  const velho=document.getElementById('colsP');if(velho){velho.remove();document.getElementById('colsV')&&document.getElementById('colsV').remove();}
+  const oc=new Set(colsOcultas(k,pad));fixas=fixas||[];
+  const v=document.createElement('div');v.id='colsV';v.className='colsv';
+  const p=document.createElement('div');p.id='colsP';p.className='colsp';
+  const lin=()=>rotulos.map(r=>`<label class="${fixas.includes(r)?'fx':''}"><span class="sw ${oc.has(r)?'':'on'}" data-cr="${r.replace(/"/g,'&quot;')}"></span>${r}</label>`).join('');
+  p.innerHTML=`<div class="ch"><b>Informações visíveis</b><button type="button" class="x" id="colsX">fechar ✕</button></div>
+    <p>Escolha as colunas que aparecem nesta lista. Fica guardado neste aparelho.</p>
+    <div class="cl" id="colsL">${lin()}</div>
+    <div class="cf"><button type="button" class="btn pri" id="colsOk">Aplicar</button><button type="button" class="btn" id="colsPad">Voltar ao padrão</button><button type="button" class="btn lk" id="colsC">Cancelar</button></div>`;
+  document.body.appendChild(v);document.body.appendChild(p);
+  const fecha=()=>{p.remove();v.remove();};
+  const liga=()=>p.querySelectorAll('[data-cr]').forEach(s=>s.onclick=()=>{const r=s.dataset.cr;if(fixas.includes(r))return;oc.has(r)?oc.delete(r):oc.add(r);s.classList.toggle('on',!oc.has(r));});
+  liga();v.onclick=fecha;p.querySelector('#colsX').onclick=fecha;p.querySelector('#colsC').onclick=fecha;
+  p.querySelector('#colsPad').onclick=()=>{oc.clear();(pad||[]).forEach(r=>oc.add(r));p.querySelector('#colsL').innerHTML=lin();liga();};
+  p.querySelector('#colsOk').onclick=()=>{colsGravar(k,[...oc]);fecha();if(aoAplicar)aoAplicar();};
+}
+/* tabela <table>: some a coluna pelo título do cabeçalho */
+function colsTabela(tab,k,pad){
+  if(!tab)return [];
+  const oc=new Set(colsOcultas(k,pad)),ths=[...tab.querySelectorAll('thead tr:first-child > th')];
+  const rot=ths.map(t=>colsNorm(t.textContent));const esc=[];
+  rot.forEach((r,i)=>{if(r&&oc.has(r))esc.push(i);});
+  ths.forEach((t,i)=>t.style.display=esc.includes(i)?'none':'');
+  tab.querySelectorAll('tbody > tr').forEach(tr=>{const tds=[...tr.children];if(tds.length!==ths.length)return;
+    tds.forEach((td,i)=>td.style.display=esc.includes(i)?'none':'');});
+  return rot.filter(Boolean);
+}
+/* lista em grade (div.h + div.r): some a coluna e refaz as trilhas */
+function colsGrade(caixa,k,trilhas,pad){
+  if(!caixa)return [];
+  const h=caixa.querySelector('.h');if(!h)return [];
+  const oc=new Set(colsOcultas(k,pad)),cel=[...h.children],rot=cel.map(c=>colsNorm(c.textContent));
+  const esc=[];rot.forEach((r,i)=>{if(r&&oc.has(r))esc.push(i);});
+  const tpl=trilhas.filter((t,i)=>!esc.includes(i)).join(' ');
+  [h,...caixa.querySelectorAll('.r')].forEach(r=>{if(r.children.length!==cel.length)return;
+    r.style.gridTemplateColumns=tpl;[...r.children].forEach((c,i)=>c.style.display=esc.includes(i)?'none':'');});
+  return rot.filter(Boolean);
+}
+
 const PAGINA_INICIAL='saldos';
 const MOTIVOS=['quebra ou vazamento','sobra de lote','erro de lançamento','vencido ou descartado','outro'];
 const SITI={contagem:'Em contagem',conferencia:'Em conferência',enviado:'Enviado ao Tiny',cancelado:'Cancelado'};
@@ -366,14 +439,14 @@ function telaSaldos(){
   <div class="sts">${[['__acabado','Produto acabado',N.produtos().length],...tags.map(t=>[t,t,N.insumos().filter(x=>x.tipo===t).length])].map(([k,r,n])=>
     `<button data-tg="${esc(k)}" class="${SAL.tag===k?'on':''}">${esc(r)}<b>${n}</b></button>`).join('')}</div>
   <div class="barra" style="margin-top:12px"><div class="busca">⌕<input id="sq" placeholder="Buscar" value="${esc(SAL.q)}"></div>
-    <button class="chip ${SAL.so?'on':''}" id="sSo">${aca?'Só sem saldo':'Abaixo do mínimo ou negativo'}</button></div>
+    <button class="chip ${SAL.so?'on':''}" id="sSo">${aca?'Só sem saldo':'Abaixo do mínimo ou negativo'}</button><span style="flex:1"></span>${colsBotao('bCols')}</div>
   ${lidos<comT?`<div class="aviso">⚠ <div>${lidos?`${lidos} de ${comT} itens desta aba têm saldo lido.`:'Os saldos desta aba ainda não foram lidos do Tiny.'} Clique em Atualizar tudo do Tiny.</div></div>`:''}
-  <div class="caixa rolx"><table style="min-width:860px"><thead><tr><th>Código</th><th>Item</th><th>Tiny</th><th class="n">Físico</th>
+  <div class="caixa rolx"><table id="tabS" style="min-width:860px"><thead><tr><th>Código</th><th>Item</th><th>Tiny</th><th class="n">Físico</th>
     ${aca?'<th class="n">A produzir</th>':'<th class="n">Reservado pelas OPs</th><th class="n">Disponível</th><th class="n">Mínimo</th>'}<th>Situação</th></tr></thead><tbody>
     ${l.map(i=>{const sit=!i.tiny?'<span class="pill p-can">sem código do Tiny</span>':i.fis==null?'<span style="color:var(--ink3)">não lido</span>'
       :aca?(i.fis>0?'<span class="pill p-con">com saldo</span>':'<span class="pill p-par">sem saldo</span>')
       :i.disp<0?'<span class="pill p-can">reservado maior que o físico</span>':i.disp<i.min?'<span class="pill p-par">abaixo do mínimo</span>':'<span class="pill p-con">ok</span>';
-      return `<tr><td class="n" style="text-align:left">${esc(i.cod)}</td><td><b>${esc(i.nome)}</b></td><td class="n" style="text-align:left;color:var(--ink3)">${esc(i.tiny||'—')}</td>
+      return `<tr data-it="${esc(i.tiny||'')}" data-nm="${esc(i.nome)}" data-un="${esc(i.un)}" style="cursor:pointer"><td class="n" style="text-align:left">${esc(i.cod)}</td><td><b>${esc(i.nome)}</b></td><td class="n" style="text-align:left;color:var(--ink3)">${esc(i.tiny||'—')}</td>
       <td class="n">${i.fis==null?'—':nq(i.fis)+' '+i.un}</td>
       ${aca?`<td class="n">${i.prod?nq(i.prod)+' '+i.un:'—'}${i.ops?`<span class="mini">${i.ops} OP${i.ops>1?'s':''}</span>`:''}</td>`
         :`<td class="n">${i.res?nq(i.res):'—'}${i.ops?`<span class="mini">${i.ops} OP${i.ops>1?'s':''} e tanques</span>`:''}</td>
@@ -385,13 +458,36 @@ function telaSaldos(){
   document.querySelectorAll('[data-tg]').forEach(b=>b.onclick=()=>{SAL.tag=b.dataset.tg;try{localStorage.setItem('erp.est.tag',SAL.tag);}catch(e){}telaSaldos();});
   $('sq').oninput=e=>{SAL.q=e.target.value;clearTimeout(window._ts);window._ts=setTimeout(()=>{telaSaldos();const i=$('sq');i.focus();i.setSelectionRange(i.value.length,i.value.length);},250);};
   $('sSo').onclick=()=>{SAL.so=!SAL.so;telaSaldos();};
+  /* colunas visíveis e o razão do item */
+  const rotS=colsTabela($('tabS'),'estoque',[]);
+  $('bCols').onclick=()=>colsPainel('estoque',rotS,[],['Item'],telaSaldos);
+  document.querySelectorAll('#tabS tbody tr[data-it]').forEach(r=>r.onclick=()=>razao(r.dataset.it,r.dataset.nm,r.dataset.un));
   $('bLer').onclick=async()=>{const ids=all.map(i=>i.tiny).filter(Boolean);
     if(N.teste)return toast('Versão de teste: a leitura do Tiny está desligada.',true);
     $('bLer').disabled=true;$('bLer').textContent='Lendo todas as abas…';
     try{await lerTudo(ids);toast('Saldos de todas as abas lidos.');}catch(e){toast('Tiny: '+e.message,true);}telaSaldos();};
   /* ao abrir: nunca lido, ou com mais de 1 h, lê tudo sozinho uma vez */
   if(!AUTO_LEU&&!N.teste){const i=N.saldosIdade?N.saldosIdade():null;
-    if(!N.saldosEm()||i==null||i>60){AUTO_LEU=true;setTimeout(()=>{const b=$('bLer');if(b&&!b.disabled)b.click();},300);}else AUTO_LEU=true;}
+    /* v301: quem lê sozinho é o servidor (a cada hora); aqui só pelo botão */
+    AUTO_LEU=true;}
+}
+
+/* O razão do item: o que o ERP mandou ao Tiny (OP de envase, lote do tanque,
+   compra, inventário, estorno), o mais novo em cima, e o que está a caminho. */
+function razao(tiny,nome,un){
+  if(!tiny)return toast('Este item não tem código do Tiny: nada dele passa pelo estoque.',true);
+  const r=N.movimentosDe?N.movimentosDe(tiny):{itens:[]};
+  const l=r.itens||[];const ent=l.filter(x=>!x.pend&&x.tipo==='E').reduce((a,x)=>a+x.qtd,0),sai=l.filter(x=>!x.pend&&x.tipo==='S').reduce((a,x)=>a+x.qtd,0);
+  const quando=x=>{const [d,h]=String(x.em||'').split(' ');return d?d.split('-').reverse().join('/')+(h?' '+h:''):'—';};
+  gaveta(`<div class="gt"><h2>${esc(nome)}</h2><button class="btn sm" id="gX" style="margin-left:auto">Fechar ✕</button></div>
+    <div class="rzt"><div><span>Saldo no Tiny</span><b>${r.saldo!=null?nq(r.saldo)+' '+esc(un||''):'não lido'}</b><small>${r.lidoEm?'lido às '+esc(r.lidoEm):''}</small></div>
+      <div><span>Entradas pelo ERP</span><b style="color:#15803D">+${nq(ent)}</b></div><div><span>Saídas pelo ERP</span><b style="color:#B3261E">−${nq(sai)}</b></div></div>
+    <div class="leg" style="margin:10px 0">Movimentos que o ERP lançou para este item. Venda e nota fiscal de saída acontecem no Tiny e aparecem no saldo, não aqui.</div>
+    <div class="rolx"><table class="tv"><thead><tr><th>Data</th><th>Origem</th><th class="n">Entrada</th><th class="n">Saída</th><th>Observação</th></tr></thead><tbody>
+    ${l.map(x=>`<tr${x.pend?' style="background:#FEFCE8"':''}><td class="m">${quando(x)}</td><td>${esc(x.origem||'—')}${x.pend?`<small style="color:#A16207">${x.pend==='falhou'?'falhou':'na fila'}${x.erro?' · '+esc(x.erro):''}</small>`:''}</td>
+      <td class="n" style="color:#15803D">${x.tipo==='E'?'+'+nq(x.qtd):''}</td><td class="n" style="color:#B3261E">${x.tipo==='S'?'−'+nq(x.qtd):''}</td><td class="k">${esc(x.obs||'')}</td></tr>`).join('')
+      ||'<tr><td colspan="5" class="vazio">Nenhum movimento deste item pelo ERP ainda.</td></tr>'}</tbody></table></div>`);
+  $('gX').onclick=()=>gaveta(null);
 }
 
 /* =====================================================================

@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Atrius · MAQ 1</title>
+<link rel="manifest" href="maq1.webmanifest">
+<meta name="theme-color" content="#0E1B33"><link rel="icon" href="icone-192.png">
+</head><body style="margin:0;background:#0E1B33;color:#fff;font-family:system-ui,sans-serif;display:grid;place-items:center;height:100vh">
+<div>Abrindo a MAQ 1…</div>
+<script>
+/* marca este aparelho como o tablet da MAQ 1 e abre a tela dela */
+try{localStorage.setItem('erp.maqTablet','1');localStorage.setItem('erp.quiosque','1');sessionStorage.removeItem('erp.qSaiu');}catch(e){}
+location.replace('./#op1');
+</script></body></html>
