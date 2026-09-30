@@ -3592,6 +3592,9 @@ body.cs-operon .cs-oper .big.pau{flex:none;width:100%;min-height:clamp(52px,6.8v
 .cs-desc.atr .pr b{color:#FCA5A5}
 .cs-desc .tq{margin-top:2vh;display:flex;align-items:center;gap:8px;font-size:clamp(12px,1.6vh,16px);color:#475569}
 .cs-desc .tq svg{width:clamp(20px,2.6vh,26px);height:clamp(20px,2.6vh,26px)}
+
+/* ===== v303 ===== */
+.cs-q .cs-qb{display:block;font-style:normal;font-size:10.5px;font-weight:700;color:#B3261E;margin-top:1px}
 </style>
 </head>
 <body>
@@ -5179,7 +5182,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v302';
+const VERSAO_APP='v303';
 let DRAG=null;
 function render(){
   recomporTudo();
@@ -19698,7 +19701,7 @@ function csArruma(el,o){
     const sp=document.createElement('span');
     sp.className='cs-q';
     sp.innerHTML=m
-      ? `<i>${m[2]?'Produzidas':'Previstas'}</i><b>${m[1]}${m[2]?' / '+m[2]:''} ${m[3]}</b>`
+      ? `<i>${m[2]?'Produzidas':'Previstas'}</i><b>${m[1]}${m[2]?' / '+m[2]:''} ${m[3]}</b>${(()=>{const q=ccx.querySelector('.qbr');return q?`<em class="cs-qb">${q.textContent.trim()}</em>`:'';})()}`
       : `<i>Quantidade</i><b>${t}</b>`;
     cid.appendChild(sp);
     ccx.style.display='none';
@@ -19771,7 +19774,9 @@ function csArruma(el,o){
     const parte=v=>String(v).split(/[–-]/).map(x=>x.trim());
     const ok=v=>v&&!/NaN|undefined/.test(v)&&v!=='--:--';
     const pIni=parte(li[0].p)[0], pFim=parte(li[li.length-1].p)[1];
-    const rIni=parte(li[0].r)[0], rFim=parte(li[li.length-1].r)[1];
+    /* v303: OP sem o início do setup marcado (só o fim) começava em branco e o
+       cartão sumia com o realizado; vale o primeiro horário que existe */
+    const rIni=li.map(x=>parte(x.r)[0]).find(v=>v&&!/NaN|undefined/.test(v)&&v!=='--:--')||parte(li[0].r)[0], rFim=parte(li[li.length-1].r)[1];
     /* o detalhe é duração, não intervalo repetido: "setup 15min · envase 2h"
        diz o que a linha precisa saber; o intervalo já está na linha de cima */
     const mm=t=>{const x=/^(\d{1,2}):(\d{2})$/.exec(String(t).trim());
@@ -19794,7 +19799,7 @@ function csArruma(el,o){
     br.className='cs-br';
     br.innerHTML=`<i>Realizado</i>
       <b>${temReal?rIni+' &rarr; '+(ok(rFim)?rFim:'em curso'):'—'}</b>
-      <u>${temReal?(ok(rFim)?'concluído':'em andamento'):'não iniciado'}</u>`;
+      <u>${temReal?(ok(rFim)?li.map(x=>{const a=mm(parte(x.r)[0]),b=mm(parte(x.r)[1]);return x.rot.toLowerCase().trim()+' '+((a!=null&&b!=null)?dm(b-a+(b<a?1440:0)):'—');}).join(' · '):'em andamento'):'não iniciado'}</u>`;
     /* Na linha da fila os horários vão separados — início numa célula, fim
        na outra — para caberem no desenho de quatro colunas. No card cheio
        continua o par previsto × realizado, que ali tem espaço. */
@@ -21694,7 +21699,7 @@ window.csNucleo=(function(){
     VERS[id]=l[0].versao;return {ok:true};
   }
   return {
-    versao:'v302',
+    versao:'v303',
     logo:()=>LOGO,
     teste:!temNuvem(),
     usuario:()=>{try{return (MEU_ACESSO&&MEU_ACESSO.nome)||(EU&&EU.nome)||emailDaSessao()||'Teste';}catch(e){return 'Teste';}},
