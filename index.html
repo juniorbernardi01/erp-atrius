@@ -3467,6 +3467,131 @@ table.csmov td small{display:block;color:var(--ink3);font-size:11px;margin-top:2
 /* o cartão da OP em produção estica até a altura igualada: mesmo tamanho nas três máquinas */
 body.comcasca .cs-viva{display:flex;flex-direction:column}
 body.comcasca .cs-viva>.bat:last-of-type{flex:1 1 auto}
+
+/* ===== v297 · tablet 10.1" em modo quiosque ===== */
+/* a tela toda: sem margem, sem arredondado em volta, cada bloco cresce com a altura */
+body.cs-operon .cs-oper .cx{max-width:none;margin:0;min-height:100vh;min-height:100dvh;display:flex;flex-direction:column}
+body.cs-operon .cs-oper .cab{border-radius:0;padding:clamp(12px,1.8vh,20px) clamp(14px,2.4vw,24px)}
+body.cs-operon .cs-oper .corpo{flex:1;border-radius:0;border-left:0;border-right:0;padding:clamp(14px,2.2vh,28px) clamp(14px,2.4vw,28px);gap:clamp(10px,1.6vh,20px)}
+body.cs-operon .cs-oper .fo{width:clamp(124px,22vw,230px);height:clamp(150px,22vh,280px)}
+body.cs-operon .cs-oper .tx h3{font-size:clamp(22px,3.1vh,36px)}
+body.cs-operon .cs-oper .chs b{font-size:clamp(21px,3vh,34px)}
+body.cs-operon .cs-oper .chs i{font-size:clamp(9px,1.2vh,12px)}
+body.cs-operon .cs-oper .pz b{font-size:clamp(30px,5.6vh,60px)}
+body.cs-operon .cs-oper .acoes{margin-top:auto;display:flex;gap:12px}
+body.cs-operon .cs-oper .big{min-height:clamp(64px,11vh,120px);font-size:clamp(18px,2.8vh,30px)}
+body.cs-operon .cs-oper .big.pau{flex:0 0 clamp(110px,22vw,200px)}
+.cs-oper .ativa{display:flex;align-items:center;justify-content:space-between;border:1px solid var(--line);border-radius:13px;padding:clamp(10px,1.4vh,16px) 16px;background:var(--surface)}
+.cs-oper .ativa i{font-style:normal;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3)}
+.cs-oper .ativa b{font-family:'JetBrains Mono',monospace;font-size:clamp(22px,3.4vh,38px);color:#0F6E56}
+/* menu: a calculadora é um bloco na barra, ao lado do X */
+.cs-opmenu .cab .calcb{margin-left:auto;display:inline-flex;align-items:center;gap:8px;background:#1E3A8A;color:#E6F1FB;border:1px solid #378ADD;border-radius:12px;padding:9px 14px;font:inherit;font-size:14px;font-weight:600;cursor:pointer}
+.cs-opmenu .cab .calcb svg{color:#B5D4F4}
+.cs-opmenu .cab .calcb+.x{margin-left:8px}
+/* janelas: tela inteira, confirmar sempre embaixo, teclado da própria janela */
+body.cs-operon .mask{z-index:380;align-items:stretch;padding:0}
+body.cs-operon .modal{max-width:none;width:100vw;height:100vh;height:100dvh;max-height:none;border-radius:0}
+body.cs-operon #mB{flex:1;overflow:auto;-webkit-overflow-scrolling:touch}
+body.cs-operon #mF{position:sticky;bottom:0;background:var(--surface);border-top:1px solid var(--line)}
+body.cs-operon #mF .btn{min-height:58px;font-size:18px}
+body.cs-operon .modal input.kpalvo{outline:3px solid #1D6FE8;outline-offset:1px}
+.cs-kp{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:16px auto 6px;max-width:460px}
+.cs-kp button{min-height:clamp(56px,7.5vh,84px);border-radius:14px;border:1px solid var(--line);background:#fff;font:600 clamp(22px,3.2vh,32px) Inter,sans-serif;color:var(--ink);cursor:pointer}
+.cs-kp button.f{font-size:15px;color:var(--ink3);background:var(--line3)}
+.cs-kp button:active{transform:scale(.97);background:#EAF2FE}
+/* descanso de tela */
+.cs-desc{display:none}
+.cs-desc.on{position:fixed;inset:0;z-index:420;background:#0E141F;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;cursor:pointer}
+.cs-desc .dm{font-size:clamp(13px,1.8vh,18px);letter-spacing:.1em;text-transform:uppercase;color:#85B7EB}
+.cs-desc .dn{font-size:clamp(28px,5vh,56px);font-weight:700;margin-top:2vh;line-height:1.2;max-width:90vw}
+.cs-desc .dl{font-size:clamp(14px,2vh,20px);color:#94A3B8;margin-top:.6vh}
+.cs-desc .dr,.cs-desc .da{font-size:clamp(12px,1.7vh,17px);letter-spacing:.08em;text-transform:uppercase;margin-top:4vh}
+.cs-desc .dr{color:#FAC775}.cs-desc .da{color:#9FE1CB}
+.cs-desc .dt{font:700 clamp(56px,11vh,120px)/1.05 'JetBrains Mono',monospace;color:#FAC775}
+.cs-desc .dc{font:700 clamp(40px,7.5vh,84px)/1.05 'JetBrains Mono',monospace;color:#9FE1CB}
+.cs-desc .dv{margin-top:6vh;font-size:clamp(13px,1.8vh,18px);color:#64748B}
+.cs-desc .dh{margin-top:1.5vh;font:500 clamp(13px,1.8vh,18px) 'JetBrains Mono',monospace;color:#475569}
+.cs-desc.pau{background:#2A1D05}.cs-desc.pau .dm{color:#FAC775}
+
+/* ===== v298 · tela do operador aprovada ===== */
+.cs-oper .etcont,.cs-oper .pausado,.cs-oper .prox{display:none!important}
+.cs-oper .cs-st{display:flex;align-items:center;gap:14px;border-radius:16px;padding:clamp(12px,1.8vh,20px) clamp(14px,3vw,24px);color:#fff;background:#1B4F9C}
+.cs-oper .cs-st .pt{width:clamp(12px,1.8vh,18px);height:clamp(12px,1.8vh,18px);border-radius:50%;background:rgba(255,255,255,.9);flex:none}
+.cs-oper .cs-st .rot{font:700 clamp(22px,3.2vh,34px) 'Barlow Condensed',sans-serif;letter-spacing:.04em;text-transform:uppercase;line-height:1.05}
+.cs-oper .cs-st .sub{font-size:clamp(12px,1.6vh,16px);opacity:.88;margin-top:2px}
+.cs-oper .cs-st .tm{margin-left:auto;font:700 clamp(28px,4.4vh,48px) 'JetBrains Mono',monospace}
+.cs-oper .cs-st.set{background:#475569}.cs-oper .cs-st.rod{background:#15803D}.cs-oper .cs-st.pau{background:#CA8A04}
+.cs-oper .cs-st.atr{background:#DC2626}.cs-oper .cs-st.apo{background:#6D28D9}
+body.cs-operon .cs-oper .acoes{flex-direction:column;gap:clamp(8px,1.2vh,14px)}
+body.cs-operon .cs-oper .big{flex:none}
+body.cs-operon .cs-oper .big.pau{flex:none;width:100%;min-height:clamp(52px,6.8vh,74px);font-size:clamp(16px,2.2vh,22px);background:#fff;color:#DC2626;border:1.5px solid #F3B4AE}
+/* PIN */
+.cs-pinop{display:none}
+.cs-pinop.on{position:fixed;inset:0;z-index:410;display:flex;flex-direction:column;align-items:center;background:#F4F5F7;padding:0 0 3vh}
+.cs-pinop.abre{background:#0E1B33;color:#fff;padding-top:8vh}
+.cs-pinop .lg{height:clamp(34px,5vh,54px);background:#fff;border-radius:10px;padding:5px 12px}
+.cs-pinop .ola{margin-top:4vh;font-size:clamp(16px,2.4vh,24px);color:#94A3B8}
+.cs-pinop .mq{font:700 clamp(36px,6vh,60px) 'Barlow Condensed',sans-serif;letter-spacing:.02em}
+.cs-pinop .pd{margin-top:1.4vh;font-size:clamp(14px,2.1vh,20px);color:#6B7280}
+.cs-pinop.abre .pd{color:#CBD5E1}
+.cs-pinop .tp{width:100%;display:flex;align-items:center;background:#0E1B33;color:#fff;padding:2vh 4vw;margin-bottom:3vh}
+.cs-pinop .tp b{display:block;font-size:clamp(18px,2.6vh,26px)}.cs-pinop .tp i{font-style:normal;font-size:clamp(12px,1.6vh,16px);color:#94A3B8}
+.cs-pinop .x{margin-left:auto;width:clamp(40px,5.4vh,56px);height:clamp(40px,5.4vh,56px);border-radius:10px;border:0;background:#1E293B;color:#fff;font-size:28px}
+.cs-pinop .pts{display:flex;gap:2.4vh;margin:3.4vh 0}
+.cs-pinop .pts i{width:2.2vh;height:2.2vh;min-width:14px;min-height:14px;border-radius:50%;border:2px solid #9CA3AF}
+.cs-pinop.abre .pts i{border-color:#475569}
+.cs-pinop .pts i.on{background:#1D6FE8;border-color:#1D6FE8}
+.cs-pinop .pts.erro i{border-color:#DC2626}
+.cs-pinop .tec{display:grid;grid-template-columns:repeat(3,clamp(72px,10.5vh,110px));gap:2vh}
+.cs-pinop .tec button{height:clamp(72px,10.5vh,110px);border-radius:50%;border:1px solid #D8DCE3;background:#fff;color:#1A1D23;font:600 clamp(24px,3.6vh,36px) Inter,sans-serif}
+.cs-pinop.abre .tec button{background:#1E293B;border:0;color:#fff}
+.cs-pinop .tec button.f{background:transparent!important;border:0;color:#94A3B8;font-size:clamp(20px,2.8vh,28px)}
+.cs-pinop .ms{min-height:3vh;margin-top:2.4vh;font-size:clamp(14px,2vh,20px);color:#DC2626}
+.cs-pinop .ms.ok{color:#15803D;font-weight:600}
+.cs-pinop.abre .ms.ok{color:#86EFAC}
+.cs-pinop .mo{width:100%;padding:0 4vw}
+.cs-pinop .mg{font-size:clamp(11px,1.4vh,14px);font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#6B7280;margin:1.2vh 0 .8vh}
+.cs-pinop .ch{display:flex;flex-wrap:wrap;gap:1vh}
+.cs-pinop .ch button{min-height:clamp(38px,5vh,52px);padding:0 14px;border-radius:999px;border:1px solid #D8DCE3;background:#fff;font:600 clamp(13px,1.7vh,17px) Inter,sans-serif}
+.cs-pinop .ch.pri button.on{background:#1B4F9C;border-color:#1B4F9C;color:#fff}
+.cs-pinop .ch.sec button.on{background:#EAF2FE;border-color:#1D6FE8;color:#1B4F9C}
+/* materiais necessários */
+.cs-matop{display:none}
+.cs-matop.on{position:fixed;inset:0;z-index:400;display:flex;flex-direction:column;background:#F4F5F7}
+.cs-matop .tp{display:flex;align-items:center;background:#0E1B33;color:#fff;padding:2vh 4vw}
+.cs-matop .tp b{display:block;font-size:clamp(18px,2.6vh,26px)}.cs-matop .tp i{font-style:normal;font-size:clamp(12px,1.6vh,16px);color:#94A3B8}
+.cs-matop .x{margin-left:auto;width:clamp(40px,5.4vh,56px);height:clamp(40px,5.4vh,56px);border-radius:10px;border:0;background:#1E293B;color:#fff;font-size:28px}
+.cs-matop .ls{flex:1;overflow:auto;padding:2vh 4vw}
+.cs-matop table{width:100%;border-collapse:collapse;font-size:clamp(15px,2.2vh,22px)}
+.cs-matop th{font-size:clamp(11px,1.4vh,14px);font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#6B7280;text-align:left;padding:1vh .5vw;border-bottom:2px solid #1A1D23}
+.cs-matop th:last-child,.cs-matop td:last-child{text-align:right}
+.cs-matop td{padding:1.5vh .5vw;border-bottom:1px solid #D8DCE3}
+.cs-matop td:last-child{font:700 clamp(16px,2.4vh,24px) 'JetBrains Mono',monospace;white-space:nowrap}
+.cs-matop .rd{padding:2vh 4vw;border-top:1px solid #D8DCE3;background:#fff}
+.cs-matop .rd button{width:100%;min-height:clamp(52px,8vh,80px);border-radius:14px;border:1.5px solid #B4B9C4;background:#fff;font:600 clamp(16px,2.2vh,22px) Inter,sans-serif}
+.cs-opmenu .cs-matb{display:flex;align-items:center;gap:10px;width:100%;background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:0 0 12px;font:600 15px Inter,sans-serif;color:var(--ink);cursor:pointer;text-align:left}
+.cs-opmenu .cs-matb svg{width:22px;height:22px;color:#1B4F9C}.cs-opmenu .cs-matb em{margin-left:auto;font-style:normal;color:var(--ink3);font-size:13px}
+/* descanso aprovado */
+.cs-desc.on{background:#070B14;--cor:#60A5FA;--cor2:#BFDBFE;justify-content:flex-start;padding:5vh 5vw 4vh}
+.cs-desc.on.set{--cor:#94A3B8;--cor2:#CBD5E1}.cs-desc.on.rod{--cor:#5DCAA5;--cor2:#9FE1CB}.cs-desc.on.apo{--cor:#A78BFA;--cor2:#DDD6FE}
+.cs-desc.on.pau{--cor:#EAB308;--cor2:#FDE68A;background:#130F03}.cs-desc.on.atr{--cor:#EF4444;--cor2:#FCA5A5;background:#150606}
+.cs-desc .ag{font:700 clamp(40px,6vh,64px) 'JetBrains Mono',monospace}
+.cs-desc .dt2{font-size:clamp(13px,1.9vh,19px);color:#64748B;margin-top:.4vh}
+.cs-desc .np{margin-top:3vh;font:700 clamp(32px,5.4vh,58px)/1.05 'Barlow Condensed',sans-serif;letter-spacing:.02em;text-transform:uppercase;max-width:90vw}
+.cs-desc .nl{font-size:clamp(13px,1.8vh,18px);color:#94A3B8;margin-top:.8vh}
+.cs-desc .an{position:relative;width:min(60vw,44vh);aspect-ratio:1;margin-top:3vh}
+.cs-desc .an svg{width:100%;height:100%;transform:rotate(-90deg)}
+.cs-desc .ad{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.cs-desc .ad .m{font:700 clamp(32px,5.6vh,58px) 'Barlow Condensed',sans-serif;letter-spacing:.03em}
+.cs-desc .ad .s{margin-top:.6vh;font-size:clamp(12px,1.7vh,17px);font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--cor2)}
+.cs-desc .ad .t{margin-top:1.2vh;font:700 clamp(28px,4.8vh,50px) 'JetBrains Mono',monospace;color:var(--cor2)}
+.cs-desc .ad .t2{font-size:clamp(11px,1.5vh,15px);color:#64748B;margin-top:.3vh}
+.cs-desc .pr{margin-top:auto;width:100%;display:flex;align-items:center;justify-content:space-between;border:1px solid #1E293B;background:#0F172A;border-radius:16px;padding:1.8vh 5vw}
+.cs-desc .pr i{font-style:normal;font-size:clamp(11px,1.5vh,15px);font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#94A3B8}
+.cs-desc .pr b{font:700 clamp(30px,4.6vh,48px) 'JetBrains Mono',monospace;color:#FAC775}
+.cs-desc.atr .pr b{color:#FCA5A5}
+.cs-desc .tq{margin-top:2vh;display:flex;align-items:center;gap:8px;font-size:clamp(12px,1.6vh,16px);color:#475569}
+.cs-desc .tq svg{width:clamp(20px,2.6vh,26px);height:clamp(20px,2.6vh,26px)}
 </style>
 </head>
 <body>
@@ -3855,6 +3980,8 @@ const ETAPAS=[['setup','Setup'],['envase','Envase'],['quebra','Perda de volume']
    liberar o tanque. Fica configurável porque nem toda fábrica trabalha assim,
    e porque ligar isso num dia de fila grande para a produção inteira. */
 let EXIGE_LIBERACAO=false;
+/* v299: a tela da máquina só aceita os operadores daquela linha (e os sem linha fixa) */
+let CS_TRAVA_LINHA=false;
 let TOLERANCIA=10;                       /* minutos de desvio antes de perguntar */
 /* Quanto de atraso o sistema aceita sem perguntar o motivo. Nasce igual à
    tolerância geral e se cadastra em Configurações → Máquinas e tanques. */
@@ -5052,7 +5179,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v296';
+const VERSAO_APP='v299';
 let DRAG=null;
 function render(){
   recomporTudo();
@@ -15171,11 +15298,15 @@ function abrirCfgPCP(){
   const des=()=>{M('mB').innerHTML=`<div class="st">Marcadores das OPs</div><div class="cfgmk" style="margin:8px 0 18px">${CAD_MK_OP.map((m,i)=>`<span><input type="color" value="${m.cor}" data-mkc="${i}">${escAttr(m.nome)}<em data-mkx="${i}">✕</em></span>`).join('')}
       <input id="mkNovo" placeholder="novo marcador" style="width:170px;height:32px"><button class="btn sm" id="mkAdd">+ incluir</button></div>
     <div class="st">Tela do operador</div><p class="adp">A tela que o operador vê na máquina. De dentro do ERP, só abre com a senha de quem tem a permissão <b>Abrir a tela do operador</b> (Pessoas e permissões, em Envase). Fica registrado quem abriu.</p>
+    <label class="chk" style="display:flex;gap:10px;align-items:flex-start;margin:4px 0 14px;cursor:pointer"><input type="checkbox" id="cfgTrava" ${CS_TRAVA_LINHA?'checked':''} style="margin-top:3px">
+      <span><b>Travar a máquina para os operadores da linha</b><br><span class="k" style="font-size:12.5px">Ligado: o tablet de cada máquina só aceita o PIN de quem tem aquela linha no cadastro (Configurações › Operadores › Linha em que trabalha) e de quem está como <b>Sem linha fixa</b>, para cobrir.
+      Desligado: qualquer operador cadastrado abre e assina em qualquer máquina. Nos dois casos, o histórico guarda quem digitou o PIN.</span></span></label>
     <button class="btn pri" id="opAbrir">Abrir tela do operador</button>`;
     M('mB').querySelectorAll('[data-mkc]').forEach(c=>c.onchange=()=>{CAD_MK_OP[+c.dataset.mkc].cor=c.value;agendarSalvar();});
     M('mB').querySelectorAll('[data-mkx]').forEach(x=>x.onclick=()=>{if(!confirm('Tirar este marcador?'))return;CAD_MK_OP.splice(+x.dataset.mkx,1);agendarSalvar();des();});
     M('mkAdd').onclick=()=>{const n=M('mkNovo').value.trim();if(!n)return;if(CAD_MK_OP.some(m=>m.nome.toLowerCase()===n.toLowerCase()))return toast('Esse marcador já existe.',true);
       CAD_MK_OP.push({nome:n,cor:OD_MK_CORES[CAD_MK_OP.length%OD_MK_CORES.length]});agendarSalvar();des();};
+    M('cfgTrava').onchange=e=>{CS_TRAVA_LINHA=e.target.checked;agendarSalvar();toast(CS_TRAVA_LINHA?'Cada máquina aceita só os operadores da linha e os sem linha fixa.':'Qualquer operador abre qualquer máquina.');};
     M('opAbrir').onclick=()=>pedirGestor(quem=>{
       try{(window.LOG_TELAOP=window.LOG_TELAOP||[]).push({em:new Date().toISOString(),por:quem});}catch(e){}
       toast('Tela do operador aberta por '+quem+'.');fecharModal();setTimeout(()=>{const b=M('telaOp');if(b&&b.onclick)b.onclick();},50);});};
@@ -15266,7 +15397,14 @@ function difConsumo(o,de,para){
   return Object.values(mapa).filter(x=>Math.abs(x.qtd)>0.0001);
 }
 
+const TINY_GRAVA=['movimentar','conta_pagar'];
+let TINY_LIBERADO=false;
 async function chamarTiny(corpo){
+  if(corpo&&TINY_GRAVA.includes(corpo.acao)&&!TINY_LIBERADO){
+    const ok=window.confirm('MODO TESTE\n\nIsto vai gravar no Tiny de verdade (estoque ou contas a pagar).\n\nLiberar as gravações no Tiny nesta sessão?');
+    if(!ok)throw new Error('Gravação no Tiny cancelada.');
+    TINY_LIBERADO=true;
+  }
   /* a verificação de sessão vinha da outra declaração, que foi removida:
      sem ela o erro que aparecia era "erro 401", que não diz nada a ninguém */
   if(!temNuvem()||!SESSAO)throw new Error('Precisa estar logado no banco.');
@@ -17260,7 +17398,7 @@ function estadoAtual(){
     ordens:ORDENS,aponta:APONTA,saldos:SALDOS,sopro:SOPRO,
     ocorrencias:OCORRENCIAS,
     cadastro:{produtos:PRODUTOS,insumos:INSUMOS,calendario:CALENDARIO,alertasParada:ALERTAS_PARADA,
-      paradasDesde:PARADAS_DESDE,marcoAplicado:MARCO_APLICADO,exigeLiberacao:EXIGE_LIBERACAO,proxLote:PROX_LOTE,formulas:FORMULAS,funcoes:FUNCOES,validade:VALIDADE,rt:RT,operadores:OPERADORES,espec:ESPEC,ensaios:ENSAIOS,quali:QUALI,modulosErp:MODULOS_ERP,fotosProd:FOTOS_PROD,fotosAju:FOTOS_AJU,preformas:PREFORMAS,prefProd:PREF_PROD,recursos:RECURSOS,gruposMaq:GRUPOS_MAQ,mkOp:CAD_MK_OP,formVers:FORM_VERS,grupos:CAD_GRUPOS,waModelo:WA_MODELO,mod272:true,mod275:true,mod278:true,motivos:MOTIVOS,tolerancia:TOLERANCIA,quebraL:QUEBRA_L,tempos:TEMPOS,setupEnv:SETUP_ENV,tempoGranel:TEMPO_GRANEL,frascos:FRASCOS,sopradoras:SOPRADORAS,tanques:TANQUES,
+      paradasDesde:PARADAS_DESDE,marcoAplicado:MARCO_APLICADO,exigeLiberacao:EXIGE_LIBERACAO,travaLinha:CS_TRAVA_LINHA,proxLote:PROX_LOTE,formulas:FORMULAS,funcoes:FUNCOES,validade:VALIDADE,rt:RT,operadores:OPERADORES,espec:ESPEC,ensaios:ENSAIOS,quali:QUALI,modulosErp:MODULOS_ERP,fotosProd:FOTOS_PROD,fotosAju:FOTOS_AJU,preformas:PREFORMAS,prefProd:PREF_PROD,recursos:RECURSOS,gruposMaq:GRUPOS_MAQ,mkOp:CAD_MK_OP,formVers:FORM_VERS,grupos:CAD_GRUPOS,waModelo:WA_MODELO,mod272:true,mod275:true,mod278:true,motivos:MOTIVOS,tolerancia:TOLERANCIA,quebraL:QUEBRA_L,tempos:TEMPOS,setupEnv:SETUP_ENV,tempoGranel:TEMPO_GRANEL,frascos:FRASCOS,sopradoras:SOPRADORAS,tanques:TANQUES,
       jornada:JORNADA,frascoProd:FRASCO_PROD,usuarios:USUARIOS,proxOp:PROX_OP,
       gruposMotivo:GRUPOS_MOTIVO,semana:SEMANA_PADRAO,tolAtraso:TOL_ATRASO},
     estoque:{saldos:ESTOQUE,em:ESTOQUE_EM,d:ESTOQUE_D},
@@ -17386,6 +17524,7 @@ function aplicarEstado(txt){
   if(cad.marcoAplicado)MARCO_APLICADO=cad.marcoAplicado;
   aplicarResetParadas();
   if(cad.exigeLiberacao!=null)EXIGE_LIBERACAO=!!cad.exigeLiberacao;
+  if(cad.travaLinha!=null)CS_TRAVA_LINHA=!!cad.travaLinha;
   if(cad.calendario)Object.assign(CALENDARIO,cad.calendario);
   if(cad.semana)Object.assign(SEMANA_PADRAO,cad.semana);
   if(cad.alertasParada&&cad.alertasParada.length){
@@ -17511,7 +17650,8 @@ const agendarSalvar=()=>{clearTimeout(tSalvar);tSalvar=setTimeout(()=>persistir(
 const SUPA={
   url:'https://vmatnbakipwxyhouzybr.supabase.co',
   key:'sb_publishable_FQrnIdGMr2VVKqyYlnDZRA_JF3i9q-h',
-  linha:'atrius'
+  linha:'atrius2',   /* MODO TESTE: grava aqui */
+  le:'atrius'        /* e lê a produção ao vivo daqui */
 };
 const SUPA_SESSAO='pcp-atrius-sessao';
 const SENHA_SERVIDOR=false;   /* vira true quando a função de redefinir senha for instalada */
@@ -17558,16 +17698,26 @@ const emailDaSessao=()=>(SESSAO&&SESSAO.user&&SESSAO.user.email)||'';
 
 /* ---------- leitura e gravação ---------- */
 async function nuvemLer(){
+  /* MODO TESTE: a produção vem do PCP ao vivo; o que só o ERP tem (versões de
+     fórmula, grupos, marcadores das OPs...) vem da linha de teste */
   const r=await fetch(
-    `${SUPA.url}/rest/v1/pcp_estado?id=eq.${SUPA.linha}&select=dados,versao,atualizado_em,atualizado_por`,
+    `${SUPA.url}/rest/v1/pcp_estado?id=in.(${SUPA.le},${SUPA.linha})&select=id,dados,versao,atualizado_em,atualizado_por`,
     {headers:cabecalhos()});
   if(r.status===401){ if(await renovarSessao())return nuvemLer(); throw new Error('sessão expirada'); }
   if(!r.ok)throw new Error('leitura falhou ('+r.status+')');
   const l=await r.json();
-  return l[0]||null;
+  const pcp=l.find(x=>x.id===SUPA.le),erp=l.find(x=>x.id===SUPA.linha);
+  if(!pcp)return erp||null;
+  const dados=Object.assign({},pcp.dados||{});
+  try{const c=Object.assign({},dados.cadastro||{}),e=(erp&&erp.dados&&erp.dados.cadastro)||{};Object.keys(e).forEach(k=>{if(!(k in c))c[k]=e[k];});dados.cadastro=c;
+    Object.keys((erp&&erp.dados)||{}).forEach(k=>{if(!(k in dados))dados[k]=erp.dados[k];});
+    /* v289: o que só o ERP mexe (saldo lido do Tiny e fila de envio) vem da linha de teste,
+       senão cada leitura voltava ao que o PCP antigo tinha e a leitura do estoque sumia */
+    ['estoque','filaTiny'].forEach(k=>{if(erp&&erp.dados&&erp.dados[k])dados[k]=erp.dados[k];});}catch(x){}
+  return {dados,versao:pcp.versao,atualizado_em:pcp.atualizado_em,atualizado_por:pcp.atualizado_por};
 }
 async function nuvemVersao(){
-  const r=await fetch(`${SUPA.url}/rest/v1/pcp_estado?id=eq.${SUPA.linha}&select=versao`,
+  const r=await fetch(`${SUPA.url}/rest/v1/pcp_estado?id=eq.${SUPA.le}&select=versao`,
     {headers:cabecalhos()});
   if(!r.ok)return null;
   const l=await r.json();
@@ -17578,16 +17728,15 @@ async function nuvemVersao(){
 async function nuvemGravar(texto){
   const corpo={dados:JSON.parse(texto),versao:VERSAO_NUVEM+1,
     atualizado_em:new Date().toISOString(),atualizado_por:emailDaSessao()};
+  /* MODO TESTE: grava sempre na linha de teste, sem tocar na do PCP */
+  corpo.id=SUPA.linha;
   const r=await fetch(
-    `${SUPA.url}/rest/v1/pcp_estado?id=eq.${SUPA.linha}&versao=eq.${VERSAO_NUVEM}`,
-    {method:'PATCH',headers:cabecalhos({'Prefer':'return=representation'}),
+    `${SUPA.url}/rest/v1/pcp_estado?on_conflict=id`,
+    {method:'POST',headers:cabecalhos({'Prefer':'resolution=merge-duplicates,return=minimal'}),
      body:JSON.stringify(corpo)});
   if(r.status===401){ if(await renovarSessao())return nuvemGravar(texto); throw new Error('sessão expirada'); }
   if(!r.ok)throw new Error('gravação falhou ('+r.status+')');
-  const l=await r.json();
-  if(!l.length)return {conflito:true};
-  VERSAO_NUVEM=l[0].versao;
-  return {conflito:false,versao:l[0].versao};
+  return {conflito:false,versao:VERSAO_NUVEM};
 }
 
 /* ---------- alguém mexeu? ---------- */
@@ -20558,7 +20707,7 @@ function csRetomar(o){
   const hora=(new Date()).toTimeString().slice(0,5);
   o.log=o.log||[];
   o.log.push({hora:hora,evento:'retomada · parada por '+o.csPausa.motivo,
-    quem:o.csPausa.quem});
+    quem:(OPERADOR&&OPERADOR.nome)||o.csPausa.quem});
   o.csPausa=null;
   try{agendarSalvar();}catch(e){}
   try{toast('Linha retomada.');}catch(e){}
@@ -20699,8 +20848,6 @@ function csMenuOperador(maq,atual,fila,feitas){
     ${(()=>{try{return (atual&&csUltimoPasso(atual))
       ?`<button class="ac" data-opm="desf">Desfazer último passo</button>`:'';
     }catch(e){return '';}})()}
-    <button class="ac" data-opm="cheia">${document.fullscreenElement
-      ?'Sair da tela cheia':'Tela cheia — esconder o navegador'}</button>
     ${'' /* Sem botões de outras máquinas: um operador não vê a produção do
             outro. O tablet de cada linha abre direto na sua máquina, pelo
             endereço favoritado (#op1, #op2, #op3). */}
@@ -20904,7 +21051,6 @@ function csPintarOperador(){
         <i>${escAttr(dLongoAno(ymd(agoraD)))}</i>
         <span class="conex" id="csOpConex"></span></div>
       <button class="tres" id="csOpMais">&#8942;</button>
-      ${podeSair?`<button class="sair" id="csOpSair">Sair</button>`:''}
     </div>
     ${'' /* A máquina ganhou faixa própria. Antes a OP e o lote apareciam aqui
             e de novo nos blocos, duas vezes na mesma tela. */}
@@ -20925,13 +21071,14 @@ function csPintarOperador(){
           </div>
         </div>
       </div>
-      ${csRelogioEtapa(atual,st,pausada)}
       <div class="prazo">
-        <div class="pz"><i>Começa</i><b>${hhmm(atual.inicio)}</b></div>
+        <div class="pz"><i>${atual.iniReal?'Começou':'Começa'}</i><b>${atual.iniReal?escAttr(atual.iniReal):hhmm(atual.inicio)}</b></div>
         <div class="pz alvo"><i>Precisa estar pronto</i><b>${(function(){
           const f=hhmm(fimPrev(atual));
           return /NaN|undefined/.test(f)?'—':f;})()}</b></div>
       </div>
+      ${csStatusOp(atual,st,pausada)}
+      ${atual.iniReal&&false?`<div class="ativa"><i>Ativa há</i><b id="csOpAtiva" data-ini="${escAttr(atual.data)}T${escAttr(atual.iniReal)}">00:00:00</b></div>`:''}
       ${pausada?`<div class="pausado">Linha pausada desde <b>${atual.csPausa.desde}</b>
         · ${escAttr(atual.csPausa.motivo)}${atual.csPausa.obs
           ?` — ${escAttr(atual.csPausa.obs)}`:''}</div>`:''}
@@ -21546,7 +21693,7 @@ window.csNucleo=(function(){
     VERS[id]=l[0].versao;return {ok:true};
   }
   return {
-    versao:'v296',
+    versao:'v299',
     logo:()=>LOGO,
     teste:!temNuvem(),
     usuario:()=>{try{return (MEU_ACESSO&&MEU_ACESSO.nome)||(EU&&EU.nome)||emailDaSessao()||'Teste';}catch(e){return 'Teste';}},
@@ -22058,7 +22205,7 @@ function csCalc(){
 }
 (function(){if(typeof csMenuOperador!=='function')return;const _m=csMenuOperador;
   csMenuOperador=function(){const r=_m.apply(this,arguments);try{const m=document.getElementById('csOpMenu');const cab=m&&m.querySelector('.cab');
-    if(cab&&!cab.querySelector('.calcb')){const b=document.createElement('button');b.className='calcb';b.innerHTML='<span>🧮</span> Calculadora';
+    if(cab&&!cab.querySelector('.calcb')){const b=document.createElement('button');b.className='calcb';b.innerHTML=CS_ICO_CALC+'<span>Calculadora</span>';
       b.onclick=ev=>{ev.stopPropagation();csCalc();};const x=cab.querySelector('.x');cab.insertBefore(b,x);}}catch(e){}return r;};})();
 </script>
 <script>
@@ -23140,5 +23287,236 @@ window.addEventListener('resize',()=>{clearTimeout(window._csIvT);window._csIvT=
 /* as imagens dos produtos mudam a altura quando terminam de carregar */
 document.addEventListener('load',ev=>{if(ev.target&&ev.target.tagName==='IMG'&&ev.target.closest&&ev.target.closest('.cs-viva')){clearTimeout(window._csIvI);window._csIvI=setTimeout(csIgualaViva,60);}},true);
 </script>
+<script>
+/* ===================== v297 · tablet em modo quiosque ===================== */
+var CS_ICO_CALC='<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2.5"/><rect x="8" y="6" width="8" height="3.5" rx=".8"/><path d="M8.5 13h.01M12 13h.01M15.5 13h.01M8.5 16.5h.01M12 16.5h.01M15.5 16.5h.01"/></svg>';
+const csOpLigado=()=>document.body.classList.contains('cs-operon');
+/* ---------- ativa há ---------- */
+function csOpTique(){
+  const b=document.getElementById('csOpAtiva');
+  if(b&&b.dataset.ini){const s=Math.max(0,Math.floor((Date.now()-new Date(b.dataset.ini).getTime())/1000));
+    b.textContent=`${p2(Math.floor(s/3600))}:${p2(Math.floor(s/60)%60)}:${p2(s%60)}`;}
+  const d=document.getElementById('csDesc');if(d&&d.classList.contains('on'))csDescPinta();
+}
+setInterval(()=>{try{if(csOpLigado())csOpTique();}catch(e){}},1000);
+/* ---------- saída escondida: segurar o logo 3 segundos ---------- */
+document.addEventListener('pointerdown',ev=>{
+  const l=ev.target.closest&&ev.target.closest('#csOper .marca');if(!l)return;
+  clearTimeout(window._csSaiT);
+  window._csSaiT=setTimeout(()=>{
+    pedirPin('Sair da tela do operador','Só o master sai da tela da máquina.',()=>{
+      try{if(/^#op[123]$/.test(location.hash))location.hash='#envase';}catch(e){}
+      csDescEsconde();csFecharOperador();},
+      q=>q.nivel==='master');
+  },3000);
+},true);
+['pointerup','pointercancel','pointerleave'].forEach(t=>document.addEventListener(t,()=>clearTimeout(window._csSaiT),true));
+/* ---------- tela sempre ligada ---------- */
+let CS_WL=null;
+async function csWake(){try{if(!csOpLigado()||!navigator.wakeLock||CS_WL)return;CS_WL=await navigator.wakeLock.request('screen');CS_WL.addEventListener('release',()=>{CS_WL=null;});}catch(e){CS_WL=null;}}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')csWake();});
+/* ---------- descanso de tela: 5 minutos sem toque ---------- */
+const CS_DESC_MIN=5;
+let CS_TOQUE=Date.now();
+function csDescPinta(){
+  const d=document.getElementById('csDesc');if(!d)return;
+  let atual=null;try{atual=csOPdaLinha(CS_OPMAQ).atual;}catch(e){}
+  const p=atual?(prodOf(atual.codigo)||{}):{};
+  const nome=String(p.descricao||(atual&&atual.codigo)||'').replace(/\s*[-–]\s*(CX|FD|PC|CT|PT|SC|BD|GL|BB)\b.*$/i,'').trim();
+  const pau=atual&&atual.csPausa;
+  let est='sem OP agora';try{if(atual)est=pau?'pausada':({preparacao:'em setup',producao:'envasando',finalizado:'a apontar'})[sit(atual)]||'a iniciar';}catch(e){}
+  let ativa='—';if(atual&&atual.iniReal){const s=Math.max(0,Math.floor((Date.now()-new Date(`${atual.data}T${atual.iniReal}`).getTime())/1000));ativa=`${p2(Math.floor(s/3600))}:${p2(Math.floor(s/60)%60)}:${p2(s%60)}`;}
+  const ag=new Date();
+  d.className='cs-desc on'+(pau?' pau':'');
+  d.innerHTML=`<div class="dm">${escAttr(CS_OPMAQ||'')} · ${escAttr(est)}</div>
+    ${atual?`<div class="dn">${escAttr(nome)}</div><div class="dl">lote ${escAttr(atual.lote||'—')} · ${nf(caixasPrev(atual))} ${und(atual)}</div>
+    ${pau?`<div class="dr">Pausada desde</div><div class="dt">${escAttr(atual.csPausa.desde)}</div><div class="dl">${escAttr(atual.csPausa.motivo||'')}</div>`
+      :`<div class="dr">Precisa estar pronto</div><div class="dt">${(()=>{const f=hhmm(fimPrev(atual));return /NaN|undefined/.test(f)?'—':f;})()}</div>`}
+    <div class="da">Ativa há</div><div class="dc">${ativa}</div>`:'<div class="dn">Nenhuma OP na linha</div>'}
+    <div class="dv">toque na tela para voltar</div><div class="dh">${p2(ag.getHours())}:${p2(ag.getMinutes())}</div>`;
+}
+function csDescMostra(){if(!csOpLigado())return;let d=document.getElementById('csDesc');
+  if(!d){d=document.createElement('div');d.id='csDesc';document.body.appendChild(d);}
+  csDescPinta();}
+function csDescEsconde(){const d=document.getElementById('csDesc');if(d)d.className='cs-desc';}
+['pointerdown','touchstart','keydown'].forEach(t=>document.addEventListener(t,ev=>{
+  CS_TOQUE=Date.now();const d=document.getElementById('csDesc');
+  if(d&&d.classList.contains('on')){ev.preventDefault();ev.stopPropagation();csDescEsconde();}
+},true));
+setInterval(()=>{try{if(csOpLigado()){csWake();if(Date.now()-CS_TOQUE>=CS_DESC_MIN*60000)csDescMostra();}else csDescEsconde();}catch(e){}},5000);
+/* ---------- janelas de PIN, motivo e contagem: tela inteira e teclado próprio ----------
+   O teclado do Android subia e cobria o campo e o botão de confirmar. Na tela
+   do operador os números entram por um teclado da própria janela. */
+const CS_KP_SEL='input[type=password],input[type=number],input[inputmode=numeric],input[inputmode=decimal],input[id*="Pin"],input[id*="pin"]';
+let CS_KP_ALVO=null;
+function csTeclado(){
+  if(!csOpLigado())return;const b=M('mB');if(!b)return;
+  const cs=[...b.querySelectorAll(CS_KP_SEL)].filter(i=>!i.disabled&&!i.readOnly&&i.type!=='hidden'&&!i.closest('[hidden]')&&getComputedStyle(i).display!=='none');
+  const velho=b.querySelector('.cs-kp');
+  if(!cs.length){if(velho)velho.remove();return;}
+  cs.forEach(i=>{i.setAttribute('inputmode','none');i.onfocus=()=>{CS_KP_ALVO=i;cs.forEach(x=>x.classList.toggle('kpalvo',x===i));};});
+  if(!CS_KP_ALVO||!cs.includes(CS_KP_ALVO))CS_KP_ALVO=cs.find(i=>i.type==='password'||/pin/i.test(i.id))||cs[0];
+  cs.forEach(x=>x.classList.toggle('kpalvo',x===CS_KP_ALVO));
+  if(velho)return;
+  const k=document.createElement('div');k.className='cs-kp';
+  k.innerHTML=['1','2','3','4','5','6','7','8','9','C','0','⌫'].map(x=>`<button type="button" data-kp="${x}"${x==='C'||x==='⌫'?' class="f"':''}>${x==='⌫'?'&#9003;':x==='C'?'limpar':x}</button>`).join('');
+  k.onclick=ev=>{const t=ev.target.closest('[data-kp]');if(!t||!CS_KP_ALVO)return;ev.preventDefault();
+    const i=CS_KP_ALVO,x=t.dataset.kp;let v=String(i.value||'');
+    v=x==='C'?'':x==='⌫'?v.slice(0,-1):v+x;
+    i.value=v;i.dispatchEvent(new Event('input',{bubbles:true}));i.dispatchEvent(new Event('change',{bubbles:true}));};
+  b.appendChild(k);
+}
+try{const _am=abrirMask;abrirMask=function(){const r=_am.apply(this,arguments);CS_KP_ALVO=null;setTimeout(csTeclado,0);return r;};}catch(e){}
+try{new MutationObserver(ms=>{if(!csOpLigado()||!M('mask').classList.contains('on'))return;
+  if(ms.every(m=>[...m.addedNodes,...m.removedNodes].every(n=>n.classList&&n.classList.contains('cs-kp'))))return;
+  clearTimeout(window._csKpT);window._csKpT=setTimeout(csTeclado,30);}).observe(document.getElementById('mB'),{childList:true,subtree:true});}catch(e){}
+</script>
+<script>
+/* ===================== v298 · tela do operador aprovada ===================== */
+/* ---------- a faixa de status: a etapa, a cor e o tempo dela ---------- */
+function csStatusOp(o,st,pau){
+  let c='ini',r='A iniciar',sub='aguardando o setup',ini='';
+  const hj=o.data||ymd(new Date());
+  if(pau){c='pau';r='Pausada';sub=`${o.csPausa.motivo||''} · desde ${o.csPausa.desde||''}${o.csPausa.quem?' · '+o.csPausa.quem:''}`;ini=o.csPausa.desde?`${ymd(new Date())}T${o.csPausa.desde}`:'';}
+  else if(st==='preparacao'){c='set';r='Em setup';sub='preparando a máquina';ini=o.iniReal?`${hj}T${o.iniReal}`:'';}
+  else if(st==='producao'){let atr=false;try{atr=atrasada(o);}catch(e){}
+    const e=(typeof iniEnvase==='function'&&iniEnvase(o))||o.envIni;
+    c=atr?'atr':'rod';r=atr?'Envase atrasado':'Envasando';sub=atr?'passou do previsto':'dentro do previsto';ini=e?`${hj}T${e}`:'';}
+  else if(st==='finalizado'){c='apo';r='A apontar';sub='conte as caixas e aponte';ini=o.fimReal?`${hj}T${o.fimReal}`:'';}
+  return `<div class="cs-st ${c}"><span class="pt"></span><div><div class="rot">${r}</div><div class="sub">${escAttr(sub)}</div></div>
+    <span class="tm" ${ini?`data-ini="${escAttr(ini)}"`:''}>${ini?'00:00:00':'--:--:--'}</span></div>`;
+}
+const csHMS=ms=>{const s=Math.max(0,Math.floor(ms/1000));return `${p2(Math.floor(s/3600))}:${p2(Math.floor(s/60)%60)}:${p2(s%60)}`;};
+setInterval(()=>{try{document.querySelectorAll('#csOper .cs-st .tm[data-ini]').forEach(b=>{b.textContent=csHMS(Date.now()-new Date(b.dataset.ini).getTime());});}catch(e){}},1000);
+
+/* ---------- PIN: para abrir a tela e em cada botão ---------- */
+/* Vale o PIN de um operador cadastrado (e do master/gestor, para suporte).
+   Quem digita vira o OPERADOR da vez: é o nome que vai para o histórico. */
+let CS_OP_ABERTO=false,CS_PIN_PASSA=false;
+function csPinValido(pin){
+  window.CS_PIN_MOTIVO='';const q=quemPorCredencial(pin);if(!q)return null;
+  if(q.tipo==='operador'){
+    if(CS_TRAVA_LINHA){const op=(typeof OPERADORES!=='undefined'?OPERADORES:[]).find(x=>x.nome===q.nome);
+      if(op&&op.maq&&op.maq!==CS_OPMAQ){window.CS_PIN_MOTIVO=`${q.nome} é da ${op.maq}. Esta máquina aceita só os operadores dela.`;return null;}}
+    return q;}
+  if(q.master||['master','gestor'].includes(q.nivel))return q;
+  try{const a=ACESSOS.find(x=>norMail(x.email)===norMail(q.email));if(a&&csTipoDe(a)==='op')return q;}catch(e){}
+  return null;
+}
+function csViraOperador(q){
+  const o=(typeof OPERADORES!=='undefined'?OPERADORES:[]).find(x=>x.nome===q.nome);
+  OPERADOR=o||{id:'pin-'+q.nome,nome:q.nome};
+}
+function csPinTela(tit,sub,ok,mot){
+  let d=document.getElementById('csPinOp');
+  if(!d){d=document.createElement('div');d.id='csPinOp';document.body.appendChild(d);}
+  const h=new Date().getHours(),ola=h<12?'Bom dia':h<18?'Boa tarde':'Boa noite';
+  const abrir=!tit;
+  d.className='cs-pinop on'+(abrir?' abre':'');
+  d.innerHTML=`${abrir?`<img class="lg" src="${LOGO}" alt="Atrius"><div class="ola">${ola}</div><div class="mq">${escAttr(CS_OPMAQ||'')}</div><div class="pd">Operador, digite seu PIN para abrir</div>`
+    :`<div class="tp"><div><b>${escAttr(tit)}</b><i>${escAttr(sub||'')}</i></div><button class="x" data-pk="x" aria-label="Cancelar">&times;</button></div><div class="pd">Digite seu PIN</div>`}
+    ${mot?`<div class="mo"><div class="mg">${escAttr(mot.titulo)} · motivo principal</div><div class="ch pri">${mot.lista.map(m=>`<button data-mp="${escAttr(m)}">${escAttr(m)}</button>`).join('')}</div>
+      <div class="mg">Motivos secundários</div><div class="ch sec">${mot.lista.map(m=>`<button data-ms="${escAttr(m)}">${escAttr(m)}</button>`).join('')}</div></div>`:''}
+    <div class="pts"><i></i><i></i><i></i><i></i></div>
+    <div class="tec">${['1','2','3','4','5','6','7','8','9','','0','⌫'].map(k=>k?`<button data-pk="${k}"${k==='⌫'?' class="f" aria-label="Apagar"':''}>${k==='⌫'?'&#9003;':k}</button>`:'<span></span>').join('')}</div>
+    <div class="ms"></div>`;
+  let v='';const pts=d.querySelector('.pts'),ms=d.querySelector('.ms');
+  const mostra=()=>[...pts.children].forEach((i,n)=>i.classList.toggle('on',n<v.length));
+  const esc={pri:'',sec:new Set()};
+  d.onclick=ev=>{const mp=ev.target.closest('[data-mp]'),msb=ev.target.closest('[data-ms]');
+    if(mp){esc.pri=mp.dataset.mp;esc.sec.delete(esc.pri);d.querySelectorAll('[data-mp]').forEach(x=>x.classList.toggle('on',x===mp));d.querySelectorAll('[data-ms]').forEach(x=>x.classList.toggle('on',esc.sec.has(x.dataset.ms)));return;}
+    if(msb){const k=msb.dataset.ms;if(k===esc.pri)return;if(esc.sec.has(k))esc.sec.delete(k);else esc.sec.add(k);msb.classList.toggle('on',esc.sec.has(k));return;}
+    const b=ev.target.closest('[data-pk]');if(!b)return;ev.stopPropagation();const k=b.dataset.pk;
+    if(k==='x'){d.className='cs-pinop';return;}
+    v=k==='⌫'?v.slice(0,-1):(v.length<6?v+k:v);mostra();ms.textContent='';
+    if(v.length>=4){const q=csPinValido(v),q0=q||quemPorCredencial(v);
+      const longo=[...(typeof OPERADORES!=='undefined'?OPERADORES:[]),...(typeof ACESSOS!=='undefined'?ACESSOS:[])].some(o=>String(o.pin||'').length>v.length);
+      const erro=m=>{pts.classList.add('erro');ms.className='ms';ms.textContent=m;setTimeout(()=>{pts.classList.remove('erro');v='';mostra();},500);};
+      if(q&&mot&&!esc.pri){erro('Escolha o motivo principal antes do PIN.');return;}
+      if(q){ms.textContent=q.nome;ms.className='ms ok';const pin=v;setTimeout(()=>{d.className='cs-pinop';csViraOperador(q);ok(q,pin,mot?{principal:esc.pri,secundarios:[...esc.sec]}:null);},250);}
+      else if(q0)erro(window.CS_PIN_MOTIVO||'Este PIN não tem acesso à tela da máquina.');
+      else if(v.length>=6||!longo)erro('PIN não reconhecido.');}};
+}
+/* abre pedindo o PIN */
+try{const _ab=csAbrirOperador;csAbrirOperador=function(){const r=_ab.apply(this,arguments);
+  if(!CS_OP_ABERTO)csPinTela('', '',()=>{CS_OP_ABERTO=true;try{csPintarOperador();}catch(e){}});return r;};}catch(e){}
+/* a máquina aberta pelo endereço (#op1…) na carga da página também pede */
+setTimeout(()=>{try{if(csOpLigado()&&!CS_OP_ABERTO)csPinTela('','',()=>{CS_OP_ABERTO=true;try{csPintarOperador();}catch(e){}});}catch(e){}},900);
+/* cada botão pede o PIN (pausar e apontar já pedem dentro da janela deles) */
+document.addEventListener('click',ev=>{
+  const b=ev.target.closest&&ev.target.closest('#csOper [data-op]');if(!b||CS_PIN_PASSA)return;
+  const a=b.dataset.op;if(!['etapa','fin','retomar'].includes(a))return;
+  ev.preventDefault();ev.stopImmediatePropagation();
+  let at=null;try{at=csOPdaLinha(CS_OPMAQ).atual;}catch(e){}
+  const tit=a==='retomar'?'Retomar a linha':a==='fin'?'Concluir envase':(b.textContent||'').trim().toLowerCase().replace(/^./,c=>c.toUpperCase());
+  /* fim do setup (Iniciar envase) acima do previsto: pede o motivo aqui */
+  let mot=null;
+  try{if(a==='etapa'&&at&&etapaAtual(at)==='envase'&&at.iniReal&&!at.envIni){const dur=hm(relogio())-hm(at.iniReal);
+    if(dur-(+at.setup||0)>TOLERANCIA)mot={titulo:`Setup levou ${hmm(dur)} (previsto ${at.setup} min)`,
+      lista:[...MOTIVOS,...MOTIVOS_NOVOS].filter(m=>(m.etapas||[]).some(e=>['setup','envase'].includes(e))).map(m=>m.nome).filter((x,i,l)=>l.indexOf(x)===i)};}}catch(e){}
+  csPinTela(tit,`${CS_OPMAQ||''}${at?` · OP ${rotuloOP(at)} · lote ${at.lote||''}`:''}`,(q,pin,esc)=>{
+    CS_PIN_PASSA=true;try{b.click();}finally{CS_PIN_PASSA=false;}
+    /* a janela de horário do sistema já vem com o PIN digitado e se confirma sozinha */
+    try{if(M('etPin')&&M('etK')){M('etPin').value=pin;M('etPin').dispatchEvent(new Event('input',{bubbles:true}));M('etK').click();if(M('etOK'))M('etOK').click();}}catch(e){}
+    if(esc&&at){try{at.setupMotivo=esc;registrar(at,'Motivo do setup acima do previsto',OPERADOR,
+      `principal: ${esc.principal}${esc.secundarios.length?' · secundários: '+esc.secundarios.join(', '):''}`);agendarSalvar();}catch(e){}}
+    setTimeout(()=>{try{csPintarOperador();}catch(e){}},200);
+  },mot);
+},true);
+
+/* ---------- materiais necessários, nos três risquinhos ---------- */
+function csMateriais(o){
+  let d=document.getElementById('csMatOp');
+  if(!d){d=document.createElement('div');d.id='csMatOp';document.body.appendChild(d);}
+  let l=[];try{l=consumoDaOP(o)||[];}catch(e){}
+  const p=prodOf(o.codigo)||{};
+  d.className='cs-matop on';
+  d.innerHTML=`<div class="tp"><div><b>Materiais necessários</b><i>OP ${escAttr(rotuloOP(o))} · ${escAttr(nomeCurto(o.codigo))} · ${nf(caixasPrev(o))} ${und(o)}</i></div><button class="x" data-mx="1" aria-label="Fechar">&times;</button></div>
+    <div class="ls"><table><thead><tr><th>Material</th><th>Quantidade</th></tr></thead><tbody>
+    ${l.map(x=>`<tr><td>${escAttr(x.nome||x.sku||'')}</td><td>${nf(x.qtd)} ${escAttr(x.un||'un')}</td></tr>`).join('')||'<tr><td colspan="2" class="vz">Esta OP não tem embalagem cadastrada.</td></tr>'}
+    </tbody></table></div><div class="rd"><button data-mx="1">Voltar para a OP</button></div>`;
+  d.onclick=ev=>{if(ev.target.closest('[data-mx]'))d.className='cs-matop';};
+}
+try{const _mo=csMenuOperador;csMenuOperador=function(maq,atual){const r=_mo.apply(this,arguments);
+  try{const m=document.getElementById('csOpMenu');const ref=m&&m.querySelector('.lista');
+    if(ref&&atual&&!m.querySelector('.cs-matb')){const b=document.createElement('button');b.className='cs-matb';
+      b.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h4"/></svg><span>Materiais necessários</span><em>OP '+escAttr(rotuloOP(atual))+' &#8250;</em>';
+      b.onclick=ev=>{ev.stopPropagation();m.className='cs-opmenu';csMateriais(atual);};ref.parentNode.insertBefore(b,ref);}}catch(e){}
+  return r;};}catch(e){}
+
+/* ---------- descanso de tela aprovado ---------- */
+csDescPinta=function(){
+  const d=document.getElementById('csDesc');if(!d)return;
+  let atual=null;try{atual=csOPdaLinha(CS_OPMAQ).atual;}catch(e){}
+  const ag=new Date();
+  let c='ini',sit='sem OP agora',tm='--:--:--',sub='',fr=0;
+  if(atual){const st=sit2(atual);
+    const hj=atual.data||ymd(ag),pau=atual.csPausa;
+    let ini='';
+    if(pau){c='pau';sit='pausada · '+String(pau.motivo||'').toLowerCase();ini=pau.desde?`${ymd(ag)}T${pau.desde}`:'';sub='pausada desde '+(pau.desde||'');}
+    else if(st==='preparacao'){c='set';sit='em setup';ini=atual.iniReal?`${hj}T${atual.iniReal}`:'';sub='em setup há';}
+    else if(st==='producao'){let a=false;try{a=atrasada(atual);}catch(e){}c=a?'atr':'rod';sit=a?'atrasada':'envasando';const e=(typeof iniEnvase==='function'&&iniEnvase(atual))||atual.envIni;ini=e?`${hj}T${e}`:'';sub='envasando há';}
+    else if(st==='finalizado'){c='apo';sit='a apontar';ini=atual.fimReal?`${hj}T${atual.fimReal}`:'';sub='a apontar há';}
+    else{sit='a iniciar';sub='começa às '+hhmm(atual.inicio);}
+    if(ini)tm=csHMS(Date.now()-new Date(ini).getTime());
+    try{const i0=atual.iniReal?new Date(`${hj}T${atual.iniReal}`).getTime():0,f=fimPrev(atual),fT=new Date(`${hj}T${hhmm(f)}`).getTime();
+      if(i0&&fT>i0)fr=Math.min(1,(Date.now()-i0)/(fT-i0));if(c==='atr')fr=1;}catch(e){}
+  }
+  const p=atual?(prodOf(atual.codigo)||{}):{};
+  const nome=String(p.descricao||(atual&&atual.codigo)||'').replace(/\s*[-–]\s*(CX|FD|PC|CT|PT|SC|BD|GL|BB)\b.*$/i,'').trim();
+  const pronto=atual?(()=>{const f=hhmm(fimPrev(atual));return /NaN|undefined/.test(f)?'—':f;})():'—';
+  d.className='cs-desc on '+c;
+  d.innerHTML=`<div class="ag">${p2(ag.getHours())}:${p2(ag.getMinutes())}</div>
+    <div class="dt2">${escAttr(dLongoAno(ymd(ag)))}</div>
+    ${atual?`<div class="np">${escAttr(nome)}</div><div class="nl">OP ${escAttr(rotuloOP(atual))} · lote ${escAttr(atual.lote||'—')} · ${nf(caixasPrev(atual))} ${und(atual)}</div>`:'<div class="np">Nenhuma OP na linha</div>'}
+    <div class="an"><svg viewBox="0 0 200 200"><circle cx="100" cy="100" r="88" fill="none" stroke="#1E293B" stroke-width="10"/>
+      <circle cx="100" cy="100" r="88" fill="none" stroke="var(--cor)" stroke-width="10" stroke-linecap="round" stroke-dasharray="553" stroke-dashoffset="${Math.round(553*(1-fr))}"/></svg>
+      <div class="ad"><div class="m">${escAttr(CS_OPMAQ||'')}</div><div class="s">${escAttr(sit)}</div><div class="t">${tm}</div><div class="t2">${escAttr(sub)}</div></div></div>
+    <div class="pr"><i>Precisa estar pronto</i><b>${pronto}</b></div>
+    <div class="tq"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 13V4.5a1.5 1.5 0 0 1 3 0V12"/><path d="M11 11.5v-2a1.5 1.5 0 0 1 3 0V12"/><path d="M14 10.5a1.5 1.5 0 0 1 3 0V12"/><path d="M17 11.5a1.5 1.5 0 0 1 3 0V16a6 6 0 0 1-6 6h-2a6 6 0 0 1-5-2.7l-2.6-4a1.5 1.5 0 0 1 2.4-1.8L8 15"/></svg>toque na tela para voltar</div>`;
+};
+function sit2(o){try{return sit(o);}catch(e){return '';}}
+</script>
+<div style="position:fixed;right:14px;bottom:10px;z-index:300;background:#C2410C;color:#fff;font:700 11px Inter,sans-serif;letter-spacing:.04em;padding:5px 10px;border-radius:999px;box-shadow:0 4px 12px rgba(0,0,0,.2)" title="Lê a produção do PCP ao vivo e grava tudo à parte: nada chega ao PCP antigo">MODO TESTE · grava à parte</div>
 </body>
 </html>
