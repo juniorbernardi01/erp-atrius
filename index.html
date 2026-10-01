@@ -5185,7 +5185,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v305';
+const VERSAO_APP='v306';
 let DRAG=null;
 function render(){
   recomporTudo();
@@ -19033,6 +19033,8 @@ pintarLogo();
     render();
     if(!MEU_ACESSO)semAcesso();
   }catch(e){
+    /* sessão vencida: só pede o login de novo, sem o aviso vermelho */
+    if(/sess[ãa]o expirada|401|JWT/i.test(String(e&&e.message||e))){try{telaLogin('Sua sessão expirou. Entre de novo.');}catch(x){}return;}
     mostrarErro('Não consegui ler as permissões: '+(e.message||e),'permissões');
   }
 })();
@@ -21702,7 +21704,7 @@ window.csNucleo=(function(){
     VERS[id]=l[0].versao;return {ok:true};
   }
   return {
-    versao:'v305',
+    versao:'v306',
     logo:()=>LOGO,
     teste:!temNuvem(),
     usuario:()=>{try{return (MEU_ACESSO&&MEU_ACESSO.nome)||(EU&&EU.nome)||emailDaSessao()||'Teste';}catch(e){return 'Teste';}},
@@ -23138,9 +23140,7 @@ function csTinyPag(){
   <div class="tps">
     <div class="tpc"><div class="tph"><b>Conexão</b><span id="tpTok">conferindo…</span></div>
       <p>Token da API v2: é por ele que o ERP lê e lança no Tiny hoje.</p><div class="tpb"><button class="btn sm" id="tpTokB">Trocar o token</button></div></div>
-    <div class="tpc v3"><div class="tph"><b>API v3 (ordens de compra)</b><span>próximo passo</span></div>
-      <p>A consulta de ordens de compra só existe na API nova do Tiny, que usa um aplicativo com client_id e client_secret.
-      Enquanto isso, as OCs entram pela planilha exportada do Tiny.</p></div>
+    ${csV3HTML()}
   </div>
   ${csSrvHTML()}
   <div class="st2" style="margin-top:18px">Carga inicial</div>
@@ -23166,6 +23166,7 @@ function csTinyPag(){
     ||'<tr><td colspan="7" class="k" style="padding:16px">Nenhuma leitura registrada ainda. A partir de agora cada carga fica aqui.</td></tr>'}</tbody></table></div></div>`;
   M('cfgVolta').onclick=()=>csIr({page:'admin',aba:'hub'});
   M('tpTokB').onclick=()=>abrirTinyCfg();
+  try{csV3Liga();}catch(e){}
   M('tpAtu').onclick=()=>{csTinyStatus();csSrvStatus();};
   try{csSrvLiga();}catch(e){}
   M('tpEst').onclick=()=>{if(!temNuvem())return toast('Sem banco (versão de teste): a leitura do Tiny está desligada.',true);
@@ -23686,6 +23687,45 @@ try{const _pv5=csPinValido;csPinValido=function(pin){const q=_pv5(pin);
     if(!temOp&&(typeof csPinSemColuna==='function'&&csPinSemColuna()))window.CS_PIN_MOTIVO='Nenhum PIN cadastrado: a coluna pin não existe no banco (rode o supabase-corrige-linhas.sql).';
     else if(!temOp)window.CS_PIN_MOTIVO='Nenhum operador com PIN cadastrado. Cadastre em Configurações › Pessoas › Operadores.';}
   return q;};}catch(e){}
+</script>
+<script>
+/* ===================== v306 · API v3 do Tiny ===================== */
+const CS_V3={st:null,lendo:false};
+const csV3Redirect=()=>location.origin+'/';
+async function csV3Status(){if(!temNuvem()||!SESSAO||CS_V3.lendo)return;CS_V3.lendo=true;
+  try{CS_V3.st=await chamarTiny({acao:'v3_status'});}catch(e){CS_V3.st={erro:String(e.message||e)};}CS_V3.lendo=false;
+  if(S.page==='admin'&&ABA_ADMIN==='tiny')csTinyPag();}
+function csV3HTML(){
+  if(!CS_V3.st&&!CS_V3.lendo)setTimeout(csV3Status,0);
+  const s=CS_V3.st||{};
+  const sit=s.erro?`<span class="x">${/desconhecid|acao/i.test(s.erro)?'publique a função nova':'sem resposta'}</span>`
+    :s.autorizado?`<span class="ok">autorizada · renova sozinha</span>`:s.chaves?'<span>falta autorizar</span>':'<span>falta configurar</span>';
+  return `<div class="tpc v3"><div class="tph"><b>API v3 (ordens de compra)</b>${sit}</div>
+    <p>Do aplicativo "ERP ATRIUS" criado no Tiny (Configurações › Aplicativos API). A URL de redirecionamento lá precisa ser <b>${escAttr(csV3Redirect())}</b>.</p>
+    ${s.autorizado?`<div class="tpn"><div><b>${s.expira?csIsoDH(s.expira):'—'}</b><span>acesso vale até</span></div><div><b>…${escAttr(s.clientFinal||'')}</b><span>client id</span></div></div>`:''}
+    <div class="g2" style="margin-top:8px;gap:8px">
+      <input class="inp" id="v3Id" placeholder="Client ID${s.chaves?' (já salvo — só para trocar)':''}" autocomplete="off">
+      <input class="inp" id="v3Sec" type="password" placeholder="Client Secret${s.chaves?' (já salvo)':''}" autocomplete="new-password"></div>
+    <div class="tpb"><button class="btn sm" id="v3Sal">Salvar as chaves</button><button class="btn sm pri" id="v3Aut" ${s.chaves?'':'disabled'}>${s.autorizado?'Autorizar de novo':'Autorizar no Tiny'}</button></div></div>`;
+}
+function csV3Liga(){
+  if(M('v3Sal'))M('v3Sal').onclick=async()=>{const id=(M('v3Id').value||'').trim(),sec=(M('v3Sec').value||'').trim();
+    if(!id||!sec)return toast('Cole o Client ID e o Client Secret.',true);
+    try{await chamarTiny({acao:'v3_salvar',client_id:id,client_secret:sec});toast('Chaves salvas. Agora clique em Autorizar no Tiny.');CS_V3.st=null;csV3Status();}
+    catch(e){toast('Tiny: '+e.message,true);}};
+  if(M('v3Aut'))M('v3Aut').onclick=async()=>{try{const r=await chamarTiny({acao:'v3_url',redirect:csV3Redirect()});
+    try{sessionStorage.setItem('erp.v3volta','1');}catch(e){}location.href=r.url;}catch(e){toast('Tiny: '+e.message,true);}};
+}
+/* volta da autorização: o Tiny devolve ?code=…&state=erpv3 no endereço do ERP */
+(function csV3Volta(n){
+  const u=new URL(location.href),code=u.searchParams.get('code'),st=u.searchParams.get('state');
+  if(!code||st!=='erpv3')return;
+  if(!temNuvem()||typeof SESSAO==='undefined'||!SESSAO){if((n||0)<40)setTimeout(()=>csV3Volta((n||0)+1),500);return;}
+  chamarTiny({acao:'v3_trocar',code,redirect:csV3Redirect()})
+    .then(()=>{toast('API v3 do Tiny autorizada. Ela se renova sozinha no servidor.');csTlog('API v3',{det:'autorizada no Tiny'});})
+    .catch(e=>toast('Tiny v3: '+e.message,true))
+    .finally(()=>{history.replaceState(null,'',location.pathname+'#admin/tiny');CS_V3.st=null;try{csIr({page:'admin',aba:'tiny'});}catch(e){}});
+})();
 </script>
 </body>
 </html>

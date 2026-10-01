@@ -358,6 +358,14 @@ select.st-h,select.st-a,select.st-b{border-radius:999px;font-weight:600}
 .fr2 label.on{border-color:#1D6FE8;background:#F4F8FF}.fr2 .rd{width:15px;height:15px;border-radius:50%;border:1.5px solid #C6C3BB}.fr2 label.on .rd{border:4.5px solid #0E1B33}.fr2 small{display:block;color:var(--ink3);font-size:11px}
 .lin2{display:block;width:100%;text-align:left;padding:9px 10px;border-bottom:1px solid var(--line2);background:#fff;font-size:13px}.lin2:hover{background:#F4F8FF}
 .rodfix .acoes{margin-right:auto;display:flex;gap:6px;align-items:center}.rodfix .cnt{font-size:15px;color:var(--ink2)}
+
+/* itens da OC no jeito do Tiny: linha de digitação no fim da tabela */
+.ti2 tr.nova td{background:#FAFAF7;border-top:1px dashed var(--line,#D8DCE3);vertical-align:top}
+.ti2 tr.nova .inp{height:34px;font-size:13px}
+.ti2 tr.nova #addIt{min-width:260px}
+.ti2 .nfo2{display:flex;align-items:center;gap:6px;margin-top:3px}
+.ti2 .nfo2 .in4{flex:1;min-width:140px}
+.addlk{display:flex;align-items:center;gap:14px;padding:8px 4px}
 .perb2{display:inline-flex;align-items:center;gap:7px;height:36px;padding:0 14px;border:1.5px solid #9DB8E8;border-radius:999px;background:#fff;color:#1D6FE8;font-weight:600;font-size:13px;cursor:pointer;white-space:nowrap}
 .perb2:hover{border-color:#1D6FE8}.perb2.ativo{background:#EFF4FD}
 .perpop{position:fixed;z-index:500;width:560px;max-width:calc(100vw - 16px);background:#fff;border:1px solid #E4E2DC;border-radius:16px;box-shadow:0 14px 36px rgba(20,24,33,.18);display:grid;grid-template-columns:170px 1fr;overflow:hidden;font-family:inherit;color:#1A1D23}
@@ -906,7 +914,7 @@ function telaOrdens(){
   const p=LST.per,nsel=[...LST.sel].filter(id=>DB.ocs.some(o=>o.id===id)).length;
   const col=(k,r,st)=>`<span class="so ${s.k===k?(s.dir>0?'asc':'desc'):''}" data-sort="${k}" style="${st||''}">${r}<i></i></span>`;
   $('app').innerHTML=`<div class="migalha">Compras › Ordens de compra</div>
-  <div class="topo"><h1>Ordens de compra</h1><span class="salvo"></span>${pode('compras.oc','editar')?'<button class="btn" id="bImpT">⤓ Importar OCs do Tiny</button><button class="btn pri" id="bNova">＋ Nova ordem de compra</button>':''}</div>
+  <div class="topo"><h1>Ordens de compra</h1><span class="salvo"></span>${pode('compras.oc','editar')?'<button class="btn" id="bImpA" title="Abertas e em andamento, com pagamento e parcelas (API v3)">⤓ Trazer OCs do Tiny</button><button class="btn" id="bImpT" title="Pela planilha exportada do Tiny">Planilha</button><button class="btn pri" id="bNova">＋ Nova ordem de compra</button>':''}</div>
   <div class="barra"><div class="busca">⌕<input id="q" placeholder="Pesquise por fornecedor, Nº OC, NF, item ou marcador" value="${esc(LST.q)}"></div>
     ${perBotao('bPer',LST.per)}
     ${falhas.length?`<button class="pend" id="bPend"><i></i>${falhas.length} ${falhas.length>1?'ordens':'ordem'} com envio ao Tiny pendente · revisar</button>`:''}
@@ -942,6 +950,7 @@ function ligaLista(lista){
   const re=()=>telaOrdens();
   if($('bNova'))$('bNova').onclick=()=>novaOC();
   if($('bImpT'))$('bImpT').onclick=importarOCsTiny;
+  if($('bImpA'))$('bImpA').onclick=importarOCsTinyAPI;
   $('q').oninput=e=>{LST.q=e.target.value;clearTimeout(window._tq);window._tq=setTimeout(()=>{re();const i=$('q');i.focus();i.setSelectionRange(i.value.length,i.value.length);},250);};
   document.querySelectorAll('[data-sit]').forEach(b=>b.onclick=()=>{LST.sit=b.dataset.sit;re();});
   document.querySelectorAll('[data-sort]').forEach(h=>h.onclick=()=>{const k=h.dataset.sort;LST.sort=LST.sort.k===k?{k,dir:-LST.sort.dir}:{k,dir:['forn'].includes(k)?1:-1};re();});
@@ -1078,9 +1087,10 @@ function telaOC(id){
   </div></div>
 
   <div class="bloco"><div class="t"><span class="n">2</span>Itens</div>
-    <div class="rolx"><table class="ti2" style="min-width:900px"><thead><tr><th>Item · e como o fornecedor chama</th><th>Comprar<span class="req">*</span></th><th class="n">Preço un<span class="req">*</span></th><th class="n">ICMS %</th><th class="n">IPI %</th><th class="n">Total</th><th></th></tr></thead><tbody>
-    ${oc.itens.map((it,i)=>linhaItem(oc,it,i,fu,L)).join('')||'<tr><td colspan="7" class="vazio">Nenhum item ainda.</td></tr>'}</tbody></table></div>
-    ${L?'':`<div class="addl rel"><span>⌕</span><input class="inp" id="addIt" placeholder="Adicionar item · ${f?'primeiro os que este fornecedor tem homologados':'escolha o fornecedor primeiro'}" style="border:0;box-shadow:none" ${f?'':'disabled'}></div>`}</div>
+    <div class="rolx"><table class="ti2" style="min-width:900px"><thead><tr><th>Item <span style="font-weight:400;text-transform:none;letter-spacing:0">· como o fornecedor chama embaixo</span></th><th>Cód (SKU)</th><th class="n">Qtde<span class="req">*</span></th><th>UN</th><th class="n">Preço un<span class="req">*</span></th><th class="n">IPI %</th><th class="n">Preço total</th><th></th></tr></thead><tbody>
+    ${oc.itens.map((it,i)=>linhaItem(oc,it,i,fu,L)).join('')||(L?'<tr><td colspan="8" class="vazio">Nenhum item ainda.</td></tr>':'')}
+    ${L?'':linhaNova(oc,f)}</tbody></table></div>
+    ${L?'':`<div class="addlk"><button class="btn lk sm" id="addMais" ${f?'':'disabled'}>⊕ adicionar item</button><button class="btn lk sm" id="addAv" ${f?'':'disabled'}>⌕ busca avançada de itens</button>${f?'':'<span class="s2">escolha o fornecedor primeiro</span>'}</div>`}</div>
 
   <div class="bloco"><div class="t"><span class="n">3</span>Frete</div><div class="c">${blocoFrete(oc,L)}</div></div>
   <div class="bloco"><div class="t"><span class="n">4</span>Pagamento</div><div class="c">${blocoPagamento(oc,t,L)}</div></div>
@@ -1095,19 +1105,64 @@ function telaOC(id){
     <span id="obr" class="obr"></span><button class="btn" id="bCanc">${L?'Voltar':'Cancelar'}</button>${L&&!['rec','con','can'].includes(oc.sit)||!L?'<button class="btn pri" id="bSalva">Salvar</button>':''}</div>`;
   ligaOC();
 }
+/* linha de digitação do item, no jeito do Tiny: escolhe o item (nome da MP no
+   cadastro, SKU ou como o fornecedor chama), digita quantidade, preço e IPI e salva */
+function linhaNova(oc,f){
+  const n=ED.novo||{},x=n.x,dis=f?'':'disabled';
+  const tot=(+n.qtd||0)*(+n.preco||0);
+  return `<tr class="nova"><td class="rel"><input class="inp" id="addIt" placeholder="${f?'Pesquise pelo nome da MP, SKU ou nome no fornecedor':'escolha o fornecedor primeiro'}" value="${x?esc(x.nome):''}" ${dis}>
+      ${x&&n.v&&n.v.nome?`<span class="s2">no fornecedor: <b>${esc(n.v.nome)}</b>${n.v.cod?' · cód '+esc(n.v.cod):''}</span>`:''}</td>
+    <td><input class="inp" id="addSku" placeholder="SKU" value="${x?esc(x.sku):''}" style="width:96px" ${dis}></td>
+    <td class="n"><input class="in3" id="addQ" value="${n.qtd?nq(n.qtd):''}" placeholder="0" ${x?'':'disabled'}></td>
+    <td>${x?esc(unDoItem(x)):''}</td>
+    <td class="n"><input class="in3" id="addP" value="${n.preco?nf(n.preco,4):''}" placeholder="0,0000" ${x?'':'disabled'}></td>
+    <td class="n"><input class="in3 p" id="addI" value="${n.ipi?nq(n.ipi):''}" placeholder="0" ${x?'':'disabled'}></td>
+    <td class="n"><b id="addT">${tot?nf(tot,2):''}</b></td>
+    <td style="white-space:nowrap"><button class="btn lk sm" id="addOk" ${x?'':'disabled'}>salvar</button><button class="btn ic sm" id="addX" title="limpar">⊘</button></td></tr>`;
+}
+/* escolher o item para a linha de digitação (da busca, do SKU ou da busca avançada) */
+function escolheNovo(oc,x){
+  const fid=oc.forn&&oc.forn.id,v=vinculo(fid,x.sku),imp=DB.imp[x.sku]||{};
+  const mp=melhorPreco(x.sku,fid),uc=ultimaCompra(x.sku,fid)||ultimaCompra(x.sku);
+  ED.novo={x,v,qtd:0,preco:mp?mp.preco:(uc?uc.preco:0),ipi:imp.ipi||0};
+}
+function salvaNovo(oc){
+  const n=ED.novo;if(!n||!n.x)return false;
+  if(oc.itens.some(i=>i.sku===n.x.sku)){toast('Este item já está na ordem.',true);return false;}
+  if(!adicionarItem(oc,n.x))return false;
+  const it=oc.itens[oc.itens.length-1];
+  if(it.modo==='cx'&&+it.cx>0){it.qtdCx=Math.ceil((+n.qtd||0)/it.cx);it.qtd=r3(it.qtdCx*it.cx);}else it.qtd=+n.qtd||0;
+  if(n.preco!=null)it.preco=+n.preco||0;if(n.ipi!=null){it.ipi=+n.ipi||0;DB.imp[it.sku]={...(DB.imp[it.sku]||{}),icms:it.icms,ipi:it.ipi,pis:it.pis,cof:it.cof,cr:it.cr};}
+  ED.novo=null;return true;
+}
+function buscaAvancada(oc,re){
+  let q='';const fid=oc.forn&&oc.forn.id;
+  const des=()=>{const k=q.toLowerCase(),ja=new Set(oc.itens.map(i=>i.sku));
+    const l=(N?N.insumos():[]).filter(x=>!ja.has(x.sku)).map(x=>({x,v:vinculo(fid,x.sku)})).filter(({x,v})=>!k||(x.sku+' '+x.nome+' '+x.tipo+' '+(v&&v.nome||'')).toLowerCase().includes(k))
+      .sort((a,b)=>((b.v&&b.v.sit==='h')?1:0)-((a.v&&a.v.sit==='h')?1:0)||a.x.nome.localeCompare(b.x.nome,'pt-BR')).slice(0,200);
+    gaveta(`<div class="gt"><h2>Busca avançada de itens</h2><button class="btn sm" id="gX" style="margin-left:auto">Fechar ✕</button></div>
+      <div class="busca">⌕<input id="baQ" placeholder="Nome da MP, SKU, tipo ou nome no fornecedor" value="${esc(q)}"></div>
+      <div class="rolx" style="margin-top:10px"><table class="tv"><thead><tr><th>Item</th><th>SKU</th><th>Tipo</th><th>No fornecedor</th></tr></thead><tbody>
+      ${l.map(({x,v},i)=>`<tr data-ba="${esc(x.sku)}" style="cursor:pointer"><td><b>${esc(x.nome)}</b></td><td class="m">${esc(x.sku)}</td><td>${esc(x.tipo||'')}</td><td>${v?esc(v.nome||'—')+(v.sit==='h'?' · <span style="color:#15803D">homologado</span>':''):'<span class="k">sem vínculo</span>'}</td></tr>`).join('')
+        ||'<tr><td colspan="4" class="vazio">Nada encontrado.</td></tr>'}</tbody></table></div>`);
+    $('gX').onclick=()=>gaveta(null);const i=$('baQ');i.focus();i.setSelectionRange(i.value.length,i.value.length);
+    i.oninput=()=>{q=i.value;clearTimeout(window._baT);window._baT=setTimeout(des,180);};
+    document.querySelectorAll('[data-ba]').forEach(r=>r.onclick=()=>{const x=insumo(r.dataset.ba);if(x){escolheNovo(oc,x);gaveta(null);re();setTimeout(()=>{if($('addQ'))$('addQ').focus();},30);}});};
+  des();
+}
 function linhaItem(oc,it,i,fu,L){
   const c=contaItem(it,fu),ab=ED.aberto.has(i),dis=L?'disabled':'';
   const cx=it.modo==='cx'&&+it.cx>0;
-  return `<tr><td><b>${esc(it.nome)}</b><div class="nfo2"><input class="in4 ${it.nomeForn?'ok':''}" data-it="${i}" data-k="nomeForn" value="${esc(it.nomeForn||'')}" placeholder="nome no fornecedor · opcional" ${dis}></div>
-      <span class="s2">${esc(it.sku)}${it.tiny?'':' · <span style="color:var(--danger)">sem código do Tiny</span>'}</span></td>
-    <td><span class="qx"><input class="qn" data-it="${i}" data-k="${cx?'qtdCx':'qtd'}" value="${nq(cx?it.qtdCx:it.qtd)}" ${dis}><span class="u">${cx?'caixas':esc(it.un||'un')}</span></span>
-      ${cx?`<span class="s2">caixa de ${nf(it.cx)} un = ${nf(it.qtd)} un</span>`:''}</td>
+  return `<tr><td><b>${esc(it.nome)}</b>
+      <div class="nfo2"><span class="s2">no fornecedor:</span><input class="in4 ${it.nomeForn?'ok':''}" data-it="${i}" data-k="nomeForn" value="${esc(it.nomeForn||'')}" placeholder="como o fornecedor chama este item" ${dis}>${it.codForn?`<span class="s2">cód ${esc(it.codForn)}</span>`:''}</div></td>
+    <td class="mono">${esc(it.sku)}${it.tiny?'':'<span class="s2" style="color:var(--danger)">sem código do Tiny</span>'}</td>
+    <td class="n"><span class="qx"><input class="qn" data-it="${i}" data-k="${cx?'qtdCx':'qtd'}" value="${nq(cx?it.qtdCx:it.qtd)}" ${dis}></span>${cx?`<span class="s2">caixa de ${nf(it.cx)} = ${nf(it.qtd)} ${esc(it.un||'un')}</span>`:''}</td>
+    <td>${cx?'cx':esc(it.un||'un')}</td>
     <td class="n"><input class="in3" data-it="${i}" data-k="preco" value="${it.preco?nf(it.preco,4):''}" ${dis}></td>
-    <td class="n"><input class="in3 p" data-it="${i}" data-k="icms" value="${nq(it.icms)}" ${dis}></td>
     <td class="n"><input class="in3 p" data-it="${i}" data-k="ipi" value="${nq(it.ipi)}" ${dis}></td>
-    <td class="n"><b>${nf(c.base,2)}</b></td><td><button class="btn ic sm ${ab?'on':''}" data-abre="${i}">⋯</button></td></tr>
-    ${ab?`<tr class="x"><td colspan="7"><div class="cx4">
-      ${CREDITAVEIS.map(([k,r])=>`<div>${r} ${k==='icms'?nq(it.icms)+'%':`<input class="in3 p" data-it="${i}" data-k="${k}" value="${nq(it[k])}" ${dis} style="height:24px;min-width:50px">%`}<b>− ${nf(c.val[k],2)}</b>
+    <td class="n"><b>${nf(c.base,2)}</b></td><td><button class="btn ic sm ${ab?'on':''}" data-abre="${i}" title="ICMS, créditos e código no fornecedor">⋯</button></td></tr>
+    ${ab?`<tr class="x"><td colspan="8"><div class="cx4">
+      ${CREDITAVEIS.map(([k,r])=>`<div>${r} ${false?nq(it.icms)+'%':`<input class="in3 p" data-it="${i}" data-k="${k}" value="${nq(it[k])}" ${dis} style="height:24px;min-width:50px">%`}<b>− ${nf(c.val[k],2)}</b>
         <label class="ckl"><span class="ck ${c.cr[k]?'on':''}" data-cr="${i}|${k}"></span>gera crédito</label></div>`).join('')}
       <div class="re">Custo real por ${esc(it.un||'un')}<b>${nf(c.real,4)}</b><small>preço − créditos${fu?' + frete rateado '+nf(fu,4):''}</small></div></div>
       <div class="lnx"><label>Código no fornecedor <input class="in3" style="min-width:120px;justify-content:flex-start;text-align:left" data-it="${i}" data-k="codForn" value="${esc(it.codForn||'')}" ${dis}></label>
@@ -1189,7 +1244,15 @@ function ligaOC(){
   document.querySelectorAll('[data-cr]').forEach(b=>b.onclick=()=>{if(L)return;const [i,k]=b.dataset.cr.split('|');const it=oc.itens[+i];
     it.cr=Object.assign({},CRED_PADRAO,it.cr||{});it.cr[k]=!it.cr[k];re();});
   document.querySelectorAll('[data-tira]').forEach(b=>b.onclick=()=>{oc.itens.splice(+b.dataset.tira,1);ED.aberto.clear();recalc();re();});
-  if($('addIt'))buscaLista($('addIt'),q=>itensParaAdicionar(oc,q),x=>{if(adicionarItem(oc,x)){recalc();re();setTimeout(()=>{const l=document.querySelectorAll('.qn');if(l.length){l[l.length-1].focus();l[l.length-1].select();}},30);}});
+  /* a linha de digitação */
+  if($('addIt'))buscaLista($('addIt'),q=>itensParaAdicionar(oc,q),x=>{escolheNovo(oc,x);re();setTimeout(()=>{if($('addQ')){$('addQ').focus();$('addQ').select();}},30);});
+  if($('addSku'))$('addSku').onkeydown=e=>{if(e.key!=='Enter')return;const x=insumo($('addSku').value.trim());if(!x)return toast('SKU não encontrado no cadastro.',true);escolheNovo(oc,x);re();setTimeout(()=>{if($('addQ'))$('addQ').focus();},30);};
+  const nv=()=>{const n=ED.novo;if(!n)return;n.qtd=num($('addQ').value);n.preco=num($('addP').value);n.ipi=num($('addI').value);const t=(+n.qtd||0)*(+n.preco||0);if($('addT'))$('addT').textContent=t?nf(t,2):'';};
+  ['addQ','addP','addI'].forEach(id=>{if($(id)){$(id).oninput=nv;$(id).onkeydown=e=>{if(e.key==='Enter'){nv();if(salvaNovo(oc)){recalc();re();setTimeout(()=>{if($('addIt'))$('addIt').focus();},30);}}};}});
+  if($('addOk'))$('addOk').onclick=()=>{nv();if(!(+((ED.novo||{}).qtd)>0))return toast('Digite a quantidade.',true);if(salvaNovo(oc)){recalc();re();setTimeout(()=>{if($('addIt'))$('addIt').focus();},30);}};
+  if($('addX'))$('addX').onclick=()=>{ED.novo=null;re();};
+  if($('addMais'))$('addMais').onclick=()=>{if($('addIt'))$('addIt').focus();};
+  if($('addAv'))$('addAv').onclick=()=>buscaAvancada(oc,re);
   /* frete */
   document.querySelectorAll('[data-fr]').forEach(el=>el.onchange=()=>{const k=el.dataset.fr;
     if(k==='valor'){oc.frete.valor=num(el.value);gerarParcelasFrete(oc);}
@@ -2294,6 +2357,75 @@ function conferirOCsTiny(rows,nome){
     try{N.logCarga&&N.logCarga('Ordens de compra',{lidos:l.length,novos:n,falhas:falta.length,det:`planilha ${nome||''} · ${it} itens`});}catch(e){}
     toast(`${n} OC(s) importadas do Tiny${falta.length?` · ${falta.length} item(ns) ficaram de fora`:''}.`);
   };
+}
+
+/* =====================================================================
+   OCs DO TINY PELA API v3: abertas e em andamento, com itens, fornecedor,
+   datas, frete, desconto, observações, categoria e as PARCELAS (vencimento,
+   valor e meio de pagamento). Item casa pelo código do Tiny, depois pelo SKU,
+   depois pelo nome. OC que já está no ERP (mesmo número) é atualizada se ainda
+   não recebeu nada; recebida não é tocada.
+   ===================================================================== */
+const MEIO_V3={'1':'Dinheiro','2':'Cheque','3':'Cartão de crédito','4':'Cartão de débito','14':'Duplicata','15':'Boleto','16':'Depósito','17':'Pix','18':'Transferência','20':'Pix','99':'Outros','90':'Sem pagamento'};
+function insumoDoTiny(p){
+  const l=N?N.insumos():[];if(!p)return null;
+  return l.find(x=>p.id&&String(x.tiny||'')===String(p.id))||l.find(x=>p.sku&&String(x.sku)===String(p.sku))||(p.descricao?insPorNomeImp(p.descricao):null);
+}
+function fornDoContatoTiny(c){
+  if(!c)return null;const doc=String(c.cpfCnpj||'').replace(/\D/g,'');
+  let f=DB.fornecedores.find(x=>c.id&&String(x.tinyId||'')===String(c.id))||DB.fornecedores.find(x=>doc&&String(x.cnpj||'').replace(/\D/g,'')===doc)||DB.fornecedores.find(x=>nImp(x.nome)===nImp(c.nome));
+  const e=c.endereco||{};
+  const d={tinyId:c.id?String(c.id):'',nome:c.nome||'',cnpj:c.cpfCnpj||'',ie:c.inscricaoEstadual||'',email:c.email||'',fone:c.telefone||c.celular||'',
+    end:[e.endereco,e.numero,e.complemento,e.bairro].filter(Boolean).join(', '),cidade:e.municipio||'',uf:e.uf||'',cep:e.cep||''};
+  if(f)Object.keys(d).forEach(k=>{if(d[k]&&!f[k])f[k]=d[k];});else{f={id:uid(),...d};DB.fornecedores.push(f);}
+  return f;
+}
+function ocDoTiny(t,velha){
+  const forn=fornDoContatoTiny(t.contato)||{id:uid(),nome:'(sem fornecedor)'};
+  const oc=velha||ocVazia();
+  const semV=[];
+  oc.num=String(t.numeroPedido||t.id||oc.num);oc.numTiny=oc.num;oc.tinyOcId=t.id;oc.origem='Tiny';
+  oc.data=String(t.data||oc.data||hojeY()).slice(0,10);oc.prev=String(t.dataPrevista||'').slice(0,10);
+  oc.sit=String(t.situacao)==='2'?'can':'env';
+  oc.forn={...forn};
+  oc.itens=[];
+  (t.itens||[]).forEach(i=>{const x=insumoDoTiny(i.produto);
+    if(!x){semV.push(`${(i.produto&&i.produto.descricao)||'?'} (${nf(+i.quantidade||0)})`);return;}
+    const it=itemNovo(x.sku,forn,+i.quantidade||0,+i.preco||0);if(!it)return;it.ipi=+i.ipi||0;oc.itens.push(it);});
+  oc.frete=oc.frete||{};oc.frete.valor=+t.frete||0;
+  if(t.fretePorConta)oc.frete.tipo=['D','4'].includes(String(t.fretePorConta))?'FOB':'CIF';
+  oc.pag=oc.pag||{};
+  if(t.categoria&&t.categoria.nome)oc.pag.categoria=t.categoria.nome;
+  const parc=(t.parcelas||[]).map(p=>({d:+p.dias||0,valor:+p.valor||0,forma:MEIO_V3[String(p.meioPagamento)]||oc.pag.forma||'Boleto',obs:p.observacoes||'',tiny:null,venc:String(p.dataVencimento||'').slice(0,10)}));
+  if(parc.length){oc.pag.parcelas=parc;oc.pag.cond=parc.map(p=>p.d).join('/');oc.pag.forma=parc[0].forma;}
+  else{try{gerarParcelas(oc,oc.pag.cond||'28');}catch(e){}}
+  oc.obs=t.observacoes||oc.obs||'';
+  oc.obsInt=[t.observacoesInternas||'',+String(t.desconto||0).replace(',','.')?`Desconto no Tiny: R$ ${nf(+String(t.desconto).replace(',','.'),2)}`:'',
+    t.notaFiscal&&t.notaFiscal.numero?`NF ${t.notaFiscal.numero}`:'',semV.length?`Itens do Tiny sem cadastro no ERP: ${semV.join('; ')}`:''].filter(Boolean).join(' · ');
+  hist(oc,velha?'Atualizada do Tiny (API)':'Trazida do Tiny (API)',`OC ${oc.num} · ${oc.itens.length} item(ns)${semV.length?` · ${semV.length} sem cadastro`:''}${parc.length?` · ${parc.length} parcela(s)`:''}`);
+  return {oc,semV:semV.length};
+}
+async function importarOCsTinyAPI(){
+  if(N.teste)return toast('Na versão de teste não há Tiny.',true);
+  const b=$('bImpA');const msg=t=>{if(b)b.textContent=t;};
+  if(b)b.disabled=true;msg('Lendo a lista no Tiny…');
+  try{
+    const l=(await N.tiny({acao:'ocs_v3_lista',situacoes:[0,3]})).ocs||[];
+    let novas=0,atual=0,pulei=0,semV=0,fal=0;
+    for(let i=0;i<l.length;i+=10){
+      msg(`Trazendo ${Math.min(i+10,l.length)} de ${l.length}…`);
+      const r=await N.tiny({acao:'ocs_v3_obter',ids:l.slice(i,i+10).map(x=>x.id)});fal+=(r.falhas||[]).length;
+      (r.ocs||[]).forEach(t=>{const num=String(t.numeroPedido||t.id);
+        const v=DB.ocs.find(o=>(o.tinyOcId&&String(o.tinyOcId)===String(t.id))||((o.origem==='Tiny'||o.numTiny)&&String(o.numTiny||o.num)===num));
+        if(v&&(v.receb||[]).length){pulei++;return;}
+        const x=ocDoTiny(t,v);semV+=x.semV;if(!v){DB.ocs.push(x.oc);novas++;}else atual++;});
+      salvar();
+    }
+    DB.seq=Math.max(DB.seq||0,...DB.ocs.map(x=>+x.num||0));salvar();render();
+    try{N.logCarga&&N.logCarga('Ordens de compra',{lidos:l.length,novos:novas,falhas:fal,det:`pela API v3 · ${atual} atualizada(s)${pulei?` · ${pulei} já recebida(s), sem mexer`:''}${semV?` · ${semV} item(ns) sem cadastro`:''}`});}catch(e){}
+    toast(`${novas} OC(s) novas e ${atual} atualizada(s) do Tiny${semV?` · ${semV} item(ns) sem cadastro no ERP (veja a obs. interna)`:''}${fal?` · ${fal} falha(s)`:''}.`,!!fal);
+  }catch(e){toast('Tiny: '+e.message,true);}
+  if(b){b.disabled=false;b.textContent='⤓ Trazer OCs do Tiny';}
 }
 
 /* =====================================================================
