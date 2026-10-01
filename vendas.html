@@ -358,6 +358,14 @@ select.st-h,select.st-a,select.st-b{border-radius:999px;font-weight:600}
 .fr2 label.on{border-color:#1D6FE8;background:#F4F8FF}.fr2 .rd{width:15px;height:15px;border-radius:50%;border:1.5px solid #C6C3BB}.fr2 label.on .rd{border:4.5px solid #0E1B33}.fr2 small{display:block;color:var(--ink3);font-size:11px}
 .lin2{display:block;width:100%;text-align:left;padding:9px 10px;border-bottom:1px solid var(--line2);background:#fff;font-size:13px}.lin2:hover{background:#F4F8FF}
 .rodfix .acoes{margin-right:auto;display:flex;gap:6px;align-items:center}.rodfix .cnt{font-size:15px;color:var(--ink2)}
+
+/* itens da OC no jeito do Tiny: linha de digitação no fim da tabela */
+.ti2 tr.nova td{background:#FAFAF7;border-top:1px dashed var(--line,#D8DCE3);vertical-align:top}
+.ti2 tr.nova .inp{height:34px;font-size:13px}
+.ti2 tr.nova #addIt{min-width:260px}
+.ti2 .nfo2{display:flex;align-items:center;gap:6px;margin-top:3px}
+.ti2 .nfo2 .in4{flex:1;min-width:140px}
+.addlk{display:flex;align-items:center;gap:14px;padding:8px 4px}
 .sync{display:flex;gap:8px;align-items:center;background:#EFF4FD;border:1px solid #CFDDF6;border-radius:10px;padding:9px 12px;font-size:12.5px;color:#1B4F9C;margin-bottom:12px;flex-wrap:wrap}
 .sync a{color:#1B4F9C;font-weight:600}
 .sel4{height:36px;border:1px solid var(--line);border-radius:9px;padding:0 10px;font:inherit;font-size:12.5px;background:#fff;width:auto}
@@ -396,6 +404,14 @@ input.sel4{width:120px;font-family:'JetBrains Mono',monospace}
 .nparm select,.nparm input:not([type=checkbox]){height:34px;border:1px solid var(--line);border-radius:8px;padding:0 8px;font:inherit;font-size:12.5px;background:#fff}
 .chk3{display:inline-flex!important;gap:5px;align-items:center;font-size:12.5px!important;color:var(--ink)!important;margin:0!important}
 .tv td small{display:block;font-size:10.5px;color:var(--ink3)}
+
+/* três pontinhos da lista de pedidos */
+.dots{width:28px;height:28px;border-radius:7px;display:grid;place-items:center;color:var(--ink2);font-weight:700;background:none;font-size:16px;border:1px solid transparent;cursor:pointer}
+.dots:hover{border-color:var(--line);background:#fff}
+.m3{position:fixed;z-index:80;width:240px;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 14px 36px rgba(20,24,33,.16);padding:6px 0}
+.m3 .mh{padding:9px 14px;border-bottom:1px solid var(--line2);font-size:12.5px;font-weight:600}.m3 button{display:block;width:100%;text-align:left;padding:8px 14px;font-size:13px;background:none;border:0;cursor:pointer;font:inherit}
+.m3 button:hover{background:var(--line3)}.m3 .sep{height:1px;background:var(--line2);margin:4px 0}
+.sts{align-items:center}
 .perb2{display:inline-flex;align-items:center;gap:7px;height:36px;padding:0 14px;border:1.5px solid #9DB8E8;border-radius:999px;background:#fff;color:#1D6FE8;font-weight:600;font-size:13px;cursor:pointer;white-space:nowrap}
 .perb2:hover{border-color:#1D6FE8}.perb2.ativo{background:#EFF4FD}
 .perpop{position:fixed;z-index:500;width:560px;max-width:calc(100vw - 16px);background:#fff;border:1px solid #E4E2DC;border-radius:16px;box-shadow:0 14px 36px rgba(20,24,33,.18);display:grid;grid-template-columns:170px 1fr;overflow:hidden;font-family:inherit;color:#1A1D23}
@@ -429,6 +445,34 @@ input.sel4{width:120px;font-family:'JetBrains Mono',monospace}
 .rodfix{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid #E4E2DC;display:flex;justify-content:flex-end;align-items:flex-end;gap:22px;padding:6px 18px;z-index:20}
 .rodfix div{line-height:1.15;white-space:nowrap}.rodfix b{display:block;font-size:13px;font-weight:600}.rodfix span{font-size:10.5px;color:#8B93A1}.rodfix .sel b{color:#1D6FE8}
 #app{padding-bottom:56px}
+
+/* Necessidade de produção: listas que abrem no número e situações em lista */
+.nppop{position:absolute;z-index:80;background:#fff;border:1px solid #D8DCE3;border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.14);padding:10px 12px;max-height:340px;overflow:auto;min-width:300px}
+.nppop>b{display:block;font-size:13px;margin-bottom:6px}
+.nppop table{border-collapse:collapse;width:100%;font-size:12.5px}
+.nppop th{text-align:left;font-size:11px;color:#6B7280;font-weight:600;padding:4px 6px;border-bottom:1px solid #EEF0F3}
+.nppop td{padding:5px 6px;border-bottom:1px solid #F3F4F6;vertical-align:top}.nppop td small{display:block;color:#6B7280;font-size:11px}
+.nppop .n{text-align:right;font-variant-numeric:tabular-nums}
+.nplk{color:#1D6FE8;text-decoration:underline;cursor:pointer}
+.npsit{position:absolute;z-index:60;background:#fff;border:1px solid #D8DCE3;border-radius:10px;box-shadow:0 10px 28px rgba(0,0,0,.12);padding:8px 10px;display:flex;flex-direction:column;gap:6px;min-width:200px;margin-top:4px}
+.npsit[hidden]{display:none}
+.colbt{display:inline-grid;place-items:center;width:34px;height:34px;border:1px solid #E4E2DC;border-radius:9px;background:#fff;color:#545C69;cursor:pointer;flex:none}
+.colbt:hover{border-color:#1D6FE8;color:#1D6FE8}
+.colsv{position:fixed;inset:0;background:rgba(20,24,33,.18);z-index:590}
+.colsp{position:fixed;top:0;right:0;bottom:0;width:340px;max-width:100vw;background:#FBFAF8;z-index:600;display:flex;flex-direction:column;padding:22px 22px 18px;border-left:1px solid #E4E2DC;font-family:inherit;color:#1A1D23}
+.colsp *{box-sizing:border-box}
+.colsp .ch{display:flex;align-items:center;gap:10px}.colsp .ch b{font-size:17px;flex:1}
+.colsp .x{background:none;border:0;color:#545C69;font:inherit;font-size:12.5px;cursor:pointer}
+.colsp p{font-size:13px;color:#6B7280;margin:14px 0 10px;line-height:1.45}
+.colsp .cl{flex:1;overflow:auto}
+.colsp label{display:flex;align-items:center;gap:12px;padding:9px 2px;border-bottom:1px solid #EFEEE9;font-size:13.5px;cursor:pointer}
+.colsp label.fx{color:#9AA1AD;cursor:default}
+.colsp .sw{width:30px;height:17px;border-radius:999px;background:#D5D8DE;position:relative;flex:none;transition:background .15s}
+.colsp .sw::after{content:'';position:absolute;top:2px;left:2px;width:13px;height:13px;border-radius:50%;background:#fff;transition:left .15s}
+.colsp .sw.on{background:#5B8DEF}.colsp .sw.on::after{left:15px}
+.colsp label.fx .sw{opacity:.5}
+.colsp .cf{display:flex;gap:8px;padding-top:14px;flex-wrap:wrap}
+.colsp .btn.lk{background:none;border:0;text-decoration:underline}
 
 </style></head><body>
 <div class="app" id="app"><div class="vazio">Carregando…</div></div>
@@ -589,6 +633,59 @@ function abrirPeriodo(botao,estado,opts,aplicar){
 }
 document.addEventListener('click',ev=>{const p=document.getElementById('perPop');if(p&&!p.contains(ev.target)&&ev.target!==p._dono&&!(p._dono&&p._dono.contains(ev.target)))p.remove();});
 
+/* =====================================================================
+   COLUNAS VISÍVEIS · o botão do Tiny que escolhe o que aparece na lista
+   Cada lista tem uma chave (vendas, compras, ordens...). A escolha fica
+   guardada no aparelho, por lista. Funciona olhando o cabeçalho da tabela:
+   não precisa mexer em quem desenha a lista — some a coluna com o título
+   que a pessoa desligou. Coluna sem título (marcar, três pontinhos) fica.
+   ===================================================================== */
+const COLS_SVG='<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 4v16M12 4v16M18 4v16"/><circle cx="6" cy="9" r="2" fill="#fff"/><circle cx="12" cy="15" r="2" fill="#fff"/><circle cx="18" cy="8" r="2" fill="#fff"/></svg>';
+const colsNorm=s=>String(s||'').replace(/[↑↓▲▼⇅]/g,'').replace(/\s+/g,' ').trim();
+function colsOcultas(k,pad){try{const v=JSON.parse(localStorage.getItem('erp.cols.'+k)||'null');return Array.isArray(v)?v:(pad||[]);}catch(e){return pad||[];}}
+function colsGravar(k,l){try{localStorage.setItem('erp.cols.'+k,JSON.stringify(l));}catch(e){}}
+function colsBotao(id){return `<button type="button" class="colbt" id="${id}" title="Escolher as colunas que aparecem">${COLS_SVG}</button>`;}
+/* painel: lista de rótulos com chave liga/desliga; fixas não desligam */
+function colsPainel(k,rotulos,pad,fixas,aoAplicar){
+  const velho=document.getElementById('colsP');if(velho){velho.remove();document.getElementById('colsV')&&document.getElementById('colsV').remove();}
+  const oc=new Set(colsOcultas(k,pad));fixas=fixas||[];
+  const v=document.createElement('div');v.id='colsV';v.className='colsv';
+  const p=document.createElement('div');p.id='colsP';p.className='colsp';
+  const lin=()=>rotulos.map(r=>`<label class="${fixas.includes(r)?'fx':''}"><span class="sw ${oc.has(r)?'':'on'}" data-cr="${r.replace(/"/g,'&quot;')}"></span>${r}</label>`).join('');
+  p.innerHTML=`<div class="ch"><b>Informações visíveis</b><button type="button" class="x" id="colsX">fechar ✕</button></div>
+    <p>Escolha as colunas que aparecem nesta lista. Fica guardado neste aparelho.</p>
+    <div class="cl" id="colsL">${lin()}</div>
+    <div class="cf"><button type="button" class="btn pri" id="colsOk">Aplicar</button><button type="button" class="btn" id="colsPad">Voltar ao padrão</button><button type="button" class="btn lk" id="colsC">Cancelar</button></div>`;
+  document.body.appendChild(v);document.body.appendChild(p);
+  const fecha=()=>{p.remove();v.remove();};
+  const liga=()=>p.querySelectorAll('[data-cr]').forEach(s=>s.onclick=()=>{const r=s.dataset.cr;if(fixas.includes(r))return;oc.has(r)?oc.delete(r):oc.add(r);s.classList.toggle('on',!oc.has(r));});
+  liga();v.onclick=fecha;p.querySelector('#colsX').onclick=fecha;p.querySelector('#colsC').onclick=fecha;
+  p.querySelector('#colsPad').onclick=()=>{oc.clear();(pad||[]).forEach(r=>oc.add(r));p.querySelector('#colsL').innerHTML=lin();liga();};
+  p.querySelector('#colsOk').onclick=()=>{colsGravar(k,[...oc]);fecha();if(aoAplicar)aoAplicar();};
+}
+/* tabela <table>: some a coluna pelo título do cabeçalho */
+function colsTabela(tab,k,pad){
+  if(!tab)return [];
+  const oc=new Set(colsOcultas(k,pad)),ths=[...tab.querySelectorAll('thead tr:first-child > th')];
+  const rot=ths.map(t=>colsNorm(t.textContent));const esc=[];
+  rot.forEach((r,i)=>{if(r&&oc.has(r))esc.push(i);});
+  ths.forEach((t,i)=>t.style.display=esc.includes(i)?'none':'');
+  tab.querySelectorAll('tbody > tr').forEach(tr=>{const tds=[...tr.children];if(tds.length!==ths.length)return;
+    tds.forEach((td,i)=>td.style.display=esc.includes(i)?'none':'');});
+  return rot.filter(Boolean);
+}
+/* lista em grade (div.h + div.r): some a coluna e refaz as trilhas */
+function colsGrade(caixa,k,trilhas,pad){
+  if(!caixa)return [];
+  const h=caixa.querySelector('.h');if(!h)return [];
+  const oc=new Set(colsOcultas(k,pad)),cel=[...h.children],rot=cel.map(c=>colsNorm(c.textContent));
+  const esc=[];rot.forEach((r,i)=>{if(r&&oc.has(r))esc.push(i);});
+  const tpl=trilhas.filter((t,i)=>!esc.includes(i)).join(' ');
+  [h,...caixa.querySelectorAll('.r')].forEach(r=>{if(r.children.length!==cel.length)return;
+    r.style.gridTemplateColumns=tpl;[...r.children].forEach((c,i)=>c.style.display=esc.includes(i)?'none':'');});
+  return rot.filter(Boolean);
+}
+
 const deBR=s=>{const m=String(s||'').trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);if(!m)return '';
   const a=m[3].length===2?'20'+m[3]:m[3];const d=new Date(+a,+m[2]-1,+m[1]);
   if(d.getDate()!==+m[1]||d.getMonth()!==+m[2]-1)return '';return ymd(d);};
@@ -670,17 +767,21 @@ function desenhaLista(){
   a.innerHTML=`<button data-aba="todas" class="${V.aba==='todas'?'on':''}" style="--cor:#1A1D23">Todos<b>${nf(tot)}</b></button>`+
     SITS.filter(s=>por[s[0]]||['Em aberto','Aprovado','Preparando envio','Pronto para envio','Faturado','Enviado','Entregue','Não Entregue','Cancelado'].includes(s[0]))
       .map(s=>`<button data-aba="${esc(s[0])}" class="${V.aba===s[0]?'on':''}" style="--cor:${s[2]}">${s[1]}<b>${nf(por[s[0]]||0)}</b></button>`).join('');
+  a.insertAdjacentHTML('beforeend','<span style="flex:1"></span>'+colsBotao('bCols'));
+  $('bCols').onclick=()=>colsPainel('vendas',COLS_V,COLS_V_PAD,['Nº','Cliente'],desenhaLista);
   a.querySelectorAll('[data-aba]').forEach(b=>b.onclick=()=>{V.aba=b.dataset.aba;V.pagina=0;V.sel.clear();carregar();});
   if(V.erro){l.innerHTML=`<div class="aviso">⚠ <div>${esc(V.erro)}${/tabelas de vendas/.test(V.erro)?'<br>Rode o arquivo <b>supabase-vendas.sql</b> no SQL Editor do Supabase.':''}</div></div>`;return;}
   if(!d){l.innerHTML=`<div class="vazio">${V.carregando?'Carregando…':'—'}</div>`;return;}
   const col=(k,r,st)=>`<th class="so2 ${V.ordem===k?(V.dir==='asc'?'asc':'desc'):''}" data-o="${k}" style="${st||''}">${r}</th>`;
   const ps=d.pedidos||[];
   const selV=[...V.sel.values()].reduce((s,p)=>s+Number(p.total||0),0);
-  l.innerHTML=ps.length?`<div class="rolx"><table class="tv"><thead><tr><th style="width:34px"><span class="ck ${ps.length&&ps.every(p=>V.sel.has(p.id))?'on':''}" id="ckT"></span></th>
-    ${col('numero','Nº')}${col('data','Data')}${col('prev','Previsto')}${col('cliente','Cliente')}${col('cidade','Cidade')}<th>CNPJ / CPF</th>${col('total','Total','text-align:right')}<th>Marcadores</th>${col('situacao','Situação')}</tr></thead><tbody>
+  /* os três pontinhos e as colunas do Tiny: Vendedor, UF, Faturado e o Nº do pedido da loja */
+  l.innerHTML=ps.length?`<div class="rolx"><table class="tv" id="tabV"><thead><tr><th style="width:34px"><span class="ck ${ps.length&&ps.every(p=>V.sel.has(p.id))?'on':''}" id="ckT"></span></th><th style="width:30px"></th>
+    ${col('numero','Nº')}${col('data','Data')}${col('prev','Previsto')}${col('fat','Faturado')}${col('cliente','Cliente')}${col('cidade','Cidade')}${col('uf','UF')}<th>CNPJ / CPF</th>${col('vendedor','Vendedor')}${col('total','Total','text-align:right')}<th>Nº pedido</th><th>Marcadores</th>${col('situacao','Situação')}</tr></thead><tbody>
     ${ps.map(p=>{const s=sitDe(p.situacao);return `<tr data-id="${esc(p.id)}" class="${V.sel.has(p.id)?'sel':''}"><td><span class="ck ${V.sel.has(p.id)?'on':''}" data-ck="${esc(p.id)}"></span></td>
-      <td class="m"><b>${esc(p.numero)}</b></td><td class="m">${br(p.data_pedido)}</td><td class="m">${p.data_prevista?br(p.data_prevista):''}</td><td class="cl">${esc(p.cliente)}</td>
-      <td>${esc([p.cidade,p.uf].filter(Boolean).join(' · '))}</td><td class="m">${esc(p.cliente_doc||'')}</td><td class="n">${nf(p.total,2)}</td>
+      <td><button type="button" class="dots" data-pm="${esc(p.id)}" title="Ações">⋯</button></td>
+      <td class="m"><b>${esc(p.numero)}</b></td><td class="m">${br(p.data_pedido)}</td><td class="m">${p.data_prevista?br(p.data_prevista):''}</td><td class="m">${p.data_faturamento?br(p.data_faturamento):''}</td><td class="cl">${esc(p.cliente)}</td>
+      <td>${esc(p.cidade||'')}</td><td>${esc(p.uf||'')}</td><td class="m">${esc(p.cliente_doc||'')}</td><td>${esc(p.vendedor||'—')}</td><td class="n">${nf(p.total,2)}</td><td class="m">${esc(p.numero_ecommerce||'')}</td>
       <td>${(p.marcadores||[]).map(m=>`<span class="mk3" style="--c:${esc(m.cor||'#8B93A1')}"><i></i>${esc(m.nome)}</span>`).join('')}</td>
       <td><span class="dot3" style="background:${s[2]}"></span> ${esc(s[1])}</td></tr>`;}).join('')}</tbody></table></div>
     <div class="pagin">${V.pagina?'<button class="btn sm" id="pAnt">‹ anteriores</button>':''}<span>${nf(V.pagina*100+1)}–${nf(V.pagina*100+ps.length)} de ${nf(d.total)}</span>${(V.pagina+1)*100<d.total?'<button class="btn sm" id="pProx">próximos ›</button>':''}</div>
@@ -688,13 +789,32 @@ function desenhaLista(){
       ${V.sel.size?`<div class="sel"><b>${nf(selV,2)}</b><span>selecionados (R$)</span></div>`:''}<div><b>${nf(d.total)}</b><span>quantidade</span></div><div><b>${d.soma!=null?nf(d.soma,2):'—'}</b><span>valor total (R$)</span></div></div>`
     :`<div class="vazio">${d.total===0&&V.aba==='todas'&&!V.q&&V.per.m==='sem'?'Nenhum pedido no ERP ainda. Comece a carga em <a href="#carga">Carga do Tiny</a>.':'Nenhum pedido com esses filtros.'}</div>`;
   l.querySelectorAll('[data-o]').forEach(h=>h.onclick=()=>{const k=h.dataset.o;V.dir=V.ordem===k&&V.dir==='desc'?'asc':'desc';V.ordem=k;V.pagina=0;carregar();});
-  l.querySelectorAll('tbody tr').forEach(r=>r.onclick=ev=>{if(ev.target.closest('.ck'))return;abrirPedido(r.dataset.id);});
+  l.querySelectorAll('tbody tr').forEach(r=>r.onclick=ev=>{if(ev.target.closest('.ck,.dots'))return;abrirPedido(r.dataset.id);});
+  l.querySelectorAll('[data-pm]').forEach(b=>b.onclick=ev=>{ev.stopPropagation();const p=ps.find(x=>String(x.id)===b.dataset.pm);if(p)menuPedido(b,p);});
+  colsTabela($('tabV'),'vendas',COLS_V_PAD);
   l.querySelectorAll('[data-ck]').forEach(c=>c.onclick=ev=>{ev.stopPropagation();const p=ps.find(x=>x.id===c.dataset.ck);V.sel.has(p.id)?V.sel.delete(p.id):V.sel.set(p.id,p);desenhaLista();});
   if($('ckT'))$('ckT').onclick=()=>{const todos=ps.every(p=>V.sel.has(p.id));ps.forEach(p=>todos?V.sel.delete(p.id):V.sel.set(p.id,p));desenhaLista();};
   if($('bDes'))$('bDes').onclick=()=>{V.sel.clear();desenhaLista();};
   if($('pAnt'))$('pAnt').onclick=()=>{V.pagina--;carregar();};
   if($('pProx'))$('pProx').onclick=()=>{V.pagina++;carregar();};
 }
+/* colunas da lista, como no Tiny; as desligadas de fábrica ficam no painel */
+const COLS_V=['Nº','Data','Previsto','Faturado','Cliente','Cidade','UF','CNPJ / CPF','Vendedor','Total','Nº pedido','Marcadores','Situação'];
+const COLS_V_PAD=['Faturado','UF','Nº pedido'];
+/* três pontinhos do pedido */
+function menuPedido(botao,p){
+  const velho=document.getElementById('m3v');if(velho){const mesmo=velho.dataset.id===String(p.id);velho.remove();if(mesmo)return;}
+  const m=document.createElement('div');m.id='m3v';m.className='m3';m.dataset.id=String(p.id);
+  const it=[['Ver o pedido',()=>abrirPedido(p.id)],['Abrir no Tiny',()=>window.open('https://erp.tiny.com.br/vendas#edit/'+encodeURIComponent(p.id),'_blank')],
+    '-',['Copiar o número',()=>copia(String(p.numero||''),'Número copiado.')],['Copiar o CNPJ/CPF',()=>copia(String(p.cliente_doc||''),'CNPJ copiado.')],
+    ['Marcar para somar',()=>{V.sel.has(p.id)?V.sel.delete(p.id):V.sel.set(p.id,p);desenhaLista();}]];
+  m.innerHTML=`<div class="mh">Pedido ${esc(p.numero)}</div>`+it.map((x,n)=>x==='-'?'<div class="sep"></div>':`<button data-n="${n}">${x[0]}</button>`).join('');
+  document.body.appendChild(m);const r=botao.getBoundingClientRect();m.style.left=r.left+'px';m.style.top=(r.bottom+4)+'px';
+  if(r.bottom+m.offsetHeight>innerHeight)m.style.top=Math.max(8,r.top-m.offsetHeight-4)+'px';
+  m.onclick=ev=>ev.stopPropagation();m.querySelectorAll('[data-n]').forEach(b=>b.onclick=()=>{m.remove();it[+b.dataset.n][1]();});
+  setTimeout(()=>document.addEventListener('click',function f(){const x=document.getElementById('m3v');if(x)x.remove();document.removeEventListener('click',f);}),0);
+}
+function copia(t,msg){try{navigator.clipboard.writeText(t).then(()=>toast(msg),()=>toast(t));}catch(e){toast(t);}}
 async function abrirPedido(id){
   gaveta(`<div class="gt"><h2>Pedido</h2><button class="btn sm" id="gX">Fechar ✕</button></div><div class="gc"><div class="vazio">Carregando…</div></div>`);
   $('gX').onclick=()=>gaveta(null);
@@ -793,49 +913,86 @@ function teste(c){
    estoque virtual; venda média e vendido no mês mostram o ritmo; a
    sugestão para pedidos cobre o estoque mínimo do cadastro do produto.
    ===================================================================== */
-const NP={meses:6,campo:'faturamento',sits:['Em aberto','Aprovado','Preparando envio','Pronto para envio'],q:'',dados:null,ord:{k:'sug',d:-1}};
+/* Filtros: o que está na tela (NP.f) só vale depois do Atualizar (NP.ap). */
+const NP_SITS0=['Em aberto','Aprovado','Preparando envio','Pronto para envio'];
+const NP={f:{meses:6,sits:NP_SITS0.slice(),per:perNovo('sem')},ap:null,q:'',dados:null,ord:{k:'prod',d:-1}};
 const npMes=n=>{const d=new Date();d.setDate(1);d.setMonth(d.getMonth()-n);return d.toISOString().slice(0,7);};
-async function npCarregar(){
-  if(N.teste){const ps=N.produtos();const ab={},ms={};ps.forEach((p,i)=>{if(i%3)ab[p.codigo]={qtd:10+i*4,pedidos:1+i%3};});
-    for(let k=NP.meses;k>=0;k--){const m=npMes(k);ms[m]={};ps.forEach((p,i)=>ms[m][p.codigo]=30+i*2+(k%3)*5);}return {ab,ms};}
-  const [a,m]=await Promise.all([N.tiny({acao:'vendas_abertos',situacoes:NP.sits}),N.tiny({acao:'vendas_mes',campo:NP.campo,de:npMes(NP.meses)+'-01',ate:new Date().toISOString().slice(0,10)})]);
-  const ab={},ms={};(a.itens||[]).forEach(x=>ab[x.sku]={qtd:+x.qtd||0,pedidos:+x.pedidos||0});(m.linhas||[]).forEach(x=>{(ms[x.mes]||(ms[x.mes]={}))[x.sku]=+x.qtd||0;});
-  return {ab,ms};
+const npBate=(txt,q)=>{const t=semAc(txt);return semAc(q).split(/\s+/).filter(Boolean).every(w=>t.includes(w));};
+async function npCarregar(ap){
+  const fx=perFaixa(ap.per),campo=ap.per.campo||'prevista';
+  const deM=npMes(ap.meses)+'-01',ateM=perAdd(npMes(0)+'-01',-1);          /* meses fechados */
+  const iniMes=npMes(0)+'-01',hoje=perHoje();
+  if(N.teste){const ps=N.produtos();const peds=[],itens=[];ps.forEach((p,i)=>{if(i%3)return;const id='T'+i;peds.push({id,numero:String(68000+i),cliente:'Cliente teste '+i,data_prevista:perAdd(hoje,i%5),situacao:'Aprovado'});itens.push({pedido_id:id,sku:p.codigo,qtd:10+i*4});});
+    const soma={},mes={};ps.forEach((p,i)=>{soma[p.codigo]=(30+i*2)*ap.meses;mes[p.codigo]=10+i;});return {peds,itens,soma,mes};}
+  const [a,m,n]=await Promise.all([
+    N.tiny({acao:'nec_pedidos',situacoes:ap.sits,campo,de:fx.de,ate:fx.ate}),
+    N.tiny({acao:'nec_media',de:deM,ate:ateM}),
+    N.tiny({acao:'nec_media',de:iniMes,ate:hoje})]);
+  return {peds:a.pedidos||[],itens:a.itens||[],soma:m.soma||{},mes:n.soma||{}};
+}
+function npPop(ancora,html){
+  const v=document.getElementById('npPop');if(v){const mesmo=v._dono===ancora;v.remove();if(mesmo)return;}
+  const d=document.createElement('div');d.id='npPop';d.className='nppop';d._dono=ancora;d.innerHTML=html;document.body.appendChild(d);
+  const r=ancora.getBoundingClientRect();d.style.top=(window.scrollY+r.bottom+6)+'px';d.style.left=Math.max(8,Math.min(window.scrollX+r.right-d.offsetWidth,window.innerWidth-d.offsetWidth-8))+'px';
+  setTimeout(()=>document.addEventListener('click',function fe(ev){if(!d.contains(ev.target)&&ev.target!==ancora){d.remove();document.removeEventListener('click',fe);}}),0);
 }
 async function telaNecProd(){
-  if(!NP.dados){$('app').innerHTML='<div class="vazio">Lendo pedidos…</div>';try{NP.dados=await npCarregar();}catch(e){NP.dados={ab:{},ms:{},erro:e.message};}}
-  const {ab,ms}=NP.dados;const sal=N.saldos(),prod=N.aProduzir();const mAt=npMes(0);
+  if(!NP.ap)NP.ap=JSON.parse(JSON.stringify(NP.f));
+  if(!NP.dados){$('app').innerHTML='<div class="vazio">Lendo pedidos…</div>';try{NP.dados=await npCarregar(NP.ap);}catch(e){NP.dados={peds:[],itens:[],soma:{},mes:{},erro:e.message};}}
+  const D=NP.dados,ap=NP.ap,fx=perFaixa(ap.per);const sal=N.saldos();
+  const ops=(N.opsAbertas?N.opsAbertas(fx.de,fx.ate):[]);
+  const pedPor={};D.peds.forEach(p=>pedPor[p.id]=p);
+  const entPor={};D.itens.forEach(it=>{const p=pedPor[it.pedido_id];if(!p)return;(entPor[it.sku]||(entPor[it.sku]=[])).push({...p,qtd:it.qtd});});
+  const opPor={};ops.forEach(o=>(opPor[o.codigo]||(opPor[o.codigo]=[])).push(o));
   const dias=new Date().getDate(),dm=new Date(new Date().getFullYear(),new Date().getMonth()+1,0).getDate();
-  const q=semAc(NP.q);
-  let L=N.produtos().filter(p=>!q||semAc(p.codigo+' '+p.descricao+' '+(p.tanque||'')).includes(q)).map(p=>{
-    const ent=(ab[p.codigo]||{}).qtd||0,npd=(ab[p.codigo]||{}).pedidos||0;
-    const fis=p.tiny&&sal[p.tiny]!=null?+sal[p.tiny]:null;const emp=((prod[p.codigo]||{}).un||0)/(+p.un_cx||1);
-    const virt=(fis||0)+emp-ent;let soma=0;for(let k=1;k<=NP.meses;k++)soma+=(ms[npMes(k)]||{})[p.codigo]||0;
-    const media=soma/NP.meses,noMes=(ms[mAt]||{})[p.codigo]||0,proj=dias?noMes/dias*dm:0;
-    const min=+p.estoqueMin||0,sug=Math.max(0,Math.ceil(min-virt));
-    return {p,ent,npd,fis,emp:Math.round(emp),virt,media,noMes,proj,min,sug,lit:sug*(+p.un_cx||1)*(+p.litragem||0)};});
+  let L=N.produtos().filter(p=>!NP.q||npBate(p.codigo+' '+p.descricao+' '+(p.tanque||''),NP.q)).map(p=>{
+    const lp=entPor[p.codigo]||[],lo=opPor[p.codigo]||[];
+    const ent=lp.reduce((s,x)=>s+x.qtd,0),npd=new Set(lp.map(x=>x.id)).size;
+    const fis=p.tiny&&sal[p.tiny]!=null?+sal[p.tiny]:null;const emp=lo.reduce((s,o)=>s+o.cx,0);
+    const virt=(fis||0)+emp;                          /* estoque virtual = físico + em produção */
+    const media=(D.soma[p.codigo]||0)/ap.meses,noMes=D.mes[p.codigo]||0,proj=dias?noMes/dias*dm:0;
+    const min=+p.estoqueMin||0,prod=Math.max(0,Math.ceil(ent-virt));  /* produzir = pedidos a entregar − estoque virtual */
+    return {p,lp,lo,ent,npd,fis,emp,virt,media,noMes,proj,min,prod,lit:prod*(+p.un_cx||1)*(+p.litragem||0)};});
   const {k,d}=NP.ord;L.sort((a,b)=>{const x=k==='nome'?a.p.descricao:a[k],y=k==='nome'?b.p.descricao:b[k];return (x>y?1:x<y?-1:0)*d;});
   const th=(k,r,st)=>`<th class="so2 ${NP.ord.k===k?(NP.ord.d>0?'asc':'desc'):''}" data-o="${k}" style="${st||''}">${r}</th>`;
-  $('app').innerHTML=`<div class="migalha">PCP › Necessidade de produção</div><div class="topo"><h1>Necessidade de produção</h1><span class="salvo"></span><button class="btn" id="npAtu">↻ Atualizar</button></div>
-  ${NP.dados.erro?`<div class="aviso">⚠ <div>Não consegui ler os pedidos: ${esc(NP.dados.erro)}</div></div>`:''}
-  <div class="nparm"><div><label>Histórico de venda dos últimos</label><span class="l"><input id="npM" value="${NP.meses}" style="width:56px"> <span class="k">mês(es)</span></span></div>
-    <div><label>Data a ser considerada</label><select id="npC"><option value="pedido" ${NP.campo==='pedido'?'selected':''}>Data do pedido</option><option value="faturamento" ${NP.campo==='faturamento'?'selected':''}>Data do faturamento</option><option value="prevista" ${NP.campo==='prevista'?'selected':''}>Data prevista</option></select></div>
-    <div><label>Considerar nas saídas</label><span class="l">${SITS.slice(0,6).map(s=>`<label class="chk3"><input type="checkbox" data-ns="${esc(s[0])}" ${NP.sits.includes(s[0])?'checked':''}> ${esc(s[1])}</label>`).join('')}</span></div></div>
-  <div class="barra"><div class="busca">⌕<input id="npQ" placeholder="Produto, código ou tanque" value="${esc(NP.q)}"></div></div>
-  <div class="rolx"><table class="tv"><thead><tr>${th('nome','Produto')}${th('ent','A entregar','text-align:right')}${th('fis','Estoque físico','text-align:right')}${th('emp','Em produção','text-align:right')}${th('virt','Estoque virtual','text-align:right')}${th('media','Venda média/mês','text-align:right')}${th('noMes','Vendido no mês','text-align:right')}${th('min','Estoque mínimo','text-align:right')}${th('sug','Sugestão para pedidos','text-align:right')}</tr></thead><tbody>
-  ${L.map(l=>`<tr><td><b>${esc(l.p.descricao)}</b><small>${esc(l.p.codigo)} · ${esc(l.p.tanque||'')}</small></td><td class="n">${nf(l.ent)}${l.npd?`<small>${l.npd} pedido${l.npd>1?'s':''}</small>`:''}</td>
-    <td class="n">${l.fis==null?'—':nf(l.fis)}</td><td class="n">${l.emp?nf(l.emp):'—'}</td><td class="n" style="font-weight:700;${l.virt<0?'color:var(--danger)':''}">${nf(l.virt)}</td>
+  const f=NP.f,mudou=JSON.stringify(f)!==JSON.stringify(ap);
+  const sitNome=s=>((SITS.find(x=>x[0]===s)||[])[1])||s;
+  $('app').innerHTML=`<div class="migalha">PCP › Necessidade de produção</div><div class="topo"><h1>Necessidade de produção</h1><span class="salvo"></span></div>
+  ${D.erro?`<div class="aviso">⚠ <div>Não consegui ler os pedidos: ${esc(D.erro)}</div></div>`:''}
+  <div class="nparm">
+    <div><label>Período (pedidos e OPs)</label>${perBotao('npPer',f.per)}</div>
+    <div><label>Histórico de venda dos últimos</label><span class="l"><input id="npM" value="${f.meses}" style="width:56px"> <span class="k">mês(es)</span></span></div>
+    <div class="rel"><label>Considerar nas saídas</label><button class="btn" id="npSitB" type="button">${f.sits.length===SITS.slice(0,6).length?'Todas as situações':f.sits.length?f.sits.map(sitNome).join(', '):'Nenhuma'} ▾</button>
+      <div class="npsit" id="npSit" hidden>${SITS.slice(0,6).map(x=>`<label class="chk3"><input type="checkbox" data-ns="${esc(x[0])}" ${f.sits.includes(x[0])?'checked':''}> ${esc(x[1])}</label>`).join('')}</div></div>
+    <div style="margin-left:auto;align-self:flex-end"><button class="btn ${mudou?'pri':''}" id="npAtu">↻ Atualizar</button>${mudou?'<div class="k" style="font-size:11.5px;margin-top:3px">os filtros mudaram: clique para aplicar</div>':''}</div></div>
+  <div class="barra"><div class="busca">⌕<input id="npQ" placeholder="Produto, código ou tanque (com ou sem acento)" value="${esc(NP.q)}"></div>
+    <span class="k" style="margin-left:10px">${ap.per.m==='sem'?'Todos os pedidos e OPs em aberto':esc(perRotulo(ap.per))}</span></div>
+  <div class="rolx"><table class="tv"><thead><tr>${th('nome','Produto')}${th('ent','Pedidos a entregar','text-align:right')}${th('fis','Estoque físico','text-align:right')}${th('emp','Em produção','text-align:right')}${th('virt','Estoque virtual','text-align:right')}${th('media','Venda média/mês','text-align:right')}${th('noMes','Vendido no mês','text-align:right')}${th('min','Estoque mínimo','text-align:right')}${th('prod','Produzir','text-align:right')}</tr></thead><tbody>
+  ${L.map((l,i)=>`<tr><td><b>${esc(l.p.descricao)}</b><small>${esc(l.p.codigo)} · ${esc(l.p.tanque||'')}</small></td>
+    <td class="n">${l.ent?`<a class="nplk" data-npe="${i}">${nf(l.ent)}</a><small>${l.npd} pedido${l.npd>1?'s':''}</small>`:'—'}</td>
+    <td class="n">${l.fis==null?'—':nf(l.fis)}</td><td class="n">${l.emp?`<a class="nplk" data-npo="${i}">${nf(l.emp)}</a><small>${l.lo.length} OP${l.lo.length>1?'s':''}</small>`:'—'}</td>
+    <td class="n" style="font-weight:700">${nf(l.virt)}</td>
     <td class="n">${nf(Math.round(l.media))} cx</td><td class="n">${nf(l.noMes)}<small>proj. ${nf(Math.round(l.proj))}</small></td><td class="n">${l.min?nf(l.min):'—'}</td>
-    <td class="n" style="${l.sug?'color:var(--danger);font-weight:700':'color:var(--ink3)'}">${l.sug?nf(l.sug)+' cx':'—'}${l.sug?`<small>${nf(Math.round(l.lit))} litros</small>`:''}</td></tr>`).join('')}</tbody></table></div>
-  <div class="leg"><b>Venda média/mês</b> e <b>Vendido no mês</b> mostram o ritmo de venda no período e na data escolhidos, para decidir se vale aproveitar o tanque e produzir mais.
-  <b>Sugestão para pedidos</b> = estoque mínimo − estoque virtual; embaixo, os litros de granel. O <b>estoque mínimo</b> vem do cadastro do produto (Cadastros › Produtos › aba Estoque). Por enquanto a página só mostra; gerar OP daqui fica para depois.</div>
-  <div class="rodfix"><div><b>${L.filter(l=>l.sug).length}</b><span>produtos abaixo do mínimo</span></div><div><b>${nf(L.reduce((s,l)=>s+l.sug,0))}</b><span>caixas sugeridas</span></div><div><b>${nf(Math.round(L.reduce((s,l)=>s+l.lit,0)))}</b><span>litros</span></div></div>`;
+    <td class="n" style="${l.prod?'color:var(--danger);font-weight:700':'color:var(--ink3)'}">${l.prod?nf(l.prod)+' cx':'—'}${l.prod?`<small>${nf(Math.round(l.lit))} litros</small>`:''}</td></tr>`).join('')}</tbody></table></div>
+  <div class="leg"><b>Pedidos a entregar</b>: pedidos nas situações marcadas e, com período, com a data dentro dele (clique no número para ver quais). <b>Em produção</b>: OPs ainda não concluídas, programadas no período (clique para ver quais).
+  <b>Estoque virtual</b> = estoque físico + em produção. <b>Produzir</b> = pedidos a entregar − estoque virtual; embaixo, os litros de granel.
+  <b>Venda média/mês</b> = o que foi entregue (faturado, enviado ou entregue) nos últimos ${ap.meses} mês(es) fechados ÷ ${ap.meses}. <b>Vendido no mês</b>: entregue neste mês até hoje, com a projeção para o mês.</div>
+  <div class="rodfix"><div><b>${L.filter(l=>l.prod).length}</b><span>produtos para produzir</span></div><div><b>${nf(L.reduce((s,l)=>s+l.prod,0))}</b><span>caixas</span></div><div><b>${nf(Math.round(L.reduce((s,l)=>s+l.lit,0)))}</b><span>litros</span></div></div>`;
   document.querySelectorAll('[data-o]').forEach(h=>h.onclick=()=>{const k=h.dataset.o;NP.ord=NP.ord.k===k?{k,d:-NP.ord.d}:{k,d:k==='nome'?1:-1};telaNecProd();});
-  $('npM').onchange=e=>{NP.meses=Math.max(1,Math.min(24,+e.target.value||6));NP.dados=null;telaNecProd();};
-  $('npC').onchange=e=>{NP.campo=e.target.value;NP.dados=null;telaNecProd();};
-  document.querySelectorAll('[data-ns]').forEach(i=>i.onchange=()=>{NP.sits=[...document.querySelectorAll('[data-ns]')].filter(x=>x.checked).map(x=>x.dataset.ns);NP.dados=null;telaNecProd();});
+  $('npPer').onclick=ev=>{ev.stopPropagation();abrirPeriodo(ev.currentTarget,NP.f.per,{prev:true,campos:[['prevista','Data prevista'],['pedido','Data do pedido']]},st=>{NP.f.per=st;telaNecProd();});};
+  $('npM').onchange=e=>{NP.f.meses=Math.max(1,Math.min(24,+e.target.value||6));telaNecProd();};
+  $('npSitB').onclick=ev=>{ev.stopPropagation();const p=$('npSit');p.hidden=!p.hidden;};
+  document.querySelectorAll('[data-ns]').forEach(i=>i.onchange=()=>{NP.f.sits=[...document.querySelectorAll('[data-ns]')].filter(x=>x.checked).map(x=>x.dataset.ns);
+    const b=$('npSitB');b.textContent=(NP.f.sits.length===6?'Todas as situações':NP.f.sits.length?NP.f.sits.map(sitNome).join(', '):'Nenhuma')+' ▾';
+    const a=$('npAtu');a.classList.add('pri');});
+  document.addEventListener('click',function fs(ev){const p=$('npSit');if(!p){document.removeEventListener('click',fs);return;}if(!p.hidden&&!p.contains(ev.target)&&ev.target.id!=='npSitB'){p.hidden=true;telaNecProd();document.removeEventListener('click',fs);}});
   $('npQ').oninput=e=>{NP.q=e.target.value;clearTimeout(window._tp);window._tp=setTimeout(()=>{telaNecProd();const i=$('npQ');i.focus();i.setSelectionRange(i.value.length,i.value.length);},250);};
-  $('npAtu').onclick=()=>{NP.dados=null;telaNecProd();};
+  $('npAtu').onclick=()=>{NP.ap=JSON.parse(JSON.stringify(NP.f));NP.dados=null;telaNecProd();};
+  document.querySelectorAll('[data-npe]').forEach(a=>a.onclick=ev=>{ev.preventDefault();ev.stopPropagation();const l=L[+a.dataset.npe];
+    const ag={};l.lp.forEach(x=>{const g=ag[x.id]||(ag[x.id]={...x,qtd:0});g.qtd+=x.qtd;});
+    npPop(a,`<b>Pedidos a entregar</b><table><thead><tr><th>Nº</th><th>Cliente</th><th>Data</th><th class="n">Qtd</th></tr></thead><tbody>${Object.values(ag).sort((x,y)=>String(x.data_prevista||'9').localeCompare(String(y.data_prevista||'9'))).map(x=>`<tr><td>${esc(x.numero||x.id)}</td><td>${esc(x.cliente||'')}<small>${esc(sitNome(x.situacao))}</small></td><td>${x.data_prevista?esc(perBr(x.data_prevista)):'sem data'}</td><td class="n">${nf(x.qtd)}</td></tr>`).join('')}</tbody></table>`);});
+  document.querySelectorAll('[data-npo]').forEach(a=>a.onclick=ev=>{ev.preventDefault();ev.stopPropagation();const l=L[+a.dataset.npo];
+    npPop(a,`<b>Em produção</b><table><thead><tr><th>OP</th><th>Data</th><th>Máquina</th><th class="n">Qtd</th></tr></thead><tbody>${l.lo.map(o=>`<tr><td>${esc(o.op)}<small>${esc(o.sit||'')}</small></td><td>${esc(perBr(o.data))}</td><td>${esc(o.maq||'')}</td><td class="n">${nf(o.cx)}</td></tr>`).join('')}</tbody></table>`);});
 }
 
 function render(){
