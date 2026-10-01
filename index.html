@@ -4938,6 +4938,9 @@ function sit(o){
      o previsto. E era menor de propósito: a produção do segundo dia entrou
      pela conclusão, não como turno. */
   if(o.fimReal&&o.caixas!=null)return 'concluida';
+  /* v316: envase finalizado de propósito (Concluir envase) vale mais que a regra
+     dos turnos — a OP que virou o dia ia para o apontamento e voltava a "produção" */
+  if(o.fimReal&&o.status==='finalizado')return 'finalizado';
   /* turnos abertos: a OP continua em produção mesmo com o dia fechado */
   if((o.turnos||[]).length&&cxFeitas(o)<caixasPrev(o))return 'producao';
   if(o.fimReal)return 'finalizado';
@@ -5248,7 +5251,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v315';
+const VERSAO_APP='v316';
 let DRAG=null;
 function render(){
   recomporTudo();
@@ -21787,7 +21790,7 @@ window.csNucleo=(function(){
     VERS[id]=l[0].versao;return {ok:true};
   }
   return {
-    versao:'v315',
+    versao:'v316',
     logo:()=>LOGO,
     teste:!temNuvem(),
     usuario:()=>{try{return (MEU_ACESSO&&MEU_ACESSO.nome)||(EU&&EU.nome)||emailDaSessao()||'Teste';}catch(e){return 'Teste';}},
