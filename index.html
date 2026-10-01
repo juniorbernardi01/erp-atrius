@@ -5248,7 +5248,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v314';
+const VERSAO_APP='v315';
 let DRAG=null;
 function render(){
   recomporTudo();
@@ -19372,12 +19372,25 @@ const csPode=p=>{
   if(csSemAcesso())return true;
   try{return podeVer(p.page);}catch(e){return true;}
 };
+/* v315: título e "em breve" não contam como página: um módulo só aparece se a
+   pessoa tem pelo menos uma página de verdade nele; o subtítulo só aparece se
+   alguma página dele aparece */
+const csFiltraPgs=l=>{
+  const vis=l.filter(csPode),reais=vis.filter(p=>!p.grupo);
+  if(!reais.length)return [];
+  return vis.filter((p,i)=>{
+    if(!p.grupo||p.breve)return true;
+    if(p.acord)return reais.some(r=>r.pai===p.acord);
+    /* subtítulo: vale se alguma página logo abaixo dele (até o próximo título) aparece */
+    const k=l.indexOf(p);for(let j=k+1;j<l.length;j++){const q=l[j];if(q.grupo)break;if(reais.includes(q))return true;}
+    return false;});
+};
 const csVivas=m=>{
-  if(m.subs)return m.subs.flatMap(s=>(s.pgs||[]).filter(csPode));
-  return (m.pgs||[]).filter(csPode);
+  if(m.subs)return m.subs.flatMap(s=>csFiltraPgs(s.pgs||[]));
+  return csFiltraPgs(m.pgs||[]);
 };
 /* submódulos com alguma página visível */
-const csSubsVivos=m=>(m.subs||[]).filter(s=>(s.pgs||[]).filter(csPode).length);
+const csSubsVivos=m=>(m.subs||[]).filter(s=>csFiltraPgs(s.pgs||[]).length);
 /* o painel ao lado abre tanto um módulo quanto um submódulo */
 const csAchaAberto=id=>{
   for(const m of CS_MOD){
@@ -21774,7 +21787,7 @@ window.csNucleo=(function(){
     VERS[id]=l[0].versao;return {ok:true};
   }
   return {
-    versao:'v314',
+    versao:'v315',
     logo:()=>LOGO,
     teste:!temNuvem(),
     usuario:()=>{try{return (MEU_ACESSO&&MEU_ACESSO.nome)||(EU&&EU.nome)||emailDaSessao()||'Teste';}catch(e){return 'Teste';}},
