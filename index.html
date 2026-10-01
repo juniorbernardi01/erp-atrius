@@ -3641,6 +3641,14 @@ body.cs-operon .cs-oper .big.pau{flex:none;width:100%;min-height:clamp(52px,6.8v
 .mots .mtgp.ab{border-color:#1B4F9C;color:#1B4F9C;background:#EAF2FE}
 .mots .mtsg{display:flex;flex-wrap:wrap;gap:8px;flex-basis:100%;padding:8px;border-radius:12px;background:#F4F6FA}
 .mots .mtsg[hidden]{display:none}
+
+/* ===== v312 ===== */
+.mpgb.tem{background:#1B4F9C;border-color:#1B4F9C;color:#fff}
+.mpgb.tem::after{content:''}
+.mpgb.ab:not(.tem){border-color:#1B4F9C;color:#1B4F9C;background:#EAF2FE}
+.mps .mpst{flex-basis:100%;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--ink3)}
+.mpo{margin-top:8px}.mpo label{display:block;font-size:12px;font-weight:700;margin-bottom:4px}
+.mpo textarea{width:100%;min-height:64px;border:1px solid var(--line);border-radius:10px;padding:8px 10px;font:inherit}
 </style>
 </head>
 <body>
@@ -5228,7 +5236,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v311';
+const VERSAO_APP='v312';
 let DRAG=null;
 function render(){
   recomporTudo();
@@ -21753,7 +21761,7 @@ window.csNucleo=(function(){
     VERS[id]=l[0].versao;return {ok:true};
   }
   return {
-    versao:'v311',
+    versao:'v312',
     logo:()=>LOGO,
     teste:!temNuvem(),
     usuario:()=>{try{return (MEU_ACESSO&&MEU_ACESSO.nome)||(EU&&EU.nome)||emailDaSessao()||'Teste';}catch(e){return 'Teste';}},
@@ -23493,8 +23501,8 @@ function csPinTela(tit,sub,ok,mot){
     if(v.length>=4){const q=csPinValido(v),q0=q||quemPorCredencial(v);
       const longo=[...(typeof OPERADORES!=='undefined'?OPERADORES:[]),...(typeof ACESSOS!=='undefined'?ACESSOS:[])].some(o=>String(o.pin||'').length>v.length);
       const erro=m=>{pts.classList.add('erro');ms.className='ms';ms.textContent=m;setTimeout(()=>{pts.classList.remove('erro');v='';mostra();},500);};
-      if(q&&mot&&!est.pri){erro('Escolha o motivo principal antes do PIN.');return;}
-      if(q){ms.textContent=q.nome;ms.className='ms ok';const pin=v;setTimeout(()=>{d.className='cs-pinop';csViraOperador(q);ok(q,pin,mot?{principal:est.pri.s,grupo:est.pri.g,secundarios:est.sec.map(x=>x.s)}:null);},250);}
+      if(q&&mot&&!est.pri){erro(est.falta||'Escolha o motivo antes do PIN.');return;}
+      if(q){ms.textContent=q.nome;ms.className='ms ok';const pin=v;setTimeout(()=>{d.className='cs-pinop';csViraOperador(q);ok(q,pin,mot?{principal:est.pri.s,grupo:est.pri.g,secundarios:est.sec.map(x=>x.s),itens:[est.pri,...est.sec]}:null);},250);}
       else if(q0)erro(window.CS_PIN_MOTIVO||'Este PIN não tem acesso à tela da máquina.');
       else if(v.length>=6||!longo)erro('PIN não reconhecido.');}};
 }
@@ -23802,8 +23810,8 @@ try{const _me7=marcarEtapa;marcarEtapa=function(o,et){
     /* Continuar sem o principal não passa; ao confirmar, grava o motivo */
     M('etK').addEventListener('click',ev=>{const b=M('csSetMot');if(!b)return;
       if(b._pre){window.CS_SETUP_ESC=null;return;}
-      if(!b._st||!b._st.pri){ev.preventDefault();ev.stopImmediatePropagation();toast('Escolha o motivo principal do setup.',true);return;}
-      const esc={principal:b._st.pri.s,secundarios:b._st.sec.map(x=>x.s),grupo:b._st.pri.g};
+      if(!b._st||!b._st.pri){ev.preventDefault();ev.stopImmediatePropagation();toast((b._st&&b._st.falta)||'Escolha o motivo do setup.',true);return;}
+      const esc={principal:b._st.pri.s,secundarios:b._st.sec.map(x=>x.s),grupo:b._st.pri.g,itens:[b._st.pri,...b._st.sec]};
       window.CS_SETUP_ESC={o,esc,dado:!!b._pre};},true);
   }catch(e){console.warn('motivo do setup:',e);}
   return r;};}catch(e){}
@@ -23994,6 +24002,43 @@ document.addEventListener('click',ev=>{
   box.querySelectorAll('.mtgp').forEach(x=>x.classList.toggle('ab',!ab&&x===g));
   box.querySelectorAll('.mtsg').forEach(x=>{x.hidden=ab||x.dataset.gs!==id;});
 },true);
+</script>
+<script>
+/* ===================== v312 · escolha múltipla de motivos ===================== */
+/* Toca nos grupos que atrapalharam (abrem os de dentro) e marca tudo o que
+   aconteceu: o que está marcado muda de cor. "Outro" abre um campo que passa a
+   ser obrigatório. O primeiro marcado fica como principal nos relatórios. */
+csMotPicker=function(el,grupos,st){
+  if(!el)return;
+  st.sel=st.sel||(st.pri?[st.pri,...(st.sec||[])]:[]);st.abertos=st.abertos||new Set(st.sel.map(x=>x.g));
+  st.outro=!!st.outro;st.txt=st.txt||'';
+  const gl=(grupos||[]).filter(g=>(g.sub||[]).length);
+  const sinc=()=>{const l=st.sel.slice();if(st.outro&&st.txt.trim())l.push({g:'Outro',s:st.txt.trim()});
+    st.pri=l[0]||null;st.sec=l.slice(1);st.falta=st.outro&&!st.txt.trim()?'Descreva o que houve em "Outro".':(!l.length?'Escolha pelo menos um motivo.':'');
+    if(st.falta)st.pri=null;};
+  const tem=(g,s)=>st.sel.some(x=>x.g===g&&x.s===s);
+  const pinta=()=>{
+    el.innerHTML=`<div class="mpl">O que aconteceu <b>*</b> <span class="k">· pode marcar mais de um</span></div>
+      <div class="mpg">${gl.map(g=>`<button type="button" class="mpgb ${st.abertos.has(g.nome)?'ab':''} ${st.sel.some(x=>x.g===g.nome)?'tem':''}" data-mg="${escAttr(g.nome)}">${escAttr(g.nome)}</button>`).join('')}
+        <button type="button" class="mpgb ${st.outro?'tem ab':''}" data-mo="1">Outro</button></div>
+      ${gl.filter(g=>st.abertos.has(g.nome)).map(g=>`<div class="mps"><span class="mpst">${escAttr(g.nome)}</span>${(g.sub||[]).map(s=>`<button type="button" class="mpsb ${tem(g.nome,s)?'on':''}" data-mg2="${escAttr(g.nome)}" data-ms="${escAttr(s)}">${escAttr(s)}</button>`).join('')}</div>`).join('')}
+      ${st.outro?`<div class="mpo"><label>Outro · descreva o que houve <b>*</b></label><textarea id="mpTx" placeholder="O que aconteceu">${escAttr(st.txt)}</textarea></div>`:''}`;
+    const tx=el.querySelector('#mpTx');if(tx){tx.oninput=()=>{st.txt=tx.value;sinc();};}
+    sinc();
+  };
+  el.onclick=ev=>{ev.stopPropagation();
+    const g=ev.target.closest('[data-mg]'),s=ev.target.closest('[data-ms]'),o=ev.target.closest('[data-mo]');
+    if(g){const n=g.dataset.mg;if(st.abertos.has(n)){st.abertos.delete(n);}else st.abertos.add(n);pinta();return;}
+    if(s){const gn=s.dataset.mg2,sub=s.dataset.ms,k=st.sel.findIndex(x=>x.g===gn&&x.s===sub);if(k>=0)st.sel.splice(k,1);else st.sel.push({g:gn,s:sub});pinta();return;}
+    if(o){st.outro=!st.outro;if(!st.outro)st.txt='';pinta();setTimeout(()=>{const t=el.querySelector('#mpTx');if(t)t.focus();},20);}
+  };
+  pinta();
+};
+/* o grupo de cada motivo marcado vai junto, para o relatório (inclusive o "Outro") */
+try{const _mo12=csMotivosOP;csMotivosOP=function(o){const l=_mo12(o);
+  const m=o.setupMotivo;if(!m||!Array.isArray(m.itens)||!m.itens.length)return l;
+  const ds=(()=>{try{return Math.max(0,dvSetup(o)||0);}catch(e){return 0;}})();
+  return l.filter(x=>x.et!=='setup').concat(m.itens.map((x,i)=>({et:'setup',g:x.g||'Outro',s:x.s,pri:i===0,custo:ds/m.itens.length})));};}catch(e){}
 </script>
 </body>
 </html>
