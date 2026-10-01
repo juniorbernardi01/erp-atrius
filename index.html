@@ -5257,7 +5257,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v319';
+const VERSAO_APP='v320';
 let DRAG=null;
 function render(){
   recomporTudo();
@@ -21796,7 +21796,7 @@ window.csNucleo=(function(){
     VERS[id]=l[0].versao;return {ok:true};
   }
   return {
-    versao:'v319',
+    versao:'v320',
     logo:()=>LOGO,
     teste:!temNuvem(),
     usuario:()=>{try{return (MEU_ACESSO&&MEU_ACESSO.nome)||(EU&&EU.nome)||emailDaSessao()||'Teste';}catch(e){return 'Teste';}},
@@ -24128,11 +24128,13 @@ try{const _ga14=gravarAcesso;gravarAcesso=function(linha,novo,email){
 <script>
 /* ===================== v318 · OPs em aberto para a Necessidade de produção ===================== */
 try{csNucleo.opsAbertas=function(de,ate){
-  return ORDENS.filter(o=>naGrade(o)&&!['concluida','finalizado'].includes(sit(o))&&(!de||o.data>=de)&&(!ate||o.data<=ate)).map(o=>{
+  /* v320: vale toda OP que ainda não entrou no estoque e está programada até o fim do período —
+     inclusive as de dias anteriores que ficaram abertas e as que só falta apontar */
+  return ORDENS.filter(o=>naGrade(o)&&sit(o)!=='concluida'&&(!ate||String(o.data||'')<=ate)).map(o=>{
     let feitas=0;try{feitas=cxFeitas(o)||0;}catch(e){}
     const st=sit(o);
     return {codigo:o.codigo,op:rotuloOP(o),data:o.data,maq:o.maq||'',cx:Math.max(0,(caixasPrev(o)||0)-feitas),
-      sit:({programada:'programada',preparacao:'em setup',producao:'em produção'})[st]||st};}).filter(x=>x.cx>0);
+      sit:({programada:'programada',preparacao:'em setup',producao:'em produção',finalizado:'a apontar'})[st]||st};}).filter(x=>x.cx>0);
 };}catch(e){}
 </script>
 </body>
