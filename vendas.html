@@ -412,6 +412,8 @@ input.sel4{width:120px;font-family:'JetBrains Mono',monospace}
 .m3 .mh{padding:9px 14px;border-bottom:1px solid var(--line2);font-size:12.5px;font-weight:600}.m3 button{display:block;width:100%;text-align:left;padding:8px 14px;font-size:13px;background:none;border:0;cursor:pointer;font:inherit}
 .m3 button:hover{background:var(--line3)}.m3 .sep{height:1px;background:var(--line2);margin:4px 0}
 .sts{align-items:center}
+
+.npatz{margin:10px 0;padding:8px 12px;border-radius:10px;background:#EAF2FE;color:#1B4F9C;font-weight:600;font-size:13px}
 .perb2{display:inline-flex;align-items:center;gap:7px;height:36px;padding:0 14px;border:1.5px solid #9DB8E8;border-radius:999px;background:#fff;color:#1D6FE8;font-weight:600;font-size:13px;cursor:pointer;white-space:nowrap}
 .perb2:hover{border-color:#1D6FE8}.perb2.ativo{background:#EFF4FD}
 .perpop{position:fixed;z-index:500;width:560px;max-width:calc(100vw - 16px);background:#fff;border:1px solid #E4E2DC;border-radius:16px;box-shadow:0 14px 36px rgba(20,24,33,.18);display:grid;grid-template-columns:170px 1fr;overflow:hidden;font-family:inherit;color:#1A1D23}
@@ -936,9 +938,15 @@ function npPop(ancora,html){
   const r=ancora.getBoundingClientRect();d.style.top=(window.scrollY+r.bottom+6)+'px';d.style.left=Math.max(8,Math.min(window.scrollX+r.right-d.offsetWidth,window.innerWidth-d.offsetWidth-8))+'px';
   setTimeout(()=>document.addEventListener('click',function fe(ev){if(!d.contains(ev.target)&&ev.target!==ancora){d.remove();document.removeEventListener('click',fe);}}),0);
 }
+/* 5L e 3L saem em fardo, o resto em caixa (a descrição do produto diz: FD ou CX) */
+const npUn=p=>/\bFD\b|FARDO/i.test(String(p&&p.descricao||''))?'fd':'cx';
 async function telaNecProd(){
   if(!NP.ap)NP.ap=JSON.parse(JSON.stringify(NP.f));
-  if(!NP.dados){$('app').innerHTML='<div class="vazio">Lendo pedidos…</div>';try{NP.dados=await npCarregar(NP.ap);}catch(e){NP.dados={peds:[],itens:[],soma:{},mes:{},erro:e.message};}}
+  if(!NP.dados){
+    /* atualizando: a tabela continua na tela, com o aviso no alto; só a primeira leitura mostra a tela vazia */
+    const ja=document.querySelector('#app .nparm');
+    if(ja){if(!document.getElementById('npAtz'))ja.insertAdjacentHTML('afterend','<div class="npatz" id="npAtz">↻ Atualizando os pedidos e as OPs…</div>');document.querySelectorAll('#app table.tv').forEach(t=>t.style.opacity='.55');}
+    else $('app').innerHTML='<div class="vazio">Lendo pedidos…</div>';try{NP.dados=await npCarregar(NP.ap);}catch(e){NP.dados={peds:[],itens:[],soma:{},mes:{},erro:e.message};}}
   const D=NP.dados,ap=NP.ap,fx=perFaixa(ap.per);const sal=N.saldos();
   const ops=(N.opsAbertas?N.opsAbertas(fx.de,fx.ate):[]);
   const pedPor={};D.peds.forEach(p=>pedPor[p.id]=p);
@@ -967,15 +975,15 @@ async function telaNecProd(){
     <div style="margin-left:auto;align-self:flex-end"><button class="btn ${mudou?'pri':''}" id="npAtu">↻ Atualizar</button>${mudou?'<div class="k" style="font-size:11.5px;margin-top:3px">os filtros mudaram: clique para aplicar</div>':''}</div></div>
   <div class="barra"><div class="busca">⌕<input id="npQ" placeholder="Produto, código ou tanque (com ou sem acento)" value="${esc(NP.q)}"></div>
     <span class="k" style="margin-left:10px">${ap.per.m==='sem'?'Todos os pedidos e OPs em aberto':esc(perRotulo(ap.per))}</span></div>
-  <div class="rolx"><table class="tv"><thead><tr>${th('nome','Produto')}${th('ent','Pedidos a entregar','text-align:right')}${th('fis','Estoque físico','text-align:right')}${th('emp','Em produção','text-align:right')}${th('virt','Estoque virtual','text-align:right')}${th('media','Venda média/mês','text-align:right')}${th('noMes','Vendido no mês','text-align:right')}${th('min','Estoque mínimo','text-align:right')}${th('prod','Produzir','text-align:right')}</tr></thead><tbody>
+  <div class="rolx"><table class="tv"><thead><tr>${th('nome','Produto')}${th('ent','Pedidos a entregar','text-align:right')}${th('fis','Estoque físico','text-align:right')}${th('emp','Produção prevista','text-align:right')}${th('virt','Estoque virtual','text-align:right')}${th('media','Venda média/mês','text-align:right')}${th('noMes','Vendido no mês','text-align:right')}${th('min','Estoque mínimo','text-align:right')}${th('prod','Produzir','text-align:right')}</tr></thead><tbody>
   ${L.map((l,i)=>`<tr><td><b>${esc(l.p.descricao)}</b><small>${esc(l.p.codigo)} · ${esc(l.p.tanque||'')}</small></td>
     <td class="n">${l.ent?`<a class="nplk" data-npe="${i}">${nf(l.ent)}</a><small>${l.npd} pedido${l.npd>1?'s':''}</small>`:'—'}</td>
     <td class="n">${l.fis==null?'—':nf(l.fis)}</td><td class="n">${l.emp?`<a class="nplk" data-npo="${i}">${nf(l.emp)}</a><small>${l.lo.length} OP${l.lo.length>1?'s':''}</small>`:'—'}</td>
     <td class="n" style="font-weight:700">${nf(l.virt)}</td>
-    <td class="n">${nf(Math.round(l.media))} cx</td><td class="n">${nf(l.noMes)}<small>proj. ${nf(Math.round(l.proj))}</small></td><td class="n">${l.min?nf(l.min):'—'}</td>
-    <td class="n" style="${l.prod?'color:var(--danger);font-weight:700':'color:var(--ink3)'}">${l.prod?nf(l.prod)+' cx':'—'}${l.prod?`<small>${nf(Math.round(l.lit))} litros</small>`:''}</td></tr>`).join('')}</tbody></table></div>
-  <div class="leg"><b>Pedidos a entregar</b>: pedidos nas situações marcadas e, com período, com a data dentro dele (clique no número para ver quais). <b>Em produção</b>: OPs ainda não concluídas, programadas no período (clique para ver quais).
-  <b>Estoque virtual</b> = estoque físico + em produção. <b>Produzir</b> = pedidos a entregar − estoque virtual; embaixo, os litros de granel.
+    <td class="n">${nf(Math.round(l.media))} ${npUn(l.p)}</td><td class="n">${nf(l.noMes)}<small>proj. ${nf(Math.round(l.proj))}</small></td><td class="n">${l.min?nf(l.min):'—'}</td>
+    <td class="n" style="${l.prod?'color:var(--danger);font-weight:700':'color:var(--ink3)'}">${l.prod?nf(l.prod)+' '+npUn(l.p):'—'}${l.prod?`<small>${nf(Math.round(l.lit))} litros</small>`:''}</td></tr>`).join('')}</tbody></table></div>
+  <div class="leg"><b>Pedidos a entregar</b>: pedidos nas situações marcadas e, com período, com a data dentro dele (clique no número para ver quais). <b>Produção prevista</b>: OPs ainda não concluídas, programadas até o fim do período (clique para ver quais).
+  <b>Estoque virtual</b> = estoque físico + produção prevista. <b>Produzir</b> = pedidos a entregar − estoque virtual; embaixo, os litros de granel.
   <b>Venda média/mês</b> = o que foi entregue (faturado, enviado ou entregue) nos últimos ${ap.meses} mês(es) fechados ÷ ${ap.meses}. <b>Vendido no mês</b>: entregue neste mês até hoje, com a projeção para o mês.</div>
   <div class="rodfix"><div><b>${L.filter(l=>l.prod).length}</b><span>produtos para produzir</span></div><div><b>${nf(L.reduce((s,l)=>s+l.prod,0))}</b><span>caixas</span></div><div><b>${nf(Math.round(L.reduce((s,l)=>s+l.lit,0)))}</b><span>litros</span></div></div>`;
   document.querySelectorAll('[data-o]').forEach(h=>h.onclick=()=>{const k=h.dataset.o;NP.ord=NP.ord.k===k?{k,d:-NP.ord.d}:{k,d:k==='nome'?1:-1};telaNecProd();});
@@ -992,7 +1000,7 @@ async function telaNecProd(){
     const ag={};l.lp.forEach(x=>{const g=ag[x.id]||(ag[x.id]={...x,qtd:0});g.qtd+=x.qtd;});
     npPop(a,`<b>Pedidos a entregar</b><table><thead><tr><th>Nº</th><th>Cliente</th><th>Data</th><th class="n">Qtd</th></tr></thead><tbody>${Object.values(ag).sort((x,y)=>String(x.data_prevista||'9').localeCompare(String(y.data_prevista||'9'))).map(x=>`<tr><td>${esc(x.numero||x.id)}</td><td>${esc(x.cliente||'')}<small>${esc(sitNome(x.situacao))}</small></td><td>${x.data_prevista?esc(perBr(x.data_prevista)):'sem data'}</td><td class="n">${nf(x.qtd)}</td></tr>`).join('')}</tbody></table>`);});
   document.querySelectorAll('[data-npo]').forEach(a=>a.onclick=ev=>{ev.preventDefault();ev.stopPropagation();const l=L[+a.dataset.npo];
-    npPop(a,`<b>Em produção</b><table><thead><tr><th>OP</th><th>Data</th><th>Máquina</th><th class="n">Qtd</th></tr></thead><tbody>${l.lo.map(o=>`<tr><td>${esc(o.op)}<small>${esc(o.sit||'')}</small></td><td>${esc(perBr(o.data))}</td><td>${esc(o.maq||'')}</td><td class="n">${nf(o.cx)}</td></tr>`).join('')}</tbody></table>`);});
+    npPop(a,`<b>Produção prevista</b><table><thead><tr><th>OP</th><th>Data</th><th>Máquina</th><th class="n">Qtd</th></tr></thead><tbody>${l.lo.map(o=>`<tr><td>${esc(o.op)}<small>${esc(o.sit||'')}</small></td><td>${esc(perBr(o.data))}${o.fim?`<small>termina ${esc(o.fim)}${o.fimDia&&o.fimDia!==o.data?' de '+esc(perBr(o.fimDia)):''}</small>`:''}</td><td>${esc(o.maq||'')}</td><td class="n">${nf(o.cx)}</td></tr>`).join('')}</tbody></table>`);});
 }
 
 function render(){
