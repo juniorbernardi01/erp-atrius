@@ -151,6 +151,17 @@ body.imprimindo #imp{display:block}.gaveta,.veu{display:none!important}}
 .rodfix{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid #E4E2DC;display:flex;justify-content:flex-end;align-items:flex-end;gap:22px;padding:6px 18px;z-index:20}
 .rodfix div{line-height:1.15;white-space:nowrap}.rodfix b{display:block;font-size:13px;font-weight:600}.rodfix span{font-size:10.5px;color:#8B93A1}.rodfix .sel b{color:#1D6FE8}
 #app{padding-bottom:56px}
+
+/* Necessidade de produção: listas que abrem no número e situações em lista */
+.nppop{position:absolute;z-index:80;background:#fff;border:1px solid #D8DCE3;border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.14);padding:10px 12px;max-height:340px;overflow:auto;min-width:300px}
+.nppop>b{display:block;font-size:13px;margin-bottom:6px}
+.nppop table{border-collapse:collapse;width:100%;font-size:12.5px}
+.nppop th{text-align:left;font-size:11px;color:#6B7280;font-weight:600;padding:4px 6px;border-bottom:1px solid #EEF0F3}
+.nppop td{padding:5px 6px;border-bottom:1px solid #F3F4F6;vertical-align:top}.nppop td small{display:block;color:#6B7280;font-size:11px}
+.nppop .n{text-align:right;font-variant-numeric:tabular-nums}
+.nplk{color:#1D6FE8;text-decoration:underline;cursor:pointer}
+.npsit{position:absolute;z-index:60;background:#fff;border:1px solid #D8DCE3;border-radius:10px;box-shadow:0 10px 28px rgba(0,0,0,.12);padding:8px 10px;display:flex;flex-direction:column;gap:6px;min-width:200px;margin-top:4px}
+.npsit[hidden]{display:none}
 .colbt{display:inline-grid;place-items:center;width:34px;height:34px;border:1px solid #E4E2DC;border-radius:9px;background:#fff;color:#545C69;cursor:pointer;flex:none}
 .colbt:hover{border-color:#1D6FE8;color:#1D6FE8}
 .colsv{position:fixed;inset:0;background:rgba(20,24,33,.18);z-index:590}
@@ -482,12 +493,26 @@ function razao(tiny,nome,un){
   gaveta(`<div class="gt"><h2>${esc(nome)}</h2><button class="btn sm" id="gX" style="margin-left:auto">Fechar ✕</button></div>
     <div class="rzt"><div><span>Saldo no Tiny</span><b>${r.saldo!=null?nq(r.saldo)+' '+esc(un||''):'não lido'}</b><small>${r.lidoEm?'lido às '+esc(r.lidoEm):''}</small></div>
       <div><span>Entradas pelo ERP</span><b style="color:#15803D">+${nq(ent)}</b></div><div><span>Saídas pelo ERP</span><b style="color:#B3261E">−${nq(sai)}</b></div></div>
-    <div class="leg" style="margin:10px 0">Movimentos que o ERP lançou para este item. Venda e nota fiscal de saída acontecem no Tiny e aparecem no saldo, não aqui.</div>
+    <div class="leg" style="margin:10px 0">Movimentos que o ERP lançou para este item. Venda e nota fiscal acontecem no Tiny: as saídas pelas vendas aparecem logo abaixo.</div>
     <div class="rolx"><table class="tv"><thead><tr><th>Data</th><th>Origem</th><th class="n">Entrada</th><th class="n">Saída</th><th>Observação</th></tr></thead><tbody>
     ${l.map(x=>`<tr${x.pend?' style="background:#FEFCE8"':''}><td class="m">${quando(x)}</td><td>${esc(x.origem||'—')}${x.pend?`<small style="color:#A16207">${x.pend==='falhou'?'falhou':'na fila'}${x.erro?' · '+esc(x.erro):''}</small>`:''}</td>
       <td class="n" style="color:#15803D">${x.tipo==='E'?'+'+nq(x.qtd):''}</td><td class="n" style="color:#B3261E">${x.tipo==='S'?'−'+nq(x.qtd):''}</td><td class="k">${esc(x.obs||'')}</td></tr>`).join('')
       ||'<tr><td colspan="5" class="vazio">Nenhum movimento deste item pelo ERP ainda.</td></tr>'}</tbody></table></div>`);
   $('gX').onclick=()=>gaveta(null);
+  /* produto acabado: as saídas pelas vendas (da base de pedidos que veio do Tiny) */
+  const pa=(N.produtos?N.produtos():[]).find(p=>String(p.tiny||'')===String(tiny));
+  if(pa&&!N.teste&&N.tiny)saidasVendas(pa,un);
+}
+async function saidasVendas(pa,un){
+  const box=document.createElement('div');box.className='rzv';box.innerHTML='<div class="leg" style="margin:16px 0 6px"><b>Saídas pelas vendas</b> · lendo os pedidos…</div>';
+  const g=document.querySelector('.gav .rolx')||document.querySelector('.rolx');if(!g)return;g.parentNode.appendChild(box);
+  try{const r=await N.tiny({acao:'vendas_saidas',sku:pa.codigo,dias:120});const l=r.itens||[];
+    const tot=l.reduce((a,x)=>a+(+x.qtd||0),0);
+    box.innerHTML=`<div class="leg" style="margin:16px 0 6px"><b>Saídas pelas vendas</b> · últimos 120 dias · ${nf(l.length)} pedido(s) · <b style="color:#B3261E">−${nq(tot)} ${esc(un||'')}</b> · pedidos faturados, enviados ou entregues, da base que veio do Tiny</div>
+      <div class="rolx"><table class="tv"><thead><tr><th>Data</th><th>Pedido</th><th>Cliente</th><th>Situação</th><th class="n">Saída</th></tr></thead><tbody>
+      ${l.map(x=>`<tr><td class="m">${x.data?String(x.data).slice(0,10).split('-').reverse().join('/'):'—'}</td><td class="m">${esc(x.numero||'')}</td><td>${esc(x.cliente||'')}${x.cidade?`<small>${esc(x.cidade)}</small>`:''}</td><td>${esc(x.situacao||'')}</td><td class="n" style="color:#B3261E">−${nq(x.qtd)}</td></tr>`).join('')
+        ||'<tr><td colspan="5" class="vazio">Nenhuma venda deste produto no período.</td></tr>'}</tbody></table></div>`;
+  }catch(e){box.innerHTML=`<div class="leg" style="margin:16px 0 6px;color:#B3261E">Não consegui ler as vendas: ${esc(e.message)}</div>`;}
 }
 
 /* =====================================================================

@@ -5257,7 +5257,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v318';
+const VERSAO_APP='v319';
 let DRAG=null;
 function render(){
   recomporTudo();
@@ -21796,7 +21796,7 @@ window.csNucleo=(function(){
     VERS[id]=l[0].versao;return {ok:true};
   }
   return {
-    versao:'v318',
+    versao:'v319',
     logo:()=>LOGO,
     teste:!temNuvem(),
     usuario:()=>{try{return (MEU_ACESSO&&MEU_ACESSO.nome)||(EU&&EU.nome)||emailDaSessao()||'Teste';}catch(e){return 'Teste';}},
@@ -22089,7 +22089,7 @@ const HM_IND={
  com:[['cmes','Compras do mês',2],['crec','A receber',1],['atras','Ordens atrasadas',1],['tforn','Top 5 fornecedores',2]],
  est:[['min','Abaixo do mínimo',1],['estx','Produtos acabados sem estoque',1]]};
 const HM_PAD={atal:null,ord:['ven','pcp','fin','com'],ind:{ven:['fat','prev','tkt','ped','dia','tprod','tcli','tvend'],pcp:['oee','vol','ops','perd','ocup'],fin:['inad','aging','prio','tdev'],com:['cmes','crec','atras','tforn'],est:['min','estx']},meta:0};
-const hmPode={ven:()=>moduloPublicado('vendas')&&podeVer('vendas.ped'),pcp:()=>true,fin:()=>moduloPublicado('financeiro')&&csFinPode('executive'),com:()=>moduloPublicado('compras')&&podeVer('compras.oc'),est:()=>moduloPublicado('estoque')};
+const hmPode={ven:()=>moduloPublicado('vendas')&&podeVer('vendas.ped'),pcp:()=>['ordens','envase','tanques','gestao','relatorio','producao'].some(k=>{try{return podeVer(k);}catch(e){return false;}}),fin:()=>moduloPublicado('financeiro')&&csFinPode('executive'),com:()=>moduloPublicado('compras')&&podeVer('compras.oc'),est:()=>moduloPublicado('estoque')};
 function hmPodeM(m){try{if(csSemAcesso()||souMestreAqui())return true;return hmPode[m]();}catch(e){return true;}}
 function hmChave(){try{return 'erp.inicio.'+norMail(emailDaSessao()||'local');}catch(e){return 'erp.inicio.local';}}
 function hmCfg(){
@@ -22221,7 +22221,9 @@ function gradeInicio(){
   const h=new Date().getHours();const sd=h<12?'Bom dia':h<18?'Boa tarde':'Boa noite';
   const nome=(nomeDaSessao()||'').split(' ')[0];
   const ats=hmTodosAtalhos();const atal=c.atal.map(k=>ats.find(a=>a.k===k)).filter(Boolean);
-  const mods=c.ord.filter(hmPodeM);
+  let mods=c.ord.filter(hmPodeM);
+  /* v319: lista vazia (ou só com o que a pessoa não pode ver): volta o padrão, filtrado pelo que ela tem */
+  if(!mods.length&&!HM.ed)mods=HM_PAD.ord.filter(hmPodeM);
   el.innerHTML=`<div class="hm ${HM.ed?'edit':''}"><div class="hm-top"><div><h1>${sd}${nome?', '+escAttr(nome):''}</h1><div class="hm-d">${(d=>d.charAt(0).toUpperCase()+d.slice(1))(new Date().toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long'}))} · ${hhmm(agoraMin())}</div></div><span style="flex:1"></span>
     <button class="btn ${HM.ed?'pri':''}" id="hmEd">${HM.ed?'✓ Pronto':'✎ Personalizar'}</button></div>
     <div class="hm-sec"><h2>Meus atalhos</h2><small>as páginas que você mais usa</small></div>
@@ -22233,7 +22235,7 @@ function gradeInicio(){
     ${HM.ed?'<div class="hm-secm"><button class="btn pri" id="hmAddM">＋ módulo no painel</button></div>':''}</div>`;
   hmLiga(el);
   /* o que vem de fora (vendas do Supabase e compras do módulo) chega depois */
-  if(mods.includes('ven'))hmDadosVen().then(V=>hmPinta('ven',V)).catch(e=>hmPinta('ven',{erro:/tabelas|vendas_painel|function/i.test(e.message)?'Rode o SQL de vendas no Supabase e faça a carga do Tiny.':e.message}));
+  if(mods.includes('ven'))Promise.race([hmDadosVen(),new Promise((_,r)=>setTimeout(()=>r(new Error('o servidor demorou para responder; recarregue a página')),25000))]).then(V=>hmPinta('ven',V)).catch(e=>hmPinta('ven',{erro:/tabelas|vendas_painel|function|schema cache|could not find/i.test(e.message)?'Falta a função de vendas no banco: rode o supabase-vendas-funcoes.sql no SQL Editor do Supabase.':e.message}));
   if(mods.includes('com'))hmDadosCom().then(D=>hmPinta('com',D)).catch(()=>hmPinta('com',{d:{}}));
 }
 function hmPinta(m,dados){document.querySelectorAll(`[data-cc^="${m}|"]`).forEach(c=>{c.innerHTML=hmBloco(m,c.dataset.cc.split('|')[1],dados);ligaMeta(c);});}
