@@ -358,6 +358,14 @@ select.st-h,select.st-a,select.st-b{border-radius:999px;font-weight:600}
 .fr2 label.on{border-color:#1D6FE8;background:#F4F8FF}.fr2 .rd{width:15px;height:15px;border-radius:50%;border:1.5px solid #C6C3BB}.fr2 label.on .rd{border:4.5px solid #0E1B33}.fr2 small{display:block;color:var(--ink3);font-size:11px}
 .lin2{display:block;width:100%;text-align:left;padding:9px 10px;border-bottom:1px solid var(--line2);background:#fff;font-size:13px}.lin2:hover{background:#F4F8FF}
 .rodfix .acoes{margin-right:auto;display:flex;gap:6px;align-items:center}.rodfix .cnt{font-size:15px;color:var(--ink2)}
+
+/* itens da OC no jeito do Tiny: linha de digitação no fim da tabela */
+.ti2 tr.nova td{background:#FAFAF7;border-top:1px dashed var(--line,#D8DCE3);vertical-align:top}
+.ti2 tr.nova .inp{height:34px;font-size:13px}
+.ti2 tr.nova #addIt{min-width:260px}
+.ti2 .nfo2{display:flex;align-items:center;gap:6px;margin-top:3px}
+.ti2 .nfo2 .in4{flex:1;min-width:140px}
+.addlk{display:flex;align-items:center;gap:14px;padding:8px 4px}
 .sync{display:flex;gap:8px;align-items:center;background:#EFF4FD;border:1px solid #CFDDF6;border-radius:10px;padding:9px 12px;font-size:12.5px;color:#1B4F9C;margin-bottom:12px;flex-wrap:wrap}
 .sync a{color:#1B4F9C;font-weight:600}
 .sel4{height:36px;border:1px solid var(--line);border-radius:9px;padding:0 10px;font:inherit;font-size:12.5px;background:#fff;width:auto}
@@ -1068,7 +1076,7 @@ function telaFuncionarios(){
   const base=DB.funcionarios.filter(f=>!q||semAc([f.nome,f.funcao,f.setor].join(' ')).includes(q));
   const l=ordena(base.filter(f=>S2.faba==='ativos'?f.ativo!==false:f.ativo===false),(f,k)=>semAc(f[k]||''));
   $('app').innerHTML=`<div class="migalha">Cadastros › Funcionários</div>
-  <div class="topo"><h1>Funcionários</h1><span class="salvo"></span>${ed?'<button class="btn" id="bBc">⌕ Buscar no cadastro</button><button class="btn pri" id="bNf">＋ Novo funcionário</button>':''}</div>
+  <div class="topo"><h1>Funcionários</h1><span class="salvo"></span>${ed?'<button class="btn" id="bImpF" title="Planilha com nome e CPF (ex.: a da assiduidade)">⤒ Importar planilha</button><button class="btn" id="bBc">⌕ Buscar no cadastro</button><button class="btn pri" id="bNf">＋ Novo funcionário</button>':''}</div>
   <div class="barra"><div class="busca">⌕<input id="q" placeholder="Nome, função ou setor" value="${esc(S2.q)}"></div></div>
   <div class="sts"><button data-fa="ativos" class="${S2.faba==='ativos'?'on':''}" style="--cor:#15803D">Ativos<b>${base.filter(f=>f.ativo!==false).length}</b></button><button data-fa="desl" class="${S2.faba==='desl'?'on':''}" style="--cor:#8B93A1">Desligados<b>${base.filter(f=>f.ativo===false).length}</b></button></div>
   <div class="rolx">${l.length?`<table class="tv"><thead><tr><th style="width:34px"></th>${th('nome','Nome')}${th('funcao','Função')}${th('setor','Setor')}${th('turno','Turno')}${th('admissao','Admissão')}<th>Telefone</th></tr></thead><tbody>
@@ -1078,6 +1086,7 @@ function telaFuncionarios(){
   $('q').oninput=e=>{S2.q=e.target.value;telaFuncionarios();const i=$('q');i.focus();i.setSelectionRange(i.value.length,i.value.length);};
   document.querySelectorAll('[data-fa]').forEach(b=>b.onclick=()=>{S2.faba=b.dataset.fa;telaFuncionarios();});ligaOrdem(telaFuncionarios);
   if($('bBc'))$('bBc').onclick=buscarNoCadastro;
+  if($('bImpF'))$('bImpF').onclick=importarFuncionarios;
   document.querySelectorAll('[data-f]').forEach(r=>r.onclick=ev=>{if(ev.target.closest('.dots'))return;fichaSimples('func',r.dataset.f);});
   document.querySelectorAll('[data-fm]').forEach(b=>b.onclick=ev=>{ev.stopPropagation();const f=DB.funcionarios.find(x=>x.id===b.dataset.fm);
     menu3(b,f.nome,[['Abrir',()=>fichaSimples('func',f.id)],...(ed?['-',[f.ativo===false?'Readmitir':'Desligar',()=>{f.ativo=f.ativo===false;salvar();telaFuncionarios();},f.ativo!==false]]:[])]);});
@@ -1128,6 +1137,59 @@ const sem=()=>{$('app').innerHTML='<div class="vazio">Você não tem acesso a es
   try{DB=normaliza(await N.ler(MOD_ID));}catch(e){DB=normaliza(null);toast('Não consegui ler os cadastros: '+e.message,true);}
   render();
 })();
+
+
+/* =====================================================================
+   FUNCIONÁRIOS POR PLANILHA (nome e CPF, como a da assiduidade)
+   Cruza com o que já existe: o mesmo CPF (ou o mesmo nome) atualiza; os
+   contatos do Tiny com esse CPF saem de clientes e ficam ligados ao
+   funcionário. Quem está ativo aqui e não veio na planilha pode ficar inativo.
+   ===================================================================== */
+function carregaJs(src){return new Promise((ok,er)=>{if(document.querySelector(`script[src="${src}"]`))return ok();const x=document.createElement('script');x.src=src;x.onload=ok;x.onerror=er;document.head.appendChild(x);});}
+const soDig=v=>String(v||'').replace(/\D/g,'');
+const fmtCpf=v=>{const d=soDig(v).padStart(11,'0').slice(-11);return d.length===11?`${d.slice(0,3)}.${d.slice(3,6)}.${d.slice(6,9)}-${d.slice(9)}`:String(v||'');};
+function importarFuncionarios(){
+  const inp=document.createElement('input');inp.type='file';inp.accept='.xls,.xlsx,.csv';
+  inp.onchange=async()=>{const arq=inp.files[0];if(!arq)return;
+    try{await carregaJs('https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js');}catch(e){return toast('Não consegui abrir o leitor de planilha.',true);}
+    let rows=[];try{const wb=window.XLSX.read(await arq.arrayBuffer(),{type:'array'});const ws=wb.Sheets[wb.SheetNames[0]];rows=window.XLSX.utils.sheet_to_json(ws,{header:1,defval:''});}
+    catch(e){return toast('Não consegui ler a planilha: '+e.message,true);}
+    /* a linha do cabeçalho é a que tem "CPF"; o nome é a coluna "funcionário" ou "nome" */
+    const hi=rows.findIndex(r=>r.some(c=>/^\s*cpf\s*$/i.test(String(c))));
+    if(hi<0)return toast('Não achei a coluna CPF na planilha.',true);
+    const cab=rows[hi].map(c=>semAc(c));const iC=cab.findIndex(c=>c.trim()==='cpf');
+    let iN=cab.findIndex(c=>/funcion|^nome/.test(c.trim()));if(iN<0)iN=iC===0?1:0;
+    const l=[];rows.slice(hi+1).forEach(r=>{const nome=String(r[iN]||'').trim(),cpf=soDig(r[iC]);if(!nome||cpf.length<9)return;l.push({nome,cpf:fmtCpf(cpf)});});
+    if(!l.length)return toast('Nenhum funcionário com nome e CPF na planilha.',true);
+    conferirFuncionarios(l);};
+  inp.click();
+}
+function conferirFuncionarios(l){
+  const porCpf=new Map(DB.funcionarios.filter(f=>soDig(f.cpf)).map(f=>[soDig(f.cpf),f])),porNome=new Map(DB.funcionarios.map(f=>[semAc(f.nome),f]));
+  const contato=cpf=>DB.contatos.find(c=>soDig(c.doc)===cpf);
+  const linhas=l.map(x=>{const d=soDig(x.cpf);const f=porCpf.get(d)||porNome.get(semAc(x.nome));const c=contato(d);return {...x,f,c};});
+  const naPlan=new Set(linhas.map(x=>x.f&&x.f.id).filter(Boolean));
+  const fora=DB.funcionarios.filter(f=>f.ativo!==false&&!naPlan.has(f.id)&&!l.some(x=>soDig(x.cpf)===soDig(f.cpf)));
+  const nNovo=linhas.filter(x=>!x.f).length,nAt=linhas.length-nNovo,nCt=linhas.filter(x=>x.c).length;
+  gaveta(`<div class="gt"><h2>Funcionários da planilha</h2><button class="btn sm" id="gX" style="margin-left:auto">Fechar ✕</button></div>
+    <p class="k">${nf(linhas.length)} na planilha · <b>${nf(nNovo)} novos</b> · ${nf(nAt)} já cadastrados (atualiza o CPF e reativa) · ${nf(nCt)} encontrados nos contatos do Tiny (saem de clientes)</p>
+    <div class="rolx" style="margin-top:10px;max-height:46vh"><table class="tv"><thead><tr><th>Nome</th><th>CPF</th><th>No ERP</th><th>Nos contatos do Tiny</th></tr></thead><tbody>
+    ${linhas.map(x=>`<tr><td><b>${esc(x.nome)}</b></td><td class="m">${esc(x.cpf)}</td><td>${x.f?'<span class="pill ok">já existe</span>':'<span class="pill">novo</span>'}</td><td>${x.c?esc(x.c.nome)+' · '+esc(tipoDe(x.c)):'—'}</td></tr>`).join('')}</tbody></table></div>
+    ${fora.length?`<label class="chk" style="margin-top:12px;display:flex;gap:8px;align-items:flex-start"><input type="checkbox" id="gInat"><span>Marcar como <b>inativos</b> os ${nf(fora.length)} funcionários ativos que não estão na planilha: ${esc(fora.slice(0,6).map(f=>f.nome).join(', '))}${fora.length>6?'…':''}</span></label>`:''}
+    <div class="gr"><button class="btn" id="gC">Cancelar</button><button class="btn pri" id="gOk">Gravar ${nf(linhas.length)} funcionários</button></div>`);
+  $('gX').onclick=$('gC').onclick=()=>gaveta(null);
+  $('gOk').onclick=()=>{
+    let novos=0;
+    linhas.forEach(x=>{let f=x.f;
+      if(!f){f={id:uid(),nome:x.nome,cpf:x.cpf,ativo:true};DB.funcionarios.push(f);novos++;}
+      else{f.cpf=x.cpf;f.ativo=true;if(!f.nome)f.nome=x.nome;}
+      if(x.c){f.contatoId=x.c.id;f.tinyId=x.c.tinyId||f.tinyId||'';if(!f.fone&&x.c.fone)f.fone=x.c.fone;x.c.tipo='Funcionário';x.c.papeis=['Funcionário'];}});
+    let inat=0;if($('gInat')&&$('gInat').checked)fora.forEach(f=>{f.ativo=false;inat++;});
+    salvar();gaveta(null);
+    try{N.logCarga&&N.logCarga('Funcionários',{lidos:linhas.length,novos,det:`planilha · ${nf(nCt)} cruzados com os contatos${inat?` · ${inat} inativado(s)`:''}`});}catch(e){}
+    toast(`${nf(linhas.length)} funcionários gravados (${nf(novos)} novos)${nCt?` · ${nf(nCt)} saíram de clientes`:''}${inat?` · ${nf(inat)} inativos`:''}.`);
+    try{telaFuncionarios();}catch(e){}};
+}
 
 </script>
 </body></html>

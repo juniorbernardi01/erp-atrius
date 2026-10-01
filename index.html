@@ -3649,6 +3649,18 @@ body.cs-operon .cs-oper .big.pau{flex:none;width:100%;min-height:clamp(52px,6.8v
 .mps .mpst{flex-basis:100%;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--ink3)}
 .mpo{margin-top:8px}.mpo label{display:block;font-size:12px;font-weight:700;margin-bottom:4px}
 .mpo textarea{width:100%;min-height:64px;border:1px solid var(--line);border-radius:10px;padding:8px 10px;font:inherit}
+
+/* ===== v313 ===== */
+.cs-q .cs-rp{color:#12703F;font-weight:700}
+.cs-q .cs-rend.q{color:#B3261E}
+.cs-q .cs-qb{display:none}
+
+/* ===== v314 ===== */
+.cs-fsug{position:absolute;left:0;right:0;top:100%;z-index:30;background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.12);max-height:280px;overflow:auto}
+.cs-fsug button{display:block;width:100%;text-align:left;border:0;background:none;padding:8px 12px;cursor:pointer;font:inherit}
+.cs-fsug button:hover{background:#F4F6FA}.cs-fsug small{display:block;color:var(--ink3);font-size:11.5px}
+.cs-fsug .vz{padding:10px 12px;color:var(--ink3);font-size:12.5px}
+#usBusFb{position:relative;max-width:560px}
 </style>
 </head>
 <body>
@@ -5236,7 +5248,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v312';
+const VERSAO_APP='v314';
 let DRAG=null;
 function render(){
   recomporTudo();
@@ -18139,7 +18151,7 @@ function csUsuAbrir(email){
   const tipo=a?csTipoDe(a):CS_PES_ABA;
   CS_USU={email:email,novo:novo,aba:'acesso',mod:'pcp',
     rasc:{nome:a?a.nome||'':'',funcao:a?a.funcao||'':'',email:a?a.email||'':'',
-      pin:a?a.pin||'':'',senha:'',tipo:tipo,master:!!(a&&nivelDe(a)==='master'),
+      pin:a?a.pin||'':'',senha:a?a.senha||'':'',tipo:tipo,master:!!(a&&nivelDe(a)==='master'),
       nivel:a?(nivelDe(a)==='master'?'gestor':nivelDe(a)):'operador',
       ativo:a?a.ativo!==false:true,perm:{...((a&&a.perm)||{})}}};
   csUsuDetalhe();
@@ -18406,6 +18418,7 @@ async function csUsuSalvar(){
     }
     /* a pessoa vai para a aba do tipo dela: cadastrou um vendedor, a tela
        mostra a aba Vendedores com ele lá */
+    try{if(!csUsuLocal())await lerAcessos();}catch(e){}
     CS_USU=null;CS_PES_ABA=r.tipo||CS_PES_ABA;
     if(typeof gradeAdmin==='function'&&document.querySelector('.cs-pesabas'))gradeAdmin();
     else await gradeAcessos();
@@ -19346,7 +19359,7 @@ if(!CS_FIX)CS_ABERTO='';
    com só os módulos travados, parecendo quebrado. Enquanto não há acesso
    conhecido, mostra tudo: quem barra de verdade é a própria tela, que já
    checa permissão na entrada. */
-const csSemAcesso=()=>{try{return !MEU_ACESSO&&!EU;}catch(e){return true;}};
+const csSemAcesso=()=>{try{if(typeof CS_ACESSOS_LIDOS!=='undefined'&&CS_ACESSOS_LIDOS)return false;return !MEU_ACESSO&&!EU;}catch(e){return true;}};
 const csPode=p=>{
   if(p.grupo)return true;
   if(p.fin){
@@ -19761,7 +19774,7 @@ function csArruma(el,o){
     const sp=document.createElement('span');
     sp.className='cs-q';
     sp.innerHTML=m
-      ? `<i>${m[2]?'Produzidas':'Previstas'}</i><b>${m[1]}${m[2]?' / '+m[2]:''} ${m[3]}</b>${m[2]?csRendHTML(m[1],m[2],m[3]):''}${(()=>{const q=ccx.querySelector('.qbr');return q?`<em class="cs-qb">${q.textContent.trim()}</em>`:'';})()}`
+      ? `<i>${m[2]?'Produzidas':'Previstas'}</i><b>${m[1]}${m[2]?' / '+m[2]:''} ${m[3]}${m[2]?csRendPct(m[1],m[2]):''}</b>${m[2]?csRendHTML(m[1],m[2],m[3]):''}${(()=>{const q=ccx.querySelector('.qbr');return q?`<em class="cs-qb">${q.textContent.trim()}</em>`:'';})()}`
       : `<i>Quantidade</i><b>${t}</b>`;
     cid.appendChild(sp);
     ccx.style.display='none';
@@ -21761,7 +21774,7 @@ window.csNucleo=(function(){
     VERS[id]=l[0].versao;return {ok:true};
   }
   return {
-    versao:'v312',
+    versao:'v314',
     logo:()=>LOGO,
     teste:!temNuvem(),
     usuario:()=>{try{return (MEU_ACESSO&&MEU_ACESSO.nome)||(EU&&EU.nome)||emailDaSessao()||'Teste';}catch(e){return 'Teste';}},
@@ -24039,6 +24052,54 @@ try{const _mo12=csMotivosOP;csMotivosOP=function(o){const l=_mo12(o);
   const m=o.setupMotivo;if(!m||!Array.isArray(m.itens)||!m.itens.length)return l;
   const ds=(()=>{try{return Math.max(0,dvSetup(o)||0);}catch(e){return 0;}})();
   return l.filter(x=>x.et!=='setup').concat(m.itens.map((x,i)=>({et:'setup',g:x.g||'Outro',s:x.s,pri:i===0,custo:ds/m.itens.length})));};}catch(e){}
+</script>
+<script>
+/* ===================== v313 ===================== */
+function csRendPct(prod,prev){const r=csRend(prod,prev);return r?` <span class="cs-rp">· ${csPct(r.rend)}</span>`:'';}
+csRendHTML=function(prod,prev,un){const r=csRend(prod,prev);if(!r||!r.q)return '';
+  return `<em class="cs-rend q">quebra · ${nf(r.q)} ${un} · ${csPct(r.qp)}</em>`;};
+/* Antes de a sessão carregar o menu mostrava tudo, e isso continuava valendo
+   para quem entrou mas não tinha o cadastro lido: via até o que estava
+   desmarcado. Agora, lido o cadastro, vale só o que a pessoa tem marcado. */
+let CS_ACESSOS_LIDOS=false;
+try{const _la13=lerAcessos;lerAcessos=async function(){const r=await _la13.apply(this,arguments);CS_ACESSOS_LIDOS=true;return r;};}catch(e){}
+try{const _fm13=csFinMostrar;csFinMostrar=function(){
+  try{if(S.page==='financeiro'&&MOD_ATUAL==='financeiro'&&CS_ACESSOS_LIDOS&&!(MEU_ACESSO&&MEU_ACESSO.master)&&!csFinPode(FIN_PAG)){
+    const w=M('finwrap');if(w)w.hidden=true;S.page='inicio';try{toast('Você não tem acesso a esta página do Financeiro.',true);}catch(e){}try{render();}catch(e){}return;}}catch(e){}
+  return _fm13.apply(this,arguments);};}catch(e){}
+</script>
+<script>
+/* ===================== v314 · pessoa a partir dos Funcionários ===================== */
+let CS_FUNC_CACHE=null;
+async function csFuncionarios(){if(CS_FUNC_CACHE)return CS_FUNC_CACHE;
+  try{const c=await csNucleo.ler('cadastros');CS_FUNC_CACHE=((c&&c.funcionarios)||[]).filter(f=>f.ativo!==false);}catch(e){CS_FUNC_CACHE=[];}
+  setTimeout(()=>{CS_FUNC_CACHE=null;},60000);return CS_FUNC_CACHE;}
+const csSemAc=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+try{const _ud14=csUsuDetalhe;csUsuDetalhe=function(){const r0=_ud14.apply(this,arguments);
+  try{const u=CS_USU;if(!u||!u.novo||u.aba!=='acesso')return r0;const nm=M('usNome');if(!nm||M('usBusF'))return r0;
+    const fld=nm.closest('.fld');const box=document.createElement('div');box.className='fld rel';box.id='usBusFb';
+    box.innerHTML=`<label>Buscar nos funcionários <span class="k" style="font-weight:400">· para não repetir cadastro</span></label>
+      <input id="usBusF" placeholder="Nome ou CPF de quem já está em Cadastros › Funcionários" autocomplete="off"><div class="cs-fsug" id="usBusL" hidden></div>
+      ${u.rasc.funcId?`<div class="k" style="margin-top:4px">Ligado ao funcionário <b>${escP(u.rasc.nome)}</b>${u.rasc.funcCpf?' · CPF '+escP(u.rasc.funcCpf):''}</div>`:''}`;
+    fld.parentNode.insertBefore(box,fld);
+    const inp=M('usBusF'),lst=M('usBusL');
+    const busca=async()=>{const q=csSemAc(inp.value).trim(),d=inp.value.replace(/\D/g,'');if(q.length<2){lst.hidden=true;return;}
+      const l=(await csFuncionarios()).filter(f=>csSemAc(f.nome).includes(q)||(d.length>=3&&String(f.cpf||'').replace(/\D/g,'').includes(d))).slice(0,10);
+      const ja=new Set((ACESSOS||[]).map(a=>csSemAc(a.nome)));
+      lst.innerHTML=l.length?l.map((f,i)=>`<button type="button" data-fi="${i}"><b>${escP(f.nome)}</b><small>${escP([f.cpf,f.funcao,f.setor].filter(Boolean).join(' · '))}${ja.has(csSemAc(f.nome))?' · <span style="color:#B3261E">já tem cadastro aqui</span>':''}</small></button>`).join('')
+        :'<div class="vz">Ninguém com esse nome em Funcionários. Cadastre lá primeiro (Cadastros › Funcionários).</div>';
+      lst.hidden=false;
+      lst.querySelectorAll('[data-fi]').forEach(b=>b.onclick=()=>{const f=l[+b.dataset.fi];
+        if(ja.has(csSemAc(f.nome))&&!confirm(`${f.nome} já tem cadastro em Pessoas. Criar outro mesmo assim?`))return;
+        const r=u.rasc;r.nome=f.nome;if(f.funcao&&!r.funcao)r.funcao=f.funcao;r.funcId=f.id;r.funcCpf=f.cpf||'';
+        lst.hidden=true;csUsuDetalhe();setTimeout(()=>{const e=M('usMail');if(e)e.focus();},30);});};
+    inp.oninput=()=>{clearTimeout(window._usBf);window._usBf=setTimeout(busca,180);};
+  }catch(e){console.warn('busca de funcionário:',e);}
+  return r0;};}catch(e){}
+/* a pessoa fica ligada ao funcionário (funcId) */
+try{const _ga14=gravarAcesso;gravarAcesso=function(linha,novo,email){
+  try{if(novo&&CS_USU&&CS_USU.rasc&&CS_USU.rasc.funcId&&linha){const p={...(linha.perm||{})};p._func=CS_USU.rasc.funcId;linha={...linha,perm:p};}}catch(e){}
+  return _ga14.call(this,linha,novo,email);};}catch(e){}
 </script>
 </body>
 </html>
