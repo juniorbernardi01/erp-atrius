@@ -3595,6 +3595,9 @@ body.cs-operon .cs-oper .big.pau{flex:none;width:100%;min-height:clamp(52px,6.8v
 
 /* ===== v303 ===== */
 .cs-q .cs-qb{display:block;font-style:normal;font-size:10.5px;font-weight:700;color:#B3261E;margin-top:1px}
+
+/* ===== v305 ===== */
+.cs-q .cs-rend{display:block;font-style:normal;font-size:10.5px;font-weight:700;color:#12703F;margin-top:1px;white-space:nowrap}
 </style>
 </head>
 <body>
@@ -5182,7 +5185,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v304';
+const VERSAO_APP='v305';
 let DRAG=null;
 function render(){
   recomporTudo();
@@ -19053,7 +19056,7 @@ try{
 }catch(e){console.warn('não consegui ler a tela do endereço:',e);}
 restaurar();
 try{window.addEventListener('beforeunload',()=>{try{localStorage.setItem(CHAVE,estadoAtual());}catch(e){}});}catch(e){}
-setInterval(()=>{if(!M('mask').classList.contains('on')&&!DRAG&&!ARR&&!FDRAG&&!SDRAG&&!CDRAG&&S.page!=='admin'&&!(typeof csDigitando==='function'&&csDigitando()))render();},60000);
+setInterval(()=>{if(!M('mask').classList.contains('on')&&!DRAG&&!ARR&&!FDRAG&&!SDRAG&&!CDRAG&&S.page!=='admin'&&S.page!=='financeiro'&&!(typeof csDigitando==='function'&&csDigitando()))render();},60000);
 
 
 /* =====================================================================
@@ -19701,7 +19704,7 @@ function csArruma(el,o){
     const sp=document.createElement('span');
     sp.className='cs-q';
     sp.innerHTML=m
-      ? `<i>${m[2]?'Produzidas':'Previstas'}</i><b>${m[1]}${m[2]?' / '+m[2]:''} ${m[3]}</b>${(()=>{const q=ccx.querySelector('.qbr');return q?`<em class="cs-qb">${q.textContent.trim()}</em>`:'';})()}`
+      ? `<i>${m[2]?'Produzidas':'Previstas'}</i><b>${m[1]}${m[2]?' / '+m[2]:''} ${m[3]}</b>${m[2]?csRendHTML(m[1],m[2],m[3]):''}${(()=>{const q=ccx.querySelector('.qbr');return q?`<em class="cs-qb">${q.textContent.trim()}</em>`:'';})()}`
       : `<i>Quantidade</i><b>${t}</b>`;
     cid.appendChild(sp);
     ccx.style.display='none';
@@ -21699,7 +21702,7 @@ window.csNucleo=(function(){
     VERS[id]=l[0].versao;return {ok:true};
   }
   return {
-    versao:'v304',
+    versao:'v305',
     logo:()=>LOGO,
     teste:!temNuvem(),
     usuario:()=>{try{return (MEU_ACESSO&&MEU_ACESSO.nome)||(EU&&EU.nome)||emailDaSessao()||'Teste';}catch(e){return 'Teste';}},
@@ -21731,7 +21734,7 @@ window.csFinPode=function(id){
 window.csFinAtual=function(id){
   if(!id||id===FIN_PAG)return;
   /* só o módulo que está na moldura pode trocar a página marcada no menu */
-  FIN_PAG=id;try{csPintar();}catch(e){}
+  FIN_PAG=id;try{const f=M('finFrame');if(f)f.dataset.pag=id;}catch(e){}try{csPintar();}catch(e){}
   try{marcarRota();}catch(e){}
 };
 function csFinMostrar(){
@@ -21749,14 +21752,16 @@ function csFinMostrar(){
   if(emb){
     if(f.dataset.emb!==MOD_ATUAL){f.dataset.emb=MOD_ATUAL;f.removeAttribute('src');
       f.onload=()=>{try{f.contentWindow.location.hash='#'+FIN_PAG;}catch(e){}};f.srcdoc=emb;}
-    else{try{f.contentWindow.location.hash='#'+FIN_PAG;}catch(e){}}
+    else if(f.dataset.pag!==FIN_PAG){f.dataset.pag=FIN_PAG;try{f.contentWindow.location.hash='#'+FIN_PAG;}catch(e){}}
     return;
   }
   if(f.dataset.emb){delete f.dataset.emb;f.removeAttribute('srcdoc');}
   const atual=f.getAttribute('src')||'';
   if(atual.split('#')[0]!==arq)f.setAttribute('src',arq+'#'+FIN_PAG);
-  else{
-    try{f.contentWindow.location.hash='#'+FIN_PAG;}
+  /* v305: só manda o módulo para outra página quando o menu mudou a página; o
+     redesenho de sempre não mexe (antes jogava a OC em edição de volta para a lista) */
+  else if(f.dataset.pag!==FIN_PAG){f.dataset.pag=FIN_PAG;
+    try{const h=String(f.contentWindow.location.hash||'').slice(1).split(/[/?&]/)[0];if(h!==FIN_PAG)f.contentWindow.location.hash='#'+FIN_PAG;}
     catch(e){f.setAttribute('src',arq+'#'+FIN_PAG);}
   }
 }
@@ -23465,7 +23470,11 @@ document.addEventListener('click',ev=>{
   csPinTela(tit,`${CS_OPMAQ||''}${at?` · OP ${rotuloOP(at)} · lote ${at.lote||''}`:''}`,(q,pin,esc)=>{
     CS_PIN_PASSA=true;try{b.click();}finally{CS_PIN_PASSA=false;}
     /* a janela de horário do sistema já vem com o PIN digitado e se confirma sozinha */
-    try{if(M('etPin')&&M('etK')){M('etPin').value=pin;M('etPin').dispatchEvent(new Event('input',{bubbles:true}));M('etK').click();if(M('etOK'))M('etOK').click();}}catch(e){}
+    let tent=0;const vai=()=>{try{
+      if(M('etPin')&&M('etK')){M('etPin').value=pin;M('etPin').dispatchEvent(new Event('input',{bubbles:true}));M('etK').click();
+        setTimeout(()=>{try{if(M('etOK'))M('etOK').click();}catch(e){}},60);return;}
+      if(M('etOK')){M('etOK').click();return;}
+    }catch(e){} if(++tent<25)setTimeout(vai,60);};vai();
     if(esc&&at){try{at.setupMotivo=esc;registrar(at,'Motivo do setup acima do previsto',OPERADOR,
       `principal: ${esc.principal}${esc.secundarios.length?' · secundários: '+esc.secundarios.join(', '):''}`);agendarSalvar();}catch(e){}}
     setTimeout(()=>{try{csPintarOperador();}catch(e){}},200);
@@ -23636,6 +23645,47 @@ try{const _mv4=movimentoDaOP;movimentoDaOP=function(o){
   if(o&&String(o.data||'')<CS_VIRADA&&!(o.tinyEnviado&&o.tinyEnviado.em))return toast('OP de antes da virada: o estoque dela já está no acerto feito no Tiny.');
   return _mv4.apply(this,arguments);};}catch(e){}
 try{const _ep4=csEnviarPendentes;csEnviarPendentes=async function(){if(!csEnviosLiberados())return toast(CS_MSG_VIRADA);return _ep4.apply(this,arguments);};}catch(e){}
+</script>
+<script>
+/* ===================== v305 ===================== */
+/* ---------- ao Tiny, só o produto acabado ----------
+   O estoque de insumos passa a ser controlado no ERP; o Tiny só precisa do
+   acabado para trabalhar as notas. Qualquer lançamento sai filtrado: fica só o
+   que é produto acabado. Sem acabado, não chama o Tiny — mas o ERP registra o
+   movimento (razão) e mexe no saldo dele do mesmo jeito. */
+const csIdsAcabado=()=>new Set(PRODUTOS.map(p=>String(tinyDe(p)||'')).filter(Boolean));
+try{const _ct5=chamarTiny;chamarTiny=async function(c){
+  if(c&&c.acao==='movimentar'){const ac=csIdsAcabado();const mv=(c.movimentos||[]).filter(m=>ac.has(String(m.id)));
+    if(!mv.length)return {falhas:[],soErp:true};
+    c={...c,movimentos:mv};}
+  return _ct5.call(this,c);};}catch(e){}
+/* a leitura do Tiny só atualiza o acabado; insumo quem conta é o ERP */
+try{const _le5=lerEstoque;lerEstoque=function(ids,botao){const ac=csIdsAcabado();return _le5.call(this,(ids||[]).filter(i=>ac.has(String(i))),botao);};}catch(e){}
+try{const _st5=csSrvTrazer;csSrvTrazer=async function(avisa){
+  const _ch=chamarTiny;chamarTiny=async c=>{const r=await _ch(c);
+    if(c&&c.acao==='srv_dados'&&c.job==='estoque'&&r&&r.saldos){const ac=csIdsAcabado();r.saldos=Object.fromEntries(Object.entries(r.saldos).filter(([k])=>ac.has(String(k))));}
+    return r;};
+  try{return await _st5.call(this,avisa);}finally{chamarTiny=_ch;}};}catch(e){}
+
+/* ---------- rendimento e quebra ---------- */
+function csRend(prod,prev){const p=+String(prod).replace(/\D/g,''),v=+String(prev).replace(/\D/g,'');if(!v)return null;
+  const q=Math.max(0,v-p);return {p,v,q,rend:p/v*100,qp:q/v*100};}
+const csPct=x=>x.toFixed(1).replace('.',',')+'%';
+function csRendHTML(prod,prev,un){const r=csRend(prod,prev);if(!r)return '';
+  return `<em class="cs-rend">${csPct(r.rend)} rend.${r.q?` · ${nf(r.q)} ${un} quebra (${csPct(r.qp)})`:''}</em>`;}
+/* no histórico da OP, ao concluir */
+try{const _ac5=csTinyAoConcluir;csTinyAoConcluir=function(o){
+  try{const v=caixasPrev(o),p=o.caixas;if(v&&p!=null&&!(o.log||[]).some(l=>l.e==='Rendimento'&&(l.d||'')===ymd(new Date()))){
+    const r=csRend(p,v);registrar(o,'Rendimento',null,`previsto ${nf(v)} ${und(o)} · produzido ${nf(p)} · ${csPct(r.rend)} de rendimento${r.q?` · quebra ${nf(r.q)} ${und(o)} (${csPct(r.qp)})`:''}`);}}catch(e){}
+  return _ac5.apply(this,arguments);};}catch(e){}
+
+/* ---------- PIN: dizer por que não abre ---------- */
+try{const _pv5=csPinValido;csPinValido=function(pin){const q=_pv5(pin);
+  if(!q&&!window.CS_PIN_MOTIVO){
+    const temOp=(OPERADORES||[]).some(o=>o.ativo!==false&&o.pin);
+    if(!temOp&&(typeof csPinSemColuna==='function'&&csPinSemColuna()))window.CS_PIN_MOTIVO='Nenhum PIN cadastrado: a coluna pin não existe no banco (rode o supabase-corrige-linhas.sql).';
+    else if(!temOp)window.CS_PIN_MOTIVO='Nenhum operador com PIN cadastrado. Cadastre em Configurações › Pessoas › Operadores.';}
+  return q;};}catch(e){}
 </script>
 </body>
 </html>
