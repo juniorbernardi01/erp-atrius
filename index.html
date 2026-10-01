@@ -3598,6 +3598,26 @@ body.cs-operon .cs-oper .big.pau{flex:none;width:100%;min-height:clamp(52px,6.8v
 
 /* ===== v305 ===== */
 .cs-q .cs-rend{display:block;font-style:normal;font-size:10.5px;font-weight:700;color:#12703F;margin-top:1px;white-space:nowrap}
+
+/* ===== v307 ===== */
+.csmot{margin-top:12px;border-top:1px solid var(--line);padding-top:12px}
+.csmc{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.csmc button{border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 12px;font:600 12.5px Inter,sans-serif;cursor:pointer}
+.csmc button.on{background:#1B4F9C;border-color:#1B4F9C;color:#fff}
+.csmc.sec button.on{background:#EAF2FE;border-color:#1D6FE8;color:#1B4F9C}
+
+/* ===== v309 · motivos medidos ===== */
+.csmf{display:flex;gap:6px;flex-wrap:wrap;margin:12px 0 8px}
+.csmf button{border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 12px;font:600 12.5px Inter,sans-serif;cursor:pointer}
+.csmf button.on{background:#1B4F9C;border-color:#1B4F9C;color:#fff}
+.csmet{font-size:10.5px;font-weight:700;border-radius:999px;padding:2px 8px;letter-spacing:.04em;text-transform:uppercase}
+.csmet.setup{background:#EEF0F3;color:#475569}.csmet.envase{background:#E7F5EC;color:#12703F}.csmet.quebra{background:#FDECEC;color:#B3261E}
+.csmt td{vertical-align:middle}
+.csmi{margin-top:18px}
+
+/* ===== v310 ===== */
+.cs-oper .mots .mtg,.mots .mtg{flex-basis:100%;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3);margin:8px 0 2px}
+.csmet.pausa{background:#FEF3C7;color:#854D0E}
 </style>
 </head>
 <body>
@@ -5185,7 +5205,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v306';
+const VERSAO_APP='v310';
 let DRAG=null;
 function render(){
   recomporTudo();
@@ -12228,7 +12248,7 @@ function finalizarEnvase(o){
                 que aconteceu. Mais de um grupo pode ter atrapalhado o mesmo
                 envase — falta de material e quebra de máquina no mesmo dia. */}
         <div class="csgrp" id="nGrp">${(typeof GRUPOS_MOTIVO!=='undefined'?GRUPOS_MOTIVO:[])
-          .filter(g=>(g.etapas||[]).some(e=>['envase','parada','setup'].includes(e)))
+          .filter(g=>(g.etapas||[]).includes('envase'))
           .map(g=>`<button type="button" class="csgb" data-g="${escAttr(g.id)}">${g.nome}</button>`)
           .join('')}</div>
         <div id="nSub"></div>
@@ -12352,7 +12372,7 @@ function finalizarEnvase(o){
       });
       if(lista.some(x=>!x.s)&&!obs){
         toast('Escolha o que aconteceu dentro do grupo, ou escreva na observação.',true);return;}
-      o.motivos=lista;
+      o.motivos=lista;o.motivosEnvase=lista;
       o.atrasoMin=Math.max(0,delta);
       const txt=lista.map(x=>x.s?`${x.g} · ${x.s}`:x.g).join(' | ');
       o.motivoFim=txt;
@@ -12778,9 +12798,10 @@ function concluir(o){
     const cx=ov?ov.cx:(M('cCx').value===''?null:+M('cCx').value);
     const l=[];
     const ds=dvSetup({...o,fimReal:f});
-    if(ds!=null&&ds>TOLERANCIA)l.push({et:'setup',txt:`Setup passou <b>${ds} min</b> da meta`});
+    /* v307: setup e envase já têm motivo nas telas deles; aqui só a quebra */
+    if(false&&ds!=null&&ds>TOLERANCIA)l.push({et:'setup',txt:`Setup passou <b>${ds} min</b> da meta`});
     const de=(iniEnvase(o)&&f)?Math.max(0,hm(f)-hm(iniEnvase(o)))-o.envase:null;
-    if(de!=null&&de>TOLERANCIA)l.push({et:'envase',txt:`Envase passou <b>${de} min</b> da meta`});
+    if(false&&de!=null&&de>TOLERANCIA)l.push({et:'envase',txt:`Envase passou <b>${de} min</b> da meta`});
     if(cx!=null){
       const perdidos=o.litros-cx*litrosCx(o);
       /* O limite é o cadastrado em Configurações ("Quebra a partir de"): abaixo
@@ -15236,7 +15257,7 @@ function abrirPerfil(){
     const s=M('pfFoto');s.style.backgroundImage=`url('${novaFoto}')`;s.textContent='';};img.src=r.result;};r.readAsDataURL(f);};
   const tema=esc2=>{try{localStorage.setItem('atrius.tema',esc2?'escuro':'claro');}catch(e){}csTema(esc2);abrirPerfil();};
   M('pfClaro').onclick=()=>tema(false);M('pfEscuro').onclick=()=>tema(true);
-  if(M('pfTab'))M('pfTab').onclick=()=>{try{localStorage.removeItem('erp.maqTablet');}catch(e){}abrirPerfil();};
+  if(M('pfTab'))M('pfTab').onclick=()=>{try{localStorage.removeItem('erp.maqTablet');localStorage.removeItem('erp.quiosque');}catch(e){}abrirPerfil();};
   M('pfC').onclick=()=>fecharModal();
   M('pfSair').onclick=()=>{fecharModal();const s=document.getElementById('csSair');if(s)s.click();};
   M('pfOk').onclick=async()=>{
@@ -15296,8 +15317,11 @@ async function abrirTinyCfg(){
 /* ===== v273: instalar como aplicativo (tablet e celular) ===== */
 try{if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js').catch(()=>{});}catch(e){}
 /* ===== v273: o tablet lembra a máquina e abre direto nela ===== */
-(function(){try{const m=location.hash.match(/^#op(\d+)$/);if(m)localStorage.setItem('erp.maqTablet',m[1]);
-  else if(!location.hash||location.hash==='#'){const n=localStorage.getItem('erp.maqTablet');if(n)location.hash='#op'+n;}}catch(e){}})();
+/* v308: só o aparelho marcado pela página maqN.html (erp.quiosque) abre sozinho na
+   máquina; abrir #opN num computador não prende mais o computador na máquina */
+(function(){try{const q=localStorage.getItem('erp.quiosque');
+  if(!q){localStorage.removeItem('erp.maqTablet');return;}
+  if(!location.hash||location.hash==='#')location.hash='#op'+q;}catch(e){}})();
 
 /* ===== v272: Configurações › PCP · marcadores das OPs e a tela do operador ===== */
 function abrirCfgPCP(){
@@ -15321,7 +15345,7 @@ function abrirCfgPCP(){
       CAD_MK_OP.push({nome:n,cor:OD_MK_CORES[CAD_MK_OP.length%OD_MK_CORES.length]});agendarSalvar();des();};
     M('cfgTrava').onchange=e=>{CS_TRAVA_LINHA=e.target.checked;agendarSalvar();toast(CS_TRAVA_LINHA?'Cada máquina aceita só os operadores da linha e os sem linha fixa.':'Qualquer operador abre qualquer máquina.');};
     M('mB').querySelectorAll('[data-cplink]').forEach(b=>b.onclick=()=>{try{navigator.clipboard.writeText(b.dataset.cplink);toast('Link copiado.');}catch(e){prompt('Copie o link:',b.dataset.cplink);}});
-    if(M('qDesl'))M('qDesl').onclick=()=>{try{localStorage.removeItem('erp.quiosque');}catch(e){}toast('Este aparelho não está mais preso na máquina.');des();};
+    if(M('qDesl'))M('qDesl').onclick=()=>{try{localStorage.removeItem('erp.quiosque');localStorage.removeItem('erp.maqTablet');}catch(e){}toast('Este aparelho não está mais preso na máquina.');des();};
     M('opAbrir').onclick=()=>pedirGestor(quem=>{
       try{(window.LOG_TELAOP=window.LOG_TELAOP||[]).push({em:new Date().toISOString(),por:quem});}catch(e){}
       toast('Tela do operador aberta por '+quem+'.');fecharModal();setTimeout(()=>{const b=M('telaOp');if(b&&b.onclick)b.onclick();},50);});};
@@ -20640,8 +20664,8 @@ function csHistorico(o){
    escolhas, não de vinte campos. Fica registrado no histórico da OP.
    ===================================================================== */
 function csPausar(o){
-  const mots=(typeof MOTIVOS!=='undefined'?MOTIVOS:[])
-    .filter(m=>!m.etapas||m.etapas.includes('interrupcao')||m.etapas.includes('envase'));
+  /* v310: os motivos da pausa saem dos grupos marcados com a etapa "pausa" */
+  const mots=gruposDe('pausa').flatMap(g=>(g.sub||[]).map(s=>({nome:`${g.nome} · ${s}`,g:g.nome,s})));
   const d=document.getElementById('csPausa');
   d.innerHTML=`<div class="cx">
     <div class="cab"><div style="flex:1">
@@ -20651,7 +20675,8 @@ function csPausar(o){
     <div class="cp">
       <label class="lb">Motivo da parada</label>
       <div class="mots" id="csMots">
-        ${mots.map(m=>`<button class="mt" data-m="${m.nome}">${m.nome}</button>`).join('')}
+        ${gruposDe('pausa').map(g=>`<div class="mtg">${g.nome}</div>`+(g.sub||[]).map(s=>`<button class="mt" data-m="${escAttr(g.nome+' · '+s)}">${escAttr(s)}</button>`).join('')).join('')}
+        <div class="mtg">Outro</div><button class="mt" data-m="Outro · observação">Outro (escrever)</button>
       </div>
       ${'' /* aparece quando o motivo pede explicação — "Outros" sozinho não
               diz nada, e no relatório de parada vira uma fatia sem nome */}
@@ -21704,7 +21729,7 @@ window.csNucleo=(function(){
     VERS[id]=l[0].versao;return {ok:true};
   }
   return {
-    versao:'v306',
+    versao:'v310',
     logo:()=>LOGO,
     teste:!temNuvem(),
     usuario:()=>{try{return (MEU_ACESSO&&MEU_ACESSO.nome)||(EU&&EU.nome)||emailDaSessao()||'Teste';}catch(e){return 'Teste';}},
@@ -23467,7 +23492,7 @@ document.addEventListener('click',ev=>{
   let mot=null;
   try{if(a==='etapa'&&at&&etapaAtual(at)==='envase'&&at.iniReal&&!at.envIni){const dur=hm(relogio())-hm(at.iniReal);
     if(dur-(+at.setup||0)>TOLERANCIA)mot={titulo:`Setup levou ${hmm(dur)} (previsto ${at.setup} min)`,
-      lista:[...MOTIVOS,...MOTIVOS_NOVOS].filter(m=>(m.etapas||[]).some(e=>['setup','envase'].includes(e))).map(m=>m.nome).filter((x,i,l)=>l.indexOf(x)===i)};}}catch(e){}
+      lista:gruposDe('setup').flatMap(g=>g.sub||[]).filter((x,i,l)=>l.indexOf(x)===i)};}}catch(e){}
   csPinTela(tit,`${CS_OPMAQ||''}${at?` · OP ${rotuloOP(at)} · lote ${at.lote||''}`:''}`,(q,pin,esc)=>{
     CS_PIN_PASSA=true;try{b.click();}finally{CS_PIN_PASSA=false;}
     /* a janela de horário do sistema já vem com o PIN digitado e se confirma sozinha */
@@ -23726,6 +23751,194 @@ function csV3Liga(){
     .catch(e=>toast('Tiny v3: '+e.message,true))
     .finally(()=>{history.replaceState(null,'',location.pathname+'#admin/tiny');CS_V3.st=null;try{csIr({page:'admin',aba:'tiny'});}catch(e){}});
 })();
+</script>
+<script>
+/* ===================== v307 · motivo do setup ao iniciar o envase ===================== */
+/* Iniciar envase fecha o setup. Se ele passou da meta (além da tolerância), a
+   janela pede o motivo principal (obrigatório) e os secundários, com os grupos do
+   setup. No tablet, o motivo já vem escolhido na tela do PIN. */
+function csSetupAtraso(o,hora){try{if(!o||!o.iniReal)return null;const fim=hm(hora||relogio()),ini=hm(o.iniReal);let d=fim-ini;if(d<0)d+=1440;return d-(+o.setup||0);}catch(e){return null;}}
+try{const _me7=marcarEtapa;marcarEtapa=function(o,et){
+  const r=_me7.apply(this,arguments);
+  try{
+    const e=et||etapaAtual(o);
+    if(e!=='envase'||!M('etK')||!o||!o.iniReal||o.envIni)return r;
+    const pre=window.CS_MOT_PRE;window.CS_MOT_PRE=null;
+    const pinta=()=>{
+      const hora=(M('etHr')&&M('etHr').value)||relogio(),atr=csSetupAtraso(o,hora);
+      let box=M('csSetMot');
+      if(atr==null||atr<=TOLERANCIA){if(box)box.remove();return;}
+      if(!box){box=document.createElement('div');box.id='csSetMot';box.className='csmot';M('mB').appendChild(box);}
+      if(box.dataset.feito)return;box.dataset.feito='1';
+      const subs=gruposDe('setup').flatMap(g=>(g.sub||[]).map(s=>({g:g.nome,s})));
+      box.innerHTML=`<div class="fld"><label>O setup passou <b>${atr} min</b> da meta. Motivo principal <b>*</b></label>
+        <div class="csmc" data-tp="p">${subs.map((x,i)=>`<button type="button" data-i="${i}" title="${escAttr(x.g)}">${escAttr(x.s)}</button>`).join('')}</div></div>
+        <div class="fld"><label>Motivos secundários</label><div class="csmc sec" data-tp="s">${subs.map((x,i)=>`<button type="button" data-i="${i}">${escAttr(x.s)}</button>`).join('')}</div></div>`;
+      box._subs=subs;box._p=null;box._s=new Set();
+      box.onclick=ev=>{const b=ev.target.closest('button[data-i]');if(!b)return;const i=+b.dataset.i,tp=b.parentNode.dataset.tp;
+        if(tp==='p'){box._p=i;box._s.delete(i);}else if(i!==box._p){box._s.has(i)?box._s.delete(i):box._s.add(i);}
+        box.querySelectorAll('[data-tp="p"] button').forEach(x=>x.classList.toggle('on',+x.dataset.i===box._p));
+        box.querySelectorAll('[data-tp="s"] button').forEach(x=>x.classList.toggle('on',box._s.has(+x.dataset.i)));};
+      if(pre){box._pre=true;const ip=subs.findIndex(x=>x.s===pre.principal);if(ip>=0){box._p=ip;(pre.secundarios||[]).forEach(s=>{const k=subs.findIndex(x=>x.s===s);if(k>=0&&k!==ip)box._s.add(k);});box._pre=true;}
+        box.querySelectorAll('[data-tp="p"] button').forEach(x=>x.classList.toggle('on',+x.dataset.i===box._p));box.querySelectorAll('[data-tp="s"] button').forEach(x=>x.classList.toggle('on',box._s.has(+x.dataset.i)));}
+    };
+    pinta();if(M('etHr'))M('etHr').addEventListener('change',()=>{const b=M('csSetMot');if(b)delete b.dataset.feito;pinta();});
+    /* Continuar sem o principal não passa; ao confirmar, grava o motivo */
+    M('etK').addEventListener('click',ev=>{const b=M('csSetMot');if(!b)return;
+      if(b._pre){window.CS_SETUP_ESC=null;return;}
+      if(b._p==null){ev.preventDefault();ev.stopImmediatePropagation();toast('Escolha o motivo principal do setup.',true);return;}
+      const esc={principal:b._subs[b._p].s,secundarios:[...b._s].map(i=>b._subs[i].s),grupo:b._subs[b._p].g};
+      window.CS_SETUP_ESC={o,esc,dado:!!b._pre};},true);
+  }catch(e){console.warn('motivo do setup:',e);}
+  return r;};}catch(e){}
+/* grava depois que o horário foi confirmado (o envase começou) */
+document.addEventListener('click',ev=>{
+  const b=ev.target.closest&&ev.target.closest('#etOK');if(!b||!window.CS_SETUP_ESC)return;
+  const {o,esc,dado}=window.CS_SETUP_ESC;window.CS_SETUP_ESC=null;
+  setTimeout(()=>{try{if(!o.envIni)return;o.setupMotivo=esc;
+    if(!dado)registrar(o,'Motivo do setup acima do previsto',OPERADOR&&OPERADOR.nome?OPERADOR:null,`principal: ${esc.principal}${esc.secundarios.length?' · secundários: '+esc.secundarios.join(', '):''}`);
+    agendarSalvar();}catch(e){}},50);
+},true);
+/* no tablet, o motivo escolhido na tela do PIN segue para a janela de horário */
+try{const _pt7=csPinTela;csPinTela=function(tit,sub,ok,mot){
+  return _pt7.call(this,tit,sub,(q,pin,esc)=>{if(esc)window.CS_MOT_PRE=esc;return ok(q,pin,esc);},mot);};}catch(e){}
+</script>
+<script>
+/* ===================== v309 · motivos medidos ===================== */
+/* Todos os motivos de uma OP, numa lista só: etapa, grupo, subgrupo, se foi o
+   principal, e quanto custou (minutos no setup e no envase, litros na quebra). */
+const csGrupoPorId=id=>(GRUPOS_MOTIVO||[]).find(g=>g.id===id);
+const csGrupoDaSub=s=>(GRUPOS_MOTIVO||[]).find(g=>(g.sub||[]).includes(s));
+function csMotivosOP(o){
+  const out=[];
+  const add=(et,g,s,pri,custo)=>out.push({et,g:g||'(sem grupo)',s:s||'(sem detalhe)',pri:!!pri,custo:+custo||0});
+  /* setup: escolhido ao iniciar o envase (v307) ou, antes, no apontamento */
+  const ds=(()=>{try{return Math.max(0,dvSetup(o)||0);}catch(e){return 0;}})();
+  if(o.setupMotivo&&o.setupMotivo.principal){const m=o.setupMotivo,l=[m.principal,...(m.secundarios||[])];
+    l.forEach((s,i)=>add('setup',(i===0&&m.grupo)||(csGrupoDaSub(s)||{}).nome,s,i===0,ds/l.length));}
+  else if(o.motivos&&!Array.isArray(o.motivos)&&o.motivos.setup){const gs=o.motivos.setup.grupos||[o.motivos.setup];const it=gs.flatMap(x=>(x.sub&&x.sub.length?x.sub:['']).map(s=>({g:(csGrupoPorId(x.g)||{}).nome||x.g,s})));
+    it.forEach((x,i)=>add('setup',x.g,x.s,i===0,ds/it.length));}
+  /* envase: escolhido ao concluir o envase */
+  const de=(()=>{try{return Math.max(0,+o.atrasoMin||dvEnvase(o)||0);}catch(e){return +o.atrasoMin||0;}})();
+  let le=o.motivosEnvase||(Array.isArray(o.motivos)?o.motivos:null);
+  if(!le&&o.motivoFim)le=String(o.motivoFim).split(' | ').map(x=>{const [g,s]=x.split(' · ');return {g,s};});
+  if((!le||!le.length)&&o.motivos&&!Array.isArray(o.motivos)&&o.motivos.envase){const gs=o.motivos.envase.grupos||[o.motivos.envase];le=gs.flatMap(x=>(x.sub&&x.sub.length?x.sub:['']).map(s=>({g:(csGrupoPorId(x.g)||{}).nome||x.g,s})));}
+  (le||[]).forEach((x,i,a)=>add('envase',x.g,x.s,i===0,de/a.length));
+  /* quebra: no apontamento */
+  if(o.motivos&&!Array.isArray(o.motivos)&&o.motivos.quebra){const q=(()=>{try{return Math.max(0,quebraL(o)||0);}catch(e){return 0;}})();
+    const gs=o.motivos.quebra.grupos||[o.motivos.quebra];const it=gs.flatMap(x=>(x.sub&&x.sub.length?x.sub:['']).map(s=>({g:(csGrupoPorId(x.g)||{}).nome||x.g,s})));
+    it.forEach((x,i)=>add('quebra',x.g,x.s,i===0,q/it.length));}
+  return out;
+}
+/* junta as OPs: por etapa, quantas OPs tiveram problema, e cada grupo e subgrupo */
+function csMedeMotivos(ops,etapa){
+  const ets=etapa&&etapa!=='todos'?[etapa]:['setup','envase','quebra'];
+  const opsEt={},G={},S={};let custoTot={min:0,l:0};
+  ops.forEach(o=>{const l=csMotivosOP(o).filter(m=>ets.includes(m.et));if(!l.length)return;
+    const vistos=new Set(),vistosG=new Set();
+    l.forEach(m=>{opsEt[m.et]=opsEt[m.et]||new Set();opsEt[m.et].add(o.id);
+      const kg=m.et+'|'+m.g,ks=kg+'|'+m.s;
+      const g=G[kg]||(G[kg]={et:m.et,g:m.g,ops:0,pri:0,custo:0});const s=S[ks]||(S[ks]={et:m.et,g:m.g,s:m.s,ops:0,pri:0,custo:0});
+      if(!vistosG.has(kg)){g.ops++;vistosG.add(kg);} if(!vistos.has(ks)){s.ops++;vistos.add(ks);}
+      if(m.pri){g.pri++;s.pri++;}g.custo+=m.custo;s.custo+=m.custo;
+      if(m.et==='quebra')custoTot.l+=m.custo;else custoTot.min+=m.custo;});});
+  const nOps=Object.fromEntries(Object.entries(opsEt).map(([k,v])=>[k,v.size]));
+  const tot=new Set(Object.values(opsEt).flatMap(v=>[...v])).size;
+  return {nOps,tot,G:Object.values(G),S:Object.values(S),custoTot};
+}
+const CS_ET_NOME={setup:'Setup',envase:'Envase',quebra:'Quebra'};
+const csCusto=(et,v)=>et==='quebra'?nf(Math.round(v))+' L':hmm(Math.round(v));
+function csTabelaMotivos(r,porSub){
+  const l=(porSub?r.S:r.G).slice().sort((a,b)=>b.ops-a.ops||b.custo-a.custo);
+  if(!l.length)return '<div class="perdz">Nenhum motivo registrado no período.</div>';
+  const totLinhas=l.reduce((a,x)=>a+x.ops,0);let acum=0;
+  return `<div class="rolx"><table class="tb csmt"><thead><tr><th>Etapa</th><th>${porSub?'Grupo › o que aconteceu':'Grupo'}</th><th class="n">OPs</th><th class="n">% das OPs da etapa</th><th class="n">% do total</th><th class="n">Acumulado</th><th class="n">Principal</th><th class="n">Custo</th></tr></thead><tbody>
+    ${l.map(x=>{const pe=r.nOps[x.et]?x.ops/r.nOps[x.et]*100:0,pt=totLinhas?x.ops/totLinhas*100:0;acum+=pt;
+      return `<tr><td><span class="csmet ${x.et}">${CS_ET_NOME[x.et]}</span></td><td>${porSub?`<span class="k">${escAttr(x.g)} ›</span> <b>${escAttr(x.s)}</b>`:`<b>${escAttr(x.g)}</b>`}</td>
+        <td class="n">${x.ops}</td><td class="n"><div class="csbar"><i style="width:${Math.round(pe)}%"></i><span>${pe.toFixed(1).replace('.',',')}%</span></div></td>
+        <td class="n">${pt.toFixed(1).replace('.',',')}%</td><td class="n k">${Math.min(100,acum).toFixed(0)}%</td><td class="n">${x.pri||'—'}</td><td class="n">${csCusto(x.et,x.custo)}</td></tr>`;}).join('')}</tbody></table></div>`;
+}
+let CS_MOT_ET='todos',CS_MOT_SUB=true;
+/* Relatórios › Motivos: tudo o que foi registrado, para atacar o que mais pesa */
+relMotivos=function(){
+  const ops=ordensFiltradas();const r=csMedeMotivos(ops,CS_MOT_ET);
+  const top=r.S.slice().sort((a,b)=>b.ops-a.ops||b.custo-a.custo)[0];
+  M('repgrid').innerHTML=`${barraFiltro(['maq','prod'])}<div class="repd">${tituloPeriodo()}</div>
+    <div class="kpis">
+      <div class="kpi"><div class="k">OPs com motivo</div><div class="v">${r.tot}</div><div class="s">de ${ops.length} OPs no período</div></div>
+      <div class="kpi"><div class="k">Setup · Envase · Pausa · Quebra</div><div class="v" style="font-size:20px">${r.nOps.setup||0} · ${r.nOps.envase||0} · ${r.nOps.pausa||0} · ${r.nOps.quebra||0}</div><div class="s">OPs com motivo em cada etapa</div></div>
+      <div class="kpi"><div class="k">Tempo perdido</div><div class="v">${hmm(Math.round(r.custoTot.min))}</div><div class="s">setup e envase acima da meta e pausas</div></div>
+      <div class="kpi"><div class="k">Litros perdidos</div><div class="v">${nf(Math.round(r.custoTot.l))} L</div><div class="s">quebra com motivo</div></div>
+      <div class="kpi"><div class="k">Problema nº 1</div><div class="v" style="font-size:17px">${top?escAttr(top.s):'—'}</div><div class="s">${top?`${escAttr(top.g)} · ${top.ops} OP${top.ops>1?'s':''}`:''}</div></div></div>
+    <div class="csmf">${[['todos','Todas as etapas'],['setup','Setup'],['envase','Envase'],['pausa','Pausa'],['quebra','Quebra']].map(([k,n])=>`<button class="${CS_MOT_ET===k?'on':''}" data-cmet="${k}">${n}</button>`).join('')}
+      <span style="flex:1"></span><button class="${CS_MOT_SUB?'':'on'}" data-cmsub="0">Por grupo</button><button class="${CS_MOT_SUB?'on':''}" data-cmsub="1">Por subgrupo</button></div>
+    ${csTabelaMotivos(r,CS_MOT_SUB)}
+    <p class="adp" style="margin-top:10px">% das OPs da etapa: em quantas das OPs que tiveram problema naquela etapa o motivo apareceu (uma OP pode ter mais de um motivo, então a coluna soma mais de 100%). % do total e Acumulado: o peso de cada motivo entre todos os registrados — os primeiros, até uns 80%, são os que mais valem atacar. Principal: quantas vezes foi o motivo principal. Custo: minutos acima da meta (setup e envase) ou litros de quebra, divididos entre os motivos da OP.</p>`;
+  try{ligarFiltro();}catch(e){}
+  M('repgrid').querySelectorAll('[data-cmet]').forEach(b=>b.onclick=()=>{CS_MOT_ET=b.dataset.cmet;relMotivos();});
+  M('repgrid').querySelectorAll('[data-cmsub]').forEach(b=>b.onclick=()=>{CS_MOT_SUB=b.dataset.cmsub==='1';relMotivos();});
+};
+/* Indicadores: os problemas que mais pesam no período, logo no painel */
+try{const _gg9=gradeGestao;gradeGestao=function(){const r0=_gg9.apply(this,arguments);
+  try{const el=M('gigrid');if(!el)return r0;
+    const dias=diasGestao(GI_PER,0),de=dias[0],ate=dias[dias.length-1];
+    const ops=ORDENS.filter(o=>naGrade(o)&&o.data>=de&&o.data<=ate);
+    const r=csMedeMotivos(ops,'todos');
+    const l=r.S.slice().sort((a,b)=>b.ops-a.ops||b.custo-a.custo).slice(0,8);
+    const totL=r.S.reduce((a,x)=>a+x.ops,0);
+    el.insertAdjacentHTML('beforeend',`<div class="csmi"><div class="st">Os problemas que mais pesaram · motivos registrados nas OPs</div>
+      ${l.length?`<table class="tb csmt"><tbody>${l.map(x=>`<tr><td><span class="csmet ${x.et}">${CS_ET_NOME[x.et]}</span></td><td><span class="k">${escAttr(x.g)} ›</span> <b>${escAttr(x.s)}</b></td>
+        <td class="n">${x.ops} OP${x.ops>1?'s':''}</td><td class="n" style="width:30%"><div class="csbar"><i style="width:${totL?Math.round(x.ops/totL*100):0}%"></i><span>${totL?(x.ops/totL*100).toFixed(1).replace('.',','):0}%</span></div></td><td class="n">${csCusto(x.et,x.custo)}</td></tr>`).join('')}</tbody></table>
+        <button class="btn sm lk" id="csmVer" style="margin-top:6px">Ver todos em Relatórios › Motivos</button>`:'<div class="perdz">Nenhum motivo registrado no período.</div>'}</div>`);
+    if(M('csmVer'))M('csmVer').onclick=()=>{S.page='relatorio';ABA_REP='motivos';render();};
+  }catch(e){console.warn('motivos nos indicadores:',e);}
+  return r0;};}catch(e){}
+</script>
+<script>
+/* ===================== v310 · motivos ajustados e pausas medidas ===================== */
+/* A lista de motivos fica gravada no banco; aqui ela é ajustada uma vez para a
+   versão combinada em 01/10 (cada grupo marcado com v310). Quem editar depois em
+   Configurações › Motivos de desvio, edita por cima disso. */
+const CS_MOT_310={
+  g1:{nome:'Problema com pessoas',etapas:['setup','envase','parada','liberacao'],sub:['Falta de operador','Falta de auxiliar','Pessoas remanejadas para outra máquina','Ritmo abaixo do cadastro','Treinamento de pessoa nova','Afastamento ou atestado']},
+  g2:{nome:'Vazamento',etapas:['quebra'],sub:['Nos bicos','No tanque da máquina','No tanque de produção','Nas mangueiras ou conexões','No frasco']},
+  g3:{nome:'Tanque atrasado',etapas:['setup','envase','parada','liberacao'],sub:['Fabricação atrasada','Aguardando análise da Qualidade','Tanque ocupado por outro produto','Tanque em limpeza']},
+  g4:{nome:'Problema de equipamento',etapas:['setup','envase','parada','pausa'],sub:['Manutenção corretiva','Bomba de ar','Fechadora de caixas','Datadora','Fechador','Rotuladora','Esteira','Troca de kit de envase','Outro equipamento']},
+  g5:{nome:'Falta de material',etapas:['setup','envase','parada','quebra','pausa'],sub:null},
+  g6:{nome:'Produto fora do padrão',etapas:['liberacao'],sub:null},
+  g7:{nome:'Desvio da linha',etapas:['setup','envase','parada','reprograma'],sub:['KIT exportação','Parou para receber embalagem','Outra prioridade de pedido','Dar apoio em outra máquina']},
+  g8:{nome:'Parada programada',etapas:['pausa'],sub:null},
+  g9:{nome:'Problema externo',etapas:['setup','envase','parada','pausa'],sub:null},
+  g10:{nome:'Perdas por falta de qualidade',etapas:['quebra'],sub:['Reprocesso','Frasco danificado','Rótulo aplicado errado','Lote bloqueado']}};
+function csMotivos310(){
+  if(typeof GRUPOS_MOTIVO==='undefined')return false;
+  if(GRUPOS_MOTIVO.some(g=>g.v310))return false;
+  Object.entries(CS_MOT_310).forEach(([id,d])=>{const g=GRUPOS_MOTIVO.find(x=>x.id===id);if(!g)return;
+    g.nome=d.nome;g.etapas=d.etapas.slice();if(d.sub)g.sub=d.sub.slice();g.v310=true;});
+  try{agendarSalvar();}catch(e){}return true;
+}
+setTimeout(csMotivos310,1500);
+try{const _ae10=aplicarEstado;aplicarEstado=function(){const r=_ae10.apply(this,arguments);try{if(csMotivos310())render();}catch(e){}return r;};}catch(e){}
+/* a etapa "pausa" aparece no cadastro de motivos */
+try{if(typeof ETAPAS!=='undefined'&&!ETAPAS.some(e=>e[0]==='pausa'))ETAPAS.push(['pausa','Pausa da linha']);}catch(e){}
+
+/* ---------- pausas medidas: cada pausa vira um registro na OP ---------- */
+try{const _rt10=csRetomar;csRetomar=function(o){
+  try{if(o&&o.csPausa){const p=o.csPausa,ag=new Date(),ate=`${p2(ag.getHours())}:${p2(ag.getMinutes())}`;
+    let min=hm(ate)-hm(p.desde||ate);if(min<0)min+=1440;
+    const [g,s]=String(p.motivo||'').split(' · ');
+    (o.pausasOp||(o.pausasOp=[])).push({desde:p.desde,ate,min,g:g||'Outro',s:s||p.obs||'',obs:p.obs||'',quem:p.quem||'',retomou:(OPERADOR&&OPERADOR.nome)||''});}}catch(e){}
+  return _rt10.apply(this,arguments);};}catch(e){}
+try{const _mo10=csMotivosOP;csMotivosOP=function(o){const l=_mo10(o);
+  (o.pausasOp||[]).forEach(p=>l.push({et:'pausa',g:p.g||'Outro',s:p.s||'(sem detalhe)',pri:true,custo:+p.min||0}));
+  return l;};}catch(e){}
+try{CS_ET_NOME.pausa='Pausa';}catch(e){}
+try{const _cm10=csMedeMotivos;csMedeMotivos=function(ops,etapa){
+  if(etapa&&etapa!=='todos')return _cm10(ops,etapa);
+  /* "todas as etapas" passa a incluir a pausa */
+  const r=_cm10(ops,'todos'),rp=_cm10(ops,'pausa');
+  r.nOps.pausa=rp.nOps.pausa||0;r.G.push(...rp.G);r.S.push(...rp.S);r.custoTot.min+=rp.custoTot.min;
+  const ids=new Set(ops.filter(o=>csMotivosOP(o).length).map(o=>o.id));r.tot=ids.size;return r;};}catch(e){}
 </script>
 </body>
 </html>
