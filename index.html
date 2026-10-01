@@ -3661,6 +3661,12 @@ body.cs-operon .cs-oper .big.pau{flex:none;width:100%;min-height:clamp(52px,6.8v
 .cs-fsug button:hover{background:#F4F6FA}.cs-fsug small{display:block;color:var(--ink3);font-size:11.5px}
 .cs-fsug .vz{padding:10px 12px;color:var(--ink3);font-size:12.5px}
 #usBusFb{position:relative;max-width:560px}
+
+/* ===== v317 · concluídas legíveis ===== */
+.cs-fimls .bat.st-concluido,.bat.st-concluido{opacity:1!important;filter:none!important;background:#FBFBF9!important;border-color:#E2E5EA!important}
+body.comcasca .bat.st-concluido>*:not(.frs):not(.cs-pts){opacity:.92!important}
+.bat.st-concluido .tx h3,.bat.st-concluido .nome,.bat.st-concluido h3{filter:saturate(.55)}
+.cs-q b .cs-rp{display:inline!important;font-style:normal;color:#12703F;font-weight:700;background:none!important;border:0!important;padding:0!important;margin:0!important;box-shadow:none!important;font-size:inherit}
 </style>
 </head>
 <body>
@@ -5251,7 +5257,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v316';
+const VERSAO_APP='v317';
 let DRAG=null;
 function render(){
   recomporTudo();
@@ -21790,7 +21796,7 @@ window.csNucleo=(function(){
     VERS[id]=l[0].versao;return {ok:true};
   }
   return {
-    versao:'v316',
+    versao:'v317',
     logo:()=>LOGO,
     teste:!temNuvem(),
     usuario:()=>{try{return (MEU_ACESSO&&MEU_ACESSO.nome)||(EU&&EU.nome)||emailDaSessao()||'Teste';}catch(e){return 'Teste';}},
@@ -24071,7 +24077,7 @@ try{const _mo12=csMotivosOP;csMotivosOP=function(o){const l=_mo12(o);
 </script>
 <script>
 /* ===================== v313 ===================== */
-function csRendPct(prod,prev){const r=csRend(prod,prev);return r?` <span class="cs-rp">· ${csPct(r.rend)}</span>`:'';}
+function csRendPct(prod,prev){const r=csRend(prod,prev);return r?`<em class="cs-rp">&nbsp;– ${csPct(r.rend)}</em>`:'';}
 csRendHTML=function(prod,prev,un){const r=csRend(prod,prev);if(!r||!r.q)return '';
   return `<em class="cs-rend q">quebra · ${nf(r.q)} ${un} · ${csPct(r.qp)}</em>`;};
 /* Antes de a sessão carregar o menu mostrava tudo, e isso continuava valendo
