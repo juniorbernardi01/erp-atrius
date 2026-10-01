@@ -3618,6 +3618,29 @@ body.cs-operon .cs-oper .big.pau{flex:none;width:100%;min-height:clamp(52px,6.8v
 /* ===== v310 ===== */
 .cs-oper .mots .mtg,.mots .mtg{flex-basis:100%;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3);margin:8px 0 2px}
 .csmet.pausa{background:#FEF3C7;color:#854D0E}
+
+/* ===== v311 · grupo › subgrupo ===== */
+.mpl{font-size:12px;font-weight:700;color:var(--ink2);margin:4px 0 6px}
+.mpg,.mps,.mpsel{display:flex;flex-wrap:wrap;gap:6px}
+.mps{margin:8px 0 2px;padding:8px;border-radius:10px;background:#F4F6FA;border:1px solid var(--line)}
+.mpsel{margin-bottom:8px}
+.mpgb{border:1px solid var(--line);background:#fff;border-radius:999px;padding:7px 13px;font:600 13px Inter,sans-serif;cursor:pointer}
+.mpgb.ab{border-color:#1B4F9C;color:#1B4F9C;background:#EAF2FE}
+.mpgb.tem::after{content:' ✓';color:#15803D}
+.mpsb{border:1px solid var(--line);background:#fff;border-radius:8px;padding:7px 12px;font:500 13px Inter,sans-serif;cursor:pointer}
+.mpsb.on{background:#1B4F9C;border-color:#1B4F9C;color:#fff}
+.mpsb.sec.on{background:#EAF2FE;border-color:#1D6FE8;color:#1B4F9C}
+.mpch{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:5px 6px 5px 12px;font:600 13px Inter,sans-serif}
+.mpch.p{background:#1B4F9C;color:#fff}.mpch.s{background:#EAF2FE;color:#1B4F9C}
+.mpch small{font-weight:500;opacity:.8}
+.mpch button{border:0;background:rgba(255,255,255,.25);color:inherit;border-radius:50%;width:20px;height:20px;cursor:pointer;line-height:1}
+.mpch.s button{background:rgba(29,111,232,.15)}
+.cs-pinop .mo{width:100%;max-width:640px;padding:0 4vw;max-height:38vh;overflow:auto}
+.mots .mtgps{display:flex;flex-wrap:wrap;gap:8px;flex-basis:100%;margin-bottom:6px}
+.mots .mtgp{border:1px solid var(--line);background:#fff;border-radius:999px;padding:10px 16px;font:600 15px Inter,sans-serif;cursor:pointer}
+.mots .mtgp.ab{border-color:#1B4F9C;color:#1B4F9C;background:#EAF2FE}
+.mots .mtsg{display:flex;flex-wrap:wrap;gap:8px;flex-basis:100%;padding:8px;border-radius:12px;background:#F4F6FA}
+.mots .mtsg[hidden]{display:none}
 </style>
 </head>
 <body>
@@ -5205,7 +5228,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v310';
+const VERSAO_APP='v311';
 let DRAG=null;
 function render(){
   recomporTudo();
@@ -20675,8 +20698,9 @@ function csPausar(o){
     <div class="cp">
       <label class="lb">Motivo da parada</label>
       <div class="mots" id="csMots">
-        ${gruposDe('pausa').map(g=>`<div class="mtg">${g.nome}</div>`+(g.sub||[]).map(s=>`<button class="mt" data-m="${escAttr(g.nome+' · '+s)}">${escAttr(s)}</button>`).join('')).join('')}
-        <div class="mtg">Outro</div><button class="mt" data-m="Outro · observação">Outro (escrever)</button>
+        <div class="mtgps">${gruposDe('pausa').map(g=>`<button type="button" class="mtgp" data-gp="${g.id}">${g.nome}</button>`).join('')}<button type="button" class="mtgp" data-gp="__outro">Outro</button></div>
+        ${gruposDe('pausa').map(g=>`<div class="mtsg" data-gs="${g.id}" hidden>`+(g.sub||[]).map(s=>`<button class="mt" data-m="${escAttr(g.nome+' · '+s)}">${escAttr(s)}</button>`).join('')+'</div>').join('')}
+        <div class="mtsg" data-gs="__outro" hidden><button class="mt" data-m="Outro · observação">Escrever o motivo</button></div>
       </div>
       ${'' /* aparece quando o motivo pede explicação — "Outros" sozinho não
               diz nada, e no relatório de parada vira uma fatia sem nome */}
@@ -21729,7 +21753,7 @@ window.csNucleo=(function(){
     VERS[id]=l[0].versao;return {ok:true};
   }
   return {
-    versao:'v310',
+    versao:'v311',
     logo:()=>LOGO,
     teste:!temNuvem(),
     usuario:()=>{try{return (MEU_ACESSO&&MEU_ACESSO.nome)||(EU&&EU.nome)||emailDaSessao()||'Teste';}catch(e){return 'Teste';}},
@@ -23454,25 +23478,23 @@ function csPinTela(tit,sub,ok,mot){
   d.className='cs-pinop on'+(abrir?' abre':'');
   d.innerHTML=`${abrir?`<img class="lg" src="${LOGO}" alt="Atrius"><div class="ola">${ola}</div><div class="mq">${escAttr(CS_OPMAQ||'')}</div><div class="pd">Operador, digite seu PIN para abrir</div>`
     :`<div class="tp"><div><b>${escAttr(tit)}</b><i>${escAttr(sub||'')}</i></div><button class="x" data-pk="x" aria-label="Cancelar">&times;</button></div><div class="pd">Digite seu PIN</div>`}
-    ${mot?`<div class="mo"><div class="mg">${escAttr(mot.titulo)} · motivo principal</div><div class="ch pri">${mot.lista.map(m=>`<button data-mp="${escAttr(m)}">${escAttr(m)}</button>`).join('')}</div>
-      <div class="mg">Motivos secundários</div><div class="ch sec">${mot.lista.map(m=>`<button data-ms="${escAttr(m)}">${escAttr(m)}</button>`).join('')}</div></div>`:''}
+    ${mot?`<div class="mo"><div class="mg">${escAttr(mot.titulo)}</div><div id="csPinMk"></div></div>`:''}
     <div class="pts"><i></i><i></i><i></i><i></i></div>
     <div class="tec">${['1','2','3','4','5','6','7','8','9','','0','⌫'].map(k=>k?`<button data-pk="${k}"${k==='⌫'?' class="f" aria-label="Apagar"':''}>${k==='⌫'?'&#9003;':k}</button>`:'<span></span>').join('')}</div>
     <div class="ms"></div>`;
   let v='';const pts=d.querySelector('.pts'),ms=d.querySelector('.ms');
   const mostra=()=>[...pts.children].forEach((i,n)=>i.classList.toggle('on',n<v.length));
-  const esc={pri:'',sec:new Set()};
-  d.onclick=ev=>{const mp=ev.target.closest('[data-mp]'),msb=ev.target.closest('[data-ms]');
-    if(mp){esc.pri=mp.dataset.mp;esc.sec.delete(esc.pri);d.querySelectorAll('[data-mp]').forEach(x=>x.classList.toggle('on',x===mp));d.querySelectorAll('[data-ms]').forEach(x=>x.classList.toggle('on',esc.sec.has(x.dataset.ms)));return;}
-    if(msb){const k=msb.dataset.ms;if(k===esc.pri)return;if(esc.sec.has(k))esc.sec.delete(k);else esc.sec.add(k);msb.classList.toggle('on',esc.sec.has(k));return;}
+  const est={pri:null,sec:[]};
+  if(mot&&d.querySelector('#csPinMk'))csMotPicker(d.querySelector('#csPinMk'),mot.grupos||gruposDe('setup'),est);
+  d.onclick=ev=>{if(ev.target.closest('#csPinMk'))return;
     const b=ev.target.closest('[data-pk]');if(!b)return;ev.stopPropagation();const k=b.dataset.pk;
     if(k==='x'){d.className='cs-pinop';return;}
     v=k==='⌫'?v.slice(0,-1):(v.length<6?v+k:v);mostra();ms.textContent='';
     if(v.length>=4){const q=csPinValido(v),q0=q||quemPorCredencial(v);
       const longo=[...(typeof OPERADORES!=='undefined'?OPERADORES:[]),...(typeof ACESSOS!=='undefined'?ACESSOS:[])].some(o=>String(o.pin||'').length>v.length);
       const erro=m=>{pts.classList.add('erro');ms.className='ms';ms.textContent=m;setTimeout(()=>{pts.classList.remove('erro');v='';mostra();},500);};
-      if(q&&mot&&!esc.pri){erro('Escolha o motivo principal antes do PIN.');return;}
-      if(q){ms.textContent=q.nome;ms.className='ms ok';const pin=v;setTimeout(()=>{d.className='cs-pinop';csViraOperador(q);ok(q,pin,mot?{principal:esc.pri,secundarios:[...esc.sec]}:null);},250);}
+      if(q&&mot&&!est.pri){erro('Escolha o motivo principal antes do PIN.');return;}
+      if(q){ms.textContent=q.nome;ms.className='ms ok';const pin=v;setTimeout(()=>{d.className='cs-pinop';csViraOperador(q);ok(q,pin,mot?{principal:est.pri.s,grupo:est.pri.g,secundarios:est.sec.map(x=>x.s)}:null);},250);}
       else if(q0)erro(window.CS_PIN_MOTIVO||'Este PIN não tem acesso à tela da máquina.');
       else if(v.length>=6||!longo)erro('PIN não reconhecido.');}};
 }
@@ -23492,7 +23514,7 @@ document.addEventListener('click',ev=>{
   let mot=null;
   try{if(a==='etapa'&&at&&etapaAtual(at)==='envase'&&at.iniReal&&!at.envIni){const dur=hm(relogio())-hm(at.iniReal);
     if(dur-(+at.setup||0)>TOLERANCIA)mot={titulo:`Setup levou ${hmm(dur)} (previsto ${at.setup} min)`,
-      lista:gruposDe('setup').flatMap(g=>g.sub||[]).filter((x,i,l)=>l.indexOf(x)===i)};}}catch(e){}
+      grupos:gruposDe('setup')};}}catch(e){}
   csPinTela(tit,`${CS_OPMAQ||''}${at?` · OP ${rotuloOP(at)} · lote ${at.lote||''}`:''}`,(q,pin,esc)=>{
     CS_PIN_PASSA=true;try{b.click();}finally{CS_PIN_PASSA=false;}
     /* a janela de horário do sistema já vem com o PIN digitado e se confirma sozinha */
@@ -23770,24 +23792,18 @@ try{const _me7=marcarEtapa;marcarEtapa=function(o,et){
       if(atr==null||atr<=TOLERANCIA){if(box)box.remove();return;}
       if(!box){box=document.createElement('div');box.id='csSetMot';box.className='csmot';M('mB').appendChild(box);}
       if(box.dataset.feito)return;box.dataset.feito='1';
-      const subs=gruposDe('setup').flatMap(g=>(g.sub||[]).map(s=>({g:g.nome,s})));
-      box.innerHTML=`<div class="fld"><label>O setup passou <b>${atr} min</b> da meta. Motivo principal <b>*</b></label>
-        <div class="csmc" data-tp="p">${subs.map((x,i)=>`<button type="button" data-i="${i}" title="${escAttr(x.g)}">${escAttr(x.s)}</button>`).join('')}</div></div>
-        <div class="fld"><label>Motivos secundários</label><div class="csmc sec" data-tp="s">${subs.map((x,i)=>`<button type="button" data-i="${i}">${escAttr(x.s)}</button>`).join('')}</div></div>`;
-      box._subs=subs;box._p=null;box._s=new Set();
-      box.onclick=ev=>{const b=ev.target.closest('button[data-i]');if(!b)return;const i=+b.dataset.i,tp=b.parentNode.dataset.tp;
-        if(tp==='p'){box._p=i;box._s.delete(i);}else if(i!==box._p){box._s.has(i)?box._s.delete(i):box._s.add(i);}
-        box.querySelectorAll('[data-tp="p"] button').forEach(x=>x.classList.toggle('on',+x.dataset.i===box._p));
-        box.querySelectorAll('[data-tp="s"] button').forEach(x=>x.classList.toggle('on',box._s.has(+x.dataset.i)));};
-      if(pre){box._pre=true;const ip=subs.findIndex(x=>x.s===pre.principal);if(ip>=0){box._p=ip;(pre.secundarios||[]).forEach(s=>{const k=subs.findIndex(x=>x.s===s);if(k>=0&&k!==ip)box._s.add(k);});box._pre=true;}
-        box.querySelectorAll('[data-tp="p"] button').forEach(x=>x.classList.toggle('on',+x.dataset.i===box._p));box.querySelectorAll('[data-tp="s"] button').forEach(x=>x.classList.toggle('on',box._s.has(+x.dataset.i)));}
+      box.innerHTML=`<div class="fld"><label>O setup passou <b>${atr} min</b> da meta.</label><div id="csSetPk"></div></div>`;
+      box._st={pri:null,sec:[]};
+      if(pre){box._pre=true;const gp=csGrupoDaSub(pre.principal);box._st.pri={g:(pre.grupo||(gp&&gp.nome)||''),s:pre.principal};
+        box._st.sec=(pre.secundarios||[]).map(s=>({g:((csGrupoDaSub(s)||{}).nome)||'',s}));}
+      csMotPicker(M('csSetPk'),gruposDe('setup'),box._st);
     };
     pinta();if(M('etHr'))M('etHr').addEventListener('change',()=>{const b=M('csSetMot');if(b)delete b.dataset.feito;pinta();});
     /* Continuar sem o principal não passa; ao confirmar, grava o motivo */
     M('etK').addEventListener('click',ev=>{const b=M('csSetMot');if(!b)return;
       if(b._pre){window.CS_SETUP_ESC=null;return;}
-      if(b._p==null){ev.preventDefault();ev.stopImmediatePropagation();toast('Escolha o motivo principal do setup.',true);return;}
-      const esc={principal:b._subs[b._p].s,secundarios:[...b._s].map(i=>b._subs[i].s),grupo:b._subs[b._p].g};
+      if(!b._st||!b._st.pri){ev.preventDefault();ev.stopImmediatePropagation();toast('Escolha o motivo principal do setup.',true);return;}
+      const esc={principal:b._st.pri.s,secundarios:b._st.sec.map(x=>x.s),grupo:b._st.pri.g};
       window.CS_SETUP_ESC={o,esc,dado:!!b._pre};},true);
   }catch(e){console.warn('motivo do setup:',e);}
   return r;};}catch(e){}
@@ -23939,6 +23955,45 @@ try{const _cm10=csMedeMotivos;csMedeMotivos=function(ops,etapa){
   const r=_cm10(ops,'todos'),rp=_cm10(ops,'pausa');
   r.nOps.pausa=rp.nOps.pausa||0;r.G.push(...rp.G);r.S.push(...rp.S);r.custoTot.min+=rp.custoTot.min;
   const ids=new Set(ops.filter(o=>csMotivosOP(o).length).map(o=>o.id));r.tot=ids.size;return r;};}catch(e){}
+</script>
+<script>
+/* ===================== v311 · grupo › subgrupo em todo motivo ===================== */
+/* Motivo principal: toca no grupo, abrem os de dentro, escolhe um. Secundários: o
+   mesmo, quantos quiser. O que foi escolhido fica à vista, com × para tirar. */
+function csMotPicker(el,grupos,st){
+  if(!el)return;st.aP=st.aP||null;st.aS=st.aS||null;
+  const gl=(grupos||[]).filter(g=>(g.sub||[]).length);
+  const subsDe=id=>((gl.find(g=>g.id===id)||{}).sub)||[];
+  const nomeG=id=>((gl.find(g=>g.id===id)||{}).nome)||'';
+  const chips=(l,tp)=>l.map((x,i)=>`<span class="mpch ${tp}"><small>${escAttr(x.g)} ›</small> ${escAttr(x.s)}<button type="button" data-mx="${tp}|${i}" aria-label="Tirar">×</button></span>`).join('');
+  const pinta=()=>{
+    el.innerHTML=`<div class="mpl">Motivo principal <b>*</b></div>
+      ${st.pri?`<div class="mpsel">${chips([st.pri],'p')}</div>`:''}
+      <div class="mpg">${gl.map(g=>`<button type="button" class="mpgb ${st.aP===g.id?'ab':''} ${st.pri&&st.pri.g===g.nome?'tem':''}" data-mg="p|${g.id}">${escAttr(g.nome)}</button>`).join('')}</div>
+      ${st.aP?`<div class="mps">${subsDe(st.aP).map(s=>`<button type="button" class="mpsb ${st.pri&&st.pri.s===s&&st.pri.g===nomeG(st.aP)?'on':''}" data-ms="p|${escAttr(s)}">${escAttr(s)}</button>`).join('')}</div>`:''}
+      <div class="mpl" style="margin-top:10px">Motivos secundários <span class="k">· opcional</span></div>
+      ${st.sec.length?`<div class="mpsel">${chips(st.sec,'s')}</div>`:''}
+      <div class="mpg">${gl.map(g=>`<button type="button" class="mpgb sec ${st.aS===g.id?'ab':''} ${st.sec.some(x=>x.g===g.nome)?'tem':''}" data-mg="s|${g.id}">${escAttr(g.nome)}</button>`).join('')}</div>
+      ${st.aS?`<div class="mps">${subsDe(st.aS).map(s=>`<button type="button" class="mpsb sec ${st.sec.some(x=>x.s===s&&x.g===nomeG(st.aS))?'on':''}" data-ms="s|${escAttr(s)}">${escAttr(s)}</button>`).join('')}</div>`:''}`;
+  };
+  el.onclick=ev=>{ev.stopPropagation();
+    const g=ev.target.closest('[data-mg]'),s=ev.target.closest('[data-ms]'),x=ev.target.closest('[data-mx]');
+    if(g){const [tp,id]=g.dataset.mg.split('|');if(tp==='p')st.aP=st.aP===id?null:id;else st.aS=st.aS===id?null:id;pinta();return;}
+    if(s){const [tp,...r]=s.dataset.ms.split('|'),sub=r.join('|');
+      if(tp==='p'){const gn=nomeG(st.aP);st.pri={g:gn,s:sub};st.sec=st.sec.filter(y=>!(y.s===sub&&y.g===gn));st.aP=null;}
+      else{const gn=nomeG(st.aS);if(st.pri&&st.pri.s===sub&&st.pri.g===gn)return;const k=st.sec.findIndex(y=>y.s===sub&&y.g===gn);if(k>=0)st.sec.splice(k,1);else st.sec.push({g:gn,s:sub});}
+      pinta();return;}
+    if(x){const [tp,i]=x.dataset.mx.split('|');if(tp==='p')st.pri=null;else st.sec.splice(+i,1);pinta();}
+  };
+  pinta();
+}
+/* pausa: toca no grupo, abrem os de dentro */
+document.addEventListener('click',ev=>{
+  const g=ev.target.closest&&ev.target.closest('#csMots .mtgp');if(!g)return;
+  const box=g.closest('#csMots'),id=g.dataset.gp,ab=g.classList.contains('ab');
+  box.querySelectorAll('.mtgp').forEach(x=>x.classList.toggle('ab',!ab&&x===g));
+  box.querySelectorAll('.mtsg').forEach(x=>{x.hidden=ab||x.dataset.gs!==id;});
+},true);
 </script>
 </body>
 </html>
