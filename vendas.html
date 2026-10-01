@@ -941,7 +941,9 @@ function npPop(ancora,html){
 /* 5L e 3L saem em fardo, o resto em caixa (a descrição do produto diz: FD ou CX) */
 const npUn=p=>/\bFD\b|FARDO/i.test(String(p&&p.descricao||''))?'fd':'cx';
 async function telaNecProd(){
-  if(!NP.ap)NP.ap=JSON.parse(JSON.stringify(NP.f));
+  /* v325: a data que o período usa nasce da regra de Configurações › Vendas; quem mexer no filtro escolhe outra */
+  if(!NP.ap){if(!NP.f.per.campo){const c=N.cfgVendas?N.cfgVendas():{};NP.f.per.campo=c.reservaPor==='ped'?'pedido':'prevista';}
+    NP.ap=JSON.parse(JSON.stringify(NP.f));}
   if(!NP.dados){
     /* atualizando: a tabela continua na tela, com o aviso no alto; só a primeira leitura mostra a tela vazia */
     const ja=document.querySelector('#app .nparm');
@@ -1003,11 +1005,30 @@ async function telaNecProd(){
     npPop(a,`<b>Produção prevista</b><table><thead><tr><th>OP</th><th>Data</th><th>Máquina</th><th class="n">Qtd</th></tr></thead><tbody>${l.lo.map(o=>`<tr><td>${esc(o.op)}<small>${esc(o.sit||'')}</small></td><td>${esc(perBr(o.data))}${o.fim?`<small>termina ${esc(o.fim)}${o.fimDia&&o.fimDia!==o.data?' de '+esc(perBr(o.fimDia)):''}</small>`:''}</td><td>${esc(o.maq||'')}</td><td class="n">${nf(o.cx)}</td></tr>`).join('')}</tbody></table>`);});
 }
 
+/* =====================================================================
+   CONFIGURAÇÕES › VENDAS · estoque reservado (v325)
+   Só a data: a reserva conta os pedidos que ainda não faturaram (em aberto,
+   aprovado, em separação, separado). A regra fica no ERP, junto do estoque.
+   ===================================================================== */
+function telaCfgVendas(){
+  const c=N.cfgVendas?N.cfgVendas():{reservaPor:'prev'},pe=pode('vendas.cfg','editar');
+  $('app').innerHTML=`<div class="migalha">Configurações › Vendas</div><div class="topo"><h1>Estoque reservado</h1></div>
+  <div class="k" style="margin:-8px 0 14px;color:var(--ink3)">O que os pedidos de venda seguram do produto acabado. Vale no item do estoque e na Necessidade de produção.</div>
+  <div class="caixa" style="padding:16px 18px;max-width:760px"><b style="font-size:14px">A reserva conta pela</b>
+    <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">${[['prev','Data prevista de entrega'],['ped','Data do pedido']].map(([k,n])=>`<button class="btn ${c.reservaPor===k?'pri':''}" data-rp="${k}" ${pe?'':'disabled'}>${n}</button>`).join('')}</div>
+    <div style="font-size:12.5px;color:var(--ink3);margin-top:10px">${c.reservaPor==='prev'?'O pedido reserva pela data em que está previsto para entregar.':'O pedido reserva pela data em que foi lançado.'}
+    Reservam os pedidos ainda não faturados: em aberto, aprovado, em separação e separado.</div>
+    ${pe?'':'<div style="font-size:12px;color:var(--ink3);margin-top:8px">Só para consultar: mudar precisa da permissão Configurações de vendas.</div>'}</div>`;
+  document.querySelectorAll('[data-rp]').forEach(b=>b.onclick=()=>{try{N.salvarCfgVendas({reservaPor:b.dataset.rp});NP.ap=null;NP.f.per.campo='';NP.dados=null;
+    toast('A reserva agora conta pela '+(b.dataset.rp==='prev'?'data prevista':'data do pedido')+'.');}catch(e){toast(e.message,true);}telaCfgVendas();});
+}
+
 function render(){
   const {pag}=lerHash();PAG=pag;
   if(!N){$('app').innerHTML=`<div class="vazio"><b>Abra este módulo pelo ERP.</b></div>`;return;}
   gaveta(null);
   if(pag==='necprod'){if(!pode('vendas.necprod','ver')&&!pode('vendas.ped','ver'))return $('app').innerHTML='<div class="vazio">Você não tem acesso a esta página.</div>';return telaNecProd();}
+  if(pag==='config'){if(!pode('vendas.cfg','ver'))return $('app').innerHTML='<div class="vazio">Você não tem acesso às configurações de vendas.</div>';return telaCfgVendas();}
   if(pag==='carga'){if(!pode('vendas.carga','ver'))return $('app').innerHTML='<div class="vazio">Você não tem acesso a esta página.</div>';return telaCarga();}
   if(!pode('vendas.ped','ver'))return $('app').innerHTML='<div class="vazio">Você não tem acesso aos pedidos de venda.</div>';
   telaPedidos();

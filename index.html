@@ -3667,6 +3667,10 @@ body.cs-operon .cs-oper .big.pau{flex:none;width:100%;min-height:clamp(52px,6.8v
 body.comcasca .bat.st-concluido>*:not(.frs):not(.cs-pts){opacity:.92!important}
 .bat.st-concluido .tx h3,.bat.st-concluido .nome,.bat.st-concluido h3{filter:saturate(.55)}
 .cs-q b .cs-rp{display:inline!important;font-style:normal;color:#12703F;font-weight:700;background:none!important;border:0!important;padding:0!important;margin:0!important;box-shadow:none!important;font-size:inherit}
+
+/* ===== v324 · concluída um pouco mais cinza ===== */
+.cs-fimls .bat.st-concluido,.bat.st-concluido{background:#F3F4F2!important;filter:grayscale(.45)!important}
+body.comcasca .bat.st-concluido>*:not(.frs):not(.cs-pts){opacity:.8!important}
 </style>
 </head>
 <body>
@@ -4813,10 +4817,11 @@ function duracaoNoDia(ini,fim,teto){
 }
 /* Um setup pode estourar, mas não vira turno inteiro: acima de 4 h ou de dez
    vezes o previsto, o que existe ali é resto de outro dia, não setup. */
-const setupReal=o=>duracaoNoDia(o.iniReal,fimSetup(o),
-  Math.max(240,(+o.setup||0)*10));
+const setupReal=o=>{const b=duracaoNoDia(o.iniReal,fimSetup(o),
+  Math.max(240,(+o.setup||0)*10));return b==null?b:Math.max(0,b-(typeof csParado==='function'?csParado(o,o.iniReal,fimSetup(o)):0));};
 const iniEnvase=o=>o.envIni||o.iniReal||'';
-const envaseReal=o=>duracaoNoDia(iniEnvase(o),o.fimReal);
+/* v322: o tempo do envase é o trabalhado: sai o intervalo da jornada (almoço) e as pausas registradas */
+const envaseReal=o=>{const b=duracaoNoDia(iniEnvase(o),o.fimReal);return b==null?b:Math.max(0,b-(typeof csParado==='function'?csParado(o,iniEnvase(o),o.fimReal):0));};
 const dvSetup=o=>{const t=setupReal(o);return t==null?null:t-o.setup;};
 const dvEnvase=o=>{const t=envaseReal(o);return t==null?null:t-o.envase;};
 const badge=v=>(v==null||v===0)?'':` <b style="color:${v>0?'var(--danger)':'var(--run)'}">${v>0?'+':''}${v}</b>`;
@@ -4909,7 +4914,7 @@ const fimPlan=o=>inicioPlan(o)+total(o);
 /* quantos minutos a fila empurrou esta OP para frente */
 const deslocada=o=>o.inicio-inicioPlan(o);
 const fimEsperado=o=>{
-  if(o.envIni)return hm(o.envIni)+o.envase;          /* envase começou: conta dele */
+  if(o.envIni)return (typeof csFimTrab==='function'?csFimTrab(o,hm(o.envIni),+o.envase||0):hm(o.envIni)+o.envase);   /* envase começou: conta dele, com almoço e pausas */
   if(o.iniReal)return hm(o.iniReal)+total(o);        /* só o setup começou */
   return fimPrev(o);                                  /* não começou: vale a agenda */
 };
@@ -5257,7 +5262,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v320';
+const VERSAO_APP='v325';
 let DRAG=null;
 function render(){
   recomporTudo();
@@ -6812,8 +6817,18 @@ function abrirDia(s){
     toast(`Marcado ${i}–${f}. Clique em Salvar para valer.`);
   };
   M('calK').onclick=()=>{
-    if(!esc){toast('Escolha como fica o dia.',true);return;}
-    grava(esc.trab,esc.ini,esc.fim);
+    if(!csPodeJornada())return toast('Você não tem permissão para ajustar a jornada. Peça para liberar em Pessoas › Permissões › PCP › Envase.',true);
+    const ms=Object.keys(pendM);
+    for(const m of ms){const i=cvSel(`[data-jmi="${m}"]`),f=cvSel(`[data-jmf="${m}"]`);
+      if(!i||!f||hm(f)<=hm(i)){toast(`${m}: o fim tem que ser depois do início.`,true);return;}}
+    if(!esc&&!ms.length){toast('Escolha como fica o dia ou mude o horário de uma máquina.',true);return;}
+    if(esc&&(esc.trab!==diaDe(s).trab||esc.ini!==diaDe(s).ini||esc.fim!==diaDe(s).fim))CALENDARIO[s]={...(CALENDARIO[s]||{}),trab:esc.trab,ini:esc.ini||'05:00',fim:esc.fim||'20:00'};
+    ms.forEach(m=>{const i=cvSel(`[data-jmi="${m}"]`),f=cvSel(`[data-jmf="${m}"]`);ajustarJornada(m,s,{ini:i,fim:f});});
+    /* o dia precisa caber o horário da máquina: se a máquina começa às 05:00, o dia abre às 05:00 */
+    ms.forEach(m=>{const c=CALENDARIO[s];const i=cvSel(`[data-jmi="${m}"]`),f=cvSel(`[data-jmf="${m}"]`);if(c&&c.trab!==false){if(hm(i)<hm(c.ini||'05:00'))c.ini=i;if(hm(f)>hm(c.fim||'20:00'))c.fim=f;}});
+    try{registrarJornada&&registrarJornada(s,ms);}catch(e){}
+    agendarSalvar();gradeCalendario();render();reabrir();
+    toast(`${dCurto(s)}: ${ms.length?ms.map(m=>`${m} ${cvSel(`[data-jmi="${m}"]`)||''}`).join(' · ')+' ':''}salvo.`);
   };
   if(M('calLimpa'))M('calLimpa').onclick=()=>{
     delete CALENDARIO[s];agendarSalvar();fecharModal();render();
@@ -6832,8 +6847,13 @@ function abrirDia(s){
     gradeCalendario();render();reabrir();
     toast(`${m} em ${dCurto(s)}: ${i}–${f}.`);
   };
-  M('mB').querySelectorAll('[data-jmi],[data-jmf]').forEach(e=>
-    e.onchange=()=>gravaMaq(e.dataset.jmi||e.dataset.jmf));
+  /* v324: o horário da máquina só marca; quem grava é o Salvar (antes gravava a
+     cada dígito, redesenhava no meio da digitação e o Salvar ficava apagado) */
+  const pendM={};
+  M('mB').querySelectorAll('[data-jmi],[data-jmf]').forEach(e=>{
+    const marcaM=()=>{const m=e.dataset.jmi||e.dataset.jmf;pendM[m]=true;M('calK').disabled=false;
+      const l=e.closest('.jl');if(l){l.classList.add('ajust');const tt=l.querySelector('.jt');if(tt)tt.innerHTML='<b>alterado</b> · clique em Salvar';}};
+    e.oninput=marcaM;e.onchange=marcaM;});
   /* Hora extra: estica o fim da linha naquele dia, uma hora por clique. O
      ajuste é da máquina e do dia — a rotina da linha não muda. */
   M('mB').querySelectorAll('[data-jmhe]').forEach(b=>b.onclick=()=>{
@@ -15553,6 +15573,11 @@ function consumoDoLote(b){
 const FILA_TINY=[];
 /* v293: razão de estoque do ERP — cada movimento que foi ao Tiny, item por item */
 const CS_ELOG=[];
+/* v325: depósitos. O principal (Fábrica) não guarda saldo próprio: é o total menos
+   o que está nos outros. Assim o total que todo o sistema usa (ESTOQUE) continua
+   sendo um número só, e a OP, que sempre baixa da Fábrica, não precisa saber de depósito. */
+const CS_EDEP={deps:[{id:'fab',nome:'Fábrica',forn:'',fornId:'',princ:true}],sal:{},trSeq:0};
+const CS_CFGV={reservaPor:'prev'};
 /* v294: histórico das leituras do Tiny (carga e atualizações) */
 const CS_TLOG=[];
 
@@ -17488,7 +17513,7 @@ function estadoAtual(){
       jornada:JORNADA,frascoProd:FRASCO_PROD,usuarios:USUARIOS,proxOp:PROX_OP,
       gruposMotivo:GRUPOS_MOTIVO,semana:SEMANA_PADRAO,tolAtraso:TOL_ATRASO},
     estoque:{saldos:ESTOQUE,em:ESTOQUE_EM,d:ESTOQUE_D},
-    filaTiny:FILA_TINY,revisaoMotivo:REVISAO_MOTIVO,estoqueLog:CS_ELOG,tinyLog:CS_TLOG});
+    filaTiny:FILA_TINY,revisaoMotivo:REVISAO_MOTIVO,estoqueLog:CS_ELOG,tinyLog:CS_TLOG,estoqueDep:CS_EDEP,cfgVendas:CS_CFGV});
 }
 function aplicarEstado(txt){
   const d=JSON.parse(txt);
@@ -17527,6 +17552,9 @@ function aplicarEstado(txt){
   FILA_TINY.length=0;(d.filaTiny||[]).forEach(x=>FILA_TINY.push(x));
   CS_ELOG.length=0;(d.estoqueLog||[]).forEach(x=>CS_ELOG.push(x));
   CS_TLOG.length=0;(d.tinyLog||[]).forEach(x=>CS_TLOG.push(x));
+  /* estado antigo não tem depósitos: fica a Fábrica sozinha */
+  if(d.estoqueDep){const e=d.estoqueDep;if(Array.isArray(e.deps)&&e.deps.length)CS_EDEP.deps=e.deps;CS_EDEP.sal=e.sal||{};CS_EDEP.trSeq=+e.trSeq||0;}
+  if(d.cfgVendas)Object.assign(CS_CFGV,d.cfgVendas);
   REVISAO_MOTIVO.length=0;(d.revisaoMotivo||[]).forEach(x=>REVISAO_MOTIVO.push(x));
   if(d.estoque){
     Object.keys(ESTOQUE).forEach(k=>delete ESTOQUE[k]);
@@ -18017,7 +18045,8 @@ const PERM_MODS=[
   {id:'pcp',nome:'PCP',itens:[
     {k:'envase',n:'Envase',acoes:true,
       extra:[{k:'telaop',n:'Abrir a tela do operador (gestor)'},
-        {k:'envase.concluir',n:'Concluir OP e assinar a quebra com o PIN'}]},
+        {k:'envase.concluir',n:'Concluir OP e assinar a quebra com o PIN'},
+        {k:'envase.jornada',n:'Ajustar a jornada (dia, sábado, feriado, horário da máquina)'}]},
     {k:'tanques',n:'Tanques',acoes:true,
       extra:[{k:'liberar',n:'Liberar lote para envase (Qualidade)'}]},
     {k:'ordens',n:'Ordens de produção',acoes:true},
@@ -18028,11 +18057,14 @@ const PERM_MODS=[
   {id:'estoque',nome:'Estoque',itens:[{k:'estoque.saldos',n:'Saldos'},
     {k:'estoque',n:'Movimentos (envio ao Tiny)',acoes:true},
     {k:'estoque.inv',n:'Inventário',acoes:true,
-      extra:[{k:'estoque.inv.enviar',n:'Enviar ajuste de inventário ao Tiny'}]}]},
+      extra:[{k:'estoque.inv.enviar',n:'Enviar ajuste de inventário ao Tiny'}]},
+    {k:'estoque.lanc',n:'Lançamentos no item (incluir, editar, remover, transferir)',acoes:true},
+    {k:'estoque.cfg',n:'Configurações de estoque (depósitos)',acoes:true}]},
   {id:'vendas',nome:'Vendas',itens:[
     {k:'vendas.ped',n:'Pedidos de venda',acoes:true},
     {k:'vendas.carga',n:'Carga do Tiny',acoes:true},
-    {k:'vendas.necprod',n:'Necessidade de produção',acoes:true}]},
+    {k:'vendas.necprod',n:'Necessidade de produção',acoes:true},
+    {k:'vendas.cfg',n:'Configurações de vendas (estoque reservado)',acoes:true}]},
   {id:'compras',nome:'Compras',itens:[
     {k:'compras.oc',n:'Ordens de compra',acoes:true,
       extra:[{k:'compras.oc.receber',n:'Receber mercadoria e estornar estoque'},
@@ -19337,6 +19369,8 @@ const CS_MOD=[
    {n:'Integração Tiny',page:'admin',aba:'tiny',ic:'int'},
    {n:'Integração WhatsApp',acao:'wacfg',ic:'int'},
    {n:'Compras',mod:'compras',fin:'config',perm:'compras.cfg',ic:'car'},
+   {n:'Estoques',mod:'estoque',fin:'depositos',perm:'estoque.cfg',ic:'est'},
+   {n:'Vendas',mod:'vendas',fin:'config',perm:'vendas.cfg',ic:'loj'},
    {n:'Dados e versão',page:'admin',aba:'dados',ic:'dad'}]},
 /* Financeiro é um título: abre embaixo dele, no próprio menu, os
     submódulos. Cada submódulo abre as páginas dele no painel ao lado. */
@@ -20552,7 +20586,7 @@ function csIrDia(){
     <div class="calsem">${['seg','ter','qua','qui','sex','sáb','dom']
       .map(x=>`<span>${x}</span>`).join('')}</div>
     <div class="csirg">${cels.join('')}</div>`;
-  M('mF').innerHTML='<button class="btn" id="irCal" title="Liberar sábado ou feriado, dia de folga, jornada">Sábados, feriados e jornada…</button><div style="flex:1"></div><button class="btn" id="irC">Fechar</button>';
+  M('mF').innerHTML='<button class="btn" id="irCal" title="Liberar sábado ou feriado, dia de folga, horário de cada máquina">Ajustes de jornada</button><div style="flex:1"></div><button class="btn" id="irC">Fechar</button>';
   M('irCal').onclick=()=>{const d=ymd(S.page==='envase'?S.ref:S.refTq);CS_IR_MES=null;CAL_MES=new Date(d+'T00:00:00');csCalendarioModal();};
   M('irC').onclick=()=>{CS_IR_MES=null;fecharModal();};
   M('irAnt').onclick=()=>{CS_IR_MES=new Date(ano,mes-1,1);csIrDia();};
@@ -20796,7 +20830,7 @@ function csPausar(o){
     const hora=(new Date()).toTimeString().slice(0,5);
     o.log=o.log||[];
     const txtMot=obs?`${motivo} — ${obs}`:motivo;
-    o.log.push({hora:hora,evento:'pausa · '+txtMot,quem:op.nome});
+    o.log.push({t:hora,d:ymd(new Date()),e:'Linha pausada',op:op.nome,m:txtMot});
     o.csPausa={desde:hora,motivo:motivo,obs:obs,quem:op.nome};
     try{agendarSalvar();}catch(e){}
     fecha();
@@ -20809,8 +20843,8 @@ function csRetomar(o){
   if(!o.csPausa)return;
   const hora=(new Date()).toTimeString().slice(0,5);
   o.log=o.log||[];
-  o.log.push({hora:hora,evento:'retomada · parada por '+o.csPausa.motivo,
-    quem:(OPERADOR&&OPERADOR.nome)||o.csPausa.quem});
+  o.log.push({t:hora,d:ymd(new Date()),e:'Linha retomada',op:(OPERADOR&&OPERADOR.nome)||o.csPausa.quem,
+    m:'parada por '+o.csPausa.motivo+(o.csPausa.desde?' desde '+o.csPausa.desde:'')});
   o.csPausa=null;
   try{agendarSalvar();}catch(e){}
   try{toast('Linha retomada.');}catch(e){}
@@ -21705,7 +21739,7 @@ window.csNucleo=(function(){
     const soma=(sku,nome,qtd,origem)=>{
       const k=chave(sku,nome);if(!k||!(qtd>0))return;
       const r=out[k]||(out[k]={sku:k,nome,qtd:0,ops:0,origens:[]});
-      r.qtd+=qtd;r.ops++;if(r.origens.length<12)r.origens.push(origem);
+      r.qtd+=qtd;r.ops++;if(r.origens.length<12)r.origens.push(origem);(r.det||(r.det=[])).push({o:origem,q:qtd});
     };
     if(o.envase)ORDENS.filter(o=>naGrade(o)&&!['concluida','finalizado'].includes(sit(o))).forEach(o=>{
       consumoDaOP(o,caixasPrev(o)).forEach(x=>soma(x.sku,x.nome,x.qtd,rotuloOP(o)));
@@ -21796,7 +21830,7 @@ window.csNucleo=(function(){
     VERS[id]=l[0].versao;return {ok:true};
   }
   return {
-    versao:'v320',
+    versao:'v325',
     logo:()=>LOGO,
     teste:!temNuvem(),
     usuario:()=>{try{return (MEU_ACESSO&&MEU_ACESSO.nome)||(EU&&EU.nome)||emailDaSessao()||'Teste';}catch(e){return 'Teste';}},
@@ -23118,7 +23152,7 @@ try{csNucleo.movimentosDe=function(id){
   id=String(id||'');
   const l=CS_ELOG.filter(x=>x.id===id).slice().reverse();
   /* e o que ainda está a caminho do Tiny */
-  const fila=FILA_TINY.filter(x=>x.estado!=='enviado').flatMap(x=>(x.movs||[]).filter(m=>String(m.id)===id)
+  const fila=FILA_TINY.filter(x=>x.estado!=='enviado'&&x.estado!=='cancelado'&&!(typeof CS_VIRADA!=='undefined'&&String(x.criado||'').slice(0,10)<CS_VIRADA)).flatMap(x=>(x.movs||[]).filter(m=>String(m.id)===id)
     .map(m=>({em:String(x.criado||'').slice(0,16),id,tipo:m.tipo,qtd:+m.qtd||0,origem:x.origem||'',obs:x.obs||x.rotulo||'',pend:x.estado,erro:x.erro||''})));
   return {itens:[...fila,...l],saldo:ESTOQUE[id],lidoEm:ESTOQUE_EM,lidoDia:ESTOQUE_D};
 };}catch(e){}
@@ -23138,6 +23172,8 @@ const CS_CFG_INFO={
   'Dados e versão':['geral','Versão no ar, módulos publicados e cópia de segurança dos dados','backup versão módulo'],
   'Produtos · grupos':['cadastros','Grupos e subgrupos dos produtos e a regra de nome do Tiny','grupo subgrupo família'],
   'Compras':['suprimentos','Aprovação, categorias, prazos e o que a ordem de compra pede','oc aprovação fornecedor'],
+  'Estoques':['suprimentos','Depósitos onde o estoque fica guardado, inclusive no fornecedor','deposito depósito fornecedor saldo transferência'],
+  'Vendas':['vendas','Estoque reservado: a reserva dos pedidos conta pela data prevista ou pela data do pedido','reserva reservado pedido'],
   'Carga do Tiny':['vendas','Trazer o histórico de pedidos de venda do Tiny para o ERP','pedidos histórico importar'],
   'Integração Tiny':['integracoes','Token da API do Tiny e teste da conexão','token api'],
   'Integração WhatsApp':['integracoes','Número, token e modelo de mensagem da cobrança pelo WhatsApp','meta whatsapp cobrança modelo'],
@@ -24133,9 +24169,229 @@ try{csNucleo.opsAbertas=function(de,ate){
   return ORDENS.filter(o=>naGrade(o)&&sit(o)!=='concluida'&&(!ate||String(o.data||'')<=ate)).map(o=>{
     let feitas=0;try{feitas=cxFeitas(o)||0;}catch(e){}
     const st=sit(o);
-    return {codigo:o.codigo,op:rotuloOP(o),data:o.data,maq:o.maq||'',cx:Math.max(0,(caixasPrev(o)||0)-feitas),
+    /* hora prevista de terminar: a do envase em andamento, ou a da agenda (pode passar da meia-noite) */
+    let fim='',fimDia=o.data;try{const m=Math.round(fimEsperado(o));fim=hhmm(((m%1440)+1440)%1440);if(m>=1440){const d=new Date(o.data+'T12:00:00');d.setDate(d.getDate()+Math.floor(m/1440));fimDia=ymd(d);}}catch(e){}
+    return {codigo:o.codigo,op:rotuloOP(o),data:o.data,fim,fimDia,maq:o.maq||'',cx:Math.max(0,(caixasPrev(o)||0)-feitas),
       sit:({programada:'programada',preparacao:'em setup',producao:'em produção',finalizado:'a apontar'})[st]||st};}).filter(x=>x.cx>0);
 };}catch(e){}
+</script>
+<script>
+/* ===================== v322 · pausa e almoço não são atraso ===================== */
+/* Minutos parados entre ini e fim (hh:mm): o intervalo da jornada da máquina
+   (almoço) e as pausas registradas na OP, juntos — o que se sobrepõe conta uma vez. */
+function csIntervalosParados(o){
+  const l=[];
+  try{((PAUSAS&&PAUSAS[o.maq])||[]).forEach(p=>{const a=hm(p.de),b=hm(p.ate);if(b>a)l.push([a,b]);});}catch(e){}
+  (o.pausasOp||[]).forEach(p=>{if(!p.desde||!p.ate)return;let a=hm(p.desde),b=hm(p.ate);if(b<a)b+=1440;if(b>a)l.push([a,b]);});
+  if(o.csPausa&&o.csPausa.desde){const a=hm(o.csPausa.desde),n=new Date(),b=n.getHours()*60+n.getMinutes();if(b>a)l.push([a,b]);}
+  l.sort((x,y)=>x[0]-y[0]);const u=[];l.forEach(x=>{const z=u[u.length-1];if(z&&x[0]<=z[1])z[1]=Math.max(z[1],x[1]);else u.push(x.slice());});
+  return u;
+}
+function csParado(o,ini,fim){
+  if(!ini||!fim)return 0;let a=hm(ini),b=hm(fim);if(isNaN(a)||isNaN(b))return 0;if(b<a)b+=1440;
+  return csIntervalosParados(o).reduce((s,[x,y])=>s+Math.max(0,Math.min(b,y)-Math.max(a,x)),0);
+}
+/* fim do trabalho a partir de ini: pula o almoço e as pausas */
+function csFimTrab(o,ini,dur){
+  let t=ini,r=+dur||0;
+  for(const [a,b] of csIntervalosParados(o)){if(b<=t)continue;if(a>=t+r)break;if(a>t){r-=(a-t);t=a;}t=Math.max(t,b);}
+  return t+r;
+}
+/* histórico antigo: pausa e retomada estavam em outro formato e apareciam como "undefined" */
+function csLogPausaFix(){let n=0;
+  (typeof ORDENS!=='undefined'?ORDENS:[]).forEach(o=>(o.log||[]).forEach(l=>{if(l&&!l.e&&l.evento){
+    const ev=String(l.evento);l.e=/^pausa/i.test(ev)?'Linha pausada':/^retomada/i.test(ev)?'Linha retomada':ev;
+    l.m=ev.replace(/^(pausa|retomada)\s*·\s*/i,'');l.t=l.t||l.hora;l.op=l.op||l.quem;l.d=l.d||o.data;n++;}}));
+  return n;}
+setTimeout(()=>{try{csLogPausaFix();}catch(e){}},1500);
+try{const _ae22=aplicarEstado;aplicarEstado=function(){const r=_ae22.apply(this,arguments);try{csLogPausaFix();}catch(e){}return r;};}catch(e){}
+</script>
+<script>
+/* ===================== v324 ===================== */
+function csPodeJornada(){try{const a=MEU_ACESSO;if(!a)return csSemAcesso();if(a.master)return true;return RANKN((a.perm||{})['envase.jornada'])>=2;}catch(e){return false;}}
+/* sem permissão: o dia abre só para olhar */
+try{const _ad24=abrirDia;abrirDia=function(s){const r=_ad24.apply(this,arguments);
+  try{if(!csPodeJornada()){M('mB').querySelectorAll('input,button.calop,[data-jmhe],[data-jmoff],[data-jmclr],#calOutro,#calLimpa').forEach(e=>e.disabled=true);
+    if(M('calK'))M('calK').style.display='none';
+    M('mB').insertAdjacentHTML('afterbegin','<div class="alert" style="margin-bottom:10px">Só para consultar: ajustar a jornada precisa da permissão <b>Ajustar a jornada</b> (Pessoas › Permissões › PCP › Envase).</div>');}}catch(e){}
+  return r;};}catch(e){}
+</script>
+<script>
+/* ===================== v325 · estoque por depósito ===================== */
+/* Quem decide o saldo de cada depósito é o razão: todo lançamento guarda o
+   efeito que teve (dif) e o depósito (dep). Editar ou remover desfaz esse
+   efeito e aplica o novo, então o saldo nunca é recontado do zero. */
+const csEPrinc=()=>(CS_EDEP.deps.find(d=>d.princ)||CS_EDEP.deps[0]||{id:'fab'}).id;
+const csEDepNome=id=>(CS_EDEP.deps.find(d=>d.id===id)||{}).nome||id||'Fábrica';
+const csEAgora=()=>`${ymd(new Date())} ${relogio()}`;
+const csEhAcabado=id=>{try{return csIdsAcabado().has(String(id));}catch(e){return false;}};
+function csSaldoDeps(id){
+  id=String(id||'');const tot=ESTOQUE[id];const por={};let outros=0;
+  CS_EDEP.deps.forEach(d=>{if(d.princ)return;const v=+((CS_EDEP.sal[d.id]||{})[id]||0);por[d.id]=v;outros+=v;});
+  por[csEPrinc()]=tot==null?(outros?-outros:null):(+tot-outros);
+  return {tot:tot==null?null:+tot,por};
+}
+/* mexe no total e, fora do principal, no saldo daquele depósito */
+function csEAplica(id,dep,delta){
+  if(!delta)return;id=String(id);
+  ESTOQUE[id]=(+ESTOQUE[id]||0)+delta;
+  if(dep&&dep!==csEPrinc()){const s=CS_EDEP.sal[dep]||(CS_EDEP.sal[dep]={});s[id]=(+s[id]||0)+delta;
+    if(Math.abs(s[id])<1e-9)delete s[id];}
+}
+/* o efeito que um lançamento teve; os antigos (sem dif) eram só entrada ou saída na Fábrica */
+const csEEfeito=x=>({dep:x.dep||csEPrinc(),delta:x.dif!=null?+x.dif:(x.tipo==='E'?1:-1)*(+x.qtd||0)});
+/* de onde veio o lançamento, no código curto da tela */
+function csECod(x){
+  const o=String(x.origem||'');
+  if(x.tr)return {cod:'TR',ref:String(x.tr)};
+  if(x.tipo==='BAL')return {cod:'BAL',ref:''};
+  if(/Compra/i.test(o)||/\bOC\s/.test(String(x.obs||'')))return {cod:'C',ref:(String(x.obs||'').match(/OC\s*([\w-]+)/)||['',''])[1]};
+  if(/Invent/i.test(o))return {cod:'INV',ref:(String(x.obs||'').match(/Invent[áa]rio\s*(INV-\d+|\d+)/i)||['',''])[1]};
+  if(/^estorno/i.test(o)||/estorno/i.test(String(x.obs||'')))return {cod:'EST',ref:(o.match(/\S+$/)||[''])[0]};
+  if(/^OP\b/.test(o))return {cod:'OP',ref:o.replace(/^OP\s*/,'')};
+  if(/^Lote\b/.test(o))return {cod:'OP',ref:o,lote:true};
+  return {cod:'M',ref:''};
+}
+/* o que não pode mudar por aqui: a OP do acabado tem o estorno dela, que acerta a fila
+   do Tiny junto; mexer só no razão faria a OP achar que o Tiny tem outra coisa */
+function csEBloqueio(x){
+  const c=csECod(x);
+  if(x.tr)return 'transfer';
+  if(csEhAcabado(x.id)&&(c.cod==='OP'||c.cod==='EST'||/^op\|/.test(String(x.chave||''))))
+    return 'Veio da OP no Tiny: para desfazer, use Estornar no Tiny na OP (Ordens de produção › ⋯).';
+  return '';
+}
+/* um nome fixo para cada lançamento, igual em todos os aparelhos */
+function csEUids(){
+  const vistos={};
+  CS_ELOG.forEach(x=>{if(x.uid)return;const k=[x.em,x.id,x.tipo,x.qtd,x.origem,x.obs].join('|');vistos[k]=(vistos[k]||0)+1;
+    let h=5381;const s=k+'#'+vistos[k];for(let i=0;i<s.length;i++)h=((h<<5)+h+s.charCodeAt(i))|0;x.uid='h'+(h>>>0).toString(36)+vistos[k];});
+}
+const csENovoUid=()=>'u'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+/* acabado: o Tiny recebe a diferença, do mesmo jeito que os outros envios do ERP */
+async function csETiny(id,delta,obs){
+  if(!delta||!csEhAcabado(id))return;
+  const r=await chamarTiny({acao:'movimentar',movimentos:[{id:String(id),tipo:delta>0?'E':'S',qtd:Math.abs(delta)}],obs});
+  const f=(r&&r.falhas)||[];if(f.length)throw new Error('o Tiny recusou: '+(f[0].erro||'sem motivo'));
+}
+const csEEm=s=>{s=String(s||'').replace('T',' ').slice(0,16);return /^\d{4}-\d{2}-\d{2}/.test(s)?(s.length<16?s.slice(0,10)+' 00:00':s):csEAgora();};
+const csEDepOk=dep=>{if(!CS_EDEP.deps.some(d=>d.id===dep))throw new Error('Depósito não encontrado.');return dep;};
+
+async function csELancar(o){
+  const id=String(o.id||''),q=+o.qtd,tipo=o.tipo;
+  if(!id)throw new Error('Item sem código do Tiny.');
+  if(!['E','S','BAL'].includes(tipo))throw new Error('Escolha entrada, saída ou balanço.');
+  if(!(q>=0)||(tipo!=='BAL'&&!(q>0)))throw new Error('Digite a quantidade.');
+  if(!String(o.obs||'').trim())throw new Error('Diga o motivo.');
+  const dep=csEDepOk(o.dep||csEPrinc());
+  const atual=+(csSaldoDeps(id).por[dep]||0);
+  const delta=tipo==='E'?q:tipo==='S'?-q:q-atual;
+  await csETiny(id,delta,(tipo==='BAL'?'Balanço':'Lançamento manual')+' · '+o.obs);
+  csEAplica(id,dep,delta);
+  const x={em:csEEm(o.em),id,tipo,qtd:q,dif:delta,dep,origem:tipo==='BAL'?'Balanço':'Manual',obs:String(o.obs).trim(),quem:quemAssina(),uid:csENovoUid(),man:true};
+  CS_ELOG.push(x);if(CS_ELOG.length>6000)CS_ELOG.splice(0,CS_ELOG.length-6000);
+  agendarSalvar();return {...x};
+}
+async function csETransferir(o){
+  const id=String(o.id||''),q=+o.qtd,de=csEDepOk(o.de),para=csEDepOk(o.para);
+  if(!id)throw new Error('Item sem código do Tiny.');
+  if(de===para)throw new Error('Escolha depósitos diferentes.');
+  if(!(q>0))throw new Error('Digite a quantidade.');
+  const tem=csSaldoDeps(id).por[de];
+  if(tem!=null&&q>tem+1e-9)throw new Error(`${csEDepNome(de)} só tem ${nf(tem)}.`);
+  const n=++CS_EDEP.trSeq,em=csEEm(o.em),obs=String(o.obs||'transferência').trim(),quem=quemAssina();
+  /* o total não muda: sai de um e entra no outro, nada vai ao Tiny */
+  csEAplica(id,de,-q);csEAplica(id,para,q);
+  CS_ELOG.push({em,id,tipo:'S',qtd:q,dif:-q,dep:de,origem:'Transferência',tr:n,obs:`${obs} → ${csEDepNome(para)}`,quem,uid:csENovoUid(),man:true},
+    {em,id,tipo:'E',qtd:q,dif:q,dep:para,origem:'Transferência',tr:n,obs:`${obs} ← ${csEDepNome(de)}`,quem,uid:csENovoUid(),man:true});
+  agendarSalvar();return {tr:n};
+}
+const csEAchar=uid=>{csEUids();const x=CS_ELOG.find(x=>x.uid===uid);if(!x)throw new Error('Lançamento não encontrado (talvez outra pessoa já o removeu).');if(x.rm)throw new Error('Este lançamento já foi removido.');return x;};
+async function csEEditar(uid,novo,mot){
+  const x=csEAchar(uid);mot=String(mot||'').trim();
+  if(!mot)throw new Error('Diga o motivo da alteração.');
+  const b=csEBloqueio(x);if(b==='transfer')throw new Error('Transferência não se edita: remova e faça de novo.');if(b)throw new Error(b);
+  const q=+novo.qtd,tipo=x.tipo==='BAL'?'BAL':(novo.tipo||x.tipo);
+  if(!(q>=0)||(tipo!=='BAL'&&!(q>0)))throw new Error('Digite a quantidade.');
+  const dep=csEDepOk(novo.dep||x.dep||csEPrinc()),ant=csEEfeito(x);
+  /* balanço editado: o saldo daquele dia passa a ser o número novo, então o efeito anda a diferença */
+  const delta=tipo==='E'?q:tipo==='S'?-q:ant.delta+(q-(+x.qtd||0));
+  await csETiny(x.id,delta-ant.delta,'Lançamento editado · '+mot);
+  csEAplica(x.id,ant.dep,-ant.delta);csEAplica(x.id,dep,delta);
+  (x.hist||(x.hist=[])).push({em:csEAgora(),quem:quemAssina(),mot,antes:{tipo:x.tipo,qtd:x.qtd,dep:x.dep||csEPrinc(),em:x.em,obs:x.obs}});
+  Object.assign(x,{tipo,qtd:q,dif:delta,dep,em:novo.em?csEEm(novo.em):x.em,obs:novo.obs!=null?String(novo.obs).trim():x.obs,editado:true});
+  agendarSalvar();return {...x};
+}
+async function csERemover(uid,mot){
+  const x=csEAchar(uid);mot=String(mot||'').trim();
+  if(!mot)throw new Error('Diga o motivo para remover.');
+  const b=csEBloqueio(x);if(b&&b!=='transfer')throw new Error(b);
+  /* transferência sai inteira: as duas pontas juntas */
+  const l=x.tr?CS_ELOG.filter(y=>y.tr===x.tr&&y.id===x.id&&!y.rm):[x];
+  const tot=l.reduce((a,y)=>a+csEEfeito(y).delta,0);
+  await csETiny(x.id,-tot,'Lançamento removido · '+mot);
+  const rm={em:csEAgora(),quem:quemAssina(),mot};
+  l.forEach(y=>{const e=csEEfeito(y);csEAplica(y.id,e.dep,-e.delta);y.rm=rm;});
+  agendarSalvar();return {removidos:l.length};
+}
+/* o razão do item, agora com depósito, código da origem e o que pode mudar */
+try{const _md25=csNucleo.movimentosDe;csNucleo.movimentosDe=function(id){
+  id=String(id||'');const r=_md25(id);csEUids();
+  const meus=CS_ELOG.filter(x=>x.id===id&&!x.rm).map(x=>{const c=csECod(x),b=csEBloqueio(x);
+    return {em:x.em,id,tipo:x.tipo,qtd:+x.qtd||0,dif:csEEfeito(x).delta,dep:x.dep||csEPrinc(),origem:x.origem||'',obs:x.obs||'',quem:x.quem||'',
+      uid:x.uid,cod:c.cod,ref:c.ref,lote:!!c.lote,tr:x.tr||null,editado:!!x.editado,hist:x.hist||[],
+      podeEditar:!b,podeRemover:!b||b==='transfer',bloqueio:b==='transfer'?'Transferência não se edita: remova e faça de novo.':b};});
+  const fila=(r.itens||[]).filter(x=>x.pend).map(x=>({...x,dep:csEPrinc(),cod:csECod(x).cod,ref:csECod(x).ref,podeEditar:false,podeRemover:false,bloqueio:'Ainda a caminho do Tiny.'}));
+  const itens=[...fila,...meus].sort((a,b)=>String(b.em).localeCompare(String(a.em)));
+  return {...r,itens,deps:csSaldoDeps(id)};};}catch(e){}
+
+/* ---------- depósitos ---------- */
+function csEDepsSalvar(lista){
+  if(!Array.isArray(lista)||!lista.length)throw new Error('Precisa ter pelo menos um depósito.');
+  const nomes=new Set();
+  lista.forEach(d=>{const n=String(d.nome||'').trim();if(!n)throw new Error('Dê um nome ao depósito.');
+    const k=n.toLowerCase();if(nomes.has(k))throw new Error(`Já existe um depósito chamado ${n}.`);nomes.add(k);});
+  if(lista.filter(d=>d.princ).length!==1)throw new Error('Precisa ter um depósito principal.');
+  /* sumir com depósito que ainda guarda material apagaria esse estoque sem rastro */
+  CS_EDEP.deps.filter(d=>!lista.some(n=>n.id===d.id)).forEach(d=>{
+    if(d.princ)throw new Error('O depósito principal não pode ser excluído.');
+    if(Object.values(CS_EDEP.sal[d.id]||{}).some(v=>Math.abs(+v)>1e-9))throw new Error(`${d.nome} ainda tem saldo. Transfira para outro depósito antes de excluir.`);
+    delete CS_EDEP.sal[d.id];});
+  const princAnt=csEPrinc(),princNovo=(lista.find(d=>d.princ)||{}).id;
+  if(princAnt!==princNovo)throw new Error('O principal continua sendo o '+csEDepNome(princAnt)+'.');
+  CS_EDEP.deps=lista.map(d=>({id:String(d.id||('d'+Date.now().toString(36))),nome:String(d.nome).trim(),forn:String(d.forn||'').trim(),fornId:String(d.fornId||''),princ:!!d.princ}));
+  agendarSalvar();return CS_EDEP.deps.map(d=>({...d}));
+}
+const csEDepUso=id=>({lanc:CS_ELOG.filter(x=>!x.rm&&(x.dep||csEPrinc())===id).length,
+  itens:id===csEPrinc()?null:Object.values(CS_EDEP.sal[id]||{}).filter(v=>Math.abs(+v)>1e-9).length});
+
+/* ---------- a origem de um lançamento, aberta no lugar certo ---------- */
+function csEAbrirOrigem(cod,ref){
+  if(cod==='OP'){const o=ORDENS.find(o=>rotuloOP(o)===ref||String(o.lote||'')===String(ref).replace(/^Lote\s*/,''));
+    if(!o)return toast('Não achei a OP '+ref+'.',true);
+    try{csIr({page:'ordens'});}catch(e){}setTimeout(()=>{try{abrirOrdem(o);}catch(e){}},80);return;}
+  /* compra e inventário: o módulo manda o id interno (ref), não o número */
+  if(cod==='C')return csIr({mod:'compras',fin:'ordens'+(ref?'/'+ref:'')});
+}
+
+/* ---------- o que os módulos usam ---------- */
+try{Object.assign(csNucleo,{
+  versao:'v325',
+  depositos:()=>CS_EDEP.deps.map(d=>({...d})),
+  salvarDepositos:l=>csEDepsSalvar(l),
+  usoDeposito:id=>csEDepUso(id),
+  saldoDeps:id=>csSaldoDeps(id),
+  ehAcabado:id=>csEhAcabado(id),
+  lancar:o=>csELancar(o),
+  transferir:o=>csETransferir(o),
+  editarLanc:(uid,novo,mot)=>csEEditar(uid,novo,mot),
+  removerLanc:(uid,mot)=>csERemover(uid,mot),
+  abrirOrigem:(c,r)=>csEAbrirOrigem(c,r),
+  abrir:p=>csIr(p),
+  cfgVendas:()=>({...CS_CFGV}),
+  salvarCfgVendas:o=>{if(o&&['prev','ped'].includes(o.reservaPor))CS_CFGV.reservaPor=o.reservaPor;agendarSalvar();return {...CS_CFGV};}
+});}catch(e){}
+
 </script>
 </body>
 </html>

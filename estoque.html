@@ -118,7 +118,23 @@ body.imprimindo #imp{display:block}.gaveta,.veu{display:none!important}}
 .btn.ic.on{background:var(--sel);border-color:#CFDDF6;color:var(--selt)}
 .rzt{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px}.rzt>div{flex:1;min-width:140px;border:1px solid var(--line);border-radius:10px;padding:9px 12px}
 .rzt span{display:block;font-size:11px;color:var(--ink3);text-transform:uppercase;letter-spacing:.05em}.rzt b{font-size:18px}.rzt small{display:block;color:var(--ink3);font-size:11px}
-#tabS tbody tr[data-it]:hover{background:rgba(29,111,232,.05)}.perb2{display:inline-flex;align-items:center;gap:7px;height:36px;padding:0 14px;border:1.5px solid #9DB8E8;border-radius:999px;background:#fff;color:#1D6FE8;font-weight:600;font-size:13px;cursor:pointer;white-space:nowrap}
+#tabS tbody tr[data-it]:hover{background:rgba(29,111,232,.05)}
+/* v325 · item do estoque e depósitos */
+.k{color:var(--ink3);font-size:12px}.lkv{cursor:pointer;color:var(--ink3)}.lkv:hover{color:var(--selt);text-decoration:underline}
+.ikp{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+.tv td small,.tv td .s{display:block;font-size:11px;color:var(--ink3);margin-top:2px}td.m{font-family:'JetBrains Mono',monospace;font-size:12px;white-space:nowrap}
+#tabI tbody tr:hover td{background:#F8FAFE}#tabI tr.ibal td{background:#F7F9FC}#tabI tr.ipend td{background:#FEFCE8}#tabI tr.imarca td{background:#EFF4FD!important}
+.dots{width:30px;height:28px;border-radius:7px;color:var(--ink2);font-weight:700;letter-spacing:1px}.dots:hover{background:var(--line3)}
+.emenu{position:absolute;z-index:70;background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 10px 28px rgba(20,24,33,.12);padding:5px;min-width:220px;max-width:300px}
+.emenu button{display:block;width:100%;text-align:left;padding:8px 10px;border-radius:7px;font-size:13px}.emenu button:hover:not(:disabled){background:var(--sel)}
+.emenu button:disabled{opacity:.4;cursor:default}.emenu button.x{color:var(--danger)}.emenu .k{padding:6px 10px;line-height:1.45;font-size:11.5px}
+.itag{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:7px;padding:2px 8px 2px 2px;font-family:'JetBrains Mono',monospace;font-size:11.5px;cursor:pointer;background:#fff;white-space:nowrap}
+.itag:hover{border-color:#9DB8E8}.itag span{border-radius:5px;padding:1px 6px;font-weight:700;font-size:10.5px;background:var(--line3);color:var(--ink2)}
+.t-OP span{background:#E6F4EA;color:#15803D}.t-C span{background:#EFF4FD;color:#1B4F9C}.t-NF span,.t-PV span{background:#F3E8FF;color:#6B21A8}
+.t-TR span{background:#FDF3E3;color:#B45309}.t-INV span,.t-BAL span{background:#E0F2FE;color:#0369A1}.t-EST span{background:#FDECEC;color:#B3261E}
+.chk3{display:flex;align-items:center;gap:7px;font-size:12.5px;cursor:pointer;padding:3px 2px}.npsit{position:absolute;z-index:60;background:#fff;border:1px solid #D8DCE3;border-radius:10px;box-shadow:0 10px 28px rgba(0,0,0,.12);padding:8px 10px;display:flex;flex-direction:column;gap:4px;min-width:230px;margin-top:4px}.npsit[hidden]{display:none}
+.tv th{white-space:nowrap}
+.perb2{display:inline-flex;align-items:center;gap:7px;height:36px;padding:0 14px;border:1.5px solid #9DB8E8;border-radius:999px;background:#fff;color:#1D6FE8;font-weight:600;font-size:13px;cursor:pointer;white-space:nowrap}
 .perb2:hover{border-color:#1D6FE8}.perb2.ativo{background:#EFF4FD}
 .perpop{position:fixed;z-index:500;width:560px;max-width:calc(100vw - 16px);background:#fff;border:1px solid #E4E2DC;border-radius:16px;box-shadow:0 14px 36px rgba(20,24,33,.18);display:grid;grid-template-columns:170px 1fr;overflow:hidden;font-family:inherit;color:#1A1D23}
 .perpop *{box-sizing:border-box}
@@ -401,7 +417,7 @@ function normaliza(d){
   d.seq=+d.seq||0;d.invs=Array.isArray(d.invs)?d.invs:[];
   return d;
 }
-let MINIMOS={};
+let MINIMOS={},COMPRAS={};
 
 function render(){
   const {pag,arg}=lerHash();PAG=pag;
@@ -409,6 +425,8 @@ function render(){
   if(!DB){$('app').innerHTML='<div class="vazio">Carregando…</div>';return;}
   if(pag==='saldos')return telaSaldos();
   if(pag==='inventario')return arg?telaInv(arg):telaInvs();
+  if(pag==='item')return telaItem(arg);
+  if(pag==='depositos'){if(!pode('estoque.cfg','ver'))return $('app').innerHTML='<div class="vazio">Você não tem acesso às configurações de estoque.</div>';return telaDepositos();}
   ir('saldos');
 }
 
@@ -472,7 +490,8 @@ function telaSaldos(){
   /* colunas visíveis e o razão do item */
   const rotS=colsTabela($('tabS'),'estoque',[]);
   $('bCols').onclick=()=>colsPainel('estoque',rotS,[],['Item'],telaSaldos);
-  document.querySelectorAll('#tabS tbody tr[data-it]').forEach(r=>r.onclick=()=>razao(r.dataset.it,r.dataset.nm,r.dataset.un));
+  /* v325: a linha abre o item, no jeito do Tiny (antes era a gaveta do razão) */
+  document.querySelectorAll('#tabS tbody tr[data-it]').forEach(r=>r.onclick=()=>{if(!r.dataset.it)return toast('Este item não tem código do Tiny: nada dele passa pelo estoque.',true);ir('item',r.dataset.it);});
   $('bLer').onclick=async()=>{const ids=all.map(i=>i.tiny).filter(Boolean);
     if(N.teste)return toast('Versão de teste: a leitura do Tiny está desligada.',true);
     $('bLer').disabled=true;$('bLer').textContent='Lendo todas as abas…';
@@ -715,9 +734,264 @@ function tablet(inv){
 (async function(){
   if(!N){render();return;}
   try{DB=normaliza(await N.ler(MOD_ID));}catch(e){DB=normaliza(null);toast('Não consegui ler o Estoque do banco: '+e.message,true);}
-  try{const c=await N.ler('compras');MINIMOS=(c&&c.minimos)||{};}catch(e){}
+  try{const c=await N.ler('compras');MINIMOS=(c&&c.minimos)||{};COMPRAS=c||{};}catch(e){}
   render();
 })();
+
+/* =====================================================================
+   ITEM DO ESTOQUE · no jeito do Tiny (v325)
+   Abas Estoque e Reservas. O saldo é por depósito, e "Todos" soma. Cada
+   lançamento tem o tipo clicável (OP, C, NF, TR, INV, M) e o ⋯ com editar e
+   remover. As notas de saída vêm do Tiny só para mostrar: quem conta o saldo
+   do acabado é o Tiny, e do insumo é o ERP.
+   ===================================================================== */
+const TIPO_NOME={E:'Entrada',S:'Saída',BAL:'Balanço'};
+const COD_NOME={OP:'abre a ordem de produção',C:'abre a ordem de compra',NF:'abre a nota fiscal no Tiny',TR:'mostra as duas pontas da transferência',
+  INV:'abre o inventário',M:'lançamento manual',BAL:'balanço: o saldo do depósito passa a ser este',EST:'estorno no Tiny',PV:'pedido de venda'};
+const SIT_RES=['Em aberto','Aprovado','Preparando envio','Pronto para envio'];   /* os nomes do Tiny que ainda não faturaram */
+const SIT_NOME={'Em aberto':'Em aberto','Aprovado':'Aprovado','Preparando envio':'Em separação','Pronto para envio':'Separado'};
+const IT={id:'',aba:'est',deps:null,per:perNovo('sem'),tipos:new Set(['E','S','BAL']),nf:{},res:{},marcaTr:null};
+const itemDe=id=>{id=String(id||'');const sem=x=>String(x||'').replace(/\D/g,'');
+  const p=N.produtos().find(p=>sem(p.tiny)===id);
+  if(p)return {id,nome:p.descricao,cod:p.codigo,un:/\bFD\b|FARDO/i.test(p.descricao||'')?'fd':'cx',acabado:true,p};
+  const x=N.insumos().find(x=>sem(x.tiny)===id);
+  if(x)return {id,nome:x.nome,cod:x.sku,un:unDe(x),acabado:false,x};
+  return null;};
+const depsN=()=>N.depositos?N.depositos():[{id:'fab',nome:'Fábrica',princ:true}];
+const depNome=id=>(depsN().find(d=>d.id===id)||{}).nome||'Fábrica';
+const quandoEm=s=>{const [d,h]=String(s||'').split(' ');return d?d.split('-').reverse().join('/')+(h?' · '+h:''):'—';};
+const agoraLocal=()=>{const d=new Date();return ymd(d)+'T'+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');};
+
+/* notas de saída e reservas: lidas uma vez por item e período */
+async function lerNF(it){
+  const fx=perFaixa(IT.per),de=fx.de||addDias(hojeY(),-120),ate=fx.ate||hojeY(),k=it.id+'|'+de+'|'+ate;
+  if(IT.nf[k])return IT.nf[k];
+  if(N.teste||!N.tiny)return IT.nf[k]={itens:[],aviso:'Versão de teste: as notas do Tiny não são lidas.'};
+  IT.nf[k]={lendo:true,itens:[]};
+  try{const r=await N.tiny({acao:'nf_item',sku:it.cod,idProduto:it.id,de,ate});
+    IT.nf[k]={itens:(r.notas||[]).map(n=>({em:String(n.data||'').slice(0,10)+' 00:00',tipo:'S',qtd:+n.qtd||0,dep:(depsN().find(d=>d.princ)||{}).id,cod:'NF',ref:n.numero,nfId:n.id,
+      obs:`NF ${n.numero}${n.serie?'-'+n.serie:''} · ${n.cliente||''}${n.cidade?' · '+n.cidade:''}`,quem:'Tiny',nf:true,bloqueio:'Nota fiscal do Tiny: muda lá.'})),estado:r.estado||{}};}
+  catch(e){
+    /* sem a tabela das notas ainda: mostra as saídas pela base de pedidos */
+    try{const r=await N.tiny({acao:'vendas_saidas',sku:it.cod,dias:120});
+      IT.nf[k]={itens:(r.itens||[]).filter(x=>(!fx.de||String(x.data||'')>=de)&&(!fx.ate||String(x.data||'').slice(0,10)<=ate)).map(x=>({em:String(x.data||'').slice(0,10)+' 00:00',tipo:'S',qtd:+x.qtd||0,dep:(depsN().find(d=>d.princ)||{}).id,cod:'PV',ref:x.numero,
+        obs:`Pedido ${x.numero} · ${x.cliente||''}${x.cidade?' · '+x.cidade:''} · ${x.situacao||''}`,quem:'Tiny',nf:true,bloqueio:'Venda do Tiny: muda lá.'})),
+        aviso:'As notas de saída ainda não foram lidas do Tiny ('+e.message+'). Mostrando as saídas pelos pedidos faturados.'};}
+    catch(e2){IT.nf[k]={itens:[],aviso:'Não consegui ler as saídas do Tiny: '+e2.message};}}
+  return IT.nf[k];
+}
+async function lerRes(it){
+  /* a chave tem que ser a mesma da tela, senão a tela pede de novo para sempre */
+  const fx=perFaixa(IT.per),cfg=N.cfgVendas?N.cfgVendas():{reservaPor:'prev'},campo=it.acabado?(cfg.reservaPor==='ped'?'pedido':'prevista'):'',k=it.id+'|'+campo+'|'+fx.de+'|'+fx.ate;
+  if(IT.res[k])return IT.res[k];
+  if(!it.acabado){const r=(N.reservado()[it.cod]||N.reservado()[it.nome]||{qtd:0,det:[]});
+    return IT.res[k]={itens:(r.det||[]).map(d=>({num:d.o,quem:'',data:'',q:d.q})),tot:r.qtd||0,campo:''};}
+  if(N.teste||!N.tiny)return IT.res[k]={itens:[],tot:0,campo};
+  IT.res[k]={lendo:true,itens:[],tot:0,campo};
+  try{const r=await N.tiny({acao:'nec_pedidos',situacoes:SIT_RES,campo,de:fx.de,ate:fx.ate});
+    const ped={};(r.pedidos||[]).forEach(p=>ped[p.id]=p);
+    const l=(r.itens||[]).filter(x=>String(x.sku)===String(it.cod)&&ped[x.pedido_id]).map(x=>{const p=ped[x.pedido_id];
+      return {num:p.numero||p.id,quem:p.cliente||'',sit:SIT_NOME[p.situacao]||p.situacao,data:campo==='pedido'?p.data_pedido:p.data_prevista,q:+x.qtd||0};});
+    l.sort((a,b)=>String(a.data||'9').localeCompare(String(b.data||'9')));
+    IT.res[k]={itens:l,tot:l.reduce((a,x)=>a+x.q,0),campo};}
+  catch(e){IT.res[k]={itens:[],tot:0,campo,erro:e.message};}
+  return IT.res[k];
+}
+
+function telaItem(id){
+  const it=itemDe(id);
+  if(!it){$('app').innerHTML=`<div class="vazio">Item não encontrado. <button class="btn lk" id="iV">Voltar aos saldos</button></div>`;$('iV').onclick=()=>ir('saldos');return;}
+  if(IT.id!==it.id){IT.id=it.id;IT.aba='est';IT.deps=null;IT.marcaTr=null;}
+  /* sem filtro (null) = todos, inclusive um depósito criado depois */
+  const deps=depsN();if(IT.deps)[...IT.deps].forEach(d=>{if(!deps.some(x=>x.id===d))IT.deps.delete(d);});
+  const SEL=IT.deps||new Set(deps.map(d=>d.id));
+  const r=N.movimentosDe(it.id),sd=r.deps||{tot:r.saldo,por:{}};
+  const fx=perFaixa(IT.per),noPer=x=>{const d=String(x.em||'').slice(0,10);return (!fx.de||d>=fx.de)&&(!fx.ate||d<=fx.ate);};
+  const nfK=it.id+'|'+(fx.de||addDias(hojeY(),-120))+'|'+(fx.ate||hojeY()),NFI=it.acabado?IT.nf[nfK]:null;
+  if(it.acabado&&!NFI)lerNF(it).then(()=>{if(PAG==='item'&&IT.id===it.id)telaItem(it.id);});
+  const todos=[...(r.itens||[]),...((NFI&&NFI.itens)||[])].sort((a,b)=>String(b.em).localeCompare(String(a.em)));
+  const l=todos.filter(x=>SEL.has(x.dep)&&IT.tipos.has(x.tipo)&&noPer(x));
+  const vals=[...SEL].map(d=>sd.por[d]),sal=vals.some(v=>v==null)?null:vals.reduce((a,b)=>a+(+b||0),0);
+  const conta=l.filter(x=>!x.pend);
+  const ent=conta.filter(x=>x.tipo==='E').reduce((a,x)=>a+x.qtd,0),sai=conta.filter(x=>x.tipo==='S').reduce((a,x)=>a+x.qtd,0);
+  const cfg=N.cfgVendas?N.cfgVendas():{reservaPor:'prev'};
+  const resK=it.id+'|'+(it.acabado?(cfg.reservaPor==='ped'?'pedido':'prevista'):'')+'|'+fx.de+'|'+fx.ate;
+  const RS=IT.res[resK];if(!RS)lerRes(it).then(()=>{if(PAG==='item'&&IT.id===it.id)telaItem(it.id);});
+  const resQ=RS?RS.tot:null,quandoP=IT.per.m==='sem'?(it.acabado?'últimos 120 dias':'todo o histórico'):perRotulo(IT.per);
+  const podeL=pode('estoque.lanc','editar'),todosD=SEL.size===deps.length;
+  const ddTxt=todosD?'Todos os depósitos':SEL.size?[...SEL].map(depNome).join(', '):'Nenhum depósito';
+  const tpTxt=IT.tipos.size===3?'Todos os tipos':IT.tipos.size?[...IT.tipos].map(t=>TIPO_NOME[t]).join(', '):'Nenhum tipo';
+  $('app').innerHTML=`<div class="migalha"><a class="lkv" id="iVolta">Estoque › Saldos</a> › item</div>
+  <div class="topo"><div style="margin-right:auto"><h1 style="margin:0">${esc(it.nome)}</h1><div class="k">${esc(it.cod)} · ${esc(it.un)}${it.acabado?' · produto acabado (o saldo é o do Tiny)':' · insumo (o saldo é controlado no ERP)'}</div></div>
+    ${podeL&&deps.length>1?'<button class="btn" id="bTr">⇄ Transferir entre depósitos</button>':''}${podeL?'<button class="btn pri" id="bInc">＋ Incluir lançamento</button>':''}</div>
+  <div class="cards ikp">
+    <div class="card"><span>Saldo</span><b>${sal==null?'—':nq(sal)}</b><small>${esc(it.un)} · ${todosD?(deps.length>1?'todos os depósitos':esc(depNome(deps[0].id))):SEL.size+' de '+deps.length+' depósitos'}${sal==null?' · não lido':''}</small></div>
+    <div class="card"><span>Reservado</span><b>${resQ==null?'…':nq(resQ)}</b><small>${it.acabado?'pedidos não faturados'+(IT.per.m==='sem'?'':' · '+esc(quandoP)):'pelas OPs programadas'}</small></div>
+    <div class="card"><span>Disponível</span><b class="${sal!=null&&resQ!=null&&sal-resQ<0?'neg':''}">${sal==null||resQ==null?'—':nq(sal-resQ)}</b><small>saldo − reservado</small></div>
+    <div class="card"><span>Entradas</span><b style="color:var(--ok)">${nq(ent)}</b><small>${esc(quandoP)}</small></div>
+    <div class="card"><span>Saídas</span><b style="color:var(--danger)">${nq(sai)}</b><small>${esc(quandoP)}</small></div></div>
+  <div class="sts"><button data-ia="est" class="${IT.aba==='est'?'on':''}">Estoque</button><button data-ia="res" class="${IT.aba==='res'?'on':''}">Reservas${RS&&!RS.lendo?` <i style="font-style:normal;color:var(--ink3)">(${RS.itens.length})</i>`:''}</button></div>
+  <div class="barra" style="margin-top:12px">
+    <div class="rel"><button class="btn" id="fDep" type="button">${esc(ddTxt)} ▾</button>
+      <div class="npsit" id="pDep" hidden><label class="chk3"><input type="checkbox" data-dall ${todosD?'checked':''}> <b>Todos</b> <span class="k">soma os depósitos</span></label>
+        ${deps.map(d=>`<label class="chk3"><input type="checkbox" data-dp="${esc(d.id)}" ${SEL.has(d.id)?'checked':''}> ${esc(d.nome)}${d.forn?' <span class="k">· fornecedor</span>':''}</label>`).join('')}</div></div>
+    ${perBotao('fPer',IT.per)}
+    ${IT.aba==='est'?`<div class="rel"><button class="btn" id="fTip" type="button">${esc(tpTxt)} ▾</button>
+      <div class="npsit" id="pTip" hidden>${['E','S','BAL'].map(t=>`<label class="chk3"><input type="checkbox" data-tp="${t}" ${IT.tipos.has(t)?'checked':''}> ${TIPO_NOME[t]}</label>`).join('')}</div></div>`:''}
+    <button class="btn lk" id="fLimpa">⊖ limpar filtros</button></div>
+  ${IT.aba==='est'?`${NFI&&NFI.aviso?`<div class="aviso">⚠ <div>${esc(NFI.aviso)}</div></div>`:''}${NFI&&NFI.lendo?'<div class="k" style="margin-bottom:8px">Lendo as notas de saída do Tiny…</div>':''}
+  <div class="caixa rolx"><table class="tv" id="tabI" style="min-width:820px"><thead><tr><th style="width:40px"></th><th>Data e hora</th><th>Depósito</th><th class="n">Entrada</th><th class="n">Saída</th><th>Observação</th><th>Tipo</th></tr></thead><tbody>
+    ${l.map((x,i)=>`<tr data-i="${i}" class="${x.tipo==='BAL'?'ibal':''} ${x.pend?'ipend':''} ${IT.marcaTr&&x.tr===IT.marcaTr?'imarca':''}" style="cursor:pointer">
+      <td><button class="dots" data-mn="${i}" title="Ações">⋯</button></td><td class="m">${quandoEm(x.em)}</td><td>${esc(depNome(x.dep))}</td>
+      <td class="n" style="color:var(--ok)">${x.tipo==='E'?nq(x.qtd):x.tipo==='BAL'?`<b title="o saldo do depósito passa a ser este">= ${nq(x.qtd)}</b>`:''}</td>
+      <td class="n" style="color:var(--danger)">${x.tipo==='S'?nq(x.qtd):''}</td>
+      <td>${esc(x.obs||x.origem||'')}${x.tipo==='BAL'?' <span class="pill p-ras">balanço · o saldo conta a partir daqui</span>':''}${x.editado?' <span class="pill p-par">editado</span>':''}${x.pend?` <span class="pill p-par">${x.pend==='falhou'?'falhou':'na fila do Tiny'}</span>`:''}<small class="s">${esc(x.quem||'')}</small></td>
+      <td><span class="itag t-${esc(x.cod||'M')}" data-or="${i}" title="${esc(COD_NOME[x.cod]||'')}"><span>${esc(x.cod==='BAL'?'INV':x.cod||'M')}</span>${esc(x.cod==='TR'?x.tr:x.ref||'')}</span></td></tr>`).join('')
+      ||'<tr><td colspan="7" class="vazio">Nenhum lançamento com esses filtros.</td></tr>'}</tbody></table></div>
+  <div class="leg"><b>Tipo</b> clicável: <b>OP</b> ordem de produção · <b>C</b> ordem de compra · <b>NF</b> nota fiscal de saída do Tiny · <b>TR</b> transferência · <b>INV</b> inventário e balanço · <b>M</b> manual.
+  O ⋯ tem <b>Editar</b> e <b>Remover lançamento</b>; os dois pedem o motivo e ficam no histórico. ${it.acabado?'Produto acabado: o que for lançado, editado ou removido aqui também vai ao Tiny.':'Insumo: os lançamentos ficam só no ERP.'}</div>`
+  :`${RS&&RS.erro?`<div class="aviso erro">⚠ <div>Não consegui ler os pedidos: ${esc(RS.erro)}</div></div>`:''}
+  <div class="caixa rolx"><table class="tv" style="min-width:620px"><thead><tr><th>${it.acabado?'Pedido':'OP'}</th>${it.acabado?`<th>Cliente</th><th>Situação</th><th>${RS&&RS.campo==='pedido'?'Data do pedido':'Data prevista'}</th>`:''}<th class="n">Reservado</th></tr></thead><tbody>
+    ${!RS||RS.lendo?'<tr><td colspan="5" class="vazio">Lendo…</td></tr>':RS.itens.map(x=>`<tr><td><span class="itag t-${it.acabado?'PV':'OP'}"><span>${it.acabado?'PV':'OP'}</span>${esc(String(x.num).replace(/^OP\s*/,''))}</span></td>${it.acabado?`<td>${esc(x.quem)}</td><td>${esc(x.sit||'')}</td><td class="m">${x.data?br(String(x.data).slice(0,10)):'sem data'}</td>`:''}<td class="n">${nq(x.q)}</td></tr>`).join('')
+      +`<tr><td colspan="${it.acabado?4:1}"><b>Total reservado</b></td><td class="n"><b>${nq(RS.tot)}</b></td></tr>`}</tbody></table></div>
+  <div class="leg">${it.acabado?`Pedidos ainda não faturados (em aberto, aprovado, em separação e separado), pela <b>${cfg.reservaPor==='ped'?'data do pedido':'data prevista'}</b>. Com período, só os pedidos com essa data dentro dele. Muda em Configurações › Vendas.`:'Insumo: reservado pelas OPs programadas e pelos tanques que ainda não consumiram.'}</div>`}`;
+  ligaItem(it,l);
+}
+function ligaItem(it,l){
+  $('iVolta').onclick=()=>ir('saldos');
+  document.querySelectorAll('[data-ia]').forEach(b=>b.onclick=()=>{IT.aba=b.dataset.ia;telaItem(it.id);});
+  const pop=(bt,pn)=>{if(!$(bt))return;$(bt).onclick=ev=>{ev.stopPropagation();['pDep','pTip'].forEach(p=>{if(p!==pn&&$(p))$(p).hidden=true;});$(pn).hidden=!$(pn).hidden;};$(pn).onclick=ev=>ev.stopPropagation();};
+  pop('fDep','pDep');pop('fTip','pTip');
+  const all=document.querySelector('[data-dall]');if(all)all.onchange=()=>{IT.deps=all.checked?null:new Set();telaItem(it.id);$('pDep').hidden=false;};
+  document.querySelectorAll('[data-dp]').forEach(c=>c.onchange=()=>{if(!IT.deps)IT.deps=new Set(depsN().map(d=>d.id));c.checked?IT.deps.add(c.dataset.dp):IT.deps.delete(c.dataset.dp);if(IT.deps.size===depsN().length)IT.deps=null;telaItem(it.id);$('pDep').hidden=false;});
+  document.querySelectorAll('[data-tp]').forEach(c=>c.onchange=()=>{c.checked?IT.tipos.add(c.dataset.tp):IT.tipos.delete(c.dataset.tp);telaItem(it.id);$('pTip').hidden=false;});
+  $('fPer').onclick=ev=>{ev.stopPropagation();abrirPeriodo(ev.currentTarget,IT.per,{prev:false},st=>{IT.per=st;telaItem(it.id);});};
+  $('fLimpa').onclick=()=>{IT.deps=null;IT.per=perNovo('sem');IT.tipos=new Set(['E','S','BAL']);IT.marcaTr=null;telaItem(it.id);};
+  if($('bInc'))$('bInc').onclick=()=>formLanc(it,null);
+  if($('bTr'))$('bTr').onclick=()=>formTransf(it);
+  document.querySelectorAll('#tabI [data-mn]').forEach(b=>b.onclick=ev=>{ev.stopPropagation();menuLanc(b,it,l[+b.dataset.mn]);});
+  document.querySelectorAll('#tabI [data-or]').forEach(t=>t.onclick=ev=>{ev.stopPropagation();abrirOrigem(it,l[+t.dataset.or]);});
+  /* a linha toda abre: editar, se pode; senão, a origem */
+  document.querySelectorAll('#tabI tr[data-i]').forEach(r=>r.onclick=()=>{const x=l[+r.dataset.i];if(x.podeEditar&&pode('estoque.lanc','editar'))formLanc(it,x);else abrirOrigem(it,x);});
+}
+document.addEventListener('click',()=>{['pDep','pTip'].forEach(p=>{const e=$(p);if(e)e.hidden=true;});document.querySelectorAll('.emenu').forEach(m=>m.remove());});
+function abrirOrigem(it,x){
+  if(!x)return;
+  if(x.cod==='TR'){IT.marcaTr=IT.marcaTr===x.tr?null:x.tr;telaItem(it.id);return toast(`Transferência ${x.tr}: as duas pontas estão marcadas.`);}
+  if(x.cod==='NF'&&x.nfId){try{window.open('https://erp.tiny.com.br/notas_fiscais#edit/'+encodeURIComponent(x.nfId),'_blank');}catch(e){}return;}
+  if(x.cod==='INV'){const v=(DB.invs||[]).find(v=>v.num===x.ref);if(v)return ir('inventario',v.id);return toast(x.cod==='INV'&&x.tipo==='BAL'?'Balanço lançado no item.':'Inventário não encontrado.');}
+  if(x.cod==='C'){const oc=((COMPRAS&&COMPRAS.ocs)||[]).find(o=>String(o.num)===String(x.ref));if(N.abrirOrigem)return N.abrirOrigem('C',oc?oc.id:'');return;}
+  if(x.cod==='OP'&&N.abrirOrigem)return N.abrirOrigem('OP',x.ref);
+  toast(COD_NOME[x.cod]?x.obs||COD_NOME[x.cod]:'Lançamento manual.');
+}
+function menuLanc(b,it,x){
+  document.querySelectorAll('.emenu').forEach(m=>m.remove());
+  const r=b.getBoundingClientRect(),m=document.createElement('div');m.className='emenu';
+  m.style.left=(r.left+window.scrollX)+'px';m.style.top=(r.bottom+window.scrollY+4)+'px';
+  const pe=pode('estoque.lanc','editar')&&x.podeEditar,pr=pode('estoque.lanc','excluir')&&x.podeRemover;
+  m.innerHTML=`<button data-a="ver">Ver a origem</button><button data-a="ed" ${pe?'':'disabled'}>Editar lançamento</button><button data-a="rm" class="x" ${pr?'':'disabled'}>Remover lançamento</button>
+    ${x.bloqueio?`<div class="k">${esc(x.bloqueio)}</div>`:!pode('estoque.lanc','editar')?'<div class="k">Sem permissão para mexer nos lançamentos (Pessoas › Permissões › Estoque).</div>':''}`;
+  document.body.appendChild(m);m.onclick=ev=>{ev.stopPropagation();const a=ev.target.dataset.a;if(!a||ev.target.disabled)return;m.remove();
+    if(a==='ver')abrirOrigem(it,x);if(a==='ed')formLanc(it,x);if(a==='rm')formRemover(it,x);};
+}
+function formLanc(it,x){
+  const deps=depsN(),bal=x&&x.tipo==='BAL';
+  gaveta(`<div class="gt"><h2>${x?'Editar lançamento':'Incluir lançamento'}</h2><button class="btn sm" id="gX">Fechar ✕</button></div><div class="gc">
+    <div class="k" style="margin-bottom:12px">${esc(it.nome)} · ${esc(it.cod)}</div>
+    <div class="campos">
+      <div class="cmp"><label>Tipo</label><select id="lT" ${bal?'disabled':''}>${[['E','Entrada'],['S','Saída'],['BAL','Balanço (o saldo passa a ser este)']].filter(([k])=>!x||bal===(k==='BAL')).map(([k,n])=>`<option value="${k}" ${(x?x.tipo:'E')===k?'selected':''}>${n}</option>`).join('')}</select></div>
+      <div class="cmp"><label>Depósito</label><select id="lD">${deps.map(d=>`<option value="${esc(d.id)}" ${(x?x.dep:(deps.find(d=>d.princ)||deps[0]).id)===d.id?'selected':''}>${esc(d.nome)}</option>`).join('')}</select></div>
+      <div class="cmp"><label>Data e hora</label><input type="datetime-local" id="lDt" value="${x?String(x.em).replace(' ','T'):agoraLocal()}"></div>
+      <div class="cmp"><label>Quantidade (${esc(it.un)})</label><input class="n" id="lQ" inputmode="decimal" value="${x?nq(x.qtd):''}"></div></div>
+    <div class="cmp" style="margin-top:12px"><label>${x?'Observação':'Motivo e observação'}</label><textarea id="lO" rows="3" placeholder="ajuste · quebra no armazém · rótulos aplicados no fornecedor…">${x?esc(x.obs||''):''}</textarea></div>
+    ${x?'<div class="cmp" style="margin-top:12px"><label>Motivo da alteração</label><input id="lM" placeholder="o que estava errado"></div>':''}
+    <div class="k" id="lSd" style="margin-top:10px"></div>
+    ${x&&(x.hist||[]).length?`<div class="leg"><b>Histórico</b><br>${x.hist.map(h=>`${esc(h.em)} · ${esc(h.quem)} · ${esc(h.mot)} (antes: ${esc(TIPO_NOME[h.antes.tipo]||'')} ${nq(h.antes.qtd)} em ${esc(depNome(h.antes.dep))})`).join('<br>')}</div>`:''}
+    ${it.acabado?'<div class="aviso" style="margin-top:12px">Produto acabado: a diferença também vai ao Tiny.</div>':''}</div>
+    <div class="gr"><button class="btn" id="gC">Cancelar</button><button class="btn pri" id="gOk">Salvar</button></div>`);
+  const sd=()=>{const s=N.saldoDeps(it.id),d=$('lD').value,v=s.por[d];$('lSd').textContent=`Saldo agora em ${depNome(d)}: ${v==null?'não lido':nq(v)+' '+it.un}`;};
+  sd();$('lD').onchange=sd;$('gX').onclick=$('gC').onclick=()=>gaveta(null);
+  $('gOk').onclick=async()=>{const b=$('gOk');const q=$('lQ').value.trim();
+    if(q===''){toast('Digite a quantidade.',true);return;}
+    if(!x&&!$('lO').value.trim()){toast('Diga o motivo.',true);return;}
+    if(x&&!$('lM').value.trim()){toast('Diga o motivo da alteração.',true);return;}
+    b.disabled=true;b.textContent='Salvando…';
+    try{const o={tipo:$('lT').value,dep:$('lD').value,em:$('lDt').value,qtd:num(q),obs:$('lO').value};
+      if(x)await N.editarLanc(x.uid,o,$('lM').value);else await N.lancar({...o,id:it.id});
+      gaveta(null);toast(x?'Lançamento editado. O saldo foi refeito.':'Lançamento incluído.');telaItem(it.id);}
+    catch(e){toast(e.message,true);b.disabled=false;b.textContent='Salvar';}};
+}
+function formRemover(it,x){
+  gaveta(`<div class="gt"><h2>Remover lançamento</h2><button class="btn sm" id="gX">Fechar ✕</button></div><div class="gc">
+    <p style="line-height:1.6">${esc(TIPO_NOME[x.tipo]||'')} de <b>${nq(x.qtd)} ${esc(it.un)}</b> em ${esc(depNome(x.dep))}, ${esc(quandoEm(x.em))}${x.obs?' · '+esc(x.obs):''}.</p>
+    ${x.tr?'<div class="aviso" style="margin-top:10px">É uma transferência: as duas pontas saem juntas e o material volta para o depósito de origem.</div>':''}
+    ${it.acabado?'<div class="aviso" style="margin-top:10px">Produto acabado: o contrário também vai ao Tiny.</div>':''}
+    <div class="cmp" style="margin-top:12px"><label>Motivo</label><textarea id="rM" rows="3"></textarea></div></div>
+    <div class="gr"><button class="btn" id="gC">Cancelar</button><button class="btn del" id="gOk">Remover</button></div>`);
+  $('gX').onclick=$('gC').onclick=()=>gaveta(null);
+  $('gOk').onclick=async()=>{if(!$('rM').value.trim())return toast('Diga o motivo para remover.',true);
+    $('gOk').disabled=true;try{await N.removerLanc(x.uid,$('rM').value);gaveta(null);toast('Lançamento removido. O saldo foi refeito.');telaItem(it.id);}
+    catch(e){toast(e.message,true);$('gOk').disabled=false;}};
+}
+function formTransf(it){
+  const deps=depsN(),s=N.saldoDeps(it.id),op=sel=>deps.map((d,i)=>`<option value="${esc(d.id)}" ${i===sel?'selected':''}>${esc(d.nome)} · ${s.por[d.id]==null?'não lido':nq(s.por[d.id])}</option>`).join('');
+  gaveta(`<div class="gt"><h2>Transferir entre depósitos</h2><button class="btn sm" id="gX">Fechar ✕</button></div><div class="gc">
+    <div class="k" style="margin-bottom:12px">${esc(it.nome)} · o total da empresa não muda e nada vai ao Tiny</div>
+    <div class="campos"><div class="cmp"><label>Sai de</label><select id="tO">${op(0)}</select></div><div class="cmp"><label>Entra em</label><select id="tD">${op(1)}</select></div>
+      <div class="cmp"><label>Quantidade (${esc(it.un)})</label><input class="n" id="tQ" inputmode="decimal"></div><div class="cmp"><label>Data e hora</label><input type="datetime-local" id="tDt" value="${agoraLocal()}"></div></div>
+    <div class="cmp" style="margin-top:12px"><label>Observação</label><input id="tOb" placeholder="remessa para rotular · retorno do fornecedor…"></div></div>
+    <div class="gr"><button class="btn" id="gC">Cancelar</button><button class="btn pri" id="gOk">Transferir</button></div>`);
+  $('gX').onclick=$('gC').onclick=()=>gaveta(null);
+  $('gOk').onclick=async()=>{try{const r=await N.transferir({id:it.id,de:$('tO').value,para:$('tD').value,qtd:num($('tQ').value),em:$('tDt').value,obs:$('tOb').value});
+    gaveta(null);toast(`Transferência ${r.tr} feita.`);telaItem(it.id);}catch(e){toast(e.message,true);}};
+}
+
+/* =====================================================================
+   CONFIGURAÇÕES › ESTOQUES · o cadastro dos depósitos
+   ===================================================================== */
+function telaDepositos(){
+  const deps=depsN(),pe=pode('estoque.cfg','editar'),px=pode('estoque.cfg','excluir');
+  $('app').innerHTML=`<div class="migalha">Configurações › Suprimentos › Estoques</div>
+  <div class="topo"><h1>Depósitos</h1>${pe?'<button class="btn pri" id="dNovo">＋ Novo depósito</button>':''}</div>
+  <div class="k" style="margin:-8px 0 14px">Onde o estoque fica guardado. "Todos" no item soma os depósitos. A Fábrica é o principal: é dela que as OPs baixam.
+   Depósito ligado a um fornecedor guarda o material de vocês que está com ele (ex.: rótulos na Plastisul).</div>
+  <div class="caixa rolx"><table class="tv"><thead><tr><th>Depósito</th><th>Fornecedor ligado</th><th class="n">Itens com saldo</th><th class="n">Lançamentos</th><th></th></tr></thead><tbody>
+  ${deps.map(d=>{const u=N.usoDeposito?N.usoDeposito(d.id):{lanc:0,itens:0};
+    return `<tr data-dl="${esc(d.id)}" style="cursor:pointer"><td><b>${esc(d.nome)}</b>${d.princ?' <span class="pill p-ras">principal</span>':''}</td><td class="k">${d.forn?esc(d.forn):'— na empresa'}</td>
+    <td class="n">${u.itens==null?'—':nq(u.itens)}</td><td class="n">${nq(u.lanc)}</td>
+    <td class="n" style="white-space:nowrap">${pe?`<button class="btn sm" data-de="${esc(d.id)}">Editar</button>`:''} ${px?`<button class="btn sm del" data-dx="${esc(d.id)}">Excluir</button>`:''}</td></tr>`;}).join('')}</tbody></table></div>
+  <div class="leg">Material mandado para o fornecedor (rótulo para aplicar no frasco, por exemplo) vai por <b>Transferir entre depósitos</b> no item; o que ele usar sai por um lançamento de saída naquele depósito.
+  Só exclui depósito sem saldo, e o principal fica sempre.</div>`;
+  if($('dNovo'))$('dNovo').onclick=()=>formDep(null);
+  document.querySelectorAll('[data-dl]').forEach(r=>r.onclick=()=>{if(pe)formDep(depsN().find(d=>d.id===r.dataset.dl));});
+  document.querySelectorAll('[data-de]').forEach(b=>b.onclick=ev=>{ev.stopPropagation();formDep(depsN().find(d=>d.id===b.dataset.de));});
+  document.querySelectorAll('[data-dx]').forEach(b=>b.onclick=ev=>{ev.stopPropagation();const d=depsN().find(x=>x.id===b.dataset.dx);if(!d)return;
+    if(d.princ)return toast('O depósito principal não pode ser excluído.',true);
+    const u=N.usoDeposito(d.id);if(u.itens)return toast(`${d.nome} ainda tem saldo. Transfira para outro depósito antes de excluir.`,true);
+    if(!confirm(`Excluir o depósito ${d.nome}?${u.lanc?'\nOs lançamentos antigos continuam no histórico dos itens.':''}`))return;
+    try{N.salvarDepositos(depsN().filter(x=>x.id!==d.id));toast('Depósito excluído.');}catch(e){toast(e.message,true);}telaDepositos();});
+}
+function formDep(d){
+  const forns=((COMPRAS&&COMPRAS.fornecedores)||[]);
+  gaveta(`<div class="gt"><h2>${d?'Editar depósito':'Novo depósito'}</h2><button class="btn sm" id="gX">Fechar ✕</button></div><div class="gc">
+    <div class="cmp"><label>Nome do depósito</label><input id="dN" value="${d?esc(d.nome):''}" placeholder="ex.: Plastisul"></div>
+    <div class="cmp rel" style="margin-top:12px"><label>Fornecedor ligado (opcional)</label><input id="dF" value="${d?esc(d.forn||''):''}" placeholder="busque no cadastro de fornecedores" autocomplete="off"></div>
+    <div class="k" style="margin-top:8px">${d&&d.princ?'Este é o depósito principal: as OPs baixam dele.':'Com fornecedor ligado, o depósito aparece como fornecedor no filtro do item.'}</div></div>
+    <div class="gr"><button class="btn" id="gC">Cancelar</button><button class="btn pri" id="gOk">Salvar</button></div>`);
+  let fornId=d?d.fornId||'':'';
+  const inp=$('dF');let lista=null;const fecha=()=>{if(lista){lista.remove();lista=null;}};
+  inp.oninput=()=>{fornId='';fecha();const q=inp.value.trim().toLowerCase();if(q.length<2)return;
+    const ach=forns.filter(f=>(f.nome+' '+(f.cnpj||'')).toLowerCase().includes(q)).slice(0,8);if(!ach.length)return;
+    lista=document.createElement('div');lista.className='lista-sug';lista.innerHTML=ach.map((f,i)=>`<button data-i="${i}"><b>${esc(f.nome)}</b><small>${esc(f.cnpj||'')}</small></button>`).join('');
+    inp.parentNode.appendChild(lista);lista.querySelectorAll('button').forEach(b=>b.onmousedown=ev=>{ev.preventDefault();const f=ach[+b.dataset.i];inp.value=f.nome;fornId=f.id||'';fecha();});};
+  inp.onblur=()=>setTimeout(fecha,150);
+  $('gX').onclick=$('gC').onclick=()=>gaveta(null);
+  $('gOk').onclick=()=>{const n=$('dN').value.trim();if(!n)return toast('Dê um nome ao depósito.',true);
+    const l=depsN();
+    if(d){const x=l.find(x=>x.id===d.id);Object.assign(x,{nome:n,forn:inp.value.trim(),fornId});}
+    else l.push({id:'d'+Date.now().toString(36),nome:n,forn:inp.value.trim(),fornId,princ:false});
+    try{N.salvarDepositos(l);gaveta(null);toast('Depósito salvo.');telaDepositos();}catch(e){toast(e.message,true);}};
+}
 
 </script>
 </body></html>
