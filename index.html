@@ -3820,23 +3820,23 @@ body.comcasca .bat.st-concluido>*:not(.frs):not(.cs-pts){opacity:.8!important}
   </div>
 </div>
 <div class="login" id="login" hidden>
-  <div class="lgcx">
+  <form class="lgcx" id="lgForm" method="post" action="./" autocomplete="on" onsubmit="return false">
     <img class="lglogo" src="" data-logo alt="Atrius">
     <p>Entre com seu e-mail e senha para acessar o sistema.</p>
     <div class="fld"><label>E-mail</label>
-      <input type="email" id="lgMail" autocomplete="username" placeholder="nome@atrius.com.br"></div>
+      <input type="email" id="lgMail" name="email" autocomplete="username" placeholder="nome@atrius.com.br"></div>
     <div class="fld"><label>Senha</label>
-      <input type="password" id="lgSenha" autocomplete="current-password"></div>
+      <input type="password" id="lgSenha" name="password" autocomplete="current-password"></div>
     <label class="chk" style="margin:2px 0 12px"><input type="checkbox" id="lgLembrar" checked>
       <span>Guardar meu e-mail neste aparelho</span></label>
     <div class="lgerro" id="lgErro" hidden></div>
-    <button class="btn pri" id="lgK">Entrar</button>
-    <button class="btn" id="lgEsq" style="width:100%;justify-content:center;margin-top:8px">Esqueci minha senha</button>
+    <button class="btn pri" id="lgK" type="submit">Entrar</button>
+    <button class="btn" id="lgEsq" type="button" style="width:100%;justify-content:center;margin-top:8px">Esqueci minha senha</button>
     <div class="lgpe" id="lgAjuda" hidden>
       Quem administra o PCP gera uma senha nova para você em
       <b>Configurações &rarr; Pessoas</b> e entrega na hora — não vai e-mail nenhum.
       Chame o Junior.</div>
-  </div>
+  </form>
 </div>
 
 <div class="tvpanel" id="tvpanel" hidden>
@@ -5330,7 +5330,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v330';
+const VERSAO_APP='v331';
 let DRAG=null;
 function render(){
   recomporTudo();
@@ -25366,6 +25366,98 @@ try{const _mo30b=modalOperador;modalOperador=function(o){
       const alvo=o||(OPERADORES.length>antes?OPERADORES[OPERADORES.length-1]:null);if(alvo){alvo.telaop=marcado;agendarSalvar();}};}catch(e){}
   return r;};}catch(e){}
 try{csNucleo.versao='v330';}catch(e){}
+
+</script>
+<script>
+/* ===================== v331 · versão nova derruba, uma conta num aparelho só =====================
+   Nada fica perguntando ao servidor de tempos em tempos. Dois sinais no banco (erp_sinal):
+   - 'versao': a versão nova, quando abre a primeira vez, se anuncia. O computador que
+     está na versão antiga confere ao trocar de página e, se ficou para trás, sai para o
+     login (ao entrar de novo, já carrega a versão nova). O tablet recarrega sozinho no
+     descanso de tela, sem interromper marcação.
+   - 'sessao:<e-mail>': o aparelho onde a conta entrou por último. Entrou em outro, este
+     sai na próxima troca de página — como no Tiny. Não vale para a conta dos tablets
+     (cadastrada como Operador, usada pelos três ao mesmo tempo). */
+const csVnum=v=>+(String(v||'').match(/\d+/)||[0])[0];
+const csSid=()=>{try{return localStorage.getItem('erp.sid')||'';}catch(e){return '';}};
+function csContaCompartilhada(){
+  try{if(csQuiosque())return true;}catch(e){}
+  try{const a=(typeof ACESSOS!=='undefined'?ACESSOS:[]).find(x=>norMail(x.email)===norMail(emailDaSessao()));if(a&&csTipoDe(a)==='op')return true;}catch(e){}
+  return false;
+}
+async function csSinalLer(ids){
+  const r=await fetch(`${SUPA.url}/rest/v1/erp_sinal?id=in.(${ids.map(i=>'"'+encodeURIComponent(i)+'"').join(',')})&select=id,dados`,{headers:cabecalhos()});
+  if(!r.ok)throw new Error('sinal '+r.status);
+  const l=await r.json();const o={};l.forEach(x=>o[x.id]=x.dados||{});return o;
+}
+async function csSinalGravar(id,dados){
+  await fetch(`${SUPA.url}/rest/v1/erp_sinal?on_conflict=id`,{method:'POST',headers:cabecalhos({Prefer:'resolution=merge-duplicates,return=minimal'}),
+    body:JSON.stringify([{id,dados,atualizado_em:new Date().toISOString()}])});
+}
+/* a versão nova se anuncia (uma vez) */
+async function csAnunciaVersao(){
+  try{if(!temNuvem()||!SESSAO)return;const s=await csSinalLer(['versao']);const v=(s.versao||{}).v;
+    if(csVnum(v)<csVnum(VERSAO_APP))await csSinalGravar('versao',{v:VERSAO_APP,em:new Date().toISOString(),por:emailDaSessao()});}catch(e){}
+}
+/* registra este aparelho como o da conta, e tira a conta dos outros aparelhos */
+async function csRegistraSessao(){
+  try{if(!temNuvem()||!SESSAO||csContaCompartilhada())return;
+    const sid='s'+Date.now().toString(36)+Math.random().toString(36).slice(2,8);
+    try{localStorage.setItem('erp.sid',sid);}catch(e){}
+    await csSinalGravar('sessao:'+norMail(emailDaSessao()),{sid,em:new Date().toISOString(),ap:(typeof csQuemGrava==='function'?csQuemGrava():'')});
+    /* o Supabase também derruba as outras sessões dessa conta (o acesso delas vence em até 1 hora) */
+    fetch(`${SUPA.url}/auth/v1/logout?scope=others`,{method:'POST',headers:cabecalhos()}).catch(()=>{});
+  }catch(e){}
+}
+function csSaiCom(msg){
+  try{sessionStorage.setItem('erp.saiu',msg);}catch(e){}
+  try{localStorage.removeItem('erp.sid');}catch(e){}
+  try{sair();}catch(e){location.reload();}
+}
+let CS_CONF_T=0;
+async function csConfereSinais(motivo){
+  if(!temNuvem()||!SESSAO)return;
+  if(Date.now()-CS_CONF_T<8000)return;CS_CONF_T=Date.now();
+  const comp=csContaCompartilhada(),ids=['versao'];if(!comp)ids.push('sessao:'+norMail(emailDaSessao()));
+  let s;try{s=await csSinalLer(ids);}catch(e){return;}
+  const v=(s.versao||{}).v;
+  if(csVnum(v)>csVnum(VERSAO_APP)){
+    if(comp){try{location.reload();}catch(e){}return;}   /* tablet: só recarrega */
+    return csSaiCom(`Saiu uma versão nova do sistema (${v}). Entre de novo.`);}
+  if(!comp){const ss=s['sessao:'+norMail(emailDaSessao())];
+    if(ss&&ss.sid&&csSid()&&ss.sid!==csSid())return csSaiCom('Sua conta foi aberta em outro aparelho. Este acesso foi encerrado.');
+    if(ss&&ss.sid&&!csSid())return csSaiCom('Entre de novo para continuar.');}
+}
+/* troca de página: é aí que confere */
+try{const _ir31=csIr;csIr=function(){const r=_ir31.apply(this,arguments);csConfereSinais('pagina');return r;};}catch(e){}
+window.addEventListener('hashchange',()=>{try{if(!csQuiosque())csConfereSinais('pagina');}catch(e){}});
+/* tablet: confere quando entra no descanso de tela */
+try{const _dp31=csDescPinta;let ult=0;csDescPinta=function(){const r=_dp31.apply(this,arguments);
+  if(Date.now()-ult>60000){ult=Date.now();csConfereSinais('descanso');}return r;};}catch(e){}
+/* depois de entrar (e ao abrir já logado): anuncia a versão; registra a sessão só quando entrou agora */
+try{const _ic31=iniciarComNuvem;iniciarComNuvem=async function(){
+  const r=await _ic31.apply(this,arguments);
+  csAnunciaVersao();
+  if(window.CS_ENTROU_AGORA){window.CS_ENTROU_AGORA=false;csRegistraSessao();}
+  else if(!csSid()&&!csContaCompartilhada())csRegistraSessao();
+  return r;};}catch(e){}
+try{const _au31=autenticar;autenticar=async function(email,senha){
+  const d=await _au31.apply(this,arguments);window.CS_ENTROU_AGORA=true;
+  /* o navegador oferece guardar o acesso, como nos outros sites */
+  try{if(window.PasswordCredential&&navigator.credentials&&!csQuiosque())
+    navigator.credentials.store(new PasswordCredential({id:email,password:senha,name:email})).catch(()=>{});}catch(e){}
+  return d;};}catch(e){}
+/* o login: um formulário de verdade (é o que faz o navegador oferecer guardar a senha) e o aviso de por que saiu */
+try{const _tl31=telaLogin;telaLogin=function(msg){
+  let m=msg;try{const s=sessionStorage.getItem('erp.saiu');if(s&&!m){m=s;}sessionStorage.removeItem('erp.saiu');}catch(e){}
+  const r=_tl31.call(this,m);
+  try{const f=M('lgForm');if(f&&!f.dataset.liga){f.dataset.liga='1';f.addEventListener('submit',ev=>{ev.preventDefault();});}}catch(e){}
+  return r;};}catch(e){}
+/* versão antiga de outro aparelho não apaga o que a versão nova acrescentou no banco */
+try{const _df31=csDiff;csDiff=function(b,l,p,ops){
+  if(!p||!p.length){const r=_df31.call(this,b,l,p||[],ops||[]);return r.filter(o=>!(o.t==='del'&&o.p.length===1));}
+  return _df31.apply(this,arguments);};}catch(e){}
+try{csNucleo.versao='v331';}catch(e){}
 
 </script>
 </body>
