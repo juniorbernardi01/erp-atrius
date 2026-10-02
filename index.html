@@ -3739,6 +3739,13 @@ body.comcasca .bat.st-concluido>*:not(.frs):not(.cs-pts){opacity:.8!important}
 .cs-motop .tec button{height:clamp(72px,9vh,104px);border-radius:50%;border:1px solid #D5DBE5;background:#fff;color:#14213D;font:600 clamp(24px,3.4vh,34px) Barlow,sans-serif}
 .cs-motop .tec button.f{background:transparent;border:0;color:#4A5468}
 .cs-motop .ms{min-height:2.6vh;font-size:clamp(14px,2vh,18px);color:#B3261E;text-align:center}.cs-motop .ms.ok{color:#15803D;font-weight:700}
+
+/* ===== v332 · fim de turno ===== */
+.cs-oper .big.tur{flex:none;padding:19px 22px;background:#E8EEFB;color:#173A73}
+.cs-motop.et-turno .mt-top{background:#173A73}.cs-motop.et-turno .mt-fx{background:#E8EEFB;color:#173A73}
+.cs-motop .tu-vl{font:700 clamp(56px,9vh,96px) 'Barlow Condensed',sans-serif;color:#14213D;line-height:1;margin-top:1vh}
+.cs-motop .tu-vl small{font-size:.4em;color:#4A5468;font-weight:600}
+.cs-motop .tu-in{font-size:clamp(15px,1.9vh,18px);color:#3F4757;text-align:center;margin-bottom:1.4vh}
 </style>
 </head>
 <body>
@@ -5330,7 +5337,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v331';
+const VERSAO_APP='v333';
 let DRAG=null;
 function render(){
   recomporTudo();
@@ -12883,17 +12890,19 @@ function concluir(o){
         Envase começou às ${iniEnvase(o)||'--:--'} · previsto terminar ${hhmm(fimPrev(o))}.</div></div>`:''}
     <div class="fld"><label>Caixas produzidas no total <b>*</b></label>
       <input type="number" id="cCx" min="0" step="1"
-        value="${pre.cx!=null?pre.cx:(somaTurnos!=null?somaTurnos:(o.caixas!=null?o.caixas:prev))}">
+        placeholder="${somaTurnos!=null?'total da OP: turnos + o que foi feito agora':''}"
+        value="${pre.cx!=null?pre.cx:(somaTurnos!=null?'':(o.caixas!=null?o.caixas:prev))}">
       <div class="hint" style="font-size:11px;color:var(--ink3);margin-top:4px">
-        ${somaTurnos!=null?`Soma de ${nTurnos} turno${nTurnos>1?'s':''}:
-          <b>${nf(somaTurnos)} ${und(o)}</b> — ${turnosDe(o).map(t=>
-            `${dCurto(t.data)} ${nf(t.caixas)}cx ${t.operador||''}`).join(' · ')}.<br>`:''}
+        ${somaTurnos!=null?`<span style="display:block;background:#E8EEFB;color:#173A73;border-radius:8px;padding:8px 10px;margin:2px 0 6px;font-size:12.5px">
+          Contado no${nTurnos>1?'s':''} turno${nTurnos>1?'s':''} anterior${nTurnos>1?'es':''}: <b>${nf(somaTurnos)} ${und(o)}</b> — ${turnosDe(o).map(t=>
+            `${dCurto(t.data)} · ${nf(t.caixas)} ${und(o)} · contou <b>${escAttr(t.operador||'?')}</b>`).join(' · ')}.
+          Lance o <b>total</b> da OP (o que já foi contado + o que foi feito agora).</span>`:''}
         Projetado: ${nf(prev)} ${undLongo(o,prev)} · ${nf(o.litros)} L · ${litrosCx(o)} L por ${undLongo(o,1)}.
         A diferença entra como quebra no relatório.</div></div>
     <div id="cDif" hidden></div>
     ${somaTurnos!=null?`<div class="fld" id="cAjBox" hidden>
-      <div class="alert">Este total não bate com a soma dos turnos, que foi assinada
-        por cada operador. Para gravar diferente, é preciso o gestor.
+      <div class="alert">Este total é menor do que o já contado nos turnos, que foi assinado
+        por cada operador. Para gravar menos, é preciso o gestor.
         O motivo vai nos campos abaixo.</div>
       <label>PIN ou senha do gestor <b>*</b></label>
       <div class="secreto">
@@ -13042,7 +13051,7 @@ function concluir(o){
   };
   const conferirAjuste=()=>{
     const box=M('cAjBox');if(!box)return;
-    const dif=(+M('cCx').value||0)!==somaTurnos;
+    const dif=M('cCx').value!==''&&(+M('cCx').value||0)<somaTurnos;
     box.hidden=!dif;
     if(dif&&M('cAjPin')){
       const s=autorizador(cv('cAjPin').trim());
@@ -13069,11 +13078,11 @@ function concluir(o){
     if(cxs===''){toast('Informe as caixas atendidas.',true);M('cCx').focus();return;}
     /* total diferente da soma assinada pelos operadores: precisa de gestor */
     let ajuste='';
-    if(somaTurnos!=null&&(+cxs||0)!==somaTurnos){
+    if(somaTurnos!=null&&(+cxs||0)<somaTurnos){
       const mestre=!!(typeof MEU_ACESSO!=='undefined'&&MEU_ACESSO&&MEU_ACESSO.master);
       const quemAj=mestre?{nome:(MEU_ACESSO.nome||'master')}:autorizador(cv('cAjPin').trim());
       if(!quemAj){
-        toast('O total difere da soma dos turnos: informe o PIN ou a senha do gestor.',true);
+        toast('O total ficou abaixo do já contado nos turnos: informe o PIN ou a senha do gestor.',true);
         if(M('cAjPin'))M('cAjPin').focus();return;}
       ajuste=`${nf(somaTurnos)} → ${nf(+cxs)} ${und(o)} · por ${quemAj.nome}`;
     }
@@ -21052,6 +21061,8 @@ function csMenuOperador(maq,atual,fila,feitas){
             }catch(e){return '';}})()}</div>`:''}
     </div>
 
+    ${(()=>{try{return (atual&&etapaAtual(atual)==='fim'&&!atual.csPausa&&sit(atual)!=='finalizado')
+      ?`<button class="ac" data-opm="turno">Fim de turno</button>`:'';}catch(e){return '';}})()}
     ${(()=>{try{return (atual&&csUltimoPasso(atual))
       ?`<button class="ac" data-opm="desf">Desfazer último passo</button>`:'';
     }catch(e){return '';}})()}
@@ -21068,6 +21079,8 @@ function csMenuOperador(maq,atual,fila,feitas){
       if(a==='fecha')return fecha();
       if(a==='cheia'){fecha();return csTelaCheia();}
       if(a==='desf'&&atual){fecha();return csDesfazer(atual);}
+      /* v333: fim de turno mora aqui, não ao lado do Pausar */
+      if(a==='turno'&&atual){fecha();return csFimTurnoOp(atual);}
       if(a==='maq'){
         const nova=b.dataset.maq;
         if(nova===maq)return fecha();
@@ -25200,7 +25213,7 @@ csPinTela=function(tit,sub,ok,mot){
     api.ok(r.q.nome);
     if(r.conectou){CS_OP_ABERTO=true;try{const el=M('login');if(el)el.hidden=true;}catch(e){}await iniciarComNuvem();
       d.className='cs-pinop';csViraOperador(r.q);try{csAbrirOperador(csMaqDoTablet());}catch(e){}try{csPintarOperador();}catch(e){}return;}
-    setTimeout(()=>{d.className='cs-pinop';csViraOperador(r.q);ok(r.q,pin,null);},250);
+    setTimeout(()=>{d.className='cs-pinop';csViraOperador(r.q);window.CS_PIN_ULT={pin,t:Date.now()};ok(r.q,pin,null);},250);
   });
 };
 /* tablet sem conexão: o teclado, não o login com e-mail */
@@ -25270,7 +25283,7 @@ function csConfereTela(cfg,cb){
   csTecPin(d.querySelector('#csTecC'),async(pin,api)=>{
     api.espera('Conferindo…');const r=await csConferePin(pin);
     if(!r.q)return api.erro(r.erro);
-    api.ok(r.q.nome);setTimeout(()=>{d.className='cs-motop';csViraOperador(r.q);cb(r.q,pin);},250);
+    api.ok(r.q.nome);setTimeout(()=>{d.className='cs-motop';csViraOperador(r.q);window.CS_PIN_ULT={pin,t:Date.now()};cb(r.q,pin);},250);
   });
 }
 /* "Voltar e mudar" volta para os motivos com o que estava marcado */
@@ -25458,6 +25471,72 @@ try{const _df31=csDiff;csDiff=function(b,l,p,ops){
   if(!p||!p.length){const r=_df31.call(this,b,l,p||[],ops||[]);return r.filter(o=>!(o.t==='del'&&o.p.length===1));}
   return _df31.apply(this,arguments);};}catch(e){}
 try{csNucleo.versao='v331';}catch(e){}
+
+</script>
+<script>
+/* ===================== v332 · fim de turno no tablet =====================
+   Botão "Fim de turno" ao lado do Pausar enquanto a máquina envasa. O operador
+   digita as caixas feitas até ali e assina com o PIN. Fica gravado como turno
+   (o mesmo do sistema): não entra no estoque; aparece no apontamento com o nome
+   de quem contou. A OP continua no próximo dia, no mesmo lote. */
+function csFimTurnoOp(o){
+  let d=document.getElementById('csMotOp');if(!d){d=document.createElement('div');d.id='csMotOp';document.body.appendChild(d);}
+  const ja=cxFeitas(o),prev=caixasPrev(o),un=und(o);let v='';
+  const pinta=()=>{
+    d.className='cs-motop on et-turno cs-turno';
+    d.innerHTML=`<div class="mt-top"><div class="tx"><b>Fim de turno</b><i>${escAttr(o.maq||'')} · OP ${escAttr(rotuloOP(o))} · lote ${escAttr(o.lote||'')}</i></div>
+        <div class="dr"><i>Agora</i><b>${relogio()}</b></div><button class="x" data-mx="1" aria-label="Cancelar">&times;</button></div>
+      <div class="mt-fx">O que faltar continua amanhã na mesma OP. As caixas entram no estoque só no apontamento final.</div>
+      <div class="mt-cp" style="align-items:center">
+        <div class="mt-rt" style="align-self:flex-start">Caixas feitas neste turno</div>
+        <div class="tu-vl">${v?nf(+v):'0'} <small>${escAttr(un)}</small></div>
+        <div class="tu-in">Previsto do lote: <b>${nf(prev)} ${escAttr(un)}</b>${ja?` · já contadas em turnos anteriores: <b>${nf(ja)}</b>`:''}${v?` · restam <b>${nf(Math.max(0,prev-ja-(+v)))}</b>`:''}</div>
+        <div class="tec">${['1','2','3','4','5','6','7','8','9','','0','⌫'].map(k=>k?`<button type="button" data-tk="${k}"${k==='⌫'?' class="f" aria-label="Apagar"':''}>${k==='⌫'?'&#9003;':k}</button>`:'<span></span>').join('')}</div>
+      </div>
+      <div class="mt-rod"><button type="button" class="mt-ok" data-mk="1" ${v===''?'disabled':''}>${v===''?'Digite as caixas':'Continuar · digitar o PIN'}</button></div>`;
+  };
+  d.onclick=ev=>{const t=ev.target;
+    if(t.closest('[data-mx]')){d.className='cs-motop';return;}
+    const k=t.closest('[data-tk]');if(k){const c=k.dataset.tk;v=c==='⌫'?v.slice(0,-1):(v.length<5?(v==='0'?c:v+c):v);return pinta();}
+    if(t.closest('[data-mk]')&&v!==''){
+      const cx=+v;
+      csConfereTela({titulo:'Fim de turno',sub:`${o.maq||''} · OP ${rotuloOP(o)} · lote ${o.lote||''}`,acao:'fechar o turno',
+        sel:[{g:'Caixas neste turno',s:`${nf(cx)} ${un}`},{g:'Até agora no lote',s:`${nf(ja+cx)} de ${nf(prev)} ${un}`}],
+        aviso:cx>Math.max(0,prev-ja)?`São ${nf(cx-Math.max(0,prev-ja))} ${un} a mais do que o tanque rende. Confira antes de assinar.`:'Amanhã a OP volta na fila desta máquina para terminar.',
+        reabrir:()=>csFimTurnoOp(o)},(q,pin)=>csGravaTurno(o,cx,pin));
+    }
+  };
+  pinta();
+}
+/* grava pela janela de fim de turno do sistema, preenchida aqui (mesma conta, mesmo histórico) */
+function csGravaTurno(o,cx,pin){
+  try{fecharTurno(o);
+    M('tDt').value=ymd(new Date());const f=relogio();M('tFim').value=f;
+    if(!M('tIni').value||hm(M('tIni').value)>=hm(f))M('tIni').value=o.envIni||o.iniReal||hhmm(Math.max(0,hm(f)-60));
+    M('tCx').value=String(cx);M('tPin').value=pin;
+    ['tCx','tPin','tFim'].forEach(i=>M(i).dispatchEvent(new Event('input',{bubbles:true})));
+    M('tK').click();}
+  catch(e){toast('Não consegui fechar o turno: '+e.message,true);}
+  setTimeout(()=>{try{csPintarOperador();}catch(e){}},300);
+}
+/* o botão: na janela, antes do pedido de PIN de cada botão */
+window.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.closest('#csOper [data-op="turno"]');if(!b)return;
+  ev.preventDefault();ev.stopImmediatePropagation();
+  let at=null;try{at=csOPdaLinha(CS_OPMAQ).atual;}catch(e){}
+  if(at)csFimTurnoOp(at);},true);
+
+/* Concluir envase no tablet: o PIN já foi digitado na tela grande; a janela de
+   finalizar não pede de novo (antes pedia duas vezes) */
+try{const _fe32=finalizarEnvase;finalizarEnvase=function(o){
+  const r=_fe32.apply(this,arguments);
+  try{const u=window.CS_PIN_ULT;
+    if(u&&Date.now()-u.t<8000&&document.body.classList.contains('cs-operon')&&M('nPin')&&M('nK')){
+      window.CS_PIN_ULT=null;
+      M('nPin').value=u.pin;M('nPin').dispatchEvent(new Event('input',{bubbles:true}));
+      if(window.CS_ENV_PRE&&M('nOco'))M('nOco').hidden=true;
+      setTimeout(()=>{try{if(window.CS_ENV_PRE&&M('nOco'))M('nOco').hidden=true;M('nK').click();}catch(e){}},30);}}catch(e){}
+  return r;};}catch(e){}
+try{csNucleo.versao='v333';}catch(e){}
 
 </script>
 </body>
