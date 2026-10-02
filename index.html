@@ -5262,7 +5262,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v325';
+const VERSAO_APP='v326';
 let DRAG=null;
 function render(){
   recomporTudo();
@@ -24140,7 +24140,7 @@ try{const _ud14=csUsuDetalhe;csUsuDetalhe=function(){const r0=_ud14.apply(this,a
     const fld=nm.closest('.fld');const box=document.createElement('div');box.className='fld rel';box.id='usBusFb';
     box.innerHTML=`<label>Buscar nos funcionários <span class="k" style="font-weight:400">· para não repetir cadastro</span></label>
       <input id="usBusF" placeholder="Nome ou CPF de quem já está em Cadastros › Funcionários" autocomplete="off"><div class="cs-fsug" id="usBusL" hidden></div>
-      ${u.rasc.funcId?`<div class="k" style="margin-top:4px">Ligado ao funcionário <b>${escP(u.rasc.nome)}</b>${u.rasc.funcCpf?' · CPF '+escP(u.rasc.funcCpf):''}</div>`:''}`;
+      ${u.rasc.funcId?`<div class="k" style="margin-top:4px">✓ ligado ao cadastro de funcionários${u.rasc.funcCpf?' · CPF '+escP(u.rasc.funcCpf):''}</div>`:''}`;
     fld.parentNode.insertBefore(box,fld);
     const inp=M('usBusF'),lst=M('usBusL');
     const busca=async()=>{const q=csSemAc(inp.value).trim(),d=inp.value.replace(/\D/g,'');if(q.length<2){lst.hidden=true;return;}
@@ -24391,6 +24391,248 @@ try{Object.assign(csNucleo,{
   cfgVendas:()=>({...CS_CFGV}),
   salvarCfgVendas:o=>{if(o&&['prev','ped'].includes(o.reservaPor))CS_CFGV.reservaPor=o.reservaPor;agendarSalvar();return {...CS_CFGV};}
 });}catch(e){}
+
+</script>
+<script>
+/* ===================== v326 · ninguém perde o que lançou =====================
+   O estado do sistema é uma linha só no banco, gravada por todos os aparelhos
+   (computadores e os três tablets). Quando dois gravavam perto, o segundo levava
+   "Outra pessoa gravou antes de você", recarregava o banco e JOGAVA FORA o que
+   tinha acabado de fazer: concluir envase, fim de turno, OP nova para amanhã.
+   Com os tablets marcando o dia inteiro, isso passou a acontecer toda hora.
+   Agora o aparelho junta as duas versões: compara com o que estava no banco
+   quando ele leu (ULTIMO), fica com o que ele mudou e com o que o outro mudou,
+   e grava de novo. OP é comparada campo a campo; histórico só soma. */
+const csJ=x=>JSON.stringify(x===undefined?null:x);
+const csObj=x=>!!x&&typeof x==='object'&&!Array.isArray(x);
+/* a chave que identifica cada item da lista (OP pelo id, envio da fila pela chave…) */
+function csChaveArr(...arrs){
+  for(const k of ['id','chave','uid','email','codigo','sku']){
+    let ok=true,n=0;
+    for(const a of arrs){if(!Array.isArray(a))continue;const s=new Set();
+      for(const e of a){if(!csObj(e)||e[k]==null||e[k]===''){ok=false;break;}const v=String(e[k]);if(s.has(v)){ok=false;break;}s.add(v);}
+      if(!ok)break;n+=a.length;}
+    if(ok&&n)return k;}
+  return null;
+}
+/* b = como estava no banco quando li · l = o meu · r = o que está no banco agora */
+function csM3(b,l,r){
+  const jl=csJ(l),jr=csJ(r);if(jl===jr)return l;
+  const jb=csJ(b);if(jl===jb)return r;if(jr===jb)return l;
+  if(Array.isArray(l)&&Array.isArray(r)){
+    const bb=Array.isArray(b)?b:[],k=csChaveArr(bb,l,r);
+    if(k){
+      const mB=new Map(bb.map(e=>[String(e[k]),e])),mL=new Map(l.map(e=>[String(e[k]),e])),mR=new Map(r.map(e=>[String(e[k]),e]));
+      const ordem=[...r.map(e=>String(e[k])),...l.map(e=>String(e[k])).filter(x=>!mR.has(x))],out=[];
+      for(const id of ordem){
+        const inL=mL.has(id),inR=mR.has(id),inB=mB.has(id),bv=mB.get(id),lv=mL.get(id),rv=mR.get(id);
+        if(inL&&inR){out.push(csM3(bv,lv,rv));continue;}
+        /* sumiu de um lado: só sai se o outro lado não mexeu nele */
+        if(inL){if(inB&&csJ(lv)===csJ(bv))continue;out.push(lv);continue;}
+        if(inB&&csJ(rv)===csJ(bv))continue;out.push(rv);
+      }
+      return out;
+    }
+    /* lista sem chave (histórico da OP, registros): o que os dois têm, sem repetir */
+    const sb=new Set(bb.map(csJ)),visto=new Set(r.map(csJ)),out=r.slice();
+    l.forEach(e=>{const j=csJ(e);if(!visto.has(j)&&!sb.has(j)){out.push(e);visto.add(j);}});
+    return out;
+  }
+  if(csObj(l)&&csObj(r)){
+    const bo=csObj(b)?b:{},out={};
+    for(const k of new Set([...Object.keys(r),...Object.keys(l)])){
+      const inL=k in l,inR=k in r,inB=k in bo;
+      if(inL&&inR){out[k]=csM3(bo[k],l[k],r[k]);continue;}
+      if(inL){if(inB&&csJ(l[k])===csJ(bo[k]))continue;out[k]=l[k];continue;}
+      if(inB&&csJ(r[k])===csJ(bo[k]))continue;out[k]=r[k];
+    }
+    return out;
+  }
+  return l;   /* o mesmo campo mudou nos dois: fica o deste aparelho, que acabou de mexer */
+}
+let CS_MESCLA_PEND=null,CS_MESCLAS=0;
+const csBase=()=>{try{return ULTIMO?JSON.parse(ULTIMO):{};}catch(e){return {};}};
+function csAplicaMesclado(t){
+  const idA=(typeof EDIT!=='undefined'&&EDIT)?EDIT.id:null;
+  RECEBENDO=true;
+  try{aplicarEstado(t);window.CS_ULT_NOVO=corpoDados();
+    if(idA){const n=ORDENS.find(x=>x.id===idA);if(n)EDIT=n;}}
+  catch(e){console.warn('não consegui aplicar a junção',e);}
+  finally{RECEBENDO=false;}
+  try{if(MODO_TV)renderTV();else render();if(typeof CS_OPMAQ!=='undefined'&&CS_OPMAQ)csPintarOperador();}catch(e){}
+}
+/* gravação: se outro gravou antes, junta e tenta de novo (até 4 vezes) */
+try{const _ng26=nuvemGravar;nuvemGravar=async function(texto){
+  let r=await _ng26(texto),volta=0;
+  while(r&&r.conflito&&volta<4){
+    volta++;
+    const linha=await nuvemLer();if(!linha||!linha.dados)return r;
+    const loc=JSON.parse(texto),rem=linha.dados,m=csM3(csBase(),loc,rem);
+    if(!Array.isArray(m.ordens))return r;
+    m.gravado=new Date().toISOString();
+    VERSAO_NUVEM=linha.versao;texto=JSON.stringify(m);CS_MESCLA_PEND=texto;
+    r=await _ng26(texto);
+  }
+  if(r&&!r.conflito&&CS_MESCLA_PEND){const t=CS_MESCLA_PEND;CS_MESCLA_PEND=null;CS_MESCLAS++;csAplicaMesclado(t);
+    try{const el=M('salvo');if(el)el.title='Juntei com o que outro aparelho gravou ao mesmo tempo';}catch(e){}}
+  return r;};}catch(e){}
+try{const _pe26=persistir;persistir=async function(forcar){
+  /* gravação em andamento: antes a mudança feita nesse meio tempo ficava sem gravar
+     até alguém mexer de novo — e a leitura seguinte do banco passava por cima dela */
+  if(salvando){setTimeout(()=>persistir(forcar),900);return;}
+  window.CS_ULT_NOVO=null;
+  const r=await _pe26.apply(this,arguments);
+  if(window.CS_ULT_NOVO){ULTIMO=window.CS_ULT_NOVO;window.CS_ULT_NOVO=null;}
+  return r;};}catch(e){}
+/* chegou coisa do banco com mudança deste aparelho ainda por gravar: junta em vez de trocar */
+try{const _ar26=aplicarRemoto;aplicarRemoto=function(dados){
+  try{
+    if(dados&&!RECEBENDO&&ULTIMO&&!(typeof csDigitando==='function'&&csDigitando())){
+      const loc=corpoDados();
+      if(loc!==ULTIMO){
+        const rem=JSON.parse(dados),m=csM3(csBase(),JSON.parse(loc),rem);
+        if(Array.isArray(m.ordens)){
+          const res=_ar26.call(this,JSON.stringify(m));
+          ULTIMO=JSON.stringify(rem);CS_MESCLAS++;agendarSalvar();
+          return res;}
+      }
+    }
+  }catch(e){console.warn('junção da leitura',e);}
+  return _ar26.apply(this,arguments);};}catch(e){}
+/* não lê o banco no meio de uma gravação: a versão mudaria debaixo dela */
+try{const _cn26=conferirNuvem;conferirNuvem=async function(){if(salvando)return;return _cn26.apply(this,arguments);};}catch(e){}
+
+/* ---------- PIN ----------
+   O tablet só aceitava operador, master e quem tinha o nível "gestor". Quem tinha a
+   permissão "Abrir a tela do operador" com outro nível (supervisor, administrador)
+   ficava de fora mesmo com a caixa marcada. Agora vale a permissão. E o PIN é
+   comparado sem espaços: um espaço digitado no cadastro bastava para não bater. */
+const csPinIgual=(a,b)=>a!=null&&String(a).trim()!==''&&String(a).trim()===String(b).trim();
+quemPorCredencial=function(v){
+  const s=String(v||'').trim();if(!s)return null;
+  const op=(OPERADORES||[]).find(o=>o.ativo!==false&&csPinIgual(o.pin,s));
+  if(op)return {nome:op.nome,funcao:op.funcao||op.papel,id:op.id,tipo:'operador',op,nivel:nivelDe(op)};
+  const l=(typeof ACESSOS!=='undefined'?ACESSOS:[]).filter(a=>a.ativo!==false);
+  const ac=l.find(a=>csPinIgual(a.pin,s))||l.find(a=>csPinIgual(a.senha,s));
+  if(ac)return {nome:ac.nome||ac.email,funcao:ac.funcao||'',email:ac.email,master:nivelDe(ac)==='master',tipo:'acesso',nivel:nivelDe(ac)};
+  return null;
+};
+function csPinsVistos(){
+  const op=(OPERADORES||[]).filter(o=>o.ativo!==false&&String(o.pin||'').trim()).length;
+  const ac=(typeof ACESSOS!=='undefined'?ACESSOS:[]).filter(a=>a.ativo!==false&&String(a.pin||'').trim()).length;
+  return {op,ac};
+}
+try{const _pv26=csPinValido;csPinValido=function(pin){
+  let q=_pv26(pin);
+  if(!q){const c=quemPorCredencial(pin);
+    if(c&&c.tipo==='acesso'){
+      if(podeTelaOp(c)){window.CS_PIN_MOTIVO='';q=c;}
+      else window.CS_PIN_MOTIVO=`${c.nome} não tem a permissão "Abrir a tela do operador" (Pessoas › Permissões › PCP › Envase).`;}
+    else if(!c){const v=csPinsVistos();
+      window.CS_PIN_MOTIVO=`PIN não encontrado. Este aparelho enxerga ${v.op} operador(es) e ${v.ac} pessoa(s) com PIN.`
+        +(v.op+v.ac===0?' Nenhum PIN chegou aqui: confira o cadastro em Configurações › Pessoas › Operadores.':'');}}
+  return q;};}catch(e){}
+
+/* ---------- Pessoas › Operadores: só nome, função, linha e PIN ----------
+   Operador de máquina não tem e-mail nem senha: abre a tela da máquina com o PIN.
+   A aba passa a cadastrar direto na lista de operadores; a conta com e-mail fica só
+   para o próprio tablet ("Contas dos tablets"). O nome vem dos Funcionários, uma vez. */
+try{const _ul26=csUsuLista;csUsuLista=function(){
+  const r=_ul26.apply(this,arguments);
+  try{if(CS_PES_ABA!=='op')return r;
+    const b=M('usNovo');if(b){b.textContent='+ Conta de tablet';b.classList.remove('pri');}
+    const g=M('acgrid');if(g&&!M('csTabTit'))g.insertAdjacentHTML('afterbegin','<div class="st" id="csTabTit" style="margin-top:0">Contas dos tablets</div><p class="adp">A conta com e-mail e senha de cada tablet (uma por máquina). Os operadores não precisam de conta: ficam na lista de baixo, só com o PIN.</p>');
+  }catch(e){}
+  return r;};}catch(e){}
+try{const _mo26=modalOperador;modalOperador=function(o){
+  const r=_mo26.apply(this,arguments);
+  try{
+    M('mTit').textContent=o?'Editar operador':'Novo operador';
+    M('mB').insertAdjacentHTML('afterbegin','<div class="alert blue" style="margin-bottom:10px">Operador não tem e-mail nem senha: abre a tela da máquina e assina com o PIN.</div>');
+    const nm=M('opNome');nm.placeholder='Comece a digitar: busca em Cadastros › Funcionários';nm.autocomplete='off';
+    const fld=nm.closest('.fld');fld.classList.add('rel');
+    const lst=document.createElement('div');lst.className='cs-fsug';lst.hidden=true;fld.appendChild(lst);
+    let funcId=o&&o.funcId||'';
+    const lig=document.createElement('div');lig.className='k';lig.style.cssText='font-size:11.5px;margin-top:4px';fld.appendChild(lig);
+    const marca=()=>{lig.textContent=funcId?'✓ ligado ao cadastro de funcionários':'';};marca();
+    nm.oninput=()=>{funcId='';marca();clearTimeout(window._opBf);window._opBf=setTimeout(async()=>{
+      const q=csSemAc(nm.value).trim();if(q.length<2){lst.hidden=true;return;}
+      const ja=new Set((OPERADORES||[]).filter(x=>!o||x.id!==o.id).map(x=>csSemAc(x.nome)));
+      const l=(await csFuncionarios()).filter(f=>csSemAc(f.nome).includes(q)).slice(0,8);
+      lst.innerHTML=l.length?l.map((f,i)=>`<button type="button" data-fi="${i}"><b>${escAttr(f.nome)}</b><small>${escAttr([f.funcao,f.setor].filter(Boolean).join(' · '))}${ja.has(csSemAc(f.nome))?' · já é operador':''}</small></button>`).join('')
+        :'<div class="vz">Ninguém com esse nome em Funcionários.</div>';
+      lst.hidden=false;
+      lst.querySelectorAll('[data-fi]').forEach(b=>b.onmousedown=ev=>{ev.preventDefault();const f=l[+b.dataset.fi];nm.value=f.nome;funcId=f.id||'';lst.hidden=true;marca();});
+    },180);};
+    nm.onblur=()=>setTimeout(()=>{lst.hidden=true;},150);
+    const k=M('opK'),salva=k.onclick;
+    k.onclick=()=>{const nome=nm.value.trim(),p=M('opPin').value.trim();
+      if(p&&(typeof ACESSOS!=='undefined'?ACESSOS:[]).some(a=>a.ativo!==false&&csPinIgual(a.pin,p)))return toast('Esse PIN já é de uma pessoa do sistema. Use outro.',true);
+      const antes=OPERADORES.length;salva();
+      const alvo=o||(OPERADORES.length>antes?OPERADORES[OPERADORES.length-1]:null);
+      if(alvo&&alvo.nome===nome&&funcId!==undefined){alvo.funcId=funcId||alvo.funcId||'';agendarSalvar();}};
+  }catch(e){console.warn('modal do operador',e);}
+  return r;};}catch(e){}
+
+/* ---------- recuperar o que ficou só neste aparelho ----------
+   Cada aparelho guarda a última versão dele antes de gravar. Se ele perdeu a
+   gravação e ainda não gravou outra coisa por cima, as OPs e as marcações estão
+   lá. Aqui elas são mostradas e voltam só se você marcar: nada é apagado, só
+   acrescentado (OP que falta, campo que está vazio, histórico que falta). */
+/* a cópia é separada assim que esta versão abre, antes de qualquer gravação: gravar
+   de novo trocaria a cópia antiga pela nova e o que sumiu não teria mais de onde voltar */
+try{const s0=localStorage.getItem(CHAVE);if(s0&&!localStorage.getItem(CHAVE+'-rec326'))localStorage.setItem(CHAVE+'-rec326',s0);}catch(e){}
+function csRecLer(){try{const s=localStorage.getItem(CHAVE+'-rec326')||localStorage.getItem(CHAVE);return s?JSON.parse(s):null;}catch(e){return null;}}
+function csRecDif(){
+  const d=csRecLer();if(!d||!Array.isArray(d.ordens))return null;
+  const cur=new Map(ORDENS.map(o=>[String(o.id),o]));const novas=[],mais=[];
+  d.ordens.forEach(o=>{const c=cur.get(String(o.id));
+    if(!c){novas.push(o);return;}
+    const vaz=Object.keys(o).filter(k=>k!=='log'&&o[k]!=null&&o[k]!==''&&(c[k]==null||c[k]===''));
+    const logF=(o.log||[]).filter(l=>!(c.log||[]).some(x=>csJ(x)===csJ(l)));
+    if(vaz.length||logF.length)mais.push({o,c,vaz,logF});});
+  const ap=Object.entries(d.aponta||{}).filter(([k,v])=>{const c=APONTA[k];if(!c)return true;return Object.keys(v||{}).some(x=>v[x]!=null&&v[x]!==''&&(c[x]==null||c[x]===''));});
+  return {gravado:d.gravado||'',novas,mais,ap};
+}
+function csRecAplicar(sel){
+  let n=0;const d=csRecLer();if(!d)return 0;
+  const cur=new Map(ORDENS.map(o=>[String(o.id),o]));
+  d.ordens.forEach(o=>{const id=String(o.id);if(!sel.has('o|'+id))return;const c=cur.get(id);
+    if(!c){ORDENS.push({setupFim:'',envIni:'',tinyAjuste:null,...o});n++;return;}
+    Object.keys(o).forEach(k=>{if(k!=='log'&&o[k]!=null&&o[k]!==''&&(c[k]==null||c[k]===''))c[k]=o[k];});
+    const falta=(o.log||[]).filter(l=>!(c.log||[]).some(x=>csJ(x)===csJ(l)));
+    if(falta.length){c.log=[...(c.log||[]),...falta];}n++;});
+  if(sel.has('aponta'))Object.entries(d.aponta||{}).forEach(([k,v])=>{const c=APONTA[k]||(APONTA[k]={});
+    Object.keys(v||{}).forEach(x=>{if(v[x]!=null&&v[x]!==''&&(c[x]==null||c[x]===''))c[x]=v[x];});});
+  agendarSalvar();try{render();}catch(e){}
+  return n;
+}
+function csRecTela(){
+  const r=csRecDif();
+  if(M('mAcao'))M('mAcao').innerHTML='';M('modal').classList.add('wide');
+  M('mTit').textContent='Recuperar o que ficou só neste aparelho';M('mSub').hidden=false;
+  M('mSub').textContent=r&&r.gravado?'Cópia guardada neste aparelho em '+new Date(r.gravado).toLocaleString('pt-BR'):'';
+  const linha=(k,o,t)=>`<tr><td><input type="checkbox" data-rk="${escAttr(k)}" checked></td><td>${escAttr(typeof dCurto==="function"?dCurto(o.data):o.data)}</td><td>${escAttr(o.maq||'')}</td><td><b>${escAttr((prodOf(o.codigo)||{}).descricao||o.codigo||'')}</b>${o.lote?' · lote '+escAttr(o.lote):''}</td><td>${t}</td></tr>`;
+  const tem=r&&(r.novas.length||r.mais.length||r.ap.length);
+  M('mB').innerHTML=!r?'<div class="vazioc">Este aparelho não tem cópia guardada.</div>':!tem?'<div class="vazioc">Nada a recuperar: tudo o que este aparelho tem já está no sistema.</div>'
+    :`<p class="adp">Marque o que deve voltar. Nada é apagado: só entra a OP que falta, o campo que está vazio e o histórico que falta. Confira antes: se uma OP foi excluída de propósito depois, desmarque.</p>
+    <div class="rolx" style="max-height:52vh"><table class="tb"><thead><tr><th></th><th>Dia</th><th>Máquina</th><th>OP</th><th>O que volta</th></tr></thead><tbody>
+    ${r.novas.map(o=>linha('o|'+o.id,o,'<b style="color:#15803D">OP que sumiu</b>')).join('')}
+    ${r.mais.map(x=>linha('o|'+x.o.id,x.o,`${x.logF.length?x.logF.length+' marcação(ões) no histórico':''}${x.vaz.length?(x.logF.length?' · ':'')+'campos: '+escAttr(x.vaz.slice(0,6).join(', ')):''}`)).join('')}
+    ${r.ap.length?`<tr><td><input type="checkbox" data-rk="aponta" checked></td><td colspan="4"><b>Tanques</b> · ${r.ap.length} apontamento(s) de preparo e liberação</td></tr>`:''}
+    </tbody></table></div>`;
+  M('mF').innerHTML=`<div style="flex:1"></div><button class="btn" id="rcX">Fechar</button>${tem?'<button class="btn pri" id="rcOk">Recuperar os marcados</button>':''}`;
+  M('rcX').onclick=fecharModal;
+  if(M('rcOk'))M('rcOk').onclick=()=>{const sel=new Set([...M('mB').querySelectorAll('[data-rk]:checked')].map(x=>x.dataset.rk));
+    const n=csRecAplicar(sel);fecharModal();toast(n?`${n} OP(s) recuperada(s). Confira na programação.`:'Nada recuperado.');};
+  abrirMask();
+}
+try{const _ga26=gradeAdmin;gradeAdmin=function(){const r=_ga26.apply(this,arguments);
+  try{if(ABA_ADMIN==='dados'&&M('adgrid')&&!M('csRecB')){
+    M('adgrid').insertAdjacentHTML('beforeend',`<div class="st">Recuperar deste aparelho</div><p class="adp">Se este aparelho lançou algo que sumiu (OP nova, conclusão, fim de turno), a última cópia dele pode ainda ter. Abra aqui no aparelho em que foi lançado.</p><button class="btn" id="csRecB">Ver o que este aparelho tem a mais</button>`);
+    M('csRecB').onclick=csRecTela;}}catch(e){}
+  return r;};}catch(e){}
+try{csNucleo.versao='v326';}catch(e){}
 
 </script>
 </body>
