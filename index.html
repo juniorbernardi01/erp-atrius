@@ -3694,6 +3694,51 @@ body.comcasca .bat.st-concluido>*:not(.frs):not(.cs-pts){opacity:.8!important}
 .cs-nmok{margin-top:2.4vh;width:min(360px,80vw);height:clamp(56px,8vh,76px);border-radius:14px;border:0;background:#15803D;color:#fff;font:700 clamp(18px,2.6vh,24px) Inter,sans-serif}
 .cs-pinop.cs-nomes .ms{margin-top:2vh;min-height:2.6vh;color:#FCA5A5;font-size:clamp(14px,2vh,19px);text-align:center;max-width:90vw}
 .cs-pinop.cs-nomes .ms.ok{color:#86EFAC}
+
+/* ===== v330 · motivos e conferir (tablet em pé) ===== */
+.cs-motop{display:none}
+.cs-motop.on{position:fixed;inset:0;z-index:415;display:flex;flex-direction:column;background:#F2F4F7;color:#14213D;font-family:Barlow,Inter,sans-serif}
+.cs-motop .mt-top{display:flex;align-items:center;gap:14px;background:#0E1B33;color:#fff;padding:2vh 4vw}
+.cs-motop.et-setup .mt-top{background:#7A3E06}.cs-motop.et-envase .mt-top{background:#7A3E06}.cs-motop.et-quebra .mt-top{background:#7F1D1D}
+.cs-motop .mt-top .tx{flex:1;display:flex;flex-direction:column;gap:3px}
+.cs-motop .mt-top .tx b{font:700 clamp(24px,3.2vh,34px) 'Barlow Condensed',sans-serif}.cs-motop .mt-top .tx i{font-style:normal;font-size:clamp(13px,1.6vh,16px);color:#C9D3E3}
+.cs-motop .mt-top .dr{display:flex;flex-direction:column;align-items:flex-end}.cs-motop .mt-top .dr i{font-style:normal;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#C9D3E3}
+.cs-motop .mt-top .dr b{font:700 clamp(24px,3.2vh,34px) 'Barlow Condensed',sans-serif;color:#FAC775}.cs-motop.et-setup .mt-top .dr b,.cs-motop.et-envase .mt-top .dr b{color:#FFE2B8}
+.cs-motop .mt-top .x{width:56px;height:56px;border-radius:14px;border:0;background:rgba(255,255,255,.14);color:#fff;font-size:30px}
+.cs-motop .mt-fx{background:#FDF3E3;color:#7A3E06;padding:1.2vh 4vw;font-size:clamp(15px,1.9vh,18px);font-weight:600}
+.cs-motop.et-pausa .mt-fx{background:#E8EEFB;color:#173A73}
+.cs-motop .mt-cp{flex:1;overflow:auto;display:flex;flex-direction:column;gap:1.4vh;padding:2vh 4vw}
+.cs-motop .mt-rt{font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#4A5468;margin-top:.6vh}
+.cs-motop .mt-rt small{text-transform:none;letter-spacing:0;font-weight:500;font-size:13px}.cs-motop .mt-rt b{color:#B3261E}
+.cs-motop .mt-gr,.cs-motop .mt-it{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1.1vh}
+.cs-motop .mt-gr button{display:flex;align-items:center;gap:10px;min-height:clamp(56px,6vh,70px);padding:0 14px 0 18px;border-radius:14px;border:2px solid #D5DBE5;background:#fff;color:#14213D;font:600 clamp(16px,2vh,19px) Barlow,sans-serif;text-align:left}
+.cs-motop .mt-gr button span{flex:1}.cs-motop .mt-gr button em{font-style:normal;min-width:28px;height:28px;border-radius:14px;background:#1D4ED8;color:#fff;font-size:15px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.cs-motop .mt-gr button.tem{background:#E8EEFB;border-color:#9DB4EE}
+.cs-motop .mt-gr button.ab{background:#1D4ED8;border-color:#1D4ED8;color:#fff}.cs-motop .mt-gr button.ab em{background:#fff;color:#1D4ED8}
+.cs-motop .mt-it button{display:flex;align-items:center;gap:12px;min-height:clamp(64px,6.6vh,78px);padding:0 16px;border-radius:14px;border:2px solid #D5DBE5;background:#fff;color:#14213D;font:600 clamp(16px,2vh,19px) Barlow,sans-serif;text-align:left}
+.cs-motop .mt-it .ck{width:30px;height:30px;border-radius:8px;border:2px solid #B8C1D0;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.cs-motop .mt-it button.on{background:#15803D;border-color:#15803D;color:#fff}.cs-motop .mt-it button.on .ck{border-color:#fff}
+.cs-motop .mt-it button.on .ck::after{content:'';width:12px;height:7px;border-left:3px solid #fff;border-bottom:3px solid #fff;transform:rotate(-45deg) translate(1px,-1px)}
+.cs-motop textarea{min-height:16vh;border-radius:14px;border:2px solid #1D4ED8;padding:14px 16px;font:400 clamp(17px,2.2vh,21px) Barlow,sans-serif;color:#14213D;background:#fff;resize:none}
+.cs-motop .mt-rod{display:flex;flex-direction:column;gap:1vh;padding:1.6vh 4vw 2.4vh;background:#fff;border-top:1px solid #D5DBE5}
+.cs-motop .mt-ch{display:flex;flex-wrap:wrap;gap:8px;min-height:42px;align-items:center}.cs-motop .mt-ch i{font-style:normal;color:#4A5468;font-size:16px}
+.cs-motop .mt-ch span{display:flex;align-items:center;gap:6px;min-height:42px;padding:0 6px 0 14px;border-radius:21px;background:#E7F5EC;border:1px solid #A7D7B8;color:#0B5C33;font-size:15px;font-weight:600}
+.cs-motop .mt-ch span small{color:#2F6B48;font-weight:500;font-size:14px}.cs-motop .mt-ch span button{width:30px;height:30px;border-radius:15px;border:0;background:#CFEBD9;color:#0B5C33;font-size:19px}
+.cs-motop .mt-ok{height:clamp(64px,7vh,78px);border-radius:16px;border:0;background:#15803D;color:#fff;font:700 clamp(18px,2.4vh,22px) Barlow,sans-serif}
+.cs-motop .mt-ok:disabled{background:#CBD2DC;color:#3F4757}
+.cs-motop .mt-cf{display:flex;flex-direction:column;background:#fff;border:1px solid #D5DBE5;border-radius:18px;padding:1.6vh 4vw}
+.cs-motop .cfh{display:flex;align-items:center;gap:12px}.cs-motop .cfh .mt-rt{flex:1;margin:0}
+.cs-motop .cfh button{height:48px;padding:0 18px;border-radius:12px;border:2px solid #D5DBE5;background:#fff;color:#14213D;font:600 17px Barlow,sans-serif}
+.cs-motop .cfl{display:flex;flex-direction:column;gap:2px;padding:1.1vh 0;border-bottom:1px solid #E3E7EE}.cs-motop .cfl small{font-size:14px;color:#4A5468}.cs-motop .cfl b{font-size:clamp(17px,2.1vh,20px)}
+.cs-motop .cfa{margin-top:1.2vh;padding:12px 16px;border-radius:12px;background:#FDF3E3;color:#6B3A06;font-size:16px}
+.cs-motop .mt-pin{display:flex;flex-direction:column;align-items:center;gap:.8vh}
+.cs-motop .mt-pin .pd1{font-size:clamp(18px,2.4vh,22px);font-weight:600}.cs-motop .mt-pin .pd2{font-size:15px;color:#4A5468}
+.cs-motop .pts{display:flex;gap:2.2vh;margin:1.4vh 0}.cs-motop .pts i{width:2vh;height:2vh;min-width:14px;min-height:14px;border-radius:50%;border:2px solid #8792A6}
+.cs-motop .pts i.on{background:#1D4ED8;border-color:#1D4ED8}.cs-motop .pts.erro i{border-color:#DC2626}
+.cs-motop .tec{display:grid;grid-template-columns:repeat(3,clamp(72px,9vh,104px));gap:1.6vh}
+.cs-motop .tec button{height:clamp(72px,9vh,104px);border-radius:50%;border:1px solid #D5DBE5;background:#fff;color:#14213D;font:600 clamp(24px,3.4vh,34px) Barlow,sans-serif}
+.cs-motop .tec button.f{background:transparent;border:0;color:#4A5468}
+.cs-motop .ms{min-height:2.6vh;font-size:clamp(14px,2vh,18px);color:#B3261E;text-align:center}.cs-motop .ms.ok{color:#15803D;font-weight:700}
 </style>
 </head>
 <body>
@@ -5285,7 +5330,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v329';
+const VERSAO_APP='v330';
 let DRAG=null;
 function render(){
   recomporTudo();
@@ -18069,7 +18114,7 @@ const PERM_MODS=[
   {id:'inicio',nome:'Início',itens:[{k:'inicio',n:'Visão do dia'}]},
   {id:'pcp',nome:'PCP',itens:[
     {k:'envase',n:'Envase',acoes:true,
-      extra:[{k:'telaop',n:'Abrir a tela do operador (gestor)'},
+      extra:[{k:'telaop',n:'Entrar na tela da máquina com PIN'},
         {k:'envase.concluir',n:'Concluir OP e assinar a quebra com o PIN'},
         {k:'envase.jornada',n:'Ajustar a jornada (dia, sábado, feriado, horário da máquina)'}]},
     {k:'tanques',n:'Tanques',acoes:true,
@@ -18297,7 +18342,7 @@ function csUsuAbaAcesso(){
         value="${escP(r.pin)}" placeholder="4 dígitos" autocomplete="off">
         <button type="button" class="olho" data-olho="usPin" title="Mostrar">&#128065;</button>
         <button type="button" class="btn sm" id="usGeraPin">Gerar</button></div></div>`,
-      'Curto, digitado na fábrica para assinar etapa, pausa e liberação. É diferente da senha. '
+      'Gerado pelo sistema, um para cada pessoa (nunca repete). Digitado na fábrica: abre a tela da máquina e assina etapa, pausa, apontamento e liberação. É diferente da senha. '
       +'Para concluir OP a pessoa precisa, além do PIN, da permissão <b>Concluir OP</b> (aba Permissões › PCP › Envase); o master conclui sempre.'
       +(csPinSemColuna()?'<br><b style="color:#B3261E">Atenção: a tabela pcp_acesso do banco não tem a coluna pin. Nenhum PIN está sendo gravado — rode o supabase-integracao.sql.</b>':''))}
     <div class="cs-usust">Cadastro, nível e situação</div>
@@ -25054,6 +25099,273 @@ try{const _mo29=modalOperador;modalOperador=function(o){
     const k=M('opK'),sv=k.onclick;k.onclick=()=>{const antes=o?o.pin:null;sv();if(o&&String(o.pin)!==String(antes)){delete CS_PINBLOQ['op:'+o.id];agendarSalvar();}};}catch(e){}
   return r;};}catch(e){}
 try{csNucleo.versao='v329';}catch(e){}
+
+</script>
+<script>
+/* ===================== v330 · tela da máquina pelo PIN · motivos novos =====================
+   PIN: o tablet abre direto no teclado; o PIN diz quem é (operador, usuário ou
+   administrador: cada PIN é de uma pessoa só, gerado pelo sistema). Entra quem tem a
+   permissão "Entrar na tela da máquina com PIN". Sem bloqueio por tentativas.
+   O PIN que o tablet não conhece (o cadastro com e-mail não chega inteiro nele) é
+   conferido no servidor. Quem digita assina: o nome vai para o histórico.
+   Motivos: tela em pé, grupo › itens, "Outro" só abre o texto quando marcado, e a
+   tela de conferir com o PIN embaixo. Setup, envase e pausa usam a mesma tela, cada
+   um com os seus grupos; o que é marcado vai para os relatórios por etapa. */
+
+/* ---------- sem bloqueio ---------- */
+csBloqueado=function(){return false;};
+csErrouPin=function(){return 0;};
+csAcertouPin=function(){};
+
+/* ---------- quem é, pelo PIN ---------- */
+const CS_PIN_CACHE={};   /* PIN conferido no servidor nesta sessão do tablet */
+const csAcessoPorEmail=e=>(typeof ACESSOS!=='undefined'?ACESSOS:[]).find(x=>norMail(x.email)===norMail(e||''));
+podeTelaOp=function(q){
+  if(!q)return false;
+  if(q.tipo==='operador'||q.op){const o=q.op||(OPERADORES||[]).find(x=>x.id===q.id||x.nome===q.nome);return !o||o.telaop!==false;}
+  if(q.pode!=null&&!csAcessoPorEmail(q.email))return !!q.pode;
+  const a=csAcessoPorEmail(q.email);if(!a)return !!q.master;
+  return !!a.master||nivelDe(a)==='master'||RANK[((a.perm||{}).telaop||'')]>=2||csTipoDe(a)==='op';
+};
+try{const _qc30=quemPorCredencial;quemPorCredencial=function(v){
+  const q=_qc30.apply(this,arguments);if(q)return q;
+  return CS_PIN_CACHE[String(v||'').trim()]||null;};}catch(e){}
+csPinValido=function(pin){
+  window.CS_PIN_MOTIVO='';const s=String(pin||'').trim();
+  const q=quemPorCredencial(s);
+  if(!q){window.CS_PIN_MOTIVO='PIN não reconhecido.';return null;}
+  if(q.tipo==='operador'&&typeof CS_TRAVA_LINHA!=='undefined'&&CS_TRAVA_LINHA){
+    const op=(OPERADORES||[]).find(x=>x.nome===q.nome);
+    if(op&&op.maq&&op.maq!==CS_OPMAQ){window.CS_PIN_MOTIVO=`${q.nome} é da ${op.maq}. Esta máquina aceita só os operadores dela.`;return null;}}
+  if(!podeTelaOp(q)){window.CS_PIN_MOTIVO=`${q.nome} não tem a permissão "Entrar na tela da máquina com PIN".`;return null;}
+  return q;
+};
+/* o servidor confere o PIN que o tablet não conhece; sem conexão ainda, também abre a conexão */
+async function csPinServidor(pin,comSessao){
+  const r=await fetch(`${SUPA.url}/functions/v1/tiny`,{method:'POST',headers:{'apikey':SUPA.key,'Content-Type':'application/json'},
+    body:JSON.stringify({acao:'pin_entrar',pin,sessao:!!comSessao,linha:SUPA.linha})});
+  const d=await r.json().catch(()=>null);
+  if(!d)throw new Error(r.status===404?'a função "tiny" não está instalada':'erro '+r.status);
+  if(d.sessao){SESSAO=d.sessao;try{localStorage.setItem(SUPA_SESSAO,JSON.stringify(d.sessao));}catch(e){}}
+  if(d.pessoa&&d.pessoa.tipo){const p=d.pessoa;
+    const q=p.tipo==='operador'?{nome:p.nome,funcao:p.funcao,id:p.id,tipo:'operador',op:(OPERADORES||[]).find(x=>x.id===p.id)||null,nivel:'operador'}
+      :{nome:p.nome,funcao:p.funcao||'',email:p.email,master:!!p.master,tipo:'acesso',nivel:p.nivel||'',pode:true};
+    CS_PIN_CACHE[String(pin).trim()]=q;d.q=q;}
+  return d;
+}
+/* confere: primeiro aqui, depois no servidor */
+async function csConferePin(v){
+  const q=csPinValido(v);if(q)return {q};
+  const motLocal=window.CS_PIN_MOTIVO||'';
+  if(/é da MAQ|não tem a permissão/.test(motLocal))return {erro:motLocal};
+  if(!temNuvem())return {erro:'PIN não reconhecido.'};
+  try{const semConexao=!SESSAO;const d=await csPinServidor(v,semConexao);
+    if(d.q){if(semConexao)return {q:d.q,conectou:true};const q2=csPinValido(v);return q2?{q:q2}:{erro:window.CS_PIN_MOTIVO||'PIN não reconhecido.'};}
+    return {erro:d.motivo||'PIN não reconhecido.'};}
+  catch(e){return {erro:'Sem conexão com o servidor: '+e.message};}
+}
+const csPinsMaisLongos=v=>[...(OPERADORES||[]),...(typeof ACESSOS!=='undefined'?ACESSOS:[])].some(o=>String(o.pin||'').trim().length>v.length);
+
+/* ---------- o teclado (usado na abertura, nos botões e no conferir) ---------- */
+function csTecPin(el,aoDigitar){
+  let v='',ocupado=false;
+  el.innerHTML=`<div class="pts"><i></i><i></i><i></i><i></i></div>
+    <div class="tec">${['1','2','3','4','5','6','7','8','9','','0','⌫'].map(k=>k?`<button type="button" data-pk="${k}"${k==='⌫'?' class="f" aria-label="Apagar"':''}>${k==='⌫'?'&#9003;':k}</button>`:'<span></span>').join('')}</div>
+    <div class="ms"></div>`;
+  const pts=el.querySelector('.pts'),ms=el.querySelector('.ms');
+  const mostra=()=>[...pts.children].forEach((i,n)=>i.classList.toggle('on',n<v.length));
+  const api={erro:m=>{pts.classList.add('erro');ms.className='ms';ms.textContent=m;setTimeout(()=>{pts.classList.remove('erro');v='';mostra();},600);},
+    ok:m=>{ms.className='ms ok';ms.textContent=m;},espera:m=>{ms.className='ms';ms.textContent=m;}};
+  el.onclick=async ev=>{const b=ev.target.closest('[data-pk]');if(!b||ocupado)return;ev.stopPropagation();
+    const k=b.dataset.pk;v=k==='⌫'?v.slice(0,-1):(v.length<6?v+k:v);mostra();ms.textContent='';
+    if(k==='⌫'||v.length<4)return;
+    if(v.length<6&&csPinsMaisLongos(v)&&!quemPorCredencial(v))return;   /* alguém tem PIN mais comprido: espera */
+    ocupado=true;const pin=v;try{await aoDigitar(pin,api);}finally{ocupado=false;}};
+  return api;
+}
+
+/* ---------- abrir a máquina e assinar um botão: só o PIN ---------- */
+let CS_PINTELA0=null;
+try{CS_PINTELA0=csPinTela;}catch(e){}
+csPinTela=function(tit,sub,ok,mot){
+  let d=document.getElementById('csPinOp');if(!d){d=document.createElement('div');d.id='csPinOp';document.body.appendChild(d);}
+  const abrir=!tit,h=new Date().getHours(),ola=h<12?'Bom dia':h<18?'Boa tarde':'Boa noite';
+  d.className='cs-pinop on'+(abrir?' abre':'');
+  d.innerHTML=abrir?`<img class="lg" src="${LOGO}" alt="Atrius"><div class="ola">${ola}</div><div class="mq">${escAttr(csMaqDoTablet())}</div><div class="pd">Digite seu PIN para abrir</div><div id="csTecA"></div>`
+    :`<div class="tp"><div><b>${escAttr(tit)}</b><i>${escAttr(sub||'')}</i></div><button class="x" data-px="1" aria-label="Cancelar">&times;</button></div><div class="pd">Digite seu PIN</div><div id="csTecA"></div>`;
+  const x=d.querySelector('[data-px]');if(x)x.onclick=()=>{d.className='cs-pinop';};
+  csTecPin(d.querySelector('#csTecA'),async(pin,api)=>{
+    api.espera('Conferindo…');const r=await csConferePin(pin);
+    if(!r.q)return api.erro(r.erro);
+    api.ok(r.q.nome);
+    if(r.conectou){CS_OP_ABERTO=true;try{const el=M('login');if(el)el.hidden=true;}catch(e){}await iniciarComNuvem();
+      d.className='cs-pinop';csViraOperador(r.q);try{csAbrirOperador(csMaqDoTablet());}catch(e){}try{csPintarOperador();}catch(e){}return;}
+    setTimeout(()=>{d.className='cs-pinop';csViraOperador(r.q);ok(r.q,pin,null);},250);
+  });
+};
+/* tablet sem conexão: o teclado, não o login com e-mail */
+try{const _tl30=CS_TL0||telaLogin;telaLogin=function(msg){
+  let q=null;try{q=csQuiosque();}catch(e){}
+  if(!q)return _tl30.apply(this,arguments);
+  try{const el=M('login');if(el)el.hidden=true;}catch(e){}
+  csPinTela('','',()=>{});
+};}catch(e){}
+try{if(csQuiosque()&&!SESSAO)telaLogin('');}catch(e){}
+
+/* ---------- motivos: tela em pé ---------- */
+const csEscDe=sel=>({principal:sel[0]?sel[0].s:'',grupo:sel[0]?sel[0].g:'',secundarios:sel.slice(1).map(x=>x.s),itens:sel.map(x=>({g:x.g,s:x.s}))});
+function csMotivosTela(cfg,cb,pre){
+  let d=document.getElementById('csMotOp');if(!d){d=document.createElement('div');d.id='csMotOp';document.body.appendChild(d);}
+  const gl=(cfg.grupos||[]).filter(g=>(g.sub||[]).length);
+  const st=pre||{sel:[],aberto:null,outro:false,txt:''};
+  const tem=(g,s)=>st.sel.some(x=>x.g===g&&x.s===s);
+  const lista=()=>[...st.sel,...(st.outro&&st.txt.trim()?[{g:'Outro',s:st.txt.trim()}]:[])];
+  const falta=()=>st.outro&&!st.txt.trim()?'Escreva o que houve em Outro':(!lista().length?'Marque pelo menos um motivo':'');
+  const pinta=()=>{
+    const ab=gl.find(g=>g.nome===st.aberto),l=lista(),f=falta();
+    d.className='cs-motop on et-'+(cfg.etapa||'');
+    d.innerHTML=`<div class="mt-top"><div class="tx"><b>${escAttr(cfg.titulo||'')}</b><i>${escAttr(cfg.sub||'')}</i></div>
+        ${cfg.dirV?`<div class="dr"><i>${escAttr(cfg.dirT||'')}</i><b>${escAttr(cfg.dirV)}</b></div>`:''}
+        <button class="x" data-mx="1" aria-label="Cancelar">&times;</button></div>
+      ${cfg.faixa?`<div class="mt-fx">${escAttr(cfg.faixa)}</div>`:''}
+      <div class="mt-cp">
+        <div class="mt-rt">1 · O que atrapalhou</div>
+        <div class="mt-gr">${gl.map(g=>{const n=st.sel.filter(x=>x.g===g.nome).length;
+          return `<button type="button" class="${st.aberto===g.nome?'ab':''} ${n?'tem':''}" data-mg="${escAttr(g.nome)}"><span>${escAttr(g.nome)}</span>${n?`<em>${n}</em>`:''}</button>`;}).join('')}
+          <button type="button" class="${st.outro?'tem':''} ${st.aberto==='__outro'?'ab':''}" data-mo="1"><span>Outro</span>${st.outro?'<em>1</em>':''}</button></div>
+        ${ab?`<div class="mt-rt">2 · ${escAttr(ab.nome)} <small>· pode marcar mais de um</small></div>
+          <div class="mt-it">${ab.sub.map(s=>`<button type="button" class="${tem(ab.nome,s)?'on':''}" data-ms="${escAttr(s)}"><span class="ck"></span><span>${escAttr(s)}</span></button>`).join('')}</div>`:''}
+        ${st.outro?`<div class="mt-rt"><label for="csMotTx">${ab?'3':'2'} · Outro · escreva o que houve <b>*</b></label></div>
+          <textarea id="csMotTx" placeholder="O que aconteceu">${escAttr(st.txt)}</textarea>`:''}
+      </div>
+      <div class="mt-rod"><div class="mt-rt">Marcados (${l.length})</div>
+        <div class="mt-ch">${l.length?l.map((x,i)=>`<span><small>${escAttr(x.g)} ›</small> ${escAttr(x.s.length>40?x.s.slice(0,40)+'…':x.s)}<button type="button" data-mr="${i}" aria-label="Tirar">×</button></span>`).join(''):'<i>Nada marcado ainda</i>'}</div>
+        <button type="button" class="mt-ok" data-mk="1" ${f?'disabled':''}>${f||'Continuar · digitar o PIN'}</button></div>`;
+    const tx=d.querySelector('#csMotTx');if(tx){tx.oninput=()=>{st.txt=tx.value;const b=d.querySelector('[data-mk]'),ff=falta();b.disabled=!!ff;b.textContent=ff||'Continuar · digitar o PIN';};}
+  };
+  d.onclick=ev=>{const t=ev.target;
+    if(t.closest('[data-mx]')){d.className='cs-motop';return;}
+    const g=t.closest('[data-mg]');if(g){st.aberto=st.aberto===g.dataset.mg?null:g.dataset.mg;return pinta();}
+    if(t.closest('[data-mo]')){st.outro=!st.outro;if(!st.outro)st.txt='';st.aberto=null;pinta();if(st.outro)setTimeout(()=>{const x=d.querySelector('#csMotTx');if(x)x.focus();},30);return;}
+    const s=t.closest('[data-ms]');if(s){const gn=st.aberto,k=st.sel.findIndex(x=>x.g===gn&&x.s===s.dataset.ms);if(k>=0)st.sel.splice(k,1);else st.sel.push({g:gn,s:s.dataset.ms});return pinta();}
+    const r=t.closest('[data-mr]');if(r){const i=+r.dataset.mr;if(i<st.sel.length)st.sel.splice(i,1);else{st.outro=false;st.txt='';}return pinta();}
+    if(t.closest('[data-mk]')){if(falta())return;d.className='cs-motop';cb(lista(),st);}
+  };
+  pinta();
+}
+function csConfereTela(cfg,cb){
+  let d=document.getElementById('csMotOp');if(!d){d=document.createElement('div');d.id='csMotOp';document.body.appendChild(d);}
+  const volta=cfg.voltar;
+  d.className='cs-motop on cs-conf';
+  d.innerHTML=`<div class="mt-top"><div class="tx"><b>${escAttr(cfg.titulo||'')}</b><i>${escAttr(cfg.sub||'')}</i></div>
+      <button class="x" data-mx="1" aria-label="Cancelar">&times;</button></div>
+    <div class="mt-cp">
+      <div class="mt-cf"><div class="cfh"><div class="mt-rt">Confira os motivos</div><button type="button" data-mv="1">‹ Voltar e mudar</button></div>
+        ${cfg.sel.map((x,i)=>`<div class="cfl"><small>${escAttr(x.g)}${i===0?' · principal':''}</small><b>${escAttr(x.s)}</b></div>`).join('')}
+        ${cfg.aviso?`<div class="cfa">${escAttr(cfg.aviso)}</div>`:''}</div>
+      <div class="mt-pin"><div class="pd1">Digite seu PIN para ${escAttr(String(cfg.acao||'confirmar').toLowerCase())}</div><div class="pd2">quem digita assina</div><div id="csTecC" class="cs-pinop-tec"></div></div>
+    </div>`;
+  d.querySelector('[data-mx]').onclick=()=>{d.className='cs-motop';};
+  d.querySelector('[data-mv]').onclick=()=>{if(cfg.reabrir)cfg.reabrir();};
+  csTecPin(d.querySelector('#csTecC'),async(pin,api)=>{
+    api.espera('Conferindo…');const r=await csConferePin(pin);
+    if(!r.q)return api.erro(r.erro);
+    api.ok(r.q.nome);setTimeout(()=>{d.className='cs-motop';csViraOperador(r.q);cb(r.q,pin);},250);
+  });
+}
+/* "Voltar e mudar" volta para os motivos com o que estava marcado */
+try{const _mt30=csMotivosTela;csMotivosTela=function(cfg,cb,pre){
+  return _mt30.call(this,cfg,(sel,st)=>{
+    const cfg2={titulo:cfg.titulo,sub:cfg.sub,sel,acao:cfg.acao||cfg.titulo,aviso:cfg.aviso,reabrir:()=>csMotivosTela(cfg,cb,st)};
+    /* quem chama com csConfereTela já embutido (csPinTela) passa direto */
+    if(cfg.__direto)return cb(sel,st);
+    return cb(sel,st,cfg2);},pre);};}catch(e){}
+/* o csPinTela com motivo: os motivos, depois o conferir com o PIN */
+try{const _pt30=csPinTela;csPinTela=function(tit,sub,ok,mot){
+  if(!mot)return _pt30.apply(this,arguments);
+  const cfg={etapa:mot.etapa||'setup',titulo:tit||'Motivo',sub,faixa:mot.titulo,grupos:mot.grupos||gruposDe(mot.etapa||'setup'),dirT:mot.dirT,dirV:mot.dirV,acao:mot.acao||tit,aviso:mot.aviso};
+  /* o setup escolhido aqui segue pronto para a janela de horário (ela não pergunta de novo) */
+  const ok2=(q,pin,esc)=>{if(esc&&cfg.etapa==='setup')window.CS_MOT_PRE=esc;return ok(q,pin,esc);};
+  const abre=pre=>csMotivosTela(cfg,(sel,st,cfg2)=>csConfereTela(cfg2,(q,pin)=>ok2(q,pin,csEscDe(sel))),pre);
+  abre();};}catch(e){}
+
+/* ---------- pausa no tablet ---------- */
+try{const _pz30=csPausar;csPausar=function(o){
+  if(!document.body.classList.contains('cs-operon'))return _pz30.apply(this,arguments);
+  const hora=relogio();
+  const cfg={etapa:'pausa',titulo:'Pausar a linha',sub:`${o.maq} · OP ${rotuloOP(o)} · lote ${o.lote||''}`,dirT:'Parou às',dirV:hora,
+    grupos:gruposDe('pausa').length?gruposDe('pausa'):gruposDe('parada'),acao:'pausar',aviso:`A pausa conta desde as ${hora}. Para voltar, toque em Retomar na tela da máquina.`};
+  csMotivosTela(cfg,(sel,st,cfg2)=>csConfereTela(cfg2,(q)=>{
+    const pri=sel[0],motivo=`${pri.g} · ${pri.s}`,outros=sel.slice(1).map(x=>`${x.g} · ${x.s}`);
+    const obs=[...(pri.g==='Outro'?[]:[]),...outros].join(' | ');
+    o.log=o.log||[];const txt=obs?`${motivo} — ${obs}`:motivo;
+    o.log.push({t:hora,d:ymd(new Date()),e:'Linha pausada',op:q.nome,m:txt});
+    o.csPausa={desde:hora,motivo,obs,quem:q.nome,itens:sel.map(x=>({g:x.g,s:x.s}))};
+    try{agendarSalvar();}catch(e){}try{toast(`${o.maq} pausada · ${txt} · ${q.nome}`,true);}catch(e){}
+    try{render();}catch(e){}try{csPintarOperador();}catch(e){}
+  }));
+};}catch(e){}
+/* a pausa medida guarda todos os motivos marcados */
+try{const _mo30=csMotivosOP;csMotivosOP=function(o){const l=_mo30(o);
+  (o.pausasOp||[]).forEach(p=>{(p.itens||[]).slice(1).forEach(x=>l.push({et:'pausa',g:x.g||'Outro',s:x.s||'(sem detalhe)',pri:false,custo:0}));});
+  return l;};}catch(e){}
+try{const _rt30=csRetomar;csRetomar=function(o){
+  const it=o&&o.csPausa&&o.csPausa.itens;const r=_rt30.apply(this,arguments);
+  try{if(it&&o.pausasOp&&o.pausasOp.length){const u=o.pausasOp[o.pausasOp.length-1];if(!u.itens)u.itens=it;}}catch(e){}
+  return r;};}catch(e){}
+
+/* ---------- concluir envase acima do previsto: motivo do envase ---------- */
+/* na janela (antes do pedido de PIN de cada botão, que fica no document) */
+window.addEventListener('click',ev=>{
+  const b=ev.target.closest&&ev.target.closest('#csOper [data-op="fin"]');if(!b||CS_PIN_PASSA||window.CS_ENV_PASSA)return;
+  let at=null;try{at=csOPdaLinha(CS_OPMAQ).atual;}catch(e){}
+  if(!at)return;
+  let atr=0;try{atr=hm(relogio())-fimPrev(at);}catch(e){atr=0;}
+  if(!(atr>TOLERANCIA))return;
+  ev.preventDefault();ev.stopImmediatePropagation();
+  csPinTela('Concluir envase',`${CS_OPMAQ||''} · OP ${rotuloOP(at)} · lote ${at.lote||''}`,(q,pin,esc)=>{
+    window.CS_ENV_PRE={o:at,lista:esc.itens,atr};
+    CS_PIN_PASSA=true;try{b.click();}finally{CS_PIN_PASSA=false;}
+    let tent=0;const vai=()=>{try{
+      if(M('etPin')&&M('etK')){M('etPin').value=pin;M('etPin').dispatchEvent(new Event('input',{bubbles:true}));M('etK').click();setTimeout(()=>{try{if(M('etOK'))M('etOK').click();}catch(e){}},60);return;}
+      if(M('etOK')){M('etOK').click();return;}}catch(e){} if(++tent<25)setTimeout(vai,60);};vai();
+    setTimeout(()=>{try{const p=window.CS_ENV_PRE;if(!p)return;window.CS_ENV_PRE=null;const o=p.o;
+      o.motivos=p.lista;o.motivosEnvase=p.lista;o.atrasoMin=Math.max(0,p.atr);
+      o.motivoFim=p.lista.map(x=>`${x.g} · ${x.s}`).join(' | ');
+      registrar(o,'Motivo do envase acima do previsto',q,o.motivoFim);agendarSalvar();csPintarOperador();}catch(e){}},700);
+  },{etapa:'envase',titulo:`Envase passou ${atr} min do previsto: diga o motivo`,grupos:gruposDe('envase'),dirT:'Passou',dirV:`${atr} min`,acao:'concluir o envase'});
+},true);
+/* a janela de finalizar não pede de novo o que já veio do tablet */
+document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.closest('#nK');if(!b||!window.CS_ENV_PRE)return;const oc=M('nOco');if(oc)oc.hidden=true;},true);
+
+/* setup acima do previsto: título e faixa como no desenho */
+try{const _pt30b=csPinTela;csPinTela=function(tit,sub,ok,mot){
+  if(mot&&!mot.etapa&&/^Setup levou/.test(mot.titulo||'')){
+    const m=String(mot.titulo).match(/Setup levou (.+?) \(previsto (\d+) min\)/);
+    mot={...mot,etapa:'setup',dirT:'Setup levou',dirV:m?m[1]:'',titulo:m?`Previsto ${m[2]} min: diga o motivo do setup`:mot.titulo,acao:tit||'iniciar o envase'};}
+  return _pt30b.call(this,tit,sub,ok,mot);};}catch(e){}
+
+/* ---------- PIN: gerado pelo sistema, um para cada pessoa ---------- */
+const csPinUsado=p=>(OPERADORES||[]).some(o=>String(o.pin||'').trim()===p)||(typeof ACESSOS!=='undefined'?ACESSOS:[]).some(a=>String(a.pin||'').trim()===p);
+pinLivre=function(){let p,g=0;do{p=String(Math.floor(1000+Math.random()*9000));g++;}while(g<5000&&csPinUsado(p));return p;};
+try{const _ua30=csUsuAbaAcesso;csUsuAbaAcesso=function(){
+  const r=_ua30.apply(this,arguments);
+  try{const i=M('usPin');if(i){
+      i.readOnly=true;if(!i.value.trim()){i.value=pinLivre();}
+      const g=M('usGeraPin');if(g){g.textContent='Gerar outro';g.onclick=()=>{i.value=pinLivre();i.type='text';};}
+      const o=i.parentNode.querySelector('.olho');if(o){o.title='Ver PIN';o.setAttribute('aria-label','Ver PIN');}
+      const h=i.closest('.fld')&&i.closest('.fld').parentNode&&i.closest('.fld').parentNode.querySelector('.cs-usuh, .hint, p');
+    }}catch(e){}
+  return r;};}catch(e){}
+try{const _mo30b=modalOperador;modalOperador=function(o){
+  const r=_mo30b.apply(this,arguments);
+  try{const p=M('opPin');if(p){p.readOnly=true;if(!String(p.value||'').trim())p.value=pinLivre();}
+    const fld=p&&p.closest('.fld');
+    if(fld&&!M('opTela')){fld.insertAdjacentHTML('afterend',`<label class="chk" style="margin:6px 0 10px"><input type="checkbox" id="opTela" ${!o||o.telaop!==false?'checked':''}><span><b>Entrar na tela da máquina com PIN</b></span></label>`);}
+    const k=M('opK'),sv=k.onclick;k.onclick=()=>{const marcado=M('opTela')?M('opTela').checked:true,antes=OPERADORES.length;sv();
+      const alvo=o||(OPERADORES.length>antes?OPERADORES[OPERADORES.length-1]:null);if(alvo){alvo.telaop=marcado;agendarSalvar();}};}catch(e){}
+  return r;};}catch(e){}
+try{csNucleo.versao='v330';}catch(e){}
 
 </script>
 </body>

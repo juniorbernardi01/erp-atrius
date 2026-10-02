@@ -914,7 +914,7 @@ function telaOrdens(){
   const p=LST.per,nsel=[...LST.sel].filter(id=>DB.ocs.some(o=>o.id===id)).length;
   const col=(k,r,st)=>`<span class="so ${s.k===k?(s.dir>0?'asc':'desc'):''}" data-sort="${k}" style="${st||''}">${r}<i></i></span>`;
   $('app').innerHTML=`<div class="migalha">Compras › Ordens de compra</div>
-  <div class="topo"><h1>Ordens de compra</h1><span class="salvo"></span>${pode('compras.oc','editar')?'<button class="btn" id="bImpA" title="Abertas e em andamento, com pagamento e parcelas (API v3)">⤓ Trazer OCs do Tiny</button><button class="btn" id="bImpT" title="Pela planilha exportada do Tiny">Planilha</button><button class="btn pri" id="bNova">＋ Nova ordem de compra</button>':''}</div>
+  <div class="topo"><h1>Ordens de compra</h1><span class="salvo"></span>${pode('compras.oc','editar')?'<button class="btn pri" id="bNova">＋ Nova ordem de compra</button>':''}</div>
   <div class="barra"><div class="busca">⌕<input id="q" placeholder="Pesquise por fornecedor, Nº OC, NF, item ou marcador" value="${esc(LST.q)}"></div>
     ${perBotao('bPer',LST.per)}
     ${falhas.length?`<button class="pend" id="bPend"><i></i>${falhas.length} ${falhas.length>1?'ordens':'ordem'} com envio ao Tiny pendente · revisar</button>`:''}
