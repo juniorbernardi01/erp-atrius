@@ -3746,6 +3746,11 @@ body.comcasca .bat.st-concluido>*:not(.frs):not(.cs-pts){opacity:.8!important}
 .cs-motop .tu-vl{font:700 clamp(56px,9vh,96px) 'Barlow Condensed',sans-serif;color:#14213D;line-height:1;margin-top:1vh}
 .cs-motop .tu-vl small{font-size:.4em;color:#4A5468;font-weight:600}
 .cs-motop .tu-in{font-size:clamp(15px,1.9vh,18px);color:#3F4757;text-align:center;margin-bottom:1.4vh}
+
+/* ===== v334 · teclado do PIN centralizado ===== */
+#csTecA,#csTecC{display:flex;flex-direction:column;align-items:center;width:100%}
+#csTecA .pts,#csTecC .pts{justify-content:center}
+#csTecA .ms,#csTecC .ms{width:100%;text-align:center}
 </style>
 </head>
 <body>
@@ -5337,7 +5342,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v333';
+const VERSAO_APP='v334';
 let DRAG=null;
 function render(){
   recomporTudo();
@@ -25536,7 +25541,7 @@ try{const _fe32=finalizarEnvase;finalizarEnvase=function(o){
       if(window.CS_ENV_PRE&&M('nOco'))M('nOco').hidden=true;
       setTimeout(()=>{try{if(window.CS_ENV_PRE&&M('nOco'))M('nOco').hidden=true;M('nK').click();}catch(e){}},30);}}catch(e){}
   return r;};}catch(e){}
-try{csNucleo.versao='v333';}catch(e){}
+try{csNucleo.versao='v334';}catch(e){}
 
 </script>
 </body>
