@@ -3755,6 +3755,9 @@ body.comcasca .bat.st-concluido>*:not(.frs):not(.cs-pts){opacity:.8!important}
 /* ===== v335 ===== */
 body.cs-semjanela #mask{visibility:hidden!important}
 .cs-oper .cs-opmenu .it.prox{display:flex!important}
+
+/* ===== v336 ===== */
+.cs-opmenu .it .atraso{margin-left:auto;font-size:11.5px;color:#B3261E;white-space:nowrap;background:#FDECEC;border:1px solid #EDCFCC;border-radius:999px;padding:3px 10px}
 </style>
 </head>
 <body>
@@ -5346,7 +5349,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v335';
+const VERSAO_APP='v336';
 let DRAG=null;
 function render(){
   recomporTudo();
@@ -21010,7 +21013,8 @@ function csMenuOperador(maq,atual,fila,feitas){
     <span class="tx"><b>${escAttr(nomeDe(o))}</b>
       <i>lote ${escAttr(o.lote||'—')} · ${nf(caixasPrev(o))} ${und(o)}${
         cls==='ok'&&o.caixas!=null?` · fez ${nf(o.caixas)}`:''}</i></span>
-    ${cls==='ok'?(noPrazo(o)?'<span class="estrela">&#9733; no prazo</span>':'')
+    ${cls==='ok'?(noPrazo(o)?'<span class="estrela">&#9733; no prazo</span>'
+      :(()=>{try{const a=hm(o.fimReal)-fimPrev(o);return a>0?`<span class="atraso">${a} min de atraso</span>`:'';}catch(e){return '';}})())
       :sinal(o)}</div>`;
   /* total do dia: o número que o supervisor pergunta no corredor */
   const totalFeito=feitas.reduce((t,o)=>t+(+o.caixas||0),0);
@@ -21295,7 +21299,7 @@ function csPintarOperador(){
           <div class="chs quatro">
             <span><i>Ordem de produção</i><b>${escAttr(rotuloOP(atual))}</b></span>
             <span><i>Lote</i><b>${atual.lote||'—'}</b></span>
-            <span><i>Tanque a puxar</i><b>${atual.tanque||'—'}</b></span>
+            <span><i>Tanque a puxar</i><b>${atual.tanque||'—'}${atual.litros?` · ${nf(atual.litros)} L`:''}</b></span>
             <span><i>Quantidade</i><b>${nf(caixasPrev(atual))} ${und(atual)}</b></span>
           </div>
         </div>
@@ -25552,7 +25556,93 @@ try{const _fe32=finalizarEnvase;finalizarEnvase=function(o){
       if(window.CS_ENV_PRE&&M('nOco'))M('nOco').hidden=true;
       setTimeout(()=>{try{if(window.CS_ENV_PRE&&M('nOco'))M('nOco').hidden=true;M('nK').click();}catch(e){}},30);}}catch(e){}
   return r;};}catch(e){}
-try{csNucleo.versao='v335';}catch(e){}
+
+
+</script>
+<script>
+/* ===================== v336 · apontamento no tablet com a tela nova =====================
+   "Apontar contagem": total de caixas no teclado grande (com o que já foi contado nos
+   turnos e quem contou), motivo da quebra na tela de motivos (só quando passa do
+   limite) e o conferir com o PIN. Quem grava é a janela de concluir do sistema,
+   preenchida por trás — mesma conta de estoque, mesmo histórico. */
+function csQuebraDe(o,cx){
+  const perdidos=o.litros-cx*litrosCx(o);
+  const lim=Math.max(0,(typeof QUEBRA_L!=='undefined'&&QUEBRA_L!=null)?+QUEBRA_L:litrosCx(o));
+  return {litros:perdidos,cx:Math.max(0,caixasPrev(o)-cx),pct:caixasPrev(o)?Math.max(0,(caixasPrev(o)-cx)/caixasPrev(o)*100):0,pede:perdidos>=lim&&perdidos>0};
+}
+function csApontarOp(o){
+  let d=document.getElementById('csMotOp');if(!d){d=document.createElement('div');d.id='csMotOp';document.body.appendChild(d);}
+  const prev=caixasPrev(o),un=und(o),tur=turnosDe(o),ja=tur.length?cxFeitas(o):0;let v='';
+  const pinta=()=>{
+    const cx=v===''?null:+v,q=cx!=null?csQuebraDe(o,cx):null,abaixo=cx!=null&&tur.length&&cx<ja;
+    d.className='cs-motop on et-turno cs-turno';
+    d.innerHTML=`<div class="mt-top"><div class="tx"><b>Apontar contagem</b><i>${escAttr(o.maq||'')} · OP ${escAttr(rotuloOP(o))} · lote ${escAttr(o.lote||'')}</i></div>
+        <div class="dr"><i>Previsto</i><b>${nf(prev)} ${escAttr(un)}</b></div><button class="x" data-mx="1" aria-label="Cancelar">&times;</button></div>
+      ${tur.length?`<div class="mt-fx">Já contado: ${tur.map(t=>`${dCurto(t.data)} · ${nf(t.caixas)} ${escAttr(un)} · contou ${escAttr(t.operador||'?')}`).join(' — ')}. Lance o total da OP.</div>`
+        :`<div class="mt-fx">Conte as caixas prontas do lote. Ao confirmar, elas entram no estoque.</div>`}
+      <div class="mt-cp" style="align-items:center">
+        <div class="mt-rt" style="align-self:flex-start">Total de caixas da OP</div>
+        <div class="tu-vl">${cx!=null?nf(cx):'0'} <small>${escAttr(un)}</small></div>
+        <div class="tu-in">${cx==null?`Previsto: <b>${nf(prev)} ${escAttr(un)}</b>`
+          :abaixo?`<b style="color:#B3261E">Menor do que o já contado (${nf(ja)}): o PIN tem que ser de um gestor.</b>`
+          :q.cx>0?`Quebra: <b style="color:${q.pede?'#B3261E':'#3F4757'}">${nf(q.cx)} ${escAttr(un)} · ${q.pct.toFixed(1).replace('.',',')}%</b>${q.pede?' — vai pedir o motivo':''}`
+          :`<b style="color:#15803D">Sem quebra</b>`}</div>
+        <div class="tec">${['1','2','3','4','5','6','7','8','9','','0','⌫'].map(k=>k?`<button type="button" data-tk="${k}"${k==='⌫'?' class="f" aria-label="Apagar"':''}>${k==='⌫'?'&#9003;':k}</button>`:'<span></span>').join('')}</div>
+      </div>
+      <div class="mt-rod"><button type="button" class="mt-ok" data-mk="1" ${v===''?'disabled':''}>${v===''?'Digite o total':'Continuar'}</button></div>`;
+  };
+  d.onclick=ev=>{const t=ev.target;
+    if(t.closest('[data-mx]')){d.className='cs-motop';return;}
+    const k=t.closest('[data-tk]');if(k){const c=k.dataset.tk;v=c==='⌫'?v.slice(0,-1):(v.length<5?(v==='0'?c:v+c):v);return pinta();}
+    if(!t.closest('[data-mk]')||v==='')return;
+    const cx=+v,q=csQuebraDe(o,cx);
+    const resumo=[{g:'Total de caixas',s:`${nf(cx)} de ${nf(prev)} ${un}`},...(q.cx>0?[{g:'Quebra',s:`${nf(q.cx)} ${un} · ${nf(Math.max(0,q.litros))} L`}]:[])];
+    const assina=sel=>csConfereTela({titulo:'Apontar contagem',sub:`${o.maq||''} · OP ${rotuloOP(o)} · lote ${o.lote||''}`,acao:'confirmar a entrada no estoque',
+        tituloConf:'Confira o apontamento',semPrincipal:true,sel:[...resumo,...(sel||[]).map(x=>({g:'Motivo da quebra · '+x.g,s:x.s}))],
+        aviso:'Ao assinar, o total entra no estoque e a OP é concluída.',reabrir:()=>csApontarOp(o)},(qq,pin)=>csGravaApont(o,cx,sel||[],pin));
+    if(!q.pede)return assina([]);
+    csMotivosTela({etapa:'quebra',titulo:'Apontar contagem',sub:`${o.maq||''} · OP ${rotuloOP(o)} · lote ${o.lote||''}`,faixa:`Quebra de ${nf(q.cx)} ${un} (${nf(Math.max(0,q.litros))} L): diga o que houve`,
+      dirT:'Quebra',dirV:`${q.pct.toFixed(1).replace('.',',')}%`,grupos:gruposDe('quebra'),acao:'confirmar'},(sel)=>assina(sel));
+  };
+  pinta();
+}
+/* preenche a janela de concluir do sistema, escondida, e confirma */
+function csGravaApont(o,cx,sel,pin){
+  document.body.classList.add('cs-semjanela');
+  const falhou=m=>{document.body.classList.remove('cs-semjanela');toast(m||'Confira a janela do apontamento.',true);};
+  try{CS_PIN_PASSA=true;concluir(o);}catch(e){CS_PIN_PASSA=false;return falhou('Não consegui abrir o apontamento: '+e.message);}
+  CS_PIN_PASSA=false;
+  try{
+    M('cCx').value=String(cx);M('cCx').dispatchEvent(new Event('input',{bubbles:true}));
+    if(M('cAjPin')){M('cAjPin').value=pin;M('cAjPin').dispatchEvent(new Event('input',{bubbles:true}));}
+    /* motivos: o grupo pelo nome, depois cada item; "Outro" vira o texto do primeiro grupo marcado */
+    const gs=gruposDe('quebra'),gid=n=>(gs.find(g=>g.nome===n)||{}).id;
+    const box=M('cMot');
+    const clica=sel=>{const b=box&&box.querySelector(sel);if(b)b.click();return !!b;};
+    const outro=sel.find(x=>x.g==='Outro'),itens=sel.filter(x=>x.g!=='Outro');
+    itens.forEach(x=>{const id=gid(x.g);if(!id)return;
+      if(!box.querySelector(`[data-g1="quebra"][data-gid="${id}"].on`))clica(`[data-g1="quebra"][data-gid="${id}"]`);
+      clica(`[data-g2="quebra"][data-gid="${id}"][data-sub="${CSS.escape(x.s)}"]`);});
+    if(outro){const id=itens.length?gid(itens[0].g):(gs[0]||{}).id;
+      if(id){if(!box.querySelector(`[data-g1="quebra"][data-gid="${id}"].on`))clica(`[data-g1="quebra"][data-gid="${id}"]`);
+        clica(`[data-g2="quebra"][data-gid="${id}"][data-sub="__outro"]`);
+        const tx=box.querySelector(`[data-gtxt="quebra"][data-gid="${id}"]`);if(tx){tx.value=outro.s;tx.dispatchEvent(new Event('input',{bubbles:true}));}}}
+    M('cK').click();
+    if(!M('cOK')||!M('cPin'))return falhou('O apontamento não passou: confira a janela.');
+    M('cPin').value=pin;M('cPin').dispatchEvent(new Event('input',{bubbles:true}));
+    M('cOK').click();
+  }catch(e){return falhou('Não consegui gravar o apontamento: '+e.message);}
+  setTimeout(()=>{
+    let fechou=false;try{fechou=sit(o)==='concluida';}catch(e){}
+    if(fechou){document.body.classList.remove('cs-semjanela');try{toast(`Contagem apontada · ${nf(cx)} ${und(o)} no estoque`);}catch(e){}}
+    else falhou('O apontamento pediu mais alguma coisa: confira a janela.');
+    try{csPintarOperador();}catch(e){}},250);
+}
+window.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.closest('#csOper [data-op="conc"]');if(!b||CS_PIN_PASSA)return;
+  ev.preventDefault();ev.stopImmediatePropagation();
+  let at=null;try{at=csOPdaLinha(CS_OPMAQ).atual;}catch(e){}
+  if(at)csApontarOp(at);},true);
+try{csNucleo.versao='v336';}catch(e){}
 
 </script>
 </body>
