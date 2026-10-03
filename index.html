@@ -5349,7 +5349,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v339';
+const VERSAO_APP='v340';
 let DRAG=null;
 function render(){
   recomporTudo();
@@ -23623,13 +23623,13 @@ function csStatusOp(o,st,pau){
   const hj=o.data||ymd(new Date());
   if(pau){c='pau';r='Pausada';sub=`${o.csPausa.motivo||''} · desde ${o.csPausa.desde||''}${o.csPausa.quem?' · '+o.csPausa.quem:''}`;ini=o.csPausa.desde?`${ymd(new Date())}T${o.csPausa.desde}`:'';}
   else if(st==='preparacao'){c='set';r='Em setup';sub='preparando a máquina';ini=o.iniReal?`${hj}T${o.iniReal}`:'';}
-  /* v338: o limite de cada etapa (previsto + tolerância) vai junto, para a faixa ficar vermelha na hora em que passa */
-  let lim=0,rAtr='';const tol=(typeof TOLERANCIA!=='undefined'?+TOLERANCIA:0)||0;
-  if(!pau&&st==='preparacao'){lim=(+o.setup||0)+tol;rAtr='Setup atrasado';}
   else if(st==='producao'){let atr=false;try{atr=atrasada(o);}catch(e){}
     const e=(typeof iniEnvase==='function'&&iniEnvase(o))||o.envIni;
     c=atr?'atr':'rod';r=atr?'Envase atrasado':'Envasando';sub=atr?'passou do previsto':'dentro do previsto';ini=e?`${hj}T${e}`:'';}
   else if(st==='finalizado'){c='apo';r='A apontar';sub='conte as caixas e aponte';ini=o.fimReal?`${hj}T${o.fimReal}`:'';}
+  /* v338/v340: o limite de cada etapa (previsto + tolerância), decidido depois da etapa, para a faixa ficar vermelha na hora */
+  let lim=0,rAtr='';const tol=(typeof TOLERANCIA!=='undefined'?+TOLERANCIA:0)||0;
+  if(!pau&&st==='preparacao'){lim=(+o.setup||0)+tol;rAtr='Setup atrasado';}
   if(!pau&&st==='producao'){lim=(+o.envase||0)+tol;rAtr='Envase atrasado';}
   /* já nasce com o tempo certo: antes nascia 00:00:00 e a cada redesenho o contador "piscava" */
   const dec=ini?Date.now()-new Date(ini).getTime():0;
