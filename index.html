@@ -5349,7 +5349,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v336';
+const VERSAO_APP='v337';
 let DRAG=null;
 function render(){
   recomporTudo();
@@ -21310,7 +21310,7 @@ function csPintarOperador(){
           const f=hhmm(fimPrev(atual));
           return /NaN|undefined/.test(f)?'—':f;})()}</b></div>
       </div>
-      ${csStatusOp(atual,st,pausada)}
+      ${typeof csStatusOp==='function'?csStatusOp(atual,st,pausada):''}
       ${atual.iniReal&&false?`<div class="ativa"><i>Ativa há</i><b id="csOpAtiva" data-ini="${escAttr(atual.data)}T${escAttr(atual.iniReal)}">00:00:00</b></div>`:''}
       ${pausada?`<div class="pausado">Linha pausada desde <b>${atual.csPausa.desde}</b>
         · ${escAttr(atual.csPausa.motivo)}${atual.csPausa.obs
@@ -21772,7 +21772,9 @@ function csCtxMaq(ev,maq){
       tic();setInterval(tic,1000);
     })();
     try{pintarLogo();}catch(e){}
-    csPintar();
+    /* a página ainda está carregando: desenha quando tudo estiver lido */
+    if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>{try{csPintar();}catch(e){try{mostrarErro((e&&e.message)||String(e),'ao montar a casca');}catch(_){}}});
+    else csPintar();
   }catch(e){
     try{mostrarErro((e&&e.message)||String(e),'ao montar a casca');}catch(_){}
   }
