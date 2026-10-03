@@ -5349,7 +5349,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v337';
+const VERSAO_APP='v339';
 let DRAG=null;
 function render(){
   recomporTudo();
@@ -17584,6 +17584,8 @@ function aplicarRemoto(dados){
     }
     if(MODO_TV){S.ref=new Date();S.refTq=new Date();try{renderTV();}catch(e){}}
     render();
+    /* v339: a tela da máquina também se redesenha com o que chegou */
+    try{if(document.body.classList.contains('cs-operon')&&typeof csPintarOperador==='function')csPintarOperador();}catch(e){}
     const el=M('salvo');if(el)el.textContent=`atualizado ${relogio()}`;
   }catch(e){console.warn('estado remoto ilegível',e);}
   finally{RECEBENDO=false;}
@@ -17959,7 +17961,7 @@ async function conferirNuvem(){
 }
 function ligarPolling(){
   clearInterval(tPoll);
-  tPoll=setInterval(conferirNuvem,MODO_TV?4000:8000);
+  tPoll=setInterval(conferirNuvem,(MODO_TV||/^#op/.test(location.hash)||(typeof csQuiosque==='function'&&csQuiosque()))?4000:8000);
 }
 
 /* ---------- tela de login ---------- */
@@ -23621,15 +23623,26 @@ function csStatusOp(o,st,pau){
   const hj=o.data||ymd(new Date());
   if(pau){c='pau';r='Pausada';sub=`${o.csPausa.motivo||''} · desde ${o.csPausa.desde||''}${o.csPausa.quem?' · '+o.csPausa.quem:''}`;ini=o.csPausa.desde?`${ymd(new Date())}T${o.csPausa.desde}`:'';}
   else if(st==='preparacao'){c='set';r='Em setup';sub='preparando a máquina';ini=o.iniReal?`${hj}T${o.iniReal}`:'';}
+  /* v338: o limite de cada etapa (previsto + tolerância) vai junto, para a faixa ficar vermelha na hora em que passa */
+  let lim=0,rAtr='';const tol=(typeof TOLERANCIA!=='undefined'?+TOLERANCIA:0)||0;
+  if(!pau&&st==='preparacao'){lim=(+o.setup||0)+tol;rAtr='Setup atrasado';}
   else if(st==='producao'){let atr=false;try{atr=atrasada(o);}catch(e){}
     const e=(typeof iniEnvase==='function'&&iniEnvase(o))||o.envIni;
     c=atr?'atr':'rod';r=atr?'Envase atrasado':'Envasando';sub=atr?'passou do previsto':'dentro do previsto';ini=e?`${hj}T${e}`:'';}
   else if(st==='finalizado'){c='apo';r='A apontar';sub='conte as caixas e aponte';ini=o.fimReal?`${hj}T${o.fimReal}`:'';}
+  if(!pau&&st==='producao'){lim=(+o.envase||0)+tol;rAtr='Envase atrasado';}
+  /* já nasce com o tempo certo: antes nascia 00:00:00 e a cada redesenho o contador "piscava" */
+  const dec=ini?Date.now()-new Date(ini).getTime():0;
+  if(lim&&ini&&dec>lim*60000&&c!=='atr'){c='atr';r=rAtr;sub='passou do previsto';}
   return `<div class="cs-st ${c}"><span class="pt"></span><div><div class="rot">${r}</div><div class="sub">${escAttr(sub)}</div></div>
-    <span class="tm" ${ini?`data-ini="${escAttr(ini)}"`:''}>${ini?'00:00:00':'--:--:--'}</span></div>`;
+    <span class="tm" ${ini?`data-ini="${escAttr(ini)}"`:''} ${lim?`data-lim="${lim}" data-ratr="${escAttr(rAtr)}"`:''}>${ini?csHMS(dec):'--:--:--'}</span></div>`;
 }
 const csHMS=ms=>{const s=Math.max(0,Math.floor(ms/1000));return `${p2(Math.floor(s/3600))}:${p2(Math.floor(s/60)%60)}:${p2(s%60)}`;};
-setInterval(()=>{try{document.querySelectorAll('#csOper .cs-st .tm[data-ini]').forEach(b=>{b.textContent=csHMS(Date.now()-new Date(b.dataset.ini).getTime());});}catch(e){}},1000);
+setInterval(()=>{try{document.querySelectorAll('#csOper .cs-st .tm[data-ini]').forEach(b=>{
+  const dec=Date.now()-new Date(b.dataset.ini).getTime();b.textContent=csHMS(dec);
+  const lim=+b.dataset.lim||0,st=b.closest('.cs-st');
+  if(lim&&st&&dec>lim*60000&&!st.classList.contains('atr')){st.className='cs-st atr';
+    const r=st.querySelector('.rot'),s=st.querySelector('.sub');if(r)r.textContent=b.dataset.ratr||'Atrasado';if(s)s.textContent='passou do previsto';}});}catch(e){}},1000);
 
 /* ---------- PIN: para abrir a tela e em cada botão ---------- */
 /* Vale o PIN de um operador cadastrado (e do master/gestor, para suporte).
@@ -25410,6 +25423,7 @@ const csVnum=v=>+(String(v||'').match(/\d+/)||[0])[0];
 const csSid=()=>{try{return localStorage.getItem('erp.sid')||'';}catch(e){return '';}};
 function csContaCompartilhada(){
   try{if(csQuiosque())return true;}catch(e){}
+  try{if(MODO_TV)return true;}catch(e){}   /* v339: a TV nunca é derrubada pela regra de uma conta num aparelho */
   try{const a=(typeof ACESSOS!=='undefined'?ACESSOS:[]).find(x=>norMail(x.email)===norMail(emailDaSessao()));if(a&&csTipoDe(a)==='op')return true;}catch(e){}
   return false;
 }
@@ -25434,7 +25448,6 @@ async function csRegistraSessao(){
     try{localStorage.setItem('erp.sid',sid);}catch(e){}
     await csSinalGravar('sessao:'+norMail(emailDaSessao()),{sid,em:new Date().toISOString(),ap:(typeof csQuemGrava==='function'?csQuemGrava():'')});
     /* o Supabase também derruba as outras sessões dessa conta (o acesso delas vence em até 1 hora) */
-    fetch(`${SUPA.url}/auth/v1/logout?scope=others`,{method:'POST',headers:cabecalhos()}).catch(()=>{});
   }catch(e){}
 }
 function csSaiCom(msg){
