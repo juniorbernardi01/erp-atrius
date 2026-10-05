@@ -3758,6 +3758,9 @@ body.cs-semjanela #mask{visibility:hidden!important}
 
 /* ===== v336 ===== */
 .cs-opmenu .it .atraso{margin-left:auto;font-size:11.5px;color:#B3261E;white-space:nowrap;background:#FDECEC;border:1px solid #EDCFCC;border-radius:999px;padding:3px 10px}
+
+/* ===== v341 ===== */
+#csSemRede{position:fixed;left:0;right:0;top:0;z-index:2100;background:#B45309;color:#fff;text-align:center;font:600 14px Inter,sans-serif;padding:7px 10px}
 </style>
 </head>
 <body>
@@ -5349,7 +5352,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v340';
+const VERSAO_APP='v342';
 let DRAG=null;
 function render(){
   recomporTudo();
@@ -19098,7 +19101,7 @@ function estadoMaquina(maq,data){
   const rodando=doDia.find(o=>['producao','preparacao'].includes(sit(o)));
   const agora=agoraMin();
   if(rodando){
-    const fim=fimPrev(rodando);
+    const fim=fimEsperado(rodando);   /* v342: do horário real (com almoço e pausas), não da agenda */
     const emSetup=sit(rodando)==='preparacao';
     return {sit:agora>fim?'atrasada':(emSetup?'setup':'producao'),oc:rodando,
       delta:agora>fim?`+${hmm(agora-fim)}`:`faltam ${hmm(fim-agora)}`,
@@ -23630,7 +23633,7 @@ function csStatusOp(o,st,pau){
   /* v338/v340: o limite de cada etapa (previsto + tolerância), decidido depois da etapa, para a faixa ficar vermelha na hora */
   let lim=0,rAtr='';const tol=(typeof TOLERANCIA!=='undefined'?+TOLERANCIA:0)||0;
   if(!pau&&st==='preparacao'){lim=(+o.setup||0)+tol;rAtr='Setup atrasado';}
-  if(!pau&&st==='producao'){lim=(+o.envase||0)+tol;rAtr='Envase atrasado';}
+  if(!pau&&st==='producao'){try{const e0=hm((typeof iniEnvase==='function'&&iniEnvase(o))||o.envIni);lim=Math.max(1,fimEsperado(o)-e0);}catch(e){lim=(+o.envase||0)+tol;}rAtr='Envase atrasado';}
   /* já nasce com o tempo certo: antes nascia 00:00:00 e a cada redesenho o contador "piscava" */
   const dec=ini?Date.now()-new Date(ini).getTime():0;
   if(lim&&ini&&dec>lim*60000&&c!=='atr'){c='atr';r=rAtr;sub='passou do previsto';}
@@ -25361,7 +25364,7 @@ window.addEventListener('click',ev=>{
   const b=ev.target.closest&&ev.target.closest('#csOper [data-op="fin"]');if(!b||CS_PIN_PASSA||window.CS_ENV_PASSA)return;
   let at=null;try{at=csOPdaLinha(CS_OPMAQ).atual;}catch(e){}
   if(!at)return;
-  let atr=0;try{atr=hm(relogio())-fimPrev(at);}catch(e){atr=0;}
+  let atr=0;try{atr=hm(relogio())-fimEsperado(at);}catch(e){atr=0;}   /* v342: o envase passou do tempo dele */
   if(!(atr>TOLERANCIA))return;
   ev.preventDefault();ev.stopImmediatePropagation();
   csPinTela('Concluir envase',`${CS_OPMAQ||''} · OP ${rotuloOP(at)} · lote ${at.lote||''}`,(q,pin,esc)=>{
@@ -25658,6 +25661,43 @@ window.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.closes
   let at=null;try{at=csOPdaLinha(CS_OPMAQ).atual;}catch(e){}
   if(at)csApontarOp(at);},true);
 try{csNucleo.versao='v336';}catch(e){}
+
+</script>
+<script>
+/* ===================== v341 · sem conexão não é para sempre =====================
+   Se o banco não respondia na hora de abrir (tablet ligando antes do Wi-Fi) ou
+   numa gravação, o sistema ficava "fora do ar" com a cópia guardada no aparelho
+   e nunca mais tentava: o tablet mostrava "Nenhuma ordem" ou uma fila velha
+   enquanto o computador via tudo certo. Agora ele tenta de novo a cada 15 s
+   (e na hora em que o Wi-Fi volta), e o que foi feito sem conexão vai junto. */
+let CS_RECON=false;
+async function csReconecta(){
+  if(CS_RECON||ONLINE||!temNuvem()||!SESSAO||MODO_TV&&false)return;
+  CS_RECON=true;
+  try{
+    /* o que este aparelho fez sem conexão: diferença entre a cópia em que ele começou e o agora */
+    let pend=[];try{if(ULTIMO)pend=csDiff(csLimpo(ULTIMO),csLimpo(corpoDados()),[],[]);}catch(e){pend=[];}
+    const v=await nuvemVersao();if(v==null)return;          /* ainda sem rede */
+    await iniciarComNuvem();
+    if(ONLINE&&pend.length){
+      try{const novo=csAplicaOps(csLimpo(corpoDados()),pend);RECEBENDO=true;try{aplicarEstado(JSON.stringify(novo));}finally{RECEBENDO=false;}
+        agendarSalvar();try{render();}catch(e){}}catch(e){console.warn('não consegui juntar o que foi feito sem conexão',e);}
+    }
+    try{if(document.body.classList.contains('cs-operon'))csPintarOperador();}catch(e){}
+  }catch(e){}finally{CS_RECON=false;csAvisoRede();}
+}
+setInterval(()=>{if(!ONLINE)csReconecta();},15000);
+window.addEventListener('online',()=>setTimeout(csReconecta,1500));
+/* na tela da máquina, uma faixa discreta enquanto estiver sem conexão */
+function csAvisoRede(){
+  try{let a=document.getElementById('csSemRede');
+    const mostra=!ONLINE&&temNuvem()&&document.body.classList.contains('cs-operon');
+    if(!mostra){if(a)a.remove();return;}
+    if(!a){a=document.createElement('div');a.id='csSemRede';document.body.appendChild(a);}
+    a.textContent='Sem conexão com o sistema · tentando de novo… (o que for marcado fica guardado e vai quando voltar)';}catch(e){}
+}
+setInterval(csAvisoRede,3000);
+try{csNucleo.versao='v341';}catch(e){}
 
 </script>
 </body>
