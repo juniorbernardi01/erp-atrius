@@ -5352,7 +5352,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v342';
+const VERSAO_APP='v344';
 let DRAG=null;
 function render(){
   recomporTudo();
@@ -12254,6 +12254,19 @@ function atrasada(o){
   return agora>fimEsperado(o);
 }
 /* recompõe a fila da máquina: o que atrasou empurra o que vem depois */
+/* v343: o encaixe (OP com horário fixo, ainda não terminada) que a OP x esbarraria se começasse em s;
+   devolve o fim previsto dele, ou null se o caminho está livre */
+function csEncaixeNoCaminho(x,maq,data,s){
+  const guarda=x.inicio;
+  try{
+    x.inicio=s;const e=fimPrev(x);
+    const fixos=ORDENS.filter(f=>f!==x&&f.maq===maq&&f.data===data&&naGrade(f)&&f.inicioManual&&!f.fimReal);
+    let fim=null;
+    fixos.forEach(f=>{const fi=f.iniReal?hm(f.iniReal):f.inicio,ff=Math.max(fimPrev(f),f.iniReal?hm(f.iniReal)+total(f):0);
+      if(s<ff&&e>fi)fim=Math.max(fim==null?0:fim,ff);});
+    return fim;
+  }catch(e){return null;}finally{x.inicio=guarda;}
+}
 function recomporDia(maq,data){
   const hoje=ymd(new Date());
   if(data<hoje)return;
@@ -12279,9 +12292,11 @@ function recomporDia(maq,data){
           if(x.inicioOriginal==null)x.inicioOriginal=x.inicio;
           x.inicio=real;
         }
-      }else if(!partida&&!x.inicioManual&&alvo!==x.inicio){
-        if(x.inicioOriginal==null)x.inicioOriginal=x.inicio;
-        x.inicio=alvo;
+      }else if(!partida&&!x.inicioManual){
+        /* v343: se no caminho tem um encaixe (horário fixado à mão), vai para depois do fim previsto dele */
+        let s=alvo;
+        for(let k=0;k<12;k++){const c=csEncaixeNoCaminho(x,maq,data,s);if(c==null)break;s=csForaDaPausa(maq,Math.min(Math.round(c),24*60-SNAP));}
+        if(s!==x.inicio){if(x.inicioOriginal==null)x.inicioOriginal=x.inicio;x.inicio=s;}
       }
       cursor=Math.max(cursor,fimPrev(x),x.iniReal?hm(x.iniReal)+total(x):0);
       /* v291: rodando e já passou do previsto — a máquina só libera depois de
@@ -25242,7 +25257,7 @@ csPinTela=function(tit,sub,ok,mot){
     api.espera('Conferindo…');const r=await csConferePin(pin);
     if(!r.q)return api.erro(r.erro);
     api.ok(r.q.nome);
-    if(r.conectou){CS_OP_ABERTO=true;try{const el=M('login');if(el)el.hidden=true;}catch(e){}await iniciarComNuvem();
+    if(r.conectou&&abrir){CS_OP_ABERTO=true;try{const el=M('login');if(el)el.hidden=true;}catch(e){}await iniciarComNuvem();
       d.className='cs-pinop';csViraOperador(r.q);try{csAbrirOperador(csMaqDoTablet());}catch(e){}try{csPintarOperador();}catch(e){}return;}
     setTimeout(()=>{d.className='cs-pinop';csViraOperador(r.q);window.CS_PIN_ULT={pin,t:Date.now()};ok(r.q,pin,null);},250);
   });
@@ -25698,6 +25713,57 @@ function csAvisoRede(){
 }
 setInterval(csAvisoRede,3000);
 try{csNucleo.versao='v341';}catch(e){}
+
+</script>
+<script>
+/* ===================== v344 · tablet com a sessão vencida =====================
+   A faixa "Sem conexão" aparecia com o Wi-Fi bom: o problema não era a rede, era
+   a sessão do tablet vencida (ou derrubada). O sistema tentava de novo com a
+   mesma sessão para sempre. Agora ele separa os dois casos:
+   - rede fora: continua tentando a cada 15 s;
+   - sessão vencida: tenta renovar; se não der, o próximo PIN digitado abre uma
+     sessão nova pelo servidor (como na primeira vez) e carrega o dia. */
+async function csSondaBanco(){
+  try{const r=await fetch(`${SUPA.url}/rest/v1/pcp_estado?id=eq.${SUPA.linha}&select=versao`,{headers:cabecalhos()});
+    if(r.ok)return 'ok';if(r.status===401||r.status===403)return 'sessao';return 'rede';}catch(e){return 'rede';}
+}
+let CS_SESSAO_VENCEU=false;
+const _rc44=csReconecta;
+csReconecta=async function(){
+  if(CS_RECON||ONLINE||!temNuvem())return;
+  if(!SESSAO){csAvisoRede();return;}
+  let p=await csSondaBanco();
+  if(p==='sessao'&&await renovarSessao())p=await csSondaBanco();
+  if(p==='sessao'){
+    let q=false;try{q=!!csQuiosque();}catch(e){}
+    if(q){SESSAO=null;try{localStorage.removeItem(SUPA_SESSAO);}catch(e){}}
+    CS_SESSAO_VENCEU=true;csAvisoRede();return;
+  }
+  if(p!=='ok'){csAvisoRede();return;}
+  CS_SESSAO_VENCEU=false;
+  return _rc44.apply(this,arguments);
+};
+/* PIN no tablet sem sessão boa: o servidor confere e abre uma sessão nova */
+const _cp44=csConferePin;
+csConferePin=async function(v){
+  let q=false;try{q=!!csQuiosque();}catch(e){}
+  if(q&&temNuvem()&&(!SESSAO||!ONLINE)){
+    try{const d=await csPinServidor(v,true);
+      if(d.q){setTimeout(()=>{CS_RECON=false;csReconecta();},300);return {q:d.q,conectou:!ONLINE};}
+      if(d.motivo)return {erro:d.motivo};}
+    catch(e){/* sem rede de verdade: segue com o que o aparelho tem */}
+  }
+  return _cp44.apply(this,arguments);
+};
+/* a faixa diz o que é */
+const _av44=csAvisoRede;
+csAvisoRede=function(){
+  _av44();
+  try{const a=document.getElementById('csSemRede');if(!a)return;
+    let q=false;try{q=!!csQuiosque();}catch(e){}
+    if(CS_SESSAO_VENCEU||(!SESSAO&&q))a.textContent='Conexão expirada · digite o seu PIN para reconectar';}catch(e){}
+};
+try{csNucleo.versao='v344';}catch(e){}
 
 </script>
 </body>
