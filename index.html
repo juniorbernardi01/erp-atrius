@@ -3792,6 +3792,18 @@ body.cs-semjanela #mask{visibility:hidden!important}
 /* ===== v348 ===== */
 .cs-flink{display:block;color:inherit;text-decoration:none}
 .cs-flink>button{width:100%}
+
+/* ===== v350 · OP mãe e filhas ===== */
+.od2t tr.od2mae td{background:#F6F8FB;border-top:1px solid #E3E7EE;cursor:pointer}
+.od2t tr.od2mae:hover td{background:#EEF3FA}
+.od2t tr.od2mae.ab td{background:#EAF1FB}
+.od2t tr.od2mae small{display:block;color:var(--ink3);font-size:11.5px;font-weight:400}
+.od2tg{display:inline-flex;width:22px;height:22px;align-items:center;justify-content:center;border-radius:6px;background:#fff;border:1px solid #D5DBE5;font-size:11px;color:#4A5468}
+.od2t tr.od2fi td{background:#fff}
+.od2t tr.od2fi td:nth-child(5){padding-left:18px}
+.od2ar{color:#98A1AE;padding-left:6px}
+.od2rep{display:inline-flex;width:16px;height:16px;border-radius:50%;background:#B3261E;color:#fff;font-size:11px;font-weight:700;align-items:center;justify-content:center;margin-left:4px}
+.od2av{margin:8px 0;padding:9px 12px;border-radius:10px;background:#FDF3E3;color:#7A3E06;font-size:13px}
 </style>
 </head>
 <body>
@@ -5383,7 +5395,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v349';
+const VERSAO_APP='v350';
 let DRAG=null;
 function render(){
   recomporTudo();
@@ -25991,6 +26003,140 @@ try{csNucleo.versao='v348';}catch(e){}
   };
 })();
 try{csNucleo.versao='v349';}catch(e){}
+
+</script>
+<script>
+/* ===================== v350 · lotes certos · OP mãe e filhas · nomes inteiros =====================
+   LOTE. O número sai da sequência do granel (o maior já usado + 1), mas não olhava
+   se ele já existia: com a perda de dados de 01/10 e aparelhos com a lista velha,
+   saíram números repetidos em tanques e dias diferentes (ex.: AMA Azul 365 em 24/09
+   e em 01/10) e OPs com número de outra família. Agora:
+   - o número novo pula qualquer número já usado no granel por outra batelada;
+   - OP que ainda não começou e está com número repetido ou fora da sequência ganha
+     um número novo sozinha (o histórico registra a troca);
+   - as que já começaram não mudam (etiqueta e Tiny já saíram): aparecem num aviso
+     na lista das Ordens, para conferir. */
+const csGranel=o=>{const p=prodOf(o.codigo);return p?p.tanque:'';};
+const csMesmaBat=(a,b)=>{try{if(chaveLote(a)===chaveLote(b))return true;
+  /* o lote que continuou no outro dia (turno, OP dividida): mesmo tanque, até 3 dias */
+  if((a.tanque||'')!==(b.tanque||''))return false;
+  const d=Math.abs(new Date(a.data+'T12:00')-new Date(b.data+'T12:00'))/864e5;return d<=3;}catch(e){return false;}};
+function csLoteOcupado(g,n,o){
+  return ORDENS.some(x=>x!==o&&naGrade(x)&&csGranel(x)===g&&+String(x.lote||'').replace(/\D/g,'')===+n&&!csMesmaBat(x,o));
+}
+try{const _pl50=proxLote;proxLote=function(g){let n=_pl50(g);if(n==null)return n;
+  for(let k=0;k<5000&&ORDENS.some(x=>naGrade(x)&&csGranel(x)===g&&+String(x.lote||'').replace(/\D/g,'')===n);k++)n++;
+  return n;};}catch(e){}
+/* conflitos: mesmo número no mesmo granel em bateladas diferentes, ou número muito abaixo da sequência */
+function csConflitosLote(){
+  const porG={};ORDENS.filter(o=>naGrade(o)&&o.lote).forEach(o=>{const g=csGranel(o);if(g)(porG[g]=porG[g]||[]).push(o);});
+  const out=[];
+  Object.entries(porG).forEach(([g,l])=>{
+    const max=Math.max(...l.map(o=>+String(o.lote).replace(/\D/g,'')||0));
+    const porN={};l.forEach(o=>{const n=+String(o.lote).replace(/\D/g,'');(porN[n]=porN[n]||[]).push(o);});
+    Object.entries(porN).forEach(([n,os])=>{
+      const grupos=[];os.forEach(o=>{const gr=grupos.find(x=>x.some(y=>csMesmaBat(y,o)));gr?gr.push(o):grupos.push([o]);});
+      if(grupos.length>1)grupos.slice(1).forEach(gr=>out.push({tipo:'repetido',g,n:+n,ops:gr,outra:grupos[0]}));
+    });
+    /* fora da sequência: bem abaixo do maior número do granel, numa OP recente */
+    l.forEach(o=>{const n=+String(o.lote).replace(/\D/g,'');if(max-n>40&&o.data>=ymd(addD(new Date(),-10)))out.push({tipo:'fora',g,n,ops:[o],max});});
+  });
+  return out;
+}
+const csNaoComecou=o=>!o.iniReal&&!o.envIni&&!o.fimReal&&!(o.turnos||[]).length&&!['concluida','finalizado','producao','preparacao'].includes(sit(o));
+function csCorrigeLotes(){
+  let n=0;
+  csConflitosLote().forEach(c=>{
+    if(!c.ops.every(csNaoComecou))return;
+    const g=c.g;const velho=c.n;
+    /* toda a batelada recebe o mesmo número novo */
+    const bat=ORDENS.filter(x=>naGrade(x)&&csGranel(x)===g&&c.ops.some(o=>csMesmaBat(o,x))&&+String(x.lote||'').replace(/\D/g,'')===velho);
+    let novo=proxLote(g);if(novo==null)return;
+    PROX_LOTE[g]=novo+1;
+    bat.forEach(o=>{o.lote=String(novo);registrar(o,'Lote corrigido',null,`${velho} → ${novo} · ${c.tipo==='repetido'?'o número já era de outra batelada':'estava fora da sequência do granel'}`);n++;});
+  });
+  if(n)agendarSalvar();
+  return n;
+}
+setTimeout(function cl(){try{if(!PRONTO)return setTimeout(cl,3000);if(!MODO_TV&&csCorrigeLotes())render();}catch(e){}},5000);
+
+/* ORDENS DE PRODUÇÃO: a linha é a OP mãe (a batelada do tanque, com o lote); ao clicar
+   abrem embaixo as OPs filhas, os produtos acabados que saíram dela. Nomes inteiros. */
+const CS_MAE_AB=new Set();
+const csNomeInteiro=c=>{const p=prodOf(c);return p?p.descricao:c;};
+try{const _ff50=od2Filtra;od2Filtra=function(l){const q=OD_BUSCA.trim().toLowerCase();
+  if(!q)return _ff50(l);const salva=OD_BUSCA;OD_BUSCA='';const base=_ff50(l);OD_BUSCA=salva;
+  return base.filter(({o,b})=>`${csNomeInteiro(o.codigo)} ${nomeCurto(o.codigo)} ${o.codigo} ${o.lote||''} ${b.lote||''} ${b.tanque||''} ${b.produto||''} ${o.maq||''}`.toLowerCase().includes(q));};}catch(e){}
+gradeOrdens=function(){
+  const el=M('odgrid');if(!el)return;
+  if(OD_ABA==='excluidas')return gradeOrdensExcluidas(el);
+  const todas=od2Filtra(od2Linhas());
+  const conta=k=>k==='excluidas'?opsExcluidas().length:k==='todas'?todas.length:todas.filter(x=>od2Sit(x.o)===k).length;
+  const s=OD2.sort,fn=OD2_SORT[s.k]||OD2_SORT.data;
+  const l=todas.filter(x=>OD_ABA==='todas'||od2Sit(x.o)===OD_ABA);
+  /* agrupa por batelada, na ordem da filha que vem primeiro */
+  const grupos=[];const pos={};
+  l.slice().sort((a,b)=>{const p=fn(a),q=fn(b);return (p>q?1:p<q?-1:0)*s.dir;}).forEach(x=>{const k=x.b.chave;if(pos[k]==null){pos[k]=grupos.length;grupos.push({b:x.b,filhas:[]});}grupos[pos[k]].filhas.push(x);});
+  const col=(k,r,st)=>`<th class="od2so ${s.k===k?(s.dir>0?'asc':'desc'):''}" data-ods="${k}" style="${st||''}">${r}</th>`;
+  const lit=grupos.reduce((t,g)=>t+(+g.b.volume||0),0);
+  const cx={};l.filter(x=>od2Sit(x.o)!=='concluida').forEach(({o})=>{const u=und(o);cx[u]=(cx[u]||0)+(o.caixas!=null?o.caixas:cxPrev0(o));});
+  const conf=csConflitosLote();
+  const linhaFilha=({o,b})=>{const ab=OD_ABERTO===o.id;const ap=APONTA[b.chave]||{};const est=o.tinyEnviado&&o.tinyEnviado.em;const pend=o.tinyAjuste&&!o.tinyAjuste.em;
+    const p=prodOf(o.codigo);const fmt=p?`${fmtLit(p.litragem)} · ${nf(o.caixas!=null?o.caixas:cxPrev0(o))} ${und(o)}`:'';
+    return `<tr class="od2fi ${ab?'aberta':''} ${OD2.sel.has(o.id)?'sel':''}" data-odrow="${o.id}"><td><span class="od2ck ${OD2.sel.has(o.id)?'on':''}" data-odck="${o.id}"></span></td>
+      <td><button class="od2dots" data-odmenu="${o.id}">&#8943;</button></td><td class="m"><span class="od2ar">↳</span></td><td class="m">${dCurto(o.data||b.data)}</td>
+      <td><b>${escAttr(csNomeInteiro(o.codigo))}</b><small>${o.codigo} · ${fmt}</small></td><td class="m">${escAttr(String(o.lote||b.lote||'—'))}</td><td>${o.maq||'—'}</td><td>${b.tanque||'—'}</td>
+      <td>${od2Selo(o)}</td><td>${csItg(o)}</td>
+      <td>${(o.marcadores||[]).map(n=>{const m=odMarcadores().find(x=>x.nome===n);return `<span class="od2mk" style="--c:${m?m.cor:'#8B93A1'}"><i></i>${escAttr(n)}</span>`;}).join('')}</td></tr>
+      ${ab?`<tr class="od2xp"><td></td><td colspan="10"><div class="od2xc">
+        <div><span>Granel</span><b>${nf(+b.volume||0)} L · ${b.tanque||'sem tanque'}${b.lote?' · lote '+b.lote:''}</b></div>
+        <div><span>Envase</span><b>${fmt} · ${o.maq||'—'}</b></div>
+        <div><span>Produzido</span><b>${o.caixas!=null?`${nf(o.caixas)} ${und(o)}${cxPrev0(o)-o.caixas>0?` · ${nf(cxPrev0(o)-o.caixas)} de perda`:''}`:'ainda não apontado'}</b></div>
+        <div><span>Liberação</span><b>${ap.liberadoEm?`liberado ${ap.liberadoEm}${ap.liberadoPor?' por '+ap.liberadoPor:''}`:'lote ainda não liberado'}</b></div>
+        <div><span>Tiny</span><b>${pend?'ajuste pendente':est?'enviado '+o.tinyEnviado.em:'ainda não enviado'}</b></div>
+        ${o.obs?`<div><span>Observação</span><b>${escAttr(o.obs)}</b></div>`:''}</div></td></tr>`:''}`;};
+  const linhaMae=g=>{const b=g.b,ab=CS_MAE_AB.has(b.chave)||(OD_BUSCA.trim()&&g.filhas.length<=4);
+    const fs=g.filhas.map(x=>x.o);const sits=fs.map(od2Sit);
+    const st=sits.includes('producao')?'producao':sits.includes('programada')?'programada':sits.every(x=>x==='concluida')?'concluida':'pendente';
+    const rep=conf.some(c=>c.ops.some(o=>fs.includes(o)));
+    const nomes=[...new Set(fs.map(o=>{const p=prodOf(o.codigo);return p?fmtLit(p.litragem):'';}))].filter(Boolean).join(' + ');
+    return `<tr class="od2mae ${ab?'ab':''}" data-odmae="${escAttr(b.chave)}"><td></td><td><span class="od2tg">${ab?'▾':'▸'}</span></td>
+      <td class="m"><b>${escAttr(String(b.lote||'—'))}</b>${rep?' <span class="od2rep" title="número repetido ou fora da sequência">!</span>':''}</td><td class="m">${dCurto(b.data)}</td>
+      <td><b>${escAttr(b.produto||'')}</b><small>granel · ${nf(+b.volume||0)} L · ${fs.length} OP${fs.length>1?'s':''} de envase${nomes?' ('+nomes+')':''}</small></td>
+      <td class="m">${escAttr(String(b.lote||'—'))}</td><td>${[...new Set(fs.map(o=>o.maq).filter(Boolean))].join(', ')||'—'}</td><td>${b.tanque||'—'}</td>
+      <td><span class="od2sel ${st}">${({producao:'Em produção',programada:'Programada',concluida:'Concluída',pendente:'Pendente'})[st]}</span></td><td></td><td></td></tr>
+      ${ab?g.filhas.map(linhaFilha).join(''):''}`;};
+  el.innerHTML=`<div class="od2">
+    <div class="od2top"><h2>Ordens de produção</h2></div>
+    <div class="od2bar"><input type="text" id="odB" class="busca" placeholder="Nº da OP, produto ou lote" value="${escAttr(OD_BUSCA)}">
+      ${perBotao('odPer',OD2.p)}
+      ${OD2.sort.k==='alt'?'<span class="od2ord">últimas alteradas no topo</span>':'<button class="od2ord b" id="odAlt" type="button">&#8634; últimas alteradas no topo</button>'}
+      <button class="od2ord b" id="odAbreT" type="button">${grupos.every(g=>CS_MAE_AB.has(g.b.chave))?'⊟ fechar todas':'⊞ abrir todas'}</button>
+      <span style="flex:1"></span><button class="btn pri" id="odNova">+ Nova OP</button></div>
+    ${conf.length?`<div class="od2av">⚠ <b>${conf.length} lote${conf.length>1?'s':''} para conferir</b> — número repetido em outra batelada do mesmo granel, ou fora da sequência, em OPs que já começaram (as que não começaram foram corrigidas sozinhas). <button class="btn lk sm" id="odConf">ver quais</button></div>`:''}
+    <div class="od2abas">${OD2_ABAS.map(([k,r,c])=>`<button data-odab="${k}" class="${k===OD_ABA?'on':''}" style="--cor:${c}">${r}<b>${nf(conta(k))}</b></button>`).join('')}</div>
+    ${l.length?`<div class="od2rol"><table class="od2t"><thead><tr><th style="width:30px"><span class="od2ck ${l.length&&l.every(x=>OD2.sel.has(x.o.id))?'on':''}" id="odCkT"></span></th><th style="width:34px"></th>
+      ${col('num','Nº OP')}${col('data','Data')}${col('prod','Produto')}${col('lote','Lote')}${col('maq','Máquina')}${col('tq','Tanque')}${col('sit','Situação')}<th>Integração</th><th>Marcadores</th></tr></thead><tbody>
+      ${grupos.map(linhaMae).join('')}</tbody></table></div>
+      <div class="od2tot"><div class="acoes">${OD2.sel.size?`<span class="cnt">&#8593; ${String(OD2.sel.size).padStart(2,'0')}</span><button class="btn sm" id="odDes">Desmarcar</button>`:''}</div>
+        <div><b>${nf(grupos.length)}</b><span>OPs mãe (lotes)</span></div><div><b>${nf(l.length)}</b><span>OPs de envase</span></div><div><b>${nf(lit)}</b><span>litros</span></div><div><b>${Object.entries(cx).map(([u,v])=>nf(v)+' '+u).join(' · ')||'—'}</b><span>a envasar</span></div></div>`
+    :'<div class="vazioc" style="padding:24px">Nenhuma OP neste período.</div>'}</div>`;
+  ligaOrdens(el,l);
+  el.querySelectorAll('[data-odmae]').forEach(r=>r.onclick=()=>{const k=r.dataset.odmae;CS_MAE_AB.has(k)?CS_MAE_AB.delete(k):CS_MAE_AB.add(k);gradeOrdens();});
+  if(M('odAbreT'))M('odAbreT').onclick=()=>{const todasAb=grupos.every(g=>CS_MAE_AB.has(g.b.chave));grupos.forEach(g=>todasAb?CS_MAE_AB.delete(g.b.chave):CS_MAE_AB.add(g.b.chave));gradeOrdens();};
+  if(M('odConf'))M('odConf').onclick=()=>csTelaConflitos(conf);
+};
+function csTelaConflitos(conf){
+  if(M('mAcao'))M('mAcao').innerHTML='';M('modal').classList.add('wide');
+  M('mTit').textContent='Lotes para conferir';M('mSub').hidden=false;M('mSub').textContent='OPs que já começaram não mudam de número sozinhas: etiqueta e Tiny já podem ter saído com ele.';
+  M('mB').innerHTML=`<div class="rolx" style="max-height:60vh"><table class="tb"><thead><tr><th>Granel</th><th>Lote</th><th>Problema</th><th>OPs</th></tr></thead><tbody>
+    ${conf.map(c=>`<tr><td>${escAttr(c.g)}</td><td class="m"><b>${c.n}</b></td><td>${c.tipo==='repetido'?`repetido · já usado em ${escAttr((c.outra||[]).map(o=>dCurto(o.data)+' '+(o.tanque||'')).join(', '))}`:`fora da sequência · o granel já está no ${c.max}`}</td>
+      <td>${c.ops.map(o=>`${dCurto(o.data)} · ${escAttr(csNomeInteiro(o.codigo))} · ${o.maq||''} · ${o.tanque||''} · ${od2Sit(o)}`).join('<br>')}</td></tr>`).join('')}</tbody></table></div>`;
+  M('mF').innerHTML='<div style="flex:1"></div><button class="btn" id="cfX">Fechar</button>';M('cfX').onclick=fecharModal;abrirMask();
+}
+/* menu da OP e excluídas: nome inteiro */
+try{const _mop50=menuOP;menuOP=function(x,b){const r=_mop50.apply(this,arguments);try{const h=document.querySelector('#od2m .mh');if(h)h.textContent=`OP ${x.o.lote||x.b.lote||''} · ${csNomeInteiro(x.o.codigo)}`;}catch(e){}return r;};}catch(e){}
+try{csNucleo.versao='v350';}catch(e){}
 
 </script>
 </body>
