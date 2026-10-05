@@ -5402,7 +5402,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v352';
+const VERSAO_APP='v353';
 let DRAG=null;
 function render(){
   recomporTudo();
@@ -18242,6 +18242,7 @@ const PERM_MODS=[
   {id:'gestao',nome:'Indicadores (no PCP)',itens:[{k:'gestao',n:'Indicadores',acoes:true}]},
   {id:'cadastros',nome:'Cadastros e configurações',itens:[
     {k:'admin',n:'Configurações',acoes:true},
+    {k:'cadprod',n:'Produtos',acoes:true},
     {k:'cad.transp',n:'Transportadores',acoes:true},
     {k:'cad.clientes',n:'Clientes e fornecedores',acoes:true},
     {k:'cad.vend',n:'Vendedores',acoes:true},
