@@ -3761,6 +3761,28 @@ body.cs-semjanela #mask{visibility:hidden!important}
 
 /* ===== v341 ===== */
 #csSemRede{position:fixed;left:0;right:0;top:0;z-index:2100;background:#B45309;color:#fff;text-align:center;font:600 14px Inter,sans-serif;padding:7px 10px}
+
+/* ===== v345 · TV ===== */
+.tvagora{margin:10px 12px 0!important;border-radius:12px;box-shadow:0 1px 0 rgba(0,0,0,.03)}
+.tvabar{gap:12px!important;padding:7px 12px!important}
+.tvabar .tm{font-family:'JetBrains Mono';font-size:14px;font-weight:700;background:rgba(255,255,255,.18);border-radius:6px;padding:1px 8px}
+.tvabar .d{max-width:52%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tvmaq.alerta{border:3px solid #DC2626!important;animation:csTvAlerta 2.4s ease-in-out infinite!important;background:#fff}
+.tvmaq.alerta .tvmh{background:#DC2626!important;color:#fff}
+.tvmaq.alerta .tvtag{background:#fff!important;color:#DC2626!important;animation:none!important}
+.tvmaq.alerta .tvabar{animation:none!important}
+@keyframes csTvAlerta{0%,100%{box-shadow:0 0 0 0 rgba(220,38,38,.25)}50%{box-shadow:0 0 28px 6px rgba(220,38,38,.35)}}
+@media (prefers-reduced-motion:reduce){.tvmaq.alerta{animation:none!important}}
+.tvfila{padding-top:12px!important}
+.tvsep{display:flex;align-items:center;gap:8px;margin:2px 0 2px;padding:6px 10px;border-radius:8px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.09em}
+.tvsep.fila{background:#EEF2F8;color:#4A5568}
+.tvsep.ok{background:#E7F5EC;color:#15803D;margin-top:10px}
+.tvsep[hidden]{display:none!important}
+.tvoc .selo{margin-left:8px;font-family:Inter,sans-serif;font-size:10px;font-weight:700;border-radius:999px;padding:2px 8px;vertical-align:middle;background:#E7F5EC;color:#15803D}
+.tvoc .selo.atr{background:#FDECEC;color:#B3261E}
+.tvoc .selo.lib{background:#E7F5EC;color:#15803D}
+.tvoc .selo.nlib{background:#FDECEC;color:#B3261E}
+.tvfilah{display:none!important}
 </style>
 </head>
 <body>
@@ -5352,7 +5374,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v344';
+const VERSAO_APP='v346';
 let DRAG=null;
 function render(){
   recomporTudo();
@@ -5540,7 +5562,7 @@ function colunaMaq(m,data,conf,estreita){
     :(_da_vez.o&&_da_vez.o.csPausa)?'Pausada'
     :_stVez==='producao'?'Envasando'
     :_stVez==='finalizado'?'A apontar'
-    :_stVez==='programada'?'A iniciar':'Em setup';
+    :_stVez==='programada'?'Aguardando setup':'Em setup';
   const _sec=(t,n)=>`<div class="cs-sec">${t} <b>(${n})</b></div>`;
   /* Tempo disponível depois da última OP da fila, até o fim da jornada.
      Hoje, conta a partir de agora; o almoço cadastrado corta o vão em dois.
@@ -19228,7 +19250,7 @@ if(MODO_TV){
     location.reload();
   };
   try{window.addEventListener('resize',coubeNaTela);}catch(e){}
-  setInterval(renderTV,1000);
+  setInterval(()=>renderTV(),1000);   /* v345: chama sempre o desenho mais novo (o que só troca a coluna que mudou) */
   /* a TV sempre mostra hoje e não grava nada */
   setInterval(()=>{const h=ymd(new Date());
     if(ymd(S.ref)!==h){S.ref=new Date();S.refTq=new Date();}},30000);
@@ -23637,7 +23659,7 @@ try{new MutationObserver(ms=>{if(!csOpLigado()||!M('mask').classList.contains('o
 /* ===================== v298 · tela do operador aprovada ===================== */
 /* ---------- a faixa de status: a etapa, a cor e o tempo dela ---------- */
 function csStatusOp(o,st,pau){
-  let c='ini',r='A iniciar',sub='aguardando o setup',ini='';
+  let c='ini',r='Aguardando setup',sub='próximo passo: iniciar o setup',ini='';
   const hj=o.data||ymd(new Date());
   if(pau){c='pau';r='Pausada';sub=`${o.csPausa.motivo||''} · desde ${o.csPausa.desde||''}${o.csPausa.quem?' · '+o.csPausa.quem:''}`;ini=o.csPausa.desde?`${ymd(new Date())}T${o.csPausa.desde}`:'';}
   else if(st==='preparacao'){c='set';r='Em setup';sub='preparando a máquina';ini=o.iniReal?`${hj}T${o.iniReal}`:'';}
@@ -25764,6 +25786,118 @@ csAvisoRede=function(){
     if(CS_SESSAO_VENCEU||(!SESSAO&&q))a.textContent='Conexão expirada · digite o seu PIN para reconectar';}catch(e){}
 };
 try{csNucleo.versao='v344';}catch(e){}
+
+</script>
+<script>
+/* ===================== v345 · TV: mesmas cores e estados do tablet, ao vivo, sem piscar =====================
+   - A TV redesenhava a tela inteira a cada segundo: a animação de alerta recomeçava
+     e tudo "piscava". Agora só troca a coluna que mudou; o relógio e o tempo do
+     topo de cada máquina andam sozinhos, segundo a segundo.
+   - Os estados e as cores são os da tela da máquina: A iniciar (azul), Em setup
+     (cinza), Envasando (verde), Setup/Envase atrasado (vermelho), Pausada (âmbar),
+     A apontar (roxo). Antes a TV não tinha pausa nem "a apontar".
+   - Concluídas ficam embaixo, separadas por uma faixa própria. */
+Object.assign(SIT_TV,{
+  iniciar:{cor:'#1D4ED8',rot:'Aguardando setup'},setup:{cor:'#475569',rot:'Em setup'},producao:{cor:'#15803D',rot:'Envasando'},
+  atrasada:{cor:'#DC2626',rot:'Atrasada'},pausada:{cor:'#CA8A04',rot:'Pausada'},apontar:{cor:'#6D28D9',rot:'A apontar'},
+  parada:{cor:'#98A1AE',rot:'Sem ordem'}});
+const csTvHms=ms=>{ms=Math.max(0,ms|0);const s=Math.floor(ms/1000),h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60;return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(x).padStart(2,'0')}`;};
+estadoMaquina=function(maq,data){
+  const doDia=ORDENS.filter(o=>o.maq===maq&&o.data===data&&naGrade(o)).sort((a,b)=>a.inicio-b.inicio);
+  const agora=agoraMin(),hj=ymd(new Date()),tol=(typeof TOLERANCIA!=='undefined'?+TOLERANCIA:0)||0;
+  const viva=doDia.find(o=>['preparacao','producao','finalizado'].includes(sit(o)));
+  const resto=o=>doDia.filter(x=>x.id!==o.id);
+  if(viva){
+    const st=sit(viva),base={oc:viva,fila:resto(viva)};
+    if(viva.csPausa)return {...base,sit:'pausada',rot:'Pausada',delta:viva.csPausa.motivo||'',desde:`${hj}T${viva.csPausa.desde}`};
+    if(st==='finalizado')return {...base,sit:'apontar',rot:'A apontar',delta:'conte as caixas',desde:viva.fimReal?`${hj}T${viva.fimReal}`:''};
+    if(st==='preparacao'){const ini=hm(viva.iniReal),lim=ini+(+viva.setup||0)+tol;
+      return agora>lim?{...base,sit:'atrasada',rot:'Setup atrasado',delta:`+${hmm(agora-lim+tol)}`,desde:`${hj}T${viva.iniReal}`}
+        :{...base,sit:'setup',rot:'Em setup',delta:`faltam ${hmm(Math.max(0,ini+(+viva.setup||0)-agora))}`,desde:`${hj}T${viva.iniReal}`};}
+    const fim=fimEsperado(viva),e=(typeof iniEnvase==='function'&&iniEnvase(viva))||viva.envIni;
+    return agora>fim?{...base,sit:'atrasada',rot:'Envase atrasado',delta:`+${hmm(agora-fim)}`,desde:e?`${hj}T${e}`:''}
+      :{...base,sit:'producao',rot:'Envasando',delta:`faltam ${hmm(fim-agora)}`,desde:e?`${hj}T${e}`:''};
+  }
+  const prox=doDia.find(o=>!['concluida','finalizado'].includes(sit(o)));
+  if(prox){const atr=agora>prox.inicio+tol;
+    return {sit:atr?'atrasada':'iniciar',rot:atr?'Aguardando setup · atrasada':'Aguardando setup',oc:prox,fila:resto(prox),
+      delta:atr?`+${hmm(agora-prox.inicio)}`:`começa às ${hhmm(prox.inicio)}`,desde:''};}
+  return {sit:'parada',proxima:null,fila:doDia};
+};
+blocoAgoraTV=function(m){
+  const s=SIT_TV[m.sit],o=m.oc,p=prodOf(o.codigo);
+  return `<div class="tvagora">
+    <div class="tvabar"><span class="t">${escTV(m.rot||s.rot)}</span>${m.desde?`<span class="tm" data-desde="${escTV(m.desde)}">${csTvHms(Date.now()-new Date(m.desde).getTime())}</span>`:''}<span class="d">${escTV(m.delta||'')}</span></div>
+    <div class="tvabody">
+      <div class="tvprod">${escTV(p.descricao)}</div>
+      <div class="dest">
+        ${celTV('d2','Máquina',escTV(o.maq))}
+        ${celTV('d2','Lote',`<span class="num">${escTV(o.lote||'—')}</span>`)}
+        ${celTV('d2','Fabricação',`<span class="num">${escTV(dFab(o.data))}</span>`)}
+        ${celTV('d3','Puxar do tanque',`${escTV(o.tanque||'—')} <span class="lt">· ${nf(o.litros)} L</span>`)}
+        ${celTV('d3','Qtde prevista',`<span class="num">${nf(caixasPrev(o))} ${und(o)}</span>`)}
+      </div>
+      <div class="tempos">
+        <div class="tcx prev"><div class="lb">Previsto</div><div class="vl">${hhmm(o.inicio)} – ${hhmm(fimPrev(o))}</div></div>
+        <div class="tcx real"><div class="lb">Realizado</div><div class="vl">${o.iniReal||o.envIni?escTV(iniEnvase(o)||o.iniReal)+' – '+(o.fimReal?escTV(o.fimReal):'<span class="curso">em curso</span>'):'<span class="curso">não começou</span>'}</div></div>
+      </div>
+    </div>
+  </div>`;
+};
+colunaTV=function(maq,data){
+  const m=estadoMaquina(maq,data),s=SIT_TV[m.sit];
+  const fechadas=m.fila.filter(o=>sit(o)==='concluida'),abertas=m.fila.filter(o=>sit(o)!=='concluida');
+  const linha=o=>{const p=prodOf(o.codigo),fim=sit(o)==='concluida';let tag='';
+    if(fim){let a=0;try{a=hm(o.fimReal)-fimPrev(o);}catch(e){}tag=a>0?`<span class="selo atr">${a} min de atraso</span>`:'<span class="selo">&#9733; no prazo</span>';}
+    else{try{tag=loteLiberado(o)?'<span class="selo lib">tanque liberado</span>':'<span class="selo nlib">tanque não liberado</span>';}catch(e){}}
+    return `<div class="tvoc ${fim?'fim':''}" style="--fam:${fim?'#98A1AE':CORES[p.grupo]}">
+      <div class="n">${escTV(p.descricao)}${tag}</div>
+      <div class="m">Lote ${escTV(o.lote||'—')} · <b>${escTV(o.tanque||'—')}</b> · <b>${nf(o.litros)} L</b> · ${nf(caixasPrev(o))} ${und(o)} ·
+        ${fim?`feito <span class="hr">${escTV(o.iniReal||'')}–${escTV(o.fimReal||'')}</span>`:`previsto <span class="hr">${hhmm(o.inicio)}–${hhmm(fimPrev(o))}</span>`}</div></div>`;};
+  return `<section class="tvmaq${m.sit==='atrasada'?' alerta':''}" style="--sit:${s.cor}">
+    <div class="tvmh"><b>${escTV(maq)}</b><span class="tvtag">${escTV(m.rot||s.rot)}</span></div>
+    ${m.sit==='parada'?blocoParadaTV(m):blocoAgoraTV(m)}
+    <div class="tvfila">
+      <div class="tvsep fila"><span>Próximas na fila (${abertas.length})</span></div>
+      ${abertas.map(linha).join('')||'<div class="tvvazio">Nada mais na fila hoje.</div>'}
+      ${fechadas.length?`<div class="tvsep ok"><span>Concluídas hoje (${fechadas.length})</span></div>${fechadas.map(linha).join('')}`:''}
+      <div class="mais" hidden></div>
+    </div>
+  </section>`;
+};
+/* só troca a coluna que mudou; o tempo anda sozinho */
+const CS_TV_CACHE={};
+renderTV=function(){
+  const d=new Date(),data=ymd(d);
+  M('tvrel').textContent=`${p2(d.getHours())}:${p2(d.getMinutes())}:${p2(d.getSeconds())}`;
+  const hj=dLongo(data);if(M('tvhoje').textContent!==hj)M('tvhoje').textContent=hj;
+  const g=M('tvgrid');if(!g)return;
+  let mudou=false;
+  MAQUINAS.forEach((m,i)=>{
+    const h=colunaTV(m,data),chave=h.replace(/<span class="tm"[^>]*>[^<]*<\/span>/g,'');
+    let sec=g.children[i];
+    if(!sec||CS_TV_CACHE[m]!==chave||sec.dataset.maq!==m){
+      const t=document.createElement('div');t.innerHTML=h.trim();const novo=t.firstElementChild;novo.dataset.maq=m;
+      if(sec)g.replaceChild(novo,sec);else g.appendChild(novo);CS_TV_CACHE[m]=chave;mudou=true;}
+  });
+  while(g.children.length>MAQUINAS.length)g.removeChild(g.lastElementChild);
+  g.querySelectorAll('.tvabar .tm[data-desde]').forEach(b=>{b.textContent=csTvHms(Date.now()-new Date(b.dataset.desde).getTime());});
+  if(mudou)coubeNaTela();
+};
+/* a fila esconde do fim o que não cabe: os separadores nunca contam como OP */
+try{const _cb45=coubeNaTela;coubeNaTela=function(){_cb45.apply(this,arguments);
+  document.querySelectorAll('.tvmaq .tvsep.ok').forEach(sep=>{let n=sep.nextElementSibling,vis=false;while(n&&n.classList.contains('tvoc')){if(!n.hidden)vis=true;n=n.nextElementSibling;}sep.hidden=!vis;});};}catch(e){}
+try{csNucleo.versao='v345';}catch(e){}
+/* PCP ao vivo: as telas da programação (Início, Ordens, Envase, Tanques) se redesenham
+   a cada 30 s para o "atrasada", o "faltam" e as cores andarem com o relógio — sem
+   mexer em janela aberta, em quem está digitando nem na rolagem. */
+setInterval(()=>{try{
+  if(MODO_TV||!PRONTO||document.body.classList.contains('cs-operon'))return;
+  if(!['inicio','ordens','envase','tanques'].includes(S.page))return;
+  if(M('mask')&&M('mask').classList.contains('on'))return;
+  if(typeof csDigitando==='function'&&csDigitando())return;
+  const sc=csScrolls();render();csVoltaScrolls(sc);
+}catch(e){}},30000);
 
 </script>
 </body>
