@@ -3788,6 +3788,10 @@ body.cs-semjanela #mask{visibility:hidden!important}
 .tvpanel .tvagora .dest{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:1px!important;border-radius:10px;overflow:hidden}
 .tvpanel .tvagora .dest .d2,.tvpanel .tvagora .dest .d3{grid-column:span 1!important}
 .tvpanel .tvagora .dest .dcel{padding:8px 14px 9px}
+
+/* ===== v348 ===== */
+.cs-flink{display:block;color:inherit;text-decoration:none}
+.cs-flink>button{width:100%}
 </style>
 </head>
 <body>
@@ -5379,7 +5383,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v347';
+const VERSAO_APP='v348';
 let DRAG=null;
 function render(){
   recomporTudo();
@@ -18205,7 +18209,7 @@ const PERM_MODS=[
     {k:'vendas.cfg',n:'Configurações de vendas (estoque reservado)',acoes:true}]},
   {id:'compras',nome:'Compras',itens:[
     {k:'compras.oc',n:'Ordens de compra',acoes:true,
-      extra:[{k:'compras.oc.receber',n:'Receber mercadoria e estornar estoque'},
+      extra:[{k:'compras.oc.receber',n:'Receber mercadoria e estornar estoque'},{k:'compras.oc.receber.extra',n:'Incluir no recebimento item que veio na nota'},
              {k:'compras.oc.conferir',n:'Conferir nota, lançar e estornar contas'},
              {k:'compras.oc.reabrir',n:'Reabrir ordem concluída'}]},
     {k:'compras.hom',n:'Homologação de fornecedores',acoes:true},
@@ -25902,6 +25906,71 @@ setInterval(()=>{try{
   if(typeof csDigitando==='function'&&csDigitando())return;
   const sc=csScrolls();render();csVoltaScrolls(sc);
 }catch(e){}},30000);
+
+</script>
+<script>
+/* ===================== v348 =====================
+   1) Histórico: matéria-prima e embalagem não vão mais ao Tiny (o estoque delas é o
+      do ERP). Os eventos "Matéria-prima na fila do Tiny / enviada ao Tiny / estornada
+      no Tiny" passam a dizer o que aconteceu de verdade — e os antigos são corrigidos. */
+const CS_EV_MP={
+  'Matéria-prima na fila do Tiny':null,
+  'Ajuste de matéria-prima na fila do Tiny':'Ajuste de matéria-prima no estoque',
+  'Matéria-prima enviada ao Tiny':'Matéria-prima baixada do estoque',
+  'Matéria-prima estornada no Tiny':'Matéria-prima devolvida ao estoque',
+  'Estorno de matéria-prima no Tiny':'Matéria-prima devolvida ao estoque',
+  'Matéria-prima não enviada ao Tiny':'Matéria-prima não baixada do estoque'};
+try{const _rg48=registrar;registrar=function(o,ev,op,det){
+  if(Object.prototype.hasOwnProperty.call(CS_EV_MP,ev)){const n=CS_EV_MP[ev];if(!n)return;ev=n;}
+  return _rg48.call(this,o,ev,op,det);};}catch(e){}
+function csCorrigeHistMP(){
+  let n=0;
+  (ORDENS||[]).forEach(o=>{if(!Array.isArray(o.log))return;const l=o.log.filter(x=>!(x&&Object.prototype.hasOwnProperty.call(CS_EV_MP,x.e)&&CS_EV_MP[x.e]===null));
+    if(l.length!==o.log.length){o.log=l;n++;}
+    o.log.forEach(x=>{if(x&&CS_EV_MP[x.e]){x.e=CS_EV_MP[x.e];n++;}});});
+  return n;
+}
+setTimeout(function corr(){try{if(!PRONTO)return setTimeout(corr,3000);if(csCorrigeHistMP()&&!MODO_TV)agendarSalvar();}catch(e){}},4000);
+
+/* 2) Abrir em nova guia: cada página do menu vira um link de verdade (botão direito ›
+      "Abrir link em nova guia", ou clique com a rodinha / Ctrl+clique). O endereço
+      #ir=… abre direto naquela página. */
+const csRota=p=>!p?'':p.page?['p',p.page,p.aba||'',p.esaba||''].join(':'):p.fin?['m',p.mod||'financeiro',p.fin].join(':'):p.acao?['a',p.acao].join(':'):'';
+function csDaRota(r){
+  const [k,a,b,c]=String(r||'').split(':');
+  if(k==='p'&&a)return {page:a,...(b?{aba:b}:{}),...(c?{esaba:c}:{})};
+  if(k==='m'&&a&&b)return {mod:a,fin:[b,c].filter(Boolean).join(':')};
+  if(k==='a'&&a)return {acao:a};
+  return null;
+}
+const csHashLivre=()=>{try{return !csQuiosque()&&!MODO_TV&&!/^#(op\d|tv)/.test(location.hash);}catch(e){return false;}};
+try{const _ir48=csIr;csIr=function(p){const r=_ir48.apply(this,arguments);
+  try{const ro=csRota(p);if(ro&&!p.acao&&csHashLivre())history.replaceState(null,'','#ir='+encodeURIComponent(ro));}catch(e){}
+  return r;};}catch(e){}
+try{const _pi48=csPintar;csPintar=function(){const r=_pi48.apply(this,arguments);
+  try{const fly=document.getElementById('csFly');const m=csAchaAberto(CS_ABERTO);
+    if(fly&&m)fly.querySelectorAll('button[data-cspg]').forEach(b=>{
+      if(b.parentElement&&b.parentElement.tagName==='A')return;
+      const p=csVivas(m)[+b.dataset.cspg];const ro=csRota(p);if(!ro||p.acao)return;
+      const a=document.createElement('a');a.href='#ir='+encodeURIComponent(ro);a.className='cs-flink';
+      b.parentNode.insertBefore(a,b);a.appendChild(b);
+      /* clique comum: navega aqui mesmo; Ctrl, Shift, rodinha: deixa o navegador abrir a guia nova */
+      a.addEventListener('click',ev=>{if(ev.ctrlKey||ev.metaKey||ev.shiftKey||ev.button===1)return;ev.preventDefault();});
+    });}catch(e){}
+  return r;};}catch(e){}
+/* abriu com #ir=… (guia nova): vai direto para a página, depois de carregar */
+(function(){
+  let alvo=null;try{const m=location.hash.match(/^#ir=([^&]+)/);if(m)alvo=csDaRota(decodeURIComponent(m[1]));}catch(e){}
+  if(!alvo)return;
+  /* espera o sistema terminar de abrir (ele vai para a tela inicial ao carregar) e então vai para a página pedida;
+     confere de novo logo depois, caso a abertura tenha passado por cima */
+  let n=0,feito=false;const inicial=()=>['home','inicio',undefined,null,''].includes(S.page);
+  const vai=()=>{try{if(typeof PRONTO!=='undefined'&&PRONTO){
+      if(!feito){feito=true;setTimeout(()=>{csIr(alvo);setTimeout(()=>{if(inicial())csIr(alvo);},2500);},1200);}return;}}catch(e){}
+    if(++n<1200)setTimeout(vai,500);};   /* até 10 min: dá tempo de entrar com a senha */
+  setTimeout(vai,800);
+})();
+try{csNucleo.versao='v348';}catch(e){}
 
 </script>
 </body>

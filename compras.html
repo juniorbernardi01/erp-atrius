@@ -45,6 +45,10 @@ input.n{text-align:right;font-family:'JetBrains Mono',monospace;font-size:12.5px
 .caixa>h3 .dir{margin-left:auto;display:flex;gap:6px}
 .cp{padding:14px 16px}
 .rolx{overflow-x:auto}
+/* itens da OC: a área cresce com os itens (sem rolagem por dentro) e a lista de sugestões passa por cima */
+@media (min-width:980px){.rolx.ocit{overflow:visible}}
+.rolx.ocit .lista-sug{z-index:200}
+.bloco:has(.ocit){position:relative;z-index:5}
 table{width:100%;border-collapse:collapse}
 th{font-size:11px;font-weight:500;color:var(--ink3);text-align:left;padding:9px 12px;background:var(--line3);border-bottom:1px solid var(--line2);white-space:nowrap}
 td{padding:10px 12px;font-size:13px;border-bottom:1px solid var(--line2);vertical-align:middle}
@@ -1087,7 +1091,7 @@ function telaOC(id){
   </div></div>
 
   <div class="bloco"><div class="t"><span class="n">2</span>Itens</div>
-    <div class="rolx"><table class="ti2" style="min-width:900px"><thead><tr><th>Item <span style="font-weight:400;text-transform:none;letter-spacing:0">· como o fornecedor chama embaixo</span></th><th>Cód (SKU)</th><th class="n">Qtde<span class="req">*</span></th><th>UN</th><th class="n">Preço un<span class="req">*</span></th><th class="n">IPI %</th><th class="n">Preço total</th><th></th></tr></thead><tbody>
+    <div class="rolx ocit"><table class="ti2" style="min-width:900px"><thead><tr><th>Item <span style="font-weight:400;text-transform:none;letter-spacing:0">· como o fornecedor chama embaixo</span></th><th>Cód (SKU)</th><th class="n">Qtde<span class="req">*</span></th><th>UN</th><th class="n">Preço un<span class="req">*</span></th><th class="n">IPI %</th><th class="n">Preço total</th><th></th></tr></thead><tbody>
     ${oc.itens.map((it,i)=>linhaItem(oc,it,i,fu,L)).join('')||(L?'<tr><td colspan="8" class="vazio">Nenhum item ainda.</td></tr>':'')}
     ${L?'':linhaNova(oc,f)}</tbody></table></div>
     ${L?'':`<div class="addlk"><button class="btn lk sm" id="addMais" ${f?'':'disabled'}>⊕ adicionar item</button><button class="btn lk sm" id="addAv" ${f?'':'disabled'}>⌕ busca avançada de itens</button>${f?'':'<span class="s2">escolha o fornecedor primeiro</span>'}</div>`}</div>
@@ -1582,7 +1586,7 @@ function receberOC(o){
       <div class="fl"><label>Chegou em<span class="req">*</span></label><input class="inp dt-in" data-cal="1" id="rDt" value="${br(st.data)}"></div></div>
     <div class="rolx"><table class="rtab"><thead><tr><th>Item</th><th>Pedido</th><th>Chegou</th><th>Unidades na nota</th></tr></thead><tbody>
     ${st.linhas.map((l,i)=>{const it=l.it;const real=l.cx&&l.chegouCx>0?r3(l.chegou/l.chegouCx):0;const dif=l.cx&&l.chegouCx>0&&Math.abs(real-it.cx)>0.5;
-      return `<tr class="${l.chegou<l.falta-1e-6?'falta':''}"><td><b>${esc(it.nome)}</b><small>${esc(it.sku)}${it.tiny?'':' · sem código do Tiny: não entra no estoque de lá'}${l.lotes?' · controla lote':''}</small>${l.chegou<l.falta-1e-6?`<small style="color:#B45309">faltou ${nq(r3(l.falta-l.chegou))} ${esc(it.un)}</small>`:''}</td>
+      return `<tr class="${l.chegou<l.falta-1e-6?'falta':''}"><td><b>${esc(it.nome)}</b><small>${esc(it.sku)}${l.extra?' · <b style="color:#1D4ED8">incluído no recebimento</b>':''}${it.tiny?'':' · sem código: não entra no estoque'}${l.lotes?' · controla lote':''}</small>${l.chegou<l.falta-1e-6?`<small style="color:#B45309">faltou ${nq(r3(l.falta-l.chegou))} ${esc(it.un)}</small>`:''}</td>
       <td>${l.cx?nf(Math.round(l.falta/it.cx))+' cx<small>≈ '+nq(l.falta)+' '+esc(it.un)+'</small>':nq(l.falta)+' '+esc(it.un)}</td>
       <td>${l.cx?`<input class="in5" data-rcx="${i}" value="${l.chegouCx}"> cx`:''}</td>
       <td><input class="in5" data-rq="${i}" value="${nq(l.chegou)}"> ${esc(it.un)}${dif?`<label class="ckl" data-rac="${i}" style="color:#B45309"><span class="ck ${l.atualizaCx?'on':''}"></span>caixa real ${nf(real)} un · atualizar no fornecedor</label>`:''}</td></tr>
@@ -1591,6 +1595,7 @@ function receberOC(o){
         ${DB.cfg.loteValidade?`<label>Validade<span class="req">*</span><input class="in5 l" data-lt="${i}|${j}|val" value="${esc(lt.val)}" placeholder="mm/aaaa"></label>`:''}
         <label>Quantidade<input class="in5" data-lt="${i}|${j}|qtd" value="${nq(lt.qtd)}"></label>
         ${j?`<button class="lix" data-ltx="${i}|${j}">🗑</button>`:`<button class="btn lk sm" data-lta="${i}">＋ outro lote</button>`}</span></td></tr>`).join(''):''}`;}).join('')}</tbody></table></div>
+    ${pode('compras.oc.receber.extra','ver')?`<div class="fl rel" style="margin-top:10px"><label>Veio outro item junto na nota? (para compor a carga)</label><input class="inp" id="rExtra" placeholder="Pesquise pelo nome da MP ou SKU e escolha para incluir no recebimento"></div>`:''}
     ${falt.length?`<div class="sald"><b>Chegou parte do pedido.</b> O que faltou:
       <label data-sd="gerar"><span class="rd2 ${st.saldo==='gerar'?'on':''}"></span>Gerar ordem de saldo, com previsão <input class="in5 l dt-in" data-cal="1" id="rPs" value="${br(st.prevSaldo)}" style="margin-left:6px"></label>
       <label data-sd="nao"><span class="rd2 ${st.saldo==='nao'?'on':''}"></span>Não virá mais · fechar sem o saldo</label></div>`:''}
@@ -1607,11 +1612,20 @@ function receberOC(o){
     document.querySelectorAll('[data-ltx]').forEach(b=>b.onclick=()=>{const [a,j]=b.dataset.ltx.split('|');st.linhas[+a].lotes.splice(+j,1);des();});
     document.querySelectorAll('[data-sd]').forEach(b=>b.onclick=ev=>{if(ev.target.tagName==='INPUT')return;st.saldo=b.dataset.sd;des();});
     $('rN').onclick=()=>modal(null);
+    /* item que não estava na ordem e veio na nota: entra na ordem com pedido 0 e já no recebimento */
+    if($('rExtra'))buscaLista($('rExtra'),q=>{const ja=new Set(st.linhas.map(l=>l.it.sku));
+        return (N?N.insumos():[]).filter(x=>!ja.has(x.sku)&&(x.sku+' '+x.nome+' '+x.tipo).toLowerCase().includes(q)).slice(0,14).map(x=>({t:x.nome,s:`${x.sku} · ${x.tipo}`,v:x}));},
+      x=>{const n=o.itens.length;if(!adicionarItem(o,x))return;const it=o.itens[n];it.qtd=0;it.qtdCx=0;it.extra=true;
+        st.linhas.push({it,falta:0,cx:false,chegouCx:0,chegou:0,lotes:controlaLote(it)?[{lote:'',val:'',qtd:0}]:null,atualizaCx:false,extra:true});
+        hist(o,'Incluiu item no recebimento',`${it.nome} · veio na nota sem estar na ordem`);des();
+        setTimeout(()=>{const i=document.querySelector(`[data-rq="${st.linhas.length-1}"]`);if(i){i.focus();i.select();}},30);},
+      'Não achou? Cadastre o item em Cadastros.');
     $('rOk').onclick=async()=>{
       const f=[];if(!st.nf)f.push('NF do fornecedor');
       if(!st.linhas.some(l=>l.chegou>0))f.push('quantidade que chegou');
       st.linhas.forEach(l=>{if(l.lotes&&l.chegou>0){if(l.lotes.some(x=>!x.lote||(DB.cfg.loteValidade&&!/^\d{2}\/\d{4}$/.test(x.val))))f.push('lote e validade (mm/aaaa) de '+l.it.nome);
         else if(Math.abs(l.lotes.reduce((s,x)=>s+(+x.qtd||0),0)-l.chegou)>1e-6)f.push('quantidade dos lotes de '+l.it.nome+' somando o que chegou');}});
+      if(st.linhas.some(l=>l.extra&&!(l.chegou>0)))f.push('quantidade do item incluído (ou tire o item)');
       if(f.length)return toast('Falta: '+f.join(', '),true);
       $('rOk').disabled=true;await confirmaRecebimento(o,st);modal(null);render();};
   };
@@ -1641,8 +1655,8 @@ async function confirmaRecebimento(o,st){
   if(!(o.pag.parcelas||[]).some(p=>p.tiny&&p.tiny.id))gerarParcelas(o,o.pag.cond,o.pag.forma);
   o.sit='rec';
   const ok=await lancarEntrada(o,r);
-  hist(o,'Recebeu a mercadoria',`NF ${st.nf} · ${r.itens.map(x=>x.nome+' '+nq(x.qtd)).join(' · ')}${ok?' · estoque lançado':' · estoque NÃO foi ao Tiny: '+((r.tiny&&r.tiny.erro)||'')}`);
-  salvar();toast(ok?'Recebido. Estoque lançado; a ordem espera a conferência da nota.':'Recebido, mas o estoque não foi ao Tiny. Veja a coluna Integração.',!ok);
+  hist(o,'Recebeu a mercadoria',`NF ${st.nf} · ${r.itens.map(x=>x.nome+' '+nq(x.qtd)).join(' · ')}${ok?' · estoque lançado':' · estoque NÃO foi lançado: '+((r.tiny&&r.tiny.erro)||'')}`);
+  salvar();toast(ok?'Recebido. Estoque lançado; a ordem espera a conferência da nota.':'Recebido, mas o estoque não foi lançado. Veja a coluna Integração.',!ok);
 }
 
 /* =====================================================================
@@ -1660,7 +1674,7 @@ function telaConferir(id){
   const soma=somaParcelas(c),dif=r2(soma-t.total);const ter=freteTerceiro(c);
   $('app').innerHTML=`<div class="migalha"><button class="btn lk sm" id="volta">‹ Ordens de compra</button></div>
   <div class="ed-top"><h1>Conferir nota · OC ${esc(o.num)}</h1><span class="pill p-${o.sit}">${SIT[o.sit]}</span></div>
-  <div class="aviso ok2">✓ <div>Recebida por <b>${esc(ult.por||'—')}</b> em ${esc(ult.em||'—')} · NF <b>${esc(o.nf||'—')}</b> · ${integ(o).est?'estoque já lançado':'<span style="color:var(--danger)">estoque não lançado no Tiny</span>'}.<br>Confira as informações de preços, impostos e formas de pagamento.</div></div>
+  <div class="aviso ok2">✓ <div>Recebida por <b>${esc(ult.por||'—')}</b> em ${esc(ult.em||'—')} · NF <b>${esc(o.nf||'—')}</b> · ${integ(o).est?'estoque já lançado':'<span style="color:var(--danger)">estoque não lançado</span>'}.<br>Confira as informações de preços, impostos e formas de pagamento.</div></div>
   ${podeC?'':'<div class="aviso">Você não tem permissão para conferir notas, ou esta ordem não está esperando conferência.</div>'}
   <div class="bloco"><div class="t"><span class="n">1</span>Itens da nota</div><div class="rolx"><table class="ti2"><thead><tr><th>Item</th><th class="n">Recebido</th><th class="n">Preço na OC</th><th class="n">Preço na nota<span class="req">*</span></th><th class="n">ICMS %</th><th class="n">IPI %</th><th class="n">Total da nota</th></tr></thead><tbody>
     ${c.itens.map((it,i)=>`<tr><td><b>${esc(it.nome)}</b><span class="s2">${esc(it.sku)}</span></td><td class="n">${nq(it.qtd)} ${esc(it.un)}</td>
@@ -1744,7 +1758,7 @@ function confirmaDupla(tit,corpo,entendi,botao,acao){
 function estornarEstoque(o,depois){
   if(integ(o).cont)return toast('Esta ordem tem contas lançadas: estorne as contas antes do estoque.',true);
   const rs_=(o.receb||[]).filter(r=>!r.estornado&&r.tiny&&r.tiny.ok);const q=rs_.reduce((s,r)=>s+r.itens.reduce((a,x)=>a+x.qtd,0),0);
-  confirmaDupla(`Estornar o estoque da OC ${esc(o.num)}`,`<p>Isto <b>tira do estoque do Olist (Tiny)</b> a entrada que o recebimento lançou. O ERP lança uma saída igual, com a OC na observação.</p>
+  confirmaDupla(`Estornar o estoque da OC ${esc(o.num)}`,`<p>Isto <b>tira do estoque</b> a entrada que o recebimento lançou. O ERP lança uma saída igual, com a OC na observação.</p>
     <div class="lst"><div><span>${rs_.length} recebimento(s) · ${nq(q)} un</span><b>saem do estoque no Olist</b></div><div><span>NF ${esc(o.nf||'—')}</span><b>fica ligada à ordem</b></div><div><span>Situação</span><b>volta para Enviada ao fornecedor</b></div></div>`,
     'Entendi que o estoque vai ser alterado no Olist','Estornar estoque no Olist',async()=>{
       let err=0;for(const r of rs_){const movs=r.itens.filter(x=>x.tiny).map(x=>({id:x.tiny,tipo:'S',qtd:x.qtd}));
@@ -1752,7 +1766,7 @@ function estornarEstoque(o,depois){
       DB.lotes=DB.lotes.filter(l=>!rs_.some(r=>r.estornado&&r.id===l.receb));
       /* a ordem continua com as quantidades recebidas: é o que se espera receber de novo */
       if(!err)o.sit='env';
-      hist(o,'Estornou o estoque',err?err+' recebimento(s) com erro no Tiny':'');salvar();modal(null);toast(err?'Parte do estorno não foi ao Tiny.':'Estoque estornado. A ordem voltou para Enviada.',!!err);render();if(depois&&!err)depois();});
+      hist(o,'Estornou o estoque',err?err+' recebimento(s) com erro no Tiny':'');salvar();modal(null);toast(err?'Parte do estorno não foi lançada.':'Estoque estornado. A ordem voltou para Enviada.',!!err);render();if(depois&&!err)depois();});
 }
 /* a API do Tiny não exclui conta a pagar: o ERP confere se nenhuma foi paga,
    mostra quais excluir no Tiny e só marca como estornadas depois do ok */
