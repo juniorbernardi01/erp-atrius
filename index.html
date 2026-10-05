@@ -3804,6 +3804,13 @@ body.cs-semjanela #mask{visibility:hidden!important}
 .od2ar{color:#98A1AE;padding-left:6px}
 .od2rep{display:inline-flex;width:16px;height:16px;border-radius:50%;background:#B3261E;color:#fff;font-size:11px;font-weight:700;align-items:center;justify-content:center;margin-left:4px}
 .od2av{margin:8px 0;padding:9px 12px;border-radius:10px;background:#FDF3E3;color:#7A3E06;font-size:13px}
+
+/* ===== v352 · integração na linha ===== */
+.od2ig{display:flex;flex-wrap:wrap;gap:4px;align-items:center}
+.od2ok,.od2no{display:inline-flex;align-items:center;font-size:10.5px;font-weight:700;border-radius:999px;padding:2px 8px;white-space:nowrap}
+.od2ok{background:#E7F5EC;color:#15803D}.od2no{background:#FDECEC;color:#B3261E}
+.od2ig .od2tg{white-space:nowrap;width:auto!important;min-width:0!important;height:auto!important;display:inline-flex;align-items:center;padding:2px 8px!important;border-radius:999px!important;font-size:10.5px!important;font-weight:700;line-height:1.4;background:#FDF3E3!important;color:#B45309!important;border:1px solid #F3D9A8!important;position:static!important}
+.od2ig .od2tg.x{background:#FDECEC!important;color:#B3261E!important;border-color:#EDCFCC!important}
 </style>
 </head>
 <body>
@@ -4498,7 +4505,7 @@ function ultimoLote(g){
 }
 /* Próximo lote: o cadastrado, senão o último usado mais um. Sem nenhum dos
    dois devolve null — e aí quem lança digita o primeiro, uma vez só. */
-const proxLote=g=>{
+let proxLote=g=>{   /* v351: let, para as regras novas poderem trocar */
   /* O que vale é a sequência real: o maior lote já usado deste granel, mais
      um. O número cadastrado em Formulações só entra quando for maior — é o
      caso de começarem uma faixa nova. Sem nenhum dos dois devolve null, e
@@ -5395,7 +5402,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v350';
+const VERSAO_APP='v352';
 let DRAG=null;
 function render(){
   recomporTudo();
@@ -6592,6 +6599,10 @@ function modalProduto(p){
       <div class="hint" style="font-size:11.5px;color:var(--ink3);margin-top:4px">
         É o ID do produto no Tiny. Sem ele o estoque deste item não sobe nem desce
         no ERP — o PCP não tem como saber de quem está falando.</div></div>
+    ${novo||!p.tanque?'':`<div class="fld"><label>Próximo lote · ${escAttr(p.tanque)}</label>
+      <input id="pLoteProx" type="number" min="1" step="1" data-g="${escAttr(p.tanque)}" value="${(()=>{try{return proxLote(p.tanque)??'';}catch(e){return '';}})()}">
+      <div class="hint" style="font-size:11.5px;color:var(--ink3);margin-top:4px">A sequência é do granel (todos os formatos de ${escAttr(p.tanque)} dividem o lote do tanque).
+        Mude só para corrigir um erro: o próximo lote sai daqui e segue contando. Apagar volta para a sequência automática.</div></div>`}
     <div class="fld"><label>Foto do produto</label>
       <div class="g2" style="grid-template-columns:1fr 150px;align-items:start">
         <div>
@@ -7837,10 +7848,8 @@ function gradeFormulas(){
   M('fmG').addEventListener('change',e=>{FGRAN=e.target.value;gradeFormulas();});
   M('fmLote').addEventListener('change',e=>{
     const v=e.target.value.trim();
-    if(v==='')delete PROX_LOTE[FGRAN]; else PROX_LOTE[FGRAN]=Math.max(1,+v||1);
-    agendarSalvar();
-    toast(v===''?`${FGRAN} sem numeração — as OPs sairão sem lote.`
-      :`${FGRAN}: próximo lote ${PROX_LOTE[FGRAN]}.`);});
+    csAcertaLote(FGRAN,v);   /* v352: a mesma regra do cadastro do item */
+    try{e.target.value=proxLote(FGRAN)??'';}catch(_){}});
   el.querySelectorAll('[data-fab]').forEach(b=>b.onclick=()=>{FABA=b.dataset.fab;gradeFormulas();});
   ({mp:fmMP,emb:fmEmb,cert:fmCert,proc:fmProc}[FABA]||fmMP)(f);
 }
@@ -17662,7 +17671,7 @@ function estadoAtual(){
     ordens:ORDENS,aponta:APONTA,saldos:SALDOS,sopro:SOPRO,
     ocorrencias:OCORRENCIAS,
     cadastro:{produtos:PRODUTOS,insumos:INSUMOS,calendario:CALENDARIO,alertasParada:ALERTAS_PARADA,
-      paradasDesde:PARADAS_DESDE,marcoAplicado:MARCO_APLICADO,exigeLiberacao:EXIGE_LIBERACAO,travaLinha:CS_TRAVA_LINHA,proxLote:PROX_LOTE,formulas:FORMULAS,funcoes:FUNCOES,validade:VALIDADE,rt:RT,operadores:OPERADORES,pinBloq:CS_PINBLOQ,espec:ESPEC,ensaios:ENSAIOS,quali:QUALI,modulosErp:MODULOS_ERP,fotosProd:FOTOS_PROD,fotosAju:FOTOS_AJU,preformas:PREFORMAS,prefProd:PREF_PROD,recursos:RECURSOS,gruposMaq:GRUPOS_MAQ,mkOp:CAD_MK_OP,formVers:FORM_VERS,grupos:CAD_GRUPOS,waModelo:WA_MODELO,mod272:true,mod275:true,mod278:true,motivos:MOTIVOS,tolerancia:TOLERANCIA,quebraL:QUEBRA_L,tempos:TEMPOS,setupEnv:SETUP_ENV,tempoGranel:TEMPO_GRANEL,frascos:FRASCOS,sopradoras:SOPRADORAS,tanques:TANQUES,
+      paradasDesde:PARADAS_DESDE,marcoAplicado:MARCO_APLICADO,exigeLiberacao:EXIGE_LIBERACAO,travaLinha:CS_TRAVA_LINHA,proxLote:PROX_LOTE,proxLoteManual:(typeof PROX_LOTE_MAN!=='undefined'?PROX_LOTE_MAN:{}),formulas:FORMULAS,funcoes:FUNCOES,validade:VALIDADE,rt:RT,operadores:OPERADORES,pinBloq:CS_PINBLOQ,espec:ESPEC,ensaios:ENSAIOS,quali:QUALI,modulosErp:MODULOS_ERP,fotosProd:FOTOS_PROD,fotosAju:FOTOS_AJU,preformas:PREFORMAS,prefProd:PREF_PROD,recursos:RECURSOS,gruposMaq:GRUPOS_MAQ,mkOp:CAD_MK_OP,formVers:FORM_VERS,grupos:CAD_GRUPOS,waModelo:WA_MODELO,mod272:true,mod275:true,mod278:true,motivos:MOTIVOS,tolerancia:TOLERANCIA,quebraL:QUEBRA_L,tempos:TEMPOS,setupEnv:SETUP_ENV,tempoGranel:TEMPO_GRANEL,frascos:FRASCOS,sopradoras:SOPRADORAS,tanques:TANQUES,
       jornada:JORNADA,frascoProd:FRASCO_PROD,usuarios:USUARIOS,proxOp:PROX_OP,
       gruposMotivo:GRUPOS_MOTIVO,semana:SEMANA_PADRAO,tolAtraso:TOL_ATRASO},
     estoque:{saldos:ESTOQUE,em:ESTOQUE_EM,d:ESTOQUE_D},
@@ -17731,6 +17740,7 @@ function aplicarEstado(txt){
   /* frascos: casa por id e respeita a ordem gravada (as colunas são reordenáveis) */
   if(cad.insumos&&cad.insumos.length){INSUMOS.length=0;cad.insumos.forEach(x=>INSUMOS.push(x));}
   if(cad.proxLote)Object.assign(PROX_LOTE,cad.proxLote);
+  try{if(cad.proxLoteManual&&typeof PROX_LOTE_MAN!=='undefined'){for(const k in PROX_LOTE_MAN)delete PROX_LOTE_MAN[k];Object.assign(PROX_LOTE_MAN,cad.proxLoteManual);}}catch(e){}
   if(cad.proxOp)PROX_OP=+cad.proxOp||1;
   /* grupos editados nas Configurações: a base traz os dez de fábrica, e o que
      estiver salvo por cima manda. Grupo novo criado depois entra também. */
@@ -22569,13 +22579,18 @@ function csUltAlt(o){
 function csItg(o){
   const est=o.tinyEnviado&&o.tinyEnviado.em,pend=o.tinyAjuste&&!o.tinyAjuste.em;
   if(pend)return `<button class="od2tg x" data-odtiny="${o.id}" title="as caixas mudaram depois do envio">ajuste pendente</button>`;
-  if(est)return `<span class="od2itg"><i class="e" title="estoque lançado">E</i><i class="t" title="enviado ao Tiny em ${escAttr(String(o.tinyEnviado.em))}${o.tinyEnviado.por?' por '+escAttr(String(o.tinyEnviado.por)):''}">&#8645;</i></span>`;
+  if(est)return `<span class="od2ok" title="enviado ao Tiny em ${escAttr(String(o.tinyEnviado.em))}">Tiny ✓ enviado</span>`;
+  if(false)return `<span class="od2itg"><i class="e" title="estoque lançado">E</i><i class="t" title="enviado ao Tiny em ${escAttr(String(o.tinyEnviado.em))}${o.tinyEnviado.por?' por '+escAttr(String(o.tinyEnviado.por)):''}">&#8645;</i></span>`;
   if(sit(o)!=='concluida')return '<span class="k">—</span>';
   const f=typeof naFila==='function'?naFila(`op|${o.id}|emb`):null;
   if(f&&f.estado!=='enviado')return `<button class="od2tg ${f.estado==='falhou'?'x':'q'}" data-odtiny="${o.id}" title="${escAttr(f.erro||'')}">${f.estado==='falhou'?'falhou':'na fila'}</button>`;
   let semCod=false;try{const p=prodOf(o.codigo);semCod=!p||!tinyDe(p);}catch(e){}
-  return `<button class="od2tg q" data-odtiny="${o.id}">${semCod?'falta código':'a enviar'}</button>`;
+  return `<button class="od2tg q" data-odtiny="${o.id}">${semCod?'Tiny · falta código':'Tiny · a enviar'}</button>`;
 }
+function csSeloLib(b){let lib=false;try{const ap=APONTA[b.chave]||{};lib=!!ap.liberadoEm||['liberado','concluido'].includes(b.status);}catch(e){}
+  return lib?'<span class="od2ok">tanque liberado</span>':'<span class="od2no">tanque não liberado</span>';}
+function csSeloTinyMae(fs){const c=fs.filter(o=>sit(o)==='concluida');if(!c.length)return '';const env=c.filter(o=>o.tinyEnviado&&o.tinyEnviado.em&&!(o.tinyAjuste&&!o.tinyAjuste.em)).length;
+  return env===c.length?'<span class="od2ok">Tiny ✓ enviado</span>':`<span class="od2no">Tiny · ${c.length-env} a enviar</span>`;}
 
 /* Concluiu, vai ao Tiny: baixa da embalagem e entrada do acabado, pela mesma
    fila da conferência manual — se a rede cair, fica pendente e reenvia, e a
@@ -26062,7 +26077,7 @@ setTimeout(function cl(){try{if(!PRONTO)return setTimeout(cl,3000);if(!MODO_TV&&
 
 /* ORDENS DE PRODUÇÃO: a linha é a OP mãe (a batelada do tanque, com o lote); ao clicar
    abrem embaixo as OPs filhas, os produtos acabados que saíram dela. Nomes inteiros. */
-const CS_MAE_AB=new Set();
+const CS_MAE_AB=new Set(),CS_MAE_FE=new Set();
 const csNomeInteiro=c=>{const p=prodOf(c);return p?p.descricao:c;};
 try{const _ff50=od2Filtra;od2Filtra=function(l){const q=OD_BUSCA.trim().toLowerCase();
   if(!q)return _ff50(l);const salva=OD_BUSCA;OD_BUSCA='';const base=_ff50(l);OD_BUSCA=salva;
@@ -26086,16 +26101,15 @@ gradeOrdens=function(){
     return `<tr class="od2fi ${ab?'aberta':''} ${OD2.sel.has(o.id)?'sel':''}" data-odrow="${o.id}"><td><span class="od2ck ${OD2.sel.has(o.id)?'on':''}" data-odck="${o.id}"></span></td>
       <td><button class="od2dots" data-odmenu="${o.id}">&#8943;</button></td><td class="m"><span class="od2ar">↳</span></td><td class="m">${dCurto(o.data||b.data)}</td>
       <td><b>${escAttr(csNomeInteiro(o.codigo))}</b><small>${o.codigo} · ${fmt}</small></td><td class="m">${escAttr(String(o.lote||b.lote||'—'))}</td><td>${o.maq||'—'}</td><td>${b.tanque||'—'}</td>
-      <td>${od2Selo(o)}</td><td>${csItg(o)}</td>
+      <td>${od2Selo(o)}</td><td><span class="od2ig">${csSeloLib(b)}${csItg(o)}</span></td>
       <td>${(o.marcadores||[]).map(n=>{const m=odMarcadores().find(x=>x.nome===n);return `<span class="od2mk" style="--c:${m?m.cor:'#8B93A1'}"><i></i>${escAttr(n)}</span>`;}).join('')}</td></tr>
       ${ab?`<tr class="od2xp"><td></td><td colspan="10"><div class="od2xc">
         <div><span>Granel</span><b>${nf(+b.volume||0)} L · ${b.tanque||'sem tanque'}${b.lote?' · lote '+b.lote:''}</b></div>
         <div><span>Envase</span><b>${fmt} · ${o.maq||'—'}</b></div>
         <div><span>Produzido</span><b>${o.caixas!=null?`${nf(o.caixas)} ${und(o)}${cxPrev0(o)-o.caixas>0?` · ${nf(cxPrev0(o)-o.caixas)} de perda`:''}`:'ainda não apontado'}</b></div>
-        <div><span>Liberação</span><b>${ap.liberadoEm?`liberado ${ap.liberadoEm}${ap.liberadoPor?' por '+ap.liberadoPor:''}`:'lote ainda não liberado'}</b></div>
-        <div><span>Tiny</span><b>${pend?'ajuste pendente':est?'enviado '+o.tinyEnviado.em:'ainda não enviado'}</b></div>
+        ${ap.liberadoEm?`<div><span>Liberado</span><b>${ap.liberadoEm}${ap.liberadoPor?' por '+ap.liberadoPor:''}</b></div>`:''}
         ${o.obs?`<div><span>Observação</span><b>${escAttr(o.obs)}</b></div>`:''}</div></td></tr>`:''}`;};
-  const linhaMae=g=>{const b=g.b,ab=CS_MAE_AB.has(b.chave)||(OD_BUSCA.trim()&&g.filhas.length<=4);
+  const linhaMae=g=>{const b=g.b,ab=CS_MAE_AB.has(b.chave)||(!!OD_BUSCA.trim()&&g.filhas.length<=4&&!CS_MAE_FE.has(b.chave));
     const fs=g.filhas.map(x=>x.o);const sits=fs.map(od2Sit);
     const st=sits.includes('producao')?'producao':sits.includes('programada')?'programada':sits.every(x=>x==='concluida')?'concluida':'pendente';
     const rep=conf.some(c=>c.ops.some(o=>fs.includes(o)));
@@ -26104,14 +26118,15 @@ gradeOrdens=function(){
       <td class="m"><b>${escAttr(String(b.lote||'—'))}</b>${rep?' <span class="od2rep" title="número repetido ou fora da sequência">!</span>':''}</td><td class="m">${dCurto(b.data)}</td>
       <td><b>${escAttr(b.produto||'')}</b><small>granel · ${nf(+b.volume||0)} L · ${fs.length} OP${fs.length>1?'s':''} de envase${nomes?' ('+nomes+')':''}</small></td>
       <td class="m">${escAttr(String(b.lote||'—'))}</td><td>${[...new Set(fs.map(o=>o.maq).filter(Boolean))].join(', ')||'—'}</td><td>${b.tanque||'—'}</td>
-      <td><span class="od2sel ${st}">${({producao:'Em produção',programada:'Programada',concluida:'Concluída',pendente:'Pendente'})[st]}</span></td><td></td><td></td></tr>
+      <td><span class="od2sel ${st}">${({producao:'Em produção',programada:'Programada',concluida:'Concluída',pendente:'Pendente'})[st]}</span></td><td><span class="od2ig">${csSeloLib(b)}${csSeloTinyMae(fs)}</span></td><td></td></tr>
       ${ab?g.filhas.map(linhaFilha).join(''):''}`;};
   el.innerHTML=`<div class="od2">
     <div class="od2top"><h2>Ordens de produção</h2></div>
     <div class="od2bar"><input type="text" id="odB" class="busca" placeholder="Nº da OP, produto ou lote" value="${escAttr(OD_BUSCA)}">
       ${perBotao('odPer',OD2.p)}
       ${OD2.sort.k==='alt'?'<span class="od2ord">últimas alteradas no topo</span>':'<button class="od2ord b" id="odAlt" type="button">&#8634; últimas alteradas no topo</button>'}
-      <button class="od2ord b" id="odAbreT" type="button">${grupos.every(g=>CS_MAE_AB.has(g.b.chave))?'⊟ fechar todas':'⊞ abrir todas'}</button>
+      <button class="od2ord b" id="odAbreT" type="button">${grupos.length&&grupos.every(g=>CS_MAE_AB.has(g.b.chave)||(!!OD_BUSCA.trim()&&g.filhas.length<=4&&!CS_MAE_FE.has(g.b.chave)))?'⊟ fechar todas':'⊞ abrir todas'}</button>
+      <button class="od2ord b" id="odLimpa" type="button">✕ limpar filtros</button>
       <span style="flex:1"></span><button class="btn pri" id="odNova">+ Nova OP</button></div>
     ${conf.length?`<div class="od2av">⚠ <b>${conf.length} lote${conf.length>1?'s':''} para conferir</b> — número repetido em outra batelada do mesmo granel, ou fora da sequência, em OPs que já começaram (as que não começaram foram corrigidas sozinhas). <button class="btn lk sm" id="odConf">ver quais</button></div>`:''}
     <div class="od2abas">${OD2_ABAS.map(([k,r,c])=>`<button data-odab="${k}" class="${k===OD_ABA?'on':''}" style="--cor:${c}">${r}<b>${nf(conta(k))}</b></button>`).join('')}</div>
@@ -26122,8 +26137,12 @@ gradeOrdens=function(){
         <div><b>${nf(grupos.length)}</b><span>OPs mãe (lotes)</span></div><div><b>${nf(l.length)}</b><span>OPs de envase</span></div><div><b>${nf(lit)}</b><span>litros</span></div><div><b>${Object.entries(cx).map(([u,v])=>nf(v)+' '+u).join(' · ')||'—'}</b><span>a envasar</span></div></div>`
     :'<div class="vazioc" style="padding:24px">Nenhuma OP neste período.</div>'}</div>`;
   ligaOrdens(el,l);
-  el.querySelectorAll('[data-odmae]').forEach(r=>r.onclick=()=>{const k=r.dataset.odmae;CS_MAE_AB.has(k)?CS_MAE_AB.delete(k):CS_MAE_AB.add(k);gradeOrdens();});
-  if(M('odAbreT'))M('odAbreT').onclick=()=>{const todasAb=grupos.every(g=>CS_MAE_AB.has(g.b.chave));grupos.forEach(g=>todasAb?CS_MAE_AB.delete(g.b.chave):CS_MAE_AB.add(g.b.chave));gradeOrdens();};
+  el.querySelectorAll('[data-odmae]').forEach(r=>r.onclick=()=>{const k=r.dataset.odmae,ab=r.classList.contains('ab');
+    if(ab){CS_MAE_AB.delete(k);CS_MAE_FE.add(k);}else{CS_MAE_AB.add(k);CS_MAE_FE.delete(k);}gradeOrdens();});
+  if(M('odAbreT'))M('odAbreT').onclick=()=>{const fechar=/fechar/.test(M('odAbreT').textContent);
+    grupos.forEach(g=>{if(fechar){CS_MAE_AB.delete(g.b.chave);CS_MAE_FE.add(g.b.chave);}else{CS_MAE_AB.add(g.b.chave);CS_MAE_FE.delete(g.b.chave);}});gradeOrdens();};
+  if(M('odLimpa'))M('odLimpa').onclick=()=>{OD_BUSCA='';OD_ABA='todas';OD2.sel.clear();OD2.sort={k:'alt',dir:-1};
+    const x=perNovo('int');x.de=perAdd(perHoje(),-30);x.ate=perAdd(perHoje(),10);x.campo='prog';OD2.p=x;CS_MAE_AB.clear();CS_MAE_FE.clear();OD_ABERTO=null;gradeOrdens();};
   if(M('odConf'))M('odConf').onclick=()=>csTelaConflitos(conf);
 };
 function csTelaConflitos(conf){
@@ -26137,6 +26156,62 @@ function csTelaConflitos(conf){
 /* menu da OP e excluídas: nome inteiro */
 try{const _mop50=menuOP;menuOP=function(x,b){const r=_mop50.apply(this,arguments);try{const h=document.querySelector('#od2m .mh');if(h)h.textContent=`OP ${x.o.lote||x.b.lote||''} · ${csNomeInteiro(x.o.codigo)}`;}catch(e){}return r;};}catch(e){}
 try{csNucleo.versao='v350';}catch(e){}
+
+</script>
+<script>
+/* ===================== v351 · sequência do lote ignora o cancelado =====================
+   Regra: cada granel (a família do tanque: AMACIANTE AZUL, ÁGUA SANITÁRIA…) tem a sua
+   sequência. O próximo lote é o maior lote VIVO desse granel + 1. OP cancelada ou
+   excluída não conta: se o lote 2 for cancelado, o próximo volta a ser o 2.
+   O número cadastrado em Formulações (Próximo lote) só manda quando foi digitado lá
+   — para começar uma faixa nova —, e fica guardado no cadastro do sistema. */
+let PROX_LOTE_MAN={};   /* granel -> número digitado em Formulações */
+const csLoteVivo=o=>o&&o.status!=='cancelada'&&!o.excluida&&!o.excluidaEm;
+ultimoLote=function(g){
+  let m=null;
+  (typeof ORDENS!=='undefined'?ORDENS:[]).forEach(o=>{if(!csLoteVivo(o))return;
+    const n=+String(o.lote||'').replace(/\D/g,'');if(!n)return;
+    const p=prodOf(o.codigo);if(p&&p.tanque===g&&(m==null||n>m))m=n;});
+  return m;
+};
+proxLote=function(g){
+  const u=ultimoLote(g),seq=u==null?null:u+1;
+  const man=PROX_LOTE_MAN[g]!=null?+PROX_LOTE_MAN[g]:null;
+  /* sem nenhum lote vivo: vale o cadastrado (o digitado, ou o antigo guardado) */
+  const cad=man!=null?man:(seq==null&&PROX_LOTE[g]!=null?+PROX_LOTE[g]:null);
+  let n=seq==null?cad:Math.max(seq,cad||0);
+  if(n==null)return null;
+  for(let k=0;k<5000&&(typeof csLoteOcupado==='function')&&ORDENS.some(x=>csLoteVivo(x)&&naGrade(x)&&csGranel(x)===g&&+String(x.lote||'').replace(/\D/g,'')===n);k++)n++;
+  return n;
+};
+try{csNucleo.versao='v351';}catch(e){}
+
+</script>
+<script>
+/* ===================== v352 =====================
+   LOTE: o próximo é o primeiro número livre a partir de onde a sequência está — o
+   maior lote vivo do granel + 1, ou o número que alguém acertou à mão (no cadastro do
+   item ou em Formulações) para corrigir um erro. Número de OP cancelada fica livre
+   de novo: cancelou o 2, o próximo é o 2. */
+proxLote=function(g){
+  const vivoUsa=n=>ORDENS.some(x=>csLoteVivo(x)&&naGrade(x)&&csGranel(x)===g&&+String(x.lote||'').replace(/\D/g,'')===n);
+  const u=ultimoLote(g),seq=u==null?null:u+1;
+  const man=PROX_LOTE_MAN[g]!=null?+PROX_LOTE_MAN[g]:null;
+  let n=man!=null?man:seq!=null?seq:(PROX_LOTE[g]!=null?+PROX_LOTE[g]:null);
+  if(n==null)return null;
+  for(let k=0;k<100000&&vivoUsa(n);k++)n++;
+  return n;
+};
+function csAcertaLote(g,v){
+  if(v===''||v==null){delete PROX_LOTE_MAN[g];toast(`${g}: segue a sequência dos lotes (${proxLote(g)??'—'}).`);}
+  else{const n=Math.max(1,Math.round(+v||1));PROX_LOTE_MAN[g]=n;PROX_LOTE[g]=n;
+    const p=proxLote(g);toast(p===n?`${g}: o próximo lote é ${n}.`:`${g}: o ${n} já está em uso; o próximo livre é ${p}.`,p!==n);}
+  agendarSalvar();
+}
+/* no cadastro do item: o próximo lote do granel dele, para acertar a sequência */
+document.addEventListener('change',ev=>{const i=ev.target;if(!i||i.id!=='pLoteProx')return;csAcertaLote(i.dataset.g,i.value.trim());
+  try{i.value=proxLote(i.dataset.g)??'';}catch(e){}});
+try{csNucleo.versao='v352';}catch(e){}
 
 </script>
 </body>
