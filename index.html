@@ -3824,6 +3824,33 @@ body.cs-semjanela #mask{visibility:hidden!important}
 .cplix{width:34px;height:34px;border:1px solid #EDCFCC;border-radius:8px;background:#FDECEC;color:#B3261E;cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
 .cpnovo select,#pfAdd{height:36px;min-width:300px;border:1px dashed #9DB6E8;border-radius:9px;background:#F7FAFF;padding:0 10px;font-weight:600;color:#173A73}
 .cpnv{font-size:10.5px;font-weight:700;background:#EAF2FF;color:#173A73;border-radius:999px;padding:2px 8px;margin-left:6px}
+
+/* ===== v357 · cadastros ===== */
+.cp2t th.c,.cp2t td.c{text-align:center}.cp2t th small{display:block;text-transform:none;letter-spacing:0;font-weight:500;color:var(--ink3)}
+.cp2t td small{display:block;font-size:10.5px;margin-top:2px}
+.cp2r{font-weight:600;border-radius:999px;padding:1px 6px;display:inline-block!important}.cp2r.mau{background:#FDECEC;color:#B3261E}.cp2r.bom{background:#E7F5EC;color:#15803D}.cp2r.ok{background:#EEF2F8;color:#334155}
+.cp2in{height:30px;box-sizing:border-box;border:1px solid #1D4ED8;border-radius:7px;text-align:center;background:#F7FAFF;font:500 12.5px var(--mono,'JetBrains Mono'),monospace}
+.cp2nome{border:0;background:none;padding:0;font:inherit;font-weight:700;color:var(--ink);cursor:pointer;text-align:left}.cp2nome:hover{color:#1D4ED8}
+.cp2tags{display:flex;gap:4px;flex-wrap:wrap}.cp2tags i{font-style:normal;font-size:10.5px;font-weight:700;border-radius:999px;padding:2px 8px;background:#EEF2F8;color:#334155}
+.cp2res{color:#B45309}
+.cp2tf{position:relative}.cp2pop{position:absolute;top:40px;left:0;z-index:60;width:260px;max-height:360px;overflow:auto;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 16px 40px rgba(20,24,33,.16);padding:8px;display:flex;flex-direction:column;gap:2px}
+.cp2pop label{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:8px;cursor:pointer;font-size:13px}.cp2pop label:hover{background:#F4F6FA}.cp2pop label b{margin-left:auto;font-weight:500;color:var(--ink3)}
+.cp2popb{display:flex;gap:6px;padding-top:6px;border-top:1px solid var(--line2);margin-top:4px}.cp2popb .btn{flex:1}
+.cp2bulk{display:flex;align-items:center;gap:10px;background:#0E1B33;color:#fff;border-radius:12px;padding:8px 14px;margin:6px 0}.cp2bulk select{height:32px;border-radius:8px}
+.cp2cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.cp2cards button{text-align:left;background:#fff;border:1px solid #DCE3EF;border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:6px;min-height:130px;cursor:pointer}
+.cp2cards button:hover{border-color:#1D4ED8}.cp2cards b{font-size:15px}.cp2cards i{font-style:normal;font-size:12.5px;color:var(--ink2)}.cp2cards span{font-size:12.5px;color:var(--ink3)}
+.cp2cards button.breve{opacity:.6}
+@media (max-width:760px){.cp2cards{grid-template-columns:1fr}}
+
+/* ===== v358 · previsto × realizado ===== */
+.rtpr th.pv,.rtpr td.pv{background:#F3F6FC}.rtpr th.rl,.rtpr td.rl{background:#FBF7EE}
+.rtpr tr.g th{font-size:11px;letter-spacing:.06em;text-transform:uppercase;text-align:center;border-bottom:0}
+.rtpr tr.g th.pv{color:#173A73}.rtpr tr.g th.rl{color:#7A4B06}
+.rtpr tr.rtl{cursor:pointer}.rtpr tr.rtl:hover td{filter:brightness(.97)}.rtpr tr.rtl.ab td{border-bottom:0}
+.rtpr tr.rtx>td{background:#FAFBFC;padding:6px 10px 12px}
+.rtd{display:inline-block;font-weight:700;font-size:12px;border-radius:999px;padding:2px 9px;background:#EEF2F8;color:#334155;white-space:nowrap}
+.rtd.mau{background:#FDECEC;color:#B3261E}.rtd.bom{background:#E7F5EC;color:#15803D}
 </style>
 </head>
 <body>
@@ -5415,7 +5442,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v354';
+const VERSAO_APP='v358';
 let DRAG=null;
 function render(){
   recomporTudo();
@@ -11952,6 +11979,9 @@ if(M('mCorr'))M('mCorr').onclick=()=>corrigirRegistros(o);
     const lp=lotePadrao(cod),v=M('fVol');
     if(lp&&v&&!v.disabled&&(!(+v.value)||TANQUES.some(x=>x.cap===+v.value)||+v.value===lp))v.value=lp;
     /* sem máquina escolhida ainda, tempoDe já devolve o menor do produto */
+    /* v357: o setup é do produto (cadastro); a máquina sem tempo para o produto só avisa */
+    try{const tp=TEMPOS[String(cod)]||{};if(!o&&M('fSet'))M('fSet').textContent=String(tp.setup!=null?tp.setup:SETUP_PADRAO);
+      if(maq&&tp.t&&Object.keys(tp.t).length&&!tp.t[maq])toast(`A ${maq} não tem tempo cadastrado para este produto.`,true);}catch(_){}
     const min=tempoDe(cod,maq),e=M('fEnv');
     if(min&&e&&!e.disabled){
       /* proporcional ao volume: o tempo da tabela é para o lote padrão */
@@ -15322,7 +15352,7 @@ function abrirTanque(t,aba){
       <table class="od2t"><thead><tr><th>Insumo</th><th style="text-align:right">%</th><th style="text-align:right">Por 1.000 L</th><th style="text-align:right">Por batelada (${nf(lote)} L)</th><th></th></tr></thead><tbody>
       ${mp.map((m,i)=>`<tr><td><b>${escAttr(m.nome)}</b> <span class="k m">${escAttr(m.sku||'')}</span></td><td class="n"><input class="cpin" data-fp="${i}" value="${cpNum(m.pct,4)}"></td>
         <td class="n">${cpNum((+m.pct||0)*10,2)} ${m.un||'kg'}</td><td class="n">${cpNum((+m.pct||0)*lote/100,2)} ${m.un||'kg'}</td><td><button class="od2dots" data-fx="${i}" title="tirar">✕</button></td></tr>`).join('')}
-      <tr><td colspan="5"><select id="fAdd"><option value="">＋ incluir insumo…</option>${INSUMOS.filter(x=>x.ativo!==false&&!mp.some(m=>m.sku===x.sku)).map(x=>`<option value="${escAttr(x.sku)}">${escAttr(x.nome)} · ${escAttr(x.sku)}</option>`).join('')}</select></td></tr></tbody></table>
+      <tr><td colspan="5"><select id="fAdd"><option value="">＋ incluir insumo…</option>${INSUMOS.filter(x=>x.ativo!==false&&x.grupo!=='uso'&&!mp.some(m=>m.sku===x.sku)).map(x=>`<option value="${escAttr(x.sku)}">${escAttr(x.nome)} · ${escAttr(x.sku)}</option>`).join('')}</select></td></tr></tbody></table>
       <div class="cpleg">Insumos somam ${cpNum(soma,3)}%; o que falta para 100% é água. Mudar e salvar cria a versão ${vs[vs.length-1].v+1}, guardando a atual com a data em que parou de valer.</div>`;
       c.querySelectorAll('[data-fp]').forEach(i=>i.onchange=()=>{const v=cpLeNum(i.value);if(v!=null)mp[+i.dataset.fp].pct=v;desenha('form',c);});
       c.querySelectorAll('[data-fx]').forEach(b=>b.onclick=()=>{mp.splice(+b.dataset.fx,1);desenha('form',c);});
@@ -17474,7 +17504,7 @@ ${d.lotes.map(b=>{const ap=APONTA[b.chave]||{};
   }catch(x){toast('Não consegui abrir a janela de impressão.',true);}
 }
 
-const ABAS_REP=[['dia','Fechamento do dia'],['envase','Envase'],['tempos','Tempo por produto'],
+let ABAS_REP=[['dia','Fechamento do dia'],['envase','Envase'],['tempos','Tempo por produto'],
   ['motivos','Motivos'],
   ['tanques','Tanques'],['sopro','Sopro'],['rotulagem','Rotulagem'],['cert','Certificados']];
 let ABA_REP='envase';
@@ -17684,7 +17714,7 @@ function estadoAtual(){
     ordens:ORDENS,aponta:APONTA,saldos:SALDOS,sopro:SOPRO,
     ocorrencias:OCORRENCIAS,
     cadastro:{produtos:PRODUTOS,insumos:INSUMOS,calendario:CALENDARIO,alertasParada:ALERTAS_PARADA,
-      paradasDesde:PARADAS_DESDE,marcoAplicado:MARCO_APLICADO,exigeLiberacao:EXIGE_LIBERACAO,travaLinha:CS_TRAVA_LINHA,proxLote:PROX_LOTE,proxLoteManual:(typeof PROX_LOTE_MAN!=='undefined'?PROX_LOTE_MAN:{}),formulas:FORMULAS,funcoes:FUNCOES,validade:VALIDADE,rt:RT,operadores:OPERADORES,pinBloq:CS_PINBLOQ,espec:ESPEC,ensaios:ENSAIOS,quali:QUALI,modulosErp:MODULOS_ERP,fotosProd:FOTOS_PROD,fotosAju:FOTOS_AJU,preformas:PREFORMAS,prefProd:PREF_PROD,recursos:RECURSOS,gruposMaq:GRUPOS_MAQ,mkOp:CAD_MK_OP,formVers:FORM_VERS,grupos:CAD_GRUPOS,waModelo:WA_MODELO,mod272:true,mod275:true,mod278:true,motivos:MOTIVOS,tolerancia:TOLERANCIA,quebraL:QUEBRA_L,tempos:TEMPOS,setupEnv:SETUP_ENV,tempoGranel:TEMPO_GRANEL,frascos:FRASCOS,sopradoras:SOPRADORAS,tanques:TANQUES,
+      paradasDesde:PARADAS_DESDE,marcoAplicado:MARCO_APLICADO,migra:(typeof CS_MIGRA!=='undefined'?CS_MIGRA:[]),exigeLiberacao:EXIGE_LIBERACAO,travaLinha:CS_TRAVA_LINHA,proxLote:PROX_LOTE,proxLoteManual:(typeof PROX_LOTE_MAN!=='undefined'?PROX_LOTE_MAN:{}),formulas:FORMULAS,funcoes:FUNCOES,validade:VALIDADE,rt:RT,operadores:OPERADORES,pinBloq:CS_PINBLOQ,espec:ESPEC,ensaios:ENSAIOS,quali:QUALI,modulosErp:MODULOS_ERP,fotosProd:FOTOS_PROD,fotosAju:FOTOS_AJU,preformas:PREFORMAS,prefProd:PREF_PROD,recursos:RECURSOS,gruposMaq:GRUPOS_MAQ,mkOp:CAD_MK_OP,formVers:FORM_VERS,grupos:CAD_GRUPOS,waModelo:WA_MODELO,mod272:true,mod275:true,mod278:true,motivos:MOTIVOS,tolerancia:TOLERANCIA,quebraL:QUEBRA_L,tempos:TEMPOS,setupEnv:SETUP_ENV,tempoGranel:TEMPO_GRANEL,frascos:FRASCOS,sopradoras:SOPRADORAS,tanques:TANQUES,
       jornada:JORNADA,frascoProd:FRASCO_PROD,usuarios:USUARIOS,proxOp:PROX_OP,
       gruposMotivo:GRUPOS_MOTIVO,semana:SEMANA_PADRAO,tolAtraso:TOL_ATRASO},
     estoque:{saldos:ESTOQUE,em:ESTOQUE_EM,d:ESTOQUE_D},
@@ -17812,6 +17842,7 @@ function aplicarEstado(txt){
   if(cad.setupEnv!=null)SETUP_ENV=+cad.setupEnv||0;
   if(cad.paradasDesde)PARADAS_DESDE=cad.paradasDesde;
   if(cad.marcoAplicado)MARCO_APLICADO=cad.marcoAplicado;
+  try{if(Array.isArray(cad.migra)&&typeof CS_MIGRA!=='undefined'){CS_MIGRA.length=0;cad.migra.forEach(x=>CS_MIGRA.push(x));}}catch(e){}
   aplicarResetParadas();
   if(cad.exigeLiberacao!=null)EXIGE_LIBERACAO=!!cad.exigeLiberacao;
   if(cad.travaLinha!=null)CS_TRAVA_LINHA=!!cad.travaLinha;
@@ -26249,12 +26280,13 @@ abrirTanque=function(t,aba){
   const capDe=id=>{const x=TANQUES.find(y=>y.id===id);return x?+x.cap:volPadrao;};
   const desenha=(a,c)=>{
     if(a==='ger'){
-      c.innerHTML=`<div class="cpgrid" style="grid-template-columns:repeat(3,minmax(0,1fr))">
-        ${cpCampo('tqN','Nome do tanque',t,'readonly')}
-        ${cpCampo('tqL','Volume padrão (L)',nf(volPadrao),'readonly')}
-        <div class="fld"><label>Tempo de preparo do tanque (min)</label><input id="tqT" value="${tg!=null?escAttr(String(tg)):''}" placeholder="ex.: 90"></div></div>
-        <p class="cpleg">É este nome que liga os produtos acabados ao tanque. O tempo de preparo vai da mistura até liberar para envasar.</p>`;
-      M('tqT').onchange=e=>{tg=cpLeNum(e.target.value);};}
+      const g0=tempoG(t),G0=TEMPO_GRANEL[t]||{};tg=tg&&typeof tg==='object'?tg:{...g0,...G0};
+      const cT=(f,r,ph)=>`<div class="fld"><label>${r}</label><input data-tqt="${f}" value="${tg[f]!=null&&tg[f]!==''?escAttr(String(tg[f])):''}" placeholder="${ph}"></div>`;
+      c.innerHTML=`<div class="cpgrid" style="grid-template-columns:repeat(4,minmax(0,1fr))">
+        <div class="fld" style="grid-column:span 4"><label>Nome do tanque</label><input value="${escAttr(t)}" readonly></div>
+        ${cT('enchimento','Tempo de enchimento (min)','do tanque físico')}${cT('limpeza','Tempo de limpeza (min)','-')}${cT('fabricacao','Tempo de preparo (min)','-')}${cT('descanso','Tempo de descanso (min)','-')}</div>
+        <p class="cpleg">É este nome que liga os produtos acabados ao tanque. Os tempos somam na linha do tempo do lote; enchimento em branco usa o do tanque físico (TQ 1, TQ 6…).</p>`;
+      c.querySelectorAll('[data-tqt]').forEach(i=>i.onchange=()=>{const v=String(i.value).trim();const n=v===''?null:cpLeNum(v);if(n==null&&i.dataset.tqt==='enchimento')delete tg.enchimento;else tg[i.dataset.tqt]=n==null?0:n;});}
     else if(a==='form'){const soma=mp.reduce((s,m)=>s+(+m.pct||0),0);const vs=FORM_VERS[t];const cap=capDe(tq);
       const agua=Math.max(0,100-soma);
       c.innerHTML=`<div class="cpsim"><label for="fTq">Simular no tanque</label>
@@ -26265,7 +26297,7 @@ abrirTanque=function(t,aba){
         <td class="n">${cpNum((+m.pct||0)*10,2)} ${m.un||'kg'}</td><td class="n"><span class="cpkg">${cpNum((+m.pct||0)*cap/100,2)} ${m.un||'kg'}</span></td><td><button class="od2dots" data-fx="${i}" aria-label="tirar insumo">✕</button></td></tr>`).join('')}
       <tr class="cpagua"><td><b>ÁGUA</b> · completa até 100%</td><td class="n">${cpNum(agua,3)}</td><td class="n">${cpNum(agua*10,1)} kg</td><td class="n">${cpNum(agua*cap/100,1)} kg</td><td></td></tr>
       <tr class="cptot"><td><b>Total no tanque</b></td><td class="n">100</td><td class="n">1.000 kg</td><td class="n"><b>${nf(cap)} kg</b></td><td></td></tr>
-      <tr><td colspan="5"><select id="fAdd"><option value="">＋ incluir insumo…</option>${INSUMOS.filter(x=>x.ativo!==false&&!mp.some(m=>m.sku===x.sku)).map(x=>`<option value="${escAttr(x.sku)}">${escAttr(x.nome)} · ${escAttr(x.sku)}</option>`).join('')}</select></td></tr></tbody></table>
+      <tr><td colspan="5"><select id="fAdd"><option value="">＋ incluir insumo…</option>${INSUMOS.filter(x=>x.ativo!==false&&x.grupo!=='uso'&&!mp.some(m=>m.sku===x.sku)).map(x=>`<option value="${escAttr(x.sku)}">${escAttr(x.nome)} · ${escAttr(x.sku)}</option>`).join('')}</select></td></tr></tbody></table>
       <div class="cpleg">Mudar os % e salvar cria a versão ${vs[vs.length-1].v+1}, guardando a atual com a data em que parou de valer.</div>`;
       M('fTq').onchange=e=>{tq=e.target.value;desenha('form',c);};
       c.querySelectorAll('[data-fp]').forEach(i=>i.onchange=()=>{const v=cpLeNum(i.value);if(v!=null)mp[+i.dataset.fp].pct=v;desenha('form',c);});
@@ -26303,7 +26335,7 @@ abrirTanque=function(t,aba){
     if(antes!==agora){const vs=FORM_VERS[t];const hoje=ymd(new Date());vs[vs.length-1].ate=hoje;vs.push({v:vs[vs.length-1].v+1,desde:hoje,mp:JSON.parse(JSON.stringify(mp))});}
     f.mp=mp;
     Object.keys(espE).forEach(k=>{if(espE[k]===' '||(espE[k]&&typeof espE[k]==='object'&&!espE[k].txt&&espE[k].min==null&&espE[k].max==null))delete espE[k];});
-    ESPEC[t]=espE;if(tg!=null)TEMPO_GRANEL[t]=tg;
+    ESPEC[t]=espE;if(tg&&typeof tg==='object')TEMPO_GRANEL[t]={...(TEMPO_GRANEL[t]||tempoG(t)),...tg};   /* v357: o objeto de sempre, nunca um número */
     prodsAntes.filter(c=>!prods.includes(c)).forEach(c=>{const p=prodOf(c);if(p)p.tanque='';});
     prods.filter(c=>!prodsAntes.includes(c)).forEach(c=>{const p=prodOf(c);if(p)p.tanque=t;});
   });
@@ -26333,6 +26365,289 @@ try{const _gc54=gradeCadProd;gradeCadProd=function(){const r=_gc54.apply(this,ar
     }}catch(e){console.warn('cadprod v354',e);}
   return r;};}catch(e){}
 try{csNucleo.versao='v354';}catch(e){}
+
+</script>
+<script>
+/* ===================== v355 · tempos e lotes da planilha de 05/10 =====================
+   A planilha de tempos e volumes (lote padrão e tempo de envase de cada produto em
+   cada máquina) é a referência. Ela entra uma vez no cadastro: depois disso quem
+   ajusta é o próprio cadastro, e a planilha não volta a passar por cima.
+   Dos 51 produtos que existem no sistema, 50 já estavam iguais; muda o
+   ÁGUA SANITÁRIA 2L (lote 10.000 L, 4:00 na MAQ 1). */
+let CS_MIGRA=[];   /* migrações de dados já aplicadas (guardadas no cadastro) */
+const CS_PLANILHA_0510={"401": {"lote": 3800, "t": {"MAQ 1": 150}}, "402": {"lote": 10000, "t": {"MAQ 1": 240}}, "403": {"lote": 10000, "t": {"MAQ 3": 240}}, "301": {"lote": 3800, "t": {"MAQ 1": 150}}, "302": {"lote": 3800, "t": {"MAQ 1": 90}}, "303": {"lote": 4600, "t": {"MAQ 3": 180}}, "803": {"lote": 3800, "t": {"MAQ 1": 120}}, "801": {"lote": 3800, "t": {"MAQ 1": 120}}, "804": {"lote": 3800, "t": {"MAQ 1": 120}}, "503": {"lote": 3800, "t": {"MAQ 1": 90}}, "802": {"lote": 3800, "t": {"MAQ 1": 120}}, "813": {"lote": 3800, "t": {"MAQ 2": 120}}, "811": {"lote": 3800, "t": {"MAQ 2": 120}}, "814": {"lote": 3800, "t": {"MAQ 2": 120}}, "812": {"lote": 3800, "t": {"MAQ 2": 120}}, "101": {"lote": 3800, "t": {"MAQ 1": 150}}, "37": {"lote": 3800, "t": {"MAQ 1": 150}}, "39": {"lote": 3800, "t": {"MAQ 2": 165, "MAQ 3": 180}}, "912": {"lote": 3800, "t": {"MAQ 1": 90}}, "913": {"lote": 3800, "t": {"MAQ 1": 90}}, "914": {"lote": 3800, "t": {"MAQ 1": 90}}, "915": {"lote": 3800, "t": {"MAQ 1": 90}}, "916": {"lote": 3800, "t": {"MAQ 1": 90}}, "922": {"lote": 3800, "t": {"MAQ 2": 120, "MAQ 3": 120}}, "923": {"lote": 3800, "t": {"MAQ 2": 120, "MAQ 3": 120}}, "924": {"lote": 3800, "t": {"MAQ 2": 120, "MAQ 3": 120}}, "925": {"lote": 3800, "t": {"MAQ 2": 120, "MAQ 3": 120}}, "926": {"lote": 3800, "t": {"MAQ 2": 120, "MAQ 3": 120}}, "732": {"lote": 3800, "t": {"MAQ 1": 150}}, "733": {"lote": 3800, "t": {"MAQ 1": 150}}, "734": {"lote": 3800, "t": {"MAQ 1": 150}}, "714": {"lote": 3800, "t": {"MAQ 1": 90}}, "703": {"lote": 3800, "t": {"MAQ 1": 270}}, "704": {"lote": 3800, "t": {"MAQ 1": 270}}, "615": {"lote": 3800, "t": {"MAQ 1": 150}}, "614": {"lote": 3800, "t": {"MAQ 1": 150}}, "645": {"lote": 3800, "t": {"MAQ 1": 180, "MAQ 2": 210}}, "644": {"lote": 3800, "t": {"MAQ 1": 180, "MAQ 2": 210}}, "625": {"lote": 3800, "t": {"MAQ 2": 120}}, "624": {"lote": 3800, "t": {"MAQ 2": 120}}, "1100": {"lote": 3800, "t": {"MAQ 1": 150}}, "1102": {"lote": 3800, "t": {"MAQ 3": 150}}, "568": {"lote": 3800, "t": {}}, "569": {"lote": 3800, "t": {}}, "1005": {"lote": 3800, "t": {"MAQ 1": 120}}, "1006": {"lote": 3800, "t": {"MAQ 1": 120}}, "1003": {"lote": 3800, "t": {}}, "1004": {"lote": 3800, "t": {}}, "405": {"lote": 3800, "t": {"MAQ 1": 150}}, "406": {"lote": 3800, "t": {"MAQ 2": 150, "MAQ 3": 150}}};
+function csAplicaPlanilha0510(){
+  if(CS_MIGRA.includes('planilha-0510'))return 0;
+  let n=0;
+  Object.entries(CS_PLANILHA_0510).forEach(([cod,v])=>{
+    const a=TEMPOS[cod]||{t:{}};const antes=JSON.stringify({lote:a.lote,t:a.t||{}});
+    const novo={...a,lote:v.lote,t:{...v.t}};
+    if(JSON.stringify({lote:novo.lote,t:novo.t})!==antes){TEMPOS[cod]=novo;n++;}
+  });
+  CS_MIGRA.push('planilha-0510');
+  return n;
+}
+setTimeout(function pl(){try{if(!PRONTO)return setTimeout(pl,3000);if(MODO_TV)return;
+  const n=csAplicaPlanilha0510();agendarSalvar();if(n)console.info('planilha 05/10:',n,'produtos atualizados');}catch(e){}},4500);
+try{csNucleo.versao='v355';}catch(e){}
+
+</script>
+<script>
+/* ===================== v356 · ALVEJANTE SEM CLORO 5L volta a 4.600 L =====================
+   A planilha dizia 5.000 L, mas o lote real é 4.600 L (combinado em 05/10). Quem já
+   abriu a v355 recebeu 5.000: esta correção roda uma vez e devolve 4.600. O setup
+   padrão de todos os produtos é 15 min (SETUP_PADRAO), como já era. */
+setTimeout(function a56(){try{if(!PRONTO)return setTimeout(a56,3000);if(MODO_TV)return;
+  if(CS_MIGRA.includes('alvejante5l-4600'))return;
+  if(TEMPOS['303']&&+TEMPOS['303'].lote===5000)TEMPOS['303'].lote=4600;
+  CS_MIGRA.push('alvejante5l-4600');agendarSalvar();}catch(e){}},6000);
+try{csNucleo.versao='v356';}catch(e){}
+
+</script>
+<script>
+/* ===================== v357 · Cadastros novos =====================
+   Abas Todos · Fabricados (Produto mãe · Produto filho · Frascos fabricados) · Insumos ·
+   Uso e consumo · Terceirizados · Revenda. Filtro de tags que só vale ao tocar em Gerar;
+   marcar vários e pôr uma tag em todos; "Editar tempos" abre os campos na própria lista
+   (lote padrão, setup e envase por máquina no filho; enchimento, limpeza, preparo e
+   descanso no tanque) e "Salvar" grava. Sob o tempo de cada máquina, o realizado das OPs
+   concluídas (mediana, ajustada para o lote padrão) e a diferença para o previsto.
+   Tempos do tanque: os mesmos de antes (TEMPO_GRANEL: limpeza, fabricação = preparo,
+   descanso); enchimento é do tanque físico e aqui vira um valor do granel só se for
+   digitado. Setup por produto (TEMPOS[cod].setup), padrão 15. */
+const CP2={aba:'fab',sub:'filho',q:'',tags:[],tagsTmp:[],tagsAberto:false,sel:new Set(),edit:false,rasc:{},res:null,resEm:0};
+const CP2_MAQ=()=>MAQUINAS.slice(0,3);
+const csTagsDe=(tipo,x)=>{if(tipo==='t')return ['Tanque'];if(Array.isArray(x.tags))return x.tags;return tipo==='p'?['Produto Acabado']:(x.tipo?[x.tipo]:[]);};
+const csMin=s=>{if(s==null||s==='')return null;const t=String(s).trim();if(/^\d+:\d{1,2}$/.test(t)){const [h,m]=t.split(':');return (+h)*60+(+m);}const n=+t.replace(',','.');return isFinite(n)?Math.round(n):null;};
+const csHm=m=>m==null||m===''?'-':`${Math.floor(m/60)}:${String(Math.round(m%60)).padStart(2,'0')}`;
+/* realizado: envase real das OPs concluídas, sem pausas, ajustado para o lote padrão; a mediana */
+let CS_REAL_CACHE=null,CS_REAL_N=-1;
+function csRealizado(cod,maq){
+  if(CS_REAL_N!==ORDENS.length){CS_REAL_N=ORDENS.length;CS_REAL_CACHE={};
+    ORDENS.forEach(o=>{if(sit(o)!=='concluida'||!o.fimReal||(o.turnos||[]).length||!o.litros)return;
+      const e=hm(o.envIni||o.setupFim||''),f=hm(o.fimReal);if(isNaN(e)||isNaN(f)||f<=e)return;
+      let pz=0;(o.pausasOp||[]).forEach(p=>{const a=hm(p.desde||''),b=hm(p.ate||'');if(!isNaN(a)&&!isNaN(b)&&b>a)pz+=b-a;});
+      const env=f-e-pz;if(env<5||env>16*60)return;
+      const lote=(TEMPOS[String(o.codigo)]||{}).lote||o.litros;
+      const k=o.codigo+'|'+o.maq;(CS_REAL_CACHE[k]=CS_REAL_CACHE[k]||[]).push(env*lote/o.litros);});}
+  const l=(CS_REAL_CACHE[cod+'|'+maq]||[]).slice().sort((a,b)=>a-b);
+  if(!l.length)return null;const m=l.length%2?l[(l.length-1)/2]:(l[l.length/2-1]+l[l.length/2])/2;
+  return {min:Math.round(m),n:l.length};
+}
+/* reservado: acabado pelos pedidos em aberto (o mesmo do Estoque); insumo pelas OPs abertas */
+function csCarregaReservas(){
+  if(CP2.res&&Date.now()-CP2.resEm<5*60000)return;CP2.resEm=Date.now();CP2.res=CP2.res||{};
+  try{const ri=csNucleo.reservado();Object.values(ri).forEach(r=>{CP2.res['i|'+r.sku]=r.qtd;});}catch(e){}
+  if(!temNuvem())return;
+  chamarTiny({acao:'nec_pedidos',situacoes:['Em aberto','Aprovado','Preparando envio','Pronto para envio'],campo:'prevista'}).then(r=>{
+    const ok={};(r.pedidos||[]).forEach(p=>ok[p.id]=1);
+    (r.itens||[]).forEach(x=>{if(!ok[x.pedido_id])return;const k='p|'+x.sku;CP2.res[k]=(CP2.res[k]||0)+(+x.qtd||0);});
+    if(S.page==='cadprod')gradeCadProd();}).catch(()=>{});
+}
+const csEst=id=>{const v=id&&ESTOQUE[String(id)];return v==null?'—':nf(Math.round(+v*10)/10);};
+function cp2Linhas(){
+  const tqs=cpTanques().map(t=>({tipo:'t',id:t,nome:t,cod:'—',x:{nome:t},g:'fab',sub:'mae'}));
+  const pr=PRODUTOS.map(p=>({tipo:'p',id:p.codigo,nome:p.descricao,cod:p.codigo,x:p,g:p.grupoCad||'fab',sub:p.frasco?'frasco':'filho'}));
+  const ins=INSUMOS.map(i=>({tipo:'i',id:i.sku,nome:i.nome,cod:i.sku,x:i,g:i.grupo==='uso'?'uso':'ins'}));
+  return tqs.concat(pr,ins).map(l=>({...l,tags:csTagsDe(l.tipo,l.x),ativo:l.tipo==='t'?true:l.tipo==='p'?ativoProd(l.x):l.x.ativo!==false}));
+}
+gradeCadProd=function(){
+  const el=M('cpgrid');if(!el)return;
+  csCarregaReservas();
+  const todas=cp2Linhas();const q=CP2.q.trim().toLowerCase();
+  const naAba=l=>CP2.aba==='todos'||l.g===CP2.aba;
+  const naSub=l=>CP2.aba!=='fab'||l.sub===CP2.sub;
+  const casa=l=>!q||`${l.nome} ${l.cod}`.toLowerCase().includes(q);
+  const temTags=l=>!CP2.tags.length||CP2.tags.every(t=>l.tags.includes(t));
+  const vis=todas.filter(l=>naAba(l)&&naSub(l)&&casa(l)&&temTags(l));
+  const abas=[['todos','Todos'],['fab','Fabricados'],['ins','Insumos'],['uso','Uso e consumo'],['ter','Terceirizados'],['rev','Revenda']];
+  const subs=[['mae','Produto mãe · tanques'],['filho','Produto filho · acabados e kits'],['frasco','Frascos fabricados']];
+  const tagsTodas=[...new Set(todas.filter(naAba).flatMap(l=>l.tags))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
+  const verMae=CP2.aba==='fab'&&CP2.sub==='mae',verFilho=CP2.aba==='fab'&&CP2.sub==='filho',ed=CP2.edit,MQ=CP2_MAQ();
+  const R=CP2.rasc;const inp=(k,v,ph,w)=>`<input class="cp2in" data-ed="${escAttr(k)}" value="${escAttr(R[k]!=null?R[k]:(v==null?'':String(v)))}" placeholder="${ph}" style="width:${w||64}px">`;
+  const th=(t,s)=>`<th class="c">${t}${s?`<small>${s}</small>`:''}</th>`;
+  const cab=`<tr><th style="width:30px"><span class="od2ck ${vis.length&&vis.every(l=>CP2.sel.has(l.tipo+'|'+l.id))?'on':''}" id="cp2CkT"></span></th><th>SKU</th><th>Nome</th><th>Tags</th>
+    ${verMae?th('Enchimento','min')+th('Limpeza','min')+th('Preparo','min')+th('Descanso','min')+'<th>Produtos filhos</th>'
+      :`<th>Un</th><th class="n">Estoque</th><th class="n">Reservado</th>${verFilho?th('Litros','por cx')+th('Lote padrão','L')+th('Caixas','por lote')+th('Setup','min')+MQ.map(m=>th(m,'envase · realizado')).join(''):''}`}<th>Situação</th></tr>`;
+  const linha=l=>{const k=l.tipo+'|'+l.id,on=CP2.sel.has(k);let meio='';
+    if(verMae){const g=tempoG(l.id),G=TEMPO_GRANEL[l.id]||{};
+      const c=(f,v)=>`<td class="c">${ed?inp(`t|${l.id}|${f}`,v,'-'):(v==null||v===''?'-':nf(+v))}</td>`;
+      meio=c('enchimento',G.enchimento)+c('limpeza',g.limpeza)+c('fabricacao',g.fabricacao)+c('descanso',g.descanso)+`<td>${cpFilhas(l.id).length} produto${cpFilhas(l.id).length===1?'':'s'}</td>`;}
+    else{const est=l.tipo==='t'?'—':csEst(l.x.tiny);const res=l.tipo==='p'?CP2.res&&CP2.res['p|'+l.cod]:l.tipo==='i'?CP2.res&&CP2.res['i|'+l.cod]:null;
+      meio=`<td>${l.tipo==='p'?cpEmb(l.x):escAttr(l.x.un||'')}</td><td class="n m">${est}</td><td class="n m cp2res">${res?nf(Math.round(res)):'—'}</td>`;
+      if(verFilho){const p=l.x,tp=TEMPOS[String(p.codigo)]||{t:{}},lcx=(+p.litragem||0)*(+p.un_cx||0),cxl=tp.lote&&lcx?tp.lote/lcx:0;
+        meio+=`<td class="c m">${lcx?nf(lcx):'-'}</td><td class="c">${ed?inp(`p|${p.codigo}|lote`,tp.lote,'L',72):(tp.lote?nf(tp.lote):'-')}</td><td class="c m">${cxl?cxl.toLocaleString('pt-BR',{maximumFractionDigits:1}):'-'}</td>
+          <td class="c">${ed?inp(`p|${p.codigo}|setup`,tp.setup!=null?tp.setup:SETUP_PADRAO,'min',56):(tp.setup!=null?tp.setup:SETUP_PADRAO)}</td>`+
+          MQ.map(m=>{const pv=(tp.t||{})[m],r=csRealizado(String(p.codigo),m);const dif=pv&&r?Math.round((r.min-pv)/pv*100):null;
+            return `<td class="c">${ed?inp(`p|${p.codigo}|${m}`,pv?csHm(pv):'','h:mm'):`<b class="m">${pv?csHm(pv):'-'}</b>`}${!ed&&pv&&cxl?`<small class="k">${(cxl/(pv/60)).toLocaleString('pt-BR',{maximumFractionDigits:1})} cx/h</small>`:''}
+              ${r?`<small class="cp2r ${dif==null?'':dif>15?'mau':dif<-10?'bom':'ok'}" title="${r.n} OP${r.n>1?'s':''} concluída${r.n>1?'s':''}">real ${csHm(r.min)}${dif!=null?` · ${dif>0?'+':''}${dif}%`:''}</small>`:''}</td>`;}).join('');}}
+    return `<tr class="${on?'sel':''} ${l.ativo?'':'cpina'}"><td><span class="od2ck ${on?'on':''}" data-cp2ck="${escAttr(k)}"></span></td><td class="m">${escAttr(String(l.cod))}</td>
+      <td><button class="cp2nome" data-cp2a="${escAttr(k)}">${escAttr(l.nome)}</button></td>
+      <td><span class="cp2tags">${l.tags.map(t=>`<i>${escAttr(t)}</i>`).join('')}</span></td>${meio}
+      <td>${l.ativo?'<span class="od2ok">ativo</span>':'<span class="od2no">inativo</span>'}</td></tr>`;};
+  el.innerHTML=`<div class="od2"><div class="od2top" style="display:flex;align-items:center;gap:8px"><h2 style="flex:1">Cadastros</h2><button class="btn pri" id="cp2Novo">＋ Novo cadastro</button></div>
+    <div class="od2abas">${abas.map(([k,n])=>`<button data-cp2ab="${k}" class="${CP2.aba===k?'on':''}">${n}<b>${nf(todas.filter(l=>k==='todos'||l.g===k).length)}</b></button>`).join('')}</div>
+    ${CP2.aba==='fab'?`<div class="cpsub">${subs.map(([k,n])=>`<button data-cp2sub="${k}" class="${CP2.sub===k?'on':''}">${n} · ${todas.filter(l=>l.g==='fab'&&l.sub===k).length}</button>`).join('')}</div>`:''}
+    <div class="od2bar"><input type="text" id="cp2B" class="busca" placeholder="Buscar por nome ou SKU" value="${escAttr(CP2.q)}">
+      <div class="cp2tf"><button class="od2ord b" id="cp2Tg" type="button">Tags: ${CP2.tags.length?escAttr(CP2.tags.join(' + ')):'Todas'} ▾</button>
+      ${CP2.tagsAberto?`<div class="cp2pop">${tagsTodas.map(t=>`<label><span class="od2ck ${CP2.tagsTmp.includes(t)?'on':''}" data-cp2tg="${escAttr(t)}"></span>${escAttr(t)}<b>${todas.filter(l=>naAba(l)&&l.tags.includes(t)).length}</b></label>`).join('')||'<span class="k">sem tags aqui</span>'}
+        <div class="cp2popb"><button class="btn sm" id="cp2TgL">Limpar</button><button class="btn sm pri" id="cp2TgG">Gerar</button></div></div>`:''}</div>
+      <span style="flex:1"></span>
+      ${(verMae||verFilho)?(ed?'<button class="btn" id="cp2EdX">Cancelar</button><button class="btn pri" id="cp2EdS">Salvar tempos</button>':'<button class="btn" id="cp2Ed">✎ Editar tempos</button>'):''}</div>
+    ${CP2.sel.size?`<div class="cp2bulk"><b>${CP2.sel.size} selecionado${CP2.sel.size>1?'s':''}</b><span style="flex:1"></span>Adicionar tag:
+      <select id="cp2BT"><option value="">escolha…</option>${[...new Set(cp2Linhas().flatMap(l=>l.tags))].filter(t=>t!=='Tanque').sort().map(t=>`<option>${escAttr(t)}</option>`).join('')}<option value="__nova">nova tag…</option></select>
+      <button class="btn sm" id="cp2BX">Desmarcar</button></div>`:''}
+    ${verFilho?'<p class="cpleg" style="margin:4px 0 8px">Lote padrão, setup e envase de um lote padrão em cada máquina. Embaixo: cx/h e o <b>realizado</b> das OPs concluídas (mediana, sem pausas, no tamanho do lote padrão) com a diferença para o previsto. É daqui que sai a previsão do envase.</p>':''}
+    ${verMae?'<p class="cpleg" style="margin:4px 0 8px">Tempos do tanque (min). Enchimento em branco usa o do tanque físico (TQ 1, TQ 6…). Somam na linha do tempo do lote.</p>':''}
+    <div class="od2rol"><table class="od2t cp2t"><thead>${cab}</thead><tbody>${vis.map(linha).join('')||`<tr><td colspan="20" class="vazioc">${CP2.aba==='fab'&&CP2.sub==='frasco'?'Nenhum frasco fabricado ainda. Use ＋ Novo cadastro.':'Nada aqui com esses filtros.'}</td></tr>`}</tbody></table></div></div>`;
+  /* ligações */
+  el.querySelectorAll('[data-cp2ab]').forEach(b=>b.onclick=()=>{CP2.aba=b.dataset.cp2ab;CP2.sel.clear();CP2.tags=[];CP2.edit=false;CP2.rasc={};gradeCadProd();});
+  el.querySelectorAll('[data-cp2sub]').forEach(b=>b.onclick=()=>{CP2.sub=b.dataset.cp2sub;CP2.sel.clear();CP2.edit=false;CP2.rasc={};gradeCadProd();});
+  const bb=M('cp2B');bb.oninput=e=>{CP2.q=e.target.value;gradeCadProd();const x=M('cp2B');x.focus();x.setSelectionRange(x.value.length,x.value.length);};
+  M('cp2Tg').onclick=ev=>{ev.stopPropagation();CP2.tagsAberto=!CP2.tagsAberto;CP2.tagsTmp=CP2.tags.slice();gradeCadProd();};
+  el.querySelectorAll('[data-cp2tg]').forEach(c=>c.parentNode.onclick=ev=>{ev.stopPropagation();const t=c.dataset.cp2tg;CP2.tagsTmp=CP2.tagsTmp.includes(t)?CP2.tagsTmp.filter(x=>x!==t):CP2.tagsTmp.concat(t);gradeCadProd();});
+  if(M('cp2TgG'))M('cp2TgG').onclick=()=>{CP2.tags=CP2.tagsTmp.slice();CP2.tagsAberto=false;CP2.sel.clear();gradeCadProd();};
+  if(M('cp2TgL'))M('cp2TgL').onclick=()=>{CP2.tags=[];CP2.tagsTmp=[];CP2.tagsAberto=false;gradeCadProd();};
+  el.querySelectorAll('[data-cp2ck]').forEach(c=>c.onclick=ev=>{ev.stopPropagation();const k=c.dataset.cp2ck;CP2.sel.has(k)?CP2.sel.delete(k):CP2.sel.add(k);gradeCadProd();});
+  if(M('cp2CkT'))M('cp2CkT').onclick=()=>{const t=vis.every(l=>CP2.sel.has(l.tipo+'|'+l.id));vis.forEach(l=>t?CP2.sel.delete(l.tipo+'|'+l.id):CP2.sel.add(l.tipo+'|'+l.id));gradeCadProd();};
+  if(M('cp2BX'))M('cp2BX').onclick=()=>{CP2.sel.clear();gradeCadProd();};
+  if(M('cp2BT'))M('cp2BT').onchange=e=>{let t=e.target.value;if(!t)return;if(t==='__nova'){t=(prompt('Nome da tag:')||'').trim();if(!t){gradeCadProd();return;}}
+    let n=0;CP2.sel.forEach(k=>{const [tp,id]=k.split('|');const x=tp==='p'?prodOf(id):tp==='i'?INSUMOS.find(i=>i.sku===id):null;if(!x)return;
+      const atual=csTagsDe(tp,x);if(!atual.includes(t)){x.tags=atual.concat(t);n++;}});
+    agendarSalvar();CP2.sel.clear();gradeCadProd();toast(n?`Tag "${t}" em ${n} cadastro${n>1?'s':''}.`:'Já tinham essa tag.');};
+  el.querySelectorAll('[data-cp2a]').forEach(b=>b.onclick=()=>{const [tp,id]=b.dataset.cp2a.split('|');tp==='t'?abrirTanque(id,'ger'):tp==='p'?abrirProdutoCad(id):abrirInsumoCad(id);});
+  el.querySelectorAll('[data-ed]').forEach(i=>i.oninput=()=>{R[i.dataset.ed]=i.value;});
+  if(M('cp2Ed'))M('cp2Ed').onclick=()=>{CP2.edit=true;CP2.rasc={};gradeCadProd();};
+  if(M('cp2EdX'))M('cp2EdX').onclick=()=>{CP2.edit=false;CP2.rasc={};gradeCadProd();};
+  if(M('cp2EdS'))M('cp2EdS').onclick=()=>csSalvaTempos();
+  M('cp2Novo').onclick=()=>csNovoCadastro();
+};
+document.addEventListener('click',ev=>{if(CP2.tagsAberto&&!ev.target.closest('.cp2tf')){CP2.tagsAberto=false;try{if(S.page==='cadprod')gradeCadProd();}catch(e){}}});
+function csSalvaTempos(){
+  const R=CP2.rasc;let n=0,erro=[];
+  Object.entries(R).forEach(([k,v])=>{const [tp,id,f]=k.split('|');const s=String(v).trim();
+    if(tp==='t'){const g=TEMPO_GRANEL[id]=TEMPO_GRANEL[id]||{...tempoG(id)};const m=s===''?null:csMin(s);
+      if(s!==''&&m==null){erro.push(id+' · '+f);return;}if(f==='enchimento'){if(m==null)delete g.enchimento;else g.enchimento=m;}else g[f]=m==null?0:m;n++;}
+    else if(tp==='p'){const tpo=TEMPOS[id]=TEMPOS[id]||{t:{},lote:3800};tpo.t=tpo.t||{};
+      if(f==='lote'){const L=+s.replace(/\./g,'').replace(',','.');if(!(L>0)){erro.push(id+' · lote');return;}tpo.lote=L;n++;}
+      else if(f==='setup'){const m=csMin(s);if(s!==''&&m==null){erro.push(id+' · setup');return;}if(m==null)delete tpo.setup;else tpo.setup=m;n++;}
+      else{const m=s===''?null:csMin(s);if(s!==''&&m==null){erro.push(id+' · '+f);return;}if(m==null)delete tpo.t[f];else tpo.t[f]=m;n++;}}});
+  if(erro.length){toast('Não entendi: '+erro.slice(0,4).join(', ')+'. Use h:mm (ex.: 2:30) ou minutos.',true);return;}
+  CP2.edit=false;CP2.rasc={};agendarSalvar();try{recomporTudo();}catch(e){}gradeCadProd();toast(n?`Tempos salvos · ${n} campo${n>1?'s':''}.`:'Nada mudou.');
+}
+/* enchimento do granel, quando digitado, vale no lugar do tanque físico */
+try{const _el57=etapasDoLote;etapasDoLote=function(b){const r=_el57.apply(this,arguments);try{const g=TEMPO_GRANEL[b.produto];
+  if(g&&g.enchimento!=null){const p=r.passos.find(x=>x.k==='enchimento');const dif=p?g.enchimento-p.min:g.enchimento;
+    if(p)p.min=g.enchimento;else if(g.enchimento)r.passos.splice(r.passos.findIndex(x=>x.k!=='limpeza'),0,{k:'enchimento',rot:'Enchimento',min:g.enchimento,nota:''});
+    r.total+=dif;let t0=r.fimPreparo!=null?r.fimPreparo-r.total:null;r.inicio=t0;r.passos.forEach(x=>{if(t0!=null){x.de=t0;x.ate=t0+x.min;t0=x.ate;}});}}catch(e){}return r;};}catch(e){}
+/* novo cadastro: escolhe o que é e preenche o essencial */
+function csNovoCadastro(){
+  if(M('mAcao'))M('mAcao').innerHTML='';M('modal').classList.add('wide','cpbig');M('mTit').textContent='O que você vai cadastrar?';M('mSub').hidden=true;
+  const C=[['tanque','Tanque · OP mãe','ex.: LAVA ROUPAS','Formulação, modo de fazer, certificado e os produtos que saem dele.'],
+    ['acabado','Produto acabado','ex.: LAVA ROUPAS 2L PREMIUM - CX C/6UN','O que vai na nota. Nasce de um tanque.'],
+    ['insumo','Insumo','ex.: PREFORMA 16G, HIPOCLORITO','Entra no produto. Comprado.'],
+    ['uso','Uso e consumo','ex.: LUVA, DILUENTE, PEÇA','A fábrica gasta, mas não vai no produto.'],
+    ['kit','Kit','ex.: KIT ROUPAS 2L - AZUL / PREMIUM','Na próxima etapa (composição e OP de fechamento).'],
+    ['frasco','Frasco fabricado','ex.: FRASCO DETERGENTE 500ML','Na próxima etapa (sopro e rotulagem, aqui ou fora).']];
+  M('mB').innerHTML=`<div class="cp2cards">${C.map(([k,n,ex,d])=>`<button data-nv="${k}" ${['kit','frasco'].includes(k)?'class="breve"':''}><b>${n}</b><i>${ex}</i><span>${d}</span></button>`).join('')}</div>`;
+  M('mF').innerHTML='<div style="flex:1"></div><button class="btn" id="nvX">Fechar</button>';M('nvX').onclick=fecharModal;
+  M('mB').querySelectorAll('[data-nv]').forEach(b=>b.onclick=()=>{const k=b.dataset.nv;
+    if(k==='kit'||k==='frasco')return toast('Kit e frasco fabricado entram na próxima etapa.');
+    if(k==='acabado'){fecharModal();return modalProduto(null);}
+    csNovoForm(k);});
+  abrirMask();
+}
+function csNovoForm(k){
+  const tq=k==='tanque';M('mTit').textContent=tq?'Novo tanque (OP mãe)':k==='uso'?'Novo item de uso e consumo':'Novo insumo';
+  M('mB').innerHTML=`<div class="cpgrid" style="grid-template-columns:2fr 1fr${tq?'':' 1fr 1fr'}">
+    <div class="fld"><label>Nome${tq?' do tanque':''}</label><input id="nvN" placeholder="${tq?'ex.: LAVA ROUPAS':k==='uso'?'ex.: LUVA NITRÍLICA':'ex.: PREFORMA 16G'}"></div>
+    ${tq?'':`<div class="fld"><label>SKU</label><input id="nvS" placeholder="${k==='uso'?'ex.: UC-0001':'ex.: PF-16'}"></div>
+    <div class="fld"><label>Unidade</label><select id="nvU"><option>un</option><option>kg</option><option>L</option><option>par</option><option>cx</option></select></div>
+    <div class="fld"><label>Tag</label><input id="nvT" placeholder="${k==='uso'?'ex.: EPI':'ex.: Preformas'}" list="nvTL"><datalist id="nvTL">${[...new Set(INSUMOS.map(i=>i.tipo).filter(Boolean))].map(t=>`<option>${escAttr(t)}</option>`).join('')}</datalist></div>`}</div>
+    <p class="cpleg">${tq?'Depois de criar, abre na Formulação para pôr os insumos e o modo de fazer.':'O resto (fornecedores, estoque mínimo…) você completa depois, dentro do cadastro.'}</p>`;
+  M('mF').innerHTML='<div style="flex:1"></div><button class="btn" id="nvV">Voltar</button><button class="btn pri" id="nvOk">Criar e abrir</button>';
+  M('nvV').onclick=csNovoCadastro;
+  M('nvOk').onclick=()=>{const nome=(M('nvN').value||'').trim().toUpperCase();if(!nome)return toast('Escreva o nome.',true);
+    if(tq){if(cpTanques().includes(nome))return toast('Já existe um tanque com esse nome.',true);
+      FORMULAS[nome]={mp:[],emb:{}};agendarSalvar();fecharModal();gradeCadProd();return abrirTanque(nome,'form');}
+    const sku=(M('nvS').value||'').trim().toUpperCase();if(!sku)return toast('Escreva o SKU.',true);
+    if(INSUMOS.some(i=>i.sku===sku)||prodOf(sku))return toast('Esse SKU já existe.',true);
+    const tag=(M('nvT').value||'').trim();
+    INSUMOS.push({sku,nome,mat:'',tiny:'',tipo:tag||'',un:M('nvU').value,ativo:true,...(k==='uso'?{grupo:'uso'}:{}),...(tag?{tags:[tag]}:{})});
+    agendarSalvar();fecharModal();CP2.aba=k==='uso'?'uso':'ins';gradeCadProd();abrirInsumoCad(sku);};
+}
+try{csNucleo.versao='v357';}catch(e){}
+
+</script>
+<script>
+/* ===================== v358 · Relatório "Previsto × realizado" =====================
+   Na aba Relatórios › Tempo por produto, lado a lado como na planilha: por produto e
+   máquina, o que a planilha prevê (lote padrão, caixas por lote, tempo de envase, cx/h,
+   setup) e o que as OPs concluídas fizeram no período. O envase real vai do início do
+   envase ao fim, tirando as pausas registradas, e é levado ao tamanho do lote padrão
+   para comparar com a mesma régua da planilha. Clicar na linha abre as OPs. */
+let RT_AB=null;
+const rtMed=a=>{if(!a.length)return null;const l=a.slice().sort((x,y)=>x-y);return l.length%2?l[(l.length-1)/2]:(l[l.length/2-1]+l[l.length/2])/2;};
+function rtOP(o){
+  const ie=hm(iniEnvase(o)),f=hm(o.fimReal);if(isNaN(ie)||isNaN(f))return null;
+  let env=f-ie;if(env<0)env+=1440;
+  let pz=0;(o.pausasOp||[]).forEach(p=>{const a=hm(p.desde||''),b=hm(p.ate||'');if(!isNaN(a)&&!isNaN(b)&&b>a&&a>=ie-1)pz+=b-a;});
+  env-=pz;if(env<5||env>16*60)return null;
+  const tp=TEMPOS[String(o.codigo)]||{t:{}},lote=+tp.lote||+o.litros||0,pv=(tp.t||{})[o.maq];
+  const ir=hm(o.iniReal||''),stR=o.envIni&&!isNaN(ir)?Math.max(0,hm(o.envIni)-ir):null;
+  return {o,env,pz,lote,pvLote:pv||null,pvOP:pv&&lote?pv*(+o.litros||lote)/lote:null,envLote:lote&&o.litros?env*lote/o.litros:env,
+    stR,stP:tp.setup!=null?+tp.setup:SETUP_PADRAO};
+}
+relTempos=function(){
+  const base=ordensFiltradas().filter(o=>sit(o)==='concluida'&&iniEnvase(o)&&o.fimReal&&!(o.turnos||[]).length);
+  const med=base.map(rtOP).filter(Boolean);
+  const G={};med.forEach(x=>{const k=x.o.codigo+'|'+x.o.maq;(G[k]=G[k]||{cod:String(x.o.codigo),maq:x.o.maq,l:[]}).l.push(x);});
+  const nfd=(v,c=1)=>v==null||isNaN(v)?'—':(+v).toLocaleString('pt-BR',{minimumFractionDigits:c,maximumFractionDigits:c});
+  const hmF=m=>m==null||isNaN(m)?'—':`${Math.floor(m/60)}:${String(Math.round(m%60)).padStart(2,'0')}`;
+  const dif=(r,p)=>r==null||!p?null:Math.round((r-p)/p*100);
+  const cor=d=>d==null?'':d>15?'mau':d<-10?'bom':'ok';
+  const L=Object.values(G).map(g=>{const p=prodOf(g.cod)||{};const tp=TEMPOS[g.cod]||{};const lcx=(+p.litragem||0)*(+p.un_cx||0);
+    const lote=+tp.lote||null,cxl=lote&&lcx?lote/lcx:null,pv=(tp.t||{})[g.maq]||null;
+    const rEnv=rtMed(g.l.map(x=>x.envLote)),stP=tp.setup!=null?+tp.setup:SETUP_PADRAO,stR=rtMed(g.l.map(x=>x.stR).filter(v=>v!=null&&v<=240));
+    return {...g,p,lote,cxl,pv,rEnv,d:dif(rEnv,pv),cxhP:pv&&cxl?cxl/(pv/60):null,cxhR:rEnv&&cxl?cxl/(rEnv/60):null,stP,stR,dSt:dif(stR,stP)};})
+    .sort((a,b)=>b.l.length-a.l.length||String(a.p.descricao).localeCompare(String(b.p.descricao)));
+  const comPv=L.filter(x=>x.pv&&x.rEnv);const n=comPv.reduce((s,x)=>s+x.l.length,0);
+  const geral=n?comPv.reduce((s,x)=>s+x.d*x.l.length,0)/n:null;
+  const acima=comPv.filter(x=>x.d>15).reduce((s,x)=>s+x.l.length,0);
+  const hPrev=med.reduce((s,x)=>s+(x.pvOP||0),0)/60,hReal=med.reduce((s,x)=>s+x.env,0)/60;
+  M('repgrid').innerHTML=`
+    ${barraFiltro(['maq','prod'])}
+    <div class="repd">${tituloPeriodo()} · Previsto (planilha) × realizado</div>
+    <div class="kpis">
+      <div class="kpi"><div class="k">OPs medidas</div><div class="v">${med.length}</div><div class="s">${L.length} produto/máquina</div></div>
+      <div class="kpi"><div class="k">Horas de envase</div><div class="v">${nfd(hReal,0)} h</div><div class="s">previsto ${nfd(hPrev,0)} h</div></div>
+      <div class="kpi"><div class="k">Diferença geral</div><div class="v" style="color:${geral>15?'var(--danger)':geral<-10?'var(--run)':'inherit'}">${geral==null?'—':(geral>0?'+':'')+nfd(geral,0)+'%'}</div><div class="s">pesada pelo nº de OPs</div></div>
+      <div class="kpi"><div class="k">Mais de 15% acima</div><div class="v">${acima}</div><div class="s">de ${n} OPs</div></div>
+    </div>
+    ${L.length?`<div class="rolx"><table class="tb rtpr"><thead>
+      <tr class="g"><th colspan="3"></th><th colspan="5" class="pv">Previsto · planilha</th><th colspan="4" class="rl">Realizado · OPs concluídas</th><th></th></tr>
+      <tr><th>Produto</th><th>Máq.</th><th class="n">OPs</th>
+        <th class="n pv">Lote padrão</th><th class="n pv">Cx/lote</th><th class="n pv">Envase</th><th class="n pv">Cx/h</th><th class="n pv">Setup</th>
+        <th class="n rl">Envase</th><th class="n rl">Cx/h</th><th class="n rl">Setup</th><th class="n rl">Pausas</th><th class="n">Diferença</th></tr></thead><tbody>
+      ${L.map(x=>{const k=x.cod+'|'+x.maq,ab=RT_AB===k;const pz=x.l.reduce((s,y)=>s+y.pz,0)/x.l.length;
+        return `<tr class="rtl ${ab?'ab':''}" data-rt="${escAttr(k)}"><td><b>${x.cod}</b> ${escAttr(x.p.descricao||'')}</td><td>${x.maq}</td><td class="n mono">${x.l.length}</td>
+          <td class="n mono pv">${x.lote?nf(x.lote)+' L':'—'}</td><td class="n mono pv">${nfd(x.cxl,1)}</td><td class="n mono pv"><b>${hmF(x.pv)}</b></td><td class="n mono pv">${nfd(x.cxhP,1)}</td><td class="n mono pv">${x.stP} min</td>
+          <td class="n mono rl"><b>${hmF(x.rEnv)}</b></td><td class="n mono rl">${nfd(x.cxhR,1)}</td><td class="n mono rl">${x.stR==null?'—':Math.round(x.stR)+' min'}</td><td class="n mono rl">${pz?Math.round(pz)+' min':'—'}</td>
+          <td class="n"><span class="rtd ${cor(x.d)}">${x.d==null?'sem previsto':(x.d>0?'+':'')+x.d+'%'}</span></td></tr>
+          ${ab?`<tr class="rtx"><td colspan="13"><table class="tb"><thead><tr><th>Data</th><th>Lote</th><th class="n">Litros</th><th class="n">Caixas</th><th class="n">Previsto p/ este volume</th><th class="n">Envase real</th><th class="n">Pausas</th><th class="n">Setup real</th><th class="n">Diferença</th></tr></thead><tbody>
+            ${x.l.slice().sort((a,b)=>String(b.o.data).localeCompare(String(a.o.data))).map(y=>{const d=dif(y.env,y.pvOP);return `<tr><td class="mono">${dCurto(y.o.data)}</td><td class="mono">${escAttr(String(y.o.lote||'—'))}</td><td class="n mono">${nf(+y.o.litros||0)}</td><td class="n mono">${y.o.caixas!=null?nf(y.o.caixas):'—'}</td>
+              <td class="n mono">${hmF(y.pvOP)}</td><td class="n mono"><b>${hmF(y.env)}</b></td><td class="n mono">${y.pz?y.pz+' min':'—'}</td><td class="n mono">${y.stR==null?'—':y.stR+' min'}</td><td class="n"><span class="rtd ${cor(d)}">${d==null?'—':(d>0?'+':'')+d+'%'}</span></td></tr>`;}).join('')}</tbody></table></td></tr>`:''}`;}).join('')}
+    </tbody></table></div>
+    <p class="adp">Previsto é o cadastro (a planilha de tempos): o envase de um lote padrão em cada máquina. Realizado é o meio das OPs concluídas no período
+      (a mediana, para uma OP fora da curva não puxar tudo), do início do envase ao fim, sem as pausas registradas, levado ao tamanho do lote padrão.
+      Vermelho: mais de 15% acima do previsto; verde: mais de 10% abaixo. Refeição que não foi registrada como pausa no tablet conta como envase.
+      Clique numa linha para ver as OPs.</p>`
+    :'<div class="vazioc">Nenhuma OP concluída com envase medido neste período.</div>'}`;
+  M('repgrid').querySelectorAll('[data-rt]').forEach(r=>r.onclick=()=>{RT_AB=RT_AB===r.dataset.rt?null:r.dataset.rt;relTempos();});
+  ligarFiltro();
+};
+try{const i=ABAS_REP.findIndex(a=>a[0]==='tempos');if(i>=0)ABAS_REP[i][1]='Previsto × realizado';}catch(e){}
+try{csNucleo.versao='v358';}catch(e){}
 
 </script>
 </body>
