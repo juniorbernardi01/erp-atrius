@@ -446,7 +446,9 @@ const nq=v=>{const n=Math.round((+v||0)*1000)/1000;return Number.isInteger(n)?nf
 const rs=v=>'R$ '+nf(v,2);
 /* número digitado à brasileira: "1.234,5" vira 1234.5 */
 const num=s=>{if(typeof s==='number')return s;s=String(s||'').trim();if(!s)return 0;
-  if(s.includes(','))s=s.replace(/\./g,'').replace(',','.');return +s||0;};
+  if(s.includes(','))s=s.replace(/\./g,'').replace(',','.');
+  else if(/^-?\d{1,3}(\.\d{3})+$/.test(s))s=s.replace(/\./g,'');   /* "17.208" é dezessete mil e duzentos */
+  return +s||0;};
 const ymd=d=>{d=d instanceof Date?d:new Date(d);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
 const hojeY=()=>ymd(new Date());
 const br=y=>y?y.split('-').reverse().join('/'):'—';
@@ -1094,7 +1096,8 @@ function telaOC(id){
     <div class="rolx ocit"><table class="ti2" style="min-width:900px"><thead><tr><th>Item <span style="font-weight:400;text-transform:none;letter-spacing:0">· como o fornecedor chama embaixo</span></th><th>Cód (SKU)</th><th class="n">Qtde<span class="req">*</span></th><th>UN</th><th class="n">Preço un<span class="req">*</span></th><th class="n">IPI %</th><th class="n">Preço total</th><th></th></tr></thead><tbody>
     ${oc.itens.map((it,i)=>linhaItem(oc,it,i,fu,L)).join('')||(L?'<tr><td colspan="8" class="vazio">Nenhum item ainda.</td></tr>':'')}
     ${L?'':linhaNova(oc,f)}</tbody></table></div>
-    ${L?'':`<div class="addlk"><button class="btn lk sm" id="addMais" ${f?'':'disabled'}>⊕ adicionar item</button><button class="btn lk sm" id="addAv" ${f?'':'disabled'}>⌕ busca avançada de itens</button>${f?'':'<span class="s2">escolha o fornecedor primeiro</span>'}</div>`}</div>
+    ${L?'':`<div class="addlk"><button class="btn lk sm" id="addMais" ${f?'':'disabled'}>⊕ adicionar item</button><button class="btn lk sm" id="addAv" ${f?'':'disabled'}>⌕ busca avançada de itens</button>${f?'':'<span class="s2">escolha o fornecedor primeiro</span>'}</div>`}
+    ${oc.itens.length?blocoTotais(totaisDe(oc,t),'','Totais da compra',true):''}</div>
 
   <div class="bloco"><div class="t"><span class="n">3</span>Frete</div><div class="c">${blocoFrete(oc,L)}</div></div>
   <div class="bloco"><div class="t"><span class="n">4</span>Pagamento</div><div class="c">${blocoPagamento(oc,t,L)}</div></div>
@@ -1581,7 +1584,11 @@ function receberOC(o){
     return {it,falta:f,cx,chegouCx:cx?Math.round(f/it.cx):0,chegou:f,lotes:controlaLote(it)?[{lote:'',val:'',qtd:f}]:null,atualizaCx:true};})};
   const des=()=>{
     const falt=st.linhas.filter(l=>l.chegou<l.falta-1e-6);
-    modal(`<h3>Receber mercadoria · OC ${esc(o.num)}</h3><p>Já vem preenchido com o pedido; mude só o que veio diferente.</p>
+    const tr=totaisReceb(o,st);
+    $('app').innerHTML=`<div class="migalha"><button class="btn lk sm" id="rVolta">‹ Ordens de compra</button></div>
+    <div class="ed-top"><h1>Receber mercadoria · OC ${esc(o.num)}</h1><span class="pill p-${o.sit}">${SIT[o.sit]||''}</span><span class="s2" style="margin-left:8px">${esc((o.forn&&o.forn.nome)||'')}</span></div>
+    <div class="bloco"><div class="t"><span class="n">1</span>Nota e itens que chegaram</div><div class="c">
+    <p style="margin:0 0 6px;color:var(--ink3)">Já vem preenchido com o pedido; mude só o que veio diferente.</p>
     <div class="g4" style="grid-template-columns:1fr 1fr;margin:10px 0"><div class="fl"><label>NF do fornecedor<span class="req">*</span></label><input class="inp" id="rNf" value="${esc(st.nf)}"></div>
       <div class="fl"><label>Chegou em<span class="req">*</span></label><input class="inp dt-in" data-cal="1" id="rDt" value="${br(st.data)}"></div></div>
     <div class="rolx"><table class="rtab"><thead><tr><th>Item</th><th>Pedido</th><th>Chegou</th><th>Unidades na nota</th></tr></thead><tbody>
@@ -1600,8 +1607,11 @@ function receberOC(o){
       <label data-sd="gerar"><span class="rd2 ${st.saldo==='gerar'?'on':''}"></span>Gerar ordem de saldo, com previsão <input class="in5 l dt-in" data-cal="1" id="rPs" value="${br(st.prevSaldo)}" style="margin-left:6px"></label>
       <label data-sd="nao"><span class="rd2 ${st.saldo==='nao'?'on':''}"></span>Não virá mais · fechar sem o saldo</label></div>`:''}
     <div class="fl" style="margin-top:10px"><label>Observações · aparecem para quem conferir a nota</label><textarea id="rObs">${esc(st.obs)}</textarea></div>
-    <div class="bt"><button class="btn" id="rN">Cancelar</button><button class="btn pri" id="rOk">Confirmar recebimento</button></div>`,'lg');
-    ligaCalendarios($('mdl'));
+    </div></div>
+    ${blocoTotais(tr,'2','Totais da nota (pelo que chegou)')}
+    <div class="rodape"><span class="esq">Total geral <b>${rs(tr.total)}</b></span><button class="btn" id="rN">Cancelar</button><button class="btn pri" id="rOk">Confirmar recebimento</button></div>`;
+    window.scrollTo(0,RC_SCROLL||0);
+    ligaCalendarios($('app'));
     $('rNf').onchange=e=>st.nf=e.target.value.trim();$('rDt').onchange=e=>st.data=deBR(e.target.value)||st.data;$('rObs').onchange=e=>st.obs=e.target.value;
     if($('rPs'))$('rPs').onchange=e=>st.prevSaldo=deBR(e.target.value)||st.prevSaldo;
     document.querySelectorAll('[data-rcx]').forEach(i=>i.onchange=()=>{const l=st.linhas[+i.dataset.rcx];l.chegouCx=Math.max(0,Math.round(num(i.value)));l.chegou=r3(l.chegouCx*l.it.cx);if(l.lotes&&l.lotes.length===1)l.lotes[0].qtd=l.chegou;des();});
@@ -1611,7 +1621,8 @@ function receberOC(o){
     document.querySelectorAll('[data-lta]').forEach(b=>b.onclick=()=>{st.linhas[+b.dataset.lta].lotes.push({lote:'',val:'',qtd:0});des();});
     document.querySelectorAll('[data-ltx]').forEach(b=>b.onclick=()=>{const [a,j]=b.dataset.ltx.split('|');st.linhas[+a].lotes.splice(+j,1);des();});
     document.querySelectorAll('[data-sd]').forEach(b=>b.onclick=ev=>{if(ev.target.tagName==='INPUT')return;st.saldo=b.dataset.sd;des();});
-    $('rN').onclick=()=>modal(null);
+    $('rN').onclick=$('rVolta').onclick=()=>{RC_SCROLL=0;render();};
+    window.onscroll=()=>{if($('rOk'))RC_SCROLL=window.scrollY;};
     /* item que não estava na ordem e veio na nota: entra na ordem com pedido 0 e já no recebimento */
     if($('rExtra'))buscaLista($('rExtra'),q=>{const ja=new Set(st.linhas.map(l=>l.it.sku));
         return (N?N.insumos():[]).filter(x=>!ja.has(x.sku)&&(x.sku+' '+x.nome+' '+x.tipo).toLowerCase().includes(q)).slice(0,14).map(x=>({t:x.nome,s:`${x.sku} · ${x.tipo}`,v:x}));},
@@ -1627,7 +1638,7 @@ function receberOC(o){
         else if(Math.abs(l.lotes.reduce((s,x)=>s+(+x.qtd||0),0)-l.chegou)>1e-6)f.push('quantidade dos lotes de '+l.it.nome+' somando o que chegou');}});
       if(st.linhas.some(l=>l.extra&&!(l.chegou>0)))f.push('quantidade do item incluído (ou tire o item)');
       if(f.length)return toast('Falta: '+f.join(', '),true);
-      $('rOk').disabled=true;await confirmaRecebimento(o,st);modal(null);render();};
+      $('rOk').disabled=true;await confirmaRecebimento(o,st);RC_SCROLL=0;render();};
   };
   des();
 }
@@ -2594,4 +2605,32 @@ function render(){
 })();
 
 </script>
+
+<script>
+/* ---------- totais no jeito do Tiny ---------- */
+let RC_SCROLL=0;
+function totaisDe(oc,t){t=t||contaOC(oc);const it=oc.itens||[];
+  return {itens:it.length,qtd:it.reduce((s,x)=>s+(+x.qtd||0),0),produtos:t.produtos,ipi:t.ipi,desconto:t.desconto||0,frete:t.frete||0,
+    total:t.total};}   /* o mesmo total da nota que a OC já usa (produtos + IPI − desconto) */
+function totaisReceb(o,st){const c=JSON.parse(JSON.stringify(o));
+  c.itens=st.linhas.map(l=>({...l.it,qtd:+l.chegou||0})).filter(x=>x.qtd>0);return totaisDe(c,contaOC(c));}
+function blocoTotais(x,n,tit,dentro){
+  const cel=(lb,vl,dest)=>`<div class="tt-c${dest?' dest':''}"><span>${lb}</span><b>${vl}</b></div>`;
+  const corpo=`<div class="tt-g">${cel('Nº de itens',nq(x.itens))}${cel('Soma das qtdes',nq(x.qtd))}${cel('Total dos produtos',rs(x.produtos))}${cel('Desconto',rs(x.desconto))}
+    ${cel('Total do IPI',rs(x.ipi))}${cel('Frete',rs(x.frete))}${cel('',' ')}${cel('Total geral',rs(x.total),true)}</div>`;
+  return dentro?`<div class="tt-box"><div class="tt-h">${tit}</div>${corpo}</div>`
+    :`<div class="bloco"><div class="t">${n?`<span class="n">${n}</span>`:''}${tit}</div><div class="c">${corpo}</div></div>`;
+}
+</script>
+<style>
+.tt-box{border-top:1px solid var(--line2);padding:12px 16px 14px}
+.tt-h{font-size:13px;font-weight:600;margin-bottom:8px}
+.tt-g{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.tt-c{display:flex;flex-direction:column;gap:4px}
+.tt-c span{font-size:11.5px;color:var(--ink3)}
+.tt-c b{background:#F4F5F7;border:1px solid var(--line2);border-radius:8px;padding:8px 10px;font-weight:600;font-variant-numeric:tabular-nums;min-height:36px}
+.tt-c.dest b{background:#EAF2FF;border-color:#BFD2FA;color:#173A73;font-size:15px}
+.tt-c:not(:has(span:not(:empty))) b{visibility:hidden}
+@media (max-width:760px){.tt-g{grid-template-columns:repeat(2,minmax(0,1fr))}}
+</style>
 </body></html>

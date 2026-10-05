@@ -5383,7 +5383,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v348';
+const VERSAO_APP='v349';
 let DRAG=null;
 function render(){
   recomporTudo();
@@ -25971,6 +25971,26 @@ try{const _pi48=csPintar;csPintar=function(){const r=_pi48.apply(this,arguments)
   setTimeout(vai,800);
 })();
 try{csNucleo.versao='v348';}catch(e){}
+
+</script>
+<script>
+/* ===================== v349 · guia nova abre direto na página =====================
+   A guia nova carregava a tela inicial e só depois ia para a página do link. Agora
+   o primeiro desenho do sistema já é o da página pedida. */
+(function(){
+  let alvo=null;try{const m=location.hash.match(/^#ir=([^&]+)/);if(m)alvo=csDaRota(decodeURIComponent(m[1]));}catch(e){}
+  if(!alvo)return;
+  let feito=false;
+  const _rd49=render;
+  render=function(){
+    if(!feito&&typeof PRONTO!=='undefined'&&PRONTO){feito=true;
+      try{if(alvo.page){S.page=alvo.page;if(alvo.aba&&alvo.page==='admin')ABA_ADMIN=alvo.aba;if(alvo.esaba&&typeof ES_ABA!=='undefined')ES_ABA=alvo.esaba;}
+        else if(alvo.fin){const mod=alvo.mod||'financeiro';if(moduloPublicado(mod)){MOD_ATUAL=mod;FIN_PAG=alvo.fin;S.page='financeiro';}}}catch(e){}
+      const r=_rd49.apply(this,arguments);try{csPintar();}catch(e){}return r;}
+    return _rd49.apply(this,arguments);
+  };
+})();
+try{csNucleo.versao='v349';}catch(e){}
 
 </script>
 </body>
