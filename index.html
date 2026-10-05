@@ -3811,6 +3811,19 @@ body.cs-semjanela #mask{visibility:hidden!important}
 .od2ok{background:#E7F5EC;color:#15803D}.od2no{background:#FDECEC;color:#B3261E}
 .od2ig .od2tg{white-space:nowrap;width:auto!important;min-width:0!important;height:auto!important;display:inline-flex;align-items:center;padding:2px 8px!important;border-radius:999px!important;font-size:10.5px!important;font-weight:700;line-height:1.4;background:#FDF3E3!important;color:#B45309!important;border:1px solid #F3D9A8!important;position:static!important}
 .od2ig .od2tg.x{background:#FDECEC!important;color:#B3261E!important;border-color:#EDCFCC!important}
+
+/* ===== v354 · cadastros ===== */
+.modal.cpbig{max-width:min(1180px,96vw)!important;width:min(1180px,96vw)!important}
+.modal.cpbig #mB{max-height:calc(100vh - 220px);overflow:auto}
+.cpsim{display:flex;align-items:center;gap:12px;background:#F4F6FA;border:1px solid #E3E7EE;border-radius:12px;padding:12px 14px;margin-bottom:14px}
+.cpsim label{font-size:11.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#4A5568}
+.cpsim select{height:40px;min-width:240px;border:1px solid #C9D2E0;border-radius:9px;padding:0 10px;font-weight:600;font-size:14px;background:#fff}
+.cpkg{display:inline-block;background:#EAF2FF;color:#173A73;border-radius:8px;padding:4px 10px;font-weight:600}
+.cpform tr.cpagua td{color:#4A5568}.cpform tr.cptot td{background:#FAFBFC;font-weight:700;border-top:1px solid #E3E7EE}
+.cpcert .cpesp{width:100%;text-align:left}
+.cplix{width:34px;height:34px;border:1px solid #EDCFCC;border-radius:8px;background:#FDECEC;color:#B3261E;cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
+.cpnovo select,#pfAdd{height:36px;min-width:300px;border:1px dashed #9DB6E8;border-radius:9px;background:#F7FAFF;padding:0 10px;font-weight:600;color:#173A73}
+.cpnv{font-size:10.5px;font-weight:700;background:#EAF2FF;color:#173A73;border-radius:999px;padding:2px 8px;margin-left:6px}
 </style>
 </head>
 <body>
@@ -5402,7 +5415,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v353';
+const VERSAO_APP='v354';
 let DRAG=null;
 function render(){
   recomporTudo();
@@ -26213,6 +26226,113 @@ function csAcertaLote(g,v){
 document.addEventListener('change',ev=>{const i=ev.target;if(!i||i.id!=='pLoteProx')return;csAcertaLote(i.dataset.g,i.value.trim());
   try{i.value=proxLote(i.dataset.g)??'';}catch(e){}});
 try{csNucleo.versao='v352';}catch(e){}
+
+</script>
+<script>
+/* ===================== v354 · cadastro do tanque simples =====================
+   Abas: Geral (só o que importa), Formulação (escolhe o tanque e vê os kg de cada
+   insumo nele), Certificado de análise (critério e especificação, inclui e exclui) e
+   Produtos deste tanque (inclui e tira). A aba PCP saiu: o tempo de preparo foi para
+   o Geral. Nada de "batelada": é o tanque. */
+function csEspecTexto(e){if(e==null)return '';if(typeof e==='string')return e;return e.txt||[e.min,e.max].filter(x=>x!=null).join(' a ');}
+/* "ENTRE 10,5 E 12,5", "10,5 a 12,5", "mín 2" → mínimo e máximo, para a liberação conferir sozinha */
+function csLeFaixa(s){const ns=String(s||'').match(/-?\d+(?:[.,]\d+)?/g);if(!ns)return {};const v=ns.map(x=>+x.replace(',','.'));
+  if(v.length>=2)return {min:Math.min(v[0],v[1]),max:Math.max(v[0],v[1])};
+  if(/m[ií]n|acima|maior/i.test(s))return {min:v[0]};if(/m[aá]x|abaixo|menor|at[eé]/i.test(s))return {max:v[0]};return {};}
+abrirTanque=function(t,aba){
+  const f=FORMULAS[t]=FORMULAS[t]||{mp:[],emb:{}};const esp=ESPEC[t]=ESPEC[t]||{};
+  if(!FORM_VERS[t])FORM_VERS[t]=[{v:1,desde:'',mp:JSON.parse(JSON.stringify(f.mp||[]))}];
+  let mp=JSON.parse(JSON.stringify(f.mp||[]));let espE=JSON.parse(JSON.stringify(esp));let tg=TEMPO_GRANEL[t];
+  const prodsAntes=cpFilhas(t).map(p=>p.codigo);let prods=prodsAntes.slice();
+  const volPadrao=(()=>{const p=cpFilhas(t)[0];return p&&TEMPOS[String(p.codigo)]?+TEMPOS[String(p.codigo)].lote||3800:3800;})();
+  let tq=(TANQUES.find(x=>+x.cap===volPadrao)||TANQUES[0]||{id:'—',cap:volPadrao}).id;
+  const capDe=id=>{const x=TANQUES.find(y=>y.id===id);return x?+x.cap:volPadrao;};
+  const desenha=(a,c)=>{
+    if(a==='ger'){
+      c.innerHTML=`<div class="cpgrid" style="grid-template-columns:repeat(3,minmax(0,1fr))">
+        ${cpCampo('tqN','Nome do tanque',t,'readonly')}
+        ${cpCampo('tqL','Volume padrão (L)',nf(volPadrao),'readonly')}
+        <div class="fld"><label>Tempo de preparo do tanque (min)</label><input id="tqT" value="${tg!=null?escAttr(String(tg)):''}" placeholder="ex.: 90"></div></div>
+        <p class="cpleg">É este nome que liga os produtos acabados ao tanque. O tempo de preparo vai da mistura até liberar para envasar.</p>`;
+      M('tqT').onchange=e=>{tg=cpLeNum(e.target.value);};}
+    else if(a==='form'){const soma=mp.reduce((s,m)=>s+(+m.pct||0),0);const vs=FORM_VERS[t];const cap=capDe(tq);
+      const agua=Math.max(0,100-soma);
+      c.innerHTML=`<div class="cpsim"><label for="fTq">Simular no tanque</label>
+        <select id="fTq">${TANQUES.map(x=>`<option value="${escAttr(x.id)}" ${x.id===tq?'selected':''}>${escAttr(x.id)} · ${nf(x.cap)} L</option>`).join('')}</select></div>
+      <div class="cpsec">Formulação · versão ${vs[vs.length-1].v}${vs[vs.length-1].desde?` · vale desde ${dCurto(vs[vs.length-1].desde)}`:''} ${vs.length>1?`<button class="btn sm" id="fvAnt">Versões anteriores (${vs.length-1})</button>`:''}</div>
+      <table class="od2t cpform"><thead><tr><th>Insumo</th><th style="text-align:right">%</th><th style="text-align:right">Por 1.000 L</th><th style="text-align:right">No ${escAttr(tq)} · ${nf(cap)} L</th><th></th></tr></thead><tbody>
+      ${mp.map((m,i)=>`<tr><td><b>${escAttr(m.nome)}</b> <span class="k m">${escAttr(m.sku||'')}</span></td><td class="n"><input class="cpin" data-fp="${i}" value="${cpNum(m.pct,4)}"></td>
+        <td class="n">${cpNum((+m.pct||0)*10,2)} ${m.un||'kg'}</td><td class="n"><span class="cpkg">${cpNum((+m.pct||0)*cap/100,2)} ${m.un||'kg'}</span></td><td><button class="od2dots" data-fx="${i}" aria-label="tirar insumo">✕</button></td></tr>`).join('')}
+      <tr class="cpagua"><td><b>ÁGUA</b> · completa até 100%</td><td class="n">${cpNum(agua,3)}</td><td class="n">${cpNum(agua*10,1)} kg</td><td class="n">${cpNum(agua*cap/100,1)} kg</td><td></td></tr>
+      <tr class="cptot"><td><b>Total no tanque</b></td><td class="n">100</td><td class="n">1.000 kg</td><td class="n"><b>${nf(cap)} kg</b></td><td></td></tr>
+      <tr><td colspan="5"><select id="fAdd"><option value="">＋ incluir insumo…</option>${INSUMOS.filter(x=>x.ativo!==false&&!mp.some(m=>m.sku===x.sku)).map(x=>`<option value="${escAttr(x.sku)}">${escAttr(x.nome)} · ${escAttr(x.sku)}</option>`).join('')}</select></td></tr></tbody></table>
+      <div class="cpleg">Mudar os % e salvar cria a versão ${vs[vs.length-1].v+1}, guardando a atual com a data em que parou de valer.</div>`;
+      M('fTq').onchange=e=>{tq=e.target.value;desenha('form',c);};
+      c.querySelectorAll('[data-fp]').forEach(i=>i.onchange=()=>{const v=cpLeNum(i.value);if(v!=null)mp[+i.dataset.fp].pct=v;desenha('form',c);});
+      c.querySelectorAll('[data-fx]').forEach(b=>b.onclick=()=>{mp.splice(+b.dataset.fx,1);desenha('form',c);});
+      M('fAdd').onchange=e=>{const x=INSUMOS.find(y=>y.sku===e.target.value);if(x){mp.push({nome:x.nome,sku:x.sku,pct:0,un:'kg'});desenha('form',c);}};
+      if(M('fvAnt'))M('fvAnt').onclick=()=>{c.insertAdjacentHTML('beforeend',`<div class="cpsec" style="margin-top:14px">Versões anteriores</div>${vs.slice(0,-1).reverse().map(v=>`<div class="cpver"><b>Versão ${v.v}</b> ${v.desde?'de '+dCurto(v.desde):''}${v.ate?' até '+dCurto(v.ate):''} · ${(v.mp||[]).map(m=>`${escAttr(m.nome)} ${cpNum(m.pct,3)}%`).join(' · ')}</div>`).join('')}`);M('fvAnt').remove();};}
+    else if(a==='cert'){
+      const usados=ENSAIOS.filter(([k])=>espE[k]!=null&&espE[k]!=='');const livres=ENSAIOS.filter(([k])=>!(espE[k]!=null&&espE[k]!==''));
+      c.innerHTML=`<table class="od2t cpcert"><thead><tr><th style="width:38%">Critério</th><th>Especificação</th><th style="width:48px"></th></tr></thead><tbody>
+        ${usados.map(([k,r])=>`<tr><td><b>${escAttr(r)}</b></td><td><input class="cpin cpesp" data-et="${k}" value="${escAttr(csEspecTexto(espE[k]))}" placeholder="ex.: ENTRE 10,5 E 12,5"></td>
+          <td><button class="cplix" data-ed="${k}" aria-label="Excluir critério ${escAttr(r)}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"></path></svg></button></td></tr>`).join('')||'<tr><td colspan="3" class="k">Nenhum critério ainda.</td></tr>'}
+        <tr class="cpnovo"><td><select id="ceAdd"><option value="">＋ adicionar critério…</option>${livres.map(([k,r])=>`<option value="${k}">${escAttr(r)}</option>`).join('')}<option value="__novo">Outro critério (escrever o nome)…</option></select></td><td colspan="2" class="k">escolha e depois escreva a especificação</td></tr></tbody></table>
+        <p class="cpleg">É o que a Qualidade confere para liberar o lote e o que sai no certificado em PDF. Quando a especificação tem números (ex.: ENTRE 10,5 E 12,5), a liberação já confere o mínimo e o máximo.</p>`;
+      c.querySelectorAll('[data-et]').forEach(i=>i.onchange=()=>{const k=i.dataset.et,v=i.value.trim();
+        if(QUALI.includes(k))espE[k]=v;else{const fx=csLeFaixa(v);espE[k]=Object.assign({txt:v},fx);}});
+      c.querySelectorAll('[data-ed]').forEach(b=>b.onclick=()=>{delete espE[b.dataset.ed];desenha('cert',c);});
+      M('ceAdd').onchange=e=>{let k=e.target.value;if(!k)return;
+        if(k==='__novo'){const n=prompt('Nome do critério (ex.: Densidade):');if(!n){desenha('cert',c);return;}
+          const r=criarEnsaio(n,'numero');if(r.erro){toast(r.erro,true);desenha('cert',c);return;}k=r.ok;}
+        espE[k]=QUALI.includes(k)?' ':{txt:''};desenha('cert',c);
+        setTimeout(()=>{const i=c.querySelector(`[data-et="${k}"]`);if(i){i.value='';i.focus();}},30);};}
+    else if(a==='fil'){
+      const lista=prods.map(cod=>prodOf(cod)).filter(Boolean).sort((a,b)=>(a.litragem-b.litragem)||String(a.codigo).localeCompare(String(b.codigo)));
+      const fora=PRODUTOS.filter(p=>!prods.includes(p.codigo)).sort((a,b)=>String(a.descricao).localeCompare(String(b.descricao),'pt-BR'));
+      c.innerHTML=`<table class="od2t"><thead><tr><th>Código</th><th>Produto</th><th style="text-align:right">Litros por unidade</th><th style="text-align:right">Unidades por embalagem</th><th>Embalagem</th><th style="text-align:right">Litros por embalagem</th><th style="width:48px"></th></tr></thead><tbody>
+        ${lista.map(p=>`<tr><td class="m">${escAttr(p.codigo)}</td><td><b>${escAttr(p.descricao)}</b>${prodsAntes.includes(p.codigo)?'':' <span class="cpnv">novo aqui</span>'}</td><td class="n">${cpNum(p.litragem,3)}</td><td class="n">${p.un_cx||'—'}</td><td>${cpEmb(p).toUpperCase()}</td><td class="n">${cpNum((+p.litragem||0)*(+p.un_cx||0),3)}</td>
+          <td><button class="cplix" data-pr="${escAttr(p.codigo)}" aria-label="Tirar ${escAttr(p.descricao)} deste tanque"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"></path></svg></button></td></tr>`).join('')||'<tr><td colspan="7" class="k">Nenhum produto nasce deste tanque ainda.</td></tr>'}
+        <tr><td colspan="7"><select id="pfAdd"><option value="">＋ incluir produto que nasce deste tanque…</option>${fora.map(p=>`<option value="${escAttr(p.codigo)}">${escAttr(p.descricao)} · ${escAttr(p.codigo)}${p.tanque?' · hoje no '+escAttr(p.tanque):''}</option>`).join('')}</select></td></tr></tbody></table>
+        <p class="cpleg">Incluir um produto aqui faz ele nascer deste tanque (se estava em outro, sai de lá). Tirar não apaga o produto: ele só fica sem tanque.</p>`;
+      c.querySelectorAll('[data-pr]').forEach(b=>b.onclick=()=>{prods=prods.filter(x=>x!==b.dataset.pr);desenha('fil',c);});
+      M('pfAdd').onchange=e=>{const v=e.target.value;if(v&&!prods.includes(v))prods.push(v);desenha('fil',c);};}
+  };
+  cpJanela(t,'Tanque',[['ger','Geral'],['form','Formulação'],['cert','Certificado de análise'],['fil','Produtos deste tanque']],aba||'form',desenha,()=>{
+    const antes=JSON.stringify((f.mp||[]).map(m=>[m.sku,+m.pct]));const agora=JSON.stringify(mp.map(m=>[m.sku,+m.pct]));
+    if(antes!==agora){const vs=FORM_VERS[t];const hoje=ymd(new Date());vs[vs.length-1].ate=hoje;vs.push({v:vs[vs.length-1].v+1,desde:hoje,mp:JSON.parse(JSON.stringify(mp))});}
+    f.mp=mp;
+    Object.keys(espE).forEach(k=>{if(espE[k]===' '||(espE[k]&&typeof espE[k]==='object'&&!espE[k].txt&&espE[k].min==null&&espE[k].max==null))delete espE[k];});
+    ESPEC[t]=espE;if(tg!=null)TEMPO_GRANEL[t]=tg;
+    prodsAntes.filter(c=>!prods.includes(c)).forEach(c=>{const p=prodOf(c);if(p)p.tanque='';});
+    prods.filter(c=>!prodsAntes.includes(c)).forEach(c=>{const p=prodOf(c);if(p)p.tanque=t;});
+  });
+  try{M('modal').classList.add('cpbig');}catch(e){}
+};
+/* produto e insumo também em janela grande */
+try{const _cj54=cpJanela;cpJanela=function(){const r=_cj54.apply(this,arguments);try{M('modal').classList.add('cpbig');}catch(e){}return r;};}catch(e){}
+try{const _fm54=fecharModal;fecharModal=function(){try{M('modal').classList.remove('cpbig');}catch(e){}return _fm54.apply(this,arguments);};}catch(e){}
+/* página de Produtos: Tanques só com as mães; insumos com as abas por tipo; botão de produto novo */
+let CP_TIPO='';
+try{const _gc54=gradeCadProd;gradeCadProd=function(){const r=_gc54.apply(this,arguments);
+  try{const el=M('cpgrid');
+    if(CP.aba==='fab'&&CP.sub==='tq')el.querySelectorAll('tr.cpfil').forEach(x=>x.remove());
+    const top=el.querySelector('.od2top');
+    if(top&&!M('cpNovo')){const b=document.createElement('button');b.className='btn pri';b.id='cpNovo';b.textContent='＋ Novo produto';b.onclick=()=>modalProduto(null);top.appendChild(b);}
+    if(CP.aba==='ins'){
+      const q=CP.q.trim().toLowerCase();const casa=s=>!q||String(s||'').toLowerCase().includes(q);
+      const ins=INSUMOS.filter(i=>casa(i.nome)||casa(i.sku)||casa(i.tipo));
+      const tipos={};ins.forEach(i=>{const k=i.tipo||'Sem tipo';tipos[k]=(tipos[k]||0)+1;});
+      const ord=Object.keys(tipos).sort((a,b)=>a.localeCompare(b,'pt-BR'));
+      if(CP_TIPO&&!tipos[CP_TIPO])CP_TIPO='';
+      const bar=document.createElement('div');bar.className='cpsub';
+      bar.innerHTML=`<button data-cpti="" class="${CP_TIPO?'':'on'}">Todos · ${ins.length}</button>`+ord.map(k=>`<button data-cpti="${escAttr(k)}" class="${CP_TIPO===k?'on':''}">${escAttr(k)} · ${tipos[k]}</button>`).join('');
+      const rol=el.querySelector('.od2rol');if(rol)rol.parentNode.insertBefore(bar,rol);
+      if(CP_TIPO)el.querySelectorAll('tr[data-cpi]').forEach(tr=>{const i=INSUMOS.find(x=>x.sku===tr.dataset.cpi);if(!i||(i.tipo||'Sem tipo')!==CP_TIPO)tr.remove();});
+      bar.querySelectorAll('[data-cpti]').forEach(b=>b.onclick=()=>{CP_TIPO=b.dataset.cpti;gradeCadProd();});
+    }}catch(e){console.warn('cadprod v354',e);}
+  return r;};}catch(e){}
+try{csNucleo.versao='v354';}catch(e){}
 
 </script>
 </body>
