@@ -3851,6 +3851,9 @@ body.cs-semjanela #mask{visibility:hidden!important}
 .rtpr tr.rtx>td{background:#FAFBFC;padding:6px 10px 12px}
 .rtd{display:inline-block;font-weight:700;font-size:12px;border-radius:999px;padding:2px 9px;background:#EEF2F8;color:#334155;white-space:nowrap}
 .rtd.mau{background:#FDECEC;color:#B3261E}.rtd.bom{background:#E7F5EC;color:#15803D}
+
+/* ===== v360 ===== */
+.cp2sit{height:36px;border:1px solid var(--line);border-radius:10px;padding:0 10px;font:inherit;font-size:13px;background:#fff}
 </style>
 </head>
 <body>
@@ -4960,6 +4963,9 @@ function numerarOP(o){
    inteiro nascia torta. */
 function total(o){
   const setup=+o.setup||0, env=+o.envase||0;
+  /* v359: veio de outro dia? então hoje é só o que faltava, sem setup — mesmo depois
+     de começar hoje (antes voltava ao tempo cheio e o card dizia "2h25 antes") */
+  if(typeof csTurnosAntes==='function'&&csTurnosAntes(o).length)return csEnvDia(o);
   if(o.iniReal||o.envIni)return setup+env;      /* já começou hoje: tempo cheio */
   const tur=(o.turnos||[]).length;
   if(!tur)return setup+env;
@@ -5003,7 +5009,7 @@ const iniEnvase=o=>o.envIni||o.iniReal||'';
 /* v322: o tempo do envase é o trabalhado: sai o intervalo da jornada (almoço) e as pausas registradas */
 const envaseReal=o=>{const b=duracaoNoDia(iniEnvase(o),o.fimReal);return b==null?b:Math.max(0,b-(typeof csParado==='function'?csParado(o,iniEnvase(o),o.fimReal):0));};
 const dvSetup=o=>{const t=setupReal(o);return t==null?null:t-o.setup;};
-const dvEnvase=o=>{const t=envaseReal(o);return t==null?null:t-o.envase;};
+const dvEnvase=o=>{const t=envaseReal(o);return t==null?null:t-csEnvDia(o);};
 const badge=v=>(v==null||v===0)?'':` <b style="color:${v>0?'var(--danger)':'var(--run)'}">${v>0?'+':''}${v}</b>`;
 /* Fim previsto do PLANEJAMENTO: parte do horário programado. É o que monta a
    agenda, calcula sobreposição e diz quanto as OPs seguintes andam. */
@@ -5094,7 +5100,7 @@ const fimPlan=o=>inicioPlan(o)+total(o);
 /* quantos minutos a fila empurrou esta OP para frente */
 const deslocada=o=>o.inicio-inicioPlan(o);
 const fimEsperado=o=>{
-  if(o.envIni)return (typeof csFimTrab==='function'?csFimTrab(o,hm(o.envIni),+o.envase||0):hm(o.envIni)+o.envase);   /* envase começou: conta dele, com almoço e pausas */
+  if(o.envIni)return (typeof csFimTrab==='function'?csFimTrab(o,hm(o.envIni),csEnvDia(o)):hm(o.envIni)+csEnvDia(o));   /* envase começou: conta dele, com almoço e pausas */
   if(o.iniReal)return hm(o.iniReal)+total(o);        /* só o setup começou */
   return fimPrev(o);                                  /* não começou: vale a agenda */
 };
@@ -5442,7 +5448,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v358';
+const VERSAO_APP='v360';
 let DRAG=null;
 function render(){
   recomporTudo();
@@ -5812,12 +5818,12 @@ function frasesDoCard(o){
 
   const ei=iniEnvase(o);
   if(o.fimReal&&ei){
-    const d=(hm(o.fimReal)-hm(ei))-o.envase;
+    const d=(hm(o.fimReal)-hm(ei))-csEnvDia(o);
     if(Math.abs(d)<=TOLERANCIA)L.push('Envase levou <b class="neu">o previsto</b>.');
     else if(d>0)L.push(`Envase levou <b>${hmm(d)}</b> a mais.`);
     else L.push(`Envase levou <b class="bom">${hmm(-d)}</b> a menos.`);
   }else if(ei){
-    const jaVai=hm(relogio())-hm(ei)-o.envase;
+    const jaVai=hm(relogio())-hm(ei)-csEnvDia(o);
     if(jaVai>TOLERANCIA)L.push(`Envase já passou <b>${hmm(jaVai)}</b> do previsto.`);
   }
   return `<div class="frs">${L.join('<br>')}</div>`;
@@ -12559,7 +12565,7 @@ function finalizarEnvase(o){
     const delta=f?hm(f)-fimPrev(o):0;
     let h='';
     if(o.setup&&ts!=null)h+=`Setup <b>${ts} min</b> · previsto ${o.setup} min${badge(ts-o.setup)}.<br>`;
-    if(te!=null)h+=`Envase <b>${te} min</b> · previsto ${o.envase} min${badge(te-o.envase)}.<br>`;
+    if(te!=null)h+=`Envase <b>${te} min</b> · previsto ${csEnvDia(o)} min${badge(te-csEnvDia(o))}.<br>`;
     if(t!=null)h+=`Total <b>${t} min</b> · previsto ${dur} min · `+
       (t>dur?`<span class="w">${t-dur} min acima</span>`:t<dur?`<span style="color:var(--run)">${dur-t} min abaixo</span>`:'no previsto')+`.<br>`;
     if(seg.length&&delta!==0)
@@ -13074,7 +13080,7 @@ function concluir(o){
     const ds=dvSetup({...o,fimReal:f});
     /* v307: setup e envase já têm motivo nas telas deles; aqui só a quebra */
     if(false&&ds!=null&&ds>TOLERANCIA)l.push({et:'setup',txt:`Setup passou <b>${ds} min</b> da meta`});
-    const de=(iniEnvase(o)&&f)?Math.max(0,hm(f)-hm(iniEnvase(o)))-o.envase:null;
+    const de=(iniEnvase(o)&&f)?Math.max(0,hm(f)-hm(iniEnvase(o)))-csEnvDia(o):null;
     if(false&&de!=null&&de>TOLERANCIA)l.push({et:'envase',txt:`Envase passou <b>${de} min</b> da meta`});
     if(cx!=null){
       const perdidos=o.litros-cx*litrosCx(o);
@@ -15380,7 +15386,7 @@ function abrirProdutoCad(cod,aba){
   const p=prodOf(cod);if(!p)return toast('Produto não encontrado.',true);
   const d=JSON.parse(JSON.stringify(p));const tp=JSON.parse(JSON.stringify(TEMPOS[String(p.codigo)]||{lote:3800,t:{}}));
   const litK=fmtLit(+p.litragem||0);let emb=JSON.parse(JSON.stringify(((FORMULAS[p.tanque]||{}).emb||{})[litK]||[]));
-  let foto=FOTOS_PROD[String(p.codigo)]||'';
+  let foto=FOTOS_PROD[String(p.codigo)]||(typeof CS_FOTOS!=='undefined'&&CS_FOTOS[String(p.codigo)])||'';const foto0=foto;   /* v360: a foto do Tiny também aparece */
   const desenha=(a,c)=>{
     const liga=()=>c.querySelectorAll('[data-pf]').forEach(i=>i.onchange=()=>{const k=i.dataset.pf;d[k]=i.type==='number'?cpLeNum(i.value):i.value;});
     const cf=(k,r,x='')=>`<div class="fld"><label>${r}</label><input data-pf="${k}" value="${escAttr(d[k]==null?'':String(d[k]))}" ${x}></div>`;
@@ -15407,7 +15413,7 @@ function abrirProdutoCad(cod,aba){
   };
   cpJanela(p.descricao,'<span style="color:#15803D">Produto acabado</span>',[['ger','Geral'],['emb','Embalagens'],['fis','Fiscal'],['pcp','PCP'],['est','Estoque']],aba||'ger',desenha,()=>{
     if(!String(d.descricao||'').trim())return toast('O nome não pode ficar vazio.',true),false;
-    Object.assign(p,d);if(foto)FOTOS_PROD[String(p.codigo)]=foto;TEMPOS[String(p.codigo)]=tp;
+    Object.assign(p,d);if(foto&&foto!==foto0)FOTOS_PROD[String(p.codigo)]=foto;TEMPOS[String(p.codigo)]=tp;
     const F=FORMULAS[p.tanque]=FORMULAS[p.tanque]||{mp:[],emb:{}};F.emb=F.emb||{};F.emb[fmtLit(+p.litragem||0)]=emb;});
 }
 function abrirInsumoCad(sku){
@@ -19732,7 +19738,7 @@ if(typeof frasesDoCard==='function'){
       const part=o.iniReal||o.envIni;
       const ei=iniEnvase(o);
       const atr=part?hm(part)-o.inicio:null;
-      const dur=ei?(hm(o.fimReal)-hm(ei))-o.envase:null;
+      const dur=ei?(hm(o.fimReal)-hm(ei))-csEnvDia(o):null;
       const fp=fimPrev(o);
       const fim=isNaN(fp)?null:hm(o.fimReal)-fp;
       if([atr,dur,fim].every(v=>v==null||isNaN(v)))return _frases.apply(this,arguments);
@@ -20041,6 +20047,8 @@ function csArruma(el,o){
     sp.innerHTML=m
       ? `<i>${m[2]?'Produzidas':'Previstas'}</i><b>${m[1]}${m[2]?' / '+m[2]:''} ${m[3]}${m[2]?csRendPct(m[1],m[2]):''}</b>${m[2]?csRendHTML(m[1],m[2],m[3]):''}${(()=>{const q=ccx.querySelector('.qbr');return q?`<em class="cs-qb">${q.textContent.trim()}</em>`:'';})()}`
       : `<i>Quantidade</i><b>${t}</b>`;
+    try{const ant=csTurnosAntes(o);if(ant.length&&o.caixas!=null){const a=ant.reduce((s,t)=>s+(+t.caixas||0),0);
+      sp.insertAdjacentHTML('beforeend',`<em class="cs-qb" style="color:#4A5568">${nf(a)} em ${ant.map(t=>dCurto(t.data)).join(', ')} + ${nf(Math.max(0,o.caixas-a))} hoje</em>`);}}catch(_){}
     cid.appendChild(sp);
     ccx.style.display='none';
   }
@@ -26415,7 +26423,7 @@ try{csNucleo.versao='v356';}catch(e){}
    Tempos do tanque: os mesmos de antes (TEMPO_GRANEL: limpeza, fabricação = preparo,
    descanso); enchimento é do tanque físico e aqui vira um valor do granel só se for
    digitado. Setup por produto (TEMPOS[cod].setup), padrão 15. */
-const CP2={aba:'fab',sub:'filho',q:'',tags:[],tagsTmp:[],tagsAberto:false,sel:new Set(),edit:false,rasc:{},res:null,resEm:0};
+const CP2={sit:'ativos',aba:'fab',sub:'filho',q:'',tags:[],tagsTmp:[],tagsAberto:false,sel:new Set(),edit:false,rasc:{},res:null,resEm:0};
 const CP2_MAQ=()=>MAQUINAS.slice(0,3);
 const csTagsDe=(tipo,x)=>{if(tipo==='t')return ['Tanque'];if(Array.isArray(x.tags))return x.tags;return tipo==='p'?['Produto Acabado']:(x.tipo?[x.tipo]:[]);};
 const csMin=s=>{if(s==null||s==='')return null;const t=String(s).trim();if(/^\d+:\d{1,2}$/.test(t)){const [h,m]=t.split(':');return (+h)*60+(+m);}const n=+t.replace(',','.');return isFinite(n)?Math.round(n):null;};
@@ -26459,7 +26467,8 @@ gradeCadProd=function(){
   const naSub=l=>CP2.aba!=='fab'||l.sub===CP2.sub;
   const casa=l=>!q||`${l.nome} ${l.cod}`.toLowerCase().includes(q);
   const temTags=l=>!CP2.tags.length||CP2.tags.every(t=>l.tags.includes(t));
-  const vis=todas.filter(l=>naAba(l)&&naSub(l)&&casa(l)&&temTags(l));
+  const naSit=l=>CP2.sit==='todos'||(CP2.sit==='ativos'?l.ativo:!l.ativo);
+  const vis=todas.filter(l=>naAba(l)&&naSub(l)&&casa(l)&&temTags(l)&&naSit(l));
   const abas=[['todos','Todos'],['fab','Fabricados'],['ins','Insumos'],['uso','Uso e consumo'],['ter','Terceirizados'],['rev','Revenda']];
   const subs=[['mae','Produto mãe · tanques'],['filho','Produto filho · acabados e kits'],['frasco','Frascos fabricados']];
   const tagsTodas=[...new Set(todas.filter(naAba).flatMap(l=>l.tags))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
@@ -26468,7 +26477,7 @@ gradeCadProd=function(){
   const th=(t,s)=>`<th class="c">${t}${s?`<small>${s}</small>`:''}</th>`;
   const cab=`<tr><th style="width:30px"><span class="od2ck ${vis.length&&vis.every(l=>CP2.sel.has(l.tipo+'|'+l.id))?'on':''}" id="cp2CkT"></span></th><th>SKU</th><th>Nome</th><th>Tags</th>
     ${verMae?th('Enchimento','min')+th('Limpeza','min')+th('Preparo','min')+th('Descanso','min')+'<th>Produtos filhos</th>'
-      :`<th>Un</th><th class="n">Estoque</th><th class="n">Reservado</th>${verFilho?th('Litros','por cx')+th('Lote padrão','L')+th('Caixas','por lote')+th('Setup','min')+MQ.map(m=>th(m,'envase · realizado')).join(''):''}`}<th>Situação</th></tr>`;
+      :`<th>Un</th><th class="n">Estoque</th><th class="n">Reservado</th>${verFilho?th('Litros','por cx')+th('Lote padrão','L')+th('Caixas','por lote')+th('Setup','min')+MQ.map(m=>th(m,'envase h:mm')).join(''):''}`}<th>Situação</th></tr>`;
   const linha=l=>{const k=l.tipo+'|'+l.id,on=CP2.sel.has(k);let meio='';
     if(verMae){const g=tempoG(l.id),G=TEMPO_GRANEL[l.id]||{};
       const c=(f,v)=>`<td class="c">${ed?inp(`t|${l.id}|${f}`,v,'-'):(v==null||v===''?'-':nf(+v))}</td>`;
@@ -26478,9 +26487,8 @@ gradeCadProd=function(){
       if(verFilho){const p=l.x,tp=TEMPOS[String(p.codigo)]||{t:{}},lcx=(+p.litragem||0)*(+p.un_cx||0),cxl=tp.lote&&lcx?tp.lote/lcx:0;
         meio+=`<td class="c m">${lcx?nf(lcx):'-'}</td><td class="c">${ed?inp(`p|${p.codigo}|lote`,tp.lote,'L',72):(tp.lote?nf(tp.lote):'-')}</td><td class="c m">${cxl?cxl.toLocaleString('pt-BR',{maximumFractionDigits:1}):'-'}</td>
           <td class="c">${ed?inp(`p|${p.codigo}|setup`,tp.setup!=null?tp.setup:SETUP_PADRAO,'min',56):(tp.setup!=null?tp.setup:SETUP_PADRAO)}</td>`+
-          MQ.map(m=>{const pv=(tp.t||{})[m],r=csRealizado(String(p.codigo),m);const dif=pv&&r?Math.round((r.min-pv)/pv*100):null;
-            return `<td class="c">${ed?inp(`p|${p.codigo}|${m}`,pv?csHm(pv):'','h:mm'):`<b class="m">${pv?csHm(pv):'-'}</b>`}${!ed&&pv&&cxl?`<small class="k">${(cxl/(pv/60)).toLocaleString('pt-BR',{maximumFractionDigits:1})} cx/h</small>`:''}
-              ${r?`<small class="cp2r ${dif==null?'':dif>15?'mau':dif<-10?'bom':'ok'}" title="${r.n} OP${r.n>1?'s':''} concluída${r.n>1?'s':''}">real ${csHm(r.min)}${dif!=null?` · ${dif>0?'+':''}${dif}%`:''}</small>`:''}</td>`;}).join('');}}
+          MQ.map(m=>{const pv=(tp.t||{})[m];
+            return `<td class="c">${ed?inp(`p|${p.codigo}|${m}`,pv?csHm(pv):'','h:mm'):`<b class="m">${pv?csHm(pv):'-'}</b>`}</td>`;}).join('');}}
     return `<tr class="${on?'sel':''} ${l.ativo?'':'cpina'}"><td><span class="od2ck ${on?'on':''}" data-cp2ck="${escAttr(k)}"></span></td><td class="m">${escAttr(String(l.cod))}</td>
       <td><button class="cp2nome" data-cp2a="${escAttr(k)}">${escAttr(l.nome)}</button></td>
       <td><span class="cp2tags">${l.tags.map(t=>`<i>${escAttr(t)}</i>`).join('')}</span></td>${meio}
@@ -26492,12 +26500,13 @@ gradeCadProd=function(){
       <div class="cp2tf"><button class="od2ord b" id="cp2Tg" type="button">Tags: ${CP2.tags.length?escAttr(CP2.tags.join(' + ')):'Todas'} ▾</button>
       ${CP2.tagsAberto?`<div class="cp2pop">${tagsTodas.map(t=>`<label><span class="od2ck ${CP2.tagsTmp.includes(t)?'on':''}" data-cp2tg="${escAttr(t)}"></span>${escAttr(t)}<b>${todas.filter(l=>naAba(l)&&l.tags.includes(t)).length}</b></label>`).join('')||'<span class="k">sem tags aqui</span>'}
         <div class="cp2popb"><button class="btn sm" id="cp2TgL">Limpar</button><button class="btn sm pri" id="cp2TgG">Gerar</button></div></div>`:''}</div>
+      <select id="cp2Sit" class="cp2sit" aria-label="Situação">${[['ativos','Ativos'],['inativos','Inativos'],['todos','Ativos e inativos']].map(([k,n])=>`<option value="${k}" ${CP2.sit===k?'selected':''}>${n}</option>`).join('')}</select>
       <span style="flex:1"></span>
       ${(verMae||verFilho)?(ed?'<button class="btn" id="cp2EdX">Cancelar</button><button class="btn pri" id="cp2EdS">Salvar tempos</button>':'<button class="btn" id="cp2Ed">✎ Editar tempos</button>'):''}</div>
     ${CP2.sel.size?`<div class="cp2bulk"><b>${CP2.sel.size} selecionado${CP2.sel.size>1?'s':''}</b><span style="flex:1"></span>Adicionar tag:
       <select id="cp2BT"><option value="">escolha…</option>${[...new Set(cp2Linhas().flatMap(l=>l.tags))].filter(t=>t!=='Tanque').sort().map(t=>`<option>${escAttr(t)}</option>`).join('')}<option value="__nova">nova tag…</option></select>
       <button class="btn sm" id="cp2BX">Desmarcar</button></div>`:''}
-    ${verFilho?'<p class="cpleg" style="margin:4px 0 8px">Lote padrão, setup e envase de um lote padrão em cada máquina. Embaixo: cx/h e o <b>realizado</b> das OPs concluídas (mediana, sem pausas, no tamanho do lote padrão) com a diferença para o previsto. É daqui que sai a previsão do envase.</p>':''}
+    ${verFilho?'<p class="cpleg" style="margin:4px 0 8px">Lote padrão, setup e o tempo de envase de um lote padrão em cada máquina. É daqui que sai a previsão do envase. O realizado fica em Relatórios › Previsto × realizado.</p>':''}
     ${verMae?'<p class="cpleg" style="margin:4px 0 8px">Tempos do tanque (min). Enchimento em branco usa o do tanque físico (TQ 1, TQ 6…). Somam na linha do tempo do lote.</p>':''}
     <div class="od2rol"><table class="od2t cp2t"><thead>${cab}</thead><tbody>${vis.map(linha).join('')||`<tr><td colspan="20" class="vazioc">${CP2.aba==='fab'&&CP2.sub==='frasco'?'Nenhum frasco fabricado ainda. Use ＋ Novo cadastro.':'Nada aqui com esses filtros.'}</td></tr>`}</tbody></table></div></div>`;
   /* ligações */
@@ -26521,6 +26530,7 @@ gradeCadProd=function(){
   if(M('cp2EdX'))M('cp2EdX').onclick=()=>{CP2.edit=false;CP2.rasc={};gradeCadProd();};
   if(M('cp2EdS'))M('cp2EdS').onclick=()=>csSalvaTempos();
   M('cp2Novo').onclick=()=>csNovoCadastro();
+  M('cp2Sit').onchange=e=>{CP2.sit=e.target.value;CP2.sel.clear();gradeCadProd();};
 };
 document.addEventListener('click',ev=>{if(CP2.tagsAberto&&!ev.target.closest('.cp2tf')){CP2.tagsAberto=false;try{if(S.page==='cadprod')gradeCadProd();}catch(e){}}});
 function csSalvaTempos(){
@@ -26587,6 +26597,7 @@ try{csNucleo.versao='v357';}catch(e){}
    envase ao fim, tirando as pausas registradas, e é levado ao tamanho do lote padrão
    para comparar com a mesma régua da planilha. Clicar na linha abre as OPs. */
 let RT_AB=null;
+const rtMedia=a=>a.length?a.reduce((s,x)=>s+x,0)/a.length:null;
 const rtMed=a=>{if(!a.length)return null;const l=a.slice().sort((x,y)=>x-y);return l.length%2?l[(l.length-1)/2]:(l[l.length/2-1]+l[l.length/2])/2;};
 function rtOP(o){
   const ie=hm(iniEnvase(o)),f=hm(o.fimReal);if(isNaN(ie)||isNaN(f))return null;
@@ -26599,7 +26610,7 @@ function rtOP(o){
     stR,stP:tp.setup!=null?+tp.setup:SETUP_PADRAO};
 }
 relTempos=function(){
-  const base=ordensFiltradas().filter(o=>sit(o)==='concluida'&&iniEnvase(o)&&o.fimReal&&!(o.turnos||[]).length);
+  const base=ordensFiltradas().filter(o=>sit(o)==='concluida'&&o.fimReal&&(iniEnvase(o)||(o.turnos||[]).length));
   const med=base.map(rtOP).filter(Boolean);
   const G={};med.forEach(x=>{const k=x.o.codigo+'|'+x.o.maq;(G[k]=G[k]||{cod:String(x.o.codigo),maq:x.o.maq,l:[]}).l.push(x);});
   const nfd=(v,c=1)=>v==null||isNaN(v)?'—':(+v).toLocaleString('pt-BR',{minimumFractionDigits:c,maximumFractionDigits:c});
@@ -26608,7 +26619,7 @@ relTempos=function(){
   const cor=d=>d==null?'':d>15?'mau':d<-10?'bom':'ok';
   const L=Object.values(G).map(g=>{const p=prodOf(g.cod)||{};const tp=TEMPOS[g.cod]||{};const lcx=(+p.litragem||0)*(+p.un_cx||0);
     const lote=+tp.lote||null,cxl=lote&&lcx?lote/lcx:null,pv=(tp.t||{})[g.maq]||null;
-    const rEnv=rtMed(g.l.map(x=>x.envLote)),stP=tp.setup!=null?+tp.setup:SETUP_PADRAO,stR=rtMed(g.l.map(x=>x.stR).filter(v=>v!=null&&v<=240));
+    const rEnv=rtMedia(g.l.map(x=>x.envLote)),stP=tp.setup!=null?+tp.setup:SETUP_PADRAO,stR=rtMedia(g.l.map(x=>x.stR).filter(v=>v!=null&&v<=240));
     return {...g,p,lote,cxl,pv,rEnv,d:dif(rEnv,pv),cxhP:pv&&cxl?cxl/(pv/60):null,cxhR:rEnv&&cxl?cxl/(rEnv/60):null,stP,stR,dSt:dif(stR,stP)};})
     .sort((a,b)=>b.l.length-a.l.length||String(a.p.descricao).localeCompare(String(b.p.descricao)));
   const comPv=L.filter(x=>x.pv&&x.rEnv);const n=comPv.reduce((s,x)=>s+x.l.length,0);
@@ -26625,7 +26636,7 @@ relTempos=function(){
       <div class="kpi"><div class="k">Mais de 15% acima</div><div class="v">${acima}</div><div class="s">de ${n} OPs</div></div>
     </div>
     ${L.length?`<div class="rolx"><table class="tb rtpr"><thead>
-      <tr class="g"><th colspan="3"></th><th colspan="5" class="pv">Previsto · planilha</th><th colspan="4" class="rl">Realizado · OPs concluídas</th><th></th></tr>
+      <tr class="g"><th colspan="3"></th><th colspan="5" class="pv">Previsto · planilha</th><th colspan="4" class="rl">Realizado · média das OPs concluídas</th><th></th></tr>
       <tr><th>Produto</th><th>Máq.</th><th class="n">OPs</th>
         <th class="n pv">Lote padrão</th><th class="n pv">Cx/lote</th><th class="n pv">Envase</th><th class="n pv">Cx/h</th><th class="n pv">Setup</th>
         <th class="n rl">Envase</th><th class="n rl">Cx/h</th><th class="n rl">Setup</th><th class="n rl">Pausas</th><th class="n">Diferença</th></tr></thead><tbody>
@@ -26638,8 +26649,8 @@ relTempos=function(){
             ${x.l.slice().sort((a,b)=>String(b.o.data).localeCompare(String(a.o.data))).map(y=>{const d=dif(y.env,y.pvOP);return `<tr><td class="mono">${dCurto(y.o.data)}</td><td class="mono">${escAttr(String(y.o.lote||'—'))}</td><td class="n mono">${nf(+y.o.litros||0)}</td><td class="n mono">${y.o.caixas!=null?nf(y.o.caixas):'—'}</td>
               <td class="n mono">${hmF(y.pvOP)}</td><td class="n mono"><b>${hmF(y.env)}</b></td><td class="n mono">${y.pz?y.pz+' min':'—'}</td><td class="n mono">${y.stR==null?'—':y.stR+' min'}</td><td class="n"><span class="rtd ${cor(d)}">${d==null?'—':(d>0?'+':'')+d+'%'}</span></td></tr>`;}).join('')}</tbody></table></td></tr>`:''}`;}).join('')}
     </tbody></table></div>
-    <p class="adp">Previsto é o cadastro (a planilha de tempos): o envase de um lote padrão em cada máquina. Realizado é o meio das OPs concluídas no período
-      (a mediana, para uma OP fora da curva não puxar tudo), do início do envase ao fim, sem as pausas registradas, levado ao tamanho do lote padrão.
+    <p class="adp">Previsto é o cadastro (a planilha de tempos): o envase de um lote padrão em cada máquina. Realizado é a média das OPs concluídas no período, do início do envase ao fim (somando os dias, quando a OP virou o dia),
+      sem as pausas registradas, levada ao tamanho do lote padrão.
       Vermelho: mais de 15% acima do previsto; verde: mais de 10% abaixo. Refeição que não foi registrada como pausa no tablet conta como envase.
       Clique numa linha para ver as OPs.</p>`
     :'<div class="vazioc">Nenhuma OP concluída com envase medido neste período.</div>'}`;
@@ -26649,6 +26660,57 @@ relTempos=function(){
 try{const i=ABAS_REP.findIndex(a=>a[0]==='tempos');if(i>=0)ABAS_REP[i][1]='Previsto × realizado';}catch(e){}
 try{csNucleo.versao='v358';}catch(e){}
 
+</script>
+<script>
+/* ===================== v359 · OP que passa de um dia para o outro =====================
+   No fim de turno o tablet conta as caixas (sem lançar estoque) e a OP continua no
+   próximo dia; no outro dia apontam o total. A tela do dia comparava o pedaço de hoje
+   com o tempo da OP inteira ("concluída 2h25 antes do previsto") porque, assim que a
+   OP começava hoje, o previsto voltava a ser o cheio. Agora o previsto de hoje é só o
+   que faltava (o envase proporcional às caixas que ainda faltavam, sem setup), e o
+   relatório soma os turnos de ontem com o pedaço de hoje. */
+function csTurnosAntes(o){return (o.turnos||[]).filter(t=>t&&t.data&&o.data&&t.data<o.data);}
+function csEnvDia(o){
+  const env=+o.envase||0,ant=csTurnosAntes(o);if(!ant.length)return env;
+  let prev=0;try{prev=caixasPrev(o);}catch(e){}
+  const feitas=ant.reduce((s,t)=>s+(+t.caixas||0),0);
+  if(!prev||feitas<=0)return env;
+  return Math.max(5,Math.round(env*Math.max(0,1-feitas/prev)));
+}
+/* as caixas desta passagem (hoje): o total apontado menos o que os turnos de antes contaram */
+function csCxDia(o){const ant=csTurnosAntes(o);if(!ant.length||o.caixas==null)return o.caixas;return Math.max(0,+o.caixas-ant.reduce((s,t)=>s+(+t.caixas||0),0));}
+/* o envase real inteiro da OP: cada turno mais o pedaço do dia em que terminou */
+function csEnvRealTotal(o){
+  const seg=[];(o.turnos||[]).forEach(t=>{const a=hm(t.ini||''),b=hm(t.fim||'');if(!isNaN(a)&&!isNaN(b)&&b>a)seg.push({d:t.data,min:b-a});});
+  const ie=hm(iniEnvase(o)),f=hm(o.fimReal||'');
+  const fechouNoTurno=(o.turnos||[]).some(t=>t.data===o.data&&t.fim===o.fimReal);
+  let pz=0;
+  if(o.fimReal&&!fechouNoTurno&&!isNaN(ie)&&!isNaN(f)&&f>ie){seg.push({d:o.data,min:f-ie});
+    (o.pausasOp||[]).forEach(p=>{const a=hm(p.desde||''),b=hm(p.ate||'');if(!isNaN(a)&&!isNaN(b)&&b>a&&a>=ie-1&&b<=f+1)pz+=b-a;});}
+  const tot=seg.reduce((s,x)=>s+x.min,0)-pz;
+  return {min:tot,pz,dias:[...new Set(seg.map(x=>x.d))].length,seg};
+}
+/* relatório: inclui as OPs que viraram o dia */
+try{const _rt59=rtOP;rtOP=function(o){
+  if(!(o.turnos||[]).length)return _rt59.apply(this,arguments);
+  const r=csEnvRealTotal(o);if(!(r.min>=5)||r.min>3*16*60)return null;
+  const tp=TEMPOS[String(o.codigo)]||{t:{}},lote=+tp.lote||+o.litros||0,pv=(tp.t||{})[o.maq];
+  return {o,env:r.min,pz:r.pz,lote,pvLote:pv||null,pvOP:pv&&lote?pv*(+o.litros||lote)/lote:null,envLote:lote&&o.litros?r.min*lote/o.litros:r.min,
+    stR:null,stP:tp.setup!=null?+tp.setup:SETUP_PADRAO,dias:r.dias};};}catch(e){}
+/* cadastros: o realizado também conta as OPs que viraram o dia */
+csRealizado=function(cod,maq){
+  if(CS_REAL_N!==ORDENS.length){CS_REAL_N=ORDENS.length;CS_REAL_CACHE={};
+    ORDENS.forEach(o=>{if(sit(o)!=='concluida'||!o.fimReal||!o.litros)return;
+      const x=rtOP(o);if(!x)return;const k=o.codigo+'|'+o.maq;(CS_REAL_CACHE[k]=CS_REAL_CACHE[k]||[]).push(x.envLote);});}
+  const l=(CS_REAL_CACHE[cod+'|'+maq]||[]).slice().sort((a,b)=>a-b);
+  if(!l.length)return null;const m=l.length%2?l[(l.length-1)/2]:(l[l.length/2-1]+l[l.length/2])/2;
+  return {min:Math.round(m),n:l.length};
+};
+try{csNucleo.versao='v359';}catch(e){}
+
+</script>
+<script>
+try{csNucleo.versao='v360';}catch(e){}
 </script>
 </body>
 </html>
