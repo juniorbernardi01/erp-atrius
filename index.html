@@ -3783,6 +3783,11 @@ body.cs-semjanela #mask{visibility:hidden!important}
 .tvoc .selo.lib{background:#E7F5EC;color:#15803D}
 .tvoc .selo.nlib{background:#FDECEC;color:#B3261E}
 .tvfilah{display:none!important}
+
+/* ===== v347 · bloco azul da TV em 2×2 ===== */
+.tvpanel .tvagora .dest{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:1px!important;border-radius:10px;overflow:hidden}
+.tvpanel .tvagora .dest .d2,.tvpanel .tvagora .dest .d3{grid-column:span 1!important}
+.tvpanel .tvagora .dest .dcel{padding:8px 14px 9px}
 </style>
 </head>
 <body>
@@ -5374,7 +5379,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v346';
+const VERSAO_APP='v347';
 let DRAG=null;
 function render(){
   recomporTudo();
@@ -25831,9 +25836,8 @@ blocoAgoraTV=function(m){
     <div class="tvabody">
       <div class="tvprod">${escTV(p.descricao)}</div>
       <div class="dest">
-        ${celTV('d2','Máquina',escTV(o.maq))}
-        ${celTV('d2','Lote',`<span class="num">${escTV(o.lote||'—')}</span>`)}
-        ${celTV('d2','Fabricação',`<span class="num">${escTV(dFab(o.data))}</span>`)}
+        ${celTV('d3','Lote',`<span class="num">${escTV(o.lote||'—')}</span>`)}
+        ${celTV('d3','Fabricação',`<span class="num">${escTV(dFab(o.data))}</span>`)}
         ${celTV('d3','Puxar do tanque',`${escTV(o.tanque||'—')} <span class="lt">· ${nf(o.litros)} L</span>`)}
         ${celTV('d3','Qtde prevista',`<span class="num">${nf(caixasPrev(o))} ${und(o)}</span>`)}
       </div>
