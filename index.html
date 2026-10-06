@@ -5449,7 +5449,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v365';
+const VERSAO_APP='v366';
 let DRAG=null;
 function render(){
   recomporTudo();
@@ -27173,6 +27173,72 @@ try{const _rd65=render;render=function(){const r=_rd65.apply(this,arguments);
     b.onclick=ev=>{try{csCtx(ev,b.dataset.cs5pts,null);}catch(e){}};});}catch(e){}
   return r;};}catch(e){}
 try{csNucleo.versao='v365';}catch(e){}
+
+</script>
+<script>
+/* ===================== v366 · Tela do Envase mais enxuta =====================
+   Pedido do Junior (06/10, 18:12), olhando a v365 na fábrica:
+   - a foto ganhava uma moldura torta (borda, recuo e margem de um estilo antigo da foto);
+   - as concluídas não ficavam cinzas (o fundo antigo do card passava por cima);
+   - os blocos estavam grandes demais.
+   Só estilo: nada muda no que os botões fazem. */
+(function(){try{const s=document.createElement('style');s.id='cs6css';s.textContent=`
+/* foto limpa: sem a moldura antiga; fundo branco quando tem foto */
+.cs5 .f5{background:#EEF3FA!important;border:0!important;box-shadow:none!important;border-radius:9px!important}
+.cs5 .f5:has(img){background:#fff!important}
+.cs5 .f5 img,.cs5 .f5 .cs-foto{margin:0!important;padding:0!important;border:0!important;box-shadow:none!important;border-radius:0!important;
+  width:100%!important;height:100%!important;max-width:none!important;max-height:none!important;object-fit:contain!important;background:transparent!important;position:static!important}
+/* card */
+.cs5col .bat.cs5{padding:10px 12px!important;gap:6px!important;margin:0!important;background:#fff!important;border:1px solid #DDE3EC!important;border-radius:11px!important;opacity:1!important;filter:none!important}
+.cs5col .bat.cs5.cs5v{border:2px solid var(--c5,#1D4ED8)!important;padding:9px 12px 8px!important}
+.cs5col .bat.cs5.cs5c{background:#ECECEE!important;border-color:#DADADF!important}
+.cs5col .bat.cs5.cs5c .k5>span{background:#F6F6F7!important;border-color:#DCDCE1!important}
+.cs5col .bat.cs5.cs5c .n5{color:#52525B!important}
+.cs5 .t5{min-height:22px}
+.cs5 .t5 .ini{font-size:12.5px}
+.cs5 .sl{font-size:9.5px;padding:2px 8px}
+.cs5 .cs-pts{width:24px!important;height:24px!important}
+.cs5 .c5{gap:10px}
+/* tamanhos menores */
+.cs5.cs5v .f5{width:84px!important;height:106px!important}
+.cs5.cs5f .f5{width:58px!important;height:74px!important}
+.cs5.cs5c .f5{width:52px!important;height:66px!important}
+.cs5 .d5{gap:6px}
+.cs5.cs5v .n5{font-size:19px}.cs5.cs5f .n5,.cs5.cs5c .n5{font-size:14.5px}
+.cs5 .k5{gap:5px}
+.cs5 .k5>span{padding:2px 7px!important;border-radius:7px!important}
+.cs5 .k5 i{font-size:8.5px}
+.cs5 .k5 b{font-size:12px!important;line-height:1.25}
+.cs5 .b5{gap:6px}
+.cs5 .b5 button{height:34px;font-size:13.5px;border-radius:8px}
+.cs5 .g5{grid-template-columns:54px 1fr 1fr;gap:4px 5px}
+.cs5 .g5 .r{height:24px;font-size:11.5px;border-radius:6px}
+.cs5 .g5 .r.tp{height:20px;font-size:10px}
+.cs5 .g5 .hp,.cs5 .g5 .hr{height:20px;font-size:11.5px;border-radius:6px}
+.cs5 .g5 .cp,.cs5 .g5 .cr{height:24px;font-size:12.5px;padding:0 8px;border-radius:6px}
+.cs5 .g5 .bar{height:14px}
+.cs5 .g5 .to{font-size:11px;padding:0 8px}
+.cs5 .g5 .fr{font-size:11.5px}
+.cs5 .tr5{padding-top:4px}
+.cs5 .tr5 .e{width:70px}
+.cs5 .tr5 .e .bo{width:17px;height:17px;font-size:10px}
+.cs5 .tr5 .e b{font-size:10.5px}.cs5 .tr5 .e i{font-size:9.5px}
+.cs5 .tr5 .se{margin-top:-22px}
+.cs5 .pv5{height:26px;padding:0 10px}.cs5 .pv5 b{font-size:13px}.cs5 .pv5 span{font-size:9.5px}
+.cs5 .av5{font-size:11px;padding:4px 8px}
+.cs5col .tqb{gap:8px!important;padding:10px!important}
+.cs5col .cs-viva,.cs5col .cs5ls{gap:8px}
+.cs5col .cs5s{padding:6px 10px;font-size:10.5px}
+.cs5h .n>b{font-size:18px!important}
+.cs5col .tqh.cs5h{padding:8px 12px!important}
+@container (max-width:560px){.cs5.cs5c .c5 .nl{width:calc(100% - 66px)}}
+@container (max-width:470px){
+ .cs5 .g5{grid-template-columns:48px 1fr 1fr}
+ .cs5 .g5 .cp,.cs5 .g5 .cr{font-size:11.5px;padding:0 5px}
+ .cs5.cs5v .n5{font-size:17px}
+ .cs5 .tr5 .e{width:58px}
+}`;document.head.appendChild(s);}catch(e){}})();
+try{csNucleo.versao='v366';}catch(e){}
 
 </script>
 </body>
