@@ -3968,6 +3968,7 @@ body.cs-semjanela #mask{visibility:hidden!important}
 
 <div class="toast" id="toast"></div>
 
+<script>/* v364: retrato do que ficou pendente, antes de qualquer leitura do banco */try{window.CS_BASE0=localStorage.getItem('erp.baseBanco');window.CS_LOC0=window.CS_BASE0?localStorage.getItem('pcp-atrius-v6'):null;}catch(e){}</script>
 <script>
 /* o logo da Atrius mora aqui, uma vez só: as imagens e o favicon
    apontam para esta constante ao abrir a página */
@@ -5448,7 +5449,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v360';
+const VERSAO_APP='v364';
 let DRAG=null;
 function render(){
   recomporTudo();
@@ -23837,7 +23838,8 @@ document.addEventListener('click',ev=>{
     if(dur-(+at.setup||0)>TOLERANCIA)mot={titulo:`Setup levou ${hmm(dur)} (previsto ${at.setup} min)`,
       grupos:gruposDe('setup')};}}catch(e){}
   csPinTela(tit,`${CS_OPMAQ||''}${at?` · OP ${rotuloOP(at)} · lote ${at.lote||''}`:''}`,(q,pin,esc)=>{
-    CS_PIN_PASSA=true;try{b.click();}finally{CS_PIN_PASSA=false;}
+    at=csOpViva(at);const b2=document.querySelector('#csOper [data-op="'+a+'"]')||b;   /* v362 */
+    CS_PIN_PASSA=true;try{b2.click();}finally{CS_PIN_PASSA=false;}
     /* a janela de horário do sistema já vem com o PIN digitado e se confirma sozinha */
     let tent=0;const vai=()=>{try{
       if(M('etPin')&&M('etK')){M('etPin').value=pin;M('etPin').dispatchEvent(new Event('input',{bubbles:true}));M('etK').click();
@@ -25494,8 +25496,9 @@ window.addEventListener('click',ev=>{
   if(!(atr>TOLERANCIA))return;
   ev.preventDefault();ev.stopImmediatePropagation();
   csPinTela('Concluir envase',`${CS_OPMAQ||''} · OP ${rotuloOP(at)} · lote ${at.lote||''}`,(q,pin,esc)=>{
-    window.CS_ENV_PRE={o:at,lista:esc.itens,atr};
-    CS_PIN_PASSA=true;try{b.click();}finally{CS_PIN_PASSA=false;}
+    at=csOpViva(at);window.CS_ENV_PRE={o:at,lista:esc.itens,atr};
+    const b2=document.querySelector('#csOper [data-op="fin"]')||b;   /* v362 */
+    CS_PIN_PASSA=true;try{b2.click();}finally{CS_PIN_PASSA=false;}
     let tent=0;const vai=()=>{try{
       if(M('etPin')&&M('etK')){M('etPin').value=pin;M('etPin').dispatchEvent(new Event('input',{bubbles:true}));M('etK').click();setTimeout(()=>{try{if(M('etOK'))M('etOK').click();}catch(e){}},60);return;}
       if(M('etOK')){M('etOK').click();return;}}catch(e){} if(++tent<25)setTimeout(vai,60);};vai();
@@ -26711,6 +26714,167 @@ try{csNucleo.versao='v359';}catch(e){}
 </script>
 <script>
 try{csNucleo.versao='v360';}catch(e){}
+</script>
+<script>
+/* ===================== v362 · tablet: o toque sempre vale =====================
+   O que acontecia: enquanto o operador digitava o PIN (ou escolhia os motivos, ou
+   contava as caixas), o tablet recebia a gravação de outro aparelho — a cada 4 s
+   ele confere o banco, e com 3 tablets e o escritório gravando isso é quase sempre.
+   Ao receber, as OPs viram objetos novos; o botão terminava a ação na OP antiga,
+   que já não estava na lista. Nada gravava e o operador tinha que tocar de novo.
+   Agora:
+   1) com o teclado do PIN, os motivos, a contagem ou o menu abertos — e por alguns
+      segundos depois de confirmar — o que chega do banco espera; entra assim que
+      a tela fecha, junto com o que o operador fez (nada se perde dos dois lados);
+   2) toda ação pega a OP pelo número na hora de gravar, nunca uma cópia velha;
+   3) a tela não se redesenha no meio de um toque. */
+let CS_ACAO_ATE=0,CS_TOQUE_OP=0;
+/* um toque na tela da máquina: entre o dedo encostar e o clique valer, nada redesenha */
+document.addEventListener('pointerdown',ev=>{try{if(ev.target.closest&&ev.target.closest('#csOper'))CS_TOQUE_OP=Date.now();}catch(e){}},true);
+const csOverlayOp=()=>{try{
+  const on=id=>{const e=document.getElementById(id);return !!(e&&e.classList.contains('on'));};
+  const pin=document.getElementById('csPinOp');
+  if(pin&&pin.classList.contains('on')&&!pin.classList.contains('abre'))return true;   /* PIN de botão (a tela de abrir não segura nada) */
+  if(on('csMotOp')||on('csOpMenu')||on('csMatOp'))return true;
+  if(M('mask')&&M('mask').classList.contains('on'))return true;   /* a janela do sistema que o tablet preenche sozinho */
+  return false;}catch(e){return false;}};
+try{const _dg62=csDigitando;csDigitando=function(){
+  if(document.body.classList.contains('cs-operon')){
+    if(Date.now()<CS_ACAO_ATE)return true;
+    if(csOverlayOp())return true;
+    if(Date.now()-CS_TOQUE_OP<700)return true;   /* no meio de um toque */
+    return false;
+  }
+  return _dg62.apply(this,arguments);};}catch(e){}
+/* O que chega do banco com a tela ocupada não é aplicado depois como estava: aquele
+   retrato já ficou velho (a ação do operador pode até já ter sido gravada). Na hora de
+   soltar, o tablet lê o banco de novo; sem banco, junta o retrato com o que mudou aqui. */
+try{const _ar62=aplicarRemoto;aplicarRemoto=function(dados){
+  if(!dados)return;
+  const op=document.body.classList.contains('cs-operon');
+  if(op&&csDigitando()){
+    if(!window.CS_OP_VELHO)window.CS_OP_BASE=ULTIMO;   /* o que o tablet achava que o banco tinha */
+    window.CS_OP_VELHO=dados;window.CS_REMOTO_PEND=dados;try{CS_REMOTO_VEIO=true;}catch(e){}return;}
+  if(window.CS_OP_VELHO&&dados===window.CS_OP_VELHO){
+    window.CS_OP_VELHO=null;const base=window.CS_OP_BASE;window.CS_OP_BASE=null;
+    if(temNuvem()&&ONLINE){window.CS_LER_JA=true;return;}   /* lê o banco de novo (o retrato envelheceu) */
+    try{if(base){const rem=csLimpo(dados),meu=csDiff(csLimpo(base),csLimpo(corpoDados()),[],[]);
+      if(meu.length)dados=JSON.stringify(csAplicaOps(rem,meu));}}catch(e){}
+  }
+  return _ar62.call(this,dados);};}catch(e){}
+/* a OP certa: a da lista agora, pelo número */
+const csOpViva=o=>{try{return (o&&o.id&&ORDENS.find(x=>x.id===o.id))||o;}catch(e){return o;}};
+['marcarEtapa','concluir','finalizarEnvase','csPausar','csRetomar','csFimTurnoOp','csGravaTurno','csApontarOp'].forEach(nm=>{
+  try{const f=window[nm]||eval(nm);if(typeof f!=='function')return;
+    const g=function(o,...r){if(o&&typeof o==='object'&&o.id)o=csOpViva(o);return f.call(this,o,...r);};
+    eval(nm+'=g');}catch(e){}});
+/* confirmou o PIN: segura o banco até a ação gravar */
+try{const _ok62=csViraOperador;csViraOperador=function(){CS_ACAO_ATE=Date.now()+3000;return _ok62.apply(this,arguments);};}catch(e){}
+/* nenhum redesenho no meio de um toque (o redesenho da própria ação vem logo depois) */
+try{const _cpo62=csPintarOperador;csPintarOperador=function(){
+  if(document.body.classList.contains('cs-operon')&&Date.now()-CS_TOQUE_OP<700){
+    clearTimeout(window._csPintaDepois);window._csPintaDepois=setTimeout(()=>{try{csPintarOperador();}catch(e){}},700);return;}
+  return _cpo62.apply(this,arguments);};}catch(e){}
+try{csNucleo.versao='v362';}catch(e){}
+
+</script>
+<script>
+/* ===================== v363 · tablet: nada cobre o botão e a tela para de piscar =====================
+   Medido num tablet simulado (toque de verdade, rede lenta, outro aparelho gravando):
+   1) Depois de cada ação aparece o aviso preto/vermelho ("Iniciar envase · 16:10",
+      "MAQ 1 pausada · …") por 3 segundos, em baixo, no meio da tela — exatamente em
+      cima do botão grande. O toque do operador caía no aviso e não no botão: nada
+      acontecia e ele tinha que tocar de novo. Agora, na tela da máquina, o aviso fica
+      no alto e não segura toque nenhum (o dedo passa direto para o botão).
+   2) A tela da máquina se redesenhava inteira a cada segundo depois de qualquer
+      mudança (a "assinatura" da OP nunca era guardada). Cada redesenho troca os
+      botões; um toque no meio disso se perdia. Agora ela só redesenha quando muda
+      alguma coisa de verdade. */
+(function(){try{const s=document.createElement('style');s.textContent=`
+.toast:not(.on){pointer-events:none}
+body.cs-operon .toast{pointer-events:none;top:14px;bottom:auto;transform:translateX(-50%) translateY(-90px);font-size:16px;padding:12px 22px;max-width:80vw}
+body.cs-operon .toast.on{transform:translateX(-50%) translateY(0)}`;document.head.appendChild(s);}catch(e){}})();
+const csAssinOp=()=>{try{const {atual}=csOPdaLinha(CS_OPMAQ);if(!atual)return '';
+  return [atual.id,sit(atual),atual.iniReal||'',atual.envIni||'',atual.fimReal||'',atual.csPausa?atual.csPausa.desde:''].join('|');}catch(e){return '';}};
+try{const _cp63=csPintarOperador;csPintarOperador=function(){
+  const r=_cp63.apply(this,arguments);
+  try{const d=document.getElementById('csOper');if(d&&d.classList.contains('on')&&Date.now()-CS_TOQUE_OP>=700)d.dataset.assin=csAssinOp();}catch(e){}
+  return r;};}catch(e){}
+try{csNucleo.versao='v363';}catch(e){}
+
+</script>
+<script>
+/* ===================== v364 · tablet sem internet: continua rodando e nada se perde =====================
+   Testado derrubando a internet no meio do trabalho (Chromium com toque de verdade):
+   1) A faixa vermelha "Sem conexão" ficava embaixo, em cima do botão PAUSAR: sem internet
+      não dava para pausar. Na tela da máquina fica só a faixa laranja do alto, que não
+      segura toque.
+   2) O que o operador marcava sem internet ficava só na tela e, quando a internet voltava,
+      o tablet lia o banco e APAGAVA tudo (iniciar setup, envase, concluir…). Motivo: na
+      segunda gravação sem internet o sistema passava a achar que aquilo já estava no
+      banco. Agora o tablet guarda à parte "o que o banco tem" e só esquece quando o
+      banco confirmar; ao voltar a internet manda tudo o que foi feito, na ordem.
+   3) Se o tablet for reiniciado sem internet, o que estava pendente continua guardado
+      e sobe quando a internet voltar.
+   4) Tudo confere o banco a cada 2 s: o que o tablet grava aparece na TV e no escritório em até ~2 s. */
+(function(){try{const s=document.createElement('style');s.textContent=`
+body.cs-operon #csSemNet{display:none!important}
+#csSemRede{pointer-events:none}`;document.head.appendChild(s);}catch(e){}})();
+const CS_BASEK='erp.baseBanco';
+const csBaseGet=()=>{try{return localStorage.getItem(CS_BASEK);}catch(e){return null;}};
+const csBaseSet=v=>{try{if(v==null)localStorage.removeItem(CS_BASEK);else if(!localStorage.getItem(CS_BASEK))localStorage.setItem(CS_BASEK,v);}catch(e){}};
+/* gravou sem banco: o "que o banco tem" não anda */
+try{const _ps64=persistir;persistir=async function(){
+  if(!(typeof temNuvem==='function'&&temNuvem()))return _ps64.apply(this,arguments);
+  const U0=ULTIMO;const r=await _ps64.apply(this,arguments);
+  try{
+    if(!ONLINE){if(U0!=null)csBaseSet(U0);const b=csBaseGet();if(b!=null)ULTIMO=b;}
+    else if(ULTIMO===corpoDados())csBaseSet(null);
+  }catch(e){}
+  return r;};}catch(e){}
+/* abriu sem internet: a cópia do aparelho, mas a base continua sendo o que o banco tem */
+try{const _rl64=restaurarLocal;restaurarLocal=async function(){
+  const r=await _rl64.apply(this,arguments);
+  try{const b=csBaseGet();if(b!=null&&typeof temNuvem==='function'&&temNuvem())ULTIMO=b;}catch(e){}
+  return r;};}catch(e){}
+/* leu o banco (abrindo ou voltando a internet): o que ficou pendente vai por cima e sobe */
+try{const _ic64=iniciarComNuvem;iniciarComNuvem=async function(){
+  const base=csBaseGet();let loc=null;try{if(base!=null)loc=localStorage.getItem(CHAVE);}catch(e){}
+  const r=await _ic64.apply(this,arguments);
+  try{if(ONLINE&&base!=null&&loc){
+    const ops=csDiff(csLimpo(base),csLimpo(loc),[],[]);
+    if(ops.length){const novo=csAplicaOps(csLimpo(corpoDados()),ops);
+      RECEBENDO=true;try{aplicarEstado(JSON.stringify(novo));}finally{RECEBENDO=false;}
+      agendarSalvar();try{render();}catch(e){}
+      try{if(document.body.classList.contains('cs-operon'))csPintarOperador();}catch(e){}
+      console.info('subindo o que foi feito sem internet:',ops.length,'mudanças');}
+    else csBaseSet(null);
+  }}catch(e){console.warn('pendente sem internet',e);}
+  return r;};}catch(e){}
+/* TV, escritório e tablets: conferem o banco a cada 2 s (antes 4 s nos tablets/TV e 8 s no escritório).
+   A conferência é só o número da versão; os dados só descem quando alguém gravou. */
+try{ligarPolling=function(){clearInterval(tPoll);tPoll=setInterval(conferirNuvem,2000);};
+  if(typeof tPoll!=='undefined'&&tPoll)ligarPolling();}catch(e){}
+try{csNucleo.versao='v364';}catch(e){}
+/* reiniciou com coisa pendente: o retrato tirado antes de tudo (CS_LOC0/CS_BASE0, no topo da página)
+   vai por cima do banco assim que o sistema estiver pronto e conectado */
+(function(){
+  if(!window.CS_BASE0||!window.CS_LOC0)return;
+  let n=0;const t=setInterval(()=>{try{
+    if(++n>600){clearInterval(t);return;}
+    if(!(typeof PRONTO!=='undefined'&&PRONTO&&ONLINE)||salvando||RECEBENDO)return;
+    clearInterval(t);
+    const ops=csDiff(csLimpo(window.CS_BASE0),csLimpo(window.CS_LOC0),[],[]);
+    window.CS_BASE0=null;window.CS_LOC0=null;
+    if(!ops.length){csBaseSet(null);return;}
+    const novo=csAplicaOps(csLimpo(corpoDados()),ops);
+    RECEBENDO=true;try{aplicarEstado(JSON.stringify(novo));}finally{RECEBENDO=false;}
+    agendarSalvar();try{render();}catch(e){}
+    try{if(document.body.classList.contains('cs-operon'))csPintarOperador();}catch(e){}
+    console.info('subindo o que ficou pendente antes de reiniciar:',ops.length,'mudanças');
+  }catch(e){console.warn('pendente ao reiniciar',e);}},500);
+})();
+
 </script>
 </body>
 </html>
