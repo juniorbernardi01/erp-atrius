@@ -5449,7 +5449,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v364';
+const VERSAO_APP='v365';
 let DRAG=null;
 function render(){
   recomporTudo();
@@ -26874,6 +26874,305 @@ try{csNucleo.versao='v364';}catch(e){}
     console.info('subindo o que ficou pendente antes de reiniciar:',ops.length,'mudanças');
   }catch(e){console.warn('pendente ao reiniciar',e);}},500);
 })();
+
+</script>
+<script>
+/* ===================== v365 · Tela do Envase no layout aprovado (06/10) =====================
+   Desenho do Junior (quadro "Tela do Envase · layout do Junior"):
+   - título da máquina cinza escuro; a cor do estado vai na BORDA do card e no SELO do canto;
+   - "OP Começou em dd/mm - hh:mm" em laranja quando a OP veio de outro dia;
+   - foto, nome, chips LOTE · OP Nº · TANQUE/ VOLUME · QTD PREVISTA, e os botões ao lado da foto;
+   - bloco de tempos: Setup e Envase em linhas, Previsto (início → fim | duração) e
+     Realizado (início → fim | diferença: + vermelho atrasou, − verde ganhou);
+     embaixo o total previsto e a frase ("Passou X min do previsto");
+   - fila: selos PROGRAMADA + LOTE LIBERADO/NÃO LIBERADO, e o previsto;
+   - concluídas: card cinza, QTD PREVISTA / REALIZADA (%) / QUEBRA (%), Total Previsto e
+     Total Realizado, selo ★ DENTRO DO PRAZO ou COM ATRASO;
+   - a bolinha ⋯ (o mesmo menu de sempre) em todos os cards.
+   Só a apresentação muda: os botões chamam as mesmas funções (marcarEtapa, finalizarEnvase,
+   concluir, csPausar, csRetomar) pelos mesmos data-csac; o ⋯ abre o mesmo csCtx. */
+(function(){try{const s=document.createElement('style');s.id='cs5css';s.textContent=`
+#tqgrid.dia .tqcol.cs5col{width:auto!important;flex:1 1 0;min-width:340px;border-radius:6px;background:#fff;border:1px solid #DDE3EC;overflow:hidden}
+.cs5col .tqh.cs5h{background:#404040!important;color:#fff;padding:10px 14px;border:0}
+.cs5h .n{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.cs5h .n>b{font:700 20px Inter,system-ui,sans-serif!important;color:#fff!important;letter-spacing:0!important}
+.cs5h .cs-livre{background:#16A34A!important;color:#fff!important;border:0!important;border-radius:999px!important;padding:3px 10px!important;font:700 11px Inter,sans-serif!important}
+.cs5h .cs-livre i{display:none}
+.cs5h .s{color:#E5E7EB;font-size:12px;margin-top:3px}
+.cs5col .tqb{padding:12px;display:flex;flex-direction:column;gap:12px;background:#fff}
+.cs5{position:relative;border-radius:12px;background:#fff;border:1px solid #DDE3EC;padding:12px 14px;display:flex;flex-direction:column;gap:8px;font-family:Inter,system-ui,sans-serif;color:#1A1D23;box-shadow:none;margin:0;cursor:default}
+.cs5.cs5v{border:2px solid var(--c5,#1D4ED8);padding:12px 16px 10px}
+.cs5.cs5c{background:#E8E8EA;border-color:#DCDCE0}
+.cs5 .t5{display:flex;align-items:center;gap:6px;min-height:26px}
+.cs5 .t5 .ini{font-size:14px;color:#F08A24;font-weight:500;white-space:nowrap}
+.cs5 .t5 .sp{flex:1}
+.cs5 .sl{font-size:10.5px;font-weight:700;letter-spacing:.04em;border-radius:999px;padding:3px 10px;white-space:nowrap;border:1px solid currentColor}
+.cs5 .sl.ch{color:#fff!important}
+.cs5 .cs-pts{position:static!important;width:28px;height:28px;border-radius:999px;border:1px solid #CBD5E1;background:#fff;display:inline-flex;align-items:center;justify-content:center;flex:none;padding:0;cursor:pointer;color:#475569}
+.cs5 .c5{display:flex;gap:14px;align-items:stretch}
+.cs5 .f5{flex:none;border-radius:10px;background:#DCE7F6;overflow:hidden;display:flex;align-items:center;justify-content:center}
+.cs5 .f5 img{width:100%;height:100%;object-fit:contain;background:#fff}
+.cs5 .d5{flex:1;min-width:0;display:flex;flex-direction:column;gap:8px}
+.cs5 .n5{font-weight:700;color:#2D4FA0;line-height:1.08}
+.cs5.cs5v .n5{font-size:22px}.cs5.cs5f .n5{font-size:16px}.cs5.cs5c .n5{font-size:16px;color:#3F3F46}
+.cs5 .k5{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.cs5 .k5.k3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.cs5col{container-type:inline-size}
+.cs5 .c5 .nl{width:110px;flex:none}
+.cs5 .k5.k3 b{font-size:12px}
+.cs5 .b5{display:grid;grid-template-columns:3fr 1fr;gap:8px}
+.cs5 .b5 button{height:40px;border-radius:10px;font:700 14.5px Inter,sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;width:100%}
+.cs5 .b5 .pr{background:#2D4FA0;color:#fff;border:0}
+.cs5 .b5 .pr.set{background:#0F172A}.cs5 .b5 .pr.apo{background:#6D28D9}.cs5 .b5 .pr.fim{background:#2D4FA0}
+.cs5 .b5 .pa{background:#FFF4F2;color:#B91C1C;border:1px solid #F6C7C0}
+.cs5 .b5.so{grid-template-columns:1fr}
+.cs5 .g5{display:grid;grid-template-columns:62px 1fr 1fr;gap:6px 7px;align-items:center}
+.cs5 .g5 .r{background:#EEF1F6;border:1px solid #CBD5E1;border-radius:8px;height:30px;display:flex;align-items:center;justify-content:center;font-size:12.5px;font-weight:600;color:#334155}
+.cs5 .g5 .r.tp{background:#fff;height:24px;font-size:11px;font-weight:500}
+.cs5 .g5 .hp,.cs5 .g5 .hr{border-radius:8px;height:24px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700}
+.cs5 .g5 .hp{background:#CDD2DA;color:#1E293B}.cs5 .g5 .hr{background:#FBC9A0;color:#7C2D12}
+.cs5 .g5 .cp,.cs5 .g5 .cr{border-radius:8px;height:30px;padding:0 10px;display:grid;grid-template-columns:1fr 18px 1fr 14px 1.15fr;align-items:center;font:600 14px Inter,sans-serif;white-space:nowrap;overflow:hidden}
+.cs5 .g5 .cp>span:nth-child(3),.cs5 .g5 .cr>span:nth-child(3){text-align:center}
+.cs5 .g5 .cp{background:#E4E6EA}.cs5.cs5c .g5 .cp{background:#F6F7F9}
+.cs5 .g5 .cr{background:#FDE6D5}
+.cs5 .g5 .a{text-align:center;color:#334155}.cs5 .g5 .cr .a{color:#F08A24}
+.cs5 .g5 .bar{width:2px;height:18px;background:#475569;justify-self:center}.cs5 .g5 .cr .bar{background:#F08A24}
+.cs5 .g5 .du{color:#9CA3AF;text-align:center;font-weight:500}
+.cs5 .g5 .df{text-align:right;font-weight:600}
+.cs5 .g5 .df.mais{color:#DC2626}.cs5 .g5 .df.menos{color:#15803D}
+.cs5 .g5 .vz{color:#94A3B8}
+.cs5 .g5 .to{display:grid;grid-template-columns:1fr 18px 1fr 14px 1.15fr;padding:0 10px;font:500 12.5px Inter,sans-serif;color:#9CA3AF;align-items:center}
+.cs5 .g5 .to .lb{grid-column:1/4;white-space:nowrap}.cs5 .g5 .to .vl{text-align:center;font-weight:600}
+.cs5 .g5 .to.rl .vl{text-align:right;color:#6B7280}
+.cs5 .g5 .fr{text-align:right;font-size:13px;font-weight:600;padding-right:2px}
+.cs5 .fr.ver{color:#DC2626}.cs5 .fr.vd{color:#15803D}.cs5 .fr.ci{color:#64748B}
+.cs5 .tr5{display:flex;align-items:center;padding-top:6px;border-top:1px solid #EEF1F5}
+.cs5 .tr5 .e{display:flex;flex-direction:column;align-items:center;gap:2px;width:78px;flex:none}
+.cs5 .tr5 .e .bo{width:22px;height:22px;border-radius:99px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:700;border:2px solid #CBD5E1;background:#fff;box-sizing:border-box}
+.cs5 .tr5 .e.ok .bo{background:#15803D;border-color:#15803D}.cs5 .tr5 .e.ag .bo{background:#2D4FA0;border-color:#2D4FA0}.cs5 .tr5 .e.neg .bo{background:#DC2626;border-color:#DC2626}
+.cs5 .tr5 .e b{font-size:11.5px;color:#334155}.cs5 .tr5 .e.ok b{color:#15803D}.cs5 .tr5 .e.ag b{color:#2D4FA0}.cs5 .tr5 .e.neg b{color:#DC2626}
+.cs5 .tr5 .e i{font-style:normal;font-size:10.5px;color:#475569}
+.cs5 .tr5 .se{flex:1;display:flex;align-items:center;margin-top:-26px;padding:0 2px}
+.cs5 .tr5 .se:before{content:"";flex:1;height:1.5px;background:#9AA6B8}.cs5 .tr5 .se:after{content:"▶";color:#9AA6B8;font-size:9px;margin-left:-2px}
+.cs5 .pv5{background:#FBF6EC;border:1px solid #EFDDB8;border-radius:9px;height:30px;padding:0 12px;display:flex;gap:12px;align-items:center}
+.cs5 .pv5 span{font-size:10.5px;font-weight:700;letter-spacing:.08em;color:#7C4A03}.cs5 .pv5 b{font-size:14.5px}
+.cs5 .av5{font-size:12px;border-radius:8px;padding:6px 10px;background:#FEF2F2;color:#B91C1C;font-weight:600}
+.cs5 .av5.am{background:#FFF7E6;color:#92400E}
+.cs5col .cs5s{border-radius:6px;padding:8px 12px;font:700 11.5px Inter,sans-serif;letter-spacing:.06em;text-transform:uppercase;display:flex;align-items:center;gap:8px;width:100%;text-align:left;border:0;cursor:default}
+.cs5col .cs5s.fi{background:#EEF2F7;border-left:4px solid #475569;color:#334155}
+.cs5col .cs5s.co{background:#ECFDF3;border-left:4px solid #15803D;color:#15803D;cursor:pointer}
+.cs5col .cs5s em{margin-left:auto;font-style:normal;font-weight:600;text-transform:none;letter-spacing:0;color:#64748B}
+.cs5col .cs-viva{display:flex;flex-direction:column;gap:12px}
+.cs5col .cs5ls{display:flex;flex-direction:column;gap:12px}
+@container (max-width:560px){.cs5.cs5c .c5{flex-wrap:wrap;align-items:center}.cs5.cs5c .f5{width:52px!important;height:64px!important}.cs5.cs5c .c5 .nl{width:calc(100% - 70px)}.cs5.cs5c .c5 .d5{flex-basis:100%}}
+@container (max-width:540px){.cs5 .k5:not(.k3){grid-template-columns:repeat(2,minmax(0,1fr))}}
+@container (max-width:470px){
+ .cs5 .t5 .ini{font-size:12.5px}
+ .cs5 .g5{grid-template-columns:52px 1fr 1fr;gap:5px}
+ .cs5 .g5 .r{font-size:11.5px}
+ .cs5 .g5 .cp,.cs5 .g5 .cr{padding:0 6px;font-size:12.5px;grid-template-columns:1fr 14px 1fr 10px 1.1fr}
+ .cs5 .g5 .to{padding:0 6px;grid-template-columns:1fr 14px 1fr 10px 1.1fr;font-size:11.5px}
+ .cs5 .g5 .fr{font-size:12px}
+ .cs5 .b5 button{font-size:13px}
+ .cs5.cs5v .n5{font-size:19px}
+ .cs5 .tr5 .e{width:64px}
+}
+.cs5 .k5>span{background:#F4F6FA;border:1px solid #DDE3EC;border-radius:9px;padding:4px 8px;min-width:0}
+.cs5.cs5c .k5>span{background:#F7F7F8}
+.cs5 .k5 i{display:block;font-style:normal;font-size:9.5px;font-weight:600;letter-spacing:.03em;color:#334155;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cs5 .k5 b{display:block;font-size:12.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cs5 .k5 b.az{color:#2D4FA0}.cs5 .k5 .qb i,.cs5 .k5 .qb b{color:#A35A00}
+`;document.head.appendChild(s);}catch(e){}})();
+
+const cs5esc=s=>{try{return escAttr(String(s==null?'':s));}catch(e){return String(s==null?'':s);}};
+const cs5hm=m=>(m==null||isNaN(m))?'':hhmm(Math.round(m));
+const cs5dur=m=>{if(m==null||isNaN(m))return '';m=Math.max(0,Math.round(m));return p2(Math.floor(m/60))+':'+p2(m%60);};
+const cs5hmin=m=>{m=Math.max(0,Math.round(m));const h=Math.floor(m/60),r=m%60;return h?`${h}h${p2(r)}min`:`${r} min`;};
+const cs5min=m=>{m=Math.round(Math.abs(m));return m>=60?cs5hmin(m):m+' min';};
+const cs5pct=(a,b)=>b?(Math.round(a/b*1000)/10).toLocaleString('pt-BR')+'%':'—';
+const cs5nome=o=>{try{const p=prodOf(o.codigo)||{};return String(p.descricao||nomeCurto(p)||o.codigo).replace(/\s*[-–]\s*(CX|FD|PC|CT|PT|SC|BD|GL|BB)\b.*$/i,'').trim();}catch(e){return String(o.codigo);}};
+const cs5foto=(o,w,h)=>{let u='';try{u=fotoDe(o.codigo);}catch(e){}
+  return `<div class="f5" style="width:${w}px;height:${h}px">${u?`<img class="cs-foto" src="${cs5esc(u)}" alt="" onerror="this.remove()">`:'<i class="cs-foto" style="display:none"></i>'}</div>`;};
+const cs5pts=o=>`<button type="button" class="cs-pts" data-cs5pts="${cs5esc(o.id)}" title="Mais ações">${(()=>{try{return csSvg('pts',2,15);}catch(e){return '&#8943;';}})()}</button>`;
+const cs5sel=(t,cor,cheio)=>cheio?`<span class="sl ch" style="background:${cor};border-color:${cor}">${t}</span>`
+  :`<span class="sl" style="color:${cor};background:#fff">${t}</span>`;
+/* veio de outro dia: o primeiro turno */
+function cs5Comecou(o){try{const ant=(typeof csTurnosAntes==='function'?csTurnosAntes(o):[]).slice().sort((a,b)=>(a.data+(a.ini||'')).localeCompare(b.data+(b.ini||'')));
+  if(!ant.length)return '';const t=ant[0];return `OP Começou em ${dCurto(t.data)}${t.ini?' - '+t.ini:''}`;}catch(e){return '';}}
+/* o estado da OP da vez: mesmas palavras e cores da TV e do tablet */
+function cs5Estado(o){
+  const st=sit(o),ag=hm(relogio()),hoje=o.data===ymd(new Date());const tol=+TOLERANCIA||0;
+  if(o.csPausa)return {t:'PAUSADA',c:'#CA8A04'};
+  if(st==='finalizado')return {t:'A APONTAR',c:'#6D28D9'};
+  if(st==='programada')return atrasada(o)?{t:'AGUARDANDO SETUP · ATRASADA',c:'#DC2626'}:{t:'AGUARDANDO SETUP',c:'#1D4ED8'};
+  if(st==='preparacao'){const d=o.iniReal&&hoje?ag-hm(o.iniReal):0;return d>(+o.setup||0)+tol?{t:'SETUP ATRASADO',c:'#DC2626'}:{t:'EM SETUP',c:'#475569'};}
+  if(st==='producao')return atrasada(o)?{t:'ENVASE ATRASADO',c:'#DC2626'}:{t:'ENVASANDO',c:'#15803D'};
+  return {t:(ST[st]||st).toUpperCase(),c:'#64748B'};
+}
+/* os tempos de uma OP: previsto e realizado por etapa */
+function cs5Tempos(o){
+  const st=sit(o),ag=hm(relogio()),hoje=o.data===ymd(new Date());
+  const cont=(typeof csTurnosAntes==='function'&&csTurnosAntes(o).length)>0;
+  const temSetup=!!(+o.setup)&&!cont;
+  const sDur=temSetup?+o.setup:0;
+  let fp=NaN;try{fp=fimPrev(o);}catch(e){}
+  const eDur=Math.max(0,(typeof total==='function'?total(o):0)-sDur);
+  const eIni=isNaN(fp)?o.inicio+sDur:fp-Math.max(0,total(o)-sDur);
+  const L=[];
+  /* setup */
+  if(temSetup){
+    const r={a:o.iniReal||'',b:'',d:null};
+    if(!o.iniReal){const f=fimSetup(o);if(f)r.b=f;}
+    if(o.iniReal){const f=fimSetup(o);
+      if(f){r.b=f;try{r.d=dvSetup(o);}catch(e){}}
+      else if(st==='preparacao'){r.b='agora';if(hoje){const x=ag-hm(o.iniReal)-sDur;if(x>0)r.d=x;}}}
+    L.push({n:'Setup',p:{a:cs5hm(o.inicio),b:cs5hm(o.inicio+sDur),d:cs5dur(sDur)},r});
+  }else L.push({n:'Setup',p:{a:'—',b:'—',d:''},r:{a:'—',b:'—',d:null},vz:true});
+  /* envase */
+  {const r={a:'',b:'',d:null};const ie=o.envIni||(o.fimReal&&!temSetup?iniEnvase(o):'');
+    if(ie){r.a=ie;
+      if(o.fimReal){r.b=o.fimReal;try{r.d=dvEnvase(o);}catch(e){}}
+      else if(st==='producao'){r.b='agora';if(hoje){let par=0;try{par=csParado(o,ie,relogio())||0;}catch(e){}const x=ag-hm(ie)-par-(typeof csEnvDia==='function'?csEnvDia(o):eDur);if(x>0)r.d=x;}}}
+    L.push({n:'Envase',p:{a:cs5hm(eIni),b:cs5hm(fp),d:cs5dur(eDur)},r});}
+  return {L,tp:sDur+eDur,sDur,eDur,fp,temSetup};
+}
+function cs5Linha(x){
+  const cel=(v,cls)=>`<span class="${cls||''}">${cs5esc(v)}</span>`;
+  const p=x.p,r=x.r;
+  const pv=`<div class="cp">${cel(p.a)}<span class="a">→</span>${cel(p.b)}<span class="bar"></span><span class="du">${cs5esc(p.d)}</span></div>`;
+  const dd=r.d==null||r.d===0?'':(r.d>0?`+${cs5min(r.d)}`:`−${cs5min(r.d)}`);
+  const rv=`<div class="cr">${r.a?cel(r.a):'<span class="vz">—</span>'}<span class="a">→</span>${r.b?cel(r.b):'<span class="vz">—</span>'}<span class="bar"></span><span class="df ${r.d>0?'mais':r.d<0?'menos':''}">${dd}</span></div>`;
+  return `<div class="r">${x.n}</div>${pv}${rv}`;
+}
+function cs5Bloco(o,modo){
+  const T=cs5Tempos(o),st=sit(o),ag=hm(relogio()),hoje=o.data===ymd(new Date());
+  let h=`<div class="g5"><div class="r tp">Tempos</div><div class="hp">Previsto</div><div class="hr">Realizado</div>${T.L.map(cs5Linha).join('')}`;
+  if(modo==='conc'){
+    let tr=null;try{const s=T.temSetup?(setupReal(o)||0):0,e=envaseReal(o);tr=e==null?null:s+e;}catch(e){}
+    const dif=tr==null?null:tr-T.tp;const tol=+TOLERANCIA||0;
+    const fr=dif==null?['ci','']:dif>0?['ver',`Passou ${cs5min(dif)} do previsto`]:dif<0?['vd',`Terminou ${cs5min(dif)} antes do previsto`]:['vd','No previsto'];
+    h+=`<span></span><div class="to"><span class="lb">Total Previsto</span><span></span><span class="vl">${cs5dur(T.tp)}</span></div>
+      <div class="to rl"><span class="lb">Total Realizado</span><span></span><span class="vl">${tr==null?'—':cs5hmin(tr)}</span></div>
+      <span></span><span></span><div class="fr ${fr[0]}">${fr[1]}</div>`;
+    o._cs5atr=dif!=null&&dif>tol;
+  }else{
+    let fr=['ci',''];
+    if(st==='programada')fr=atrasada(o)&&hoje?['ver',`Atrasada ${cs5min(ag-o.inicio)} para começar`]:['ci','Ainda não começou'];
+    else if(o.csPausa)fr=['ver',`Pausada desde ${o.csPausa.desde||''}`];
+    else if(['preparacao','producao'].includes(st)){let fe=NaN;try{fe=fimEsperado(o);}catch(e){}
+      fr=atrasada(o)&&hoje&&!isNaN(fe)?['ver',`Passou ${cs5min(ag-fe)} do previsto`]:['vd','Dentro do previsto'];}
+    else if(st==='finalizado')fr=['ci','Envase terminou · falta apontar a contagem'];
+    h+=`<span></span><div class="to"><span class="lb"></span><span></span><span class="vl">${cs5dur(T.tp)}</span></div><div class="fr ${fr[0]}">${fr[1]}</div>`;
+  }
+  return h+'</div>';
+}
+function cs5Botoes(o){
+  const st=sit(o);
+  if(st==='finalizado')return `<div class="b5 so"><button type="button" class="pr apo" data-csac="conc">&#9635; Apontar contagem</button></div>`;
+  if(o.csPausa)return `<div class="b5 so"><button type="button" class="pr" data-csac="retomar">&#9654; Retomar linha</button></div>`;
+  let et=null;try{et=etapaAtual(o);}catch(e){}
+  if(!et)return '';
+  const rot=(typeof csRotEtapa==='function')?csRotEtapa(o,et):'Iniciar';
+  const cls=et==='fim'?'fim':et==='setup'?'set':'env';
+  return `<div class="b5"><button type="button" class="pr ${cls}" data-csac="${et==='fim'?'fin':'etapa'}">&#9654; ${cs5esc(rot)}</button><button type="button" class="pa" data-csac="pausa">PAUSAR</button></div>`;
+}
+function cs5Trilha(o){
+  let es=['pend','pend','pend','pend'];try{es=csEstados(o);}catch(e){}
+  const st=sit(o),ativa=['preparacao','producao','finalizado'].includes(st);
+  const sub=['liberado','enche e fecha','contagem','liberado'];
+  const nomes=['Tanque','Envase','Quarentena','Estoque'];
+  return `<div class="tr5">${nomes.map((n,i)=>{let x=es[i];if(i===0&&x==='pend'&&(ativa||st==='programada'))x='neg';
+    const tx=x==='ok'?(i===0?'liberado':'ok'):x==='neg'?'não liberado':x==='ag'?(i===1?(st==='preparacao'?'setup':'agora'):'a contar'):sub[i];
+    const bo=x==='ok'?'&#10003;':x==='ag'?'<i style="width:5px;height:5px;border-radius:9px;background:#fff;display:block"></i>':x==='neg'?'!':'';
+    return `<div class="e ${x}"><span class="bo">${bo}</span><b>${n}</b><i>${tx}</i></div>`;}).join('<div class="se"></div>')}</div>`;
+}
+const cs5Chips=(o,n)=>{
+  const tq=`${o.tanque||'a programar'} - ${nf(o.litros)}L`;
+  const base=[['LOTE',o.lote||'—',1],['OP Nº',rotuloOP(o),1],['TANQUE/ VOLUME',tq,0]];
+  if(n===3)return `<div class="k5 k3">${base.map(c=>`<span><i>${c[0]}</i><b class="${c[2]?'az':''}">${cs5esc(c[1])}</b></span>`).join('')}</div>`;
+  base.push(['QTD PREVISTA',`${nf(caixasPrev(o))} ${und(o)}`,0]);
+  return `<div class="k5">${base.map(c=>`<span><i>${c[0]}</i><b class="${c[2]?'az':''}">${cs5esc(c[1])}</b></span>`).join('')}</div>`;
+};
+const cs5Avisos=o=>{let h='';try{
+  if(o.tinyAjuste&&!o.tinyAjuste.em)h+=`<div class="av5 am">Caixas corrigidas depois do envio — falta ajustar o estoque no Tiny.</div>`;
+  const st=sit(o);if(!['concluida','cancelada','finalizado'].includes(st)&&fimEsperado(o)>jorn(o.maq)[1])h+=`<div class="av5 am">Passa das ${hhmm(jorn(o.maq)[1])} — continua amanhã</div>`;
+}catch(e){}return h;};
+/* card da OP da vez */
+function cs5CardVez(o,conf){
+  const E=cs5Estado(o),ini=cs5Comecou(o);
+  return `<div class="bat cs5 cs5v${conf&&conf.has&&conf.has(o.id)?' fora':''}" data-fo="${cs5esc(o.id)}" data-csok="1" style="--c5:${E.c}">
+    <div class="t5">${ini?`<span class="ini">${cs5esc(ini)}</span>`:''}<span class="sp"></span>${cs5sel(E.t,E.c,true)}${cs5pts(o)}</div>
+    <div class="c5" style="margin-top:-4px">${cs5foto(o,104,132)}<div class="d5" style="justify-content:space-between">
+      <div class="n5">${cs5esc(cs5nome(o))}</div>${cs5Chips(o,4)}${cs5Botoes(o)}</div></div>
+    ${cs5Bloco(o,'vez')}${cs5Trilha(o)}${cs5Avisos(o)}</div>`;
+}
+/* card da fila */
+function cs5CardFila(o,conf){
+  let lib=false;try{lib=!!loteLiberado(o);}catch(e){}
+  const T=cs5Tempos(o);
+  return `<div class="bat cs5 cs5f${conf&&conf.has&&conf.has(o.id)?' fora':''}" data-fo="${cs5esc(o.id)}" data-csok="1">
+    <div class="t5"><span class="sp"></span>${cs5sel('PROGRAMADA','#475569')}${lib?cs5sel('LOTE LIBERADO','#15803D'):cs5sel('LOTE NÃO LIBERADO','#DC2626')}${cs5pts(o)}</div>
+    <div class="c5" style="margin-top:-2px">${cs5foto(o,76,104)}<div class="d5">
+      <div class="n5">${cs5esc(cs5nome(o))}</div>${cs5Chips(o,4)}
+      <div class="pv5"><span>PREVISTO</span><b>${cs5hm(o.inicio)} → ${cs5hm(T.fp)}</b></div></div></div>${cs5Avisos(o)}</div>`;
+}
+/* card concluído */
+function cs5CardFim(o,conf){
+  const ini=cs5Comecou(o);const canc=sit(o)==='cancelada';
+  const prev=caixasPrev(o),feitas=o.caixas==null?null:+o.caixas,q=feitas==null?null:Math.max(0,prev-feitas);
+  const bloco=cs5Bloco(o,'conc');   /* calcula o atraso antes dos selos */
+  const sel=canc?cs5sel('CANCELADA','#64748B'):cs5sel('CONCLUÍDA','#15803D')+(o._cs5atr?cs5sel('COM ATRASO','#C2410C'):cs5sel('★ DENTRO DO PRAZO','#15803D'));
+  const qt=`<div class="k5 k3"><span><i>QTD PREVISTA</i><b>${nf(prev)} ${und(o)}</b></span>
+    <span><i>QTD REALIZADA</i><b>${feitas==null?'—':`${nf(feitas)} ${und(o)} - ${cs5pct(feitas,prev)}`}</b></span>
+    <span class="qb"><i>QTD QUEBRA</i><b>${q==null?'—':`${nf(q)} ${und(o)} - ${cs5pct(q,prev)}`}</b></span></div>`;
+  return `<div class="bat cs5 cs5c" data-fo="${cs5esc(o.id)}" data-csok="1">
+    <div class="t5">${ini?`<span class="ini">${cs5esc(ini)}</span>`:''}<span class="sp"></span>${sel}${cs5pts(o)}</div>
+    <div class="c5" style="margin-top:-4px">${cs5foto(o,76,104)}
+      <div class="n5 nl">${cs5esc(cs5nome(o))}</div>
+      <div class="d5">${cs5Chips(o,3)}${qt}</div></div>
+    ${canc?'':bloco}${cs5Avisos(o)}</div>`;
+}
+/* a coluna da máquina, no dia */
+try{const _cm65=colunaMaq;colunaMaq=function(m,data,conf,estreita){
+  if(estreita)return _cm65.apply(this,arguments);
+  try{
+    const itens=[...ORDENS.filter(o=>o.maq===m&&o.data===data&&naGrade(o)).map(o=>({tipo:'op',o,de:o.inicio,ate:o.fimReal?hm(o.fimReal):fimPrev(o)})),
+      ...turnosNoDia(m,data).map(x=>({tipo:'turno',o:x.o,t:x.t,de:x.de,ate:x.ate}))].sort((a,b)=>a.de-b.de);
+    const ops=itens.filter(x=>x.tipo==='op');const outros=itens.filter(x=>x.tipo!=='op');
+    const [ji,jf]=jorn(m);const ocup=unidosNaJanela(itens,ji,jf);const livre=Math.max(0,(jf-ji)-ocup);
+    const fim=ops.filter(x=>['concluida','cancelada'].includes(sit(x.o)));
+    const abertos=ops.filter(x=>!fim.includes(x));
+    const vez=abertos.find(x=>['preparacao','producao','finalizado'].includes(sit(x.o)))||abertos[0];
+    abertos.forEach(x=>CS_CHEIAS.delete(x.o.id));if(vez)CS_CHEIAS.add(vez.o.id);
+    const fila=abertos.filter(x=>x!==vez);
+    /* tempo livre depois da última OP (o mesmo cálculo de antes) */
+    let livreTot=0,livreIni=null;
+    {const hoje=data===ymd(new Date());const agm=hoje?hm(relogio()):(data<ymd(new Date())?24*60:0);
+      const ult=ops.filter(x=>sit(x.o)!=='cancelada').reduce((t,x)=>Math.max(t,isNaN(x.ate)?t:x.ate),ji);
+      let pd=[{de:Math.max(ult,agm,ji),ate:jf}];
+      ((typeof PAUSAS!=='undefined'&&PAUSAS[m])||[]).forEach(p=>{const a=hm(p.de),b=hm(p.ate);
+        pd=pd.flatMap(x=>{if(b<=x.de||a>=x.ate)return [x];const r=[];if(a>x.de)r.push({de:x.de,ate:a});if(b<x.ate)r.push({de:b,ate:x.ate});return r;});});
+      pd=pd.filter(x=>x.ate-x.de>=SNAP);if(pd.length){livreTot=pd.reduce((t,x)=>t+(x.ate-x.de),0);livreIni=pd[0].de;}}
+    const n=ops.length;
+    const estoura=(()=>{try{const k=csEstouros(data).filter(e=>e.o.maq===m).length;return k?`<button type="button" class="cs-estoura" data-estoura="${data}" title="Ver o aviso">${k} OP${k>1?'s':''} passa${k>1?'m':''} do dia</button>`:'';}catch(e){return '';}})();
+    const jd=(()=>{try{const j=jornDia(m,data);return j?`${hhmm(j[0])}–${hhmm(j[1])}`:'não roda hoje';}catch(e){return `${hhmm(ji)}–${hhmm(jf)}`;}})();
+    const ab=(window.CS_FIM_AB||[]).includes(m+'|'+data);
+    const corpo=`<div class="cs-viva">${vez?cs5CardVez(vez.o,conf):''}${outros.map(x=>cardTurno(x,false)).join('')}${vez?'':(data===ymd(new Date())?'<div class="cs-vazio">Nenhuma OP na linha agora</div>':'')}</div>`
+      +(fila.length?`<div class="cs5s fi">Próximas na fila (${fila.length})</div>`+fila.map(x=>cs5CardFila(x.o,conf)).join(''):'')
+      +(fim.length?`<button type="button" class="cs5s co" data-fimtg="${cs5esc(m+'|'+data)}">${ab?'▼':'▶'}&nbsp; Concluídas hoje (${fim.length})<em>${ab?'guardar':'mostrar'}</em></button>`
+        +(ab?`<div class="cs5ls">${fim.map(x=>cs5CardFim(x.o,conf)).join('')}</div>`:''):'');
+    return `<div class="tqcol cs-maq cs5col">
+      <div class="tqh cs5h"><div class="n"><b>${cs5esc(m)}</b>${livreTot?`<button type="button" class="cs-livre" data-gd="${data}" data-gm="${cs5esc(m)}" data-gi="${livreIni}" title="Programar a partir das ${hhmm(livreIni)}">${hmm(livreTot)} livres<i>+</i></button>`:''}${estoura}</div>
+        <div class="s">${n?`${n} OP${n>1?'s':''}`:'Sem programação'} · ${jd}${jornAjustada(m,data)?' · ajustado':''} · ${Math.floor(ocup/60)}h${p2(ocup%60)} ocupada</div></div>
+      <div class="tqb">${corpo}</div></div>`;
+  }catch(e){console.warn('tela do envase nova',e);return _cm65.apply(this,arguments);}
+};}catch(e){}
+/* a bolinha ⋯ do card novo: o mesmo menu de sempre (ligada como a antiga, no próprio botão) */
+try{const _rd65=render;render=function(){const r=_rd65.apply(this,arguments);
+  try{document.querySelectorAll('[data-cs5pts]').forEach(b=>{if(b.dataset.lig)return;b.dataset.lig='1';
+    b.onclick=ev=>{try{csCtx(ev,b.dataset.cs5pts,null);}catch(e){}};});}catch(e){}
+  return r;};}catch(e){}
+try{csNucleo.versao='v365';}catch(e){}
 
 </script>
 </body>
