@@ -200,6 +200,10 @@ body.imprimindo #imp{display:block}.gaveta,.veu{display:none!important}}
 <div class="app" id="app"><div class="vazio">Carregando…</div></div>
 <div class="veu" id="veu"></div><div class="gaveta" id="gav"></div>
 
+<script>/* v372: busca sem acento — "agua" acha "água" em todo campo de busca */
+(function(){try{const AC=/[\u00C0-\u024F]/;const str=s=>String(s).normalize('NFD').replace(/[\u0300-\u036f]/g,'');const inc=String.prototype.includes;
+Object.defineProperty(String.prototype,'includes',{configurable:true,writable:true,value:function(q,pos){if(typeof q==='string'&&(AC.test(this)||AC.test(q)))return inc.call(str(this),str(q),pos);return inc.call(this,q,pos);}});}catch(e){}})();
+</script>
 <script>
 /* =====================================================================
    Estoque · ERP Atrius · módulo do ERP Atrius
@@ -572,12 +576,11 @@ function novoInv(){
     <div class="cmp"><label>Nome</label><input id="gNm" style="width:100%" value="${esc($('gNm')?$('gNm').value:'')}" placeholder="ex.: Matéria-prima · fechamento de setembro"></div>
     <div class="cmp" style="margin-top:14px"><label>O que entra · nenhuma marcada é o inventário geral</label>
       <div style="display:flex;gap:6px;flex-wrap:wrap">${tags.map(t=>`<button class="chip ${sel.has(t)?'on':''}" data-t="${esc(t)}">${esc(t)} <i>${N.insumos().filter(x=>x.tipo===t).length}</i></button>`).join('')}</div></div>
-    <div class="aviso" style="margin-top:16px">⚠ <div>O saldo de cada item é congelado agora${N.saldosEm()?', a partir da leitura do Tiny das '+esc(N.saldosEm()):''}. Leia os saldos antes, se a última leitura for velha.</div></div>
-    <button class="btn" id="gLer">↻ Ler saldos do Tiny agora</button></div>
+    <div class="aviso" style="margin-top:16px">⚠ <div>O saldo de cada item é congelado agora, como está no ERP. A contagem é comparada com ele.</div></div></div>
     <div class="gr"><button class="btn" id="gN">Cancelar</button><button class="btn pri" id="gOk">Abrir inventário</button></div>`);
     $('gX').onclick=$('gN').onclick=()=>gaveta(null);
     document.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>{const t=b.dataset.t;sel.has(t)?sel.delete(t):sel.add(t);desenha();});
-    $('gLer').onclick=async()=>{if(N.teste)return toast('Versão de teste: leitura do Tiny desligada. O saldo congelado fica zero.',true);
+    if($('gLer'))$('gLer').onclick=async()=>{if(N.teste)return toast('Versão de teste: leitura do Tiny desligada. O saldo congelado fica zero.',true);
       $('gLer').disabled=true;$('gLer').textContent='Lendo…';
       const ids=N.insumos().filter(x=>!sel.size||sel.has(x.tipo)).map(x=>String(x.tiny||'').replace(/\D/g,'')).filter(Boolean);
       try{await N.lerSaldos(ids);toast('Saldos lidos.');}catch(e){toast('Tiny: '+e.message,true);}desenha();};

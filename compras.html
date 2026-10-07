@@ -425,6 +425,10 @@ select.st-h,select.st-a,select.st-b{border-radius:999px;font-weight:600}
 <div class="app" id="app"><div class="vazio">Carregando…</div></div>
 <div class="veu" id="veu"></div><div class="gaveta" id="gav"></div>
 
+<script>/* v372: busca sem acento — "agua" acha "água" em todo campo de busca */
+(function(){try{const AC=/[\u00C0-\u024F]/;const str=s=>String(s).normalize('NFD').replace(/[\u0300-\u036f]/g,'');const inc=String.prototype.includes;
+Object.defineProperty(String.prototype,'includes',{configurable:true,writable:true,value:function(q,pos){if(typeof q==='string'&&(AC.test(this)||AC.test(q)))return inc.call(str(this),str(q),pos);return inc.call(this,q,pos);}});}catch(e){}})();
+</script>
 <script>
 /* =====================================================================
    Compras · ERP Atrius · módulo do ERP Atrius

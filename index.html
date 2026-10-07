@@ -4941,7 +4941,7 @@ function ordem(o){
   if(dig&&pn&&proxLote(pn.tanque)==null)PROX_LOTE[pn.tanque]=dig+1;
   /* lote é do tanque: herda do irmão da mesma batelada ou tira número novo */
   if(!nova.lote&&nova.tanque)nova.lote=loteDaBatelada(nova,true)||'';
-  numerarOP(nova);
+  if(typeof csIrmaDeNumero!=='function')numerarOP(nova);
   return nova;
 }
 
@@ -5095,7 +5095,7 @@ function proximaLetra(opNum){
   return 'Z';
 }
 /* as irmãs de uma OP de envase, na ordem das letras */
-const irmasDe=o=>!o||!o.opNum?[]:ORDENS.filter(x=>x.opNum===o.opNum&&x.opLetra)
+const irmasDe=o=>!o||!o.opNum?[]:ORDENS.filter(x=>x.opNum===o.opNum&&(x.opLetra||(typeof csOpNovo==='function'&&csOpNovo(x)&&x!==o)))
   .sort((a,b)=>String(a.opLetra).localeCompare(String(b.opLetra)));
 const fimPlan=o=>inicioPlan(o)+total(o);
 /* quantos minutos a fila empurrou esta OP para frente */
@@ -5449,7 +5449,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v368';
+const VERSAO_APP='v372';
 let DRAG=null;
 function render(){
   recomporTudo();
@@ -8267,10 +8267,10 @@ function folha(titulo,cod,codsub,corpo){
   .idl .lote .v{font-size:24px;font-weight:800;line-height:1.05;
     font-variant-numeric:tabular-nums}
   .idl .mid{min-width:0;display:flex;flex-direction:column;justify-content:center}
-  .idl .nm{font-size:25px;font-weight:800;line-height:1.02;text-transform:uppercase;
-    letter-spacing:-.02em}
-  .idl .nm em{font-style:normal;font-size:14px;font-weight:700;letter-spacing:0;
-    color:#374151;margin-left:9px;white-space:nowrap}
+  .idl .nm{font-size:22px;font-weight:800;line-height:1.08;text-transform:uppercase;
+    letter-spacing:-.01em;overflow-wrap:anywhere}
+  .idl .nm em{display:block;font-style:normal;font-size:15px;font-weight:700;letter-spacing:.02em;
+    color:#374151;margin:4px 0 0;white-space:nowrap}
   .idl .inf{font-size:10px;color:#4B5563;margin-top:2px}
   .idl .fab{border-left:2px solid #12151A;padding-left:16px;text-align:right;
     display:flex;flex-direction:column;justify-content:center}
@@ -8982,8 +8982,8 @@ function imprimirOPEnvase(o){
   const mae=o.opNum?String(o.opNum).padStart(4,'0'):null;
   /* o nome vai por extenso: abreviação serve para caber no card da tela,
      não no papel que alguém lê na linha */
-  const nome=p.descricao||nomeCurto(o.codigo);
-  const fmt=p.un_cx?`${und(o).toUpperCase()} C/${p.un_cx} UN`:'';
+  const nome=String(p.descricao||nomeCurto(o.codigo)).replace(/\s*[-–]\s*(CX|FD|PC|CT|PT|SC|BD|GL|BB)\b.*$/i,'').trim().toUpperCase();
+  const fmt=p.un_cx?`${und(o).toUpperCase()} C/ ${p.un_cx} UN`:'';
 
   const corpo=`
     ${cabecalhoOP(o.lote,nome,fmt,`SKU ${o.codigo}`,o.data,p.tanque)}
@@ -9047,15 +9047,15 @@ function imprimirOPEnvase(o){
     ${linhaLivre('Problemas — o que atrasou, o que quebrou, o que faltou',3)}
     ${linhaLivre('Observações',3)}
     ${assinar2('Operador da linha','Gestor ou supervisor')}
-    ${rodapeOP(`OP ${mae?`${mae}-${o.opLetra||'A'}`:rotuloOP(o)} · lote ${
+    ${rodapeOP(`OP ${rotuloOP(o)} · lote ${
       o.lote||'—'} · ${nome}`)}`;
 
   csFolhaModal({titulo:'OP de envase',
     sub:`${nomeCurto(o.codigo)} · ${o.maq||'—'} · lote ${o.lote||'—'}`,
     arquivo:csNomeOP(o),
     html:folha('Ordem de produção — Envase',
-    mae?`${mae}-${o.opLetra||'A'}`:rotuloOP(o),
-    mae?`tanque ${mae}`:'',
+    rotuloOP(o),
+    mae?`tanque ${String(o.opNum).padStart(4,'0')}`:'',
     corpo)});
 }
 
@@ -12315,6 +12315,10 @@ function salvar(){
       const gA=csGranel(EDIT),pN=prodOf(f.codigo),gN=pN?pN.tanque:gA;
       if(gN&&gN!==gA){const prov={...EDIT,...f,lote:''};const lt=loteDaBatelada(prov,true);f.lote=lt||'';
         registrar(EDIT,'Lote renumerado',null,`${EDIT.lote||'—'} → ${f.lote||'—'} · mudou de ${gA} para ${gN}`);}}}catch(e){}
+    /* v370: guarda do lote — repetido ou fora da sequência não grava; lote travado não muda */
+    try{if(typeof csConfereLoteOP==='function'&&String(f.lote||'')!==String(EDIT.lote||'')){
+      if(csLoteTravado(EDIT)&&EDIT.lote){toast(`O lote ${EDIT.lote} já foi liberado/impresso/iniciado: não muda mais. Cancele a OP e lance outra se precisar.`,true);return;}
+      const erro=csConfereLoteOP({...EDIT,...f},f.lote);if(erro){toast(erro,true);if(M('fLote'))M('fLote').focus();return;}}}catch(e){}
     const antes=retrato(EDIT);
     const eraPendente=EDIT.status==='pendente';
     /* mexeu no início de uma OP que já começou: é decisão de gente, não da fila.
@@ -12328,6 +12332,7 @@ function salvar(){
     if(f.inicio!=null&&f.inicio!==EDIT.inicio)EDIT.inicioManual=true;
     if(HORA_MANUAL)EDIT.inicioManual=true;
     Object.assign(EDIT,f);
+    try{if(typeof csOpNovo==='function'&&(csOpNovo(EDIT)||!EDIT.opNum)&&(antes.lote!==EDIT.lote||antes.tanque!==EDIT.tanque||antes.codigo!==EDIT.codigo))numerarOP(EDIT);}catch(e){}
     if(eraPendente){EDIT.status='programada';
       registrar(EDIT,'Saldo reprogramado',null,`${f.maq} ${hhmm(f.inicio)} em ${dCurto(f.data)}`);}
     else var mud=mudancas(antes,f);
@@ -26189,7 +26194,7 @@ gradeOrdens=function(){
       <button class="od2ord b" id="odAbreT" type="button">${grupos.length&&grupos.every(g=>CS_MAE_AB.has(g.b.chave)||(!!OD_BUSCA.trim()&&g.filhas.length<=4&&!CS_MAE_FE.has(g.b.chave)))?'⊟ fechar todas':'⊞ abrir todas'}</button>
       <button class="od2ord b" id="odLimpa" type="button">✕ limpar filtros</button>
       <span style="flex:1"></span><button class="btn pri" id="odNova">+ Nova OP</button></div>
-    ${conf.length?`<div class="od2av">⚠ <b>${conf.length} lote${conf.length>1?'s':''} para conferir</b> — número repetido em outra batelada do mesmo granel, ou fora da sequência, em OPs que já começaram (as que não começaram foram corrigidas sozinhas). <button class="btn lk sm" id="odConf">ver quais</button></div>`:''}
+    ${''/* v371: tarja retirada */}${false?`<div class="od2av">⚠ <b>${conf.length} lote${conf.length>1?'s':''} para conferir</b> — número repetido em outra batelada do mesmo granel, ou fora da sequência, em OPs que já começaram (as que não começaram foram corrigidas sozinhas). <button class="btn lk sm" id="odConf">ver quais</button></div>`:''}
     <div class="od2abas">${OD2_ABAS.map(([k,r,c])=>`<button data-odab="${k}" class="${k===OD_ABA?'on':''}" style="--cor:${c}">${r}<b>${nf(conta(k))}</b></button>`).join('')}</div>
     ${l.length?`<div class="od2rol"><table class="od2t"><thead><tr><th style="width:30px"><span class="od2ck ${l.length&&l.every(x=>OD2.sel.has(x.o.id))?'on':''}" id="odCkT"></span></th><th style="width:34px"></th>
       ${col('num','Nº OP')}${col('data','Data')}${col('prod','Produto')}${col('lote','Lote')}${col('maq','Máquina')}${col('tq','Tanque')}${col('sit','Situação')}<th>Integração</th><th>Marcadores</th></tr></thead><tbody>
@@ -27062,7 +27067,7 @@ function cs5Bloco(o,modo){
     o._cs5atr=dif!=null&&dif>tol;
   }else{
     let fr=['ci',''];
-    if(st==='programada')fr=atrasada(o)&&hoje?['ver',`Atrasada ${cs5min(ag-o.inicio)} para começar`]:['ci','Ainda não começou'];
+    if(st==='programada')fr=atrasada(o)&&hoje&&ag>csPrevIni(o)?['ver',`Atrasada ${cs5min(ag-csPrevIni(o))} para começar`]:['ci','Ainda não começou'];
     else if(o.csPausa)fr=['ver',`Pausada desde ${o.csPausa.desde||''}`];
     else if(['preparacao','producao'].includes(st)){let fe=NaN;try{fe=fimEsperado(o);}catch(e){}
       fr=atrasada(o)&&hoje&&!isNaN(fe)?['ver',`Passou ${cs5min(ag-fe)} do previsto`]:['vd','Dentro do previsto'];}
@@ -27119,7 +27124,7 @@ function cs5CardFila(o,conf){
     <div class="t5"><span class="sp"></span>${cs5sel('PROGRAMADA','#475569')}${lib?cs5sel('LOTE LIBERADO','#15803D'):cs5sel('LOTE NÃO LIBERADO','#DC2626')}${cs5pts(o)}</div>
     <div class="c5" style="margin-top:-2px">${cs5foto(o,76,104)}<div class="d5">
       <div class="n5">${cs5esc(cs5nome(o))}</div>${cs5Chips(o,4)}
-      <div class="pv5"><span>PREVISTO</span><b>${cs5hm(o.inicio)} → ${cs5hm(T.fp)}</b></div></div></div>${cs5Avisos(o)}</div>`;
+      <div class="pv5"><span>PREVISTO</span><b>${cs5hm(csPrevIni(o))} → ${cs5hm(T.fp)}</b></div></div></div>${cs5Avisos(o)}</div>`;
 }
 /* card concluído */
 function cs5CardFim(o,conf){
@@ -28591,6 +28596,522 @@ function cs5CardTurno(x,conf){
     <div class="c5" style="margin-top:-4px">${cs5foto(o,76,104)}<div class="n5 nl">${cs5esc(cs5nome(o))}</div><div class="d5">${chips1}${chips2}</div></div>${bloco}</div>`;
 }
 try{csNucleo.versao='v368';}catch(e){}
+
+</script>
+<script>
+/* ===================== v369 · número da OP por lote; letra só com dois produtos; PDF da OP =====================
+   Numeração: um número por lote do tanque (OP mãe). Os envases desse lote usam o mesmo número;
+   a letra (-A, -B) só aparece quando saem DOIS produtos diferentes do mesmo lote. Um produto só:
+   tanque OP 0002, envase OP 0002. O número não é mais copiado quando se duplica uma OP (era isso
+   que fazia a Água Sanitária acumular 125-A … 125-L em lotes diferentes).
+   As OPs de antes desta versão mantêm o número e a letra que já têm (as folhas impressas valem).
+   PDF da OP: nome em cima sem a embalagem, "CX C/ 6 UN" na linha de baixo. */
+function csOpNovoDesde(){
+  const k=CS_MIGRA.find(x=>String(x).startsWith('op-novo:'));
+  if(k)return +k.split(':')[1]||0;
+  const n=(typeof PROX_OP!=='undefined'&&PROX_OP)||1;
+  CS_MIGRA.push('op-novo:'+n);try{agendarSalvar();}catch(e){}
+  return n;
+}
+const csOpNovo=o=>!!(o&&o.opNum&&o.opNum>=csOpNovoDesde());
+/* a irmã de lote: mesmo lote, mesmo tanque, mesmo granel, viva */
+function csIrmaDeNumero(o){
+  if(!o||!o.lote||!o.tanque)return null;
+  const g=csGranel(o);
+  return ORDENS.find(x=>x!==o&&x.id!==o.id&&x.opNum&&csLoteVivo(x)&&String(x.lote)===String(o.lote)&&(x.tanque||'')===(o.tanque||'')&&csGranel(x)===g)||null;
+}
+numerarOP=function(o){
+  const irma=csIrmaDeNumero(o);
+  if(irma){o.opNum=irma.opNum;}
+  else{
+    /* número copiado de outra OP (duplicar) ou de outro lote: não vale */
+    const deOutro=o.opNum&&ORDENS.some(x=>x!==o&&x.id!==o.id&&x.opNum===o.opNum&&(String(x.lote||'')!==String(o.lote||'')||(x.tanque||'')!==(o.tanque||'')));
+    if(!o.opNum||deOutro)o.opNum=novoNumeroOP();
+  }
+  if(o.opNum>=csOpNovoDesde())o.opLetra='';   /* na numeração nova a letra é decidida na hora de mostrar */
+  return o;
+};
+/* letras: pela ordem em que cada produto entrou no lote */
+function csLetraOP(o){
+  if(!csOpNovo(o))return o.opLetra||'';
+  const irm=ORDENS.filter(x=>x.opNum===o.opNum&&csLoteVivo(x));
+  const prods=[...new Set(irm.sort((a,b)=>(a.data+String(a.inicio??0).padStart(5,'0')+a.id).localeCompare(b.data+String(b.inicio??0).padStart(5,'0')+b.id)).map(x=>String(x.codigo)))];
+  if(prods.length<2)return '';
+  return 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'[prods.indexOf(String(o.codigo))]||'';
+}
+rotuloOP=function(o){
+  if(!o)return '—';
+  if(o.opNum){const l=csLetraOP(o);return `${String(o.opNum).padStart(4,'0')}${l?'-'+l:''}`;}
+  return String(o.id).slice(-6).toUpperCase();
+};
+csNomeOP=function(o){
+  return csNomeArquivo([o.opNum?`OP${rotuloOP(o)}`:`OP ${o.id}`,(prodOf(o.codigo)||{}).descricao||nomeCurto(o.codigo),o.lote?`L ${o.lote}`:'']);
+};
+/* OP nova (ordem) e OP editada (lote/tanque/produto mudaram): número do lote */
+try{const _or69=ordem;ordem=function(o){const n=_or69.apply(this,arguments);try{numerarOP(n);}catch(e){}return n;};}catch(e){}
+try{csNucleo.versao='v369';}catch(e){}
+
+</script>
+<script>
+/* ===================== v370 · relatório da OP com os problemas relatados; guarda dos lotes =====================
+   RELATÓRIO DA OP (o "Histórico"): depois de Previsto × Realizado entra o bloco PROBLEMAS RELATADOS NO
+   LOTE — Setup | Envase | Quebras — com cada motivo marcado nos tablets e no apontamento (grupo,
+   detalhe, custo em minutos ou fardos/litros, hora, quem) e o resumo embaixo. O histórico fica abaixo
+   só com os demais registros (sem repetir os motivos), com os fins de turno destacados. O relatório
+   imprime e salva em PDF.
+   LOTES: o número do lote é registro do produto (Anvisa, supermercado). Além da regra de numeração,
+   agora há uma guarda em três pontos: (1) ao gravar uma OP, lote repetido ou fora da sequência do
+   granel é recusado com aviso; (2) o que chega de outro aparelho é conferido na hora — duas pessoas
+   lançando ao mesmo tempo não ficam com o mesmo número; (3) uma auditoria contínua mostra qualquer
+   anomalia (repetido, pulo, OP sem lote) com um aviso vermelho no topo, e o lote não muda mais depois
+   que o tanque foi liberado ou a folha impressa. */
+
+/* ---------- problemas relatados: os dados ---------- */
+function csProblemasOP(o){
+  const S=[],E=[],Q=[];
+  const un=und(o);
+  const quem=o.operador||'';
+  /* setup */
+  try{const ds=Math.max(0,dvSetup(o)||0);
+    const m=o.setupMotivo;
+    if(m&&(m.principal||(m.itens||[]).length)){const it=m.itens&&m.itens.length?m.itens:[{g:m.grupo,s:m.principal},...(m.secundarios||[]).map(s=>({g:(csGrupoDaSub(s)||{}).nome,s}))];
+      it.forEach((x,i)=>S.push({g:x.g||'(sem grupo)',s:x.s||'',custo:i===0&&ds?`+${cs5min(ds)}`:'',quando:(fimSetup(o)||o.envIni)?`${dCurto(o.data)} ${fimSetup(o)||o.envIni}`:dCurto(o.data),quem}));}
+    else{const le=(typeof csMotivosOP==='function'?csMotivosOP(o):[]).filter(x=>x.et==='setup');le.forEach((x,i)=>S.push({g:x.g,s:x.s,custo:i===0&&ds?`+${cs5min(ds)}`:'',quando:dCurto(o.data),quem}));}
+  }catch(e){}
+  /* envase: pausas e motivos do fim */
+  try{(o.pausasOp||[]).forEach(p=>E.push({g:p.g||'Pausa',s:p.s||p.obs||'',custo:`pausa ${cs5min(+p.min||0)}`,quando:`${dCurto(p.dia||o.data)} ${p.desde||''}${p.ate?' → '+p.ate:''}`,quem:p.quem||quem,pausa:true}));
+    const de=Math.max(0,(+o.atrasoMin||0)||(dvEnvase(o)||0));
+    const le=(typeof csMotivosOP==='function'?csMotivosOP(o):[]).filter(x=>x.et==='envase');
+    le.forEach((x,i)=>E.push({g:x.g,s:x.s,custo:i===0&&de?`+${cs5min(de)}`:'',quando:o.fimReal?`${dCurto(o.data)} ${o.fimReal}`:dCurto(o.data),quem}));
+  }catch(e){}
+  /* quebra */
+  try{const lq=(typeof csMotivosOP==='function'?csMotivosOP(o):[]).filter(x=>x.et==='quebra');
+    const qcx=o.caixas!=null?Math.max(0,caixasPrev(o)-o.caixas):0,ql=Math.max(0,quebraL(o)||0);
+    lq.forEach((x,i)=>Q.push({g:x.g,s:x.s,custo:i===0&&qcx?`${nf(qcx)} ${un} · ${nf(Math.round(ql))} L`:'',quando:o.fimReal?`${dCurto(o.data)} ${o.fimReal}`:dCurto(o.data),quem:(o.quemApontou||quem)}));
+  }catch(e){}
+  return {S,E,Q};
+}
+function csProblemasHTML(o,print){
+  const {S,E,Q}=csProblemasOP(o);const un=und(o);
+  let ds=0,de=0,pausas=0,qcx=0,ql=0;
+  try{ds=Math.round(dvSetup(o)||0);}catch(e){}try{de=Math.round((+o.atrasoMin||0)||(dvEnvase(o)||0));}catch(e){}
+  try{pausas=(o.pausasOp||[]).reduce((s,p)=>s+(+p.min||0),0);}catch(e){}
+  try{if(o.caixas!=null){qcx=Math.max(0,caixasPrev(o)-o.caixas);ql=Math.max(0,quebraL(o)||0);}}catch(e){}
+  const pct=(()=>{try{const p=caixasPrev(o);return p?(qcx/p*100).toFixed(1).replace('.',','):'0';}catch(e){return '0';}})();
+  const sinal=v=>v>0?`+${cs5min(v)}`:v<0?`−${cs5min(-v)}`:'no previsto';
+  const col=(tit,cor,fundo,itens,tot,vazio)=>`<div class="pbcol" style="background:${fundo}"><div class="pbh"><b style="color:${cor}">${tit}</b><span style="color:${cor}">${tot}</span></div>
+    ${itens.length?itens.map(x=>`<div class="pbi"><div class="pbt"><b>${escAttr(x.g)}</b><b style="color:${cor}">${escAttr(x.custo||'')}</b></div>${x.s?`<div class="pbs">${escAttr(x.s)}</div>`:''}<div class="pbq">${escAttr(x.quando||'')}${x.quem?' · '+escAttr(x.quem):''}</div></div>`).join(''):`<div class="pbz">${vazio}</div>`}</div>`;
+  const concl=sit(o)==='concluida';
+  const prox=(()=>{try{const seg=seguintes(o)[0];if(!seg||!o.fimReal)return '';const d=hm(o.fimReal)-inicioPlan(seg);return d>0?`Empurrou a próxima OP (${rotuloOP(seg)}) em <b>${cs5min(d)}</b>`:'';}catch(e){return '';}})();
+  return `<div class="pbx${print?' print':''}">
+    <div class="pbtit"><b>PROBLEMAS RELATADOS NO LOTE</b><span>os motivos marcados nos tablets e no apontamento</span></div>
+    <div class="pbg">
+      ${col('SETUP','#475569','#EEF2F7',S,o.iniReal||fimSetup(o)?sinal(ds):'—','Setup dentro do previsto · nenhum motivo')}
+      ${col('ENVASE','#B45309','#FFF7E6',E,(o.fimReal?sinal(de):'em andamento')+((o.pausasOp||[]).length?` · ${(o.pausasOp||[]).length} pausa${(o.pausasOp||[]).length>1?'s':''}`:''),'Envase dentro do previsto · nenhum motivo')}
+      ${col('QUEBRAS','#DC2626','#FEF2F2',Q,concl?(qcx?`${nf(qcx)} ${un} · ${pct}%`:'0'):'—','Sem quebra')}
+    </div>
+    <div class="pbrod"><span>Total de atraso: <b style="color:${ds+de>0?'#DC2626':'#15803D'}">${sinal(ds+de)}</b></span><span>Pausas: <b>${cs5min(pausas)}</b></span><span>Quebra: <b style="color:${qcx?'#DC2626':'#15803D'}">${concl?`${nf(qcx)} ${un} (${nf(Math.round(ql))} L)`:'—'}</b></span>${prox?`<span>${prox}</span>`:''}</div>
+  </div>`;
+}
+(function(){try{const s=document.createElement('style');s.textContent=`
+.pbx{border:1px solid #DDE3EC;border-radius:12px;background:#F8FAFC;padding:12px 14px;display:flex;flex-direction:column;gap:10px;margin:12px 0}
+.pbtit{display:flex;align-items:baseline;gap:10px}.pbtit b{font-size:12.5px;letter-spacing:.06em}.pbtit span{font-size:12px;color:#64748B}
+.pbg{display:flex;gap:10px}.pbcol{flex:1;min-width:0;border-radius:11px;padding:10px;display:flex;flex-direction:column;gap:8px}
+.pbh{display:flex;justify-content:space-between;align-items:center;font-size:12px;letter-spacing:.06em}.pbh span{font-weight:700;letter-spacing:0}
+.pbi{border:1px solid #E5E7EB;border-radius:9px;padding:8px 10px;background:#fff;display:flex;flex-direction:column;gap:3px}
+.pbt{display:flex;justify-content:space-between;gap:8px;font-size:13px}.pbs{font-size:12.5px;color:#334155}.pbq{font-size:11px;color:#64748B}
+.pbz{font-size:12.5px;color:#94A3B8;padding:8px 2px}
+.pbrod{font-size:12px;color:#334155;display:flex;gap:16px;flex-wrap:wrap}
+.cs-hist .log .e.turno{background:#FFF4E8;border-left:3px solid #F08A24;border-radius:6px;padding-left:8px}
+.cs-hist .log .e.turno b:after{content:" · FIM DE TURNO";color:#B45309;font-size:10.5px;letter-spacing:.05em}
+.pbx.print{font-family:system-ui,sans-serif}
+`;document.head.appendChild(s);}catch(e){}})();
+/* o histórico: fim de turno destacado; os motivos já aparecem nos blocos, então saem da linha do tempo */
+const CS_EV_MOTIVO=/^(Motivo do setup|Motivos? d[oa] (envase|quebra|pausa)|Linha pausada|Linha retomada|Motivo informado)/i;
+try{const _hh70=historicoHTML;historicoHTML=function(o){
+  let h=_hh70.apply(this,arguments);
+  try{
+    const tmp=document.createElement('div');tmp.innerHTML=h;
+    tmp.querySelectorAll('.e').forEach(el=>{const b=el.querySelector('b');const t=b?b.textContent:'';
+      if(/^Turno fechado|^Continua no próximo dia|^Fim de turno/i.test(t))el.classList.add('turno');});
+    h=tmp.innerHTML;
+  }catch(e){}
+  return h;};}catch(e){}
+/* o relatório: bloco em cima, histórico embaixo, botão de imprimir/PDF */
+try{const _ch70=csHistorico;csHistorico=function(o){
+  const r=_ch70.apply(this,arguments);
+  try{
+    const d=document.getElementById('csHist');if(!d)return r;
+    const cp=d.querySelector('.cp.hist');if(!cp)return r;
+    const linh=[...cp.querySelectorAll('.linh')].find(x=>/Histórico/.test(x.textContent));
+    const box=document.createElement('div');box.innerHTML=csProblemasHTML(o,false);
+    if(linh)cp.insertBefore(box.firstElementChild,linh);else cp.appendChild(box.firstElementChild);
+    const rod=d.querySelector('.rod');
+    if(rod&&!rod.querySelector('#csHistPdf')){const b=document.createElement('button');b.className='btn sm';b.id='csHistPdf';b.textContent='Imprimir / PDF do relatório';
+      rod.insertBefore(b,rod.firstElementChild.nextSibling);b.onclick=()=>{try{csImprimeRelatorioOP(o);}catch(e){toast('Não consegui montar o relatório: '+e.message,true);}};}
+  }catch(e){console.warn('relatório da OP',e);}
+  return r;};}catch(e){}
+function csImprimeRelatorioOP(o){
+  const p=prodOf(o.codigo)||{};
+  const d=document.getElementById('csHist');
+  const prev=d?d.querySelector('.cp.hist'):null;
+  const tempos=prev?[...prev.children].filter(x=>!x.classList.contains('pbx')&&!x.classList.contains('linh')&&!x.classList.contains('log')).map(x=>x.outerHTML).join(''):'';
+  const hist=historicoHTML(o);
+  const corpo=`<style>
+    .rel h2{font-size:12px;letter-spacing:.06em;color:#4B5563;margin:12px 0 6px}
+    .rel table{width:100%;border-collapse:collapse;font-size:11.5px}.rel td,.rel th{border-bottom:1px solid #E5E7EB;padding:4px 6px;text-align:left}
+    .rel .pbx{break-inside:avoid}.rel .pbg{display:flex;gap:8px}.rel .pbcol{flex:1;border-radius:8px;padding:8px}
+    .rel .pbh{display:flex;justify-content:space-between;font-size:11px;letter-spacing:.06em;margin-bottom:6px}
+    .rel .pbi{border:1px solid #E5E7EB;border-radius:7px;padding:6px 8px;background:#fff;margin-bottom:6px}
+    .rel .pbt{display:flex;justify-content:space-between;font-size:11.5px}.rel .pbs{font-size:11px;color:#334155}.rel .pbq{font-size:10px;color:#64748B}
+    .rel .pbz{font-size:11px;color:#94A3B8}.rel .pbrod{font-size:11px;display:flex;gap:14px;flex-wrap:wrap;margin-top:6px}.rel .pbtit{display:flex;gap:8px;align-items:baseline;margin-bottom:8px}.rel .pbtit b{font-size:11.5px;letter-spacing:.06em}.rel .pbtit span{font-size:10.5px;color:#64748B}
+    .rel .log .dia{font-weight:700;margin:8px 0 3px;font-size:11px;color:#374151}.rel .log .e{display:grid;grid-template-columns:44px 110px 1fr;gap:6px;font-size:11px;padding:2px 0;border-bottom:1px solid #F1F5F9}
+    .rel .log .e.turno{background:#FFF4E8}.rel .log .e em{display:block;color:#4B5563;font-style:normal}.rel .log .tg{font-size:9.5px;color:#B45309;margin-left:4px}
+    .rel .log .e.morta{opacity:.5;text-decoration:line-through}.rel .linf{font-size:11px;color:#374151;margin-top:4px}
+    .rel .cmp{width:100%}
+  </style><div class="rel">
+    ${cabecalhoOP(o.lote,String(p.descricao||nomeCurto(o.codigo)).replace(/\s*[-–]\s*(CX|FD|PC|CT|PT|SC|BD|GL|BB)\b.*$/i,'').trim().toUpperCase(),p.un_cx?`${und(o).toUpperCase()} C/ ${p.un_cx} UN`:'',`SKU ${o.codigo} · ${o.maq||''} · OP ${rotuloOP(o)}`,o.data,p.tanque)}
+    <h2>PREVISTO × REALIZADO</h2>${tempos}
+    ${csProblemasHTML(o,true)}
+    <h2>HISTÓRICO</h2><div class="log">${hist||'<p>Nenhum registro.</p>'}</div>
+    ${rodapeOP(`Relatório da OP ${rotuloOP(o)} · lote ${o.lote||'—'} · ${p.descricao||o.codigo}`)}
+  </div>`;
+  csFolhaModal({titulo:'Relatório da OP',sub:`${nomeCurto(o.codigo)} · ${o.maq||'—'} · lote ${o.lote||'—'}`,
+    arquivo:csNomeArquivo([`Relatorio OP${rotuloOP(o)}`,p.descricao||o.codigo,o.lote?`L ${o.lote}`:'']),
+    html:folha('Relatório da OP',rotuloOP(o),`lote ${o.lote||'—'}`,corpo)});
+}
+
+/* ---------- guarda dos lotes ---------- */
+const csLoteN=o=>+String((o&&o.lote)||'').replace(/\D/g,'')||0;
+/* lote travado: liberado, impresso, começou ou concluído */
+function csLoteTravado(o){
+  try{if(!o||!o.lote)return false;
+    if(!csNaoComecou(o))return true;
+    const b=csLoteDaOP(o);if(b&&(APONTA[b.chave]||{}).liberadoEm)return true;
+    if((o.log||[]).some(l=>/impress|Etiqueta/i.test(String(l.e||''))))return true;
+  }catch(e){}
+  return false;
+}
+/* anomalias: repetido (lotes iguais em bateladas diferentes), pulo na sequência, OP sem lote */
+const CS_AUD_DESDE='2026-10-01';   /* antes disso o PCP antigo numerava; não é auditado */
+function csAuditoriaLotes(){
+  const out=[];
+  const porG={};
+  ORDENS.filter(o=>naGrade(o)&&csLoteVivo(o)&&o.data>=CS_AUD_DESDE).forEach(o=>{const g=csGranel(o);if(!g)return;(porG[g]=porG[g]||[]).push(o);});
+  Object.entries(porG).forEach(([g,l])=>{
+    const porN={};l.forEach(o=>{const n=csLoteN(o);if(!n){out.push({tipo:'sem',g,ops:[o],txt:`OP ${rotuloOP(o)} (${nomeCurto(o.codigo)}, ${dCurto(o.data)}) está sem lote`});return;}(porN[n]=porN[n]||[]).push(o);});
+    Object.entries(porN).forEach(([n,os])=>{
+      const grupos=[];os.forEach(o=>{const gr=grupos.find(x=>x.some(y=>csMesmaBat(y,o)));gr?gr.push(o):grupos.push([o]);});
+      if(grupos.length>1)out.push({tipo:'repetido',g,n:+n,ops:os,txt:`${g}: lote ${n} em ${grupos.length} bateladas diferentes (${os.map(o=>rotuloOP(o)+' '+dCurto(o.data)).join(', ')})`});
+    });
+    /* fora da sequência: número isolado, longe dos outros (como o 1020 no Amaciante); depois, pulos */
+    const ns=[...new Set(Object.keys(porN).map(Number))].sort((a,b)=>a-b);
+    if(ns.length>=2){
+      let fora=[];
+      /* grupos separados por saltos > 40; o grupo certo é o que segue o último lote de antes da janela */
+      const grupos=[[ns[0]]];for(let i=1;i<ns.length;i++){if(ns[i]-ns[i-1]>40)grupos.push([ns[i]]);else grupos[grupos.length-1].push(ns[i]);}
+      if(grupos.length>1){let ref=null;ORDENS.forEach(o=>{if(csLoteVivo(o)&&o.data<CS_AUD_DESDE&&csGranel(o)===g){const n=csLoteN(o);if(n&&(ref==null||n>ref))ref=n;}});
+        const alvo=ref==null?0:grupos.map((gr,i)=>[Math.abs(gr[0]-ref),i]).sort((x,y)=>x[0]-y[0])[0][1];
+        grupos.forEach((gr,i)=>{if(i!==alvo)fora.push(...gr);});}
+      fora.forEach(n=>out.push({tipo:'fora',g,n,ops:porN[n],txt:`${g}: lote ${n} está fora da sequência (${porN[n].map(o=>rotuloOP(o)+' '+dCurto(o.data)).join(', ')}); os outros vão de ${ns.filter(x=>!fora.includes(x))[0]} a ${ns.filter(x=>!fora.includes(x)).slice(-1)[0]}`}));
+      const seq=ns.filter(n=>!fora.includes(n));
+      if(seq.length>=2){const todos=new Set(ORDENS.filter(o=>csLoteVivo(o)&&csGranel(o)===g).map(csLoteN));const faltam=[];for(let n=seq[0];n<=seq[seq.length-1];n++)if(!todos.has(n))faltam.push(n);
+        if(faltam.length)out.push({tipo:'pulo',g,txt:`${g}: a sequência pulou ${faltam.length} número${faltam.length>1?'s':''} (${faltam.slice(0,6).join(', ')}${faltam.length>6?'…':''})`});}
+    }
+  });
+  return out;
+}
+/* aviso no topo quando há anomalia; clicar abre a lista */
+function csAvisoLotes(){
+  try{
+    if(MODO_TV||document.body.classList.contains('cs-operon'))return;
+    const l=csAuditoriaLotes();let a=document.getElementById('csLoteAviso');
+    if(!l.length){if(a)a.remove();return;}
+    if(!a){a=document.createElement('button');a.id='csLoteAviso';a.type='button';a.style.cssText='position:fixed;top:8px;left:50%;transform:translateX(-50%);z-index:1900;background:#DC2626;color:#fff;border:0;border-radius:999px;padding:7px 14px;font:700 12.5px Inter,sans-serif;box-shadow:0 6px 18px rgba(0,0,0,.25);cursor:pointer';document.body.appendChild(a);
+      a.onclick=()=>{const l2=csAuditoriaLotes();M('mAcao')&&(M('mAcao').innerHTML='');M('mTit').textContent='Auditoria dos lotes';M('mSub').hidden=true;
+        M('mB').innerHTML=`<div class="alert">${l2.length} problema${l2.length>1?'s':''} na numeração. Corrija na ficha da OP (campo Lote) ou cancele a OP errada.</div><ul style="font-size:13px;line-height:1.6;padding-left:18px">${l2.map(x=>`<li>${escAttr(x.txt)}</li>`).join('')}</ul>`;
+        M('mF').innerHTML=`<div style="flex:1"></div><button class="btn" id="laF">Fechar</button>`;M('laF').onclick=fecharModal;abrirMask();};}
+    a.textContent=`⚠ Lotes: ${l.length} problema${l.length>1?'s':''} na numeração`;
+  }catch(e){}
+}
+setInterval(csAvisoLotes,8000);setTimeout(csAvisoLotes,6000);
+/* (1) gravar uma OP: lote repetido ou fora da sequência não passa */
+function csConfereLoteOP(o,loteNovo){
+  const n=+String(loteNovo||'').replace(/\D/g,'');if(!n)return '';
+  const g=csGranel(o);if(!g)return '';
+  const outro=ORDENS.find(x=>x!==o&&x.id!==o.id&&naGrade(x)&&csLoteVivo(x)&&csGranel(x)===g&&csLoteN(x)===n&&!csMesmaBat(x,o));
+  if(outro)return `O lote ${n} de ${g} já é da OP ${rotuloOP(outro)} (${dCurto(outro.data)}). Cada lote tem um número só.`;
+  const u=ultimoLote(g);if(u!=null&&n>u+1&&!(PROX_LOTE_MAN&&PROX_LOTE_MAN[g]))return `${g}: o próximo lote da sequência é ${u+1}; ${n} pularia ${n-u-1} número${n-u-1>1?'s':''}. Se for de propósito, acerte a sequência em Formulações.`;
+  return '';
+}
+/* (2) o que chega de outro aparelho: lote repetido em OP que não começou é renumerado na hora */
+try{const _ar70=aplicarRemoto;aplicarRemoto=function(dados){
+  const r=_ar70.apply(this,arguments);
+  try{if(!document.body.classList.contains('cs-operon')&&!MODO_TV){const n=csCorrigeLotes();if(n){toast(`Lote repetido entre dois aparelhos: ${n} OP${n>1?'s':''} renumerada${n>1?'s':''}. Confira no histórico.`,true);render();}}}catch(e){}
+  return r;};}catch(e){}
+/* (3) depois de gravar localmente também */
+try{const _ag70=agendarSalvar;agendarSalvar=function(){try{if(!document.body.classList.contains('cs-operon')&&!MODO_TV){const n=csCorrigeLotes();if(n)toast(`Lote repetido: ${n} OP${n>1?'s':''} renumerada${n>1?'s':''}.`,true);}}catch(e){}return _ag70.apply(this,arguments);};}catch(e){}
+try{csNucleo.versao='v370';}catch(e){}
+
+</script>
+<script>
+/* ===================== v371 · previsto encadeado; lotes fora da sequência; lote anterior =====================
+   1) PREVISTO NA TELA DE ENVASE: uma OP empurra a outra. O previsto de cada OP da máquina começa
+      onde a anterior terminou de verdade (fim real; se ainda não terminou, o fim previsto dela,
+      também encadeado). A duração prevista continua a mesma — só desloca. Euforia terminou 07:55,
+      o Amaciante fica previsto 07:55 → 09:40; terminou 11:30, o Floral fica 11:30 → …
+   2) LOTES FORA DA SEQUÊNCIA: o 1020 que o Amaciante ganhou por engano (nasceu como Floral) virou
+      a referência da sequência — o próximo passou a ser 1021, 1022… Agora um número isolado, longe
+      do resto da sequência do granel, NÃO conta como "último lote": o próximo continua 378. As OPs
+      que ainda não começaram com número desses são renumeradas sozinhas (378, 379…), e a que já
+      rodou (o 1020 concluído) fica como está, no histórico.
+      Faixa nova de propósito: acerte "Próximo lote" em Formulações — aí a faixa vale.
+   3) A tarja vermelha "Lotes: problemas" sai do topo da tela.
+   4) Na ficha da OP, embaixo do lote: "Lote anterior do granel: 377 (OP 0139 · 06/10) · este: 378",
+      para conferir na hora de gerar. */
+
+/* ---------- 1) previsto encadeado ---------- */
+function csPrevIni(o){
+  try{
+    if(!o||o.inicio==null||!o.maq||!o.data)return o?o.inicio:0;
+    const ini=+o.inicio;
+    const lista=ORDENS.filter(x=>x.maq===o.maq&&x.data===o.data&&naGrade(x)&&x.inicio!=null)
+      .sort((a,b)=>(a.inicio-b.inicio)||String(a.id).localeCompare(String(b.id)));
+    const i=lista.findIndex(x=>x===o||x.id===o.id);
+    const P=i>0?lista[i-1]:null;
+    let r=ini;
+    if(P){
+      /* a anterior empurra: o previsto desta nunca fica antes do fim dela (nem antes do plano) */
+      const fimP=P.fimReal?hm(P.fimReal):csPrevFim(P);
+      if(fimP!=null&&!isNaN(fimP))r=Math.max(fimP,ini);
+    }
+    return r;
+  }catch(e){return o.inicio;}
+}
+function csPrevFim(o){try{return csFimComPausa(o.maq,csPrevIni(o),total(o));}catch(e){return NaN;}}
+try{const _t71=cs5Tempos;cs5Tempos=function(o){
+  const pi=csPrevIni(o);
+  if(pi==null||pi===o.inicio)return _t71(o);
+  return _t71(Object.assign({},o,{inicio:pi}));
+};}catch(e){}
+
+/* ---------- 2) lotes fora da sequência ---------- */
+/* números deste granel que estão isolados do resto: grupos separados por saltos > 40; o grupo
+   certo é o maior (empate: o que tem a OP mais antiga). Uma faixa nova acertada em Formulações vale. */
+function csLotesFora(g){
+  try{
+    const porN={};
+    ORDENS.forEach(o=>{if(!csLoteVivo(o)||!naGrade(o)||csGranel(o)!==g)return;const n=csLoteN(o);if(!n)return;(porN[n]=porN[n]||[]).push(o);});
+    const ns=Object.keys(porN).map(Number).sort((a,b)=>a-b);
+    if(ns.length<2)return new Set();
+    const grupos=[[ns[0]]];for(let i=1;i<ns.length;i++){if(ns[i]-ns[i-1]>40)grupos.push([ns[i]]);else grupos[grupos.length-1].push(ns[i]);}
+    if(grupos.length<2)return new Set();
+    const man=(typeof PROX_LOTE_MAN!=='undefined'&&PROX_LOTE_MAN[g]!=null)?+PROX_LOTE_MAN[g]:null;
+    const peso=gr=>[gr.length,-Math.min(...gr.map(n=>porN[n].map(o=>o.data).sort()[0]||'9').map(d=>+String(d).replace(/\D/g,'')||0))];
+    let alvo=0;grupos.forEach((gr,i)=>{const a=peso(gr),b=peso(grupos[alvo]);if(a[0]>b[0]||(a[0]===b[0]&&a[1]>b[1]))alvo=i;});
+    const fora=new Set();
+    grupos.forEach((gr,i)=>{if(i===alvo)return;if(man!=null&&gr[0]>=man&&gr[0]<=man+40)return;gr.forEach(n=>fora.add(n));});
+    return fora;
+  }catch(e){return new Set();}
+}
+ultimoLote=function(g){
+  const fora=csLotesFora(g);let m=null;
+  ORDENS.forEach(o=>{if(!csLoteVivo(o))return;const n=csLoteN(o);if(!n||fora.has(n))return;if(csGranel(o)===g&&(m==null||n>m))m=n;});
+  return m;
+};
+/* OP que ainda não começou com número fora da sequência: recebe o próximo certo */
+function csCorrigeForaSeq(){
+  let n=0;
+  try{
+    const gs=[...new Set(ORDENS.filter(o=>naGrade(o)&&csLoteVivo(o)).map(csGranel).filter(Boolean))];
+    gs.forEach(g=>{
+      const fora=csLotesFora(g);if(!fora.size)return;
+      const ops=ORDENS.filter(o=>naGrade(o)&&csLoteVivo(o)&&csGranel(o)===g&&fora.has(csLoteN(o)));
+      /* por batelada, na ordem do dia/hora */
+      const bats=[];ops.sort((a,b)=>(a.data+String(a.inicio??0).padStart(5,'0')).localeCompare(b.data+String(b.inicio??0).padStart(5,'0')))
+        .forEach(o=>{const b=bats.find(x=>x.n===csLoteN(o)&&x.ops.some(y=>csMesmaBat(y,o)));b?b.ops.push(o):bats.push({n:csLoteN(o),ops:[o]});});
+      bats.forEach(b=>{
+        if(!b.ops.every(o=>typeof csNaoComecou==='function'&&csNaoComecou(o)&&!(typeof csLoteTravado==='function'&&csLoteTravado(o))))return;
+        const novo=proxLote(g);if(novo==null)return;
+        b.ops.forEach(o=>{o.lote=String(novo);try{registrar(o,'Lote corrigido',null,`${b.n} → ${novo} · ${b.n} estava fora da sequência do ${g}`);}catch(e){}n++;});
+      });
+    });
+  }catch(e){}
+  return n;
+}
+/* o "fora da sequência" antigo (abaixo do maior número) media contra o 1020 e renumerava de novo: sai */
+try{const _cf71=csConflitosLote;csConflitosLote=function(){return (_cf71.apply(this,arguments)||[]).filter(c=>c.tipo!=='fora');};}catch(e){}
+try{const _cl71=csCorrigeLotes;csCorrigeLotes=function(){let n=0;try{n=csCorrigeForaSeq();}catch(e){}const m=_cl71.apply(this,arguments)||0;if(n&&!m){try{agendarSalvar();}catch(e){}}return n+m;};}catch(e){}
+
+/* ---------- 3) sem a tarja ---------- */
+csAvisoLotes=function(){try{const a=document.getElementById('csLoteAviso');if(a)a.remove();}catch(e){}};
+
+/* ---------- 4) lote anterior na ficha ---------- */
+function csLoteAnterior(g,o){
+  const fora=csLotesFora(g);let m=null;
+  ORDENS.forEach(x=>{if(!csLoteVivo(x)||x===o||(o&&x.id===o.id))return;const n=csLoteN(x);if(!n||fora.has(n))return;
+    if(csGranel(x)===g&&(m==null||n>m.n||(n===m.n&&x.data>m.o.data)))m={n,o:x};});
+  return m;
+}
+function csDicaLoteAnterior(){
+  try{
+    const hl=M('fLoteHint'),cx=M('fLote');if(!hl||!cx)return;
+    const cod=(M('fPr')||{}).value||'';const p=cod?prodOf(cod):null;if(!p||!p.tanque)return;
+    const g=p.tanque;const o=(typeof EDIT!=='undefined'&&EDIT)?EDIT:null;
+    const ant=csLoteAnterior(g,o);
+    const este=cx.value||cx.placeholder||'';
+    const fora=[...csLotesFora(g)].filter(n=>ORDENS.some(x=>csLoteVivo(x)&&csGranel(x)===g&&csLoteN(x)===n&&x.data>=CS_AUD_DESDE));
+    const avisoFora=fora.length?` · <span class="w">fora da sequência: ${[...fora].sort((a,b)=>a-b).join(', ')}</span>`:'';
+    hl.innerHTML=`<span>Lote anterior do ${escAttr(g)}: <b>${ant?ant.n:'—'}</b>${ant?` (OP ${escAttr(rotuloOP(ant.o))} · ${dCurto(ant.o.data)})`:''}${este?` · este: <b>${escAttr(String(este))}</b>`:''}${avisoFora}</span>`;
+  }catch(e){}
+}
+try{const _c71=calc;calc=function(){const r=_c71.apply(this,arguments);csDicaLoteAnterior();return r;};}catch(e){}
+try{csNucleo.versao='v371';}catch(e){}
+
+</script>
+<script>
+/* ===================== v372 · lotes corrigidos pelo histórico; dropdown com busca; busca sem acento =====================
+   1) LOTES: uma vez, ao abrir (migração 'lotes-seq-372'), todo lote fora da sequência do granel — concluído ou não —
+      é renumerado pelo histórico: o próximo é sempre o último da sequência + 1 (Amaciante: 1020 → 378, 1021 → 379,
+      1022 → 380). Vai junto o texto das movimentações (estoque/Tiny: "OP 148-A · lote 1020" → "lote 378") e o
+      registro no histórico da OP. Depois disso, OP que ainda não começou com número fora da sequência continua
+      sendo renumerada sozinha (v371).
+   2) Ficha da OP: embaixo do Lote só "Lote anterior AMACIANTE AZUL: 377".
+   3) DROPDOWNS: todo select com 6+ opções abre com uma caixa de busca; digitando filtra por nome e por SKU/código,
+      sem diferença de acento. Enter escolhe, Esc fecha. Não entra no tablet nem na TV.
+   4) BUSCA SEM ACENTO: "agua" acha "água" em todos os campos de busca (includes compara sem acentos). */
+
+/* ---------- 4) busca sem acento (vale para todos os filtros, que usam includes) ---------- */
+(function(){try{
+  const AC=/[À-ɏ]/;const str=s=>String(s).normalize('NFD').replace(/[̀-ͯ]/g,'');
+  const inc=String.prototype.includes;
+  Object.defineProperty(String.prototype,'includes',{configurable:true,writable:true,value:function(q,pos){
+    if(typeof q==='string'&&(AC.test(this)||AC.test(q)))return inc.call(str(this),str(q),pos);
+    return inc.call(this,q,pos);}});
+}catch(e){}})();
+const csSemAc2=s=>String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
+
+/* ---------- 1) lotes pelo histórico ---------- */
+function csTrocaLoteTextos(ops,velho,novo,g){
+  const rx=new RegExp(`\\b(lote|Lote) ${velho}\\b`,'g'),rx1=new RegExp(`\\b(lote|Lote) ${velho}\\b`);
+  const nums=ops.map(o=>o.opNum).filter(Boolean);
+  const deOP=s=>nums.some(n=>new RegExp(`\\bOP 0*${n}(-[A-Z])?\\b`).test(String(s||'')));
+  const bate=x=>{const s=`${x.obs||''} ${x.origem||''}`;return rx1.test(s)&&(deOP(s)||s.includes(g)||(x.chave&&String(x.chave).includes('|'+g+'|')));};
+  [...(typeof CS_ELOG!=='undefined'?CS_ELOG:[]),...(typeof FILA_TINY!=='undefined'?FILA_TINY:[])].forEach(x=>{
+    if(!bate(x))return;
+    if(x.obs)x.obs=String(x.obs).replace(rx,`$1 ${novo}`);
+    if(x.origem)x.origem=String(x.origem).replace(rx,`$1 ${novo}`);
+  });
+  try{Object.keys(APONTA).forEach(k=>{const a=APONTA[k];if(a&&String(a.lote||'')===String(velho)&&k.includes('|'+g+'|'))a.lote=String(novo);});}catch(e){}
+}
+function csMigraLotes372(){
+  if(CS_MIGRA.includes('lotes-seq-372'))return 0;
+  if(document.body.classList.contains('cs-operon')||MODO_TV)return 0;
+  let n=0;const feitos=[];
+  try{
+    const gs=[...new Set(ORDENS.filter(o=>naGrade(o)&&csLoteVivo(o)).map(csGranel).filter(Boolean))];
+    gs.forEach(g=>{
+      const fora=csLotesFora(g);if(!fora.size)return;
+      const ops=ORDENS.filter(o=>naGrade(o)&&csLoteVivo(o)&&csGranel(o)===g&&fora.has(csLoteN(o))&&o.data>=CS_AUD_DESDE);
+      if(!ops.length)return;
+      const bats=[];ops.sort((a,b)=>(a.data+String(a.inicio??0).padStart(5,'0')).localeCompare(b.data+String(b.inicio??0).padStart(5,'0')))
+        .forEach(o=>{const b=bats.find(x=>x.n===csLoteN(o)&&x.ops.some(y=>csMesmaBat(y,o)));b?b.ops.push(o):bats.push({n:csLoteN(o),ops:[o]});});
+      bats.forEach(b=>{
+        const novo=proxLote(g);if(novo==null)return;
+        b.ops.forEach(o=>{o.lote=String(novo);try{registrar(o,'Lote corrigido',null,`${b.n} → ${novo} · pelo histórico do ${g}: o anterior era ${novo-1}`);}catch(e){}n++;});
+        csTrocaLoteTextos(b.ops,b.n,novo,g);feitos.push(`${g}: ${b.n} → ${novo}`);
+      });
+      try{PROX_LOTE[g]=proxLote(g);}catch(e){}
+    });
+  }catch(e){}
+  CS_MIGRA.push('lotes-seq-372');
+  try{agendarSalvar();}catch(e){}
+  if(n)try{toast(`Lotes acertados pelo histórico: ${feitos.join(' · ')}`,false);}catch(e){}
+  return n;
+}
+/* a correção automática (v371) espera a migração passar, para a ordem ficar pelo histórico (1020→378, 1021→379…) */
+try{const _cfs72=csCorrigeForaSeq;csCorrigeForaSeq=function(){if(!CS_MIGRA.includes('lotes-seq-372'))return 0;return _cfs72.apply(this,arguments);};}catch(e){}
+setTimeout(function m372(){try{if(!PRONTO)return setTimeout(m372,2000);if(csMigraLotes372())render();}catch(e){}},4000);
+
+/* ---------- 2) dica do lote ---------- */
+csDicaLoteAnterior=function(){
+  try{
+    const hl=M('fLoteHint'),cx=M('fLote');if(!hl||!cx)return;
+    const cod=(M('fPr')||{}).value||'';const p=cod?prodOf(cod):null;if(!p||!p.tanque)return;
+    const g=p.tanque;const o=(typeof EDIT!=='undefined'&&EDIT)?EDIT:null;
+    const ant=csLoteAnterior(g,o);
+    hl.innerHTML=`<span>Lote anterior ${escAttr(g)}: <b>${ant?ant.n:'—'}</b></span>`;
+  }catch(e){}
+};
+
+/* ---------- 3) select com busca ---------- */
+(function(){try{const s=document.createElement('style');s.textContent=`
+#csCombo{position:fixed;z-index:4000;background:#fff;border:1px solid #CBD5E1;border-radius:10px;box-shadow:0 12px 32px rgba(15,23,42,.18);min-width:260px;max-width:min(560px,96vw);font:13px Inter,system-ui,sans-serif;overflow:hidden}
+#csCombo input{width:100%;box-sizing:border-box;border:0;border-bottom:1px solid #E2E8F0;padding:9px 12px;font:13.5px Inter,system-ui,sans-serif;outline:none}
+#csCombo .ls{max-height:300px;overflow:auto}
+#csCombo .it{padding:7px 12px;cursor:pointer;display:flex;gap:8px;align-items:baseline;border-bottom:1px solid #F1F5F9}
+#csCombo .it:last-child{border-bottom:0}#csCombo .it.on,#csCombo .it:hover{background:#EFF6FF}
+#csCombo .it .k{font:600 11.5px ui-monospace,Menlo,monospace;color:#2563EB;min-width:34px}#csCombo .it .g{font-size:11px;color:#94A3B8;margin-left:auto;white-space:nowrap}
+#csCombo .vz{padding:10px 12px;color:#94A3B8}
+#csCombo .it b{background:#FEF3C7;font-weight:600}`;document.head.appendChild(s);}catch(e){}})();
+const CS_COMBO_MIN=6;
+let CS_CB=null;
+function csComboFecha(){const b=document.getElementById('csCombo');if(b)b.remove();CS_CB=null;}
+function csComboAbre(sel,pre){
+  csComboFecha();
+  const opts=[...sel.options].filter(o=>!o.disabled||o.selected).map((o,i)=>({i:o.index,v:o.value,t:o.textContent.trim(),g:(o.parentElement&&o.parentElement.tagName==='OPTGROUP')?o.parentElement.label:'',
+    k:csSemAc2(o.textContent+' '+o.value+' '+(o.dataset&&o.dataset.sku||'')+' '+((o.parentElement&&o.parentElement.label)||''))}));
+  const box=document.createElement('div');box.id='csCombo';
+  box.innerHTML=`<input type="text" placeholder="Digite para buscar… (nome ou código)" autocomplete="off"><div class="ls"></div>`;
+  document.body.appendChild(box);
+  const r=sel.getBoundingClientRect();const larg=Math.max(r.width,260);
+  box.style.left=Math.max(6,Math.min(r.left,window.innerWidth-larg-6))+'px';box.style.minWidth=larg+'px';
+  const alt=Math.min(360,window.innerHeight-20);
+  if(r.bottom+alt<window.innerHeight||r.top<alt)box.style.top=(r.bottom+3)+'px';else box.style.bottom=(window.innerHeight-r.top+3)+'px';
+  const inp=box.querySelector('input'),ls=box.querySelector('.ls');
+  let vis=opts,cur=Math.max(0,opts.findIndex(o=>o.i===sel.selectedIndex));
+  const marca=(t,q)=>{if(!q)return escAttr(t);const n=csSemAc2(t);const i=n.indexOf(q);if(i<0)return escAttr(t);return escAttr(t.slice(0,i))+'<b>'+escAttr(t.slice(i,i+q.length))+'</b>'+escAttr(t.slice(i+q.length));};
+  const pinta=()=>{
+    const q=csSemAc2(inp.value.trim());
+    const parts=q.split(/\s+/).filter(Boolean);
+    vis=parts.length?opts.filter(o=>parts.every(p=>o.k.includes(p))):opts;
+    if(cur>=vis.length)cur=0;
+    ls.innerHTML=vis.length?vis.slice(0,200).map((o,i)=>{const m=/^([A-Za-z0-9.-]{1,10}) · (.*)$/.exec(o.t);
+      return `<div class="it ${i===cur?'on':''}" data-i="${o.i}">${m?`<span class="k">${marca(m[1],parts[0]||'')}</span><span>${marca(m[2],parts[0]||'')}</span>`:`<span>${marca(o.t,parts[0]||'')}</span>`}${o.g?`<span class="g">${escAttr(o.g)}</span>`:''}</div>`;}).join('')
+      :`<div class="vz">Nada com "${escAttr(inp.value)}"</div>`;
+    const on=ls.querySelector('.it.on');if(on&&on.scrollIntoView)on.scrollIntoView({block:'nearest'});
+  };
+  const escolhe=i=>{if(i==null||i<0)return csComboFecha();const mudou=sel.selectedIndex!==i;sel.selectedIndex=i;csComboFecha();
+    if(mudou){sel.dispatchEvent(new Event('input',{bubbles:true}));sel.dispatchEvent(new Event('change',{bubbles:true}));}
+    try{sel.focus({preventScroll:true});}catch(e){}};
+  ls.addEventListener('mousedown',ev=>{const it=ev.target.closest('.it');if(!it)return;ev.preventDefault();escolhe(+it.dataset.i);});
+  inp.addEventListener('input',()=>{cur=0;pinta();});
+  inp.addEventListener('keydown',ev=>{
+    if(ev.key==='ArrowDown'){cur=Math.min(vis.length-1,cur+1);pinta();ev.preventDefault();}
+    else if(ev.key==='ArrowUp'){cur=Math.max(0,cur-1);pinta();ev.preventDefault();}
+    else if(ev.key==='Enter'){ev.preventDefault();if(vis[cur])escolhe(vis[cur].i);}
+    else if(ev.key==='Escape'||ev.key==='Tab'){csComboFecha();try{sel.focus({preventScroll:true});}catch(e){}if(ev.key==='Escape')ev.preventDefault();}
+  });
+  CS_CB={sel,box};
+  inp.value=pre||'';pinta();inp.focus();
+  if(pre)inp.setSelectionRange(pre.length,pre.length);
+}
+const csComboQuer=sel=>sel&&sel.tagName==='SELECT'&&!sel.multiple&&!sel.disabled&&sel.options.length>=CS_COMBO_MIN
+  &&!document.body.classList.contains('cs-operon')&&!(typeof MODO_TV!=='undefined'&&MODO_TV)&&!sel.dataset.semBusca;
+document.addEventListener('mousedown',ev=>{
+  const sel=ev.target&&ev.target.closest&&ev.target.closest('select');
+  if(CS_CB&&!ev.target.closest('#csCombo')){csComboFecha();}
+  if(!csComboQuer(sel))return;
+  ev.preventDefault();csComboAbre(sel,'');
+},true);
+document.addEventListener('keydown',ev=>{
+  const sel=document.activeElement;
+  if(!csComboQuer(sel)||CS_CB)return;
+  if(ev.key.length===1&&!ev.ctrlKey&&!ev.metaKey&&!ev.altKey){ev.preventDefault();csComboAbre(sel,ev.key);}
+  else if(ev.key==='Enter'||ev.key===' '||ev.key==='ArrowDown'){ev.preventDefault();csComboAbre(sel,'');}
+},true);
+window.addEventListener('resize',csComboFecha);document.addEventListener('scroll',ev=>{if(CS_CB&&!(ev.target&&ev.target.closest&&ev.target.closest('#csCombo')))csComboFecha();},true);
+try{csNucleo.versao='v372';}catch(e){}
 
 </script>
 </body>
