@@ -5449,7 +5449,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v372';
+const VERSAO_APP='v373';
 let DRAG=null;
 function render(){
   recomporTudo();
@@ -29112,6 +29112,23 @@ document.addEventListener('keydown',ev=>{
 },true);
 window.addEventListener('resize',csComboFecha);document.addEventListener('scroll',ev=>{if(CS_CB&&!(ev.target&&ev.target.closest&&ev.target.closest('#csCombo')))csComboFecha();},true);
 try{csNucleo.versao='v372';}catch(e){}
+
+</script>
+<script>
+/* ===================== v373 · título da máquina fixo no topo da tela de Envase =====================
+   Rolando a tela, o cabeçalho escuro de cada máquina (MAQ 1 · 3h45 livres · 3 OPs…) fica preso logo abaixo
+   da barra do sistema; só os blocos de produção rolam por trás. */
+(function(){try{const s=document.createElement('style');s.textContent=`
+body.comcasca #tqgrid.dia .tqcol.cs5col,#tqgrid.dia .tqcol.cs5col{overflow:visible!important}
+#tqgrid.dia .tqcol.cs5col .tqh.cs5h{position:sticky;top:calc(var(--cs5top,0px) - 16px);z-index:40;border-radius:6px 6px 0 0;box-shadow:0 6px 14px -8px rgba(0,0,0,.45)}
+#tqgrid.dia .tqcol.cs5col .tqb{border-radius:0 0 6px 6px;overflow:hidden}
+body.tv #tqgrid.dia .tqcol.cs5col .tqh.cs5h{top:calc(var(--cs5top,0px) - 18px)}`;document.head.appendChild(s);}catch(e){}})();
+/* a altura da barra de cima pode variar (zoom, TV): mede e guarda em --cs5top */
+try{const _rd73=render;render=function(){const r=_rd73.apply(this,arguments);
+  try{const h=document.querySelector('header.top');const alt=h&&getComputedStyle(h).position==='sticky'?Math.round(h.getBoundingClientRect().height):0;
+    document.documentElement.style.setProperty('--cs5top',alt+'px');}catch(e){}
+  return r;};}catch(e){}
+try{csNucleo.versao='v373';}catch(e){}
 
 </script>
 </body>
