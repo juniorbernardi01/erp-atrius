@@ -5449,7 +5449,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v366';
+const VERSAO_APP='v368';
 let DRAG=null;
 function render(){
   recomporTudo();
@@ -11275,7 +11275,7 @@ function fecharTurno(o){
        é sobrescrito com o horário do dia seguinte — sem esta fotografia, o
        previsto do turno que fechou deixa de existir e a tela passa a comparar
        o realizado de ontem com o plano de hoje. */
-    turnosDe(o).push({data:dt,ini:i,fim:f,caixas:cx,operador:op.nome,opId:op.id,
+    turnosDe(o).push({data:dt,ini:i,fim:f,caixas:cx,operador:op.nome,opId:op.id,real:{iniReal:o.iniReal||'',setupFim:(typeof fimSetup==='function'?fimSetup(o):o.setupFim)||'',envIni:o.envIni||''},
       em:relogio(),emDia:ymd(new Date()),
       plano:{inicio:o.inicio,setup:turnosDe(o).length?0:(+o.setup||0),
         alvo:cxFaltam(o)+cx,lancada:inicioPlan(o)}});
@@ -12310,6 +12310,11 @@ function salvar(){
       const lt=loteDaBatelada(prov,true);
       if(lt)f.lote=lt;
     }
+    /* v367: trocou o produto para outro granel (OP que não começou): o lote velho não vai junto */
+    try{if(f.codigo&&String(f.lote||'')===String(EDIT.lote||'')&&csNaoComecou(EDIT)){
+      const gA=csGranel(EDIT),pN=prodOf(f.codigo),gN=pN?pN.tanque:gA;
+      if(gN&&gN!==gA){const prov={...EDIT,...f,lote:''};const lt=loteDaBatelada(prov,true);f.lote=lt||'';
+        registrar(EDIT,'Lote renumerado',null,`${EDIT.lote||'—'} → ${f.lote||'—'} · mudou de ${gA} para ${gN}`);}}}catch(e){}
     const antes=retrato(EDIT);
     const eraPendente=EDIT.status==='pendente';
     /* mexeu no início de uma OP que já começou: é decisão de gente, não da fila.
@@ -13026,9 +13031,9 @@ function concluir(o){
         value="${pre.cx!=null?pre.cx:(somaTurnos!=null?'':(o.caixas!=null?o.caixas:prev))}">
       <div class="hint" style="font-size:11px;color:var(--ink3);margin-top:4px">
         ${somaTurnos!=null?`<span style="display:block;background:#E8EEFB;color:#173A73;border-radius:8px;padding:8px 10px;margin:2px 0 6px;font-size:12.5px">
-          Contado no${nTurnos>1?'s':''} turno${nTurnos>1?'s':''} anterior${nTurnos>1?'es':''}: <b>${nf(somaTurnos)} ${und(o)}</b> — ${turnosDe(o).map(t=>
-            `${dCurto(t.data)} · ${nf(t.caixas)} ${und(o)} · contou <b>${escAttr(t.operador||'?')}</b>`).join(' · ')}.
-          Lance o <b>total</b> da OP (o que já foi contado + o que foi feito agora).</span>`:''}
+          <b>Fim de turno</b> ${turnosDe(o).map(t=>
+            `${dCurto(t.data)}: <b>${nf(t.caixas)} ${und(o)}</b> (registro de ${escAttr(t.operador||'?')})`).join(' + ')} · <b>Ficou para hoje: ${nf(Math.max(0,prev-somaTurnos))} ${und(o)}</b>.<br>
+          Lance o <b>TOTAL</b> da OP (registro + hoje). É o total que entra no estoque; o registro do fim de turno não lança estoque.</span>`:''}
         Projetado: ${nf(prev)} ${undLongo(o,prev)} · ${nf(o.litros)} L · ${litrosCx(o)} L por ${undLongo(o,1)}.
         A diferença entra como quebra no relatório.</div></div>
     <div id="cDif" hidden></div>
@@ -14335,18 +14340,15 @@ function abrirLote(b){
           ${mp.map(x=>{
             const t=x.tiny||(insPorNome(x.nome)||{}).tiny;
             const s=situacaoItem(t,x.kg,RES_CACHE);
-            return `<tr class="${s.k==='falta'?'semmp':''}${x._orig?' trocada':''}">
+            return `<tr class="${s.k==='falta'&&!x._rem?'semmp':''}${x._orig?' trocada':''}${x._rem?' mprem':''}">
             ${'' /* em falta, o botão acende: é exatamente aí que a troca é a
                     saída, e ele não pode passar despercebido */}
-            <td class="c"><button class="btroca ico ${s.k==='falta'?'urg':''}"
-              data-troca="${escAttr(x.nome)}" ${trava?'disabled':''}
-              aria-label="Trocar ${escAttr(x.nome)}" title="${trava
-                ?'O lote já foi liberado — a troca só vale antes da liberação'
-                :'Trocar este insumo neste lote'}">${SVG_TROCA}</button></td>
+            <td class="c"><button type="button" class="bmp3 ${s.k==='falta'?'urg':''}" data-mp3="${escAttr(x.nome)}" data-mp3c="${escAttr(b.chave)}" data-mp3d="${escAttr(b.data)}"
+              aria-label="Ações de ${escAttr(x.nome)}" title="Editar, remover ou trocar"><i></i><i></i><i></i></button></td>
             <td>${x.nome}<span class="k mono" style="display:block;font-size:10.5px">${
               escAttr(x.sku||t||'—')}${x._orig?` · no lugar de ${escAttr(x._orig)}`:''}</span></td>
-            <td class="n mono"><b>${nf1(x.kg)}</b> kg</td>
-            <td class="n mono ${s.k==='falta'?'w':'k'}">${s.txt}</td>
+            <td class="n mono"><b>${nf1(x.kg)}</b> kg${x._aj!=null?`<span class="mpaj">ajustado de ${nf1(x._ajBase)} kg · ${escAttr(x._ajMotivo||'')}</span>`:''}${x._rem?`<span class="mpaj">removido · ${escAttr(x._ajMotivo||'')}</span>`:''}</td>
+            <td class="n mono estq ${s.k==='falta'?'w':'k'}">${(()=>{const fis=t!=null&&ESTOQUE[t]!==undefined?+ESTOQUE[t]:null;if(fis==null)return '<span class="k">—</span>';const rv=reservado(t,RES_CACHE);return `<b>${nfSaldo(fis)}</b> kg`;})()}<span class="selo ${s.k==='ok'?'ok':s.k==='falta'?'falta':s.k==='aperto'?'aperto':'sem'}">${s.k==='ok'?'OK':s.k==='falta'?'FALTA':s.k==='aperto'?'APERTADO':'SEM LEITURA'}</span></td>
             <td><input class="lmp" data-lmp="${escAttr(x.nome)}" value="${
               escAttr(loteMP(b,x.nome))}" placeholder="—" ${trava}></td></tr>`;}).join('')}
           <tr><td></td><td class="k">Água e complemento</td>
@@ -14889,7 +14891,7 @@ function metaDoDia(data,ate){
         /* proporcional: OP que ainda está rodando conta só a parte vencida */
         prog+=o.litros*(f-i)/Math.max(1,total(o));
       }
-      if(o.caixas!=null)feito+=o.caixas*litrosCx(o);
+      if(o.caixas!=null)feito+=csCxDia(o)*litrosCx(o);
     });
     const ocupado=unidosNaJanela(jan,ji,fim);
     const vago=Math.max(0,fim-ji-ocupado-pausaMin(m));
@@ -16330,7 +16332,7 @@ function capacidadeMaquina(maq,dias){
     const janelas=[];
     ORDENS.filter(o=>o.maq===maq&&o.data===d&&naGrade(o)).forEach(o=>{
       janelas.push({de:o.inicio,ate:o.fimReal?hm(o.fimReal):fimPrev(o)});
-      if(o.caixas!=null){caixas+=o.caixas;litros+=o.caixas*litrosCx(o);}
+      if(o.caixas!=null){caixas+=csCxDia(o);litros+=csCxDia(o)*litrosCx(o);}
     });
     /* turno de OP que virou o dia: ocupou a máquina e produziu aqui */
     turnosNoDia(maq,d).forEach(x=>{
@@ -17080,7 +17082,7 @@ function gradeInicio(){
 
   /* ---- volume ---- */
   const volPrev=ops.reduce((s,o)=>s+o.litros,0);
-  const volFeito=ops.reduce((s,o)=>s+(o.caixas!=null?o.caixas*litrosCx(o):0),0)
+  const volFeito=ops.reduce((s,o)=>s+(o.caixas!=null?csCxDia(o)*litrosCx(o):0),0)
     +MAQUINAS.reduce((s,m)=>s+turnosNoDia(m,hoje)
       .reduce((a,x)=>a+(x.t.caixas||0)*litrosCx(x.o),0),0);
   const pcVol=volPrev?volFeito/volPrev*100:0;
@@ -17341,7 +17343,7 @@ function dadosDoDia(data){
   const perdaCx=feitas.reduce((s,o)=>s+Math.max(0,caixasPrev(o)-o.caixas),0);
   const perdaL=feitas.reduce((s,o)=>s+Math.max(0,caixasPrev(o)-o.caixas)*litrosCx(o),0);
   const prevL=ops.reduce((s,o)=>s+o.litros,0);
-  const feitoL=feitas.reduce((s,o)=>s+o.caixas*litrosCx(o),0);
+  const feitoL=feitas.reduce((s,o)=>s+csCxDia(o)*litrosCx(o),0);
   const atrasadas=ops.filter(o=>o.fimReal&&hm(o.fimReal)>fimEsperado(o)).length;
   const ocs=OCORRENCIAS.filter(o=>o.data===data);
   const porMaq={};
@@ -25725,13 +25727,15 @@ function csApontarOp(o){
     d.className='cs-motop on et-turno cs-turno';
     d.innerHTML=`<div class="mt-top"><div class="tx"><b>Apontar contagem</b><i>${escAttr(o.maq||'')} · OP ${escAttr(rotuloOP(o))} · lote ${escAttr(o.lote||'')}</i></div>
         <div class="dr"><i>Previsto</i><b>${nf(prev)} ${escAttr(un)}</b></div><button class="x" data-mx="1" aria-label="Cancelar">&times;</button></div>
-      ${tur.length?`<div class="mt-fx">Já contado: ${tur.map(t=>`${dCurto(t.data)} · ${nf(t.caixas)} ${escAttr(un)} · contou ${escAttr(t.operador||'?')}`).join(' — ')}. Lance o total da OP.</div>`
+      ${tur.length?`<div class="mt-fx"><b>Fim de turno</b> ${tur.map(t=>`${dCurto(t.data)}: <b>${nf(t.caixas)} ${escAttr(un)}</b> (registro de ${escAttr(t.operador||'?')})`).join(' + ')} · <b>Ficou para hoje: ${nf(Math.max(0,prev-ja))} ${escAttr(un)}</b>.<br>Digite o <b>TOTAL</b> da OP (registro + hoje). É o total que entra no estoque.</div>`
         :`<div class="mt-fx">Conte as caixas prontas do lote. Ao confirmar, elas entram no estoque.</div>`}
       <div class="mt-cp" style="align-items:center">
         <div class="mt-rt" style="align-self:flex-start">Total de caixas da OP</div>
         <div class="tu-vl">${cx!=null?nf(cx):'0'} <small>${escAttr(un)}</small></div>
         <div class="tu-in">${cx==null?`Previsto: <b>${nf(prev)} ${escAttr(un)}</b>`
-          :abaixo?`<b style="color:#B3261E">Menor do que o já contado (${nf(ja)}): o PIN tem que ser de um gestor.</b>`
+          :abaixo?`<b style="color:#B3261E">Menor do que o registro do fim de turno (${nf(ja)}).</b> Se digitou só o de hoje: <button type="button" class="mt-ok" data-soma="1" style="display:inline-block;width:auto;padding:6px 14px;margin-left:6px">Somar (${nf(ja)} + ${nf(cx)} = ${nf(ja+cx)})</button><br><span style="font-size:.9em">Para gravar menos que o registro, o PIN tem que ser de um gestor.</span>`
+          :(tur.length&&cx===ja)?`<b style="color:#B3261E">Igual ao registro do fim de turno: hoje não saiu nenhuma caixa?</b> Se digitou só o de hoje: <button type="button" class="mt-ok" data-soma="1" style="display:inline-block;width:auto;padding:6px 14px;margin-left:6px">Somar (${nf(ja)} + ${nf(cx)} = ${nf(ja+cx)})</button>`
+          :tur.length?`Hoje: <b>${nf(cx-ja)} ${escAttr(un)}</b> · ${q.cx>0?`Quebra: <b style="color:${q.pede?'#B3261E':'#3F4757'}">${nf(q.cx)} ${escAttr(un)} · ${q.pct.toFixed(1).replace('.',',')}%</b>${q.pede?' — vai pedir o motivo':''}`:'<b style="color:#15803D">Sem quebra</b>'}`
           :q.cx>0?`Quebra: <b style="color:${q.pede?'#B3261E':'#3F4757'}">${nf(q.cx)} ${escAttr(un)} · ${q.pct.toFixed(1).replace('.',',')}%</b>${q.pede?' — vai pedir o motivo':''}`
           :`<b style="color:#15803D">Sem quebra</b>`}</div>
         <div class="tec">${['1','2','3','4','5','6','7','8','9','','0','⌫'].map(k=>k?`<button type="button" data-tk="${k}"${k==='⌫'?' class="f" aria-label="Apagar"':''}>${k==='⌫'?'&#9003;':k}</button>`:'<span></span>').join('')}</div>
@@ -25741,6 +25745,7 @@ function csApontarOp(o){
   d.onclick=ev=>{const t=ev.target;
     if(t.closest('[data-mx]')){d.className='cs-motop';return;}
     const k=t.closest('[data-tk]');if(k){const c=k.dataset.tk;v=c==='⌫'?v.slice(0,-1):(v.length<5?(v==='0'?c:v+c):v);return pinta();}
+    if(t.closest('[data-soma]')){v=String(ja+(+v||0));return pinta();}
     if(!t.closest('[data-mk]')||v==='')return;
     const cx=+v,q=csQuebraDe(o,cx);
     const resumo=[{g:'Total de caixas',s:`${nf(cx)} de ${nf(prev)} ${un}`},...(q.cx>0?[{g:'Quebra',s:`${nf(q.cx)} ${un} · ${nf(Math.max(0,q.litros))} L`}]:[])];
@@ -27090,8 +27095,8 @@ const cs5Chips=(o,n)=>{
   const tq=`${o.tanque||'a programar'} - ${nf(o.litros)}L`;
   const base=[['LOTE',o.lote||'—',1],['OP Nº',rotuloOP(o),1],['TANQUE/ VOLUME',tq,0]];
   if(n===3)return `<div class="k5 k3">${base.map(c=>`<span><i>${c[0]}</i><b class="${c[2]?'az':''}">${cs5esc(c[1])}</b></span>`).join('')}</div>`;
-  base.push(['QTD PREVISTA',`${nf(caixasPrev(o))} ${und(o)}`,0]);
-  return `<div class="k5">${base.map(c=>`<span><i>${c[0]}</i><b class="${c[2]?'az':''}">${cs5esc(c[1])}</b></span>`).join('')}</div>`;
+  if(typeof csTurnosAntes==='function'&&csTurnosAntes(o).length&&!['concluida','cancelada'].includes(sit(o)))base.push(['FALTAM',`${nf(Math.max(0,caixasPrev(o)-cxTurnos(o)))} ${und(o)}`,2]);else base.push(['QTD PREVISTA',`${nf(caixasPrev(o))} ${und(o)}`,0]);
+  return `<div class="k5">${base.map(c=>`<span><i>${c[0]}</i><b class="${c[2]===2?'lar':c[2]?'az':''}">${cs5esc(c[1])}</b></span>`).join('')}</div>`;
 };
 const cs5Avisos=o=>{let h='';try{
   if(o.tinyAjuste&&!o.tinyAjuste.em)h+=`<div class="av5 am">Caixas corrigidas depois do envio — falta ajustar o estoque no Tiny.</div>`;
@@ -27157,10 +27162,11 @@ try{const _cm65=colunaMaq;colunaMaq=function(m,data,conf,estreita){
     const estoura=(()=>{try{const k=csEstouros(data).filter(e=>e.o.maq===m).length;return k?`<button type="button" class="cs-estoura" data-estoura="${data}" title="Ver o aviso">${k} OP${k>1?'s':''} passa${k>1?'m':''} do dia</button>`:'';}catch(e){return '';}})();
     const jd=(()=>{try{const j=jornDia(m,data);return j?`${hhmm(j[0])}–${hhmm(j[1])}`:'não roda hoje';}catch(e){return `${hhmm(ji)}–${hhmm(jf)}`;}})();
     const ab=(window.CS_FIM_AB||[]).includes(m+'|'+data);
-    const corpo=`<div class="cs-viva">${vez?cs5CardVez(vez.o,conf):''}${outros.map(x=>cardTurno(x,false)).join('')}${vez?'':(data===ymd(new Date())?'<div class="cs-vazio">Nenhuma OP na linha agora</div>':'')}</div>`
+    const fins=[...fim.map(x=>({t:isNaN(x.ate)?0:x.ate,h:()=>cs5CardFim(x.o,conf)})),...outros.map(x=>({t:x.ate,h:()=>cs5CardTurno(x,conf)}))].sort((a,b)=>a.t-b.t);
+    const corpo=`<div class="cs-viva">${vez?cs5CardVez(vez.o,conf):''}${vez?'':(data===ymd(new Date())?'<div class="cs-vazio">Nenhuma OP na linha agora</div>':'')}</div>`
       +(fila.length?`<div class="cs5s fi">Próximas na fila (${fila.length})</div>`+fila.map(x=>cs5CardFila(x.o,conf)).join(''):'')
-      +(fim.length?`<button type="button" class="cs5s co" data-fimtg="${cs5esc(m+'|'+data)}">${ab?'▼':'▶'}&nbsp; Concluídas hoje (${fim.length})<em>${ab?'guardar':'mostrar'}</em></button>`
-        +(ab?`<div class="cs5ls">${fim.map(x=>cs5CardFim(x.o,conf)).join('')}</div>`:''):'');
+      +(fins.length?`<button type="button" class="cs5s co" data-fimtg="${cs5esc(m+'|'+data)}">${ab?'▼':'▶'}&nbsp; Concluídas hoje (${fins.length})<em>${ab?'guardar':'mostrar'}</em></button>`
+        +(ab?`<div class="cs5ls">${fins.map(x=>x.h()).join('')}</div>`:''):'');
     return `<div class="tqcol cs-maq cs5col">
       <div class="tqh cs5h"><div class="n"><b>${cs5esc(m)}</b>${livreTot?`<button type="button" class="cs-livre" data-gd="${data}" data-gm="${cs5esc(m)}" data-gi="${livreIni}" title="Programar a partir das ${hhmm(livreIni)}">${hmm(livreTot)} livres<i>+</i></button>`:''}${estoura}</div>
         <div class="s">${n?`${n} OP${n>1?'s':''}`:'Sem programação'} · ${jd}${jornAjustada(m,data)?' · ajustado':''} · ${Math.floor(ocup/60)}h${p2(ocup%60)} ocupada</div></div>
@@ -27239,6 +27245,1352 @@ try{csNucleo.versao='v365';}catch(e){}
  .cs5 .tr5 .e{width:58px}
 }`;document.head.appendChild(s);}catch(e){}})();
 try{csNucleo.versao='v366';}catch(e){}
+
+</script>
+<script>
+/* ===================== v367 · lote, liberação, apontamento, formulações v2, ajuste na folha, compras =====================
+   1) LOTE: o lote é da batelada de verdade (mesmo tanque, mesmo granel, mesmo dia E dentro da
+      capacidade): a segunda enchida do tanque no mesmo dia ganha número novo (era isso que
+      repetia o 362). Trocar o produto de uma OP que não começou para outro granel devolve o
+      lote velho e pega o próximo do granel novo (o 1020 do Amaciante nasceu como Floral).
+   2) LIBERAÇÃO SEGUE O LOTE: a liberação, a análise, os lotes de insumo e as trocas ficavam
+      guardados pela data da OP. Quando a OP passava para o dia seguinte (fim de turno ou
+      edição da data) o sistema não achava mais nada: "tanque não liberado" de manhã, e a
+      matéria-prima baixava DE NOVO na nova liberação. Agora o lote leva tudo junto.
+   3) APONTAMENTO com fim de turno: mostra "Fim de turno dd/mm: X (registro) · ficou para
+      hoje: Y" e pede o TOTAL; se a pessoa digitar só o de hoje, um toque em "Somar" resolve.
+   4) FORMULAÇÕES v2 (documento revisado de 07/10) e MODO DE FAZER por granel: entram uma vez,
+      como versão nova a partir de hoje; OP antiga continua com a versão dela.
+   5) FOLHA DO LOTE: a coluna Estoque mostra quanto tem, vermelho quando não cobre, selo
+      FALTA/OK; a bolinha ⋯ em cada insumo abre Editar (quantidade deste lote), Remover, Trocar.
+   6) COMPRAS (e os outros módulos): duas pessoas gravando OCs diferentes não se atrapalham
+      mais — o conflito agora junta as duas gravações em vez de descartar a última. */
+
+/* ---------- 1) lote ---------- */
+function csIrmaoDeLote(o){
+  try{
+    const ch=chaveLote(o);
+    const todos=ORDENS.filter(x=>x.lote&&naGrade(x)&&chaveLote(x)===ch&&x!==o&&x.id!==o.id);
+    if(!todos.length)return null;
+    const lista=[...todos,o].sort((a,b)=>(a.inicio??0)-(b.inicio??0));
+    const limite=o.tanque?tqOf(o.tanque).cap:(CAPACIDADES.find(c=>c>=Math.max(...lista.map(x=>x.litros)))||Math.max(...CAPACIDADES));
+    let vol=0,grupo=[];
+    for(const x of lista){
+      if(!grupo.length||vol+(+x.litros||0)>limite){grupo=[];vol=0;}
+      grupo.push(x);vol+=(+x.litros||0);
+      if(x===o||x.id===o.id)break;
+    }
+    return grupo.find(x=>x!==o&&x.id!==o.id&&x.lote)||null;
+  }catch(e){return null;}
+}
+loteDaBatelada=function(o,criar){
+  const irmao=csIrmaoDeLote(o);
+  if(irmao)return irmao.lote;
+  if(!criar)return null;
+  const p=prodOf(o.codigo);if(!p)return null;
+  const n=proxLote(p.tanque);
+  if(n==null)return null;
+  PROX_LOTE[p.tanque]=n+1;
+  agendarSalvar();
+  return String(n);
+};
+
+/* ---------- 2) a liberação segue o lote ---------- */
+/* as chaves antigas que esta batelada pode ter tido: os dias dos turnos e as datas trocadas na ficha */
+function csChavesAntigas(b){
+  const out=new Set();
+  const datas=new Set();
+  (b.ordens||[]).forEach(o=>{
+    (o.turnos||[]).forEach(t=>{if(t&&t.data&&t.data!==b.data)datas.add(t.data);});
+    (o.log||[]).forEach(l=>{const m=/data (\d\d)\/(\d\d) → (\d\d)\/(\d\d)/.exec(String(l.m||''));
+      if(m){const ano=(l.d||o.data||'').slice(0,4)||String(new Date().getFullYear());datas.add(`${ano}-${m[2]}-${m[1]}`);}});
+  });
+  [...datas].sort().reverse().forEach(d=>{for(let i=0;i<4;i++)out.add(`${d}|${b.tanque||'—'}|${b.produto}|${i}`);});
+  return [...out].filter(k=>k!==b.chave);
+}
+function csMigraChaveLote(b){
+  if(!b||b.origem==='saldo'||APONTA[b.chave])return false;
+  if(!b.lote||String(b.lote).includes(','))return false;
+  for(const k of csChavesAntigas(b)){
+    const a=APONTA[k];if(!a||!(a.liberadoEm||a.analise||a.lotesMP||a.trocasMP||a.fabIni))continue;
+    /* o lote tem que bater: a chave antiga pode ser de outra batelada do mesmo dia */
+    if(a.lote&&String(a.lote)!==String(b.lote))continue;
+    if(!a.lote){const ops=ORDENS.filter(o=>naGrade(o)&&(o.turnos||[]).some(t=>t.data===k.split('|')[0])||o.data===k.split('|')[0]);
+      const temLote=ops.some(o=>String(o.lote)===String(b.lote)&&(o.tanque||'—')===(b.tanque||'—'));if(!temLote)continue;}
+    APONTA[b.chave]={...a,lote:String(b.lote),produto:b.produto,veioDe:k};
+    const de=`lote|${k}|`,para=`lote|${b.chave}|`;
+    (typeof FILA_TINY!=='undefined'?FILA_TINY:[]).forEach(x=>{if(String(x.chave).startsWith(de))x.chave=para+String(x.chave).slice(de.length);});
+    try{(b.ordens||[]).forEach(o=>registrar(o,'Liberação acompanhou o lote',null,`${dCurto(k.split('|')[0])} → ${dCurto(b.data)} · lote ${b.lote}`));}catch(e){}
+    try{agendarSalvar();}catch(e){}
+    return true;
+  }
+  return false;
+}
+try{const _bt67=bateladas;let _bt67in=false;bateladas=function(data){
+  let l=_bt67.apply(this,arguments);
+  if(_bt67in)return l;
+  _bt67in=true;
+  try{let mudou=false;l.forEach(b=>{if(csMigraChaveLote(b))mudou=true;});if(mudou)l=_bt67.apply(this,arguments);}
+  catch(e){console.warn('liberação pelo lote',e);}
+  finally{_bt67in=false;}
+  return l;};}catch(e){}
+/* o que se grava daqui em diante já leva o lote */
+try{const _ab67=abrirLote;abrirLote=function(b){
+  try{if(b&&b.lote&&!String(b.lote).includes(',')&&APONTA[b.chave]&&!APONTA[b.chave].lote)APONTA[b.chave]={...APONTA[b.chave],lote:String(b.lote),produto:b.produto};}catch(e){}
+  return _ab67.apply(this,arguments);};}catch(e){}
+
+/* ---------- 4) formulações v2 e modo de fazer ---------- */
+const CS_FORM367={
+"mp": {
+"ÁGUA SANITÁRIA": [
+{
+"un": "kg",
+"pct": 12.0,
+"sku": "MP-005",
+"nome": "HIPOCLORITO DE SÓDIO",
+"custo": 1.2364
+},
+{
+"un": "kg",
+"pct": 0.1075,
+"sku": "MP-017",
+"nome": "HIDROXIDO DE SODIO",
+"custo": 5.7094
+}
+],
+"ALVEJANTE SEM CLORO": [
+{
+"un": "kg",
+"pct": 2.0,
+"sku": "MP-020",
+"nome": "PERÓXIDO DE HIDROGÊNIO",
+"custo": 2.9138
+},
+{
+"un": "kg",
+"pct": 0.1,
+"sku": "MP-013",
+"nome": "LAURIL ÉTER SULFATO DE SÓDIO 70%",
+"custo": 12.8625
+},
+{
+"un": "kg",
+"pct": 0.15,
+"sku": "MP-002",
+"nome": "ACIDO SULFONICO 90",
+"custo": 15.0019
+},
+{
+"un": "kg",
+"pct": 0.1,
+"sku": "ESS-002",
+"nome": "FRAGRÂNCIA FLORAL",
+"custo": 64.4175
+},
+{
+"un": "kg",
+"pct": 0.1,
+"sku": "MP001",
+"nome": "EDTA TETRASSÓDICO",
+"custo": 0
+}
+],
+"AMACIANTE AZUL": [
+{
+"un": "kg",
+"pct": 0.5,
+"sku": "MP-011",
+"nome": "BASE DE AMACIANTE",
+"custo": 32.2088
+},
+{
+"un": "kg",
+"pct": 0.1,
+"sku": "ESS-023",
+"nome": "FRAGRÂNCIA AM AZUL",
+"custo": 71.1979
+},
+{
+"un": "kg",
+"pct": 0.00211,
+"sku": "COR-005",
+"nome": "CORANTE AZUL IRACOR",
+"custo": 70.875
+}
+],
+"AMACIANTE ROSA": [
+{
+"un": "kg",
+"pct": 0.5,
+"sku": "MP-011",
+"nome": "BASE DE AMACIANTE",
+"custo": 32.2088
+},
+{
+"un": "kg",
+"pct": 0.0025,
+"sku": "COR-007",
+"nome": "CORANTE VERMELHO IRACOR",
+"custo": 86.2943
+},
+{
+"un": "kg",
+"pct": 0.1,
+"sku": "ESS-031",
+"nome": "FRAGRÂNCIA AM ROSA",
+"custo": 58.0545
+}
+],
+"AMACIANTE ROXO": [
+{
+"un": "kg",
+"pct": 0.5,
+"sku": "MP-011",
+"nome": "BASE DE AMACIANTE",
+"custo": 32.2088
+},
+{
+"un": "kg",
+"pct": 0.0025,
+"sku": "COR-024",
+"nome": "CORANTE VIOLETA IRACOR",
+"custo": 196.875
+},
+{
+"un": "kg",
+"pct": 0.1,
+"sku": "SEMSKU-FRAGRANCIA AM ROXO",
+"nome": "FRAGRÂNCIA AM ROXO",
+"custo": 66.402
+}
+],
+"AMACIANTE TRADICIONAL": [
+{
+"un": "kg",
+"pct": 0.448,
+"sku": "MP-011",
+"nome": "BASE DE AMACIANTE",
+"custo": 32.2088
+},
+{
+"un": "kg",
+"pct": 0.00211,
+"sku": "COR-005",
+"nome": "CORANTE AZUL IRACOR",
+"custo": 70.875
+},
+{
+"un": "kg",
+"pct": 0.075,
+"sku": "ESS-023",
+"nome": "FRAGRÂNCIA AM AZUL",
+"custo": 71.1979
+}
+],
+"AMACIANTE VERDE": [
+{
+"un": "kg",
+"pct": 0.5,
+"sku": "MP-011",
+"nome": "BASE DE AMACIANTE",
+"custo": 32.2088
+},
+{
+"un": "kg",
+"pct": 0.1,
+"sku": "ESS-030",
+"nome": "FRAGRÂNCIA AM VERDE",
+"custo": 63.0236
+},
+{
+"un": "kg",
+"pct": 0.0033,
+"sku": "COR-023",
+"nome": "CORANTE VERDE IRACOR",
+"custo": 89.8931
+}
+],
+"CLORO GEL": [
+{
+"un": "kg",
+"pct": 20.0,
+"sku": "MP-005",
+"nome": "HIPOCLORITO DE SÓDIO",
+"custo": 1.2364
+},
+{
+"un": "kg",
+"pct": 5.0,
+"sku": "MP-013",
+"nome": "LAURIL ÉTER SULFATO DE SÓDIO 70%",
+"custo": 12.8625
+},
+{
+"un": "kg",
+"pct": 1.75,
+"sku": "MP-017",
+"nome": "HIDROXIDO DE SODIO",
+"custo": 5.7094
+}
+],
+"DESENGORDURANTE": [
+{
+"un": "kg",
+"pct": 4.0,
+"sku": "MP-013",
+"nome": "LAURIL ÉTER SULFATO DE SÓDIO 70%",
+"custo": 12.8625
+},
+{
+"un": "kg",
+"pct": 4.0,
+"sku": "MP-017",
+"nome": "HIDROXIDO DE SODIO",
+"custo": 5.7094
+},
+{
+"un": "kg",
+"pct": 0.0033,
+"sku": "COR-001",
+"nome": "CORANTE VERMELHO LIMPOL",
+"custo": 100.3649
+},
+{
+"un": "kg",
+"pct": 0.0033,
+"sku": "COR-004",
+"nome": "CORANTE AMARELO TARTRAZ",
+"custo": 83.8421
+},
+{
+"un": "kg",
+"pct": 0.04,
+"sku": "ESS-026",
+"nome": "FRAGRÂNCIA  LIMAO",
+"custo": 29.1375
+}
+],
+"DESINFETANTE EUCALIPTO": [
+{
+"un": "kg",
+"pct": 0.5,
+"sku": "MP-004",
+"nome": "QUATERNARIO DE 5º GERAÇÃO",
+"custo": 10.8281
+},
+{
+"un": "kg",
+"pct": 0.08333,
+"sku": "ESS-006",
+"nome": "FRAGRÂNCIA EUCALIPTO",
+"custo": 43.9425
+},
+{
+"un": "kg",
+"pct": 0.2,
+"sku": "MP-003",
+"nome": "NONIL FENOL",
+"custo": 14.8838
+},
+{
+"un": "kg",
+"pct": 0.004,
+"sku": "COR-006",
+"nome": "CORANTE VERDE ALIZARINE",
+"custo": 59.3688
+}
+],
+"DESINFETANTE FLORAL": [
+{
+"un": "kg",
+"pct": 0.5,
+"sku": "MP-004",
+"nome": "QUATERNARIO DE 5º GERAÇÃO",
+"custo": 10.8281
+},
+{
+"un": "kg",
+"pct": 0.13333,
+"sku": "MP-003",
+"nome": "NONIL FENOL",
+"custo": 14.8838
+},
+{
+"un": "kg",
+"pct": 0.001,
+"sku": "COR-003",
+"nome": "CORANTE RODAMINA",
+"custo": 188.8554
+},
+{
+"un": "kg",
+"pct": 0.1,
+"sku": "ESS-002",
+"nome": "FRAGRÂNCIA FLORAL",
+"custo": 64.4175
+}
+],
+"DESINFETANTE LAVANDA": [
+{
+"un": "kg",
+"pct": 0.5,
+"sku": "MP-004",
+"nome": "QUATERNARIO DE 5º GERAÇÃO",
+"custo": 10.8281
+},
+{
+"un": "kg",
+"pct": 0.1,
+"sku": "ESS-003",
+"nome": "FRAGRÂNCIA LAVANDA",
+"custo": 40.95
+},
+{
+"un": "kg",
+"pct": 0.13333,
+"sku": "MP-003",
+"nome": "NONIL FENOL",
+"custo": 14.8838
+},
+{
+"un": "kg",
+"pct": 0.001,
+"sku": "COR-022",
+"nome": "CORANTE VIOLETA",
+"custo": 196.875
+}
+],
+"DESINFETANTE MARINE": [
+{
+"un": "kg",
+"pct": 0.5,
+"sku": "MP-004",
+"nome": "QUATERNARIO DE 5º GERAÇÃO",
+"custo": 10.8281
+},
+{
+"un": "kg",
+"pct": 0.1,
+"sku": "ESS-005",
+"nome": "FRAGRÂNCIA MARINE",
+"custo": 47.25
+},
+{
+"un": "kg",
+"pct": 0.13333,
+"sku": "MP-003",
+"nome": "NONIL FENOL",
+"custo": 14.8838
+},
+{
+"un": "kg",
+"pct": 0.00276,
+"sku": "COR-002",
+"nome": "CORANTE AZUL TURQUEZA",
+"custo": 80.1749
+}
+],
+"DESINFETANTE PINHO": [
+{
+"un": "kg",
+"pct": 0.5,
+"sku": "MP-004",
+"nome": "QUATERNARIO DE 5º GERAÇÃO",
+"custo": 10.8281
+},
+{
+"un": "kg",
+"pct": 0.0833,
+"sku": "ESS-007",
+"nome": "FRAGRÂNCIA PINHO",
+"custo": 33.075
+},
+{
+"un": "kg",
+"pct": 0.13333,
+"sku": "MP-003",
+"nome": "NONIL FENOL",
+"custo": 14.8838
+},
+{
+"un": "kg",
+"pct": 0.00119,
+"sku": "COR-001",
+"nome": "CORANTE VERMELHO LIMPOL",
+"custo": 100.3649
+},
+{
+"un": "kg",
+"pct": 0.00211,
+"sku": "COR-004",
+"nome": "CORANTE AMARELO TARTRAZ",
+"custo": 83.8421
+},
+{
+"un": "kg",
+"pct": 0.00053,
+"sku": "COR-002",
+"nome": "CORANTE AZUL TURQUEZA",
+"custo": 80.1749
+}
+],
+"LAVA LOUÇAS MAÇÃ": [
+{
+"un": "kg",
+"pct": 4.6,
+"sku": "MP-035",
+"nome": "SAL REFINADO NÃO IODADO",
+"custo": 0.9075
+},
+{
+"un": "kg",
+"pct": 0.004,
+"sku": "COR-001",
+"nome": "CORANTE VERMELHO LIMPOL",
+"custo": 100.3649
+},
+{
+"un": "kg",
+"pct": 0.03,
+"sku": "ESS-011",
+"nome": "FRAGRÂNCIA MAÇÃ",
+"custo": 94.5945
+},
+{
+"un": "kg",
+"pct": 4.6,
+"sku": "MP-040",
+"nome": "ALPHADT 120",
+"custo": 11.2775
+}
+],
+"LAVA LOUÇAS NEUTRO": [
+{
+"un": "kg",
+"pct": 4.6,
+"sku": "MP-035",
+"nome": "SAL REFINADO NÃO IODADO",
+"custo": 0.9075
+},
+{
+"un": "kg",
+"pct": 0.004,
+"sku": "COR-004",
+"nome": "CORANTE AMARELO TARTRAZ",
+"custo": 83.8421
+},
+{
+"un": "kg",
+"pct": 4.6,
+"sku": "MP-040",
+"nome": "ALPHADT 120",
+"custo": 11.2775
+}
+],
+"LAVA ROUPAS GLICERINA": [
+{
+"un": "kg",
+"pct": 5.0,
+"sku": "MP-035",
+"nome": "SAL REFINADO NÃO IODADO",
+"custo": 0.9075
+},
+{
+"un": "kg",
+"pct": 0.2,
+"sku": "MP-037",
+"nome": "GLICERINA BIDESTILADA",
+"custo": 8.6468
+},
+{
+"un": "kg",
+"pct": 0.0037,
+"sku": "SEMSKU-CORANTE AMARELO METANIL",
+"nome": "CORANTE AMARELO METANIL",
+"custo": 70.8655
+},
+{
+"un": "kg",
+"pct": 5.0,
+"sku": "MP-040",
+"nome": "ALPHADT 120",
+"custo": 11.2775
+},
+{
+"un": "kg",
+"pct": 0.1,
+"sku": "ESS-031",
+"nome": "FRAGRÂNCIA AM ROSA",
+"custo": 58.0545
+}
+],
+"LAVA ROUPAS PREMIUM": [
+{
+"un": "kg",
+"pct": 5.0,
+"sku": "MP-035",
+"nome": "SAL REFINADO NÃO IODADO",
+"custo": 0.9075
+},
+{
+"un": "kg",
+"pct": 0.0048,
+"sku": "COR-002",
+"nome": "CORANTE AZUL TURQUEZA",
+"custo": 80.1749
+},
+{
+"un": "kg",
+"pct": 5.0,
+"sku": "MP-040",
+"nome": "ALPHADT 120",
+"custo": 11.2775
+},
+{
+"un": "kg",
+"pct": 0.1,
+"sku": "SEMSKU-FRAGRANCIA AM ROXO",
+"nome": "FRAGRÂNCIA AM ROXO",
+"custo": 66.402
+}
+],
+"LIMPA CANIL": [
+{
+"un": "kg",
+"pct": 1.5,
+"sku": "MP-004",
+"nome": "QUATERNARIO DE 5º GERAÇÃO",
+"custo": 10.8281
+},
+{
+"un": "kg",
+"pct": 0.5,
+"sku": "ESS-018",
+"nome": "FRAGRÂNCIA CITRONELA",
+"custo": 88.2
+},
+{
+"un": "kg",
+"pct": 1.0,
+"sku": "MP-003",
+"nome": "NONIL FENOL",
+"custo": 14.8838
+},
+{
+"un": "kg",
+"pct": 0.005,
+"sku": "COR-006",
+"nome": "CORANTE VERDE ALIZARINE",
+"custo": 59.3688
+}
+],
+"LIMPA VIDROS": [
+{
+"un": "kg",
+"pct": 6.0,
+"sku": "MP-015",
+"nome": "BUTILGLICOL",
+"custo": 10.9463
+},
+{
+"un": "kg",
+"pct": 5.0,
+"sku": "MP-009",
+"nome": "ALCOOL ETILICO HIDRATADO 92",
+"custo": 4.6463
+},
+{
+"un": "kg",
+"pct": 0.05,
+"sku": "MP-013",
+"nome": "LAURIL ÉTER SULFATO DE SÓDIO 70%",
+"custo": 12.8625
+},
+{
+"un": "kg",
+"pct": 0.0005,
+"sku": "COR-002",
+"nome": "CORANTE AZUL TURQUEZA",
+"custo": 80.1749
+}
+],
+"LIMPADOR PERFUMADO EUFORIA": [
+{
+"un": "kg",
+"pct": 0.8,
+"sku": "MP-003",
+"nome": "NONIL FENOL",
+"custo": 14.8838
+},
+{
+"un": "kg",
+"pct": 0.5,
+"sku": "MP-004",
+"nome": "QUATERNARIO DE 5º GERAÇÃO",
+"custo": 10.8281
+},
+{
+"un": "kg",
+"pct": 0.15,
+"sku": "ESS-012",
+"nome": "FRAGRÂNCIA LP EUFORIA",
+"custo": 41.7375
+},
+{
+"un": "kg",
+"pct": 0.004,
+"sku": "COR-002",
+"nome": "CORANTE AZUL TURQUEZA",
+"custo": 80.1749
+},
+{
+"un": "kg",
+"pct": 0.0005,
+"sku": "COR-004",
+"nome": "CORANTE AMARELO TARTRAZ",
+"custo": 83.8421
+}
+],
+"LIMPADOR PERFUMADO FELICIDADE": [
+{
+"un": "kg",
+"pct": 0.8,
+"sku": "MP-003",
+"nome": "NONIL FENOL",
+"custo": 14.8838
+},
+{
+"un": "kg",
+"pct": 0.5,
+"sku": "MP-004",
+"nome": "QUATERNARIO DE 5º GERAÇÃO",
+"custo": 10.8281
+},
+{
+"un": "kg",
+"pct": 0.075,
+"sku": "ESS-013",
+"nome": "FRAGRÂNCIA LP FELICIDADE",
+"custo": 40.95
+},
+{
+"un": "kg",
+"pct": 0.075,
+"sku": "ESS-003",
+"nome": "FRAGRÂNCIA LAVANDA",
+"custo": 0
+},
+{
+"un": "kg",
+"pct": 0.0047,
+"sku": "COR-001",
+"nome": "CORANTE VERMELHO LIMPOL",
+"custo": 100.3649
+}
+],
+"LIMPEZA PESADA": [
+{
+"un": "kg",
+"pct": 1.0,
+"sku": "MP-019",
+"nome": "AMÔNIA LÍQUIDA",
+"custo": 5.1188
+},
+{
+"un": "kg",
+"pct": 0.7,
+"sku": "MP-013",
+"nome": "LAURIL ÉTER SULFATO DE SÓDIO 70%",
+"custo": 12.8625
+},
+{
+"un": "kg",
+"pct": 0.5,
+"sku": "MP-015",
+"nome": "BUTILGLICOL",
+"custo": 10.9463
+},
+{
+"un": "kg",
+"pct": 0.1,
+"sku": "ESS-008",
+"nome": "FRAGRÂNCIA UVA",
+"custo": 68.796
+},
+{
+"un": "kg",
+"pct": 0.0033,
+"sku": "COR-022",
+"nome": "CORANTE VIOLETA",
+"custo": 196.875
+}
+]
+},
+"proc": {
+"ÁGUA SANITÁRIA": [
+"Conferir limpeza da sala conforme POP n°5",
+"Conferir limpeza dos equipamentos conforme POP n°3",
+"Fracionar matérias primas, conforme formulação",
+"ADICIONE ÁGUA AO TANQUE",
+"ENQUANTO O TANQUE ENCHE, ADICIONAR O HIPOCLORITO DE SÓDIO",
+"ADICIONAR SODA EM ESCAMA (HIDROXIDO DE SÓDIO)",
+"COMPLETE O TANQUE DE ÁGUA",
+"Retire uma amostra e envie para o laboratório para analisar",
+"Necessita de correção? Qual?",
+"Responsável pela Fabricação: (Douglas Possebon / Airton Junior)",
+"Resultado da análise de Cloro Ativo (2,0 - 2,5)",
+"Resultado pH (10,5 - 12,5)",
+"Amostra testemunha retida para o Controle de Qualidade",
+"LIBERAÇÃO PARA ENVASE (Mariane Kluge / Neuci Bernardi)"
+],
+"ALVEJANTE SEM CLORO": [
+"Conferir limpeza da sala conforme POP n°5",
+"Conferir limpeza dos equipamentos conforme POP n°3",
+"Fracionar matérias primas, conforme formulação",
+"ADICIONE ÁGUA ATÉ 70% DO VOLUME DO TANQUE",
+"SOB AGITAÇÃO, ADICIONE O EDTA DEIXEI POR 5 MIN.",
+"SOB AGITAÇÃO, ADICIONE O ÁCIDO SULFÔNICO",
+"SOB AGITAÇÃO, ADICIONE O LAURIL ÉTER SULFATO DE SÓDIO",
+"SOB AGITAÇÃO, ADICIONE A FRAGRÂNCIA",
+"SOB AGITAÇÃO, ADICIONE O PERÓXIDO DE HIDROGÊNIO",
+"COMPLETE O TANQUE DE ÁGUA",
+"Retire uma amostra e envie para o laboratório para analisar",
+"Necessita de correção? Qual?",
+"Responsável pela Fabricação: (Douglas Possebon / Airton Junior)",
+"Resultado pH (3,0 - 5,0)",
+"Amostra testemunha retida para o Controle de Qualidade",
+"LIBERAÇÃO PARA ENVASE (Mariane Kluge / Neuci Bernardi)"
+],
+"AMACIANTE AZUL": [
+"Conferir limpeza da sala conforme POP n°5",
+"Conferir limpeza dos equipamentos conforme POP n°3",
+"Fracionar matérias primas, conforme formulação",
+"ADICIONAR ÁGUA ATÉ 50% DO VOLUME DO TANQUE",
+"SOB AGITAÇÃO, ADICIONAR O CORANTE E FRAGRÂNCIA",
+"SOB AGITAÇÃO, ADICIONAR LENTAMENTE A BASE DE AMACIANTE",
+"MANTER SOB AGITAÇÃO, COMPLETAR O TANQUE COM ÁGUA (Obs. Evitando encher com pressão de água)",
+"DESLIGAR O MOTOR E DEIXAR DESCANSAR POR 30 MINUTOS",
+"Retire uma amostra e envie para o laboratório para analisar",
+"Necessita de correção? Qual?",
+"Responsável pela Fabricação: (Douglas Possebon / Airton Junior)",
+"Resultado Viscosidade (acima de 0,18min)",
+"Resultado pH (6,0 - 7,5)",
+"Amostra testemunha retida para o Controle de Qualidade",
+"LIBERAÇÃO PARA ENVASE (Mariane Kluge / Neuci Bernardi)"
+],
+"AMACIANTE ROSA": [
+"Conferir limpeza da sala conforme POP n°5",
+"Conferir limpeza dos equipamentos conforme POP n°3",
+"Fracionar matérias primas, conforme formulação",
+"ADICIONAR ÁGUA ATÉ 50% DO VOLUME DO TANQUE",
+"SOB AGITAÇÃO, ADICIONAR O CORANTE E FRAGRÂNCIA",
+"SOB AGITAÇÃO, ADICIONAR LENTAMENTE A BASE DE AMACIANTE",
+"MANTER SOB AGITAÇÃO, COMPLETAR O TANQUE COM ÁGUA (Obs. Evitando encher com pressão de água)",
+"DESLIGAR O MOTOR E DEIXAR DESCANSAR POR 30 MINUTOS",
+"Retire uma amostra e envie para o laboratório para analisar",
+"Necessita de correção? Qual?",
+"Responsável pela Fabricação: (Douglas Possebon / Airton Junior)",
+"Resultado Viscosidade (acima de 0,18min)",
+"Resultado pH (6,0 - 7,5)",
+"Amostra testemunha retida para o Controle de Qualidade",
+"LIBERAÇÃO PARA ENVASE (Mariane Kluge / Neuci Bernardi)"
+],
+"AMACIANTE ROXO": [
+"Conferir limpeza da sala conforme POP n°5",
+"Conferir limpeza dos equipamentos conforme POP n°3",
+"Fracionar matérias primas, conforme formulação",
+"ADICIONAR ÁGUA ATÉ 50% DO VOLUME DO TANQUE",
+"SOB AGITAÇÃO, ADICIONAR O CORANTE E FRAGRÂNCIA",
+"SOB AGITAÇÃO, ADICIONAR LENTAMENTE A BASE DE AMACIANTE",
+"MANTER SOB AGITAÇÃO, COMPLETAR O TANQUE COM ÁGUA (Obs. Evitando encher com pressão de água)",
+"DESLIGAR O MOTOR E DEIXAR DESCANSAR POR 30 MINUTOS",
+"Retire uma amostra e envie para o laboratório para analisar",
+"Necessita de correção? Qual?",
+"Responsável pela Fabricação: (Douglas Possebon / Airton Junior)",
+"Resultado Viscosidade (acima de 0,18min)",
+"Resultado pH (6,0 - 7,5)",
+"Amostra testemunha retida para o Controle de Qualidade",
+"LIBERAÇÃO PARA ENVASE (Mariane Kluge / Neuci Bernardi)"
+],
+"AMACIANTE VERDE": [
+"Conferir limpeza da sala conforme POP n°5",
+"Conferir limpeza dos equipamentos conforme POP n°3",
+"Fracionar matérias primas, conforme formulação",
+"ADICIONAR ÁGUA ATÉ 50% DO VOLUME DO TANQUE",
+"SOB AGITAÇÃO, ADICIONAR O CORANTE E FRAGRÂNCIA",
+"SOB AGITAÇÃO, ADICIONAR LENTAMENTE A BASE DE AMACIANTE",
+"MANTER SOB AGITAÇÃO, COMPLETAR O TANQUE COM ÁGUA (Obs. Evitando encher com pressão de água)",
+"DESLIGAR O MOTOR E DEIXAR DESCANSAR POR 30 MINUTOS",
+"Retire uma amostra e envie para o laboratório para analisar",
+"Necessita de correção? Qual?",
+"Responsável pela Fabricação: (Douglas Possebon / Airton Junior)",
+"Resultado Viscosidade (acima de 0,18min)",
+"Resultado pH (6,0 - 7,5)",
+"Amostra testemunha retida para o Controle de Qualidade",
+"LIBERAÇÃO PARA ENVASE (Mariane Kluge / Neuci Bernardi)"
+],
+"AMACIANTE TRADICIONAL": [
+"Conferir limpeza da sala conforme POP n°5",
+"Conferir limpeza dos equipamentos conforme POP n°3",
+"Fracionar matérias primas, conforme formulação",
+"ADICIONAR ÁGUA ATÉ 50% DO VOLUME DO TANQUE",
+"SOB AGITAÇÃO, ADICIONAR O CORANTE E FRAGRÂNCIA",
+"SOB AGITAÇÃO, ADICIONAR LENTAMENTE A BASE DE AMACIANTE",
+"MANTER SOB AGITAÇÃO, COMPLETAR O TANQUE COM ÁGUA (Obs. Evitando encher com pressão de água)",
+"DESLIGAR O MOTOR E DEIXAR DESCANSAR POR 30 MINUTOS",
+"Retire uma amostra e envie para o laboratório para analisar",
+"Necessita de correção? Qual?",
+"Responsável pela Fabricação: (Douglas Possebon / Airton Junior)",
+"Resultado Viscosidade (acima de 0,13min)",
+"Resultado pH (6,0 - 7,5)",
+"Amostra testemunha retida para o Controle de Qualidade",
+"LIBERAÇÃO PARA ENVASE (Mariane Kluge / Neuci Bernardi)"
+],
+"CLORO GEL": [
+"Conferir limpeza da sala conforme POP n°5",
+"Conferir limpeza dos equipamentos conforme POP n°3",
+"Fracionar matérias primas, conforme formulação",
+"ADICIONE ÁGUA AO TANQUE",
+"ENQUANTO O TANQUE ENCHE, ADICIONAR O HIPOCLORITO DE SÓDIO (100kg = ~ 85L)",
+"ADICIONAR SODA EM ESCAMAS (HIDRÓXIDO DE SÓDIO)",
+"ADICIONAR O LAURIL ÉTER SULFATO DE SÓDIO",
+"SOB AGITAÇÃO, COMPLETE O TANQUE COM ÁGUA",
+"Retire uma amostra e envie para o laboratório para analisar",
+"Necessita de correção? Qual?",
+"Responsável pela Fabricação: (Douglas Possebon / Airton Junior)",
+"Resultado Viscosidade (acima de 0,15min)",
+"Resultado pH (11,0 - 13,0)",
+"Amostra testemunha retida para o Controle de Qualidade",
+"LIBERAÇÃO PARA ENVASE (Mariane Kluge / Neuci Bernardi)"
+],
+"DESENGORDURANTE": [
+"Conferir limpeza da sala conforme POP n°5",
+"Conferir limpeza dos equipamentos conforme POP n°3",
+"Fracionar matérias primas, conforme formulação",
+"ADICIONAR ÁGUA ATE 70% DO TANQUE",
+"SOB AGITAÇÃO, ADICIONE A SODA",
+"SOB AGITAÇÃO, ADICIONE O LAURIL ÉTER SULFATO DE SÓDIO",
+"SOB AGITAÇÃO, ADICIONE CORANTE E FRAGRÂNCIA",
+"COMPLETE O TANQUE COM ÁGUA",
+"Retire uma amostra e envie para o laboratório para analisar",
+"Necessita de correção? Qual?",
+"Responsável pela Fabricação: (Douglas Possebon / Airton Junior)",
+"Resultado Viscosidade (acima de 0,18min)",
+"Resultado pH (10,0 - 11,0)",
+"Amostra testemunha retida para o Controle de Qualidade",
+"LIBERAÇÃO PARA ENVASE (Mariane Kluge / Neuci Bernardi)"
+],
+"DESINFETANTE EUCALIPTO": [
+"Conferir limpeza da sala conforme POP n°5",
+"Conferir limpeza dos equipamentos conforme POP n°3",
+"Fracionar matérias primas, conforme formulação",
+"ADICIONE ÁGUA ATÉ 80% DO VOLUME DO TANQUE",
+"SOB AGITAÇÃO, ADICIONE O CORANTE",
+"EM UM RECIPIENTE SEPARADO, MISTURE O NONIL FENOL E A FRAGRÂNCIA",
+"SOB AGITAÇÃO, ADICIONE A MISTURA AO TANQUE",
+"SOB AGITAÇÃO, ADICIONE O QUATERNÁRIO DE AMÔNIA",
+"COMPLETE O TANQUE COM ÁGUA",
+"Retire uma amostra e envie para o laboratório para analisar",
+"Necessita de correção? Qual?",
+"Responsável pela Fabricação: (Douglas Possebon / Airton Junior)",
+"Resultado pH (6,0 - 8,0)",
+"Amostra testemunha retida para o Controle de Qualidade",
+"LIBERAÇÃO PARA ENVASE (Mariane Kluge / Neuci Bernardi)"
+],
+"DESINFETANTE FLORAL": [
+"Conferir limpeza da sala conforme POP n°5",
+"Conferir limpeza dos equipamentos conforme POP n°3",
+"Fracionar matérias primas, conforme formulação",
+"ADICIONE ÁGUA ATÉ 80% DO VOLUME DO TANQUE",
+"SOB AGITAÇÃO, ADICIONE O CORANTE",
+"EM UM RECIPIENTE SEPARADO, MISTURE O NONIL FENOL E A FRAGRÂNCIA",
+"SOB AGITAÇÃO, ADICIONE A MISTURA AO TANQUE",
+"SOB AGITAÇÃO, ADICIONE O QUATERNÁRIO DE AMÔNIA",
+"COMPLETE O TANQUE COM ÁGUA",
+"Retire uma amostra e envie para o laboratório para analisar",
+"Necessita de correção? Qual?",
+"Responsável pela Fabricação: (Douglas Possebon / Airton Junior)",
+"Resultado pH (6,0 - 8,0)",
+"Amostra testemunha retida para o Controle de Qualidade",
+"LIBERAÇÃO PARA ENVASE (Mariane Kluge / Neuci Bernardi)"
+],
+"DESINFETANTE LAVANDA": [
+"Conferir limpeza da sala conforme POP n°5",
+"Conferir limpeza dos equipamentos conforme POP n°3",
+"Fracionar matérias primas, conforme formulação",
+"ADICIONE ÁGUA ATÉ 80% DO VOLUME DO TANQUE",
+"SOB AGITAÇÃO, ADICIONE O CORANTE",
+"EM UM RECIPIENTE SEPARADO, MISTURE O NONIL FENOL E A FRAGRÂNCIA",
+"SOB AGITAÇÃO, ADICIONE A MISTURA AO TANQUE",
+"SOB AGITAÇÃO, ADICIONE O QUATERNÁRIO DE AMÔNIA",
+"COMPLETE O TANQUE COM ÁGUA",
+"Retire uma amostra e envie para o laboratório para analisar",
+"Necessita de correção? Qual?",
+"Responsável pela Fabricação: (Douglas Possebon / Airton Junior)",
+"Resultado pH (6,0 - 8,0)",
+"Amostra testemunha retida para o Controle de Qualidade",
+"LIBERAÇÃO PARA ENVASE (Mariane Kluge / Neuci Bernardi)"
+],
+"DESINFETANTE MARINE": [
+"Conferir limpeza da sala conforme POP n°5",
+"Conferir limpeza dos equipamentos conforme POP n°3",
+"Fracionar matérias primas, conforme formulação",
+"ADICIONE ÁGUA ATÉ 80% DO VOLUME DO TANQUE",
+"SOB AGITAÇÃO, ADICIONE O CORANTE",
+"EM UM RECIPIENTE SEPARADO, MISTURE O NONIL FENOL E A FRAGRÂNCIA",
+"SOB AGITAÇÃO, ADICIONE A MISTURA AO TANQUE",
+"SOB AGITAÇÃO, ADICIONE O QUATERNÁRIO DE AMÔNIA",
+"COMPLETE O TANQUE COM ÁGUA",
+"Retire uma amostra e envie para o laboratório para analisar",
+"Necessita de correção? Qual?",
+"Responsável pela Fabricação: (Douglas Possebon / Airton Junior)",
+"Resultado pH (6,0 - 8,0)",
+"Amostra testemunha retida para o Controle de Qualidade",
+"LIBERAÇÃO PARA ENVASE (Mariane Kluge / Neuci Bernardi)"
+],
+"DESINFETANTE PINHO": [
+"Conferir limpeza da sala conforme POP n°5",
+"Conferir limpeza dos equipamentos conforme POP n°3",
+"Fracionar matérias primas, conforme formulação",
+"ADICIONE ÁGUA ATÉ 80% DO VOLUME DO TANQUE",
+"SOB AGITAÇÃO, ADICIONE O CORANTE",
+"EM UM RECIPIENTE SEPARADO, MISTURE O NONIL FENOL E A FRAGRÂNCIA",
+"SOB AGITAÇÃO, ADICIONE A MISTURA AO TANQUE",
+"SOB AGITAÇÃO, ADICIONE O QUATERNÁRIO DE AMÔNIA",
+"COMPLETE O TANQUE COM ÁGUA",
+"Retire uma amostra e envie para o laboratório para analisar",
+"Necessita de correção? Qual?",
+"Responsável pela Fabricação: (Douglas Possebon / Airton Junior)",
+"Resultado pH (6,0 - 8,0)",
+"Amostra testemunha retida para o Controle de Qualidade",
+"LIBERAÇÃO PARA ENVASE (Mariane Kluge / Neuci Bernardi)"
+],
+"LAVA LOUÇAS MAÇÃ": [
+"Conferir limpeza da sala conforme POP n°5",
+"Conferir limpeza dos equipamentos conforme POP n°3",
+"Fracionar matérias primas, conforme formulação",
+"ADICIONE ÁGUA ATÉ 80% DO VOLUME DO TANQUE",
+"SOB AGITAÇÃO, ADICIONE ATÉ 40% DE SAL REFINADO TOTAL",
+"SOB AGITAÇÃO, ADICIONE O ALPHADT120",
+"SOB AGITAÇÃO, ADICIONE O CORANTE E FRAGRÂNCIA",
+"SOB AGITAÇÃO, ADICIONE O RESTANTE DE SAL REFINADO",
+"COMPLETE DE ÁGUA O TANQUE.",
+"Retire uma amostra e envie para o laboratório para analisar",
+"Necessita de correção? Qual?",
+"Responsável pela Fabricação: (Douglas Possebon / Airton Junior)",
+"Resultado Viscosidade (acima de 0,18min)",
+"Resultado pH (5,5 - 7,0)",
+"Amostra testemunha retida para o Controle de Qualidade",
+"LIBERAÇÃO PARA ENVASE (Mariane Kluge / Neuci Bernardi)"
+],
+"LAVA LOUÇAS NEUTRO": [
+"Conferir limpeza da sala conforme POP n°5",
+"Conferir limpeza dos equipamentos conforme POP n°3",
+"Fracionar matérias primas, conforme formulação",
+"ADICIONE ÁGUA ATÉ 80% DO VOLUME DO TANQUE",
+"SOB AGITAÇÃO, ADICIONE ATÉ 40% DE SAL REFINADO TOTAL",
+"SOB AGITAÇÃO, ADICIONE O ALPHADT120",
+"SOB AGITAÇÃO, ADICIONE O CORANTE",
+"SOB AGITAÇÃO, ADICIONE O RESTANTE DE SAL REFINADO",
+"COMPLETE DE ÁGUA O TANQUE.",
+"Retire uma amostra e envie para o laboratório para analisar",
+"Necessita de correção? Qual?",
+"Responsável pela Fabricação: (Douglas Possebon / Airton Junior)",
+"Resultado Viscosidade (acima de 0,18min)",
+"Resultado pH (5,5 - 7,0)",
+"Amostra testemunha retida para o Controle de Qualidade",
+"LIBERAÇÃO PARA ENVASE (Mariane Kluge / Neuci Bernardi)"
+],
+"LAVA ROUPAS GLICERINA": [
+"Conferir limpeza da sala conforme POP n°5",
+"Conferir limpeza dos equipamentos conforme POP n°3",
+"Fracionar matérias primas, conforme formulação",
+"ADICIONE ÁGUA ATÉ 80% DO VOLUME DO TANQUE",
+"SOB AGITAÇÃO, ADICIONE ATÉ 40% DE SAL REFINADO TOTAL",
+"SOB AGITAÇÃO, ADICIONE O ALPHADT120",
+"SOB AGITAÇÃO, ADICIONE O CORANTE E FRAGRÂNCIA",
+"SOB AGITAÇÃO, ADICIONE GLICERINA BIDESTILADA",
+"SOB AGITAÇÃO, ADICIONE O RESTANTE DE SAL REFINADO",
+"COMPLETE DE ÁGUA O TANQUE.",
+"Retire uma amostra e envie para o laboratório para analisar",
+"Necessita de correção? Qual?",
+"Responsável pela Fabricação: (Douglas Possebon / Airton Junior)",
+"Resultado Viscosidade (acima de 0,22min)",
+"Resultado pH (5,5 - 7,0)",
+"Amostra testemunha retida para o Controle de Qualidade",
+"LIBERAÇÃO PARA ENVASE (Mariane Kluge / Neuci Bernardi)"
+],
+"LAVA ROUPAS PREMIUM": [
+"Conferir limpeza da sala conforme POP n°5",
+"Conferir limpeza dos equipamentos conforme POP n°3",
+"Fracionar matérias primas, conforme formulação",
+"ADICIONE ÁGUA ATÉ 80% DO VOLUME DO TANQUE",
+"SOB AGITAÇÃO, ADICIONE ATÉ 40% DE SAL REFINADO TOTAL",
+"SOB AGITAÇÃO, ADICIONE O ALPHADT120",
+"SOB AGITAÇÃO, ADICIONE O CORANTE E FRAGRÂNCIA",
+"SOB AGITAÇÃO, ADICIONE O RESTANTE DE SAL REFINADO",
+"COMPLETE DE ÁGUA O TANQUE.",
+"Retire uma amostra e envie para o laboratório para analisar",
+"Necessita de correção? Qual?",
+"Responsável pela Fabricação: (Douglas Possebon / Airton Junior)",
+"Resultado Viscosidade (acima de 0,22min)",
+"Resultado pH (5,5 - 7,0)",
+"Amostra testemunha retida para o Controle de Qualidade",
+"LIBERAÇÃO PARA ENVASE (Mariane Kluge / Neuci Bernardi)"
+],
+"LIMPA CANIL": [
+"Conferir limpeza da sala conforme POP n°5",
+"Conferir limpeza dos equipamentos conforme POP n°3",
+"Fracionar matérias primas, conforme formulação",
+"ADICIONE ÁGUA ATÉ 80% DO VOLUME DO TANQUE",
+"SOB AGITAÇÃO, ADICIONE O CORANTE",
+"EM UM RECIPIENTE SEPARADO, MISTURE O NONIL FENOL E A FRAGRÂNCIA",
+"SOB AGITAÇÃO, ADICIONE A MISTURA AO TANQUE",
+"SOB AGITAÇÃO, ADICIONE O QUATERNÁRIO DE AMÔNIA",
+"COMPLETE O TANQUE COM ÁGUA",
+"Retire uma amostra e envie para o laboratório para analisar",
+"Necessita de correção? Qual?",
+"Responsável pela Fabricação: (Douglas Possebon / Airton Junior)",
+"Resultado pH (6,0 - 8,0)",
+"Amostra testemunha retida para o Controle de Qualidade",
+"LIBERAÇÃO PARA ENVASE (Mariane Kluge / Neuci Bernardi)"
+],
+"LIMPA VIDROS": [
+"Conferir limpeza da sala conforme POP n°5",
+"Conferir limpeza dos equipamentos conforme POP n°3",
+"Fracionar matérias primas, conforme formulação",
+"ADICIONE ÁGUA ATÉ 70% DO VOLUME DO TANQUE",
+"SOB AGITAÇÃO, ADICIONE O CORANTE",
+"SOB AGITAÇÃO, ADICIONE BUTILGLICOL",
+"SOB AGITAÇÃO, ADICIONE ALCOOL ETILICO HIDRATADO 92",
+"SOB AGITAÇÃO, ADICIONE LAURIL ÉTER SULFATO DE SÓDIO",
+"COMPLETE O TANQUE COM ÁGUA",
+"Retire uma amostra e envie para o laboratório para analisar",
+"Necessita de correção? Qual?",
+"Responsável pela Fabricação: (Douglas Possebon / Airton Junior)",
+"Resultado pH (6,0 - 8,0)",
+"Amostra testemunha retida para o Controle de Qualidade",
+"LIBERAÇÃO PARA ENVASE (Mariane Kluge / Neuci Bernardi)"
+],
+"LIMPADOR PERFUMADO EUFORIA": [
+"Conferir limpeza da sala conforme POP n°5",
+"Conferir limpeza dos equipamentos conforme POP n°3",
+"Fracionar matérias primas, conforme formulação",
+"ADICIONE ÁGUA ATÉ 70% DO VOLUME DO TANQUE",
+"SOB AGITAÇÃO, ADICIONE O CORANTE",
+"EM UM RECIPIENTE SEPARADO, MISTURE O NONIL FENOL E A FRAGRÂNCIA",
+"SOB AGITAÇÃO, ADICIONE A MISTURA AO TANQUE",
+"SOB AGITAÇÃO, ADICIONE O QUATERNÁRIO DE AMÔNIA",
+"COMPLETE O TANQUE COM ÁGUA",
+"Retire uma amostra e envie para o laboratório para analisar",
+"Necessita de correção? Qual?",
+"Responsável pela Fabricação: (Douglas Possebon / Airton Junior)",
+"Resultado pH (6,0 - 8,0)",
+"Amostra testemunha retida para o Controle de Qualidade",
+"LIBERAÇÃO PARA ENVASE (Mariane Kluge / Neuci Bernardi)"
+],
+"LIMPADOR PERFUMADO FELICIDADE": [
+"Conferir limpeza da sala conforme POP n°5",
+"Conferir limpeza dos equipamentos conforme POP n°3",
+"Fracionar matérias primas, conforme formulação",
+"ADICIONE ÁGUA ATÉ 70% DO VOLUME DO TANQUE",
+"SOB AGITAÇÃO, ADICIONE O CORANTE",
+"EM UM RECIPIENTE SEPARADO, MISTURE O NONIL FENOL E A FRAGRÂNCIA",
+"SOB AGITAÇÃO, ADICIONE A MISTURA AO TANQUE",
+"SOB AGITAÇÃO, ADICIONE O QUATERNÁRIO DE AMÔNIA",
+"COMPLETE O TANQUE COM ÁGUA",
+"Retire uma amostra e envie para o laboratório para analisar",
+"Necessita de correção? Qual?",
+"Responsável pela Fabricação: (Douglas Possebon / Airton Junior)",
+"Resultado pH (6,0 - 8,0)",
+"Amostra testemunha retida para o Controle de Qualidade",
+"LIBERAÇÃO PARA ENVASE (Mariane Kluge / Neuci Bernardi)"
+],
+"LIMPEZA PESADA": [
+"Conferir limpeza da sala conforme POP n°5",
+"Conferir limpeza dos equipamentos conforme POP n°3",
+"Fracionar matérias primas, conforme formulação",
+"ADICIONE ÁGUA ATÉ 70% DO VOLUME DO TANQUE",
+"SOB AGITAÇÃO, ADICIONE O BUTILGLICOL",
+"SOB AGITAÇÃO, ADICIONE O LAURIL ÉTER SULFATO DE SÓDIO",
+"SOB AGITAÇÃO, ADICIONE O FRAGRÂNCIA",
+"SOB AGITAÇÃO, ADICIONE A AMÔNIA LÍQUIDA",
+"COMPLETE O TANQUE COM ÁGUA",
+"Retire uma amostra e envie para o laboratório para analisar",
+"Necessita de correção? Qual?",
+"Responsável pela Fabricação: (Douglas Possebon / Airton Junior)",
+"Resultado pH (9,0 - 11,0)",
+"Amostra testemunha retida para o Controle de Qualidade",
+"LIBERAÇÃO PARA ENVASE (Mariane Kluge / Neuci Bernardi)"
+]
+}
+};
+function csAplicaForm367(){
+  if(CS_MIGRA.includes('form-v2-0710'))return -1;
+  let n=0;const hoje=ymd(new Date());
+  Object.entries(CS_FORM367.mp).forEach(([g,mp])=>{
+    const f=formulaDe(g);
+    const antes=JSON.stringify((f.mp||[]).map(x=>[x.nome,+x.pct]));
+    const depois=JSON.stringify(mp.map(x=>[x.nome,+x.pct]));
+    if(antes!==depois){
+      if(!FORM_VERS[g])FORM_VERS[g]=[{v:1,desde:'',mp:JSON.parse(JSON.stringify(f.mp||[]))}];
+      /* se hoje já houve lote deste granel (pesado pela fórmula antiga), a versão nova vale de amanhã */
+      let desde=hoje;try{if(ORDENS.some(o=>o.data===hoje&&csGranel(o)===g&&(o.iniReal||o.fimReal||sit(o)==='concluida')))desde=ymd(addD(new Date(),1));}catch(e){}
+      const vs=FORM_VERS[g];vs[vs.length-1].ate=desde;
+      vs.push({v:vs[vs.length-1].v+1,desde,mp:JSON.parse(JSON.stringify(mp)),obs:'formulação revisada · documento de 07/10'});
+      f.mp=JSON.parse(JSON.stringify(mp));n++;
+    }
+  });
+  Object.entries(CS_FORM367.proc).forEach(([g,passos])=>{const f=formulaDe(g);f.proc=passos.slice();});
+  CS_MIGRA.push('form-v2-0710');
+  return n;
+}
+setTimeout(function f(){try{if(!PRONTO)return setTimeout(f,3000);if(MODO_TV)return;
+  const n=csAplicaForm367();if(n<0)return;agendarSalvar();
+  if(n)toast(`Formulações atualizadas: ${n} granéis ganharam a versão nova (vale para as OPs a partir de hoje).`);}catch(e){console.warn('form367',e);}},7000);
+
+/* ---------- 5) folha do lote: estoque com número, FALTA/OK, ⋯ ---------- */
+(function(){try{const s=document.createElement('style');s.textContent=`
+.tform .selo{display:inline-block;font-size:9.5px;font-weight:700;letter-spacing:.05em;border-radius:999px;padding:2px 7px;margin-left:6px;vertical-align:middle}
+.tform .selo.ok{background:#ECFDF3;color:#15803D}.tform .selo.falta{background:#FEF2F2;color:#DC2626}.tform .selo.aperto{background:#FFF7E6;color:#B45309}.tform .selo.sem{background:#F1F5F9;color:#64748B}
+.tform td.estq{white-space:nowrap}.tform td.estq .selo{margin-left:8px}.tform td.estq.w b{color:#DC2626}
+.tform tr.mprem td{opacity:.55;text-decoration:line-through}.tform tr.mprem td.c,.tform tr.mprem td.estq{text-decoration:none}
+.tform .mpaj{display:block;font-size:10.5px;color:#B45309}
+.bmp3{width:28px;height:28px;border-radius:999px;border:1px solid #CBD5E1;background:#fff;display:inline-flex;align-items:center;justify-content:center;gap:3px;cursor:pointer;padding:0}
+.bmp3 i{width:4px;height:4px;border-radius:9px;background:#475569;display:block}
+.bmp3.urg{border-color:#DC2626}.bmp3.urg i{background:#DC2626}
+.cs-ctx.mpmenu form{padding:8px 10px;display:flex;flex-direction:column;gap:6px;min-width:240px}
+.cs-ctx.mpmenu form input{height:32px;border:1px solid var(--line);border-radius:8px;padding:0 9px;font:inherit}
+.cs-ctx.mpmenu form .ll{font-size:11px;color:var(--ink3)}
+.cs-ctx.mpmenu form .bb{display:flex;gap:6px;justify-content:flex-end}
+.cs-ctx.mpmenu form button{height:32px;padding:0 12px;border-radius:8px;border:1px solid var(--line);background:#fff;font:600 12.5px Inter,sans-serif;cursor:pointer}
+.cs-ctx.mpmenu form button.pri{background:#15803D;color:#fff;border-color:#15803D}`;document.head.appendChild(s);}catch(e){}})();
+const csAjMPDe=b=>((APONTA[b.chave]||{}).mpAjuste)||{};
+try{const _mpl67=mpDoLote;mpDoLote=function(b){
+  const l=_mpl67.apply(this,arguments);
+  const aj=csAjMPDe(b);
+  return l.map(x=>{const a=aj[x._orig||x.nome]||aj[x.nome];if(!a)return x;
+    if(a.remove)return {...x,kg:0,_rem:true,_ajMotivo:a.motivo,_ajQuem:a.quem,_ajEm:a.em};
+    return {...x,kg:+a.kg,_aj:+a.kg,_ajBase:x.kg,_ajMotivo:a.motivo,_ajQuem:a.quem,_ajEm:a.em};});};}catch(e){}
+function csGravaAjMP(b,nome,dados,evento,det){
+  const at=APONTA[b.chave]||{};const aj={...(at.mpAjuste||{})};
+  if(dados)aj[nome]=dados;else delete aj[nome];
+  APONTA[b.chave]={...at,mpAjuste:aj};
+  try{(b.ordens||[]).forEach(o=>registrar(o,evento,null,det));}catch(e){}
+  agendarSalvar();
+  const nova=bateladas(b.data).find(x=>x.chave===b.chave)||b;
+  try{if((APONTA[b.chave]||{}).liberadoEm)csMPNaLiberacao(nova);}catch(e){}
+  abrirLote(nova);
+}
+function csMenuMP(ev,b,nome){
+  ev.stopPropagation();ev.preventDefault();
+  const c=document.getElementById('csCtx');if(!c)return;
+  const linha=mpDoLote(b).find(x=>x.nome===nome||x._orig===nome);if(!linha)return;
+  const trava=!!(APONTA[b.chave]||{}).liberadoEm&&!podeEditar('tanques');
+  const base=linha._ajBase!=null?linha._ajBase:linha.kg;
+  c.className='cs-ctx mpmenu on';
+  const menu=()=>{c.innerHTML=`<div style="padding:6px 12px 2px;font-size:11px;color:var(--ink3)">${escAttr(linha.nome)} · ${nf1(linha.kg)} kg</div><div class="div"></div>
+    <button data-mpa="editar">&#9998; Editar quantidade neste lote</button>
+    ${linha._rem?`<button data-mpa="voltar">&#8634; Voltar com o insumo</button>`:`<button data-mpa="remover">&#10005; Remover deste lote</button>`}
+    <button data-mpa="trocar">${SVG_TROCA} Trocar por outro insumo</button>
+    ${linha._aj!=null?`<div class="div"></div><button data-mpa="padrao">&#8634; Voltar à quantidade da fórmula (${nf1(linha._ajBase)} kg)</button>`:''}`;};
+  const form=(titulo,kg,ok)=>{c.innerHTML=`<form><div class="ll"><b>${escAttr(titulo)}</b> · ${escAttr(linha.nome)}</div>
+      ${kg!=null?`<input type="number" step="0.001" min="0" id="mpQtd" value="${kg}" placeholder="kg neste lote"><div class="ll">Fórmula: ${nf1(base)} kg para ${nf(b.volume)} L</div>`:''}
+      <input id="mpMot" placeholder="Motivo (obrigatório)"><div class="bb"><button type="button" data-mpa="cancela">Cancelar</button><button type="submit" class="pri">Gravar</button></div></form>`;
+    c.querySelector('form').onsubmit=e=>{e.preventDefault();const mot=c.querySelector('#mpMot').value.trim();if(!mot){toast('Escreva o motivo.',true);return;}
+      const q=kg!=null?+c.querySelector('#mpQtd').value:null;if(kg!=null&&!(q>=0)){toast('Informe a quantidade.',true);return;}
+      c.className='cs-ctx';ok(q,mot);};
+    const i=c.querySelector('#mpQtd')||c.querySelector('#mpMot');if(i)setTimeout(()=>i.focus(),30);};
+  c.onclick=e=>{const bt=e.target.closest('[data-mpa]');if(!bt)return;e.stopPropagation();const a=bt.dataset.mpa;
+    if(a==='cancela'){c.className='cs-ctx';return;}
+    if(trava&&a!=='trocar'){toast('O lote já foi liberado: quem mexe agora é quem edita os tanques.',true);return;}
+    const quem=quemAssina(),em=relogio(),dia=ymd(new Date());
+    if(a==='editar')form('Editar quantidade',linha.kg,(q,mot)=>csGravaAjMP(b,nome,{kg:q,motivo:mot,quem,em,dia},'Quantidade de insumo ajustada no lote',`${nome}: ${nf1(base)} → ${nf1(q)} kg · ${mot}`));
+    else if(a==='remover')form('Remover deste lote',null,(q,mot)=>csGravaAjMP(b,nome,{remove:true,motivo:mot,quem,em,dia},'Insumo removido do lote',`${nome} · ${mot}`));
+    else if(a==='voltar'||a==='padrao'){c.className='cs-ctx';csGravaAjMP(b,nome,null,'Insumo voltou ao padrão da fórmula',`${nome}: ${nf1(base)} kg`);}
+    else if(a==='trocar'){c.className='cs-ctx';modalTroca(b,nome);}
+  };
+  menu();
+  const x=Math.min(ev.clientX||0,window.innerWidth-300),y=Math.min(ev.clientY||0,window.innerHeight-220);
+  c.style.left=x+'px';c.style.top=y+'px';
+  setTimeout(()=>document.addEventListener('click',function f(e){if(!c.contains(e.target)){c.className='cs-ctx';document.removeEventListener('click',f,true);}},true),0);
+}
+document.addEventListener('click',ev=>{const bt=ev.target.closest&&ev.target.closest('[data-mp3]');if(!bt)return;
+  const chave=bt.dataset.mp3c,data=bt.dataset.mp3d;let b=null;try{b=bateladas(data).find(x=>x.chave===chave);}catch(e){}
+  if(b)csMenuMP(ev,b,bt.dataset.mp3);},true);
+
+/* ---------- 6) módulos: conflito junta em vez de descartar ---------- */
+(function(){try{
+  const N=window.csNucleo;if(!N||!N.gravar)return;
+  const BASE={};
+  const _ler=N.ler,_gravar=N.gravar;
+  N.ler=async function(id){const d=await _ler.apply(this,arguments);try{if(d!=null)BASE[id]=JSON.stringify(d);}catch(e){}return d;};
+  N.gravar=async function(id,dados){
+    let r=await _gravar.apply(this,arguments);
+    if(r&&r.conflito){
+      try{
+        const banco=await _ler.call(this,id);   /* também atualiza a versão conhecida */
+        const base=BASE[id]?JSON.parse(BASE[id]):null;
+        let junto=dados;
+        if(base&&banco){const ops=csDiff(base,dados,[],[]);junto=ops.length?csAplicaOps(JSON.parse(JSON.stringify(banco)),ops):banco;}
+        else if(banco&&!base)junto=csM3Cego(dados,banco);
+        r=await _gravar.call(this,id,junto);
+        if(r&&!r.conflito){r={...r,mesclado:true,dados:junto};BASE[id]=JSON.stringify(junto);}
+        return r;
+      }catch(e){console.warn('junção do módulo',e);return r;}
+    }
+    if(r&&r.ok&&!r.local){try{BASE[id]=JSON.stringify(dados);}catch(e){}}
+    return r;
+  };
+}catch(e){}})();
+try{csNucleo.versao='v367';}catch(e){}
+
+</script>
+<script>
+/* ===================== v368 · fim de turno vira card de concluída do dia =====================
+   O pedaço de ontem da OP que virou o dia aparecia em cima da coluna como "turno deste dia · a OP
+   está em 07/10", parecendo que ainda corria. Agora entra nas CONCLUÍDAS HOJE do dia em que o turno
+   fechou, no fim da lista (pela hora), como uma OP normal: selo FIM DE TURNO · CONTINUA EM dd/mm - hh:mm,
+   tempos daquele dia (previsto × realizado), registro do fim de turno e o que ficou. No dia seguinte a
+   OP mostra "FALTAM X" em vez da quantidade prevista. Quebra só no dia em que a OP fecha.
+   Relatórios: a OP que virou o dia contava as caixas duas vezes (o turno no dia dele e o total no
+   dia do fechamento) — agora cada dia conta só o seu pedaço (csCxDia). */
+(function(){try{const s=document.createElement('style');s.textContent=`
+.cs5.cs5t{background:#ECECEE!important;border-color:#DADADF!important}
+.cs5.cs5t .n5{color:#52525B!important}
+.cs5 .k5 b.lar{color:#B45309}`;document.head.appendChild(s);}catch(e){}})();
+const CS_LAR8='#F08A24';
+/* as caixas registradas nos turnos até este (inclusive) */
+function cs8Antes(o,t){const l=turnosDe(o);const i=l.indexOf(t);return l.slice(0,i<0?l.length:i+1).reduce((s,x)=>s+(+x.caixas||0),0);}
+function cs5CardTurno(x,conf){
+  const o=x.o,t=x.t;const un=und(o),prev=caixasPrev(o);
+  const idx=turnosDe(o).indexOf(t);const primeiro=idx<=0;
+  const reg=+t.caixas||0,ate=cs8Antes(o,t),ficou=Math.max(0,prev-ate);
+  const aberta=!['concluida','cancelada'].includes(sit(o));
+  const selo=cs5sel(aberta?`FIM DE TURNO · CONTINUA EM ${dCurto(o.data)} - ${hhmm(o.inicio)}`:`FIM DE TURNO · CONTINUOU EM ${dCurto(o.data)}`,CS_LAR8);
+  const pl=t.plano||{};const real=t.real||{};
+  const sDur=primeiro?(+pl.setup||+o.setup||0):0;
+  const pIni=pl.inicio!=null?+pl.inicio:hm(t.ini)-sDur;
+  const eDur=(()=>{try{const e=+o.envase||0;if(primeiro||!prev)return e;const ant=turnosDe(o).slice(0,idx).reduce((s,y)=>s+(+y.caixas||0),0);return Math.max(5,Math.round(e*Math.max(0,1-ant/prev)));}catch(e){return +o.envase||0;}})();
+  const L=[];
+  if(sDur){const rIni=real.iniReal||(primeiro?o.iniReal:'')||'',rFim=real.setupFim||'';
+    let d=null;try{if(rIni&&rFim)d=(hm(rFim)-hm(rIni))-sDur;}catch(e){}
+    L.push({n:'Setup',p:{a:cs5hm(pIni),b:cs5hm(pIni+sDur),d:cs5dur(sDur)},r:{a:rIni,b:rFim,d}});}
+  else L.push({n:'Setup',p:{a:'—',b:'—',d:''},r:{a:'—',b:'—',d:null}});
+  const tr=Math.max(0,hm(t.fim)-hm(t.ini));
+  L.push({n:'Envase',p:{a:cs5hm(pIni+sDur),b:cs5hm(pIni+sDur+eDur),d:cs5dur(eDur)},r:{a:t.ini,b:t.fim,d:null}});
+  const sReal=(()=>{try{const a=real.iniReal||(primeiro?o.iniReal:''),b=real.setupFim;return a&&b?Math.max(0,hm(b)-hm(a)):0;}catch(e){return 0;}})();
+  const bloco=`<div class="g5"><div class="r tp">Tempos</div><div class="hp">Previsto</div><div class="hr">Realizado</div>${L.map(cs5Linha).join('')}
+    <span></span><div class="to"><span class="lb">Total Previsto</span><span></span><span class="vl">${cs5dur(sDur+eDur)}</span></div>
+    <div class="to rl"><span class="lb">Total Realizado</span><span></span><span class="vl">${cs5hmin(sReal+tr)}</span></div>
+    <span></span><span></span><div class="fr ci">Fechou o turno às ${cs5esc(t.fim)}${t.operador?` · ${cs5esc(t.operador)}`:''}</div></div>`;
+  const chips1=`<div class="k5 k3"><span><i>LOTE</i><b class="az">${cs5esc(o.lote||'—')}</b></span><span><i>OP Nº</i><b class="az">${cs5esc(rotuloOP(o))}</b></span><span><i>TANQUE/ VOLUME</i><b>${cs5esc((o.tanque||'a programar')+' - '+nf(o.litros)+'L')}</b></span></div>`;
+  const chips2=`<div class="k5 k3"><span><i>QTD PREVISTA</i><b>${nf(prev)} ${un}</b></span><span><i>REGISTRO FIM TURNO</i><b>${nf(reg)} ${un}</b></span><span><i>FICOU PARA ${cs5esc(dCurto(o.data))}</i><b class="lar">${nf(ficou)} ${un}</b></span></div>`;
+  return `<div class="bat cs5 cs5c cs5t" data-fo="${cs5esc(o.id)}" data-csok="1">
+    <div class="t5">${idx>0?`<span class="ini">${cs5esc(cs5Comecou(o))}</span>`:''}<span class="sp"></span>${selo}${cs5pts(o)}</div>
+    <div class="c5" style="margin-top:-4px">${cs5foto(o,76,104)}<div class="n5 nl">${cs5esc(cs5nome(o))}</div><div class="d5">${chips1}${chips2}</div></div>${bloco}</div>`;
+}
+try{csNucleo.versao='v368';}catch(e){}
 
 </script>
 </body>

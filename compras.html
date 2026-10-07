@@ -470,6 +470,7 @@ async function gravarAgora(){
   try{
     const r=await N.gravar(MOD_ID,DB);
     if(r&&r.conflito){toast('Outra pessoa gravou antes. Recarreguei o que está no banco.',true);DB=normaliza(await N.ler(MOD_ID));render();}
+    else if(r&&r.mesclado){DB=normaliza(r.dados);render();marcaSalvo('salvo no banco '+agora().slice(-5)+' · junto com o de outra pessoa');}
     else marcaSalvo(r&&r.local?'salvo neste navegador '+agora().slice(-5):'salvo no banco '+agora().slice(-5));
   }catch(e){marcaSalvo('NÃO SALVOU');toast('Não consegui gravar: '+e.message,true);}
   GRAVANDO=false;if(SUJO)salvar();
