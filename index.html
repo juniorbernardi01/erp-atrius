@@ -5449,7 +5449,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v374';
+const VERSAO_APP='v376';
 let DRAG=null;
 function render(){
   recomporTudo();
@@ -29328,6 +29328,266 @@ csComboAbre=function(sel,pre){
 /* a tarja vermelha dos lotes: o setInterval da v370 guardou a função antiga; some de vez */
 setInterval(()=>{try{const a=document.getElementById('csLoteAviso');if(a)a.remove();}catch(e){}},1500);
 try{csNucleo.versao='v374';}catch(e){}
+
+</script>
+<script>
+/* ===================== v375 · faixa fixa com os títulos das máquinas · "+" só na fila · previsto da OP que virou o dia =====================
+   1) FAIXA FIXA: os cabeçalhos escuros das máquinas saem das colunas e vão para uma faixa presa no topo da área
+      que rola (logo abaixo de Envase/Tanques/data). A página rola normal por trás; a faixa não se mexe.
+      As colunas voltam a ser como eram (sem rolagem própria, sem altura fixa).
+   2) "+" SÓ NA FILA: um divisor antes de cada OP da fila (antes da primeira e entre elas), nunca depois da
+      última nem nas concluídas. Linha cinza com o "+" verde sempre visível; no mouse aparece "encaixar aqui ·
+      hh:mm". Altura fixa: os blocos não se mexem. A hora é sempre o FIM PREVISTO mostrado no card de cima.
+   3) PREVISTO DA OP QUE VIROU O DIA (fim de turno): ela é a primeira da máquina no dia seguinte — previsto da
+      abertura (07:00) até o tempo que falta para o saldo, sem setup; a fila vem depois dela, encadeada. */
+
+/* ---------- 3) ordem da corrente: quem já começou / veio de ontem vem primeiro ---------- */
+csPrevIni=function(o){
+  try{
+    if(!o||o.inicio==null||!o.maq||!o.data)return o?o.inicio:0;
+    const ini=+o.inicio;
+    const cont=x=>(typeof csTurnosAntes==='function'&&csTurnosAntes(x).length)||x.iniReal||x.envIni;
+    const chave=x=>(cont(x)?'0':'1')+(x.iniReal||x.envIni?String(hm(x.iniReal||x.envIni)).padStart(5,'0'):String(x.inicio??0).padStart(5,'0'))+String(x.id);
+    const lista=ORDENS.filter(x=>x.maq===o.maq&&x.data===o.data&&naGrade(x)&&x.inicio!=null).sort((a,b)=>chave(a).localeCompare(chave(b)));
+    const i=lista.findIndex(x=>x===o||x.id===o.id);
+    const P=i>0?lista[i-1]:null;
+    let r=ini;
+    if(cont(o)&&typeof csTurnosAntes==='function'&&csTurnosAntes(o).length){
+      /* veio de outro dia: parte da abertura da máquina (ou do fim da anterior), não do horário velho */
+      let ji=420;try{const j=jornDia(o.maq,o.data)||jorn(o.maq);ji=j[0];}catch(e){}
+      r=ji;
+    }
+    if(P){const fimP=P.fimReal?hm(P.fimReal):csPrevFim(P);if(fimP!=null&&!isNaN(fimP))r=Math.max(fimP,r);}
+    return r;
+  }catch(e){return o.inicio;}
+};
+
+/* ---------- 2) "+" só na fila ---------- */
+(function(){try{const s=document.createElement('style');s.textContent=`
+.cs5mais{position:relative;height:18px;margin:0;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:3}
+.cs5mais::before{content:'';position:absolute;left:12px;right:12px;top:50%;height:1px;background:#D4D9E1}
+.cs5mais i{width:18px;height:18px;border-radius:999px;background:#16A34A;color:#fff;font:700 13px/18px Inter,sans-serif;text-align:center;font-style:normal;position:relative;opacity:1;transform:none;transition:transform .12s}
+.cs5mais em{position:absolute;left:calc(50% + 14px);top:50%;transform:translateY(-50%);font:600 11.5px Inter,sans-serif;color:#15803D;font-style:normal;white-space:nowrap;opacity:0;background:#fff;padding:1px 6px;border-radius:6px;transition:opacity .12s}
+.cs5mais:hover{height:18px;margin:0}.cs5mais:hover::before{background:#86EFAC}.cs5mais:hover i{transform:scale(1.15)}.cs5mais:hover em{opacity:1}
+.cs5mais.ult{display:none}`;document.head.appendChild(s);}catch(e){}})();
+cs5FilaComMais=function(fila,vez,m,data,conf){
+  if(!fila.length)return '';
+  const fpDe=o=>{try{if(o.fimReal)return hm(o.fimReal);const T=cs5Tempos(o);return isNaN(T.fp)?null:T.fp;}catch(e){return null;}};
+  let t=vez?fpDe(vez.o):null;
+  if(t==null){const hoje=ymd(new Date());let ji=420;try{const j=jornDia(m,data)||jorn(m);ji=j[0];}catch(e){}t=data===hoje?Math.max(ji,hm(relogio())):ji;}
+  const mais=tt=>`<div class="cs5mais" data-mais="${cs5esc(m)}|${data}|${Math.round(tt)}" title="Encaixar uma OP aqui, às ${hhmm(tt)}"><i>+</i><em>encaixar aqui · ${hhmm(tt)}</em></div>`;
+  let h='';
+  fila.forEach(x=>{h+=mais(t)+cs5CardFila(x.o,conf);const f=fpDe(x.o);if(f!=null)t=f;});
+  return h;
+};
+
+/* ---------- 1) faixa fixa com os títulos ---------- */
+(function(){try{const s=document.createElement('style');s.textContent=`
+#tqgrid.dia .tqcol.cs5col{overflow:hidden!important;display:block;height:auto!important;max-height:none!important}
+#tqgrid.dia .tqcol.cs5col .tqb{overflow:visible;max-height:none;border-radius:6px}
+#tqgrid.dia .tqcol.cs5col>.tqh.cs5h{display:none}
+.cs5faixa{position:sticky;top:-16px;z-index:60;display:flex;gap:12px;min-width:0;width:100%;margin:-16px 0 10px;padding-top:16px;background:var(--surface,#F5F4F0)}
+.cs5faixa .tqh.cs5h{flex:1 1 0;min-width:340px;background:#404040;color:#fff;padding:10px 14px;border:0;border-radius:6px;box-shadow:0 8px 16px -10px rgba(0,0,0,.5);position:relative}
+body.tv .cs5faixa{top:-18px;margin-top:-18px;padding-top:18px}`;document.head.appendChild(s);}catch(e){}})();
+function cs5Faixa(){
+  try{
+    const g=document.getElementById('tqgrid');const wrap=document.getElementById('tqwrap');
+    let fx=document.getElementById('cs5faixa');
+    if(!g||!wrap||!g.classList.contains('dia')||document.body.classList.contains('cs-operon')){if(fx)fx.remove();return;}
+    const cols=[...g.querySelectorAll('.tqcol.cs5col')];if(!cols.length){if(fx)fx.remove();return;}
+    if(!fx){fx=document.createElement('div');fx.id='cs5faixa';fx.className='cs5faixa';}
+    if(fx.parentElement!==wrap||fx.nextSibling!==g)wrap.insertBefore(fx,g);
+    fx.innerHTML='';
+    cols.forEach(c=>{const h=c.querySelector(':scope>.tqh.cs5h');if(!h)return;const cl=h.cloneNode(true);cl.style.display='';fx.appendChild(cl);});
+    /* o aviso/livres de dentro do título continua funcionando: o clique vai para o original */
+    fx.querySelectorAll('[data-gi],[data-estoura]').forEach(b=>{b.addEventListener('click',ev=>{ev.preventDefault();const sel=b.dataset.gi!=null?`[data-gi="${b.dataset.gi}"][data-gm="${b.dataset.gm}"]`:`[data-estoura="${b.dataset.estoura}"]`;const o=g.querySelector('.tqh.cs5h '+sel);if(o)o.click();});});
+  }catch(e){}
+}
+try{const _rd75=render;render=function(){const r=_rd75.apply(this,arguments);try{cs5Faixa();}catch(e){}return r;};}catch(e){}
+/* a v374 fixava a altura das colunas: desliga */
+try{cs74Alturas=function(){};}catch(e){}
+try{csNucleo.versao='v375';}catch(e){}
+
+</script>
+<script>
+/* ===================== v376 · colunas rolam por dentro (faixa fixa) · Programação do dia em página · hora de início ·
+   trilha do card =====================
+   1) ENVASE (dia): a faixa com os títulos fica fixa (v375) e cada coluna rola por dentro — a roda do mouse rola só a
+      máquina onde o mouse está. A faixa "Programação do dia" sai de baixo das colunas (a página não precisa mais rolar).
+   2) PROGRAMAÇÃO DO DIA: botão "Programação" ao lado de "Tela da TV" abre a página inteira, maior e mais legível
+      (linhas altas, nome inteiro com lote e horário, grade das horas). Clicar numa OP abre a ficha dela; ao fechar,
+      volta para a programação. Setas mudam o dia. Esc fecha.
+   3) HORA DE INÍCIO (ficha da OP): o mesmo campo, moderno: digita "0500" e vira 05:00 (qualquer minuto, não só de 5
+      em 5); ↑/↓ andam 5 min; já vem com o PRÓXIMO HORÁRIO LIVRE da máquina escolhida (troca de máquina, troca a
+      sugestão; quem mexeu à mão fica com o que digitou).
+   4) TRILHA Tanque → Envase → Quarentena → Estoque: mais curta, centralizada, sem cortar. */
+
+/* ---------- 1) colunas rolam por dentro ---------- */
+(function(){try{const s=document.createElement('style');s.textContent=`
+#tqgrid.dia .tqcol.cs5col{overflow:hidden!important;display:flex!important;flex-direction:column}
+#tqgrid.dia .tqcol.cs5col .tqb{flex:1 1 auto;min-height:0;overflow-y:auto!important;overflow-x:hidden;scrollbar-width:thin;max-height:none}
+#tqgrid.dia{align-items:stretch}
+body:has(#tqgrid.dia) #csTL{display:none}`;document.head.appendChild(s);}catch(e){}})();
+function cs76Alturas(){
+  try{
+    const g=document.getElementById('tqgrid');if(!g||!g.classList.contains('dia'))return;
+    if(document.body.classList.contains('cs-operon'))return;
+    const cols=[...g.querySelectorAll('.tqcol.cs5col')];if(!cols.length)return;
+    const top=Math.round(g.getBoundingClientRect().top);
+    const alt=Math.max(360,window.innerHeight-top-14);
+    cols.forEach(c=>{c.style.setProperty('height',alt+'px','important');c.style.setProperty('max-height',alt+'px','important');c.style.setProperty('overflow','hidden','important');});
+  }catch(e){}
+}
+(function(){const pos={};
+  document.addEventListener('scroll',ev=>{const t=ev.target;if(t&&t.classList&&t.classList.contains('tqb')){const c=t.closest('.cs5col');const k=c&&c.querySelector('.cs5h b');if(k)pos[k.textContent]=t.scrollTop;}},true);
+  try{const _rd=render;render=function(){const r=_rd.apply(this,arguments);try{cs76Alturas();document.querySelectorAll('#tqgrid.dia .cs5col').forEach(c=>{const k=c.querySelector('.cs5h b');const b=c.querySelector('.tqb');if(k&&b&&pos[k.textContent])b.scrollTop=pos[k.textContent];});}catch(e){}return r;};}catch(e){}
+  window.addEventListener('resize',()=>{try{cs76Alturas();}catch(e){}});
+})();
+
+/* ---------- 2) Programação do dia em página ---------- */
+(function(){try{const s=document.createElement('style');s.textContent=`
+#csProg{position:fixed;inset:0;z-index:700;background:#F3F4F6;display:none;flex-direction:column;font-family:Inter,system-ui,sans-serif}
+#csProg.on{display:flex}
+body.cs-prog-on .mask{z-index:960!important}
+body.cs-prog-on #csCombo{z-index:4000}
+#csProg .pg-cab{display:flex;align-items:center;gap:14px;padding:14px 24px;background:#fff;border-bottom:1px solid #E5E7EB}
+#csProg .pg-cab h2{margin:0;font-size:20px;font-weight:700}
+#csProg .pg-cab .dt{display:inline-flex;align-items:center;gap:6px;border:1px solid #D1D5DB;border-radius:10px;padding:4px 8px;background:#fff}
+#csProg .pg-cab .dt b{font-size:14px;min-width:200px;text-align:center}
+#csProg .pg-cab button{font-family:inherit}
+#csProg .pg-cab .nv{width:30px;height:30px;border:0;background:#F3F4F6;border-radius:8px;font-size:16px;cursor:pointer}
+#csProg .pg-cab .hj{border:1px solid #D1D5DB;background:#fff;border-radius:8px;padding:5px 10px;font-size:12.5px;cursor:pointer}
+#csProg .pg-cab .x{margin-left:auto;border:1px solid #D1D5DB;background:#fff;border-radius:10px;padding:7px 14px;font-size:13px;font-weight:600;cursor:pointer}
+#csProg .pg-corpo{flex:1;overflow:auto;padding:18px 24px}
+#csProg .cs-tl{background:#fff;border:1px solid #E5E7EB;border-radius:14px;padding:18px 22px}
+#csProg .cab{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#6B7280;margin-bottom:14px;display:flex;align-items:center;gap:10px}
+#csProg .cab span{margin-left:auto;font-weight:400;letter-spacing:0;text-transform:none;font-size:13px;color:#374151}
+#csProg .cab span b{font-size:20px;color:#15803D;margin-right:4px}
+#csProg .hh{position:relative;height:18px;display:block;font-size:12px;color:#6B7280;margin:0 110px 4px 100px}
+#csProg .hh span{position:absolute;transform:translateX(-50%);white-space:nowrap;font-family:ui-monospace,Menlo,monospace}
+#csProg .csl{display:flex;align-items:center;margin-bottom:10px}
+#csProg .nm{width:100px;flex:none;font-size:16px;font-weight:700;color:#111827}
+#csProg .fx{flex:1;height:52px;background:#F3F4F6;border-radius:10px;position:relative;overflow:hidden;background-image:repeating-linear-gradient(to right,#E5E7EB 0 1px,transparent 1px var(--hw,8.333%))}
+#csProg .csb{position:absolute;top:4px;bottom:4px;border-radius:8px;font-size:12px;font-weight:600;display:flex;align-items:center;padding:0 10px;overflow:hidden;white-space:nowrap;cursor:pointer;line-height:1.2}
+#csProg .csb.op{background:color-mix(in srgb,var(--c) 22%,#fff);color:#1F2937;border-left:5px solid var(--c)}
+#csProg .csb.op.st-run{background:color-mix(in srgb,var(--c) 42%,#fff)}
+#csProg .csb.op.st-fim{opacity:.55}
+#csProg .csb.op small{display:block;font-weight:500;color:#4B5563;font-size:11px}
+#csProg .csb.op:hover{outline:2px solid var(--c)}
+#csProg .atraso{background:#FCA5A5;color:#7F1D1D;justify-content:center}
+#csProg .int{background:repeating-linear-gradient(-45deg,#E5E7EB 0 5px,#F3F4F6 5px 10px);color:#6B7280;justify-content:center;cursor:default;font-size:11px}
+#csProg .fol{background:#E5E7EB;color:#9CA3AF;justify-content:center;cursor:default;font-size:11px;top:0;bottom:0;border-radius:0}
+#csProg .vao{background:repeating-linear-gradient(45deg,#ECFDF5 0 8px,transparent 8px 16px);border:1px dashed #15803D;color:#15803D;font-weight:700;justify-content:center;cursor:default}
+#csProg .perd{background:repeating-linear-gradient(45deg,#F3F4F6 0 8px,transparent 8px 16px);color:#9CA3AF;justify-content:center;cursor:default;font-size:11px}
+#csProg .ag{position:absolute;top:-4px;bottom:-4px;width:2px;background:#DC2626;z-index:5}
+#csProg .ag::after{content:'agora';position:absolute;top:0;left:4px;font-size:9.5px;color:#DC2626;font-weight:700}
+#csProg .oc{width:110px;flex:none;text-align:right;padding-left:12px;line-height:1.2}
+#csProg .oc b{font-size:18px;display:block}#csProg .oc i{font-style:normal;font-size:11.5px;color:#6B7280;display:block}
+#csProg .leg{display:flex;gap:16px;flex-wrap:wrap;margin-top:14px;padding-top:12px;border-top:1px solid #E5E7EB;font-size:12px;color:#4B5563}
+#csProg .leg span{display:flex;align-items:center;gap:6px}#csProg .leg .q{width:16px;height:13px;border-radius:4px;display:block}
+#csProg .leg .q.op{background:color-mix(in srgb,var(--c) 30%,#fff);border-left:4px solid var(--c)}#csProg .leg .q.st-fim{opacity:.5}
+#csProg .leg .q.atraso{background:#FCA5A5}#csProg .leg .q.vao{border:1px dashed #15803D;background:#ECFDF5}#csProg .leg .q.int{background:repeating-linear-gradient(-45deg,#E5E7EB 0 3px,#F3F4F6 3px 6px)}#csProg .leg .q.perd{background:#E5E7EB}
+#csProg .leg .k{margin-left:auto;color:#9CA3AF}`;document.head.appendChild(s);}catch(e){}})();
+/* a faixa desenha pelo horário REAL de quem já começou e pelo previsto encadeado de quem ainda não começou */
+try{const _fd76=csFaixaDia;csFaixaDia=function(){
+  const bak=ORDENS.slice();
+  try{
+    const cl=bak.map(o=>{try{if(!naGrade(o))return o;const ini=(o.iniReal||o.envIni)?hm(o.iniReal||o.envIni):csPrevIni(o);if(ini==null||isNaN(ini)||ini===o.inicio)return o;const c=Object.assign(Object.create(Object.getPrototypeOf(o)),o);c.inicio=ini;return c;}catch(e){return o;}});
+    ORDENS.length=0;ORDENS.push(...cl);
+    return _fd76.apply(this,arguments);
+  }finally{ORDENS.length=0;ORDENS.push(...bak);}
+};}catch(e){}
+let CS_PROG_ON=false;
+function csProgPinta(){
+  const p=document.getElementById('csProg');if(!p||!CS_PROG_ON)return;
+  const corpo=p.querySelector('.pg-corpo');
+  let html='';try{html=csFaixaDia();}catch(e){html='';}
+  corpo.innerHTML=html||'<p style="color:#6B7280">Nenhuma máquina trabalha neste dia.</p>';
+  const d=S.ref instanceof Date?S.ref:new Date();
+  p.querySelector('.dt b').textContent=d.toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long'});
+  /* nome inteiro + horário dentro das barras largas; grade das horas */
+  corpo.querySelectorAll('.csb.op').forEach(b=>{
+    const t=String(b.getAttribute('title')||'');const m=/^OP (\S+) · (.*?) · (\d\d:\d\d)–(\d\d:\d\d)/.exec(t);
+    const o=ORDENS.find(x=>x.id===b.dataset.csop);const w=b.getBoundingClientRect().width;
+    if(m&&o&&w>150){b.innerHTML=`<span><b>${escAttr(m[2])}</b><small>Lote ${escAttr(o.lote||'—')} · OP ${escAttr(rotuloOP(o))} · ${m[3]}–${m[4]}</small></span>`;}
+    else if(m&&o&&w>70){b.textContent=`L${o.lote||''} ${m[3]}–${m[4]}`;}
+  });
+  try{const hs=[...corpo.querySelectorAll('.hh span')].map(s=>parseFloat(s.style.left));if(hs.length>=2){const hw=hs[1]-hs[0];corpo.querySelectorAll('.fx').forEach(f=>f.style.setProperty('--hw',hw+'%'));}}catch(e){}
+  corpo.querySelectorAll('[data-csop]').forEach(b=>b.onclick=()=>{const o=ORDENS.find(x=>x.id===b.dataset.csop);if(o)abrirOrdem(o);});
+}
+function csProgAbre(){
+  let p=document.getElementById('csProg');
+  if(!p){p=document.createElement('div');p.id='csProg';
+    p.innerHTML=`<div class="pg-cab"><h2>Programação do dia</h2><span class="dt"><button type="button" class="nv" data-d="-1">‹</button><b></b><button type="button" class="nv" data-d="1">›</button></span><button type="button" class="hj">Hoje</button><button type="button" class="x">✕ Fechar</button></div><div class="pg-corpo"></div>`;
+    document.body.appendChild(p);
+    p.querySelectorAll('.nv').forEach(b=>b.onclick=()=>{const d=S.ref instanceof Date?new Date(S.ref):new Date();d.setDate(d.getDate()+(+b.dataset.d));S.ref=d;render();});
+    p.querySelector('.hj').onclick=()=>{S.ref=new Date();render();};
+    p.querySelector('.x').onclick=csProgFecha;}
+  CS_PROG_ON=true;p.classList.add('on');document.body.classList.add('cs-prog-on');csProgPinta();
+}
+function csProgFecha(){CS_PROG_ON=false;const p=document.getElementById('csProg');if(p)p.classList.remove('on');document.body.classList.remove('cs-prog-on');}
+document.addEventListener('keydown',ev=>{if(ev.key==='Escape'&&CS_PROG_ON&&!document.querySelector('.mask.on'))csProgFecha();});
+try{const _rd76=render;render=function(){const r=_rd76.apply(this,arguments);try{csProgPinta();}catch(e){}return r;};}catch(e){}
+try{const _bd76=csBarraDia;csBarraDia=function(){const r=_bd76.apply(this,arguments);
+  try{let b=document.getElementById('csProgBtn');
+    if(!b){b=document.createElement('button');b.id='csProgBtn';b.className='btn sm';b.textContent='Programação';b.title='Programação do dia em tela inteira';b.onclick=csProgAbre;}
+    const slot=M('csSlBtn'),tv=M('tv');
+    if(slot&&b.parentNode!==slot){if(tv&&tv.parentNode===slot)slot.insertBefore(b,tv);else slot.appendChild(b);}
+    b.hidden=S.page!=='envase';
+  }catch(e){}
+  return r;};}catch(e){}
+
+/* ---------- 3) hora de início ---------- */
+(function(){try{const s=document.createElement('style');s.textContent=`
+input.cs-hora{font:700 18px ui-monospace,Menlo,monospace!important;letter-spacing:.03em;text-align:center;padding-right:30px!important;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236B7280' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 7v5l3 2'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 9px center}
+input.cs-hora.ruim{border-color:#DC2626!important;color:#DC2626}
+.cs-hora-dica{font-size:11px;color:var(--ink3);margin-top:4px}`;document.head.appendChild(s);}catch(e){}})();
+const csHoraFmt=v=>{const d=String(v||'').replace(/\D/g,'').slice(0,4);if(!d)return '';if(d.length<=2)return d;return d.slice(0,2)+':'+d.slice(2);};
+const csHoraOk=v=>{const m=/^(\d{1,2}):(\d{2})$/.exec(String(v||''));if(!m)return false;return +m[1]<=23&&+m[2]<=59;};
+/* próximo horário livre da máquina no dia: depois da última OP (previsto encadeado), nunca antes da abertura; hoje nunca antes de agora */
+function csProxLivreMaq(maq,data){
+  try{
+    let ji=420;try{const j=jornDia(maq,data)||jorn(maq);ji=j[0];}catch(e){}
+    let t=ji;
+    ORDENS.filter(o=>o.maq===maq&&o.data===data&&naGrade(o)&&o.inicio!=null).forEach(o=>{const f=o.fimReal?hm(o.fimReal):csPrevFim(o);if(f!=null&&!isNaN(f))t=Math.max(t,f);});
+    if(data===ymd(new Date()))t=Math.max(t,Math.ceil(agoraMin()/5)*5);
+    return Math.min(t,23*60+55);
+  }catch(e){return null;}
+}
+function csLigaHora(){
+  const i=M('fHr');if(!i||i.dataset.cs76)return;i.dataset.cs76='1';
+  try{i.type='text';}catch(e){}
+  i.classList.add('cs-hora');i.setAttribute('inputmode','numeric');i.setAttribute('placeholder','hh:mm');i.setAttribute('maxlength','5');i.removeAttribute('step');
+  let ult=csHoraOk(i.value)?i.value:'';
+  i.addEventListener('input',()=>{const f=csHoraFmt(i.value);if(f!==i.value)i.value=f;i.classList.toggle('ruim',i.value.length===5&&!csHoraOk(i.value));if(csHoraOk(i.value)){ult=i.value;try{calc();}catch(e){}}});
+  i.addEventListener('blur',()=>{let v=i.value;if(/^\d{1,2}$/.test(v))v=v.padStart(2,'0')+':00';if(/^\d{2}:\d$/.test(v))v=v+'0';
+    if(!csHoraOk(v)){v=ult;}i.value=v;i.classList.remove('ruim');try{calc();}catch(e){}});
+  i.addEventListener('keydown',ev=>{if(ev.key!=='ArrowUp'&&ev.key!=='ArrowDown')return;ev.preventDefault();
+    const m=csHoraOk(i.value)?hm(i.value):hm(ult||'07:00');const n=Math.max(0,Math.min(23*60+59,m+(ev.key==='ArrowUp'?5:-5)-(ev.key==='ArrowUp'?m%5:(m%5?m%5-5:0))));
+    i.value=hhmm(n);ult=i.value;HORA_MANUAL=true;try{calc();}catch(e){}});
+  /* sugestão: próximo horário livre da máquina (OP nova, sem hora vinda de fora) */
+  const sugere=()=>{try{if(typeof EDIT!=='undefined'&&EDIT)return;if(HORA_MANUAL)return;const maq=M('fMq')&&M('fMq').value,data=M('fDt')&&M('fDt').value;if(!maq||!data)return;
+    const t=csProxLivreMaq(maq,data);if(t==null)return;i.value=hhmm(t);ult=i.value;
+    let d=i.parentElement.querySelector('.cs-hora-dica');if(!d){d=document.createElement('div');d.className='cs-hora-dica';i.parentElement.appendChild(d);}
+    d.textContent=`Próximo livre da ${maq}: ${hhmm(t)}`;try{calc();}catch(e){}}catch(e){}};
+  if(M('fMq'))M('fMq').addEventListener('change',sugere);
+  if(M('fDt'))M('fDt').addEventListener('change',sugere);
+  if(!i.dataset.pre)sugere();
+}
+try{const _ao76=abrirOrdem;abrirOrdem=function(o,pre){const r=_ao76.apply(this,arguments);try{const i=M('fHr');if(i&&pre&&pre.inicio!=null)i.dataset.pre='1';csLigaHora();}catch(e){}return r;};}catch(e){}
+
+/* ---------- 4) trilha ---------- */
+(function(){try{const s=document.createElement('style');s.textContent=`
+.cs5 .tr5{display:flex;align-items:flex-start;justify-content:center;gap:0;padding:10px 8px 2px;border-top:1px solid #EEF1F5;margin-top:4px}
+.cs5 .tr5 .e{width:auto!important;min-width:70px;flex:none;gap:3px}
+.cs5 .tr5 .e .bo{width:22px;height:22px}
+.cs5 .tr5 .se{flex:0 1 54px;min-width:18px;margin:0;padding:0 3px;align-self:flex-start;height:22px;display:flex;align-items:center}
+.cs5 .tr5 .se:before{content:"";flex:1;height:2px;background:#D1D5DB;border-radius:2px}
+.cs5 .tr5 .se:after{content:"";width:6px;height:6px;border-right:2px solid #D1D5DB;border-top:2px solid #D1D5DB;transform:rotate(45deg);margin-left:-5px}
+.cs5 .tr5 .e.ok+.se:before,.cs5 .tr5 .e.ok+.se:after{background:#86EFAC;border-color:#86EFAC}
+.cs5 .tr5 .e.ok+.se:after{background:transparent}`;document.head.appendChild(s);}catch(e){}})();
+try{csNucleo.versao='v376';}catch(e){}
 
 </script>
 </body>
