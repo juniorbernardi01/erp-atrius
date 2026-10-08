@@ -5449,7 +5449,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v373';
+const VERSAO_APP='v374';
 let DRAG=null;
 function render(){
   recomporTudo();
@@ -27169,7 +27169,7 @@ try{const _cm65=colunaMaq;colunaMaq=function(m,data,conf,estreita){
     const ab=(window.CS_FIM_AB||[]).includes(m+'|'+data);
     const fins=[...fim.map(x=>({t:isNaN(x.ate)?0:x.ate,h:()=>cs5CardFim(x.o,conf)})),...outros.map(x=>({t:x.ate,h:()=>cs5CardTurno(x,conf)}))].sort((a,b)=>a.t-b.t);
     const corpo=`<div class="cs-viva">${vez?cs5CardVez(vez.o,conf):''}${vez?'':(data===ymd(new Date())?'<div class="cs-vazio">Nenhuma OP na linha agora</div>':'')}</div>`
-      +(fila.length?`<div class="cs5s fi">Próximas na fila (${fila.length})</div>`+fila.map(x=>cs5CardFila(x.o,conf)).join(''):'')
+      +(fila.length?`<div class="cs5s fi">Próximas na fila (${fila.length})</div>`:'')+cs5FilaComMais(fila,vez,m,data,conf)
       +(fins.length?`<button type="button" class="cs5s co" data-fimtg="${cs5esc(m+'|'+data)}">${ab?'▼':'▶'}&nbsp; Concluídas hoje (${fins.length})<em>${ab?'guardar':'mostrar'}</em></button>`
         +(ab?`<div class="cs5ls">${fins.map(x=>x.h()).join('')}</div>`:''):'');
     return `<div class="tqcol cs-maq cs5col">
@@ -29129,6 +29129,205 @@ try{const _rd73=render;render=function(){const r=_rd73.apply(this,arguments);
     document.documentElement.style.setProperty('--cs5top',alt+'px');}catch(e){}
   return r;};}catch(e){}
 try{csNucleo.versao='v373';}catch(e){}
+
+</script>
+<script>
+/* ===================== v374 · título da máquina fixo de verdade · "+" na fila · relatório da OP em blocos ·
+   PDF na frente · nomes dos arquivos · dropdown com grupos =====================
+   1) ENVASE (tela do dia): o cabeçalho escuro de cada máquina não se mexe. Quem rola é o corpo da coluna
+      (os blocos de produção), por trás do título — cada coluna tem a sua rolagem, como um quadro.
+   2) "+" ENTRE AS OPs DA FILA: passando o mouse entre dois cards (ou antes do primeiro / depois do último)
+      aparece "+ encaixar aqui · hh:mm". Clicar abre a escolha "Lançar OP nova / trazer uma que existe" já
+      com a máquina, o dia e a hora daquele ponto; quem vem depois é empurrado.
+   3) RELATÓRIO DA OP: o quadro "Previsto × realizado" vira dois blocos (TANQUE | ENVASE) no mesmo estilo dos
+      motivos — previsto, realizado e desvio lado a lado, análise e operador embaixo. Título "Relatório da OP 0157-A".
+      Botão "PDF histórico": a folha abre NA FRENTE (não mais atrás do painel), com Imprimir e Salvar em PDF.
+   4) NOMES DOS ARQUIVOS: "PRODUTO - L 0377 - OP envase 0139-A", "GRANEL - L 0377 - OP tanque 0139",
+      "GRANEL - L 0377 - Certificado de analise", "PRODUTO - L 0377 - Relatorio OP 0139-A".
+   5) DROPDOWN COM BUSCA: os grupos de produto voltam como títulos da lista (Amaciantes, Desinfetantes…). */
+
+/* ---------- 1) cabeçalho fixo: a coluna rola por dentro ---------- */
+(function(){try{const s=document.createElement('style');s.textContent=`
+#tqgrid.dia .tqcol.cs5col{overflow:hidden!important;display:flex;flex-direction:column}
+#tqgrid.dia .tqcol.cs5col .tqh.cs5h{position:relative!important;top:auto!important;border-radius:6px 6px 0 0;box-shadow:0 6px 14px -8px rgba(0,0,0,.45);z-index:2;flex:none}
+#tqgrid.dia .tqcol.cs5col .tqb{flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden;border-radius:0 0 6px 6px;scrollbar-width:thin}
+#tqgrid.dia{align-items:stretch}`;document.head.appendChild(s);}catch(e){}})();
+/* a coluna vai até o pé da tela: o corpo rola, o título fica */
+function cs74Alturas(){
+  try{
+    const g=document.getElementById('tqgrid');if(!g||!g.classList.contains('dia'))return;
+    if(document.body.classList.contains('cs-operon'))return;
+    const cols=[...g.querySelectorAll('.tqcol.cs5col')];if(!cols.length)return;
+    const top=Math.round(cols[0].getBoundingClientRect().top);
+    const alt=Math.max(420,window.innerHeight-top-16);
+    cols.forEach(c=>{c.style.height=alt+'px';c.style.maxHeight=alt+'px';});
+  }catch(e){}
+}
+try{const _rd74=render;render=function(){const r=_rd74.apply(this,arguments);try{cs74Alturas();}catch(e){}return r;};}catch(e){}
+window.addEventListener('resize',()=>{try{cs74Alturas();}catch(e){}});
+/* o corpo da coluna guarda a rolagem entre um redesenho e outro */
+(function(){const pos={};
+  document.addEventListener('scroll',ev=>{const t=ev.target;if(t&&t.classList&&t.classList.contains('tqb')){const c=t.closest('.cs5col');const k=c&&c.querySelector('.cs5h b');if(k)pos[k.textContent]=t.scrollTop;}},true);
+  try{const _rd=render;render=function(){const r=_rd.apply(this,arguments);try{document.querySelectorAll('#tqgrid.dia .cs5col').forEach(c=>{const k=c.querySelector('.cs5h b');const b=c.querySelector('.tqb');if(k&&b&&pos[k.textContent])b.scrollTop=pos[k.textContent];});}catch(e){}return r;};}catch(e){}
+})();
+
+/* ---------- 2) "+" entre as OPs da fila ---------- */
+(function(){try{const s=document.createElement('style');s.textContent=`
+.cs5mais{position:relative;height:14px;margin:-2px 0;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:3}
+.cs5mais::before{content:'';position:absolute;left:14px;right:14px;top:50%;height:2px;background:transparent;border-radius:2px;transition:background .12s}
+.cs5mais i{width:22px;height:22px;border-radius:999px;background:#2563EB;color:#fff;font:700 15px/22px Inter,sans-serif;text-align:center;font-style:normal;opacity:0;transform:scale(.7);transition:all .12s;position:relative}
+.cs5mais em{position:absolute;left:calc(50% + 16px);top:50%;transform:translateY(-50%);font:600 11.5px Inter,sans-serif;color:#1D4ED8;font-style:normal;white-space:nowrap;opacity:0;transition:opacity .12s;background:#fff;padding:1px 6px;border-radius:6px}
+.cs5mais:hover{height:30px;margin:0}
+.cs5mais:hover::before{background:#93C5FD}.cs5mais:hover i,.cs5mais:hover em{opacity:1;transform:none}.cs5mais:hover em{transform:translateY(-50%)}
+.cs5mais.ult{height:26px;margin:4px 0 2px}.cs5mais.ult i{opacity:.55;transform:none}.cs5mais.ult::before{background:#E2E8F0}
+body.cs-operon .cs5mais,body.tv .cs5mais{display:none}`;document.head.appendChild(s);}catch(e){}})();
+function cs5FilaComMais(fila,vez,m,data,conf){
+  const hoje=ymd(new Date());const ag=hm(relogio());
+  const fimDe=x=>{try{if(!x)return null;const o=x.o;if(o.fimReal)return hm(o.fimReal);return csPrevFim(o);}catch(e){return null;}};
+  let t0=fimDe(vez);if(t0==null||isNaN(t0)){const [ji]=jorn(m);t0=data===hoje?Math.max(ji,ag):ji;}
+  const mais=(t,cls)=>`<div class="cs5mais ${cls||''}" data-mais="${cs5esc(m)}|${data}|${Math.round(t)}" title="Encaixar uma OP aqui, às ${hhmm(t)}"><i>+</i><em>encaixar aqui · ${hhmm(t)}</em></div>`;
+  let h='';let t=t0;
+  fila.forEach(x=>{h+=mais(t)+cs5CardFila(x.o,conf);const f=fimDe(x);t=(f==null||isNaN(f))?t:Math.max(t,f);});
+  h+=mais(t,'ult');
+  return h;
+}
+document.addEventListener('click',ev=>{
+  const b=ev.target.closest&&ev.target.closest('.cs5mais');if(!b)return;
+  if(document.body.classList.contains('cs-operon'))return;
+  const [m,data,t]=String(b.dataset.mais).split('|');
+  try{vaoModal(m,data,+t);}catch(e){try{abrirOrdem(null,{maq:m,data,inicio:+t});}catch(e2){}}
+});
+
+/* ---------- 3) relatório da OP em blocos ---------- */
+function csPrevRealHTML(o){
+  const T=cs5Tempos(o);const un=und(o);
+  const prevCx=caixasPrev(o),feitas=(typeof cxFeitas==='function')?cxFeitas(o):(o.caixas||0);
+  const pill=(d,inv)=>{if(d==null||d===''||isNaN(d))return '<span class="prv-p vz">—</span>';if(d===0)return '<span class="prv-p ok">no previsto</span>';
+    const ruim=inv?d<0:d>0;return `<span class="prv-p ${ruim?'mau':'ok'}">${d>0?'+':'−'}${cs5min(Math.abs(d))}</span>`;};
+  const row=(n,p,r,pil)=>`<div class="prv-r"><span class="n">${n}</span><span class="p">${p}</span><span class="r">${r}</span>${pil}</div>`;
+  const seta=(a,b)=>`${a||'—'} <i>→</i> ${b||'—'}`;
+  /* envase (mesmos números dos cards) */
+  const L=T.L;const s=L[0],e=L[1];
+  let durReal=null;try{const sr=T.temSetup?(setupReal(o)||0):0,er=envaseReal(o);durReal=er==null?null:sr+er;}catch(x){}
+  const env=[
+    T.temSetup?row('Setup',seta(s.p.a,s.p.b)+`<small>${s.p.d}</small>`,seta(s.r.a,s.r.b),pill(s.r.d)):'',
+    row('Envase',seta(e.p.a,e.p.b)+`<small>${e.p.d}</small>`,seta(e.r.a,e.r.b),pill(e.r.d)),
+    row('Total',cs5hmin(T.tp),durReal==null?'—':cs5hmin(durReal),pill(durReal==null?null:durReal-T.tp)),
+    row(`Caixas`,`${nf(prevCx)} ${un}`,o.caixas!=null?`${nf(feitas)} ${un}`:'—',o.caixas!=null&&prevCx?`<span class="prv-p ${feitas>=prevCx?'ok':'mau'}">${feitas-prevCx>0?'+':''}${nf(feitas-prevCx)}</span>`:'<span class="prv-p vz">—</span>')
+  ].join('');
+  /* tanque */
+  let tq='',nota='',cabT='TANQUE';
+  try{const b=csLoteDaOP(o);
+    if(b){cabT=`TANQUE · ${b.tanque||'sem tanque'} · LOTE ${b.lote||'—'}`;
+      const fi=fabIniDe(b),ff=fabFimDe(b);const rp=(fi&&ff)?Math.max(0,hm(ff.hora)-hm(fi.hora)):null;
+      const prep=b.etapas&&b.etapas.total?b.etapas.total:null;
+      const prazo=(b.ordens&&b.ordens.length)?Math.min(...b.ordens.map(x=>x.inicio==null?1e9:x.inicio)):1e9;
+      const ap=APONTA[b.chave]||{};
+      tq=row('Preparo',prep?cs5dur(prep):'—',rp!=null?cs5hmin(rp):'—',pill(rp!=null&&prep?rp-prep:null))
+        +row('Fabricação',seta('—',prazo<1e9?hhmm(prazo):'—'),seta(fi?fi.hora:'',ff?ff.hora:''),pill(ff&&prazo<1e9?hm(ff.hora)-prazo:null))
+        +row('Liberação','—',b.liberadoEm||ap.liberadoEm||'não liberado',b.liberadoEm||ap.liberadoEm?'<span class="prv-p ok">liberado</span>':'<span class="prv-p mau">pendente</span>');
+      const a=analiseOk(b);
+      nota=a.pend.length?`<span class="prv-n">Falta medir: ${escAttr(a.pend.join(', '))}</span>`:a.fora.length?`<span class="prv-n mau">Fora do padrão: ${escAttr(a.fora.join(', '))}</span>`:`<span class="prv-n ok">✓ Análise conforme em todos os ensaios</span>`;
+      if(b.liberadoPor||ap.liberadoPor)nota+=`<span class="prv-n">Liberado por <b>${escAttr(b.liberadoPor||ap.liberadoPor)}</b></span>`;
+    }else tq='<div class="pbz">Sem lote de tanque ligado a esta OP.</div>';
+  }catch(x){tq='<div class="pbz">—</div>';}
+  const col=(tit,cor,fundo,rows,rod)=>`<div class="pbcol prv-c" style="background:${fundo}"><div class="pbh"><b style="color:${cor}">${tit}</b></div>
+    <div class="prv-h"><span></span><span>Previsto</span><span>Realizado</span><span></span></div>${rows}${rod?`<div class="prv-rod">${rod}</div>`:''}</div>`;
+  return `<div class="pbx prv"><div class="pbtit"><b>PREVISTO × REALIZADO</b><span>o que estava programado e o que aconteceu</span></div>
+    <div class="pbg">
+      ${col(cabT,'#1D4ED8','#EFF6FF',tq,nota)}
+      ${col(`ENVASE · ${escAttr(o.maq||'sem máquina')}`,'#15803D','#F0FDF4',env,o.operador?`<span class="prv-n">Operador <b>${escAttr(o.operador)}</b></span>`:'')}
+    </div></div>`;
+}
+(function(){try{const s=document.createElement('style');s.textContent=`
+.prv .prv-h{display:grid;grid-template-columns:66px 1fr 1fr 72px;font-size:10.5px;letter-spacing:.05em;color:#64748B;padding:0 8px;margin-bottom:-2px}
+.prv .prv-r{display:grid;grid-template-columns:66px 1fr 1fr 72px;align-items:center;gap:4px;white-space:nowrap;background:#fff;border:1px solid #E5E7EB;border-radius:9px;padding:7px 8px;font-size:12.5px}
+.prv .prv-r .n{font-weight:600;color:#334155}.prv .prv-r .p{color:#475569;font-family:ui-monospace,Menlo,monospace;font-size:11.5px}.prv .prv-r .r{font-family:ui-monospace,Menlo,monospace;font-size:11.5px;font-weight:600}
+.prv .prv-r i{font-style:normal;color:#94A3B8;margin:0 2px}.prv .prv-r small{display:block;font:11px Inter,sans-serif;color:#94A3B8}
+.prv .prv-p{justify-self:end;font:600 10.5px Inter,sans-serif;border-radius:999px;padding:2px 7px;white-space:nowrap}
+.prv .prv-p.ok{background:#DCFCE7;color:#15803D}.prv .prv-p.mau{background:#FEE2E2;color:#B91C1C}.prv .prv-p.vz{color:#94A3B8}
+.prv .prv-rod{display:flex;gap:12px;flex-wrap:wrap;margin-top:2px}.prv .prv-n{font-size:12px;color:#334155}.prv .prv-n.ok{color:#15803D}.prv .prv-n.mau{color:#B91C1C;font-weight:600}
+.rel .prv .prv-h,.rel .prv .prv-r{grid-template-columns:64px 1fr 1fr 70px;font-size:11px}.rel .prv .prv-r{padding:4px 6px;margin-bottom:4px}.rel .prv .prv-p{font-size:10px}`;document.head.appendChild(s);}catch(e){}})();
+try{const _ch74=csHistorico;csHistorico=function(o){
+  const r=_ch74.apply(this,arguments);
+  try{
+    const d=document.getElementById('csHist');if(!d)return r;
+    const cp=d.querySelector('.cp.hist');const lin=cp&&cp.querySelector('.lin');
+    if(lin){const box=document.createElement('div');box.innerHTML=csPrevRealHTML(o);lin.replaceWith(box.firstElementChild);}
+    const h3=d.querySelector('.cab h3');if(h3)h3.textContent=`Relatório da OP ${rotuloOP(o)}`;
+    const pb=d.querySelector('#csHistPdf');if(pb)pb.textContent='PDF histórico';
+    const bop=d.querySelector('#csHistOP');if(bop)bop.textContent='PDF da OP';
+  }catch(e){console.warn('relatório v374',e);}
+  return r;};}catch(e){}
+/* a folha (impressão/PDF) sempre na frente de qualquer painel */
+(function(){try{const s=document.createElement('style');s.textContent=`.mask.cs-folha{z-index:950!important}
+#csLoteAviso{display:none!important}`;document.head.appendChild(s);}catch(e){}})();
+try{const _fm74=csFolhaModal;csFolhaModal=function(c){const r=_fm74.apply(this,arguments);try{M('modal').closest('.mask').classList.add('cs-folha');}catch(e){try{document.querySelector('.mask').classList.add('cs-folha');}catch(e2){}}return r;};}catch(e){}
+try{const _fc74=fecharModal;fecharModal=function(){try{document.querySelectorAll('.mask.cs-folha').forEach(m=>m.classList.remove('cs-folha'));}catch(e){}return _fc74.apply(this,arguments);};}catch(e){}
+/* o estilo do relatório na folha: a prévia pega o bloco da tela, então a folha precisa das mesmas regras */
+try{const _ir74=csImprimeRelatorioOP;csImprimeRelatorioOP=function(o){
+  const _f=csFolhaModal;csFolhaModal=function(c){try{const css=[...document.querySelectorAll('style')].map(s=>s.textContent).filter(t=>t.includes('.prv .prv-r')).join('\n');
+    c.html=String(c.html).replace('<h2>PREVISTO × REALIZADO</h2>',csPrevRealHTML(o)).replace(/<p class="vz">[^<]*<\/p>/g,'').replace('</head>',`<style>${css}\n.pbx.prv .pbg{display:flex;gap:8px}.pbx.prv .pbcol{flex:1;border-radius:8px;padding:8px}.pbx.prv .pbh{font-size:11px;letter-spacing:.06em;margin-bottom:6px}.prv .prv-r{page-break-inside:avoid}</style></head>`);
+    c.arquivo=csNomeArquivo([cs74Nome(o.codigo),o.lote?`L ${cs74Lote(o.lote)}`:'',`Relatorio OP ${rotuloOP(o)}`]);}catch(e){}
+    return _f.apply(this,arguments);};
+  try{return _ir74.apply(this,arguments);}finally{csFolhaModal=_f;}
+};}catch(e){}
+
+/* ---------- 4) nomes dos arquivos ---------- */
+const cs74Nome=c=>String((prodOf(c)||{}).descricao||nomeCurto(c)).replace(/\s*[-–]\s*(CX|FD|PC|CT|PT|SC|BD|GL|BB)\b.*$/i,'').trim();
+const cs74Lote=l=>{const n=String(l||'').replace(/\D/g,'');return n?n.padStart(4,'0'):String(l||'');};
+csNomeOP=function(o){return csNomeArquivo([cs74Nome(o.codigo),o.lote?`L ${cs74Lote(o.lote)}`:'',`OP envase ${rotuloOP(o)}`]);};
+csNomeLote=function(b,pref){
+  const mae=(b.ordens||[]).find(x=>x.opNum);const p=String(pref||'').trim();
+  const tipo=/analise/i.test(p)?'Certificado de analise':(p||`OP tanque${mae?' '+String(mae.opNum).padStart(4,'0'):''}`);
+  return csNomeArquivo([b.produto,b.lote?`L ${cs74Lote(b.lote)}`:'',tipo]);
+};
+
+/* ---------- 5) dropdown: grupos como títulos ---------- */
+(function(){try{const s=document.createElement('style');s.textContent=`#csCombo .gr{padding:6px 12px 3px;font:700 10.5px Inter,sans-serif;letter-spacing:.06em;color:#64748B;background:#F8FAFC;border-bottom:1px solid #F1F5F9;position:sticky;top:0}`;document.head.appendChild(s);}catch(e){}})();
+csComboAbre=function(sel,pre){
+  csComboFecha();
+  const opts=[...sel.options].filter(o=>!o.disabled||o.selected).map(o=>({i:o.index,v:o.value,t:o.textContent.trim(),g:(o.parentElement&&o.parentElement.tagName==='OPTGROUP')?o.parentElement.label:'',
+    k:csSemAc2(o.textContent+' '+o.value+' '+(o.dataset&&o.dataset.sku||'')+' '+((o.parentElement&&o.parentElement.label)||''))}));
+  const box=document.createElement('div');box.id='csCombo';
+  box.innerHTML=`<input type="text" placeholder="Digite para buscar… (nome ou código)" autocomplete="off"><div class="ls"></div>`;
+  document.body.appendChild(box);
+  const r=sel.getBoundingClientRect();const larg=Math.max(r.width,260);
+  box.style.left=Math.max(6,Math.min(r.left,window.innerWidth-larg-6))+'px';box.style.minWidth=larg+'px';
+  const alt=Math.min(360,window.innerHeight-20);
+  if(r.bottom+alt<window.innerHeight||r.top<alt)box.style.top=(r.bottom+3)+'px';else box.style.bottom=(window.innerHeight-r.top+3)+'px';
+  const inp=box.querySelector('input'),ls=box.querySelector('.ls');
+  let vis=opts,cur=Math.max(0,opts.findIndex(o=>o.i===sel.selectedIndex));
+  const marca=(t,q)=>{if(!q)return escAttr(t);const n=csSemAc2(t);const i=n.indexOf(q);if(i<0)return escAttr(t);return escAttr(t.slice(0,i))+'<b>'+escAttr(t.slice(i,i+q.length))+'</b>'+escAttr(t.slice(i+q.length));};
+  const pinta=()=>{
+    const q=csSemAc2(inp.value.trim());const parts=q.split(/\s+/).filter(Boolean);
+    vis=parts.length?opts.filter(o=>parts.every(p=>o.k.includes(p))):opts;
+    if(cur>=vis.length)cur=0;
+    let g0=null;const temG=vis.some(o=>o.g);
+    ls.innerHTML=vis.length?vis.slice(0,200).map((o,i)=>{const m=/^([A-Za-z0-9.-]{1,10}) · (.*)$/.exec(o.t);
+      const cab=temG&&o.g!==g0?(g0=o.g,`<div class="gr">${escAttr(o.g||'Outros')}</div>`):'';
+      return cab+`<div class="it ${i===cur?'on':''}" data-i="${o.i}">${m?`<span class="k">${marca(m[1],parts[0]||'')}</span><span>${marca(m[2],parts[0]||'')}</span>`:`<span>${marca(o.t,parts[0]||'')}</span>`}</div>`;}).join('')
+      :`<div class="vz">Nada com "${escAttr(inp.value)}"</div>`;
+    const on=ls.querySelector('.it.on');if(on&&on.scrollIntoView)on.scrollIntoView({block:'nearest'});
+  };
+  const escolhe=i=>{if(i==null||i<0)return csComboFecha();const mudou=sel.selectedIndex!==i;sel.selectedIndex=i;csComboFecha();
+    if(mudou){sel.dispatchEvent(new Event('input',{bubbles:true}));sel.dispatchEvent(new Event('change',{bubbles:true}));}
+    try{sel.focus({preventScroll:true});}catch(e){}};
+  ls.addEventListener('mousedown',ev=>{const it=ev.target.closest('.it');if(!it)return;ev.preventDefault();escolhe(+it.dataset.i);});
+  inp.addEventListener('input',()=>{cur=0;pinta();});
+  inp.addEventListener('keydown',ev=>{
+    if(ev.key==='ArrowDown'){cur=Math.min(vis.length-1,cur+1);pinta();ev.preventDefault();}
+    else if(ev.key==='ArrowUp'){cur=Math.max(0,cur-1);pinta();ev.preventDefault();}
+    else if(ev.key==='Enter'){ev.preventDefault();if(vis[cur])escolhe(vis[cur].i);}
+    else if(ev.key==='Escape'||ev.key==='Tab'){csComboFecha();try{sel.focus({preventScroll:true});}catch(e){}if(ev.key==='Escape')ev.preventDefault();}
+  });
+  CS_CB={sel,box};
+  inp.value=pre||'';pinta();inp.focus();
+  if(pre)inp.setSelectionRange(pre.length,pre.length);
+};
+/* a tarja vermelha dos lotes: o setInterval da v370 guardou a função antiga; some de vez */
+setInterval(()=>{try{const a=document.getElementById('csLoteAviso');if(a)a.remove();}catch(e){}},1500);
+try{csNucleo.versao='v374';}catch(e){}
 
 </script>
 </body>
