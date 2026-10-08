@@ -740,6 +740,11 @@ function normaliza(d){
   d=d&&typeof d==='object'?d:{};
   ['contatos','grupos','vendedores','funcionarios','bancos','motivosCob'].forEach(k=>{if(!Array.isArray(d[k]))d[k]=[];});
   d.sync=d.sync||{};
+  /* 08/10: vendedores como no Tiny — "ativos com acesso ao sistema" são os 15 ativos hoje; os demais ficam inativos */
+  if(!d.vendAcesso0810){const ATIVOS=['VANESSA BECK','HENRIQUE - H. BASSANI LAND LTDA','EDUARDO N HAERTEL & CIA LTDA','AIRTON - AWJ REPRESENTACOES LTDA','THIAGO - BERCAS REPRESENTACOES LTDA','LEONARDO - E. G. MATOS CONSULTORIA','EVERTON G. DA SILVA E CIA LTDA','EDNARDO - PRADO REPRESENTACAO','LEANDRO BENCKENSTEIN','KLEBER FERNANDES DA SILVA','DANIEL VAZ','TEV COMERCIO E REPRESENTACOES','ESSENCIAL PROD DE LIMPEZA LTDA','UNIT COMPANIES LTDA','DORALINO CAMPOS'];
+    const k=x=>String(x||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().replace(/\s+/g,' ').trim();const set=new Set(ATIVOS.map(k));
+    d.vendedores.forEach(v=>{const hit=set.has(k(v.nome))||set.has(k(v.tinyNome))||set.has(k(v.razao));if(hit){v.ativo=true;v.acesso=true;}else if(v.acesso!==true){v.ativo=false;}});
+    d.vendAcesso0810=true;d._salvarMigra=true;}
   return d;
 }
 const soNum=s=>String(s||'').replace(/\D/g,'');
@@ -1015,20 +1020,24 @@ function testeContatos(p){
 /* ============================ VENDEDORES ============================ */
 function telaVendedores(){
   const ed=pode('cad.vend','editar');const q=semAc(S2.q);
-  const l=ordena(DB.vendedores.filter(v=>(!q||semAc([v.nome,v.razao,v.cnpj,v.email].join(' ')).includes(q))),(v,k)=>semAc(v[k]||''));
+  const AB=S2.vab||'acesso';const casaAba=v=>AB==='todos'?true:AB==='acesso'?(v.ativo!==false&&v.acesso===true):AB==='ativos'?v.ativo!==false:v.ativo===false;
+  const l=ordena(DB.vendedores.filter(v=>casaAba(v)&&(!q||semAc([v.nome,v.razao,v.cnpj,v.email].join(' ')).includes(q))),(v,k)=>semAc(v[k]||''));
+  const nAb=f=>DB.vendedores.filter(f).length;
   const carteira=v=>DB.contatos.filter(c=>(v.cobertura&&v.cobertura.modo==='conta')?(v.cobertura.clientes||[]).includes(c.id):semAc(c.vendedor)===semAc(v.nome)).length;
   $('app').innerHTML=`<div class="migalha">Cadastros › Vendedores</div>
   <div class="topo"><h1>Vendedores</h1><span class="salvo"></span>${ed?'<button class="btn" id="bTv">⤓ Trazer os vendedores do Tiny</button><button class="btn pri" id="bNv">＋ Novo vendedor</button>':''}</div>
-  <div class="barra"><div class="busca">⌕<input id="q" placeholder="Nome, CNPJ ou e-mail" value="${esc(S2.q)}"></div></div>
+  <div class="barra"><div class="busca">⌕<input id="q" placeholder="Nome, CNPJ ou e-mail" value="${esc(S2.q)}"></div>
+   <div class="seg" id="vAbas">${[['acesso','ativos com acesso ao sistema',v=>v.ativo!==false&&v.acesso===true],['todos','todos',v=>true],['ativos','ativos',v=>v.ativo!==false],['inativos','inativos',v=>v.ativo===false]].map(([k,r,f])=>`<button data-vab="${k}" class="${AB===k?'on':''}">${r} <i style="font-style:normal;opacity:.7">${nAb(f)}</i></button>`).join('')}</div></div>
   <div class="rolx">${l.length?`<table class="tv"><thead><tr><th style="width:34px"></th>${th('nome','Vendedor')}${th('tipo','Tipo')}<th>Atende</th><th style="text-align:right">Clientes</th>${th('email','E-mail')}<th>Situação</th></tr></thead><tbody>
   ${l.map(v=>`<tr data-v="${v.id}"><td><button class="dots" data-vm="${v.id}">⋯</button></td><td><b>${esc(v.nome)}</b>${v.razao&&v.razao!==v.nome?`<small>${esc(v.razao)}</small>`:''}</td><td>${esc(v.tipo||'—')}</td>
-    <td>${v.cobertura&&v.cobertura.modo==='conta'?'Por conta':'Por região'}${v.cobertura&&v.cobertura.modo!=='conta'&&(v.cobertura.cidades||[]).length?` · ${v.cobertura.cidades.length} cidades`:''}</td><td class="n">${carteira(v)}</td><td>${esc(v.email||'—')}</td><td>${v.ativo===false?'<span class="k">inativo</span>':'ativo'}</td></tr>`).join('')}</tbody></table>`
+    <td>${v.cobertura&&v.cobertura.modo==='conta'?'Por conta':'Por região'}${v.cobertura&&v.cobertura.modo!=='conta'&&(v.cobertura.cidades||[]).length?` · ${v.cobertura.cidades.length} cidades`:''}</td><td class="n">${carteira(v)}</td><td>${esc(v.email||'—')}</td><td>${v.ativo===false?'<span class="k">inativo</span>':(v.acesso===true?'<span style="color:#15803D;font-weight:600">ativo · com acesso</span>':'ativo')}</td></tr>`).join('')}</tbody></table>`
     :`<div class="vazio">${DB.vendedores.length?'Nenhum vendedor com essa busca.':'Nenhum vendedor ainda. Traga os nomes do Tiny ou cadastre um novo.'}</div>`}</div>${rodape([[nf(l.length),'vendedores']])}`;
   $('q').oninput=e=>{S2.q=e.target.value;telaVendedores();const i=$('q');i.focus();i.setSelectionRange(i.value.length,i.value.length);};
   ligaOrdem(telaVendedores);
+  document.querySelectorAll('[data-vab]').forEach(b=>b.onclick=()=>{S2.vab=b.dataset.vab;telaVendedores();});
   document.querySelectorAll('[data-v]').forEach(r=>r.onclick=ev=>{if(ev.target.closest('.dots'))return;fichaVendedor(r.dataset.v);});
   document.querySelectorAll('[data-vm]').forEach(b=>b.onclick=ev=>{ev.stopPropagation();const v=DB.vendedores.find(x=>x.id===b.dataset.vm);
-    menu3(b,v.nome,[['Abrir',()=>fichaVendedor(v.id)],...(ed?['-',[v.ativo===false?'Reativar':'Inativar',()=>{v.ativo=v.ativo===false;salvar();telaVendedores();},v.ativo!==false]]:[])]);});
+    menu3(b,v.nome,[['Abrir',()=>fichaVendedor(v.id)],...(ed?['-',[v.acesso===true?'Tirar o acesso ao sistema':'Dar acesso ao sistema',()=>{v.acesso=v.acesso!==true;if(v.acesso)v.ativo=true;salvar();telaVendedores();}],[v.ativo===false?'Reativar':'Inativar',()=>{v.ativo=v.ativo===false;if(!v.ativo)v.acesso=false;salvar();telaVendedores();},v.ativo!==false]]:[])]);});
   if($('bNv'))$('bNv').onclick=()=>{const v={id:uid(),nome:'',tipo:'Representante PJ',ativo:true,cobertura:{modo:'regiao',cidades:[],clientes:[]}};fichaVendedor(v.id,v);};
   if($('bTv'))$('bTv').onclick=()=>{const nomes=[...new Set(DB.contatos.map(c=>c.vendedor).filter(Boolean))];let n=0;
     nomes.forEach(nm=>{if(!DB.vendedores.some(v=>semAc(v.nome)===semAc(nm))){DB.vendedores.push({id:uid(),nome:nm,tipo:'Representante PJ',ativo:true,cobertura:{modo:'regiao',cidades:[],clientes:[]}});n++;}});
@@ -1052,13 +1061,13 @@ function fichaVendedor(id,novo,rasc){
       ${ed?'<div class="busca" style="margin-top:8px">⌕<input id="vbc" placeholder="incluir cliente: nome ou CNPJ"></div><div id="vbr"></div>':''}`
     :`<p class="k" style="margin-bottom:8px">Cidades que este vendedor atende.</p><div class="cidl">${(cv.cidades||[]).map((c,i)=>`<span>${esc(c)}${ed?`<b data-xi="${i}">✕</b>`:''}</span>`).join('')||'<span class="k">nenhuma cidade ainda</span>'}</div>
       ${ed?'<div style="display:flex;gap:6px;margin-top:8px"><input id="vci" placeholder="nome da cidade" style="flex:1"><button class="btn sm" id="vca">＋ incluir</button></div>':''}`}`;}
-  else if(aba==='acesso')corpo=`<p class="k">O acesso ao ERP (e-mail, perfil e páginas) é dado em <b>Configurações › Pessoas e permissões</b>, escolhendo este vendedor. E-mail de contato: <b>${esc(v.email||'—')}</b>.</p>`;
+  else if(aba==='acesso')corpo=`<label style="display:flex;align-items:center;gap:10px;margin-bottom:10px;font-weight:600"><input type="checkbox" id="vAcesso" ${v.acesso===true?'checked':''} ${ed?'':'disabled'}> Ativo com acesso ao sistema</label><p class="k">Só os vendedores com acesso aparecem nas cobranças e nos relatórios do dia a dia. </p><p class="k">O acesso ao ERP (e-mail, perfil e páginas) é dado em <b>Configurações › Pessoas e permissões</b>, escolhendo este vendedor. E-mail de contato: <b>${esc(v.email||'—')}</b>.</p>`;
   else{const cl=DB.contatos.filter(c=>v.cobertura.modo==='conta'?(v.cobertura.clientes||[]).includes(c.id):semAc(c.vendedor)===semAc(v.tinyNome||v.nome));
     corpo=`<p class="k" style="margin-bottom:8px">${cl.length} clientes${v.cobertura.modo==='conta'?' na conta':' com este vendedor no Tiny'}.</p><table class="tv"><thead><tr><th>Cliente</th><th>Cidade</th><th>Grupo</th></tr></thead><tbody>${cl.slice(0,300).map(c=>`<tr><td><b>${esc(c.nome)}</b></td><td>${esc(c.cidade||'')}</td><td>${esc((grupoDe(c)||{}).nome||'—')}</td></tr>`).join('')||'<tr><td colspan="3" class="vazio">Nenhum cliente na carteira.</td></tr>'}</tbody></table>`;}
   gaveta(`<div class="gt"><h2>${esc(v.nome||'Novo vendedor')}</h2><button class="btn sm" id="gX" style="margin-left:auto">Fechar ✕</button></div>
   <div class="gc"><div class="tabsg">${[['dados','Dados'],['cob','Cobertura'],['acesso','Acesso'],['cart','Carteira']].map(([k,r])=>`<button data-va="${k}" class="${aba===k?'on':''}">${r}</button>`).join('')}</div>${corpo}</div>
   ${ed?'<div class="gr"><button class="btn" id="gC">Cancelar</button><button class="btn pri" id="gS">Salvar</button></div>':''}`);
-  const guarda=()=>document.querySelectorAll('#gav [data-k]').forEach(i=>{v[i.dataset.k]=i.value;});
+  const guarda=()=>{document.querySelectorAll('#gav [data-k]').forEach(i=>{v[i.dataset.k]=i.value;});const ac=$('vAcesso');if(ac){v.acesso=ac.checked;if(v.acesso)v.ativo=true;}};
   const de_novo=()=>fichaVendedor(id,novo,v);
   document.querySelectorAll('[data-va]').forEach(b=>b.onclick=()=>{guarda();S2.vaba=b.dataset.va;de_novo();});
   if($('vTipo'))$('vTipo').onchange=()=>{guarda();de_novo();};
@@ -1160,6 +1169,7 @@ const sem=()=>{$('app').innerHTML='<div class="vazio">Você não tem acesso a es
 (async function(){
   if(!N)return render();
   try{DB=normaliza(await N.ler(MOD_ID));}catch(e){DB=normaliza(null);toast('Não consegui ler os cadastros: '+e.message,true);}
+  if(DB._salvarMigra){delete DB._salvarMigra;try{setTimeout(()=>salvar(),800);}catch(e){}}
   render();
 })();
 

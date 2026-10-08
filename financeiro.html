@@ -1617,7 +1617,9 @@ function resolverCadastro(nome,doc){
   }
   return null;
 }
+function cobUnificaVendedores(){try{const base=(window.FIN_CAD&&FIN_CAD.vendedores)||[];if(!base.length)return;const tok=s=>norm(String(s||'')).split(/[\s\-–]+/).filter(x=>x&&x.length>2&&!/^(ltda|cia|e|de|da|do|das|dos|rep|representacoes|representacao|comercio|consultoria)$/.test(x))[0]||'';const dup=s=>s.replace(/(.)+/g,'$1');const mapa={};base.forEach(b=>{const k=dup(tok(b));if(k&&!mapa[k])mapa[k]=b;});const troca=v=>{if(!v||v==='Não identificado')return v;if(base.some(b=>norm(b)===norm(v)))return base.find(b=>norm(b)===norm(v));const k=dup(tok(v));return (k&&mapa[k])||v;};DATA.current.forEach(g=>{const n=troca(g.seller);if(n!==g.seller){g.seller=n;g.seller_match_method=g.seller_match_method||'Cadastro (vendedor)';}});DATA.history.forEach(h=>{const n=troca(h.seller);if(n!==h.seller)h.seller=n;});Object.keys(VENDEDOR_CLIENTE).forEach(k=>{VENDEDOR_CLIENTE[k]=troca(VENDEDOR_CLIENTE[k]);});}catch(e){console.warn('vendedores',e);}}
 function aplicarCadastro(){
+  cobUnificaVendedores();
   DATA.current.forEach(g=>{
     const r=resolverCadastro(g.customer,g.doc);
     if(!r)return;
@@ -1693,8 +1695,9 @@ const VENDEDORES_EXTRA_KEY='atrius-vendedores-extra-v70';
 let VENDEDORES_EXTRA=(()=>{try{const v=JSON.parse(localStorage.getItem(VENDEDORES_EXTRA_KEY)||'[]');return Array.isArray(v)?v:[]}catch(e){return []}})();
 function saveVendedoresExtra(){persist(VENDEDORES_EXTRA_KEY,VENDEDORES_EXTRA)}
 function listaDeVendedores(){
+  if(window.FIN_CAD&&FIN_CAD.vendedores&&FIN_CAD.vendedores.length){const base=FIN_CAD.vendedores.slice();const ant=DATA.current.map(g=>g.seller).filter(v=>v&&v!=='N\u00e3o identificado'&&!vendedorRemovido(v)&&!base.some(b=>norm(b)===norm(v)));return [...new Set([...base,...ant])].sort((a,b)=>a.localeCompare(b));}
   return [...new Set([...DATA.current.map(g=>g.seller),...DATA.history.map(h=>h.seller),
-    ...Object.values(VENDEDOR_CLIENTE),...(typeof CADASTRO!=='undefined'?CADASTRO.map(c=>c.v):[]),...(window.FIN_CAD?FIN_CAD.vendedores:[]),...VENDEDORES_EXTRA]
+    ...Object.values(VENDEDOR_CLIENTE),...(typeof CADASTRO!=='undefined'?CADASTRO.map(c=>c.v):[]),...VENDEDORES_EXTRA]
     .filter(v=>v&&v!=='N\u00e3o identificado'&&!vendedorRemovido(v)))].sort((a,b)=>a.localeCompare(b));
 }
 /* O painel roda no navegador e nao tem servidor de e-mail: o botao monta a mensagem
@@ -5496,7 +5499,7 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden)renderDail
   /* cadastro do ERP: clientes (CNPJ, vendedor, WhatsApp), vendedores e motivos de cobrança — a base das cobranças usa os mesmos */
   window.FIN_CAD={clientes:[],vendedores:[],motivos:[]};
   try{if(N&&N.ler){const c=await N.ler('cadastros');if(c){
-    const vend=(c.vendedores||[]).filter(v=>v&&v.ativo!==false).map(v=>v.nome).filter(Boolean);
+    const comAcesso=(c.vendedores||[]).filter(v=>v&&v.ativo!==false&&v.acesso===true);const vend=(comAcesso.length?comAcesso:(c.vendedores||[]).filter(v=>v&&v.ativo!==false)).map(v=>v.tinyNome||v.nome).filter(Boolean);
     FIN_CAD.vendedores=vend;
     FIN_CAD.clientes=(c.contatos||[]).filter(x=>x&&x.nome&&(x.doc||x.nome)&&!(x.papeis||[]).includes('Funcionário')&&x.tipo!=='Funcionário').map(x=>({v:x.vendedor||'',n:x.nome,d:x.doc||'',wa:x.fone||''}));
     FIN_CAD.motivos=(c.motivosCob||[]).filter(m=>m&&m.ativo!==false&&/exclus/i.test(m.uso||'Exclusão')).map(m=>m.nome).filter(Boolean);
