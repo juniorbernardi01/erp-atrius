@@ -4680,7 +4680,7 @@ const nivel=t=>{
   if(logado)return '';            /* entrou, mas não está no cadastro */
   return EU?(EU.master?'excluir':(EU.perm[t]||'')):'';
 };
-const podeVer=t=>moduloLigado(t)&&RANK[nivel(t)]>=1;
+const podeVer=t=>t==='fin.cob.qualquer'?(typeof FIN_COB_PAGINAS!=='undefined'&&FIN_COB_PAGINAS.some(p=>podeVer('fin.cob.'+p.id))):(moduloLigado(t)&&RANK[nivel(t)]>=1);
 const podeEditar=t=>RANK[nivel(t)]>=2;
 const podeExcluir=t=>RANK[nivel(t)]>=3;
 const telaAtual=()=>S.page==='envase'?'envase':S.page;
@@ -5450,7 +5450,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v379';
+const VERSAO_APP='v381';
 let DRAG=null;
 function render(){
   recomporTudo();
@@ -18009,7 +18009,7 @@ async function autenticar(email,senha){
     body:JSON.stringify({email:email,password:senha})});
   const d=await r.json();
   if(!r.ok)throw new Error(d.error_description||d.msg||d.message||'e-mail ou senha inválidos');
-  SESSAO=d;
+  SESSAO=d;try{SESSAO.obtido=Date.now();}catch(e){}
   try{localStorage.setItem(SUPA_SESSAO,JSON.stringify(d));}catch(e){}
   return d;
 }
@@ -18020,7 +18020,7 @@ async function renovarSessao(){
       method:'POST',headers:{'apikey':SUPA.key,'Content-Type':'application/json'},
       body:JSON.stringify({refresh_token:SESSAO.refresh_token})});
     if(!r.ok)return false;
-    SESSAO=await r.json();
+    SESSAO=await r.json();try{SESSAO.obtido=Date.now();}catch(e){}
     try{localStorage.setItem(SUPA_SESSAO,JSON.stringify(SESSAO));}catch(e){}
     return true;
   }catch(e){return false;}
@@ -19566,8 +19566,7 @@ const CS_MOD=[
    {n:'Transportadores',mod:'transportadores',fin:'lista',perm:'cad.transp',ic:'com'},
    {n:'Clientes e fornecedores',mod:'cadastros',fin:'clientes',perm:'cad.clientes',ic:'pes'},
    {n:'Vendedores',mod:'cadastros',fin:'vendedores',perm:'cad.vend',ic:'pes'},
-   {n:'Funcionários',mod:'cadastros',fin:'funcionarios',perm:'cad.func',ic:'pes'},
-   {n:'Bancos e FIDCs',mod:'cadastros',fin:'bancos',perm:'cad.bancos',ic:'fin'}]},
+   {n:'Funcionários',mod:'cadastros',fin:'funcionarios',perm:'cad.func',ic:'pes'}]},  /* v381: Bancos e FIDCs mora em Financeiro › Gestão de Cobranças › Carteira */
  {id:'estoque',nome:'Estoque',ic:'est',pgs:[
    {n:'Saldos',mod:'estoque',fin:'saldos',perm:'estoque.saldos',ic:'est'},
    {n:'Movimentos',page:'estoque',esaba:'mov',ic:'mov'},
@@ -19599,13 +19598,8 @@ const CS_MOD=[
 /* Financeiro é um título: abre embaixo dele, no próprio menu, os
     submódulos. Cada submódulo abre as páginas dele no painel ao lado. */
  {id:'financeiro',nome:'Financeiro',ic:'fin',pgs:[
-   {grupo:true,acord:'cob',n:'Gestão de Cobranças',ic:'cob'},
-   {grupo:true,pai:'cob',n:'Acompanhamento'},
-   ...['executive','collections','sellers','protestos','history'].map(id=>({n:FIN_COB_PAGINAS.find(p=>p.id===id).n,fin:id,mod:'financeiro',perm:'fin.cob.'+id,pai:'cob'})),
-   {grupo:true,pai:'cob',n:'Gestão'},
-   ...['vendedores','mensal','sellerDelivery'].map(id=>({n:FIN_COB_PAGINAS.find(p=>p.id===id).n,fin:id,mod:'financeiro',perm:'fin.cob.'+id,pai:'cob'})),
-   {grupo:true,pai:'cob',n:'Posição'},
-   ...['carteira','reports'].map(id=>({n:FIN_COB_PAGINAS.find(p=>p.id===id).n,fin:id,mod:'financeiro',perm:'fin.cob.'+id,pai:'cob'})),
+   /* v380: a Gestão de Cobranças é uma página só, com abas em cima (Clientes, Cobranças, Carteira, Importação…) */
+   {n:'Gestão de Cobranças',fin:'cobrancas',mod:'financeiro',perm:'fin.cob.qualquer',ic:'cob'},
    {grupo:true,breve:true,n:'Caixa',ic:'fin'},
    {grupo:true,breve:true,n:'Contas a pagar',ic:'fin'},
    {grupo:true,breve:true,n:'Contas a receber',ic:'fin'}]},
@@ -29737,6 +29731,28 @@ try{csNucleo.versao='v378';}catch(e){}
 <script>
 try{const v=document.getElementById('lgVer');if(v)v.textContent=VERSAO_APP;}catch(e){}
 try{csNucleo.versao='v379';}catch(e){}
+</script>
+<script>
+try{csNucleo.versao='v380';}catch(e){}
+</script>
+<script>
+/* ===== v381 · sessão que não cai =====
+   Antes: o login só era renovado quando uma chamada dava 401 — e aí várias chamadas renovavam ao mesmo tempo com o
+   mesmo refresh_token; o Supabase aceita a primeira e derruba as outras ("sessão expirou"). Agora: uma renovação por vez
+   (as demais esperam a mesma) e renovação antecipada, 15 min antes de vencer, também ao voltar para a aba. */
+(function(){
+  try{
+    const _r=renovarSessao;let emCurso=null;
+    renovarSessao=function(){if(emCurso)return emCurso;emCurso=Promise.resolve().then(()=>_r.apply(this,arguments)).finally(()=>{emCurso=null;});return emCurso;};
+    const falta=()=>{const s=SESSAO;if(!s)return Infinity;const at=s.expires_at?s.expires_at*1000:((s.obtido||0)+((+s.expires_in)||3600)*1000);return at-Date.now();};
+    const cedo=()=>{try{if(SESSAO&&SESSAO.refresh_token&&falta()<15*60*1000)renovarSessao();}catch(e){}};
+    setInterval(cedo,60*1000);
+    document.addEventListener('visibilitychange',()=>{if(!document.hidden)cedo();});
+    window.addEventListener('online',cedo);
+    try{if(SESSAO&&!SESSAO.obtido)SESSAO.obtido=Date.now()-30*60*1000;}catch(e){}
+  }catch(e){}
+})();
+try{csNucleo.versao='v381';}catch(e){}
 </script>
 </body>
 </html>
