@@ -669,6 +669,10 @@ const PROTESTOS_KEY='atrius-protestos-v105';
 const PROTESTOS_PADRAO={'SEJA|33155003|06/08/2026':{data:'01/09/2026',registradoEm:'informado por voc\u00ea'}};
 let PROTESTOS=(()=>{const m={...PROTESTOS_PADRAO};try{Object.assign(m,JSON.parse(localStorage.getItem(PROTESTOS_KEY)||'{}')||{})}catch(e){}return m})();
 const CUSTAS_KEY='atrius-custas-protesto-v118';
+const ACORDOS_KEY='atrius-acordos-v1';
+let ACORDOS=(()=>{try{return JSON.parse(localStorage.getItem(ACORDOS_KEY)||'{}')||{}}catch(e){return {}}})();
+function saveAcordos(){persist(ACORDOS_KEY,ACORDOS)}
+function acordoDe(chave){return ACORDOS[chave]||null}
 let CUSTAS=(()=>{try{return JSON.parse(localStorage.getItem(CUSTAS_KEY)||'{}')||{}}catch(e){return {}}})();
 function saveCustas(){persist(CUSTAS_KEY,CUSTAS)}
 function custasDe(chave){return CUSTAS[chave]||{custas:0,obs:''}}
@@ -695,6 +699,7 @@ function diasCorridos(deBr,paraBr){
   return Math.round((new Date(by,Number(b[2])-1,Number(b[1]))-new Date(ay,Number(a[2])-1,Number(a[1])))/86400000);
 }
 function posicaoAtualizada(valor,vencBr,chave,refBr){
+  const ACORDO_LIM=(()=>{try{const ac=(typeof ACORDOS!=='undefined')&&chave&&ACORDOS[chave];return ac&&ac.data?ac.data:null;}catch(e){return null;}})();
   const base=Number(valor||0);
   const hoje=refBr||localDateKey().split('-').reverse().join('/');
   const venc=vencimentoUtil(vencBr);
@@ -704,6 +709,7 @@ function posicaoAtualizada(valor,vencBr,chave,refBr){
   let saldo=base,multaAplicada=false,custasPendentes=custas,dataBase=vencBrUtil,abatido=0;
   let multaTotal=0,jurosTotal=0;
   const trecho=(ate)=>{
+    if(ACORDO_LIM&&brToIso(ate)>brToIso(ACORDO_LIM))ate=ACORDO_LIM;   /* acordo: multa e juros param nessa data */
     const dias=Math.max(0,diasCorridos(dataBase,ate));
     const juros=dias>0?saldo*JUROS_MES_PCT*(dias/30):0;
     const multa=(!multaAplicada&&dias>0)?saldo*MULTA_PCT:0;
@@ -5309,7 +5315,8 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden)renderDail
    <span class="cob-chip"><small>vendedor</small><select id="cobVend"><option value="">todos</option></select></span>
    <span class="cob-chip"><small>empresa</small><select id="cobEmp"><option value="">todas</option></select></span>
    <span class="cob-chip"><small>situação</small><select id="cobSit"><option value="">todas</option><option value="avencer">a vencer</option><option value="atraso">em atraso</option><option value="cartorio">em cartório</option><option value="protestado">protestado</option></select></span>
-   <span style="flex:1"></span><span id="cobGerTxt" style="font-size:11.5px;color:#8A93A3"></span><button class="cob-gerar cinza" id="cobGerar">▶ Gerar</button></div>
+   <span style="flex:1"></span><span id="cobGerTxt" style="font-size:11.5px;color:#8A93A3"></span><button class="btn" id="cobUnir" title="junta dois cadastros do mesmo cliente">Unificar duplicados</button><button class="cob-gerar cinza" id="cobGerar">▶ Gerar</button></div>
+   <div id="cobUnirBox" hidden style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;padding:0 16px 12px"><label class="small" style="flex:1;min-width:240px">Cliente que será absorvido<input class="input" list="cobUnirLista" id="cobUnirDe" placeholder="digite o nome…" style="width:100%;margin-top:4px"></label><label class="small" style="flex:1;min-width:240px">Passa a ser<input class="input" list="cobUnirLista" id="cobUnirPara" placeholder="digite o nome…" style="width:100%;margin-top:4px"></label><datalist id="cobUnirLista"></datalist><button class="btn primary" id="cobUnirOk">Unificar</button><button class="btn" id="cobUnirX">cancelar</button></div>
    <div class="cob-busca"><span style="color:#8A93A3;font-size:16px">⌕</span><input id="cobQ" placeholder="Buscar cliente pelo nome ou CNPJ — Enter abre o cliente"></div></div>
   <div class="panel" style="margin-top:12px"><div class="cob-leg"><span><i style="background:#15803D"></i>a vencer</span><span><i style="background:#C2410C"></i>em atraso</span><span><i style="background:#B91C1C"></i>em cartório</span><span><i style="background:#6D28D9"></i>protestado</span><span id="cobN" style="margin-left:auto;color:#8A93A3"></span></div><div class="tablewrap" id="cobLista"></div></div>`;
  main.appendChild(cli);
@@ -5356,7 +5363,7 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden)renderDail
   let tM=0,tJ=0,tC=0,tP=0,tT=0,tF=0;
   const rows=tits.map(({g,t,sit})=>{const ch=chaveTitulo(t);const p=posicaoAtualizada(valorTitulo(t),t.due,ch);const pr=protDe(t);tM+=p.multa;tJ+=p.juros;tC+=p.custas;tP+=p.abatido;tT+=p.total;tF+=p.base;
    const cor=sit==='Protestado'?'#6D28D9':ehCartorio(sit)?'#B91C1C':'#C2410C';
-   return `<tr><td class="l"><b>${t.title}</b><span class="s">${t.source||g.source||''} · venc. ${t.due}</span></td><td class="l"><span class="cob-pill ${sit==='Protestado'?'rx':ehCartorio(sit)?'bad':'warn'}">${sit}</span>${pr?`<span class="s">protesto em ${pr.data||''}</span>`:''}</td><td class="m" style="color:${cor};font-weight:600">${p.dias} dias</td><td class="m">${money(p.base)}</td><td class="m">${money(p.multa+p.juros)}<span class="s">2% + 1% a.m.</span></td><td><input class="input" data-cob-custas="${ch}" value="${p.custas?Number(p.custas).toFixed(2).replace('.',','):''}" placeholder="0,00" style="width:84px;text-align:right"></td><td class="m" style="color:#15803D">${p.abatido?'− '+money(p.abatido):'—'}</td><td class="m" style="font-weight:700;color:#1E3A8A">${money(p.total)}</td><td class="l" style="white-space:nowrap"><button class="btn" data-cob-pagar="${ch}">Registrar pagamento</button>${pr?` <button class="btn" data-cob-retirar="${ch}">Retirar protesto</button>`:''}</td></tr>`;}).join('');
+   return `<tr><td class="l"><b>${t.title}</b><span class="s">${t.source||g.source||''} · venc. ${t.due}</span></td><td class="l"><span class="cob-pill ${sit==='Protestado'?'rx':ehCartorio(sit)?'bad':'warn'}">${sit}</span>${pr?`<span class="s">protesto em ${pr.data||''}</span>`:''}</td><td class="m" style="color:${cor};font-weight:600">${p.dias} dias</td><td class="m">${money(p.base)}</td><td class="m">${money(p.multa+p.juros)}<span class="s">2% + 1% a.m.</span></td><td><input class="input" data-cob-custas="${ch}" value="${p.custas?Number(p.custas).toFixed(2).replace('.',','):''}" placeholder="0,00" style="width:84px;text-align:right"></td><td class="m" style="color:#15803D">${p.abatido?'− '+money(p.abatido):'—'}</td><td class="m" style="font-weight:700;color:#1E3A8A">${money(p.total)}</td><td class="l" style="white-space:nowrap"><button class="btn" data-cob-pagar="${ch}">Registrar pagamento</button>${pr?` <button class="btn" data-cob-retirar="${ch}">Retirar protesto</button>`:''} ${cobAcordoBtn(ch)}</td></tr>`;}).join('');
   const pags=[];tits.forEach(({t})=>{const ch=chaveTitulo(t);(PARCIAIS[ch]||[]).forEach(x=>pags.push({t:t.title,...x}));});
   const el=document.createElement('div');el.id='cobFicha';el.className='panel';el.style.marginTop='14px';
   el.innerHTML=`<div class="panelh"><div><h3>Valores de hoje · ${tits.length} título(s) em aberto</h3><div class="small">Valor de face + multa 2% + juros 1% a.m. pro rata + custas de cartório − pagamentos lançados. As custas você digita aqui; salvam sozinhas.</div></div><div class="small"><b style="font-size:15px;color:#1E3A8A">${money(tT)}</b> a cobrar hoje</div></div>
@@ -5364,6 +5371,7 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden)renderDail
    ${pags.length?`<div class="panelh" style="border-top:1px solid #E3E6EB"><h3>Pagamentos lançados</h3></div><div class="tablewrap"><table class="cob-t"><thead><tr><th class="l">Título</th><th>Data</th><th>Valor</th><th class="l">Registrado em</th></tr></thead><tbody>${pags.map(x=>`<tr><td class="l m">${x.t}</td><td class="m">${x.data||''}</td><td class="m">${money(x.valor)}</td><td class="l">${x.registradoEm||''}</td></tr>`).join('')}</tbody></table></div>`:''}`;
   const res=$('historyResults');res.parentElement.insertBefore(el,res.nextSibling);
   el.querySelectorAll('[data-cob-custas]').forEach(i=>i.addEventListener('change',()=>{const k=i.dataset.cobCustas;CUSTAS[k]={...custasDe(k),custas:brNumber(i.value)};saveCustas();try{refreshAllAfterImport();}catch(e){}renderHistory();}));
+  cobLigaAcordo(el,()=>renderHistory());
   el.querySelectorAll('[data-cob-pagar]').forEach(b=>b.onclick=()=>{const x=[...prot.abertos,...listaPagaveis()].find(y=>y.chave===b.dataset.cobPagar);if(x)abrirPagProtesto(x);else alert('Não achei o título.');});
   el.querySelectorAll('[data-cob-retirar]').forEach(b=>b.onclick=()=>{const x=prot.abertos.find(y=>y.chave===b.dataset.cobRetirar);if(!x)return;if(!confirm(`Retirar a marcação de protesto do título ${x.titulo}?`))return;definirProtesto(x.tit,null);refreshAllAfterImport();renderHistory();});
   /* Registrar pagamento vale para qualquer título vencido, não só protestado: monta o mesmo objeto que o Protestos usa */
@@ -5371,16 +5379,23 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden)renderDail
  }
  /* o modal de pagamento, ao fechar, recarrega a ficha */
  const _fp=window.fecharPagProtesto;if(_fp)window.fecharPagProtesto=function(){const r=_fp.apply(this,arguments);try{if(document.querySelector('.view.active')&&document.querySelector('.view.active').id==='history')renderHistory();}catch(e){}return r;};
+ /* ---- acordo: trava multa e juros na data combinada ---- */
+ window.cobAcordoBtn=function(ch,cls){const ac=acordoDe(ch);return ac?`<span class="cob-pill ok" title="${esc(ac.obs||'')}">acordo ${esc(ac.data)}</span> <button class="btn" data-cob-acordo-x="${ch}" style="padding:3px 6px;font-size:11px" title="desfazer o acordo">✕</button>`:`<button class="btn ${cls||''}" data-cob-acordo="${ch}" style="padding:4px 7px;font-size:11px">Acordo</button>`;};
+ window.cobLigaAcordo=function(root,depois){root.querySelectorAll('[data-cob-acordo]').forEach(b=>b.onclick=()=>{const ch=b.dataset.cobAcordo;const hoje=localDateKey().split('-').reverse().join('/');const d=prompt('Lançar acordo para este título.\n\nA partir desta data a multa e os juros param de correr (o valor fica travado no que era no dia).\n\nData do acordo (dd/mm/aaaa):',hoje);if(!d)return;if(!/^\d{2}\/\d{2}\/\d{4}$/.test(d.trim())){alert('Data inválida. Use dd/mm/aaaa.');return;}const obs=prompt('Observação do acordo (opcional: valor combinado, parcelas, quem aceitou):','')||'';ACORDOS[ch]={data:d.trim(),obs,por:(window.csNucleo&&csNucleo.usuario?csNucleo.usuario():''),em:new Date().toLocaleString('pt-BR')};saveAcordos();try{refreshAllAfterImport();}catch(e){}depois&&depois();});
+  root.querySelectorAll('[data-cob-acordo-x]').forEach(b=>b.onclick=()=>{const ch=b.dataset.cobAcordoX;if(!confirm('Desfazer o acordo? Multa e juros voltam a correr desde o vencimento.'))return;delete ACORDOS[ch];saveAcordos();try{refreshAllAfterImport();}catch(e){}depois&&depois();});};
+ /* Protestos: botão Acordo em cada linha aberta */
+ const _rp=window.renderProtestos;if(_rp)window.renderProtestos=function(){const r=_rp.apply(this,arguments);try{document.querySelectorAll('#protAberto [data-prot-pago]').forEach(b=>{if(b.parentElement.querySelector('[data-cob-acordo],[data-cob-acordo-x]'))return;const ch=b.dataset.protPago;const w=document.createElement('span');w.innerHTML=' '+cobAcordoBtn(ch);b.parentElement.insertBefore(w,b);});cobLigaAcordo(document.getElementById('protAberto'),()=>renderProtestos());}catch(e){}return r;};
  /* ---- fila de cobrança: valores de hoje na revisão (painel da direita) ---- */
  window.cobHojeDe=function(g){let v=0;titulosCobraveis(g).forEach(t=>{try{v+=posicaoAtualizada(valorTitulo(t),t.due,chaveTitulo(t)).total;}catch(e){v+=Number(valorTitulo(t))||0;}});return v;};
  function cobBlocoHoje(g,alvo){const money=v=>'R$ '+(+v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});const prot=listaProtestos();
   const tits=titulosCobraveis(g);if(!tits.length)return;let tF=0,tMJ=0,tC=0,tP=0,tT=0;
   const rows=tits.map(t=>{const ch=chaveTitulo(t);const p=posicaoAtualizada(valorTitulo(t),t.due,ch);const sit=titleSituation(g,t);const pr=prot.abertos.find(x=>x.chave===ch);tF+=p.base;tMJ+=p.multa+p.juros;tC+=p.custas;tP+=p.abatido;tT+=p.total;
-   return `<tr><td class="l"><b>${t.title}</b><span class="s">venc. ${t.due} · ${p.dias} dias${pr?' · protesto '+(pr.data||''):''}</span></td><td class="m">${money(p.base)}</td><td class="m">${money(p.multa+p.juros)}</td><td><input class="input" data-cob-custas2="${ch}" value="${p.custas?Number(p.custas).toFixed(2).replace('.',','):''}" placeholder="0,00" style="width:70px;text-align:right;padding:3px 5px"></td><td class="m" style="color:#15803D">${p.abatido?'− '+money(p.abatido):'—'}</td><td class="m" style="font-weight:700;color:#1E3A8A">${money(p.total)}</td><td><button class="btn" data-cob-pagar2="${ch}" style="padding:4px 7px;font-size:11px">Pagamento</button></td></tr>`;}).join('');
+   return `<tr><td class="l"><b>${t.title}</b><span class="s">venc. ${t.due} · ${p.dias} dias${pr?' · protesto '+(pr.data||''):''}</span></td><td class="m">${money(p.base)}</td><td class="m">${money(p.multa+p.juros)}</td><td><input class="input" data-cob-custas2="${ch}" value="${p.custas?Number(p.custas).toFixed(2).replace('.',','):''}" placeholder="0,00" style="width:70px;text-align:right;padding:3px 5px"></td><td class="m" style="color:#15803D">${p.abatido?'− '+money(p.abatido):'—'}</td><td class="m" style="font-weight:700;color:#1E3A8A">${money(p.total)}</td><td style="white-space:nowrap"><button class="btn" data-cob-pagar2="${ch}" style="padding:4px 7px;font-size:11px">Pagamento</button> ${cobAcordoBtn(ch)}</td></tr>`;}).join('');
   const el=document.createElement('div');el.id='cobHoje';el.style.cssText='margin:10px 0;border:1px solid #C7D7F2;border-radius:10px;overflow:hidden;background:#F5F8FD';
   el.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;font-size:12px;font-weight:700;color:#1E3A8A">VALORES DE HOJE · face + multa 2% + juros 1% a.m. + custas − pagos<span style="font-size:15px">${money(tT)}</span></div><div class="tablewrap" style="background:#fff"><table class="cob-t"><thead><tr><th class="l">Título</th><th>Face</th><th>Multa+juros</th><th>Custas</th><th>Pago</th><th>Hoje</th><th></th></tr></thead><tbody>${rows}<tr><td class="l"><b>Total</b></td><td class="m"><b>${money(tF)}</b></td><td class="m"><b>${money(tMJ)}</b></td><td class="m"><b>${money(tC)}</b></td><td class="m" style="color:#15803D"><b>${tP?'− '+money(tP):'—'}</b></td><td class="m" style="color:#1E3A8A"><b>${money(tT)}</b></td><td></td></tr></tbody></table></div>`;
   alvo.appendChild(el);
   el.querySelectorAll('[data-cob-custas2]').forEach(i=>i.addEventListener('change',()=>{const k=i.dataset.cobCustas2;CUSTAS[k]={...custasDe(k),custas:brNumber(i.value)};saveCustas();try{sincronizarMensagem(g);save();refreshAllAfterImport();}catch(e){}renderCollections();openDetail(g.customer);}));
+  cobLigaAcordo(el,()=>{renderCollections();openDetail(g.customer);});
   el.querySelectorAll('[data-cob-pagar2]').forEach(b=>b.onclick=()=>{const t=tits.find(x=>chaveTitulo(x)===b.dataset.cobPagar2);if(!t)return;abrirPagProtesto({chave:chaveTitulo(t),cliente:g.customer,doc:g.doc,vendedor:g.seller,whatsapp:g.whatsapp,titulo:t.title,empresa:t.source||g.source,venc:t.due,valor:Number(valorTitulo(t)),tit:t,g});});}
  const _od=window.openDetail;window.openDetail=function(name){const r=_od.apply(this,arguments);try{const g=DATA.current.find(x=>x.customer===name);const d=document.querySelector('#collectionDetail .detail');const m=d&&d.querySelector('.metrics');if(g&&m){const met=document.createElement('div');met.className='metric';met.innerHTML=`<span>A cobrar hoje</span><b style="color:#1E3A8A">${'R$ '+cobHojeDe(g).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}</b>`;m.appendChild(met);const wrap=document.createElement('div');m.parentElement.insertBefore(wrap,m.nextSibling);cobBlocoHoje(g,wrap);}}catch(e){console.warn(e);}return r;};
  const _fp2=window.fecharPagProtesto;if(_fp2)window.fecharPagProtesto=function(){const r=_fp2.apply(this,arguments);try{const v=document.querySelector('.view.active');if(v&&v.id==='collections'&&typeof selected!=='undefined'&&selected){renderCollections();openDetail(selected.customer);}}catch(e){}return r;};
@@ -5389,6 +5404,12 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden)renderDail
  cli.querySelectorAll('[data-por]').forEach(b=>b.onclick=()=>{F.por=b.dataset.por;cli.querySelectorAll('[data-por]').forEach(x=>x.classList.toggle('on',x===b));if(F.por==='cliente'){F.vend='';$('cobVend').value='';}cobRenderClientes();});
  $('cobVend').onchange=e=>{F.vend=e.target.value;dirty();};$('cobEmp').onchange=e=>{F.emp=e.target.value;dirty();};$('cobSit').onchange=e=>{F.sit=e.target.value;dirty();};
  $('cobGerar').onclick=()=>{if(!DIRTY)return;cobRenderClientes();};
+ $('cobUnir').onclick=()=>{const b=$('cobUnirBox');b.hidden=!b.hidden;if(!b.hidden){$('cobUnirLista').innerHTML=(ROWS||[]).map(r=>`<option value="${esc(r.n)}">`).join('');$('cobUnirDe').value=F.q||'';$('cobUnirDe').focus();}};
+ $('cobUnirX').onclick=()=>{$('cobUnirBox').hidden=true;};
+ $('cobUnirOk').onclick=()=>{const o=$('cobUnirDe').value.trim(),d=$('cobUnirPara').value.trim();if(!o||!d)return alert('Preencha os dois clientes.');if(norm(o)===norm(d))return alert('Os dois campos apontam para o mesmo cliente.');
+  const acha=n=>(ROWS||[]).find(r=>norm(r.n)===norm(n))||(ROWS||[]).find(r=>norm(r.n).includes(norm(n)));const ro=acha(o),rd=acha(d);if(!ro||!rd)return alert('Não achei um dos clientes na lista.');
+  if(!confirm(`Unificar "${ro.n}" em "${rd.n}"?\n\nTítulos, histórico e comprovantes passam para "${rd.n}". A decisão vale para as próximas importações.`))return;
+  fundirClientes(ro.n,rd.n);try{refreshAllAfterImport();renderCarteira();}catch(e){}$('cobUnirBox').hidden=true;cobRenderClientes(true);alert(`"${ro.n}" foi unificado em "${rd.n}".`);};
  $('cobQ').oninput=e=>{F.q=e.target.value;cobRenderClientes();};$('cobQ').onkeydown=e=>{if(e.key==='Enter'){const q=F.q.toLowerCase();const r=(ROWS||[]).find(x=>x.n.toLowerCase().includes(q));if(r)cobAbrirCliente(r.n);}};
  /* ---- fila (contador na aba) ---- */
  function fila(){try{const n=DATA.current.filter(g=>{const s=typeof status==='function'?status(g):'';return s!=='Enviado'&&s!=='Bloqueado';}).length;const i=$('cobFila');i.hidden=!n;i.textContent=n;}catch(e){}}
@@ -5421,14 +5442,21 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden)renderDail
   let base={};
   if(temNuvem){
     try{
-      const d=await N.ler('fin');
+      const d=await N.ler('financeiro');
       if(d&&d.chaves&&Object.keys(d.chaves).length){aplicar(d.chaves);base=d.chaves;ST.ok=true;ST.em=d.em||null;ST.por=d.por||null;}
       else{
         /* nuvem vazia: vale o que está online (nada). O que havia neste computador fica guardado de lado,
            fora da sincronização, e a página começa vazia — os dados entram por Importação (restaurar backup / relatórios). */
         const local=foto();
-        if(Object.keys(local).length){try{localStorage.setItem('fin-guardado-antes-da-nuvem',JSON.stringify({em:new Date().toISOString(),dados:local}));}catch(e){}}
-        aplicar({});base={};ST.ok=true;ST.vazia=true;
+        if(Object.keys(local).length&&localStorage.getItem('fin-guardado-antes-da-nuvem')){
+          /* este computador já passou pela sincronização antes: o que há aqui foi importado/restaurado depois dela
+             (a nuvem não aceitou na hora) — então sobe como base, sem perguntar */
+          const r=await N.gravar('financeiro',{chaves:local,em:new Date().toISOString(),por:N.usuario()});
+          if(r&&r.ok){base=local;ST.ok=true;ST.em=new Date().toISOString();ST.por=N.usuario();}else{ST.erro=(r&&r.erro)||'não gravou';}
+        }else{
+          if(Object.keys(local).length){try{localStorage.setItem('fin-guardado-antes-da-nuvem',JSON.stringify({em:new Date().toISOString(),dados:local}));}catch(e){}}
+          aplicar({});base={};ST.ok=true;ST.vazia=true;
+        }
       }
     }catch(e){ST.erro=String(e.message||e);}
     /* o backup embutido no arquivo não vale mais: a nuvem manda */
@@ -5440,14 +5468,14 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden)renderDail
       if(salvando){pend=true;return;}salvando=true;
       try{
         let minha=foto();
-        let r=await N.gravar('fin',{chaves:minha,em:new Date().toISOString(),por:N.usuario()});
+        let r=await N.gravar('financeiro',{chaves:minha,em:new Date().toISOString(),por:N.usuario()});
         if(r&&r.conflito){
           /* alguém gravou antes: junta — chave que eu não mexi fica como está na nuvem; chave que eu mexi vai a minha */
-          const d=await N.ler('fin');const nuvem=(d&&d.chaves)||{};const junto={...nuvem};let perdi=0;
+          const d=await N.ler('financeiro');const nuvem=(d&&d.chaves)||{};const junto={...nuvem};let perdi=0;
           Object.keys(minha).forEach(k=>{if(minha[k]!==base[k]){if(nuvem[k]!==undefined&&nuvem[k]!==base[k])perdi++;junto[k]=minha[k];}});
           Object.keys(base).forEach(k=>{if(minha[k]===undefined&&nuvem[k]!==undefined&&nuvem[k]===base[k])delete junto[k];});
           aplicar(junto);minha=junto;
-          r=await N.gravar('fin',{chaves:minha,em:new Date().toISOString(),por:N.usuario()});
+          r=await N.gravar('financeiro',{chaves:minha,em:new Date().toISOString(),por:N.usuario()});
           if(perdi&&window.cobAvisar)cobAvisar('Outra pessoa gravou ao mesmo tempo em '+perdi+' parte(s); a sua versão foi mantida. Confira os últimos lançamentos.');
         }
         if(r&&r.ok){base=minha;ST.ok=true;ST.erro=null;ST.em=new Date().toISOString();ST.por=N.usuario();}
@@ -5463,7 +5491,7 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden)renderDail
     P.setItem=function(k,v){const r=_set.call(this,k,v);if(this===localStorage&&String(k).startsWith('atrius-'))agendar();return r;};
     P.removeItem=function(k){const r=_rem.call(this,k);if(this===localStorage&&String(k).startsWith('atrius-'))agendar();return r;};
     /* outra pessoa gravou? a cada 60 s confere; se mudou e eu não tenho nada pendente, avisa para recarregar */
-    setInterval(async()=>{try{if(t||salvando||pend)return;if(document.hidden)return;const d=await N.ler('fin');if(d&&d.em&&ST.em&&d.em>ST.em&&d.por!==undefined){if(window.cobAvisar)cobAvisar('Dados atualizados por '+(d.por||'outra pessoa')+' às '+new Date(d.em).toLocaleTimeString('pt-BR').slice(0,5)+'.',{rotulo:'Recarregar',fn:()=>location.reload()});}}catch(e){}},60000);
+    setInterval(async()=>{try{if(t||salvando||pend)return;if(document.hidden)return;const d=await N.ler('financeiro');if(d&&d.em&&ST.em&&d.em>ST.em&&d.por!==undefined){if(window.cobAvisar)cobAvisar('Dados atualizados por '+(d.por||'outra pessoa')+' às '+new Date(d.em).toLocaleTimeString('pt-BR').slice(0,5)+'.',{rotulo:'Recarregar',fn:()=>location.reload()});}}catch(e){}},60000);
   }
   /* cadastro do ERP: clientes (CNPJ, vendedor, WhatsApp), vendedores e motivos de cobrança — a base das cobranças usa os mesmos */
   window.FIN_CAD={clientes:[],vendedores:[],motivos:[]};
