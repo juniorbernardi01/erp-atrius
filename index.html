@@ -3836,7 +3836,7 @@ body.cs-semjanela #mask{visibility:hidden!important}
 .cp2tf{position:relative}.cp2pop{position:absolute;top:40px;left:0;z-index:60;width:260px;max-height:360px;overflow:auto;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 16px 40px rgba(20,24,33,.16);padding:8px;display:flex;flex-direction:column;gap:2px}
 .cp2pop label{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:8px;cursor:pointer;font-size:13px}.cp2pop label:hover{background:#F4F6FA}.cp2pop label b{margin-left:auto;font-weight:500;color:var(--ink3)}
 .cp2popb{display:flex;gap:6px;padding-top:6px;border-top:1px solid var(--line2);margin-top:4px}.cp2popb .btn{flex:1}
-.cp2bulk{display:flex;align-items:center;gap:10px;background:#0E1B33;color:#fff;border-radius:12px;padding:8px 14px;margin:6px 0}.cp2bulk select{height:32px;border-radius:8px}
+.cp2bulk{display:flex;align-items:center;gap:10px;background:#0E1B33;color:#fff;border-radius:12px;padding:8px 14px;margin:6px 0}.cp2bulk select{height:32px;border-radius:8px;color:#0E1B33;background:#fff;border:1px solid #cbd5e1;padding:0 8px}.cp2bulk .btn{color:#0E1B33;background:#fff;border-color:#fff}.cp2bulk .btn.ina{background:#FEE2E2;color:#991B1B;border-color:#FEE2E2}
 .cp2cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
 .cp2cards button{text-align:left;background:#fff;border:1px solid #DCE3EF;border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:6px;min-height:130px;cursor:pointer}
 .cp2cards button:hover{border-color:#1D4ED8}.cp2cards b{font-size:15px}.cp2cards i{font-style:normal;font-size:12.5px;color:var(--ink2)}.cp2cards span{font-size:12.5px;color:var(--ink3)}
@@ -5450,7 +5450,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v383';
+const VERSAO_APP='v384';
 let DRAG=null;
 function render(){
   recomporTudo();
@@ -26517,7 +26517,7 @@ gradeCadProd=function(){
       ${(verMae||verFilho)?(ed?'<button class="btn" id="cp2EdX">Cancelar</button><button class="btn pri" id="cp2EdS">Salvar tempos</button>':'<button class="btn" id="cp2Ed">✎ Editar tempos</button>'):''}</div>
     ${CP2.sel.size?`<div class="cp2bulk"><b>${CP2.sel.size} selecionado${CP2.sel.size>1?'s':''}</b><span style="flex:1"></span>Adicionar tag:
       <select id="cp2BT"><option value="">escolha…</option>${[...new Set(cp2Linhas().flatMap(l=>l.tags))].filter(t=>t!=='Tanque').sort().map(t=>`<option>${escAttr(t)}</option>`).join('')}<option value="__nova">nova tag…</option></select>
-      <button class="btn sm" id="cp2BX">Desmarcar</button></div>`:''}
+      <button class="btn sm ina" id="cp2BI">Inativar</button><button class="btn sm" id="cp2BR">Reativar</button><button class="btn sm" id="cp2BX">Desmarcar</button></div>`:''}
     ${verFilho?'<p class="cpleg" style="margin:4px 0 8px">Lote padrão, setup e o tempo de envase de um lote padrão em cada máquina. É daqui que sai a previsão do envase. O realizado fica em Relatórios › Previsto × realizado.</p>':''}
     ${verMae?'<p class="cpleg" style="margin:4px 0 8px">Tempos do tanque (min). Enchimento em branco usa o do tanque físico (TQ 1, TQ 6…). Somam na linha do tempo do lote.</p>':''}
     <div class="od2rol"><table class="od2t cp2t"><thead>${cab}</thead><tbody>${vis.map(linha).join('')||`<tr><td colspan="20" class="vazioc">${CP2.aba==='fab'&&CP2.sub==='frasco'?'Nenhum frasco fabricado ainda. Use ＋ Novo cadastro.':'Nada aqui com esses filtros.'}</td></tr>`}</tbody></table></div></div>`;
@@ -26532,6 +26532,10 @@ gradeCadProd=function(){
   el.querySelectorAll('[data-cp2ck]').forEach(c=>c.onclick=ev=>{ev.stopPropagation();const k=c.dataset.cp2ck;CP2.sel.has(k)?CP2.sel.delete(k):CP2.sel.add(k);gradeCadProd();});
   if(M('cp2CkT'))M('cp2CkT').onclick=()=>{const t=vis.every(l=>CP2.sel.has(l.tipo+'|'+l.id));vis.forEach(l=>t?CP2.sel.delete(l.tipo+'|'+l.id):CP2.sel.add(l.tipo+'|'+l.id));gradeCadProd();};
   if(M('cp2BX'))M('cp2BX').onclick=()=>{CP2.sel.clear();gradeCadProd();};
+  const cp2Ativa=(on)=>{let n=0;CP2.sel.forEach(k=>{const [tp,id]=k.split('|');const x=tp==='p'?prodOf(id):tp==='i'?INSUMOS.find(i=>i.sku===id):null;if(!x)return;if((x.ativo!==false)!==on){x.ativo=on;n++;}});
+    agendarSalvar();CP2.sel.clear();gradeCadProd();toast(n?`${n} cadastro${n>1?'s':''} ${on?'reativado':'inativado'}${n>1?'s':''}.`:(on?'Já estavam ativos.':'Já estavam inativos.'));};
+  if(M('cp2BI'))M('cp2BI').onclick=()=>cp2Ativa(false);
+  if(M('cp2BR'))M('cp2BR').onclick=()=>cp2Ativa(true);
   if(M('cp2BT'))M('cp2BT').onchange=e=>{let t=e.target.value;if(!t)return;if(t==='__nova'){t=(prompt('Nome da tag:')||'').trim();if(!t){gradeCadProd();return;}}
     let n=0;CP2.sel.forEach(k=>{const [tp,id]=k.split('|');const x=tp==='p'?prodOf(id):tp==='i'?INSUMOS.find(i=>i.sku===id):null;if(!x)return;
       const atual=csTagsDe(tp,x);if(!atual.includes(t)){x.tags=atual.concat(t);n++;}});
@@ -29763,6 +29767,9 @@ try{csNucleo.versao='v382';}catch(e){}
 </script>
 <script>
 try{csNucleo.versao='v383';}catch(e){}
+</script>
+<script>
+try{csNucleo.versao='v384';}catch(e){}
 </script>
 </body>
 </html>
