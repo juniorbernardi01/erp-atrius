@@ -714,6 +714,15 @@ tr.mot td{background:#FDFAF0;font-size:11px;color:#7A5C0B;padding:6px 12px}
   padding:5px 0;line-height:1.45;align-items:baseline;
   border-bottom:1px solid var(--line3)}
 .log .e:last-child{border-bottom:0}
+.log table.htab{width:100%;border-collapse:collapse;font-size:11.5px;line-height:1.4}
+.log table.htab th{text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3);font-weight:600;padding:4px 6px;border-bottom:1px solid var(--line2);white-space:nowrap}
+.log table.htab td{padding:5px 6px;border-bottom:1px solid var(--line3);vertical-align:top}
+.log table.htab td.d,.log table.htab td.t{font-family:'JetBrains Mono';color:var(--ink3);white-space:nowrap}
+.log table.htab td.qm{color:var(--ink2);font-weight:500;max-width:150px}
+.log table.htab td.m{color:var(--ink2)}.log table.htab td.m em{display:block;font-style:normal}
+.log table.htab tr.p-sis{background:#FAFAF8}.log table.htab tr.p-ed{background:#FFFBEB}.log table.htab tr.morta{opacity:.5;text-decoration:line-through}
+.log table.htab tr.turno{background:#FFF4E8}
+.log table.htab .hmais{color:#DC2626;font-weight:700}.log table.htab .hmenos{color:#15803D;font-weight:700}.log table.htab .hok{color:#15803D;font-weight:600}
 .log .e .t{font-family:'JetBrains Mono';color:var(--ink3)}
 .log .e .qm{color:var(--ink2);font-weight:500;overflow:hidden;text-overflow:ellipsis;
   white-space:nowrap}
@@ -5450,7 +5459,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v384';
+const VERSAO_APP='v386';
 let DRAG=null;
 function render(){
   recomporTudo();
@@ -10904,31 +10913,52 @@ function corrigirRegistros(o,foco){
    uma lista corrida em que uma OP lançada em 04/09 e produzida em 08/09
    parecia voltar no tempo — 08:17, 13:19, 14:51, 05:53.
    ===================================================================== */
+/* v386: cada registro com nome claro e detalhe em linhas */
+function csHistRotulo(o,e){
+  const m=String(e.m||'').trim();const linhas=s=>String(s||'').split(/\s*·\s*/).filter(Boolean);
+  const mais=d=>d>0?`<span class="hmais">+${cs5min(d)}</span>`:d<0?`<span class="hmenos">−${cs5min(-d)}</span>`:'<span class="hok">no previsto</span>';
+  const ev=String(e.e||'');
+  if(/^Matéria-prima (baixada do estoque|enviada ao Tiny|na fila do Tiny)$/.test(ev))return {ev:'MPs baixadas do estoque',det:[m.replace(/ · na liberação$/,'')]};
+  if(/^Ajuste de matéria-prima/.test(ev))return {ev:'Ajuste de MPs no estoque',det:[m]};
+  if(ev==='Etiquetas impressas'){const q=/^(\d+)\s*etiquetas?/.exec(m);const resto=linhas(m).filter(x=>!/^\d+\s*etiquetas?$/.test(x)&&!/^lote /.test(x));return {ev:'Etiquetas impressas',det:[`Impressas ${q?q[1]:'—'} etiquetas${resto.length?' · '+resto.join(' · '):''}`]};}
+  if(ev==='Lote liberado')return {ev:'Lote liberado',det:[`<span class="hok">Análise conforme</span> · liberado por <b>${e.op||'—'}</b>${m?' · '+m:''}`]};
+  if(ev==='Lote liberado fora do padrão')return {ev:'Lote liberado fora do padrão',det:[`<span class="hmais">Fora do padrão: ${m||'—'}</span> · liberado por <b>${e.op||'—'}</b>`]};
+  if(ev==='Envase finalizado'){const r=/setup (\S+)[–-](\S+) \((\d+) min\) ([+-]?\d+) · envase (\S+)[–-](\S+) \((\d+) min\) ([+-]?\d+)/.exec(m);
+    if(r)return {ev:'Envase finalizado',det:[`Setup ${r[1]}–${r[2]} · ${r[3]} min · ${mais(+r[4])}`,`Envase ${r[5]}–${r[6]} · ${r[7]} min · ${mais(+r[8])}`]};
+    return {ev,det:[m]};}
+  if(ev==='Motivo do setup acima do previsto'){let d=null;try{if(o.iniReal&&fimSetup(o))d=(hm(fimSetup(o))-hm(o.iniReal))-(+o.setup||0);}catch(x){}
+    return {ev:`Atraso no setup${d!=null&&d>0?' · +'+cs5min(d):''}`,det:linhas(m.replace(/^principal:\s*/,'').replace(/secundários:\s*/,''))};}
+  if(ev==='Motivo do envase acima do previsto'){let d=null;try{const T=cs5Tempos(o);const er=envaseReal(o);if(er!=null)d=er-T.eDur;}catch(x){}
+    return {ev:`Atraso no envase${d!=null&&d>0?' · +'+cs5min(d):''}`,det:linhas(m)};}
+  if(ev==='Motivos informados')return {ev:'Motivos informados',det:linhas(m).map(x=>x.replace(/^\d+:\s*/,''))};
+  if(ev==='OP concluída'){const r=/^(\S+)[–-](\S+) · (\d+) min · (.+)$/.exec(m);return {ev:'Envase concluído · apontamento',det:r?[`${r[1]}–${r[2]} · ${r[3]} min`,`Produzido ${r[4]}`]:[m]};}
+  if(ev==='Rendimento')return {ev:'Rendimento',det:linhas(m)};
+  if(ev==='Estoque enviado ao Tiny')return {ev:'Estoque lançado',det:[m]};
+  if(ev==='Envase iniciado'){const r=/^(\S+) · setup (\S+)[–-](\S+) · (\S+)$/.exec(m);return {ev:'Envase iniciado',det:r?[`Começou às ${r[1]}`,`Setup ${r[2]}–${r[3]} · ${r[4]}`]:[m]};}
+  if(ev==='Setup iniciado')return {ev:'Setup iniciado',det:[m?`Às ${m}`:'']};
+  if(ev==='OP lançada')return {ev:'OP lançada',det:[m]};
+  if(ev==='Liberação acompanhou o lote')return {ev:'Liberação acompanhou o lote',det:[m]};
+  return {ev,det:[m]};
+}
 function historicoHTML(o){
   const log=(o.log||[]);
-  /* a última conclusão é a que vale; as anteriores ficam riscadas */
-  let ultConc=-1;
-  log.forEach((e,i)=>{if(e.e==='OP concluída')ultConc=i;});
-
-  let dia='';const out=[];
-  log.forEach((e,i)=>{
-    if(e.d&&e.d!==dia){dia=e.d;out.push(`<div class="dia">${dLongo(dia)}</div>`);}
+  let ultConc=-1;log.forEach((e,i)=>{if(e.e==='OP concluída')ultConc=i;});
+  const esc_=s=>String(s==null?'':s);
+  const linhas=log.map((e,i)=>{
     const morta=(e.e==='OP concluída'&&ultConc>=0&&i!==ultConc);
-    const cls=[pesoEvento(e),morta?'morta':''].filter(Boolean).join(' ');
+    const cls=[pesoEvento(e)?'p-'+pesoEvento(e):'',morta?'morta':''].filter(Boolean).join(' ');
     const atraso=defasagem(e);
-    const etq=morta?`<span class="tg sub">substituída${
-        log[ultConc]&&log[ultConc].t?` às ${log[ultConc].t}`:''}</span>`
+    const etq=morta?`<span class="tg sub">substituída${log[ultConc]&&log[ultConc].t?` às ${log[ultConc].t}`:''}</span>`
       :atraso?`<span class="tg tarde">informado ${hmm(atraso)} depois</span>`:'';
-    out.push(`<div class="e ${cls}">
-      <span class="t">${e.t||''}</span>
-      <span class="qm">${e.op||'—'}</span>
-      <span><b>${e.e}</b>${etq}
-        ${e.k==='edicao'?(e.campos||[]).map(c=>
-          `<i class="dif"><u>${c.c}</u>${c.de}<s>→</s><b>${c.para}</b></i>`).join(''):''}
-        ${e.mot?`<em>Motivo: ${e.mot}</em>`:''}
-        ${e.m?`<em>${e.m}</em>`:''}</span></div>`);
+    const R=csHistRotulo(o,e);
+    const det=[
+      e.k==='edicao'?(e.campos||[]).map(c=>`<i class="dif"><u>${c.c}</u>${c.de}<s>→</s><b>${c.para}</b></i>`).join(''):'',
+      e.mot?`<em>Motivo: ${esc_(e.mot)}</em>`:'',
+      ...(R.det||[]).filter(Boolean).map(x=>`<em>${x}</em>`)].filter(Boolean).join('');
+    return `<tr class="hl ${cls}"><td class="d">${e.d?dCurto(e.d):''}</td><td class="t">${e.t||''}</td><td class="qm">${esc_(e.op||'—')}</td><td class="ev"><b>${esc_(R.ev)}</b>${etq}</td><td class="m">${det}</td></tr>`;
   });
-  return out.join('');
+  if(!linhas.length)return '';
+  return `<table class="htab"><colgroup><col style="width:46px"><col style="width:42px"><col style="width:150px"><col style="width:200px"><col></colgroup><thead><tr><th>Data</th><th>Hora</th><th>Quem</th><th>Registro</th><th>Detalhe</th></tr></thead><tbody>${linhas.join('')}</tbody></table>`;
 }
 
 /* =====================================================================
@@ -12320,6 +12350,8 @@ function salvar(){
     try{if(typeof csConfereLoteOP==='function'&&String(f.lote||'')!==String(EDIT.lote||'')){
       if(csLoteTravado(EDIT)&&EDIT.lote){toast(`O lote ${EDIT.lote} já foi liberado/impresso/iniciado: não muda mais. Cancele a OP e lance outra se precisar.`,true);return;}
       const erro=csConfereLoteOP({...EDIT,...f},f.lote);if(erro){toast(erro,true);if(M('fLote'))M('fLote').focus();return;}}}catch(e){}
+    /* v386: depois de liberado, o lote fica no tanque — não troca */
+    try{if(f.tanque&&EDIT.tanque&&f.tanque!==EDIT.tanque&&EDIT.lote&&csLoteTravado(EDIT)){toast(`O lote ${EDIT.lote} já foi liberado em ${EDIT.tanque}: não troca de tanque. Se precisar, reabra o lote.`,true);return;}}catch(e){}
     const antes=retrato(EDIT);
     const eraPendente=EDIT.status==='pendente';
     /* mexeu no início de uma OP que já começou: é decisão de gente, não da fila.
@@ -14443,6 +14475,13 @@ function abrirLote(b){
 
   ligarCertificado(b);
   if(M('lK'))M('lK').onclick=()=>{
+    /* v385: a liberação é do lote — se já foi liberado (em outro tanque/dia), não libera nem baixa de novo */
+    try{if(csMigraChaveLote(b)){fecharModal();render();toast('Este lote já tinha sido liberado: a liberação acompanhou o lote.');return;}
+      const jaLib=(b.ordens||[]).map(o=>(o.log||[]).filter(l=>/^Lote liberado/.test(String(l.e||''))).slice(-1)[0]).filter(Boolean)[0];
+      if(jaLib&&!(APONTA[b.chave]||{}).liberadoEm){toast(`Este lote já foi liberado em ${jaLib.d?dCurto(jaLib.d):''} ${jaLib.t||''} (${jaLib.m||''}). Para liberar de novo, reabra o lote.`,true);return;}
+    }catch(e){}
+    if(!fabFimDe(b)){toast('Conclua o preparo do tanque antes de liberar o lote.',true);return;}
+    if(!ensaiosDe(b.produto).length){toast('Este produto não tem ensaios cadastrados: a liberação exige análise. Cadastre os ensaios na ficha do produto.',true);return;}
     const a=analiseOk(b);
     /* Falta medir não é decisão de ninguém: é ensaio em branco. */
     if(a.pend.length){
@@ -14477,7 +14516,7 @@ function abrirLote(b){
         const at=APONTA[b.chave]||{};
         const fora=!a.ok;
         APONTA[b.chave]={...at,obs:obs,liberadoEm:relogio(),liberadoPor:quem.nome,
-          liberadoData:ymd(new Date()),
+          liberadoData:ymd(new Date()),lote:String(b.lote||at.lote||''),produto:b.produto,
           analise:{...(at.analise||b.analise||{}),desvio:fora||!!(at.analise&&at.analise.desvio)},
           log:[...(at.log||[]),{t:relogio(),d:ymd(new Date()),
             e:fora?'Lote liberado fora do padrão':'Lote liberado para envase',
@@ -22987,6 +23026,15 @@ function csMPJa(b){
    liberação), manda só a diferença — nunca o lote inteiro outra vez. */
 function csMPNaLiberacao(b){
   if(!b||!temNuvem()||typeof SESSAO==='undefined'||!SESSAO)return;
+  try{if(b.lote&&!String(b.lote).includes(',')){const pl=`lote|${b.chave}|`;
+    if(!FILA_TINY.some(x=>x.chave===`${pl}mp`)){const re=new RegExp(`lote ${String(b.lote).replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}(\\s|·|$)`);
+      const outra=FILA_TINY.find(x=>/^lote\|/.test(String(x.chave))&&/\|mp$/.test(String(x.chave))&&!String(x.chave).startsWith(pl)&&re.test(String(x.obs||''))&&String(x.chave).split('|')[3]===b.produto);
+      if(outra){const de=String(outra.chave).slice(0,-2);FILA_TINY.forEach(x=>{if(String(x.chave).startsWith(de))x.chave=pl+String(x.chave).slice(de.length);});
+        (b.ordens||[]).forEach(o=>registrar(o,'Baixa de matéria-prima acompanhou o lote',null,`já baixada antes · lote ${b.lote}`));}
+      if(!FILA_TINY.some(x=>x.chave===`${pl}mp`)&&(b.ordens||[]).some(o=>(o.log||[]).some(l=>/^Matéria-prima (enviada ao Tiny|baixada do estoque|na fila do Tiny)$/.test(String(l.e||''))))){
+        /* v386: a OP registra que a MP já saiu, mas o envio não está mais na fila deste aparelho — não repete o lote inteiro */
+        (b.ordens||[]).forEach(o=>registrar(o,'Baixa de matéria-prima não repetida',null,`o registro do lote ${b.lote} já tem a baixa; conferir no Estoque`));agendarSalvar();
+        toast(`Lote ${b.lote||''}: a matéria-prima já tinha sido baixada — não foi lançada de novo.`,true);return;}}}}catch(e){}
   const alvo=csMPAlvo(b),ja=csMPJa(b),movs=[];
   new Set([...Object.keys(alvo),...Object.keys(ja)]).forEach(id=>{
     const d=Math.round(((alvo[id]||0)-(ja[id]||0))*1000)/1000;
@@ -27317,8 +27365,21 @@ function csChavesAntigas(b){
   return [...out].filter(k=>k!==b.chave);
 }
 function csMigraChaveLote(b){
-  if(!b||b.origem==='saldo'||APONTA[b.chave])return false;
+  if(!b||b.origem==='saldo')return false;
   if(!b.lote||String(b.lote).includes(','))return false;
+  /* v385: pelo número do lote, em qualquer tanque/dia — a liberação é do lote, não do tanque */
+  if(!(APONTA[b.chave]&&APONTA[b.chave].liberadoEm)){
+    const k=Object.keys(APONTA).find(k=>{if(k===b.chave)return false;const a=APONTA[k];
+      return a&&a.lote&&String(a.lote)===String(b.lote)&&!!a.liberadoEm&&String(k).split('|')[2]===b.produto;});
+    if(k){const a=APONTA[k];APONTA[b.chave]={...a,...(APONTA[b.chave]||{}),liberadoEm:a.liberadoEm,liberadoPor:a.liberadoPor,liberadoData:a.liberadoData,analise:a.analise,obs:a.obs,log:[...(a.log||[]),...((APONTA[b.chave]||{}).log||[])],lote:String(b.lote),produto:b.produto,veioDe:k};
+      delete APONTA[k];
+      const de=`lote|${k}|`,para=`lote|${b.chave}|`;
+      (typeof FILA_TINY!=='undefined'?FILA_TINY:[]).forEach(x=>{if(String(x.chave).startsWith(de))x.chave=para+String(x.chave).slice(de.length);});
+      try{(b.ordens||[]).forEach(o=>registrar(o,'Liberação acompanhou o lote',null,`${k.split('|')[1]} ${dCurto(k.split('|')[0])} → ${b.tanque||'—'} ${dCurto(b.data)} · lote ${b.lote}`));}catch(e){}
+      try{agendarSalvar();}catch(e){}
+      return true;}
+  }
+  if(APONTA[b.chave])return false;
   for(const k of csChavesAntigas(b)){
     const a=APONTA[k];if(!a||!(a.liberadoEm||a.analise||a.lotesMP||a.trocasMP||a.fabIni))continue;
     /* o lote tem que bater: a chave antiga pode ser de outra batelada do mesmo dia */
@@ -28771,6 +28832,16 @@ function csImprimeRelatorioOP(o){
     .rel .log .dia{font-weight:700;margin:8px 0 3px;font-size:11px;color:#374151}.rel .log .e{display:grid;grid-template-columns:44px 110px 1fr;gap:6px;font-size:11px;padding:2px 0;border-bottom:1px solid #F1F5F9}
     .rel .log .e.turno{background:#FFF4E8}.rel .log .e em{display:block;color:#4B5563;font-style:normal}.rel .log .tg{font-size:9.5px;color:#B45309;margin-left:4px}
     .rel .log .e.morta{opacity:.5;text-decoration:line-through}.rel .linf{font-size:11px;color:#374151;margin-top:4px}
+    .rel .log table.htab{width:100%;border-collapse:collapse;font-size:10.5px;line-height:1.35}.rel .log table.htab thead{display:table-header-group}
+    .rel .log table.htab th{text-align:left;font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:#64748B;padding:3px 5px;border-bottom:1.5px solid #CBD5E1;background:#F8FAFC}
+    .rel .log table.htab td{padding:3px 5px;border-bottom:1px solid #E5E7EB;vertical-align:top}.rel .log table.htab tr{break-inside:avoid;page-break-inside:avoid}
+    .rel .log table.htab td.d,.rel .log table.htab td.t{font-family:ui-monospace,Menlo,monospace;color:#64748B;white-space:nowrap}.rel .log table.htab td.qm{color:#334155;max-width:120px}
+    .rel .log table.htab td.m{color:#4B5563}.rel .log table.htab td.m em{display:block;font-style:normal}
+    .rel .log table.htab tr.p-ed{background:#FFFBEB}.rel .log table.htab tr.morta{opacity:.5;text-decoration:line-through}.rel .log table.htab .tg{font-size:9px;color:#B45309;margin-left:4px}
+    .rel .log table.htab .hmais{color:#DC2626;font-weight:700}.rel .log table.htab .hmenos{color:#15803D;font-weight:700}.rel .log table.htab .hok{color:#15803D;font-weight:600}
+    .rel .log table.htab .dif{font-style:normal;margin-right:6px}.rel .log table.htab .dif u{text-decoration:none;color:#64748B;margin-right:3px}.rel .log table.htab .dif s{text-decoration:none;color:#94A3B8;margin:0 3px}
+    .rel h2{break-after:avoid}.rel .pbx,.rel .prv{break-inside:avoid;page-break-inside:avoid}.rel .pbcol{min-width:0;overflow:hidden}
+    .rel .rt7{gap:6px}.rel .rt7b{padding:6px 8px;overflow:hidden}.rel .rt7k{padding:3px 7px;min-width:90px}.rel .rt7k b{font-size:11px}.rel .rt7k span{font-size:8.5px}.rel .rt7g{grid-template-columns:62px 1fr 1fr;gap:3px 4px;font-size:10px}.rel .rt7g .rt7c{grid-template-columns:1fr 10px 1fr 1px 46px;padding:2px 4px;font-size:10px;gap:1px}.rel .rt7g .rt7h{font-size:9px}.rel .rt7to,.rel .rt7fr,.rel .rt7n{font-size:10px}.rel .rt7t{font-size:10px}
     .rel .cmp{width:100%}
   </style><div class="rel">
     ${cabecalhoOP(o.lote,String(p.descricao||nomeCurto(o.codigo)).replace(/\s*[-–]\s*(CX|FD|PC|CT|PT|SC|BD|GL|BB)\b.*$/i,'').trim().toUpperCase(),p.un_cx?`${und(o).toUpperCase()} C/ ${p.un_cx} UN`:'',`SKU ${o.codigo} · ${o.maq||''} · OP ${rotuloOP(o)}`,o.data,p.tanque)}
@@ -29636,7 +29707,8 @@ csLigaHora=function(){
 
 /* ---------- 1) relatório: tempos como no card ---------- */
 (function(){try{const s=document.createElement('style');s.textContent=`
-.rt7{display:flex;gap:10px;margin:10px 0 12px}
+.rt7{display:flex;flex-direction:column;gap:8px;margin:10px 0 12px}
+.rt7ks{display:flex;flex-wrap:wrap;gap:6px}.rt7k{background:#F8FAFC;border:1px solid #EEF1F5;border-radius:7px;padding:5px 9px;min-width:110px}.rt7k span{display:block;font:600 9.5px Inter,sans-serif;letter-spacing:.05em;text-transform:uppercase;color:#6B7280}.rt7k b{font:700 12.5px ui-monospace,Menlo,monospace;color:#111827}.rt7k b i{font:500 10.5px Inter,sans-serif;color:#6B7280}.rt7k.ok b{color:#15803D}
 .rt7b{flex:1;min-width:0;border:1px solid #DDE3EC;border-radius:10px;background:#fff;padding:8px 10px}
 .rt7b .rt7t{font:700 11px Inter,sans-serif;letter-spacing:.06em;color:#374151;margin-bottom:6px;display:flex;justify-content:space-between}
 .rt7b .rt7t span{font-weight:500;letter-spacing:0;color:#6B7280}
@@ -29708,14 +29780,14 @@ function csRelTempos(o){
       const prazo=(b.ordens&&b.ordens.length)?Math.min(...b.ordens.map(x=>x.inicio==null?1e9:csPrevIni(x))):1e9;
       const ap=APONTA[b.chave]||{};const lib=b.liberadoEm||ap.liberadoEm||'';
       const dvp=(rp!=null&&prep)?(rp-prep>0?`+${cs5min(rp-prep)}`:rp-prep<0?`−${cs5min(prep-rp)}`:''):'';
-      tqRows=row('Preparo',uni(prep?cs5hmin(prep):'',''),uni(rp!=null?cs5hmin(rp):'',dvp,true))
-        +row('Fabricação',cel('',prazo<1e9?hhmm(prazo):'','prazo'),cel(fi?fi.hora:'',ff?ff.hora:'',(ff&&prazo<1e9)?hm(ff.hora)-prazo:null,true))
-        +row('Liberação',uni('',''),uni(lib?`${lib}`:'não liberado','',true));
+      /* v386: só o que importa — início e fim do preparo, quanto levou, hora da liberação e quem liberou */
+      const kv=(k,v,cls)=>`<div class="rt7k ${cls||''}"><span>${k}</span><b>${v||'—'}</b></div>`;
+      tqRows=`<div class="rt7ks">${kv('Início do preparo',fi?fi.hora:'')}${kv('Fim do preparo',ff?ff.hora:'')}${kv('Tempo de preparo',rp!=null?cs5hmin(rp)+(prep&&dvp?' <i>('+dvp+' vs '+cs5hmin(prep)+')</i>':''):'')}${kv('Liberação',lib?lib+((ap.liberadoData||b.liberadoData)?' · '+dCurto(ap.liberadoData||b.liberadoData):''):'não liberado',lib?'ok':'')}</div>`;
       const a=analiseOk(b);
       nota=`<div class="rt7n">${a.pend.length?`<span>Falta medir: ${esc(a.pend.join(', '))}</span>`:a.fora.length?`<span class="mau">Fora do padrão: ${esc(a.fora.join(', '))}</span>`:`<span class="ok">✓ Análise conforme</span>`}${(b.liberadoPor||ap.liberadoPor)?`<span>Liberado por <b>${esc(b.liberadoPor||ap.liberadoPor)}</b></span>`:''}</div>`;
     }else tqRows=`<div class="rt7vz" style="grid-column:1/-1">Sem lote de tanque ligado a esta OP.</div>`;
   }catch(x){tqRows=`<div class="rt7vz" style="grid-column:1/-1">—</div>`;}
-  const tqBox=`<div class="rt7b"><div class="rt7t">${tit}</div><div class="rt7g">${hdr}${tqRows}</div>${nota}</div>`;
+  const tqBox=`<div class="rt7b"><div class="rt7t">${tit}</div>${/rt7ks/.test(tqRows)?tqRows:`<div class="rt7g">${hdr}${tqRows}</div>`}${nota}</div>`;
   return `<div class="rt7">${tqBox}${envBox}</div>`;
 }
 csPrevRealHTML=function(o){return `<div class="pbx prv" style="padding:10px 12px"><div class="pbtit"><b>PREVISTO × REALIZADO</b></div>${csRelTempos(o)}</div>`;};
@@ -29770,6 +29842,12 @@ try{csNucleo.versao='v383';}catch(e){}
 </script>
 <script>
 try{csNucleo.versao='v384';}catch(e){}
+</script>
+<script>
+try{csNucleo.versao='v385';}catch(e){}
+</script>
+<script>
+try{csNucleo.versao='v386';}catch(e){}
 </script>
 </body>
 </html>
