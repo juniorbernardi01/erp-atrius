@@ -5450,7 +5450,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v381';
+const VERSAO_APP='v382';
 let DRAG=null;
 function render(){
   recomporTudo();
@@ -19379,8 +19379,8 @@ try{
 if(M('assina'))M('assina').onclick=trocarOperador;
 try{
   /* sem endereço (voltou pelo ícone, login...), vale a última tela desta aba */
-  let r0=lerRota(location.hash);
-  if(!r0&&!/^#op/.test(location.hash)){try{r0=lerRota(sessionStorage.getItem('erp.rota')||'');}catch(e){}}
+  let r0=/^#op/.test(location.hash)?lerRota(location.hash):null;   /* v382: sempre abre no Início */
+  if(!r0&&location.hash&&!/^#op/.test(location.hash)&&!MODO_TV){try{history.replaceState(null,'',location.pathname+location.search);}catch(e){}}
   if(r0&&!MODO_TV){
     S.page=r0.page;
     if(r0.mod){MOD_ATUAL=r0.mod;if(r0.fin)FIN_PAG=r0.fin;}
@@ -19566,7 +19566,8 @@ const CS_MOD=[
    {n:'Transportadores',mod:'transportadores',fin:'lista',perm:'cad.transp',ic:'com'},
    {n:'Clientes e fornecedores',mod:'cadastros',fin:'clientes',perm:'cad.clientes',ic:'pes'},
    {n:'Vendedores',mod:'cadastros',fin:'vendedores',perm:'cad.vend',ic:'pes'},
-   {n:'Funcionários',mod:'cadastros',fin:'funcionarios',perm:'cad.func',ic:'pes'}]},  /* v381: Bancos e FIDCs mora em Financeiro › Gestão de Cobranças › Carteira */
+   {n:'Funcionários',mod:'cadastros',fin:'funcionarios',perm:'cad.func',ic:'pes'},
+   {n:'Motivos das cobranças',mod:'cadastros',fin:'motivos',perm:'cad.bancos',ic:'cob'}]},  /* v381: Bancos e FIDCs mora em Financeiro › Gestão de Cobranças › Carteira */
  {id:'estoque',nome:'Estoque',ic:'est',pgs:[
    {n:'Saldos',mod:'estoque',fin:'saldos',perm:'estoque.saldos',ic:'est'},
    {n:'Movimentos',page:'estoque',esaba:'mov',ic:'mov'},
@@ -29753,6 +29754,9 @@ try{csNucleo.versao='v380';}catch(e){}
   }catch(e){}
 })();
 try{csNucleo.versao='v381';}catch(e){}
+</script>
+<script>
+try{csNucleo.versao='v382';}catch(e){}
 </script>
 </body>
 </html>

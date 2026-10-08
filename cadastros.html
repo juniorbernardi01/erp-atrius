@@ -738,7 +738,7 @@ const PAGINA_INICIAL='clientes';
    ===================================================================== */
 function normaliza(d){
   d=d&&typeof d==='object'?d:{};
-  ['contatos','grupos','vendedores','funcionarios','bancos'].forEach(k=>{if(!Array.isArray(d[k]))d[k]=[];});
+  ['contatos','grupos','vendedores','funcionarios','bancos','motivosCob'].forEach(k=>{if(!Array.isArray(d[k]))d[k]=[];});
   d.sync=d.sync||{};
   return d;
 }
@@ -1111,8 +1111,28 @@ function telaBancos(){
     menu3(bt,b.nome,[['Abrir',()=>fichaSimples('banco',b.id)],...(ed?['-',[b.ativo===false?'Reativar':'Inativar',()=>{b.ativo=b.ativo===false;salvar();telaBancos();},b.ativo!==false]]:[])]);});
   if($('bNb'))$('bNb').onclick=()=>fichaSimples('banco',null);
 }
+/* ===== Financeiro › Motivos das cobranças (usados ao excluir cliente do relatório, pausar cobrança etc.) ===== */
+const MOTIVOS_PADRAO=[['Cliente não é da Atrius — entrou por engano no relatório','Exclusão do relatório'],['Título já pago — baixa não refletida pela empresa','Exclusão do relatório'],['Valor ou dados incorretos no relatório','Exclusão do relatório'],['Cobrança negociada ou renegociada','Exclusão do relatório'],['Duplicidade — cliente já consta em outra ficha','Exclusão do relatório'],['Cheque em prazo de compensação','Exclusão do relatório'],['Cheque em prazo de compensação','Exclusão do relatório']];
+function telaMotivos(){
+  const ed=pode('cad.bancos','editar');
+  if(!DB.motivosCob.length){MOTIVOS_PADRAO.forEach(([nome,uso])=>DB.motivosCob.push({id:uid(),nome,uso,ativo:true}));salvar();}
+  /* 08/10: motivo novo para quem já tinha a lista */
+  if(!DB.motivosCob.some(m=>/cheque em prazo/i.test(m.nome||''))){DB.motivosCob.push({id:uid(),nome:'Cheque em prazo de compensação',uso:'Exclusão do relatório',ativo:true});salvar();}
+  const l=ordena(DB.motivosCob,(b,k)=>semAc(b[k]||''));
+  $('app').innerHTML=`<div class="migalha">Cadastros › Financeiro › Motivos das cobranças</div>
+  <div class="topo"><h1>Motivos das cobranças</h1><span class="salvo"></span>${ed?'<button class="btn pri" id="mNb">＋ Novo motivo</button>':''}</div>
+  <div class="rolx">${l.length?`<table class="tv"><thead><tr><th style="width:34px"></th>${th('nome','Motivo')}${th('uso','Onde aparece')}<th>Observação</th><th>Situação</th></tr></thead><tbody>
+  ${l.map(b=>`<tr data-mo="${b.id}"><td><button class="dots" data-mom="${b.id}">⋯</button></td><td><b>${esc(b.nome)}</b></td><td>${esc(b.uso||'—')}</td><td>${esc(b.obs||'—')}</td><td>${b.ativo===false?'<span class="k">inativo</span>':'ativo'}</td></tr>`).join('')}</tbody></table>`:'<div class="vazio">Nenhum motivo cadastrado.</div>'}</div>
+  <div class="leg">A Gestão de Cobranças mostra estes motivos ao excluir um cliente do relatório. "Outro motivo" (com texto livre) aparece sempre.</div>${rodape([[nf(l.length),'motivos']])}`;
+  ligaOrdem(telaMotivos);
+  document.querySelectorAll('[data-mo]').forEach(r=>r.onclick=ev=>{if(ev.target.closest('.dots'))return;fichaSimples('motivo',r.dataset.mo);});
+  document.querySelectorAll('[data-mom]').forEach(bt=>bt.onclick=ev=>{ev.stopPropagation();const b=DB.motivosCob.find(x=>x.id===bt.dataset.mom);
+    menu3(bt,b.nome,[['Editar',()=>fichaSimples('motivo',b.id)],...(ed?['-',[b.ativo===false?'Reativar':'Inativar',()=>{b.ativo=b.ativo===false;salvar();telaMotivos();},b.ativo!==false],['Excluir',()=>{if(!confirm('Excluir o motivo "'+b.nome+'"?'))return;DB.motivosCob=DB.motivosCob.filter(x=>x!==b);salvar();telaMotivos();}]]:[])]);});
+  if($('mNb'))$('mNb').onclick=()=>fichaSimples('motivo',null);
+}
 function fichaSimples(tipo,id){
-  const cfg=tipo==='func'?{lista:'funcionarios',perm:'cad.func',tit:'Funcionário',campos:[['nome','Nome *','l2'],['funcao','Função'],['setor','Setor'],['turno','Turno'],['admissao','Admissão (dd/mm/aaaa)'],['fone','Telefone'],['cpf','CPF'],['obs','Observação','l2']]}
+  const cfg=tipo==='motivo'?{lista:'motivosCob',perm:'cad.bancos',tit:'Motivo de cobrança',campos:[['nome','Motivo *','l2'],['uso','Onde aparece (Exclusão do relatório, Pausa, Outro)'],['obs','Observação','l2']]}
+    :tipo==='func'?{lista:'funcionarios',perm:'cad.func',tit:'Funcionário',campos:[['nome','Nome *','l2'],['funcao','Função'],['setor','Setor'],['turno','Turno'],['admissao','Admissão (dd/mm/aaaa)'],['fone','Telefone'],['cpf','CPF'],['obs','Observação','l2']]}
     :{lista:'bancos',perm:'cad.bancos',tit:'Banco ou FIDC',campos:[['nome','Nome *','l2'],['tipo','Tipo (Banco, FIDC, Factoring)'],['codigo','Código do banco'],['agencia','Agência'],['conta','Conta'],['para','Para que serve','l2'],['contato','Contato'],['fone','Telefone']]};
   const ed=pode(cfg.perm,'editar');const o=id?DB[cfg.lista].find(x=>x.id===id):{id:uid(),ativo:true};if(!o)return;
   const val=k=>k==='admissao'&&o[k]?br(o[k]):(o[k]||'');
@@ -1133,6 +1153,7 @@ async function render(){
   if(pag==='vendedores'){if(!pode('cad.vend','ver'))return sem();return telaVendedores();}
   if(pag==='funcionarios'){if(!pode('cad.func','ver'))return sem();return telaFuncionarios();}
   if(pag==='bancos'){if(!pode('cad.bancos','ver'))return sem();return telaBancos();}
+  if(pag==='motivos'){if(!pode('cad.bancos','ver'))return sem();return telaMotivos();}
   return telaClientes();
 }
 const sem=()=>{$('app').innerHTML='<div class="vazio">Você não tem acesso a esta página.</div>';};
