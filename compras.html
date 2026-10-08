@@ -513,7 +513,7 @@ function buscaInsumo(input,escolhe,filtro){
     const achados=(N?N.insumos():[]).filter(x=>(!filtro||filtro(x))&&(x.sku+' '+x.nome+' '+x.tipo).toLowerCase().includes(q)).slice(0,12);
     if(!achados.length)return;
     lista=document.createElement('div');lista.className='lista-sug';
-    lista.innerHTML=achados.map((x,i)=>`<button data-i="${i}"><b>${esc(x.nome)}</b><small>${esc(x.sku)} · ${esc(x.tipo)}${x.tiny?'':' · sem código do Tiny'}</small></button>`).join('');
+    lista.innerHTML=achados.map((x,i)=>`<button data-i="${i}"><b>${esc(x.nome)}</b><small>${esc(x.sku)} · ${esc(x.tipo)}</small></button>`).join('');
     caixa.appendChild(lista);
     lista.querySelectorAll('button').forEach(b=>b.onmousedown=ev=>{ev.preventDefault();escolhe(achados[+b.dataset.i]);input.value='';fecha();});
   });
@@ -706,7 +706,9 @@ function migraOC(o){
       parcelas:(o.parcelas||[]).map(p=>({d:+p.dias||0,valor:+p.valor||0,forma:p.forma||o.forma||'Boleto',obs:'',tiny:p.tiny||null}))};
   }
   o.entrega=o.entrega||{outro:false};
-  (o.itens||[]).forEach(it=>{it.qtd=+it.qtd||0;if(it.modo==='cx'&&!(+it.cx>0))it.modo='un';});
+  o.benef=!!o.benef;
+  (o.itens||[]).forEach(it=>{it.qtd=+it.qtd||0;if(it.modo==='cx'&&!(+it.cx>0))it.modo='un';if(!it.tiny&&it.sku)it.tiny='ERP-'+it.sku;if(it.env&&!it.env.tiny&&it.env.sku)it.env.tiny='ERP-'+it.env.sku;});
+  (o.receb||[]).forEach(r=>(r.itens||[]).forEach(x=>{if(!x.tiny&&x.sku)x.tiny='ERP-'+x.sku;}));
   return o;
 }
 
@@ -854,8 +856,9 @@ async function tiny(corpo){
 }
 async function lancarEntrada(oc,r){
   const movs=r.itens.filter(x=>x.tiny&&x.qtd>0).map(x=>({id:x.tiny,tipo:'E',qtd:x.qtd,preco:x.preco||0}));
-  if(!movs.length){r.tiny={erro:'nenhum item tem código do Tiny'};return false;}
-  try{const x=await tiny({acao:'movimentar',movimentos:movs,obs:`OC ${oc.num}${r.nf?' · NF '+r.nf:''} · ${oc.forn?oc.forn.nome:''}`});
+  r.itens.filter(x=>x.env&&x.env.tiny&&x.env.qtd>0).forEach(x=>movs.push({id:x.env.tiny,tipo:'S',qtd:x.env.qtd}));
+  if(!movs.length){r.tiny={erro:'nenhum item para lançar'};return false;}
+  try{const x=await tiny({acao:'movimentar',movimentos:movs,obs:`OC ${oc.num}${oc.benef?' · beneficiamento':''}${r.nf?' · NF '+r.nf:''} · ${oc.forn?oc.forn.nome:''}`});
     const fal=(x&&x.falhas)||[];
     r.tiny=fal.length?{erro:fal.length+' item(ns) recusado(s): '+fal.map(f=>f.erro).join('; ').slice(0,180)}:{ok:true,em:agora()};
   }catch(e){r.tiny={erro:e.message};}
@@ -954,7 +957,7 @@ function telaOrdens(){
       return `<div class="r ${LST.sel.has(o.id)?'sel':''}" data-oc="${o.id}"><span class="mw"><button class="dots" data-menu="${o.id}">${IC_PTS}</button></span>
       <span class="ck ${LST.sel.has(o.id)?'on':''}" data-ck="${o.id}"></span><span class="num">${esc(o.num)}</span><span class="dt">${br(o.data)}</span>
       <span class="dt pr" style="${atr?'color:var(--danger)':''}">${br(o.prev)}${atr?'<small>atrasada</small>':''}</span>
-      <span class="fo">${esc(o.forn?o.forn.nome:'sem fornecedor')}<small>${(o.itens||[]).length} ${(o.itens||[]).length===1?'item':'itens'}${o.saldoDe?' · saldo da '+esc(o.saldoDe):''}</small></span>
+      <span class="fo">${esc(o.forn?o.forn.nome:'sem fornecedor')}<small>${o.benef?'<b style="color:#1D4ED8">beneficiamento</b> · ':''}${(o.itens||[]).length} ${(o.itens||[]).length===1?'item':'itens'}${o.saldoDe?' · saldo da '+esc(o.saldoDe):''}</small></span>
       <span class="tot">${nf(t.total,2)}</span><span><span class="pill p-${o.sit}">${SIT[o.sit]}</span></span>
       <span class="mks">${(o.marcadores||[]).map(chipMk).join('')}</span><span class="nf ${o.nf?'':'v'}">${esc(o.nf||'—')}</span>${iconesInteg(o)}</div>`;}).join('')}`
     :`<div class="vazio">Nenhuma ordem ${LST.sit==='todas'?'':'nesta situação '}com esses filtros.</div>`}</div>
@@ -1084,13 +1087,15 @@ function telaOC(id){
   const totUn=(oc.itens||[]).reduce((s,i)=>s+(+i.qtd||0),0),totCx=(oc.itens||[]).reduce((s,i)=>s+(i.modo==='cx'?+i.qtdCx||0:0),0);
   const unRes=[...new Set(oc.itens.map(i=>i.un))].length===1&&oc.itens.length?oc.itens[0].un:'un';
   $('app').innerHTML=`<div class="migalha"><button class="btn lk sm" id="volta">‹ Ordens de compra</button></div>
-  <div class="ed-top"><h1>${ED.nova?'Nova ordem de compra':(L?'Ordem ':'Editar ordem ')+esc(oc.num)}</h1>${ED.nova?'':`<span class="pill p-${oc.sit}">${SIT[oc.sit]}</span>`}</div>
+  <div class="ed-top"><h1>${ED.nova?(oc.benef?'Nova ordem de beneficiamento':'Nova ordem de compra'):(L?'Ordem ':'Editar ordem ')+esc(oc.num)+(oc.benef?' · beneficiamento':'')}</h1>${ED.nova?'':`<span class="pill p-${oc.sit}">${SIT[oc.sit]}</span>`}</div>
   ${L&&!ED.nova?`<div class="aviso">🔒 <div>${oc.sit==='rec'?'A mercadoria já chegou: preços e boletos se acertam em <b>Conferir nota</b>.':oc.sit==='con'?'Ordem concluída. Para corrigir, use <b>Reabrir ordem</b> nos três pontinhos.':oc.sit==='can'?'Ordem cancelada.':'Você não tem permissão para editar ordens.'}</div></div>`:''}
   <div class="bloco"><div class="t"><span class="n">1</span>Fornecedor e entrega</div><div class="c"><div class="g3" style="grid-template-columns:2fr 1fr">
     <div class="fl"><label>Fornecedor<span class="req">*</span></label>${f?`<div class="v" id="fV">${esc(f.nome)}${L?'':'<button class="btn lk sm" id="fTroca" style="margin-left:auto">trocar</button>'}</div>`
       :`<div class="rel"><input class="inp" id="fBusca" placeholder="buscar fornecedor cadastrado · nome ou CNPJ" ${dis}></div>`}
       ${f?`<div class="lk2"><button id="lD">dados do fornecedor</button><button id="lU">ver últimas compras</button></div>`:`<div class="lk2">${DB.cfg.soCadastro&&!N.teste?'':'<button id="fNovo">＋ novo fornecedor'+(N.teste&&DB.cfg.soCadastro?' (só no TESTE)':'')+'</button>'}<button id="fTiny">buscar no Tiny</button></div>`}
-      <label class="chk2" id="endC"><span class="ck ${oc.entrega.outro?'on':''}"></span>Endereço de entrega diferente</label></div>
+      <label class="chk2" id="endC"><span class="ck ${oc.entrega.outro?'on':''}"></span>Endereço de entrega diferente</label>
+      <label class="chk2" id="benC" title="O fornecedor transforma material nosso (ex.: sopra a preforma e devolve o frasco). Na chegada entra o item pronto e sai do estoque o material enviado."><span class="ck ${oc.benef?'on':''}"></span>Beneficiamento · o fornecedor transforma material nosso</label>
+      ${oc.benef?'<div class="s2" style="margin-top:4px;color:#1D4ED8">Em cada item, abra ⋯ e informe o material que a Atrius envia e quanto sai por unidade pronta. O preço é o do serviço.</div>':''}</div>
     <div class="fl"><label>Previsão de entrega<span class="req">*</span></label><input class="inp dt-in dest" data-cal="1" id="prev" value="${oc.prev?br(oc.prev):''}" placeholder="dd/mm/aaaa" ${dis}></div></div>
     <div class="exp" id="xD" hidden>${f?`<div class="g2"><div><span>CNPJ</span>${esc(f.cnpj||'—')}</div><div><span>Inscrição estadual</span>${esc(f.ie||'—')}</div><div><span>Cidade</span>${esc([f.cidade,f.uf].filter(Boolean).join(' · ')||'—')}</div>
       <div><span>Endereço</span>${esc(f.end||'—')}</div><div><span>Contato</span>${esc([f.contato,f.fone,f.email].filter(Boolean).join(' · ')||'—')}</div><div><span>No Tiny</span>${f.tinyId?'ligado · '+esc(f.tinyId):'<span style="color:var(--amb)">sem código do Tiny</span>'}</div></div>`:''}</div>
@@ -1175,9 +1180,10 @@ function buscaAvancada(oc,re){
 function linhaItem(oc,it,i,fu,L){
   const c=contaItem(it,fu),ab=ED.aberto.has(i),dis=L?'disabled':'';
   const cx=it.modo==='cx'&&+it.cx>0;
-  return `<tr><td><b>${esc(it.nome)}</b>
+  const env=oc.benef?(it.env?`<div class="s2" style="color:#1D4ED8">↳ sai ${nq(it.env.fator||1)} ${esc(it.env.un||'un')} de <b>${esc(it.env.nome)}</b> por ${esc(it.un||'un')} · ${nq(r3((it.env.fator||1)*(+it.qtd||0)))} ${esc(it.env.un||'un')} no total</div>`:`<div class="s2" style="color:var(--danger)">↳ beneficiamento: informe em ⋯ o material enviado</div>`):'';
+  return `<tr><td><b>${esc(it.nome)}</b>${env}
       <div class="nfo2"><span class="s2">no fornecedor:</span><input class="in4 ${it.nomeForn?'ok':''}" data-it="${i}" data-k="nomeForn" value="${esc(it.nomeForn||'')}" placeholder="como o fornecedor chama este item" ${dis}>${it.codForn?`<span class="s2">cód ${esc(it.codForn)}</span>`:''}</div></td>
-    <td class="mono">${esc(it.sku)}${it.tiny?'':'<span class="s2" style="color:var(--danger)">sem código do Tiny</span>'}</td>
+    <td class="mono">${esc(it.sku)}</td>
     <td class="n"><span class="qx"><input class="qn" data-it="${i}" data-k="${cx?'qtdCx':'qtd'}" value="${nq(cx?it.qtdCx:it.qtd)}" ${dis}></span>${cx?`<span class="s2">caixa de ${nf(it.cx)} = ${nf(it.qtd)} ${esc(it.un||'un')}</span>`:''}</td>
     <td>${cx?'cx':esc(it.un||'un')}</td>
     <td class="n"><input class="in3" data-it="${i}" data-k="preco" value="${it.preco?nf(it.preco,4):''}" ${dis}></td>
@@ -1187,6 +1193,9 @@ function linhaItem(oc,it,i,fu,L){
       ${CREDITAVEIS.map(([k,r])=>`<div>${r} ${false?nq(it.icms)+'%':`<input class="in3 p" data-it="${i}" data-k="${k}" value="${nq(it[k])}" ${dis} style="height:24px;min-width:50px">%`}<b>− ${nf(c.val[k],2)}</b>
         <label class="ckl"><span class="ck ${c.cr[k]?'on':''}" data-cr="${i}|${k}"></span>gera crédito</label></div>`).join('')}
       <div class="re">Custo real por ${esc(it.un||'un')}<b>${nf(c.real,4)}</b><small>preço − créditos${fu?' + frete rateado '+nf(fu,4):''}</small></div></div>
+      ${oc.benef?`<div class="lnx" style="background:#EFF6FF;border-radius:8px;padding:8px"><b style="color:#1D4ED8">Beneficiamento</b>
+        <label>Material enviado pela Atrius ${it.env?`<b>${esc(it.env.nome)}</b> <span class="s2">${esc(it.env.sku)}</span>${L?'':`<button class="btn lk sm" data-benx="${i}">trocar</button>`}`:`<span class="rel"><input class="in3" style="min-width:260px;text-align:left" data-benq="${i}" placeholder="nome ou SKU do material (ex.: preforma)" ${dis}></span>`}</label>
+        ${it.env?`<label>Sai por ${esc(it.un||'un')} pronto <input class="in3" data-benf="${i}" value="${nq(it.env.fator||1)}" ${dis}> ${esc(it.env.un||'un')}</label><span class="s2">na chegada de ${nq(it.qtd)} ${esc(it.un||'un')} saem ${nq(r3((it.env.fator||1)*(+it.qtd||0)))} ${esc(it.env.un||'un')} do estoque; o preço acima é o do serviço por ${esc(it.un||'un')}</span>`:''}</div>`:''}
       <div class="lnx"><label>Código no fornecedor <input class="in3" style="min-width:120px;justify-content:flex-start;text-align:left" data-it="${i}" data-k="codForn" value="${esc(it.codForn||'')}" ${dis}></label>
         <span>IPI ${nq(it.ipi)}% · ${nf(c.val.ipi,2)} vem na nota e volta inteiro</span>
         ${controlaLote(it)?'<span class="mk2" style="--c:#15803D">controla lote</span>':''}
@@ -1245,6 +1254,11 @@ function ligaOC(){
   if($('lD'))$('lD').onclick=()=>{$('xD').hidden=!$('xD').hidden;};
   if($('lU'))$('lU').onclick=()=>ultimasComprasGaveta(oc.itens[0]&&oc.itens[0].sku,oc.forn&&oc.forn.id);
   $('endC').onclick=()=>{if(L)return;oc.entrega.outro=!oc.entrega.outro;re();};
+  if($('benC'))$('benC').onclick=()=>{if(L)return;oc.benef=!oc.benef;if(oc.benef)oc.itens.forEach((x,i)=>{if(!x.env)ED.aberto.add(i);});re();};
+  document.querySelectorAll('[data-benq]').forEach(inp=>buscaLista(inp,q=>(N?N.insumos():[]).filter(x=>x.sku!==oc.itens[+inp.dataset.benq].sku&&(x.sku+' '+x.nome+' '+x.tipo).toLowerCase().includes(q)).slice(0,14).map(x=>({t:x.nome,s:`${x.sku} · ${x.tipo}`,v:x})),
+    x=>{const it=oc.itens[+inp.dataset.benq];it.env={sku:x.sku,nome:x.nome,tiny:x.tiny||('ERP-'+x.sku),un:unDoItem(x),fator:(it.env&&+it.env.fator)||1};re();},'Material que a Atrius manda para o fornecedor.'));
+  document.querySelectorAll('[data-benf]').forEach(el=>el.onchange=()=>{const it=oc.itens[+el.dataset.benf];if(it.env)it.env.fator=Math.max(0,num(el.value))||1;re();});
+  document.querySelectorAll('[data-benx]').forEach(b=>b.onclick=()=>{const it=oc.itens[+b.dataset.benx];delete it.env;re();});
   document.querySelectorAll('[data-en]').forEach(i=>i.onchange=()=>{oc.entrega[i.dataset.en]=i.value.trim();});
   if($('bCep'))$('bCep').onclick=()=>buscaCep(oc,re);
   $('prev').onchange=e=>{const y=deBR(e.target.value);if(y){oc.prev=y;}else if(e.target.value.trim())toast('Data inválida. Use dd/mm/aaaa.',true);re();};
@@ -1340,7 +1354,7 @@ function adicionarItem(oc,x){
     toast('Item ainda não homologado neste fornecedor: entrou como "em avaliação".');
   }
   const imp=DB.imp[x.sku]||{},mp=melhorPreco(x.sku,fid),uc=ultimaCompra(x.sku,fid)||ultimaCompra(x.sku);
-  const it={sku:x.sku,nome:x.nome,tiny:x.tiny||'',un:unDoItem(x),tipo:x.tipo,qtd:0,qtdCx:0,cx:0,modo:'un',preco:mp?mp.preco:(uc?uc.preco:0),
+  const it={sku:x.sku,nome:x.nome,tiny:x.tiny||('ERP-'+x.sku),un:unDoItem(x),tipo:x.tipo,qtd:0,qtdCx:0,cx:0,modo:'un',preco:mp?mp.preco:(uc?uc.preco:0),
     icms:imp.icms||0,ipi:imp.ipi||0,pis:imp.pis??1.65,cof:imp.cof??7.6,cr:imp.cr||{...CRED_PADRAO},nomeForn:'',codForn:''};
   aplicaVinculo(oc,it);oc.itens.push(it);
   if(!oc.pag.categoria)oc.pag.categoria=categoriaSugerida(oc);
@@ -1363,6 +1377,7 @@ function validarOC(oc){
   return f;
 }
 function salvarOC(){
+  if(ED&&ED.oc&&ED.oc.benef&&ED.oc.itens.some(x=>!x.env||!x.env.sku))return toast('Beneficiamento: informe em ⋯ o material enviado de cada item.',true);
   const oc=ED.oc;const f=validarOC(oc);
   if(f.length){$('obr').textContent='Falta preencher: '+f.join(', ');toast('Falta preencher: '+f.join(', '),true);return;}
   if(ED.nova){DB.seq=Math.max(DB.seq,...DB.ocs.map(o=>+o.num||0))+1;oc.num=String(DB.seq);hist(oc,'Criou a ordem',oc.origem&&oc.origem!=='Manual'?oc.origem:'');DB.ocs.push(oc);}
@@ -1540,13 +1555,13 @@ function empresa(){const e=DB.cfg.empresa||{};return {razao:e.razao||'Atrius Pro
 function folhaOC(o){
   const e=empresa(),f=o.forn||{},t=contaOC(o);let logo='';try{logo=N.logo?N.logo():'';}catch(x){}
   const ent=o.entrega&&o.entrega.outro?o.entrega:null;
-  const itens=o.itens.map((it,k)=>`<tr><td class="c k">${k+1}</td><td><b>${esc(it.nome)}</b>${it.nomeForn||it.modo==='cx'?`<small>${esc(it.nomeForn||'')}${it.nomeForn&&it.modo==='cx'?' · ':''}${it.modo==='cx'?nf(it.qtdCx)+' '+(+it.qtdCx===1?'caixa':'caixas')+' de '+nf(it.cx)+' un':''}</small>`:''}</td>
+  const itens=o.itens.map((it,k)=>`<tr><td class="c k">${k+1}</td><td><b>${esc(it.nome)}</b>${o.benef&&it.env?`<small>Material enviado pela Atrius: ${nq(r3((it.env.fator||1)*(+it.qtd||0)))} ${esc(it.env.un||'un')} de ${esc(it.env.nome)} (${nq(it.env.fator||1)} por ${esc(it.un||'un')}) · preço = serviço</small>`:''}${it.nomeForn||it.modo==='cx'?`<small>${esc(it.nomeForn||'')}${it.nomeForn&&it.modo==='cx'?' · ':''}${it.modo==='cx'?nf(it.qtdCx)+' '+(+it.qtdCx===1?'caixa':'caixas')+' de '+nf(it.cx)+' un':''}</small>`:''}</td>
     <td class="c">${esc((it.un||'un').toUpperCase())}</td><td class="n">${nq(it.qtd)}</td><td class="n">${nf(it.preco,4)}</td><td class="n">${nq(it.icms)}%</td><td class="n">${nq(it.ipi)}%</td><td class="n">${nf(contaItem(it).base,2)}</td></tr>`).join('');
   const prazo=(o.pag.parcelas||[]).length===1&&o.pag.parcelas[0].d===0?'à vista':(o.pag.parcelas||[]).map(p=>p.d).join('/')+' dias';
   const formas=[...new Set((o.pag.parcelas||[]).map(p=>p.forma))].join(' + ')||o.pag.forma;
   return `<div class="folha f2">
   <div class="c1">${logo?`<img src="${logo}" alt="Atrius">`:'<b style="font-size:22pt;color:#1B4F9C">Atrius</b>'}<div class="empd"><b>${esc(e.razao)}</b>${[e.cnpj&&'CNPJ '+e.cnpj,e.ie&&'IE '+e.ie].filter(Boolean).join(' · ')}<br>${esc([e.end,e.cidade+' · '+e.uf,e.cep].filter(Boolean).join(' · '))}<br>${esc([e.fone,e.email].filter(Boolean).join(' · '))}</div></div>
-  <div class="c2"><div><span class="rot">Ordem de compra</span><span class="nro"><i>Nº</i> ${esc(o.num)}</span></div>
+  <div class="c2"><div><span class="rot">${o.benef?'Ordem de beneficiamento':'Ordem de compra'}</span><span class="nro"><i>Nº</i> ${esc(o.num)}</span></div>
     <div class="datas"><div class="emi"><span>Emissão</span><b>${br(o.data)}</b></div><div class="ent"><span>Entrega prevista</span><b>${br(o.prev)}</b></div></div></div>
   <div class="c3"><div><span class="rot">Fornecedor</span><b>${esc(f.nome||'')}</b><p>${[f.cnpj&&'CNPJ '+esc(f.cnpj),f.ie&&'IE '+esc(f.ie)].filter(Boolean).join(' · ')}<br>${esc([f.end,[f.cidade,f.uf].filter(Boolean).join(' · ')].filter(Boolean).join(' · '))}</p></div>
     <div><span class="rot">Entregar em</span>${ent?`<b>${esc(ent.end||'')}${ent.num?', '+esc(ent.num):''}</b><p>${esc([ent.bairro,ent.cidade,ent.uf,ent.cep].filter(Boolean).join(' · '))}${ent.compl?'<br>'+esc(ent.compl):''}${ent.hora?'<br>Recebimento: '+esc(ent.hora):''}${ent.quem?'<br>'+esc(ent.quem):''}</p>`
@@ -1596,7 +1611,8 @@ async function salvarPDFs(l){
 function receberOC(o){
   const faltaDe=it=>Math.max(0,r3((+it.qtd||0)-recebidoDe(o,it.sku)));
   const st={nf:'',data:hojeY(),obs:'',saldo:'gerar',prevSaldo:addDias(o.prev||hojeY(),1),linhas:o.itens.map(it=>{const f=faltaDe(it);const cx=it.modo==='cx'&&+it.cx>0;
-    return {it,falta:f,cx,chegouCx:cx?Math.round(f/it.cx):0,chegou:f,lotes:controlaLote(it)?[{lote:'',val:'',qtd:f}]:null,atualizaCx:true};})};
+    return {it,falta:f,cx,chegouCx:cx?Math.round(f/it.cx):0,chegou:f,lotes:controlaLote(it)?[{lote:'',val:'',qtd:f}]:null,atualizaCx:true,sai:o.benef&&it.env?r3(f*(+it.env.fator||1)):0,saiMan:false};})};
+  const recalcSai=l=>{if(o.benef&&l.it.env&&!l.saiMan)l.sai=r3(l.chegou*(+l.it.env.fator||1));};
   const des=()=>{
     const falt=st.linhas.filter(l=>l.chegou<l.falta-1e-6);
     const tr=totaisReceb(o,st);
@@ -1608,7 +1624,7 @@ function receberOC(o){
       <div class="fl"><label>Chegou em<span class="req">*</span></label><input class="inp dt-in" data-cal="1" id="rDt" value="${br(st.data)}"></div></div>
     <div class="rolx"><table class="rtab"><thead><tr><th>Item</th><th>Pedido</th><th>Chegou</th><th>Unidades na nota</th></tr></thead><tbody>
     ${st.linhas.map((l,i)=>{const it=l.it;const real=l.cx&&l.chegouCx>0?r3(l.chegou/l.chegouCx):0;const dif=l.cx&&l.chegouCx>0&&Math.abs(real-it.cx)>0.5;
-      return `<tr class="${l.chegou<l.falta-1e-6?'falta':''}"><td><b>${esc(it.nome)}</b><small>${esc(it.sku)}${l.extra?' · <b style="color:#1D4ED8">incluído no recebimento</b>':''}${it.tiny?'':' · sem código: não entra no estoque'}${l.lotes?' · controla lote':''}</small>${l.chegou<l.falta-1e-6?`<small style="color:#B45309">faltou ${nq(r3(l.falta-l.chegou))} ${esc(it.un)}</small>`:''}</td>
+      return `<tr class="${l.chegou<l.falta-1e-6?'falta':''}"><td><b>${esc(it.nome)}</b><small>${esc(it.sku)}${l.extra?' · <b style="color:#1D4ED8">incluído no recebimento</b>':''}${l.lotes?' · controla lote':''}</small>${o.benef&&it.env?`<small style="color:#1D4ED8">↳ sai do estoque <input class="in5" data-rs="${i}" value="${nq(l.sai)}" style="width:70px"> ${esc(it.env.un||'un')} de ${esc(it.env.nome)}${l.saiMan?' <i>(ajustado)</i>':' ('+nq(it.env.fator||1)+' por '+esc(it.un)+')'}</small>`:''}${l.chegou<l.falta-1e-6?`<small style="color:#B45309">faltou ${nq(r3(l.falta-l.chegou))} ${esc(it.un)}</small>`:''}</td>
       <td>${l.cx?nf(Math.round(l.falta/it.cx))+' cx<small>≈ '+nq(l.falta)+' '+esc(it.un)+'</small>':nq(l.falta)+' '+esc(it.un)}</td>
       <td>${l.cx?`<input class="in5" data-rcx="${i}" value="${l.chegouCx}"> cx`:''}</td>
       <td><input class="in5" data-rq="${i}" value="${nq(l.chegou)}"> ${esc(it.un)}${dif?`<label class="ckl" data-rac="${i}" style="color:#B45309"><span class="ck ${l.atualizaCx?'on':''}"></span>caixa real ${nf(real)} un · atualizar no fornecedor</label>`:''}</td></tr>
@@ -1629,8 +1645,9 @@ function receberOC(o){
     ligaCalendarios($('app'));
     $('rNf').onchange=e=>st.nf=e.target.value.trim();$('rDt').onchange=e=>st.data=deBR(e.target.value)||st.data;$('rObs').onchange=e=>st.obs=e.target.value;
     if($('rPs'))$('rPs').onchange=e=>st.prevSaldo=deBR(e.target.value)||st.prevSaldo;
-    document.querySelectorAll('[data-rcx]').forEach(i=>i.onchange=()=>{const l=st.linhas[+i.dataset.rcx];l.chegouCx=Math.max(0,Math.round(num(i.value)));l.chegou=r3(l.chegouCx*l.it.cx);if(l.lotes&&l.lotes.length===1)l.lotes[0].qtd=l.chegou;des();});
-    document.querySelectorAll('[data-rq]').forEach(i=>i.onchange=()=>{const l=st.linhas[+i.dataset.rq];l.chegou=Math.max(0,num(i.value));if(l.lotes&&l.lotes.length===1)l.lotes[0].qtd=l.chegou;des();});
+    document.querySelectorAll('[data-rcx]').forEach(i=>i.onchange=()=>{const l=st.linhas[+i.dataset.rcx];l.chegouCx=Math.max(0,Math.round(num(i.value)));l.chegou=r3(l.chegouCx*l.it.cx);if(l.lotes&&l.lotes.length===1)l.lotes[0].qtd=l.chegou;recalcSai(l);des();});
+    document.querySelectorAll('[data-rq]').forEach(i=>i.onchange=()=>{const l=st.linhas[+i.dataset.rq];l.chegou=Math.max(0,num(i.value));if(l.lotes&&l.lotes.length===1)l.lotes[0].qtd=l.chegou;recalcSai(l);des();});
+    document.querySelectorAll('[data-rs]').forEach(i=>i.onchange=()=>{const l=st.linhas[+i.dataset.rs];l.sai=Math.max(0,num(i.value));l.saiMan=true;des();});
     document.querySelectorAll('[data-rac]').forEach(b=>b.onclick=()=>{const l=st.linhas[+b.dataset.rac];l.atualizaCx=!l.atualizaCx;des();});
     document.querySelectorAll('[data-lt]').forEach(i=>i.onchange=()=>{const [a,b,k]=i.dataset.lt.split('|');st.linhas[+a].lotes[+b][k]=k==='qtd'?num(i.value):i.value.trim();});
     document.querySelectorAll('[data-lta]').forEach(b=>b.onclick=()=>{st.linhas[+b.dataset.lta].lotes.push({lote:'',val:'',qtd:0});des();});
@@ -1659,7 +1676,7 @@ function receberOC(o){
 }
 async function confirmaRecebimento(o,st){
   const r={id:uid(),em:agora(),por:usuario(),data:st.data,nf:st.nf,obs:st.obs,
-    itens:st.linhas.filter(l=>l.chegou>0).map(l=>({sku:l.it.sku,nome:l.it.nome,tiny:l.it.tiny,qtd:l.chegou,cx:l.cx?l.chegouCx:0,preco:+l.it.preco||0,lotes:l.lotes?l.lotes.map(x=>({...x})):null}))};
+    itens:st.linhas.filter(l=>l.chegou>0).map(l=>({sku:l.it.sku,nome:l.it.nome,tiny:l.it.tiny,qtd:l.chegou,cx:l.cx?l.chegouCx:0,preco:+l.it.preco||0,lotes:l.lotes?l.lotes.map(x=>({...x})):null,env:o.benef&&l.it.env&&l.sai>0?{sku:l.it.env.sku,nome:l.it.env.nome,tiny:l.it.env.tiny||('ERP-'+l.it.env.sku),un:l.it.env.un,qtd:l.sai}:null}))};
   o.receb.push(r);o.nf=st.nf;o.obsReceb=st.obs;
   st.linhas.forEach(l=>{if(l.cx&&l.chegouCx>0&&l.atualizaCx){const real=Math.round(l.chegou/l.chegouCx);if(Math.abs(real-l.it.cx)>0.5&&o.forn)garanteVinculo(o.forn.id,l.it.sku,{cx:real});}});
   r.itens.forEach(x=>(x.lotes||[]).forEach(lt=>DB.lotes.push({sku:x.sku,nome:x.nome,lote:lt.lote,val:lt.val,qtd:+lt.qtd,nf:st.nf,oc:o.num,forn:o.forn&&o.forn.nome,data:st.data,receb:r.id})));
@@ -1681,7 +1698,7 @@ async function confirmaRecebimento(o,st){
   if(!(o.pag.parcelas||[]).some(p=>p.tiny&&p.tiny.id))gerarParcelas(o,o.pag.cond,o.pag.forma);
   o.sit='rec';
   const ok=await lancarEntrada(o,r);
-  hist(o,'Recebeu a mercadoria',`NF ${st.nf} · ${r.itens.map(x=>x.nome+' '+nq(x.qtd)).join(' · ')}${ok?' · estoque lançado':' · estoque NÃO foi lançado: '+((r.tiny&&r.tiny.erro)||'')}`);
+  hist(o,'Recebeu a mercadoria',`NF ${st.nf} · ${r.itens.map(x=>x.nome+' '+nq(x.qtd)+(x.env?' (saiu '+nq(x.env.qtd)+' '+x.env.nome+')':'')).join(' · ')}${ok?' · estoque lançado':' · estoque NÃO foi lançado: '+((r.tiny&&r.tiny.erro)||'')}`);
   salvar();toast(ok?'Recebido. Estoque lançado; a ordem espera a conferência da nota.':'Recebido, mas o estoque não foi lançado. Veja a coluna Integração.',!ok);
 }
 
@@ -1787,7 +1804,7 @@ function estornarEstoque(o,depois){
   confirmaDupla(`Estornar o estoque da OC ${esc(o.num)}`,`<p>Isto <b>tira do estoque</b> a entrada que o recebimento lançou. O ERP lança uma saída igual, com a OC na observação.</p>
     <div class="lst"><div><span>${rs_.length} recebimento(s) · ${nq(q)} un</span><b>saem do estoque no Olist</b></div><div><span>NF ${esc(o.nf||'—')}</span><b>fica ligada à ordem</b></div><div><span>Situação</span><b>volta para Enviada ao fornecedor</b></div></div>`,
     'Entendi que o estoque vai ser alterado no Olist','Estornar estoque no Olist',async()=>{
-      let err=0;for(const r of rs_){const movs=r.itens.filter(x=>x.tiny).map(x=>({id:x.tiny,tipo:'S',qtd:x.qtd}));
+      let err=0;for(const r of rs_){const movs=r.itens.filter(x=>x.tiny).map(x=>({id:x.tiny,tipo:'S',qtd:x.qtd}));r.itens.filter(x=>x.env&&x.env.tiny&&x.env.qtd>0).forEach(x=>movs.push({id:x.env.tiny,tipo:'E',qtd:x.env.qtd}));
         try{const x=await tiny({acao:'movimentar',movimentos:movs,obs:`Estorno da OC ${o.num}${r.nf?' · NF '+r.nf:''}`});if(x&&(x.falhas||[]).length)err++;else{r.estornado=true;r.estornoEm=agora();}}catch(e){err++;}}
       DB.lotes=DB.lotes.filter(l=>!rs_.some(r=>r.estornado&&r.id===l.receb));
       /* a ordem continua com as quantidades recebidas: é o que se espera receber de novo */
@@ -1922,7 +1939,7 @@ function necLinhas(){
   const cob=(+c.cobN||0)*({d:1,s:7,m:30}[c.cobU]||1),cr=1+(+c.cresc||0)/100;
   return N.insumos().map(x=>{
     const un=unDe(x),k=x.sku;
-    const fis=x.tiny&&sal[x.tiny]!==undefined?+sal[x.tiny]:null;
+    const _kx=x.tiny||('ERP-'+x.sku);const fis=sal[_kx]!==undefined?+sal[_kx]:null;
     const r=res[k]||res[x.nome]||{qtd:0,ops:0};const pi=(pedIns[k]||{qtd:0}).qtd;
     const saidas=r.qtd+pi,entradas=emCompra(k),virt=(fis||0)+entradas-saidas;
     const tot=meses.reduce((s,m)=>s+((CM[m]||{})[k]||0),0),dia=diasJan?tot/diasJan:0;
@@ -1988,7 +2005,7 @@ async function telaNecessidade(){
         sug:`<td class="n" style="${l.sug?'color:var(--ok);font-weight:700':'color:var(--ink3)'}">${l.sug?nq(l.sug):'—'}</td>`,
         comprar:`<td class="n"><input class="n" data-cp="${esc(l.k)}" value="${m?nq(NEC.sel[l.k]):''}" placeholder="${l.sug?nq(l.sug):''}" style="width:84px;height:30px;${m?'border:1.5px solid #15803D;font-weight:700':''}"></td>`};
       return `<tr data-nl="${esc(l.k)}" class="${m?'sel':''}"><td class="fx1 ckc" data-nk="${esc(l.k)}"><span class="ck ${m?'on':''}"></span></td>
-      <td class="fx2"><b>${esc(l.x.nome)}</b><span class="s">${esc(l.k)} · ${esc(l.x.tipo||'')} · ${l.un}${l.x.tiny?'':' · <span style="color:var(--danger)">sem código do Tiny</span>'}</span></td>
+      <td class="fx2"><b>${esc(l.x.nome)}</b><span class="s">${esc(l.k)} · ${esc(l.x.tipo||'')} · ${l.un}</span></td>
       ${CO.map(k=>C[k]).join('')}</tr>`;}).join('')}</tbody></table>`;})()
     :`<div class="vazio">${NEC.so?'Nada precisa ser comprado com esses parâmetros. <button class="btn lk" id="nTodos">Ver todos os itens</button>':'Nenhum item com esse filtro.'}</div>`}</div>
   <div class="leg"><b>Saídas previstas</b>: os pedidos nas situações escolhidas, passados pela fórmula, mais as OPs de envase (embalagem) e de tanque (matéria-prima).

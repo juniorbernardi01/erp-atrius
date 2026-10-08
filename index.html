@@ -5450,7 +5450,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v382';
+const VERSAO_APP='v383';
 let DRAG=null;
 function render(){
   recomporTudo();
@@ -9222,9 +9222,9 @@ function modalInsumo(x){
           ${novo?'Em branco, o sistema gera.':'Não muda depois de criado.'}</div></div>
     </div>
     <div class="fld"><label>Código no Tiny</label>
-      <input id="inTiny" value="${novo?'':escAttr(x.tiny||'')}" placeholder="640716858">
+      <input id="inTiny" value="${novo||/^ERP-/.test(String(x.tiny||''))?'':escAttr(x.tiny||'')}" placeholder="opcional">
       <div class="hint" style="font-size:11px;color:var(--ink3);margin-top:4px">
-        É por ele que o estoque vai conversar com o ERP.</div></div>
+        Opcional: o estoque de insumo é do ERP. Sem código, o item fica com a chave interna ERP-SKU.</div></div>
     <div class="fld"><label>Observação</label>
       <input id="inMat" value="${novo?'':escAttr(x.mat||'')}"
         placeholder="material, gramatura, fornecedor"></div>
@@ -9245,12 +9245,12 @@ function modalInsumo(x){
     if(novo){
       let sku=cv('inSku').trim().toUpperCase()||novoSkuIns(tipo);
       if(INSUMOS.some(y=>y.sku===sku)){toast('Esse SKU já existe.',true);return;}
-      INSUMOS.push({sku:sku,nome:nome,tipo:tipo,tiny:cv('inTiny').trim(),
-        mat:cv('inMat').trim(),ativo:true});
+      INSUMOS.push({sku:sku,nome:nome,tipo:tipo,tiny:cv('inTiny').trim()||('ERP-'+sku),
+        mat:cv('inMat').trim(),ativo:true});csInsNorm();
       agendarSalvar();fecharModal();gradeAdmin();toast(`${nome} cadastrado · ${sku}`);
     }else{
       const antes=x.nome;
-      x.nome=nome;x.tipo=tipo;x.tiny=cv('inTiny').trim();x.mat=cv('inMat').trim();
+      x.nome=nome;x.tipo=tipo;{const nt=cv('inTiny').trim()||('ERP-'+x.sku);if(nt!==x.tiny){if(x.tiny&&ESTOQUE[x.tiny]!==undefined&&ESTOQUE[nt]===undefined){ESTOQUE[nt]=ESTOQUE[x.tiny];if(/^ERP-/.test(x.tiny))delete ESTOQUE[x.tiny];}x.tiny=nt;}}csInsNorm();x.mat=cv('inMat').trim();
       x.ativo=cv('inAtivo')==='1';
       /* o nome mudou: acerta as fórmulas que apontavam para o nome antigo */
       if(antes!==nome){
@@ -15655,7 +15655,9 @@ function abrirCfgPCP(){
    botão diferente. Quem olhasse a Integração e o Estoque via números
    distintos do mesmo item sem entender por quê.
    ===================================================================== */
-let ESTOQUE={};              /* id do Tiny -> saldo lido */
+let ESTOQUE={};              /* id do Tiny (ou chave interna ERP-<SKU>) -> saldo */
+/* v383: insumo sem código do Tiny usa a chave interna ERP-<SKU>; o saldo mora só no ERP, começa em 0 */
+function csInsNorm(){try{INSUMOS.forEach(i=>{if(!i.tiny&&i.sku)i.tiny='ERP-'+String(i.sku).trim();if(/^ERP-/.test(String(i.tiny||''))&&ESTOQUE[i.tiny]===undefined)ESTOQUE[i.tiny]=0;});}catch(e){}}
 let ESTOQUE_EM='';           /* hh:mm da última leitura */
 let ESTOQUE_D='';            /* dia da última leitura, para saber se envelheceu */
 
@@ -17797,6 +17799,7 @@ function aplicarEstado(txt){
   const cad=Object.assign({},d,d.cadastro||{});
   /* frascos: casa por id e respeita a ordem gravada (as colunas são reordenáveis) */
   if(cad.insumos&&cad.insumos.length){INSUMOS.length=0;cad.insumos.forEach(x=>INSUMOS.push(x));}
+  csInsNorm();
   if(cad.proxLote)Object.assign(PROX_LOTE,cad.proxLote);
   try{if(cad.proxLoteManual&&typeof PROX_LOTE_MAN!=='undefined'){for(const k in PROX_LOTE_MAN)delete PROX_LOTE_MAN[k];Object.assign(PROX_LOTE_MAN,cad.proxLoteManual);}}catch(e){}
   if(cad.proxOp)PROX_OP=+cad.proxOp||1;
@@ -22064,9 +22067,9 @@ window.csNucleo=(function(){
     usuario:()=>{try{return (MEU_ACESSO&&MEU_ACESSO.nome)||(EU&&EU.nome)||emailDaSessao()||'Teste';}catch(e){return 'Teste';}},
     pode:(k,nv)=>{try{if(window.CS_DEMO||csSemAcesso())return true;
       const r=RANK[nivel(k)]||0;return r>=({ver:1,editar:2,excluir:3})[nv||'ver'];}catch(e){return false;}},
-    insumos:()=>INSUMOS.filter(x=>x.ativo!==false).map(x=>({...x})),
+    insumos:()=>{csInsNorm();return INSUMOS.filter(x=>x.ativo!==false).map(x=>({...x}));},
     produtos:()=>PRODUTOS.filter(p=>ativoProd(p)).map(p=>({...p})),
-    saldos:()=>({...ESTOQUE}),
+    saldos:()=>{csInsNorm();return {...ESTOQUE};},
     saldosEm:()=>ESTOQUE_EM,
     lerSaldos:async ids=>{await lerEstoque(ids,null);return {...ESTOQUE};},
     lerTudo:async()=>{await csLerTudoTiny();return {...ESTOQUE};},
@@ -26592,7 +26595,7 @@ function csNovoForm(k){
     const sku=(M('nvS').value||'').trim().toUpperCase();if(!sku)return toast('Escreva o SKU.',true);
     if(INSUMOS.some(i=>i.sku===sku)||prodOf(sku))return toast('Esse SKU já existe.',true);
     const tag=(M('nvT').value||'').trim();
-    INSUMOS.push({sku,nome,mat:'',tiny:'',tipo:tag||'',un:M('nvU').value,ativo:true,...(k==='uso'?{grupo:'uso'}:{}),...(tag?{tags:[tag]}:{})});
+    INSUMOS.push({sku,nome,mat:'',tiny:'ERP-'+sku,tipo:tag||'',un:M('nvU').value,ativo:true,...(k==='uso'?{grupo:'uso'}:{}),...(tag?{tags:[tag]}:{})});
     agendarSalvar();fecharModal();CP2.aba=k==='uso'?'uso':'ins';gradeCadProd();abrirInsumoCad(sku);};
 }
 try{csNucleo.versao='v357';}catch(e){}
@@ -29757,6 +29760,9 @@ try{csNucleo.versao='v381';}catch(e){}
 </script>
 <script>
 try{csNucleo.versao='v382';}catch(e){}
+</script>
+<script>
+try{csNucleo.versao='v383';}catch(e){}
 </script>
 </body>
 </html>
