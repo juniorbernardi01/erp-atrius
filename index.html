@@ -720,7 +720,7 @@ tr.mot td{background:#FDFAF0;font-size:11px;color:#7A5C0B;padding:6px 12px}
 .log table.htab td.d,.log table.htab td.t{font-family:'JetBrains Mono';color:var(--ink3);white-space:nowrap}
 .log table.htab td.qm{color:var(--ink2);font-weight:500;max-width:150px}
 .log table.htab td.m{color:var(--ink2)}.log table.htab td.m em{display:block;font-style:normal}
-.log table.htab tr.p-sis{background:#FAFAF8}.log table.htab tr.p-ed{background:#FFFBEB}.log table.htab tr.morta{opacity:.5;text-decoration:line-through}
+.log table.htab tr.p-sis{background:#FAFAF8}.log table.htab tr.p-ed{background:#FFFBEB}.log table.htab tr.morta td{color:#6B7280;background:#FAFAFA}
 .log table.htab tr.turno{background:#FFF4E8}
 .log table.htab .hmais{color:#DC2626;font-weight:700}.log table.htab .hmenos{color:#15803D;font-weight:700}.log table.htab .hok{color:#15803D;font-weight:600}
 .log .e .t{font-family:'JetBrains Mono';color:var(--ink3)}
@@ -4263,6 +4263,7 @@ let TOL_ATRASO=10;
    envase — a fábrica termina em unidade. Acima, é perda e vai ser cobrada
    no apontamento. O número fica no cadastro porque muda com o processo. */
 let QUEBRA_L=15;
+let QUEBRA_TOL=3;                        /* % de quebra a partir do qual o gestor assina junto a contagem */
 /* trocas de foto por produto: o cadastro manda, a do Tiny é o padrão.
    Declarado aqui em cima porque o estado é montado antes do mapa de fotos. */
 let FOTOS_PROD={};
@@ -5094,7 +5095,7 @@ function numeroMae(o){
 }
 function rotuloOP(o){
   if(!o)return '—';
-  if(o.opNum)return `${String(o.opNum).padStart(3,'0')}${o.opLetra?'-'+o.opLetra:''}`;
+  if(o.opNum)return String(o.opNum).padStart(4,'0');   /* v388: sem letra */
   return String(o.id).slice(-6).toUpperCase();   /* legado */
 }
 /* a próxima letra livre dentro da mesma mãe */
@@ -5459,7 +5460,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v386';
+const VERSAO_APP='v392';
 let DRAG=null;
 function render(){
   recomporTudo();
@@ -6317,6 +6318,12 @@ function corpoAba(a){
       <div class="tolc"><input type="number" id="adQbr" min="0" step="1"
         value="${QUEBRA_L}"><span>L</span></div>
     </div>
+    <div class="tol">
+      <div><b>Tolerância de quebra</b>
+        <span>Quebra acima deste percentual do lote exige dupla checagem: o gestor que acompanhou a contagem assina com o PIN dele junto com o operador. 0 desliga.</span></div>
+      <div class="tolc"><input type="number" id="adQbrPct" min="0" step="0.5"
+        value="${QUEBRA_TOL}"><span>%</span></div>
+    </div>
 
     ${REVISAO_MOTIVO.length?`
     <div class="alert q" style="margin:14px 0 10px">
@@ -6556,6 +6563,9 @@ function gradeAdmin(){
   if(M('adQbr'))M('adQbr').addEventListener('change',ev=>{
     QUEBRA_L=Math.max(0,+ev.target.value||0);agendarSalvar();
     toast(`Quebra a partir de ${QUEBRA_L} L.`);});
+  if(M('adQbrPct'))M('adQbrPct').addEventListener('change',ev=>{
+    QUEBRA_TOL=Math.max(0,+ev.target.value||0);agendarSalvar();
+    toast(QUEBRA_TOL?`Acima de ${QUEBRA_TOL}% de quebra, o gestor assina junto.`:'Dupla checagem da quebra desligada.');});
 
   /* apelido local: grava o cadastro. Nome próprio para não sombrear salvar() da OP. */
   const gravarCad=()=>{agendarSalvar();};
@@ -10913,52 +10923,96 @@ function corrigirRegistros(o,foco){
    uma lista corrida em que uma OP lançada em 04/09 e produzida em 08/09
    parecia voltar no tempo — 08:17, 13:19, 14:51, 05:53.
    ===================================================================== */
-/* v386: cada registro com nome claro e detalhe em linhas */
-function csHistRotulo(o,e){
-  const m=String(e.m||'').trim();const linhas=s=>String(s||'').split(/\s*·\s*/).filter(Boolean);
-  const mais=d=>d>0?`<span class="hmais">+${cs5min(d)}</span>`:d<0?`<span class="hmenos">−${cs5min(-d)}</span>`:'<span class="hok">no previsto</span>';
-  const ev=String(e.e||'');
-  if(/^Matéria-prima (baixada do estoque|enviada ao Tiny|na fila do Tiny)$/.test(ev))return {ev:'MPs baixadas do estoque',det:[m.replace(/ · na liberação$/,'')]};
-  if(/^Ajuste de matéria-prima/.test(ev))return {ev:'Ajuste de MPs no estoque',det:[m]};
-  if(ev==='Etiquetas impressas'){const q=/^(\d+)\s*etiquetas?/.exec(m);const resto=linhas(m).filter(x=>!/^\d+\s*etiquetas?$/.test(x)&&!/^lote /.test(x));return {ev:'Etiquetas impressas',det:[`Impressas ${q?q[1]:'—'} etiquetas${resto.length?' · '+resto.join(' · '):''}`]};}
-  if(ev==='Lote liberado')return {ev:'Lote liberado',det:[`<span class="hok">Análise conforme</span> · liberado por <b>${e.op||'—'}</b>${m?' · '+m:''}`]};
-  if(ev==='Lote liberado fora do padrão')return {ev:'Lote liberado fora do padrão',det:[`<span class="hmais">Fora do padrão: ${m||'—'}</span> · liberado por <b>${e.op||'—'}</b>`]};
-  if(ev==='Envase finalizado'){const r=/setup (\S+)[–-](\S+) \((\d+) min\) ([+-]?\d+) · envase (\S+)[–-](\S+) \((\d+) min\) ([+-]?\d+)/.exec(m);
-    if(r)return {ev:'Envase finalizado',det:[`Setup ${r[1]}–${r[2]} · ${r[3]} min · ${mais(+r[4])}`,`Envase ${r[5]}–${r[6]} · ${r[7]} min · ${mais(+r[8])}`]};
-    return {ev,det:[m]};}
-  if(ev==='Motivo do setup acima do previsto'){let d=null;try{if(o.iniReal&&fimSetup(o))d=(hm(fimSetup(o))-hm(o.iniReal))-(+o.setup||0);}catch(x){}
-    return {ev:`Atraso no setup${d!=null&&d>0?' · +'+cs5min(d):''}`,det:linhas(m.replace(/^principal:\s*/,'').replace(/secundários:\s*/,''))};}
-  if(ev==='Motivo do envase acima do previsto'){let d=null;try{const T=cs5Tempos(o);const er=envaseReal(o);if(er!=null)d=er-T.eDur;}catch(x){}
-    return {ev:`Atraso no envase${d!=null&&d>0?' · +'+cs5min(d):''}`,det:linhas(m)};}
-  if(ev==='Motivos informados')return {ev:'Motivos informados',det:linhas(m).map(x=>x.replace(/^\d+:\s*/,''))};
-  if(ev==='OP concluída'){const r=/^(\S+)[–-](\S+) · (\d+) min · (.+)$/.exec(m);return {ev:'Envase concluído · apontamento',det:r?[`${r[1]}–${r[2]} · ${r[3]} min`,`Produzido ${r[4]}`]:[m]};}
-  if(ev==='Rendimento')return {ev:'Rendimento',det:linhas(m)};
-  if(ev==='Estoque enviado ao Tiny')return {ev:'Estoque lançado',det:[m]};
-  if(ev==='Envase iniciado'){const r=/^(\S+) · setup (\S+)[–-](\S+) · (\S+)$/.exec(m);return {ev:'Envase iniciado',det:r?[`Começou às ${r[1]}`,`Setup ${r[2]}–${r[3]} · ${r[4]}`]:[m]};}
-  if(ev==='Setup iniciado')return {ev:'Setup iniciado',det:[m?`Às ${m}`:'']};
-  if(ev==='OP lançada')return {ev:'OP lançada',det:[m]};
-  if(ev==='Liberação acompanhou o lote')return {ev:'Liberação acompanhou o lote',det:[m]};
-  return {ev,det:[m]};
+/* v390 · histórico da OP com os registros canônicos:
+   OP lançada · OP editada · Lote liberado · MP baixada no estoque · Setup iniciado · Setup finalizado (com atraso) ·
+   Setup pausado · Etiqueta impressa · Fim de turno · Retomada de envase · Envase pausado · Envase finalizado (com atraso) ·
+   Estoque P.A. lançado · OP reaberta · Estoque estornado (MP ou P.A.) · Correção de registro · Apontamento */
+function csHistMotivos(m){
+  /* "G · S | Outro · texto" ou "principal: X · secundários: a, b" → uma linha por motivo, sem o rótulo Outro */
+  return String(m||'').replace(/^principal:\s*/,'').replace(/\s*·\s*secundários:\s*/,' | ').split(/\s*\|\s*/)
+    .map(x=>x.replace(/^Outro\s*·\s*/,'').replace(/^Outro$/,'').trim()).filter(Boolean);
+}
+function csHistRotulo(o,e,ctx){
+  const m=String(e.m||'').trim();const ev=String(e.e||'');const t=e.t||'';
+  const dv=d=>d>0?`<span class="hmais">+${cs5min(d)}</span>`:d<0?`<span class="hmenos">−${cs5min(-d)}</span>`:'<span class="hok">no previsto</span>';
+  const un=(()=>{try{return und(o);}catch(x){return 'cx';}})();
+  const motivos=(ctx&&ctx.motivos)||[];
+  switch(ev){
+    case 'OP lançada':return {ev:'OP lançada',det:[m]};
+    case 'OP editada':{
+      if(e.k==='edicao')return {ev:'Correção de registro',det:[...(e.campos||[]).map(c=>`${c.c}: de <b>${c.de}</b> para <b>${c.para}</b>`),e.mot?`Motivo: ${e.mot}`:'']};
+      const troca=s=>{const r=/^(.+?) (.*?) → (.*)$/.exec(s);if(!r)return s;const campo=({'início':'horário','maq':'máquina'})[r[1]]||r[1];return `${campo}: de <b>${r[2]}</b> para <b>${r[3]}</b>`;};
+      return {ev:'OP editada',det:m.split(/\s*·\s*/).filter(Boolean).map(troca)};}
+    case 'OP puxada':case 'OP empurrada':{const r=/^(\S+) · estava para (\S+), entra (\S+) — (.*)$/.exec(m);
+      return {ev:'OP editada',det:r?[`horário: de <b>${r[2]}</b> para <b>${r[3]}</b> · ${r[1]} ${ev==='OP puxada'?'antes':'depois'} — ${r[4]}`]:[m]};}
+    case 'Edição de registro':case 'Horários apagados':
+      return {ev:'Correção de registro',det:[...(e.campos||[]).map(c=>`${c.c}: de <b>${c.de}</b> para <b>${c.para}</b>`),e.mot?`Motivo: ${e.mot}`:'',e.m||'']};
+    case 'Lote liberado':return {ev:'Lote liberado',det:[`<span class="hok">Análise conforme</span> · por <b>${e.op||'—'}</b>${m?' · '+m:''}`]};
+    case 'Lote liberado fora do padrão':return {ev:'Lote liberado',det:[`<span class="hmais">Fora do padrão: ${m||'—'}</span> · por <b>${e.op||'—'}</b>`]};
+    case 'Matéria-prima baixada do estoque':case 'Matéria-prima enviada ao Tiny':case 'Matéria-prima na fila do Tiny':{
+      const det=[m.replace(/ · na liberação$/,'')];
+      try{const b=csLoteDaOP(o);const aj=b&&(APONTA[b.chave]||{}).mpAjuste;if(aj)Object.entries(aj).forEach(([n,a])=>{if(a&&a.kg!=null)det.push(`Ajuste: <b>${n}</b> → ${nf(+a.kg)} kg${a.motivo?' · '+a.motivo:''}`);});}catch(x){}
+      return {ev:'MP baixada no estoque',det};}
+    case 'Ajuste de matéria-prima na fila do Tiny':case 'Ajuste de matéria-prima enviado ao Tiny':return {ev:'MP ajustada no estoque',det:[m]};
+    case 'Estorno de matéria-prima no Tiny':case 'Matéria-prima estornada no Tiny':case 'Estorno enviado ao Tiny':return {ev:'Estoque MP estornado',det:[m?`Motivo: ${m}`:'']};
+    case 'Setup iniciado':return {ev:'Setup iniciado',det:[m?`às ${m}`:'']};
+    case 'Envase iniciado':{const r=/^(\S+) · setup (\S+)[–-](\S+) · (\S+)$/.exec(m);let d=null;try{if(r){d=(hm(r[3])-hm(r[2]))-(+o.setup||0);}}catch(x){}
+      const atr=d!=null&&d>0;const det=r?[`Setup ${r[2]}–${r[3]} · ${r[4]} · previsto ${cs5min(+o.setup||0)}${d!=null?' · '+dv(d):''}`,`Envase começou às ${r[1]}`]:[m?`às ${m}`:''];
+      if(atr)motivos.filter(x=>x.et==='setup').forEach(x=>det.push(`Motivo: ${x.txt}`));
+      return {ev:atr?'Setup finalizado com atraso':'Setup finalizado',det,setupAtraso:atr};}
+    case 'Envase retomado':return {ev:'Retomada de envase',det:[`às ${/^\d\d:\d\d$/.test(m)?m:t}`]};
+    case 'Linha pausada':{const emEnvase=ctx&&ctx.emEnvase;return {ev:emEnvase?'Envase pausado':'Setup pausado',det:[`às ${t}${m?' · '+m.replace(/ — /,' · '):''}`]};}
+    case 'Linha retomada':{const r=/desde (\d\d:\d\d)/.exec(m);let dur='';try{if(r&&t){let d=hm(t)-hm(r[1]);if(d<0)d+=1440;dur=cs5min(d);}}catch(x){}
+      return {ev:(ctx&&ctx.emEnvase)?'Retomada de envase':'Retomada de setup',det:[`às ${t}${dur?' · pausa de <b>'+dur+'</b>':''}${m?' · '+m.replace(/^parada por /,'').replace(/ desde \d\d:\d\d$/,''):''}`]};}
+    case 'Etiquetas impressas':{const q=/^(\d+)\s*etiquetas?/.exec(m);const resto=m.split(/\s*·\s*/).filter(x=>!/^\d+\s*etiquetas?$/.test(x)&&!/^lote /.test(x));return {ev:'Etiqueta impressa',det:[`${q?q[1]:'—'} etiquetas${resto.length?' · '+resto.join(' · '):''}`]};}
+    case 'Turno fechado':return {ev:'Fim de turno',det:[m,...((ctx&&ctx.continua)?[ctx.continua]:[])]};
+    case 'Continua no próximo dia':return {skip:true};
+    case 'Envase finalizado':{const r=/setup (\S+)[–-](\S+) \((\d+) min\) ([+-]?\d+) · envase (\S+)[–-](\S+) \((\d+) min\) ([+-]?\d+)/.exec(m);
+      const d=r?+r[8]:null;const atr=d!=null&&d>0;const det=r?[`Envase ${r[5]}–${r[6]} · ${r[7]} min · previsto ${+r[7]-d} min · ${dv(d)}`]:[m];
+      if(atr)motivos.filter(x=>x.et==='envase').forEach(x=>det.push(`Motivo: ${x.txt}`));
+      return {ev:atr?'Envase finalizado com atraso':'Envase finalizado',det};}
+    case 'Motivo do setup acima do previsto':case 'Motivo do envase acima do previsto':case 'Motivos informados':case 'Rendimento':case 'Quebra confirmada':case 'Total ajustado pelo gestor':return {skip:true};
+    case 'OP concluída':{const r=/^(\S+)[–-](\S+) · (\d+) min · (.+)$/.exec(m);const det=[];let prev=0;try{prev=caixasPrev(o);}catch(x){}
+      const cx=r?(+String(r[4]).replace(/\D/g,'')||0):(o.caixas||0);
+      det.push(`Produzido <b>${nf(cx)} ${un}</b>${prev?` · previsto ${nf(prev)} · rendimento <b>${(cx/prev*100).toFixed(1).replace('.',',')}%</b>`:''}`);
+      try{const q=Math.max(0,prev-cx);if(q>0){det.push(`<span class="hmais">Quebra ${nf(q)} ${un} · ${nf(Math.round(q*litrosCx(o)))} L · ${(q/prev*100).toFixed(1).replace('.',',')}%</span>`);motivos.filter(x=>x.et==='quebra').forEach(x=>det.push(`Motivo: ${x.txt}`));}else if(prev)det.push('<span class="hok">Sem quebra</span>');}catch(x){}
+      try{if(o.quebraConf&&o.quebraConf.gestor)det.push(`Dupla checagem por <b>${o.quebraConf.gestor}</b>`);}catch(x){}
+      return {ev:'Apontamento',det};}
+    case 'Contagem conferida pelo gestor':return {ev:'Apontamento · dupla checagem',det:[m]};
+    case 'Estoque enviado ao Tiny':{const re=/entrada ([\d.]+)/.exec(m);const cx=re?+re[1].replace(/\./g,''):(o.caixas||0);let L=0;try{L=Math.round(cx*litrosCx(o));}catch(x){}
+      return {ev:'Estoque P.A. lançado',det:[`Entrada <b>${nf(cx)} ${un}</b> · ${nf(L)} L${/erro/i.test(m)?' · <span class="hmais">'+m.replace(/^.*· /,'')+'</span>':''}`]};}
+    case 'Estoque estornado no Tiny':{const r=/^(\d+) movimentos? · (.*?)(?: — (.*))?$/.exec(m);const det=[`Motivo: ${r?(r[3]||r[2]):m}`];
+      try{const ents=(typeof FILA_TINY!=='undefined'?FILA_TINY:[]).filter(x=>String(x.chave).startsWith(`op|${o.id}|estorno`));const k=(ctx&&ctx.nEstorno)||0;const ent=ents[Math.min(k,ents.length-1)];
+        }catch(x){}
+      return {ev:'Estoque P.A. estornado',det};}
+    case 'OP reaberta':{const r=/^(.*?) · fim (\S+) desmarcado · (\S+) cx a reconfirmar$/.exec(m);return {ev:'OP reaberta',det:r?[`Motivo: ${r[1]} · o fim ${r[2]} foi desmarcado · ${r[3]} ${un} a reconfirmar`]:[m?`Motivo: ${m}`:'']};}
+    default:return {ev,det:[m]};
+  }
 }
 function historicoHTML(o){
   const log=(o.log||[]);
   let ultConc=-1;log.forEach((e,i)=>{if(e.e==='OP concluída')ultConc=i;});
   const esc_=s=>String(s==null?'':s);
+  /* motivos informados na OP (setup/envase/quebra), para entrar na linha do registro certo */
+  let motivos=[];try{motivos=(typeof csMotivosOP==='function'?csMotivosOP(o):[]).map(x=>({et:x.et,txt:`${x.g||''}${x.s?' · '+x.s:''}`.replace(/^Outro · /,'')}));}catch(x){}
+  const mOf=i=>{const e=log[i];if(/^Motivo do (setup|envase)/.test(e.e))return null;return null;};
   const linhas=log.map((e,i)=>{
     const morta=(e.e==='OP concluída'&&ultConc>=0&&i!==ultConc);
-    const cls=[pesoEvento(e)?'p-'+pesoEvento(e):'',morta?'morta':''].filter(Boolean).join(' ');
-    const atraso=defasagem(e);
-    const etq=morta?`<span class="tg sub">substituída${log[ultConc]&&log[ultConc].t?` às ${log[ultConc].t}`:''}</span>`
-      :atraso?`<span class="tg tarde">informado ${hmm(atraso)} depois</span>`:'';
-    const R=csHistRotulo(o,e);
-    const det=[
-      e.k==='edicao'?(e.campos||[]).map(c=>`<i class="dif"><u>${c.c}</u>${c.de}<s>→</s><b>${c.para}</b></i>`).join(''):'',
-      e.mot?`<em>Motivo: ${esc_(e.mot)}</em>`:'',
-      ...(R.det||[]).filter(Boolean).map(x=>`<em>${x}</em>`)].filter(Boolean).join('');
+    const emEnvase=log.slice(0,i).some(x=>/^(Envase iniciado|Envase retomado)$/.test(String(x.e||'')));
+    const continua=(e.e==='Turno fechado')?(()=>{const c=log[i+1];if(c&&c.e==='Continua no próximo dia'){const r=/^(\S+) → (\S+) às (\S+) · (.*)$/.exec(String(c.m||''));return r?`Continua <b>${r[2]}</b> às ${r[3]} · faltam ${r[4]}`:c.m;}return '';})():'';
+    const nEstorno=log.slice(0,i).filter(x=>x.e==='Estoque estornado no Tiny').length;
+    const R=csHistRotulo(o,e,{emEnvase,continua,motivos,nEstorno});if(R.skip)return '';
+    const cls=[pesoEvento(e)?'p-'+pesoEvento(e):'',morta?'morta':'',e.e==='Turno fechado'?'turno':''].filter(Boolean).join(' ');
+    const atraso=(e.k==='edicao')?defasagem(e):0;
+    const etq=atraso?`<span class="tg tarde">informado ${hmm(atraso)} depois</span>`:'';
+    if(morta){const reab=log.slice(i+1).find(x=>x.e==='OP reaberta');const mot=reab?String(reab.m||'').split(' · ')[0]:'';R.ev='Apontamento estornado';R.det=[...(R.det||[]),`<span class="hmais">Estornado${reab?' às '+(reab.t||'')+(mot?' · '+mot:''):''} · vale o apontamento seguinte</span>`];}
+    if(/^Lote liberado/.test(e.e)){const ant=log.slice(0,i).find(x=>/^Lote liberado/.test(String(x.e||'')));if(ant){R.ev='Lote liberado · desconsiderado';R.det=[`<span class="hmais">já liberado em ${ant.d?dCurto(ant.d):''} ${ant.t||''}</span>`];}}
+    if(/^Matéria-prima (baixada do estoque|enviada ao Tiny|na fila do Tiny)$/.test(e.e)){const ant=log.slice(0,i).find(x=>/^Matéria-prima (baixada do estoque|enviada ao Tiny|na fila do Tiny)$/.test(String(x.e||'')));if(ant){R.ev='MP baixada · desconsiderada';R.det=[`<span class="hmais">já baixada em ${ant.d?dCurto(ant.d):''} ${ant.t||''} · corrigida no balanço</span>`];}}
+    const det=(R.det||[]).filter(Boolean).map(x=>`<em>${x}</em>`).join('');
     return `<tr class="hl ${cls}"><td class="d">${e.d?dCurto(e.d):''}</td><td class="t">${e.t||''}</td><td class="qm">${esc_(e.op||'—')}</td><td class="ev"><b>${esc_(R.ev)}</b>${etq}</td><td class="m">${det}</td></tr>`;
   });
   if(!linhas.length)return '';
-  return `<table class="htab"><colgroup><col style="width:46px"><col style="width:42px"><col style="width:150px"><col style="width:200px"><col></colgroup><thead><tr><th>Data</th><th>Hora</th><th>Quem</th><th>Registro</th><th>Detalhe</th></tr></thead><tbody>${linhas.join('')}</tbody></table>`;
+  return `<table class="htab"><colgroup><col style="width:46px"><col style="width:42px"><col style="width:150px"><col style="width:190px"><col></colgroup><thead><tr><th>Data</th><th>Hora</th><th>Quem</th><th>Registro</th><th>Detalhe</th></tr></thead><tbody>${linhas.join('')}</tbody></table>`;
 }
 
 /* =====================================================================
@@ -12379,7 +12433,7 @@ function salvar(){
   }
   const n=ordem(f);
   if(HORA_MANUAL)n.inicioManual=true;
-  registrar(n,'OP lançada',null,`${f.maq} ${hhmm(f.inicio)}`);
+  registrar(n,'OP lançada',null,`${f.maq} · ${f.tanque||'sem tanque'} · ${nf(+f.litros||+n.litros||0)} L · ${dCurto(f.data)} às ${hhmm(f.inicio)}`);
   S.sel=n.id;fecharModal();
   S.ref=new Date(f.data+'T00:00:00');S.refTq=new Date(f.data+'T00:00:00');
   render();toast(`OP lançada no ${f.tanque}.`);
@@ -13075,8 +13129,8 @@ function concluir(o){
         Projetado: ${nf(prev)} ${undLongo(o,prev)} · ${nf(o.litros)} L · ${litrosCx(o)} L por ${undLongo(o,1)}.
         A diferença entra como quebra no relatório.</div></div>
     <div id="cDif" hidden></div>
-    ${somaTurnos!=null?`<div class="fld" id="cAjBox" hidden>
-      <div class="alert">Este total é menor do que o já contado nos turnos, que foi assinado
+    ${true?`<div class="fld" id="cAjBox" hidden>
+      <div class="alert" id="cAjTxt">Este total é menor do que o já contado nos turnos, que foi assinado
         por cada operador. Para gravar menos, é preciso o gestor.
         O motivo vai nos campos abaixo.</div>
       <label>PIN ou senha do gestor <b>*</b></label>
@@ -13226,8 +13280,10 @@ function concluir(o){
   };
   const conferirAjuste=()=>{
     const box=M('cAjBox');if(!box)return;
-    const dif=M('cCx').value!==''&&(+M('cCx').value||0)<somaTurnos;
+    const cxv=+M('cCx').value||0;const difT=M('cCx').value!==''&&somaTurnos!=null&&cxv<somaTurnos;const difQ=M('cCx').value!==''&&csQuebraAcima(o,cxv);const dif=difT||difQ;
     box.hidden=!dif;
+    if(M('cAjTxt'))M('cAjTxt').innerHTML=difT?'Este total é menor do que o já contado nos turnos, que foi assinado por cada operador. Para gravar menos, é preciso o gestor. O motivo vai nos campos abaixo.'
+      :`<b>Dupla checagem:</b> a quebra passou de ${QUEBRA_TOL}% do lote. O gestor que acompanhou a contagem assina junto com o PIN dele.`;
     if(dif&&M('cAjPin')){
       const s=autorizador(cv('cAjPin').trim());
       M('cAjQuem').innerHTML=s?`<b>${s.nome}</b> autoriza.`
@@ -13260,6 +13316,14 @@ function concluir(o){
         toast('O total ficou abaixo do já contado nos turnos: informe o PIN ou a senha do gestor.',true);
         if(M('cAjPin'))M('cAjPin').focus();return;}
       ajuste=`${nf(somaTurnos)} → ${nf(+cxs)} ${und(o)} · por ${quemAj.nome}`;
+    }
+    /* v387: quebra acima da tolerância — o gestor que acompanhou a contagem assina junto */
+    if(csQuebraAcima(o,+cxs||0)){
+      const quemG=autorizador(cv('cAjPin')?cv('cAjPin').trim():'');
+      if(!quemG){toast(`Quebra acima de ${QUEBRA_TOL}%: o gestor que acompanhou a contagem precisa assinar com o PIN dele.`,true);if(M('cAjPin'))M('cAjPin').focus();return;}
+      const p_=caixasPrev(o),q_=Math.max(0,p_-(+cxs||0));
+      o.quebraConf={gestor:quemG.nome,pct:p_?+(q_/p_*100).toFixed(1):0,tol:QUEBRA_TOL,em:relogio(),d:ymd(new Date())};
+      registrar(o,'Contagem conferida pelo gestor',quemG,`quebra ${nf(q_)} ${und(o)} (${o.quebraConf.pct}%) acima da tolerância de ${QUEBRA_TOL}% · gestor ${quemG.nome}`);
     }
     Object.entries(motivosOP(o)).forEach(([et,v])=>{
       if(!escolha[et]&&v&&v.g)
@@ -17770,7 +17834,7 @@ function estadoAtual(){
     ordens:ORDENS,aponta:APONTA,saldos:SALDOS,sopro:SOPRO,
     ocorrencias:OCORRENCIAS,
     cadastro:{produtos:PRODUTOS,insumos:INSUMOS,calendario:CALENDARIO,alertasParada:ALERTAS_PARADA,
-      paradasDesde:PARADAS_DESDE,marcoAplicado:MARCO_APLICADO,migra:(typeof CS_MIGRA!=='undefined'?CS_MIGRA:[]),exigeLiberacao:EXIGE_LIBERACAO,travaLinha:CS_TRAVA_LINHA,proxLote:PROX_LOTE,proxLoteManual:(typeof PROX_LOTE_MAN!=='undefined'?PROX_LOTE_MAN:{}),formulas:FORMULAS,funcoes:FUNCOES,validade:VALIDADE,rt:RT,operadores:OPERADORES,pinBloq:CS_PINBLOQ,espec:ESPEC,ensaios:ENSAIOS,quali:QUALI,modulosErp:MODULOS_ERP,fotosProd:FOTOS_PROD,fotosAju:FOTOS_AJU,preformas:PREFORMAS,prefProd:PREF_PROD,recursos:RECURSOS,gruposMaq:GRUPOS_MAQ,mkOp:CAD_MK_OP,formVers:FORM_VERS,grupos:CAD_GRUPOS,waModelo:WA_MODELO,mod272:true,mod275:true,mod278:true,motivos:MOTIVOS,tolerancia:TOLERANCIA,quebraL:QUEBRA_L,tempos:TEMPOS,setupEnv:SETUP_ENV,tempoGranel:TEMPO_GRANEL,frascos:FRASCOS,sopradoras:SOPRADORAS,tanques:TANQUES,
+      paradasDesde:PARADAS_DESDE,marcoAplicado:MARCO_APLICADO,migra:(typeof CS_MIGRA!=='undefined'?CS_MIGRA:[]),exigeLiberacao:EXIGE_LIBERACAO,travaLinha:CS_TRAVA_LINHA,proxLote:PROX_LOTE,proxLoteManual:(typeof PROX_LOTE_MAN!=='undefined'?PROX_LOTE_MAN:{}),formulas:FORMULAS,funcoes:FUNCOES,validade:VALIDADE,rt:RT,operadores:OPERADORES,pinBloq:CS_PINBLOQ,espec:ESPEC,ensaios:ENSAIOS,quali:QUALI,modulosErp:MODULOS_ERP,fotosProd:FOTOS_PROD,fotosAju:FOTOS_AJU,preformas:PREFORMAS,prefProd:PREF_PROD,recursos:RECURSOS,gruposMaq:GRUPOS_MAQ,mkOp:CAD_MK_OP,formVers:FORM_VERS,grupos:CAD_GRUPOS,waModelo:WA_MODELO,mod272:true,mod275:true,mod278:true,motivos:MOTIVOS,tolerancia:TOLERANCIA,quebraL:QUEBRA_L,quebraTol:QUEBRA_TOL,tempos:TEMPOS,setupEnv:SETUP_ENV,tempoGranel:TEMPO_GRANEL,frascos:FRASCOS,sopradoras:SOPRADORAS,tanques:TANQUES,
       jornada:JORNADA,frascoProd:FRASCO_PROD,usuarios:USUARIOS,proxOp:PROX_OP,
       gruposMotivo:GRUPOS_MOTIVO,semana:SEMANA_PADRAO,tolAtraso:TOL_ATRASO},
     estoque:{saldos:ESTOQUE,em:ESTOQUE_EM,d:ESTOQUE_D},
@@ -17926,6 +17990,7 @@ function aplicarEstado(txt){
   if(cad.tolerancia!=null)TOLERANCIA=+cad.tolerancia||0;
   if(cad.tolAtraso!=null)TOL_ATRASO=+cad.tolAtraso||0;
   if(cad.quebraL!=null)QUEBRA_L=Math.max(0,+cad.quebraL||0);
+  if(cad.quebraTol!=null)QUEBRA_TOL=Math.max(0,+cad.quebraTol||0);
   if(cad.frascos&&cad.frascos.length){
     const sobra=FRASCOS.slice(),ordenados=[];
     cad.frascos.forEach(f=>{
@@ -25766,6 +25831,7 @@ try{const _fe32=finalizarEnvase;finalizarEnvase=function(o){
    turnos e quem contou), motivo da quebra na tela de motivos (só quando passa do
    limite) e o conferir com o PIN. Quem grava é a janela de concluir do sistema,
    preenchida por trás — mesma conta de estoque, mesmo histórico. */
+function csQuebraAcima(o,cx){try{if(!(QUEBRA_TOL>0))return false;const p=caixasPrev(o);if(!p)return false;return (p-(+cx||0))/p*100>QUEBRA_TOL;}catch(e){return false;}}
 function csQuebraDe(o,cx){
   const perdidos=o.litros-cx*litrosCx(o);
   const lim=Math.max(0,(typeof QUEBRA_L!=='undefined'&&QUEBRA_L!=null)?+QUEBRA_L:litrosCx(o));
@@ -25801,9 +25867,14 @@ function csApontarOp(o){
     if(!t.closest('[data-mk]')||v==='')return;
     const cx=+v,q=csQuebraDe(o,cx);
     const resumo=[{g:'Total de caixas',s:`${nf(cx)} de ${nf(prev)} ${un}`},...(q.cx>0?[{g:'Quebra',s:`${nf(q.cx)} ${un} · ${nf(Math.max(0,q.litros))} L`}]:[])];
+    const acima=csQuebraAcima(o,cx);
+    const gestor=(sel,pin)=>{const opAntes=OPERADOR;
+      csConfereTela({titulo:'Dupla checagem · gestor',sub:`${o.maq||''} · OP ${rotuloOP(o)} · lote ${o.lote||''}`,acao:'assinar a contagem como gestor',tituloConf:'Quebra acima da tolerância',semPrincipal:true,
+        sel:[...resumo,{g:'Dupla checagem',s:`Quebra de ${q.pct.toFixed(1).replace('.',',')}% · tolerância ${QUEBRA_TOL}%`}],aviso:'O gestor que acompanhou a contagem (Mari, Fernanda, Neuci…) digita o PIN dele. Sem isso a contagem não entra.',reabrir:()=>csApontarOp(o)},
+        (qg,pin2)=>{OPERADOR=opAntes;if(!autorizador(pin2)){toast(`${qg.nome} não é gestor: a dupla checagem precisa de um gestor.`,true);return gestor(sel,pin);}csGravaApont(o,cx,sel||[],pin,pin2);});};
     const assina=sel=>csConfereTela({titulo:'Apontar contagem',sub:`${o.maq||''} · OP ${rotuloOP(o)} · lote ${o.lote||''}`,acao:'confirmar a entrada no estoque',
-        tituloConf:'Confira o apontamento',semPrincipal:true,sel:[...resumo,...(sel||[]).map(x=>({g:'Motivo da quebra · '+x.g,s:x.s}))],
-        aviso:'Ao assinar, o total entra no estoque e a OP é concluída.',reabrir:()=>csApontarOp(o)},(qq,pin)=>csGravaApont(o,cx,sel||[],pin));
+        tituloConf:'Confira o apontamento',semPrincipal:true,sel:[...resumo,...(sel||[]).map(x=>({g:'Motivo da quebra · '+x.g,s:x.s})),...(acima?[{g:'Dupla checagem',s:`Quebra acima de ${QUEBRA_TOL}%: depois do seu PIN, o gestor assina junto`}]:[])],
+        aviso:acima?'Depois do seu PIN, o gestor que acompanhou a contagem assina com o dele.':'Ao assinar, o total entra no estoque e a OP é concluída.',reabrir:()=>csApontarOp(o)},(qq,pin)=>acima?gestor(sel,pin):csGravaApont(o,cx,sel||[],pin));
     if(!q.pede)return assina([]);
     csMotivosTela({etapa:'quebra',titulo:'Apontar contagem',sub:`${o.maq||''} · OP ${rotuloOP(o)} · lote ${o.lote||''}`,faixa:`Quebra de ${nf(q.cx)} ${un} (${nf(Math.max(0,q.litros))} L): diga o que houve`,
       dirT:'Quebra',dirV:`${q.pct.toFixed(1).replace('.',',')}%`,grupos:gruposDe('quebra'),acao:'confirmar'},(sel)=>assina(sel));
@@ -25811,14 +25882,14 @@ function csApontarOp(o){
   pinta();
 }
 /* preenche a janela de concluir do sistema, escondida, e confirma */
-function csGravaApont(o,cx,sel,pin){
+function csGravaApont(o,cx,sel,pin,pinG){
   document.body.classList.add('cs-semjanela');
   const falhou=m=>{document.body.classList.remove('cs-semjanela');toast(m||'Confira a janela do apontamento.',true);};
   try{CS_PIN_PASSA=true;concluir(o);}catch(e){CS_PIN_PASSA=false;return falhou('Não consegui abrir o apontamento: '+e.message);}
   CS_PIN_PASSA=false;
   try{
     M('cCx').value=String(cx);M('cCx').dispatchEvent(new Event('input',{bubbles:true}));
-    if(M('cAjPin')){M('cAjPin').value=pin;M('cAjPin').dispatchEvent(new Event('input',{bubbles:true}));}
+    if(M('cAjPin')){M('cAjPin').value=pinG||pin;M('cAjPin').dispatchEvent(new Event('input',{bubbles:true}));}
     /* motivos: o grupo pelo nome, depois cada item; "Outro" vira o texto do primeiro grupo marcado */
     const gs=gruposDe('quebra'),gid=n=>(gs.find(g=>g.nome===n)||{}).id;
     const box=M('cMot');
@@ -28705,7 +28776,7 @@ function csLetraOP(o){
 }
 rotuloOP=function(o){
   if(!o)return '—';
-  if(o.opNum){const l=csLetraOP(o);return `${String(o.opNum).padStart(4,'0')}${l?'-'+l:''}`;}
+  if(o.opNum)return String(o.opNum).padStart(4,'0');   /* v388: sem letra */
   return String(o.id).slice(-6).toUpperCase();
 };
 csNomeOP=function(o){
@@ -28745,7 +28816,8 @@ function csProblemasOP(o){
   /* envase: pausas e motivos do fim */
   try{(o.pausasOp||[]).forEach(p=>E.push({g:p.g||'Pausa',s:p.s||p.obs||'',custo:`pausa ${cs5min(+p.min||0)}`,quando:`${dCurto(p.dia||o.data)} ${p.desde||''}${p.ate?' → '+p.ate:''}`,quem:p.quem||quem,pausa:true}));
     const de=Math.max(0,(+o.atrasoMin||0)||(dvEnvase(o)||0));
-    const le=(typeof csMotivosOP==='function'?csMotivosOP(o):[]).filter(x=>x.et==='envase');
+    const norm_=s=>String(s||'').trim().toLowerCase();const jaP=new Set(E.filter(x=>x.pausa).map(x=>norm_(x.g)+'|'+norm_(x.s)));
+    const le=(typeof csMotivosOP==='function'?csMotivosOP(o):[]).filter(x=>x.et==='envase').filter(x=>!jaP.has(norm_(x.g)+'|'+norm_(x.s)));
     le.forEach((x,i)=>E.push({g:x.g,s:x.s,custo:i===0&&de?`+${cs5min(de)}`:'',quando:o.fimReal?`${dCurto(o.data)} ${o.fimReal}`:dCurto(o.data),quem}));
   }catch(e){}
   /* quebra */
@@ -28763,24 +28835,32 @@ function csProblemasHTML(o,print){
   try{if(o.caixas!=null){qcx=Math.max(0,caixasPrev(o)-o.caixas);ql=Math.max(0,quebraL(o)||0);}}catch(e){}
   const pct=(()=>{try{const p=caixasPrev(o);return p?(qcx/p*100).toFixed(1).replace('.',','):'0';}catch(e){return '0';}})();
   const sinal=v=>v>0?`+${cs5min(v)}`:v<0?`−${cs5min(-v)}`:'no previsto';
-  const col=(tit,cor,fundo,itens,tot,vazio)=>`<div class="pbcol" style="background:${fundo}"><div class="pbh"><b style="color:${cor}">${tit}</b><span style="color:${cor}">${tot}</span></div>
-    ${itens.length?itens.map(x=>`<div class="pbi"><div class="pbt"><b>${escAttr(x.g)}</b><b style="color:${cor}">${escAttr(x.custo||'')}</b></div>${x.s?`<div class="pbs">${escAttr(x.s)}</div>`:''}<div class="pbq">${escAttr(x.quando||'')}${x.quem?' · '+escAttr(x.quem):''}</div></div>`).join(''):`<div class="pbz">${vazio}</div>`}</div>`;
+  const col=(tit,cor,fundo,itens,tot,vazio)=>`<div class="pbcol" style="--c:${cor}"><div class="pbh"><b style="color:${cor}">${tit}</b><span style="color:${cor}">${tot}</span></div>
+    ${itens.length?`<ul class="pbl">${itens.map(x=>`<li><span class="pbm">${escAttr(x.g)}${x.s?` <small>· ${escAttr(x.s)}</small>`:''}</span>${x.custo?`<b style="color:${cor}">${escAttr(x.custo)}</b>`:''}</li>`).join('')}</ul>`:`<div class="pbz">${vazio}</div>`}</div>`;
   const concl=sit(o)==='concluida';
   const prox=(()=>{try{const seg=seguintes(o)[0];if(!seg||!o.fimReal)return '';const d=hm(o.fimReal)-inicioPlan(seg);return d>0?`Empurrou a próxima OP (${rotuloOP(seg)}) em <b>${cs5min(d)}</b>`:'';}catch(e){return '';}})();
+  /* v390: mesma tabela do Previsto × Realizado — Etapa | Motivo | Tempo */
+  const cor=v=>v>0?'mais':v<0?'menos':'ok';
+  const bloco=(tit,tot,totCls,itens,vazio)=>{
+    const head=`<tr class="grp"><td colspan="2">${tit}</td><td class="dv ${totCls}">${tot}</td></tr>`;
+    if(!itens.length)return head+`<tr><td class="n"></td><td class="rt7vz" colspan="2">${vazio}</td></tr>`;
+    return head+itens.map(x=>`<tr><td class="n"></td><td>${escAttr(x.g)}${x.s?` <span class="sub">· ${escAttr(x.s)}</span>`:''}</td><td class="dv ${x.pausa?'pz':'mais'}">${escAttr(x.custo||'')}</td></tr>`).join('');};
+  const temSetup=!!(o.iniReal||fimSetup(o));
   return `<div class="pbx${print?' print':''}">
-    <div class="pbtit"><b>PROBLEMAS RELATADOS NO LOTE</b><span>os motivos marcados nos tablets e no apontamento</span></div>
-    <div class="pbg">
-      ${col('SETUP','#475569','#EEF2F7',S,o.iniReal||fimSetup(o)?sinal(ds):'—','Setup dentro do previsto · nenhum motivo')}
-      ${col('ENVASE','#B45309','#FFF7E6',E,(o.fimReal?sinal(de):'em andamento')+((o.pausasOp||[]).length?` · ${(o.pausasOp||[]).length} pausa${(o.pausasOp||[]).length>1?'s':''}`:''),'Envase dentro do previsto · nenhum motivo')}
-      ${col('QUEBRAS','#DC2626','#FEF2F2',Q,concl?(qcx?`${nf(qcx)} ${un} · ${pct}%`:'0'):'—','Sem quebra')}
-    </div>
-    <div class="pbrod"><span>Total de atraso: <b style="color:${ds+de>0?'#DC2626':'#15803D'}">${sinal(ds+de)}</b></span><span>Pausas: <b>${cs5min(pausas)}</b></span><span>Quebra: <b style="color:${qcx?'#DC2626':'#15803D'}">${concl?`${nf(qcx)} ${un} (${nf(Math.round(ql))} L)`:'—'}</b></span>${prox?`<span>${prox}</span>`:''}</div>
+    <div class="pbtit"><b>PROBLEMAS RELATADOS NO LOTE</b><span>motivos marcados nos tablets e no apontamento</span></div>
+    <table class="rt8 pb8"><thead><tr><th>Etapa</th><th>Motivo</th><th>Tempo</th></tr></thead><tbody>
+      ${bloco('SETUP',temSetup?sinal(ds):'—',temSetup?cor(ds):'',S,'dentro do previsto · nenhum motivo')}
+      ${bloco('ENVASE',(o.fimReal?sinal(de):'em andamento')+((o.pausasOp||[]).length?` · ${(o.pausasOp||[]).length} pausa${(o.pausasOp||[]).length>1?'s':''}`:''),o.fimReal?cor(de):'',E,'dentro do previsto · nenhum motivo')}
+      ${bloco('QUEBRA',concl?(qcx?`${nf(qcx)} ${un} · ${pct}%`:'0'):'—',qcx?'mais':'ok',Q,'sem quebra')}
+      <tr class="tot"><td class="n">Total</td><td>atraso ${pausas?`<span class="sub">(${cs5min(pausas)} em pausas, já contadas)</span>`:''}${prox?` · <span class="sub">${prox}</span>`:''}</td><td class="dv ${cor(ds+de)}">${sinal(ds+de)}</td></tr>
+    </tbody></table>
   </div>`;
 }
 (function(){try{const s=document.createElement('style');s.textContent=`
-.pbx{border:1px solid #DDE3EC;border-radius:12px;background:#F8FAFC;padding:12px 14px;display:flex;flex-direction:column;gap:10px;margin:12px 0}
+.pbx{border:0;background:#fff;padding:0;display:flex;flex-direction:column;gap:6px;margin:12px 0}
 .pbtit{display:flex;align-items:baseline;gap:10px}.pbtit b{font-size:12.5px;letter-spacing:.06em}.pbtit span{font-size:12px;color:#64748B}
-.pbg{display:flex;gap:10px}.pbcol{flex:1;min-width:0;border-radius:11px;padding:10px;display:flex;flex-direction:column;gap:8px}
+.pbg{display:flex;gap:18px}.pbcol{flex:1;min-width:0;padding:0 0 0 10px;border-left:3px solid var(--c,#CBD5E1);display:flex;flex-direction:column;gap:4px}
+.pbl{list-style:none;margin:2px 0 0;padding:0;display:flex;flex-direction:column;gap:3px}.pbl li{display:flex;justify-content:space-between;gap:10px;font-size:12.5px;color:#1F2937;padding:2px 0;border-bottom:1px dashed #E5E7EB}.pbl li:last-child{border-bottom:0}.pbl li .pbm:before{content:'—';color:#9CA3AF;margin-right:6px}.pbl li small{color:#64748B;font-size:12px}.pbl li b{white-space:nowrap;font-size:12px}
 .pbh{display:flex;justify-content:space-between;align-items:center;font-size:12px;letter-spacing:.06em}.pbh span{font-weight:700;letter-spacing:0}
 .pbi{border:1px solid #E5E7EB;border-radius:9px;padding:8px 10px;background:#fff;display:flex;flex-direction:column;gap:3px}
 .pbt{display:flex;justify-content:space-between;gap:8px;font-size:13px}.pbs{font-size:12.5px;color:#334155}.pbq{font-size:11px;color:#64748B}
@@ -28824,7 +28904,8 @@ function csImprimeRelatorioOP(o){
   const corpo=`<style>
     .rel h2{font-size:12px;letter-spacing:.06em;color:#4B5563;margin:12px 0 6px}
     .rel table{width:100%;border-collapse:collapse;font-size:11.5px}.rel td,.rel th{border-bottom:1px solid #E5E7EB;padding:4px 6px;text-align:left}
-    .rel .pbx{break-inside:avoid}.rel .pbg{display:flex;gap:8px}.rel .pbcol{flex:1;border-radius:8px;padding:8px}
+    .rel .pbx{break-inside:avoid}.rel .pbg{display:flex;gap:14px}.rel .pbcol{flex:1;padding:0 0 0 8px;border-left:3px solid var(--c,#CBD5E1)}
+    .rel .pbl{list-style:none;margin:0;padding:0}.rel .pbl li{display:flex;justify-content:space-between;gap:8px;font-size:10.5px;padding:2px 0;border-bottom:1px dashed #E5E7EB}.rel .pbl li .pbm:before{content:'—';color:#9CA3AF;margin-right:5px}.rel .pbl li small{color:#64748B}.rel .pbl li b{white-space:nowrap}
     .rel .pbh{display:flex;justify-content:space-between;font-size:11px;letter-spacing:.06em;margin-bottom:6px}
     .rel .pbi{border:1px solid #E5E7EB;border-radius:7px;padding:6px 8px;background:#fff;margin-bottom:6px}
     .rel .pbt{display:flex;justify-content:space-between;font-size:11.5px}.rel .pbs{font-size:11px;color:#334155}.rel .pbq{font-size:10px;color:#64748B}
@@ -28837,14 +28918,15 @@ function csImprimeRelatorioOP(o){
     .rel .log table.htab td{padding:3px 5px;border-bottom:1px solid #E5E7EB;vertical-align:top}.rel .log table.htab tr{break-inside:avoid;page-break-inside:avoid}
     .rel .log table.htab td.d,.rel .log table.htab td.t{font-family:ui-monospace,Menlo,monospace;color:#64748B;white-space:nowrap}.rel .log table.htab td.qm{color:#334155;max-width:120px}
     .rel .log table.htab td.m{color:#4B5563}.rel .log table.htab td.m em{display:block;font-style:normal}
-    .rel .log table.htab tr.p-ed{background:#FFFBEB}.rel .log table.htab tr.morta{opacity:.5;text-decoration:line-through}.rel .log table.htab .tg{font-size:9px;color:#B45309;margin-left:4px}
-    .rel .log table.htab .hmais{color:#DC2626;font-weight:700}.rel .log table.htab .hmenos{color:#15803D;font-weight:700}.rel .log table.htab .hok{color:#15803D;font-weight:600}
+    .rel .log table.htab tr.p-ed{background:#FFFBEB}.rel .log table.htab tr.morta td{color:#6B7280;background:#FAFAFA}.rel .log table.htab .tg{font-size:9px;color:#B45309;margin-left:4px}
+    .rel .log table.htab tr.turno td{background:#FFF4E8}.rel .log table.htab .hmais{color:#DC2626;font-weight:700}.rel .log table.htab .hmenos{color:#15803D;font-weight:700}.rel .log table.htab .hok{color:#15803D;font-weight:600}
     .rel .log table.htab .dif{font-style:normal;margin-right:6px}.rel .log table.htab .dif u{text-decoration:none;color:#64748B;margin-right:3px}.rel .log table.htab .dif s{text-decoration:none;color:#94A3B8;margin:0 3px}
     .rel h2{break-after:avoid}.rel .pbx,.rel .prv{break-inside:avoid;page-break-inside:avoid}.rel .pbcol{min-width:0;overflow:hidden}
+    .rel .rt8{font-size:10.5px}.rel .rt8 td{padding:2px 6px}.rel .rt8 td.rg{font-size:10.5px}.rel .rt8 td.du{font-size:10px}.rel .rt8 td.dv{font-size:10px}.rel .rt8 th{font-size:8.5px;padding:2px 6px}.rel .rt8 tr.grp td{font-size:9.5px;padding:3px 6px}
     .rel .rt7{gap:6px}.rel .rt7b{padding:6px 8px;overflow:hidden}.rel .rt7k{padding:3px 7px;min-width:90px}.rel .rt7k b{font-size:11px}.rel .rt7k span{font-size:8.5px}.rel .rt7g{grid-template-columns:62px 1fr 1fr;gap:3px 4px;font-size:10px}.rel .rt7g .rt7c{grid-template-columns:1fr 10px 1fr 1px 46px;padding:2px 4px;font-size:10px;gap:1px}.rel .rt7g .rt7h{font-size:9px}.rel .rt7to,.rel .rt7fr,.rel .rt7n{font-size:10px}.rel .rt7t{font-size:10px}
     .rel .cmp{width:100%}
   </style><div class="rel">
-    ${cabecalhoOP(o.lote,String(p.descricao||nomeCurto(o.codigo)).replace(/\s*[-–]\s*(CX|FD|PC|CT|PT|SC|BD|GL|BB)\b.*$/i,'').trim().toUpperCase(),p.un_cx?`${und(o).toUpperCase()} C/ ${p.un_cx} UN`:'',`SKU ${o.codigo} · ${o.maq||''} · OP ${rotuloOP(o)}`,o.data,p.tanque)}
+    ${cabecalhoOP(o.lote,String(p.descricao||nomeCurto(o.codigo)).replace(/\s*[-–]\s*(CX|FD|PC|CT|PT|SC|BD|GL|BB)\b.*$/i,'').trim().toUpperCase(),p.un_cx?`${und(o).toUpperCase()} C/ ${p.un_cx} UN`:'',`SKU ${o.codigo} · ${o.maq||''}`,o.data,p.tanque)}
     <h2>PREVISTO × REALIZADO</h2>${tempos}
     ${csProblemasHTML(o,true)}
     <h2>HISTÓRICO</h2><div class="log">${hist||'<p>Nenhum registro.</p>'}</div>
@@ -29341,7 +29423,7 @@ try{const _fc74=fecharModal;fecharModal=function(){try{document.querySelectorAll
 /* o estilo do relatório na folha: a prévia pega o bloco da tela, então a folha precisa das mesmas regras */
 try{const _ir74=csImprimeRelatorioOP;csImprimeRelatorioOP=function(o){
   const _f=csFolhaModal;csFolhaModal=function(c){try{const css=[...document.querySelectorAll('style')].map(s=>s.textContent).filter(t=>t.includes('.prv .prv-r')).join('\n');
-    c.html=String(c.html).replace('<h2>PREVISTO × REALIZADO</h2>',csPrevRealHTML(o)).replace(/<p class="vz">[^<]*<\/p>/g,'').replace('</head>',`<style>${css}\n.pbx.prv .pbg{display:flex;gap:8px}.pbx.prv .pbcol{flex:1;border-radius:8px;padding:8px}.pbx.prv .pbh{font-size:11px;letter-spacing:.06em;margin-bottom:6px}.prv .prv-r{page-break-inside:avoid}</style></head>`);
+    c.html=String(c.html).replace('<h2>PREVISTO × REALIZADO</h2>',csPrevRealHTML(o)).replace(/<p class="vz">[^<]*<\/p>/g,'').replace('</head>',`<style>${css}\n.pbx.prv .pbg{display:flex;gap:14px}.pbx.prv .pbcol{flex:1;border-radius:8px;padding:8px}.pbx.prv .pbh{font-size:11px;letter-spacing:.06em;margin-bottom:6px}.prv .prv-r{page-break-inside:avoid}</style></head>`);
     c.arquivo=csNomeArquivo([cs74Nome(o.codigo),o.lote?`L ${cs74Lote(o.lote)}`:'',`Relatorio OP ${rotuloOP(o)}`]);}catch(e){}
     return _f.apply(this,arguments);};
   try{return _ir74.apply(this,arguments);}finally{csFolhaModal=_f;}
@@ -29708,6 +29790,11 @@ csLigaHora=function(){
 /* ---------- 1) relatório: tempos como no card ---------- */
 (function(){try{const s=document.createElement('style');s.textContent=`
 .rt7{display:flex;flex-direction:column;gap:8px;margin:10px 0 12px}
+.rt8{width:100%;border-collapse:separate;border-spacing:0;font-size:12px;margin:6px 0 2px;border:1px solid #E5E7EB;border-radius:10px;overflow:hidden}.rt8 th{text-align:left;font:600 10px Inter,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#6B7280;padding:6px 10px;background:#F8FAFC;border-bottom:1px solid #E5E7EB}
+.rt8 td{padding:6px 10px;border-bottom:1px solid #F1F5F9;vertical-align:middle}.rt8 tbody tr:last-child td{border-bottom:0}.rt8 td.n{font-weight:600;color:#374151;white-space:nowrap}.rt8 td.rg{font:600 12px ui-monospace,Menlo,monospace;color:#111827;white-space:nowrap}.rt8 td.rg i{font-style:normal;color:#9CA3AF;margin:0 4px}
+.rt8 td.du{font:500 11px ui-monospace,Menlo,monospace;color:#6B7280;white-space:nowrap}.rt8 td.dv{font:700 11.5px Inter,sans-serif;white-space:nowrap}.rt8 td.dv.mais{color:#DC2626}.rt8 td.dv.menos{color:#15803D}.rt8 td.dv.ok{color:#15803D}
+.rt8 tr.grp td{background:#fff;font:700 10.5px Inter,sans-serif;letter-spacing:.08em;color:#1D4ED8;padding:8px 10px 2px;border-bottom:0}.rt8 tr.grp td span{font-weight:500;letter-spacing:0;color:#6B7280;margin-left:10px;text-transform:none}.rt8 tr.grp td:first-child:before{content:'';display:inline-block;width:3px;height:10px;background:#1D4ED8;border-radius:2px;margin-right:7px;vertical-align:-1px}
+.rt8 tr.tot td{border-top:1px solid #E5E7EB;border-bottom:0;background:#F8FAFC}.rt8 .sub{color:#64748B;font-weight:400}.rt8 td.dv.pz{color:#B45309}.rt8.pb8 td.n{width:70px}.rt8.pb8 td.dv{text-align:right;white-space:nowrap}.rt8.pb8 th:last-child{text-align:right}.rt8 .ok{color:#15803D;font-weight:600}.rt8 .mau{color:#B91C1C;font-weight:600}.rt8 .rt7vz{color:#9CA3AF}
 .rt7ks{display:flex;flex-wrap:wrap;gap:6px}.rt7k{background:#F8FAFC;border:1px solid #EEF1F5;border-radius:7px;padding:5px 9px;min-width:110px}.rt7k span{display:block;font:600 9.5px Inter,sans-serif;letter-spacing:.05em;text-transform:uppercase;color:#6B7280}.rt7k b{font:700 12.5px ui-monospace,Menlo,monospace;color:#111827}.rt7k b i{font:500 10.5px Inter,sans-serif;color:#6B7280}.rt7k.ok b{color:#15803D}
 .rt7b{flex:1;min-width:0;border:1px solid #DDE3EC;border-radius:10px;background:#fff;padding:8px 10px}
 .rt7b .rt7t{font:700 11px Inter,sans-serif;letter-spacing:.06em;color:#374151;margin-bottom:6px;display:flex;justify-content:space-between}
@@ -29726,6 +29813,145 @@ csLigaHora=function(){
 .rt7n{font-size:11px;color:#374151;margin-top:6px;display:flex;gap:10px;flex-wrap:wrap}.rt7n .ok{color:#15803D}.rt7n .mau{color:#B91C1C;font-weight:600}
 .rel .rt7b{break-inside:avoid}`;document.head.appendChild(s);}catch(e){}})();
 function csRelTempos(o){
+  const esc=cs5esc;const vz='<span class="rt7vz">—</span>';
+  /* v388: uma tabela só — Etapa | Previsto | Dur. | Realizado | Desvio */
+  const cel=(a,b,d,rl)=>{const dd=typeof d==='string'?d:(d==null||isNaN(d))?'':(d>0?`+${cs5min(d)}`:d<0?`−${cs5min(-d)}`:'no previsto');
+    const cls=typeof d==='number'?(d>0?'mais':d<0?'menos':'ok'):'';
+    return `<td class="rg">${a||vz} <i>→</i> ${b||vz}</td><td class="${rl?'dv '+cls:'du'}">${esc(dd)}</td>`;};
+  const row=(n,p,r)=>`<tr><td class="n">${esc(n)}</td>${p}${r}</tr>`;
+  const uni=(v,d,rl)=>`<td class="rg">${v||vz}</td><td class="${rl?'dv':'du'}">${esc(d||'')}</td>`;
+  const hdr='';const grp=(n,s)=>`<tr class="grp"><td colspan="5">${n}${s?`<span>${s}</span>`:''}</td></tr>`;
+  /* ----- envase ----- */
+  const T=cs5Tempos(o);const turnos=turnosDe(o).slice().sort((a,b)=>(a.data+(a.ini||'')).localeCompare(b.data+(b.ini||'')));
+  const ant=turnos.filter(t=>t.data&&t.data<o.data);
+  let rows='',tp=0,tr=0,temReal=false;
+  /* setup: no primeiro dia */
+  const sDurPlan=+o.setup||0;
+  if(sDurPlan){
+    const pl=(ant[0]&&ant[0].plano)||{};const re=(ant[0]&&ant[0].real)||{};
+    const pIni=ant.length?(pl.inicio!=null?+pl.inicio:hm(ant[0].ini)-sDurPlan):csPrevIni(o);
+    const rIni=re.iniReal||(ant.length?'':o.iniReal)||'',rFim=re.setupFim||(ant.length?'':(fimSetup(o)||''))||'';
+    let d=null;if(rIni&&rFim){d=(hm(rFim)-hm(rIni))-sDurPlan;tr+=hm(rFim)-hm(rIni);temReal=true;}
+    tp+=sDurPlan;
+    rows+=row('Setup',cel(hhmm(pIni),hhmm(pIni+sDurPlan),cs5dur(sDurPlan)),cel(rIni,rFim,d,true));
+  }
+  if(ant.length){
+    const prev=caixasPrev(o);const env=+o.envase||0;
+    ant.forEach((t,i)=>{
+      const pl=t.plano||{};const sD=i===0?sDurPlan:0;
+      const pIni=pl.inicio!=null?+pl.inicio:hm(t.ini)-sD;
+      const feitasAntes=ant.slice(0,i).reduce((s,x)=>s+(+x.caixas||0),0);
+      const eDur=(prev&&i>0)?Math.max(5,Math.round(env*Math.max(0,1-feitasAntes/prev))):env;
+      const rDur=Math.max(0,hm(t.fim)-hm(t.ini));tr+=rDur;temReal=true;
+      rows+=row(`Envase ${dCurto(t.data)} · fim de turno`,cel(hhmm(pIni+sD),hhmm(pIni+sD+eDur),cs5dur(eDur)),cel(t.ini,t.fim,cs5hmin(rDur),true));
+    });
+    const e=T.L[1];tp=sDurPlan+(+o.envase||0);
+    let rd=null;try{const er=envaseReal(o);if(er!=null){rd=er-T.eDur;tr+=er;temReal=true;}}catch(x){}
+    rows+=row(`Envase ${dCurto(o.data)} · continuação`,cel(e.p.a,e.p.b,e.p.d),cel(e.r.a,e.r.b,rd,true));
+  }else{
+    const e=T.L[1];tp+=T.eDur;
+    let rd=null;try{const er=envaseReal(o);if(er!=null){rd=er-T.eDur;tr+=er;temReal=true;}}catch(x){}
+    rows+=row('Envase',cel(e.p.a,e.p.b,e.p.d),cel(e.r.a,e.r.b,rd,true));
+  }
+  const concl=['concluida','finalizado'].includes(sit(o));
+  const dif=concl&&temReal?tr-tp:null;
+  const fr=dif==null?['ci',''+(temReal?'':'')]:dif>0?['ver',`Passou ${cs5min(dif)} do previsto`]:dif<0?['vd',`Terminou ${cs5min(-dif)} antes do previsto`]:['vd','No previsto'];
+  const envBox=grp(`ENVASE · ${esc(o.maq||'sem máquina')}`,o.operador?'operador '+esc(o.operador):'')+rows
+    +`<tr class="tot"><td class="n">Total do envase</td><td></td><td class="du">${cs5hmin(tp)}</td><td class="rg">${temReal?cs5hmin(tr):'—'}</td><td class="dv ${fr[0]==='ver'?'mais':fr[0]==='vd'?'menos':''}">${fr[1]||''}</td></tr>`;
+  /* ----- tanque ----- */
+  let tqRows='',nota='',tit='TANQUE';
+  try{const b=csLoteDaOP(o);
+    if(b){tit=`TANQUE · ${esc(b.tanque||'sem tanque')} · LOTE ${esc(b.lote||'—')}`;
+      const fi=fabIniDe(b),ff=fabFimDe(b);const rp=(fi&&ff)?Math.max(0,hm(ff.hora)-hm(fi.hora)):null;
+      const prep=b.etapas&&b.etapas.total?+b.etapas.total:null;
+      const prazo=(b.ordens&&b.ordens.length)?Math.min(...b.ordens.map(x=>x.inicio==null?1e9:csPrevIni(x))):1e9;
+      const ap=APONTA[b.chave]||{};const lib=b.liberadoEm||ap.liberadoEm||'';
+      const dvp=(rp!=null&&prep)?(rp-prep>0?`+${cs5min(rp-prep)}`:rp-prep<0?`−${cs5min(prep-rp)}`:''):'';
+      /* v386: só o que importa — início e fim do preparo, quanto levou, hora da liberação e quem liberou */
+      const a=analiseOk(b);const quemL=b.liberadoPor||ap.liberadoPor||'';const dLib=ap.liberadoData||b.liberadoData||'';
+      const anl=a.pend.length?`<span class="mau">falta medir ${esc(a.pend.join(', '))}</span>`:a.fora.length?`<span class="mau">fora do padrão: ${esc(a.fora.join(', '))}</span>`:`<span class="ok">✓ análise conforme</span>`;
+      tqRows=grp(`TANQUE · ${esc(b.tanque||'sem tanque')}`)
+        +row('Preparo',cel('',prazo<1e9?hhmm(prazo):'',prep?cs5hmin(prep):'prazo'),cel(fi?fi.hora:'',ff?ff.hora:'',rp!=null?cs5hmin(rp)+(dvp?' ('+dvp+')':''):'',true))
+        +row('Liberação',uni('',''),uni(lib?`<b>${lib}</b>${dLib?' · '+dCurto(dLib):''}${quemL?' · '+esc(quemL):''} · ${anl}`:'não liberado','',true));
+      nota='';if(false)nota=`<div class="rt7n">${a.pend.length?`<span>Falta medir: ${esc(a.pend.join(', '))}</span>`:a.fora.length?`<span class="mau">Fora do padrão: ${esc(a.fora.join(', '))}</span>`:`<span class="ok">✓ Análise conforme</span>`}${(b.liberadoPor||ap.liberadoPor)?`<span>Liberado por <b>${esc(b.liberadoPor||ap.liberadoPor)}</b></span>`:''}</div>`;
+    }else tqRows=grp('TANQUE','sem lote de tanque ligado a esta OP');
+  }catch(x){tqRows=grp('TANQUE','—');}
+  return `<table class="rt8"><thead><tr><th>Etapa</th><th>Previsto</th><th>Dur.</th><th>Realizado</th><th>Desvio</th></tr></thead><tbody>${tqRows}${envBox}</tbody></table>`;
+}
+csPrevRealHTML=function(o){return `<div class="pbx prv" style="padding:10px 12px"><div class="pbtit"><b>PREVISTO × REALIZADO</b></div>${csRelTempos(o)}</div>`;};
+/* a folha precisa do CSS novo */
+try{const _ir77=csImprimeRelatorioOP;csImprimeRelatorioOP=function(o){
+  const _f=csFolhaModal;csFolhaModal=function(c){try{const css=[...document.querySelectorAll('style')].map(s=>s.textContent).filter(t=>t.includes('.rt7g .rt7c')).join('\n');
+    c.html=String(c.html).replace('</head>',`<style>${css}\n.pbx.prv{margin:6px 0}.rt7b{page-break-inside:avoid}</style></head>`);}catch(e){}return _f.apply(this,arguments);};
+  try{return _ir77.apply(this,arguments);}finally{csFolhaModal=_f;}};}catch(e){}
+try{csNucleo.versao='v377';}catch(e){}
+
+</script>
+<script>
+/* ===================== v378 · faixa das máquinas atrás do menu · folha do relatório arrumada =====================
+   1) A faixa fixa com os títulos ficava na frente do menu lateral aberto: z-index abaixo do menu.
+   2) PDF/impressão do relatório: as classes do bloco Previsto × Realizado batiam com as da folha (.c, .bx, .r, .tt) e
+      o quadro saía embaralhado. Classes com prefixo próprio (rt7…). */
+(function(){try{const s=document.createElement('style');s.textContent=`.cs5faixa{z-index:30!important}`;document.head.appendChild(s);}catch(e){}})();
+try{csNucleo.versao='v378';}catch(e){}
+
+</script>
+<script>
+try{const v=document.getElementById('lgVer');if(v)v.textContent=VERSAO_APP;}catch(e){}
+try{csNucleo.versao='v379';}catch(e){}
+</script>
+<script>
+try{csNucleo.versao='v380';}catch(e){}
+</script>
+<script>
+/* ===== v381 · sessão que não cai =====
+   Antes: o login só era renovado quando uma chamada dava 401 — e aí várias chamadas renovavam ao mesmo tempo com o
+   mesmo refresh_token; o Supabase aceita a primeira e derruba as outras ("sessão expirou"). Agora: uma renovação por vez
+   (as demais esperam a mesma) e renovação antecipada, 15 min antes de vencer, também ao voltar para a aba. */
+(function(){
+  try{
+    const _r=renovarSessao;let emCurso=null;
+    renovarSessao=function(){if(emCurso)return emCurso;emCurso=Promise.resolve().then(()=>_r.apply(this,arguments)).finally(()=>{emCurso=null;});return emCurso;};
+    const falta=()=>{const s=SESSAO;if(!s)return Infinity;const at=s.expires_at?s.expires_at*1000:((s.obtido||0)+((+s.expires_in)||3600)*1000);return at-Date.now();};
+    const cedo=()=>{try{if(SESSAO&&SESSAO.refresh_token&&falta()<15*60*1000)renovarSessao();}catch(e){}};
+    setInterval(cedo,60*1000);
+    document.addEventListener('visibilitychange',()=>{if(!document.hidden)cedo();});
+    window.addEventListener('online',cedo);
+    try{if(SESSAO&&!SESSAO.obtido)SESSAO.obtido=Date.now()-30*60*1000;}catch(e){}
+  }catch(e){}
+})();
+try{csNucleo.versao='v381';}catch(e){}
+</script>
+<script>
+try{csNucleo.versao='v382';}catch(e){}
+</script>
+<script>
+try{csNucleo.versao='v383';}catch(e){}
+</script>
+<script>
+try{csNucleo.versao='v384';}catch(e){}
+</script>
+<script>
+try{csNucleo.versao='v385';}catch(e){}
+</script>
+<script>
+try{csNucleo.versao='v386';}catch(e){}
+</script>
+<script>
+try{csNucleo.versao='v387';}catch(e){}
+</script>
+<script>
+try{csNucleo.versao='v388';}catch(e){}
+</script>
+<script>
+try{csNucleo.versao='v389';}catch(e){}
+</script>
+<script>
+try{csNucleo.versao='v390';}catch(e){}
+</script>
+<script>
+/* ===== v391: blocos coloridos de volta ===== */
+csRelTempos=function(o){
   const esc=cs5esc;const vz='<span class="rt7vz">—</span>';
   const cel=(a,b,d,rl)=>{const dd=typeof d==='string'?d:(d==null||isNaN(d))?'':(d>0?`+${cs5min(d)}`:d<0?`−${cs5min(-d)}`:'');
     const cls=typeof d==='number'?(d>0?'mais':d<0?'menos':''):'';
@@ -29789,65 +30015,123 @@ function csRelTempos(o){
   }catch(x){tqRows=`<div class="rt7vz" style="grid-column:1/-1">—</div>`;}
   const tqBox=`<div class="rt7b"><div class="rt7t">${tit}</div>${/rt7ks/.test(tqRows)?tqRows:`<div class="rt7g">${hdr}${tqRows}</div>`}${nota}</div>`;
   return `<div class="rt7">${tqBox}${envBox}</div>`;
-}
-csPrevRealHTML=function(o){return `<div class="pbx prv" style="padding:10px 12px"><div class="pbtit"><b>PREVISTO × REALIZADO</b></div>${csRelTempos(o)}</div>`;};
-/* a folha precisa do CSS novo */
-try{const _ir77=csImprimeRelatorioOP;csImprimeRelatorioOP=function(o){
-  const _f=csFolhaModal;csFolhaModal=function(c){try{const css=[...document.querySelectorAll('style')].map(s=>s.textContent).filter(t=>t.includes('.rt7g .rt7c')).join('\n');
-    c.html=String(c.html).replace('</head>',`<style>${css}\n.pbx.prv{margin:6px 0}.rt7b{page-break-inside:avoid}</style></head>`);}catch(e){}return _f.apply(this,arguments);};
-  try{return _ir77.apply(this,arguments);}finally{csFolhaModal=_f;}};}catch(e){}
-try{csNucleo.versao='v377';}catch(e){}
+};
 
-</script>
-<script>
-/* ===================== v378 · faixa das máquinas atrás do menu · folha do relatório arrumada =====================
-   1) A faixa fixa com os títulos ficava na frente do menu lateral aberto: z-index abaixo do menu.
-   2) PDF/impressão do relatório: as classes do bloco Previsto × Realizado batiam com as da folha (.c, .bx, .r, .tt) e
-      o quadro saía embaralhado. Classes com prefixo próprio (rt7…). */
-(function(){try{const s=document.createElement('style');s.textContent=`.cs5faixa{z-index:30!important}`;document.head.appendChild(s);}catch(e){}})();
-try{csNucleo.versao='v378';}catch(e){}
+csProblemasHTML=function(o,print){
+  const {S,E,Q}=csProblemasOP(o);const un=und(o);
+  let ds=0,de=0,pausas=0,qcx=0,ql=0;
+  try{ds=Math.round(dvSetup(o)||0);}catch(e){}try{de=Math.round((+o.atrasoMin||0)||(dvEnvase(o)||0));}catch(e){}
+  try{pausas=(o.pausasOp||[]).reduce((s,p)=>s+(+p.min||0),0);}catch(e){}
+  try{if(o.caixas!=null){qcx=Math.max(0,caixasPrev(o)-o.caixas);ql=Math.max(0,quebraL(o)||0);}}catch(e){}
+  const pct=(()=>{try{const p=caixasPrev(o);return p?(qcx/p*100).toFixed(1).replace('.',','):'0';}catch(e){return '0';}})();
+  const sinal=v=>v>0?`+${cs5min(v)}`:v<0?`−${cs5min(-v)}`:'no previsto';
+  /* motivo | submotivo — tempo: dois níveis, para medir depois (% por motivo e por submotivo) */
+  const col=(tit,cor,fundo,itens,tot,vazio)=>`<div class="pbcol" style="background:${fundo}"><div class="pbh"><b style="color:${cor}">${tit}</b><span style="color:${cor}">${tot}</span></div>
+    ${itens.length?`<ul class="pbl2">${itens.map(x=>`<li><span class="pbm"><b>${escAttr(x.g)}</b>${x.s&&x.s!=='(sem detalhe)'?` <i>|</i> ${escAttr(x.s)}`:''}</span>${x.custo?` <b class="pbc" style="color:${cor}">— ${escAttr(x.custo)}</b>`:''}</li>`).join('')}</ul>`:`<div class="pbz">${vazio}</div>`}</div>`;
+  const concl=sit(o)==='concluida';
+  const prox=(()=>{try{const seg=seguintes(o)[0];if(!seg||!o.fimReal)return '';const d=hm(o.fimReal)-inicioPlan(seg);return d>0?`Empurrou a próxima OP (${rotuloOP(seg)}) em <b>${cs5min(d)}</b>`:'';}catch(e){return '';}})();
+  return `<div class="pbx${print?' print':''}">
+    <div class="pbtit"><b>PROBLEMAS RELATADOS NO LOTE</b><span>motivo | submotivo — tempo</span></div>
+    <div class="pbg">
+      ${col('SETUP','#475569','#EEF2F7',S,o.iniReal||fimSetup(o)?sinal(ds):'—','dentro do previsto · nenhum motivo')}
+      ${col('ENVASE','#B45309','#FFF7E6',E,(o.fimReal?sinal(de):'em andamento')+((o.pausasOp||[]).length?` · ${(o.pausasOp||[]).length} pausa${(o.pausasOp||[]).length>1?'s':''}`:''),'dentro do previsto · nenhum motivo')}
+      ${col('QUEBRA','#DC2626','#FEF2F2',Q,concl?(qcx?`${nf(qcx)} ${un} · ${pct}%`:'0'):'—','sem quebra')}
+    </div>
+    <div class="pbrod"><span>Total de atraso: <b style="color:${ds+de>0?'#DC2626':'#15803D'}">${sinal(ds+de)}</b>${pausas?` <small>(${cs5min(pausas)} em pausas, já contadas)</small>`:''}</span><span>Quebra: <b style="color:${qcx?'#DC2626':'#15803D'}">${concl?`${nf(qcx)} ${un} (${nf(Math.round(ql))} L)`:'—'}</b></span>${prox?`<span>${prox}</span>`:''}</div>
+  </div>`;
+};
+(function(){try{const s=document.createElement('style');s.textContent=`
+.pbx{border:0;background:transparent;padding:0;gap:8px}
+.pbg{display:flex;gap:10px}.pbcol{flex:1;min-width:0;border-radius:11px;padding:10px 12px;border:0;display:flex;flex-direction:column;gap:6px}
+.pbl2{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px}.pbl2 li{font-size:12.5px;color:#1F2937;line-height:1.35}.pbl2 li:before{content:'•';color:#6B7280;margin-right:6px}
+.pbl2 li i{font-style:normal;color:#9CA3AF;margin:0 2px}.pbl2 li .pbc{white-space:nowrap}
+.rel .pbx .pbg{display:flex;gap:8px}.rel .pbx .pbcol{flex:1;border-radius:8px;padding:7px 9px;border-left:0}/*.rt7g .rt7c*/.rel .pbl2 li{font-size:10.5px}.rel .pbh{display:flex;justify-content:space-between;font-size:10.5px;letter-spacing:.06em;margin-bottom:4px}
+.rt7{display:flex;flex-direction:column;gap:8px;margin:8px 0 10px}
+.rt7ks{display:flex;flex-wrap:wrap;gap:6px}.rt7k{background:#F8FAFC;border:1px solid #EEF1F5;border-radius:7px;padding:5px 9px;min-width:110px}.rt7k span{display:block;font:600 9.5px Inter,sans-serif;letter-spacing:.05em;text-transform:uppercase;color:#6B7280}.rt7k b{font:700 12.5px ui-monospace,Menlo,monospace;color:#111827}.rt7k b i{font:500 10.5px Inter,sans-serif;color:#6B7280}.rt7k.ok b{color:#15803D}
+`;document.head.appendChild(s);}catch(e){}})();
 
+try{csNucleo.versao='v391';}catch(e){}
 </script>
 <script>
-try{const v=document.getElementById('lgVer');if(v)v.textContent=VERSAO_APP;}catch(e){}
-try{csNucleo.versao='v379';}catch(e){}
-</script>
-<script>
-try{csNucleo.versao='v380';}catch(e){}
-</script>
-<script>
-/* ===== v381 · sessão que não cai =====
-   Antes: o login só era renovado quando uma chamada dava 401 — e aí várias chamadas renovavam ao mesmo tempo com o
-   mesmo refresh_token; o Supabase aceita a primeira e derruba as outras ("sessão expirou"). Agora: uma renovação por vez
-   (as demais esperam a mesma) e renovação antecipada, 15 min antes de vencer, também ao voltar para a aba. */
-(function(){
-  try{
-    const _r=renovarSessao;let emCurso=null;
-    renovarSessao=function(){if(emCurso)return emCurso;emCurso=Promise.resolve().then(()=>_r.apply(this,arguments)).finally(()=>{emCurso=null;});return emCurso;};
-    const falta=()=>{const s=SESSAO;if(!s)return Infinity;const at=s.expires_at?s.expires_at*1000:((s.obtido||0)+((+s.expires_in)||3600)*1000);return at-Date.now();};
-    const cedo=()=>{try{if(SESSAO&&SESSAO.refresh_token&&falta()<15*60*1000)renovarSessao();}catch(e){}};
-    setInterval(cedo,60*1000);
-    document.addEventListener('visibilitychange',()=>{if(!document.hidden)cedo();});
-    window.addEventListener('online',cedo);
-    try{if(SESSAO&&!SESSAO.obtido)SESSAO.obtido=Date.now()-30*60*1000;}catch(e){}
-  }catch(e){}
-})();
-try{csNucleo.versao='v381';}catch(e){}
-</script>
-<script>
-try{csNucleo.versao='v382';}catch(e){}
-</script>
-<script>
-try{csNucleo.versao='v383';}catch(e){}
-</script>
-<script>
-try{csNucleo.versao='v384';}catch(e){}
-</script>
-<script>
-try{csNucleo.versao='v385';}catch(e){}
-</script>
-<script>
-try{csNucleo.versao='v386';}catch(e){}
+/* ===== v392: previsto × realizado compacto ===== */
+csRelTempos=function(o){
+  const esc=cs5esc;const vz='<span class="rt7vz">—</span>';
+  const cel=(a,b,d,rl)=>{const dd=typeof d==='string'?d:(d==null||isNaN(d))?'':(d>0?`+${cs5min(d)}`:d<0?`−${cs5min(-d)}`:'');
+    const cls=typeof d==='number'?(d>0?'mais':d<0?'menos':''):'';
+    return `<div class="rt7c ${rl?'rt7rl':''}"><span>${a||vz}</span><span class="rt7a">→</span><span>${b||vz}</span><span class="rt7bar"></span><span class="${rl?'rt7df '+cls:'rt7du'}">${esc(dd)}</span></div>`;};
+  const row=(n,p,r)=>`<div class="rt7r">${esc(n)}</div>${p}${r}`;
+  const uni=(v,d,rl)=>`<div class="rt7c ${rl?'rt7rl':''}" style="grid-template-columns:1fr 1px 44px"><span>${v||vz}</span><span class="rt7bar"></span><span class="${rl?'rt7df':'rt7du'}">${esc(d||'')}</span></div>`;
+  const hdr=`<div></div><div class="rt7h">PREVISTO</div><div class="rt7h">REALIZADO</div>`;
+  /* ----- envase ----- */
+  const T=cs5Tempos(o);const turnos=turnosDe(o).slice().sort((a,b)=>(a.data+(a.ini||'')).localeCompare(b.data+(b.ini||'')));
+  const ant=turnos.filter(t=>t.data&&t.data<o.data);
+  let rows='',tp=0,tr=0,temReal=false;
+  /* setup: no primeiro dia */
+  const sDurPlan=+o.setup||0;
+  if(sDurPlan){
+    const pl=(ant[0]&&ant[0].plano)||{};const re=(ant[0]&&ant[0].real)||{};
+    const pIni=ant.length?(pl.inicio!=null?+pl.inicio:hm(ant[0].ini)-sDurPlan):csPrevIni(o);
+    const rIni=re.iniReal||(ant.length?'':o.iniReal)||'',rFim=re.setupFim||(ant.length?'':(fimSetup(o)||''))||'';
+    let d=null;if(rIni&&rFim){d=(hm(rFim)-hm(rIni))-sDurPlan;tr+=hm(rFim)-hm(rIni);temReal=true;}
+    tp+=sDurPlan;
+    rows+=row('Setup',cel(hhmm(pIni),hhmm(pIni+sDurPlan),cs5dur(sDurPlan)),cel(rIni,rFim,d,true));
+  }
+  if(ant.length){
+    const prev=caixasPrev(o);const env=+o.envase||0;
+    ant.forEach((t,i)=>{
+      const pl=t.plano||{};const sD=i===0?sDurPlan:0;
+      const pIni=pl.inicio!=null?+pl.inicio:hm(t.ini)-sD;
+      const feitasAntes=ant.slice(0,i).reduce((s,x)=>s+(+x.caixas||0),0);
+      const eDur=(prev&&i>0)?Math.max(5,Math.round(env*Math.max(0,1-feitasAntes/prev))):env;
+      const rDur=Math.max(0,hm(t.fim)-hm(t.ini));tr+=rDur;temReal=true;
+      rows+=row(`Envase ${dCurto(t.data)} · fim de turno`,cel(hhmm(pIni+sD),hhmm(pIni+sD+eDur),cs5dur(eDur)),cel(t.ini,t.fim,cs5hmin(rDur),true));
+    });
+    const e=T.L[1];tp=sDurPlan+(+o.envase||0);
+    let rd=null;try{const er=envaseReal(o);if(er!=null){rd=er-T.eDur;tr+=er;temReal=true;}}catch(x){}
+    rows+=row(`Envase ${dCurto(o.data)} · continuação`,cel(e.p.a,e.p.b,e.p.d),cel(e.r.a,e.r.b,rd,true));
+  }else{
+    const e=T.L[1];tp+=T.eDur;
+    let rd=null;try{const er=envaseReal(o);if(er!=null){rd=er-T.eDur;tr+=er;temReal=true;}}catch(x){}
+    rows+=row('Envase',cel(e.p.a,e.p.b,e.p.d),cel(e.r.a,e.r.b,rd,true));
+  }
+  const concl=['concluida','finalizado'].includes(sit(o));
+  const dif=concl&&temReal?tr-tp:null;
+  const fr=dif==null?['ci',''+(temReal?'':'')]:dif>0?['ver',`Passou ${cs5min(dif)} do previsto`]:dif<0?['vd',`Terminou ${cs5min(-dif)} antes do previsto`]:['vd','No previsto'];
+  const envBox=`<div class="rt7b"><div class="rt7t">ENVASE · ${esc(o.maq||'sem máquina')}<span>${o.operador?esc(o.operador):''}</span></div><div class="rt7g">${hdr}${rows}
+    <div class="rt7to"><span>Total previsto <b>${cs5hmin(tp)}</b> · realizado <b>${temReal?cs5hmin(tr):'—'}</b></span>${fr[1]?`<span class="rt7fr ${fr[0]}">${fr[1]}</span>`:''}</div></div></div>`;
+  /* ----- tanque ----- */
+  let tqRows='',nota='',tit='TANQUE';
+  try{const b=csLoteDaOP(o);
+    if(b){tit=`TANQUE · ${esc(b.tanque||'sem tanque')}`;
+      const fi=fabIniDe(b),ff=fabFimDe(b);const rp=(fi&&ff)?Math.max(0,hm(ff.hora)-hm(fi.hora)):null;
+      const prep=b.etapas&&b.etapas.total?+b.etapas.total:null;
+      const prazo=(b.ordens&&b.ordens.length)?Math.min(...b.ordens.map(x=>x.inicio==null?1e9:csPrevIni(x))):1e9;
+      const ap=APONTA[b.chave]||{};const lib=b.liberadoEm||ap.liberadoEm||'';
+      const dvp=(rp!=null&&prep)?(rp-prep>0?`+${cs5min(rp-prep)}`:rp-prep<0?`−${cs5min(prep-rp)}`:''):'';
+      /* v386: só o que importa — início e fim do preparo, quanto levou, hora da liberação e quem liberou */
+      const a=analiseOk(b);const quemL=b.liberadoPor||ap.liberadoPor||'';const dLib=ap.liberadoData||b.liberadoData||'';
+      const anl=a.pend.length?`<span class="mau">falta medir ${esc(a.pend.join(', '))}</span>`:a.fora.length?`<span class="mau">fora do padrão: ${esc(a.fora.join(', '))}</span>`:`<span class="ok">✓ análise conforme</span>`;
+      tqRows=`<div class="rt7l"><span>Preparo <b>${fi?fi.hora:'—'}</b> <i>→</i> <b>${ff?ff.hora:'—'}</b>${rp!=null?` · <b>${cs5hmin(rp)}</b>${prep&&dvp?' <small>('+dvp+' vs '+cs5hmin(prep)+')</small>':''}`:(prep?` · previsto <b>${cs5hmin(prep)}</b>`:'')}</span><span>Liberação ${lib?`<b>${lib}</b>${dLib?' · '+dCurto(dLib):''}${quemL?' · '+esc(quemL):''} · ${anl}`:'<b>não liberado</b>'}</span></div>`;
+
+      nota='';if(false)nota=`<div class="rt7n">${a.pend.length?`<span>Falta medir: ${esc(a.pend.join(', '))}</span>`:a.fora.length?`<span class="mau">Fora do padrão: ${esc(a.fora.join(', '))}</span>`:`<span class="ok">✓ Análise conforme</span>`}${(b.liberadoPor||ap.liberadoPor)?`<span>Liberado por <b>${esc(b.liberadoPor||ap.liberadoPor)}</b></span>`:''}</div>`;
+    }else tqRows=`<div class="rt7vz" style="grid-column:1/-1">Sem lote de tanque ligado a esta OP.</div>`;
+  }catch(x){tqRows=`<div class="rt7vz" style="grid-column:1/-1">—</div>`;}
+  const tqBox=`<div class="rt7b tq"><div class="rt7t">${tit}</div>${/rt7l/.test(tqRows)?tqRows:`<div class="rt7g">${hdr}${tqRows}</div>`}${nota}</div>`;
+  return `<div class="rt7">${tqBox}${envBox}</div>`;
+};
+
+(function(){try{const s=document.createElement('style');s.textContent=`
+.rt7{display:flex;flex-direction:column;gap:6px;margin:6px 0 8px}
+.rt7b{padding:7px 10px}.rt7b .rt7t{margin-bottom:4px}
+.rt7l{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;font-size:11.5px;color:#374151;align-items:baseline}.rt7l b{font-family:ui-monospace,Menlo,monospace;color:#111827}.rt7l i{font-style:normal;color:#9CA3AF}.rt7l small{color:#6B7280}.rt7l .ok{color:#15803D;font-weight:600}.rt7l .mau{color:#B91C1C;font-weight:600}
+.rt7g{grid-template-columns:178px 1fr 1fr;gap:2px 6px;font-size:11px}.rt7g .rt7r{white-space:nowrap;padding:3px 7px;font-size:11px;background:transparent;color:#374151}.rt7g .rt7h{padding:0 0 1px}
+.rt7g .rt7c{padding:2px 7px;font-size:11px;grid-template-columns:1fr 12px 1fr 1px 48px}
+.rt7g .rt7to{padding:3px 7px 0;font-size:11px;align-items:center}.rt7g .rt7to .rt7fr{padding:0}
+.rel .rt7 .rt7b{padding:5px 8px}.rel .rt7b .rt7l{font-size:10px}.rel .rt7b .rt7g{grid-template-columns:165px 1fr 1fr;font-size:10px;gap:2px 5px}.rel .rt7b .rt7g .rt7r{font-size:10px;padding:2px 5px;white-space:nowrap}.rel .rt7b .rt7g .rt7c{font-size:10px;padding:1px 5px;grid-template-columns:1fr 10px 1fr 1px 44px}.rel .rt7b .rt7g .rt7to{font-size:10px}
+.pbg .pbcol:nth-child(2){flex:1.8}.pbl2 li .pbc{white-space:nowrap}
+/*.rt7g .rt7c*/`;document.head.appendChild(s);}catch(e){}})();
+
+try{csNucleo.versao='v392';}catch(e){}
 </script>
 </body>
 </html>
