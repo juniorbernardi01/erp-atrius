@@ -5449,7 +5449,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v376';
+const VERSAO_APP='v377';
 let DRAG=null;
 function render(){
   recomporTudo();
@@ -27070,7 +27070,7 @@ function cs5Bloco(o,modo){
     if(st==='programada')fr=atrasada(o)&&hoje&&ag>csPrevIni(o)?['ver',`Atrasada ${cs5min(ag-csPrevIni(o))} para começar`]:['ci','Ainda não começou'];
     else if(o.csPausa)fr=['ver',`Pausada desde ${o.csPausa.desde||''}`];
     else if(['preparacao','producao'].includes(st)){let fe=NaN;try{fe=fimEsperado(o);}catch(e){}
-      fr=atrasada(o)&&hoje&&!isNaN(fe)?['ver',`Passou ${cs5min(ag-fe)} do previsto`]:['vd','Dentro do previsto'];}
+      fr=atrasada(o)&&hoje&&!isNaN(fe)?['ver',`Passou ${cs5min(ag-fe)} do previsto`]:(o.iniReal||o.envIni)?['vd','Dentro do previsto']:['ci',''];}
     else if(st==='finalizado')fr=['ci','Envase terminou · falta apontar a contagem'];
     h+=`<span></span><div class="to"><span class="lb"></span><span></span><span class="vl">${cs5dur(T.tp)}</span></div><div class="fr ${fr[0]}">${fr[1]}</div>`;
   }
@@ -29588,6 +29588,140 @@ try{const _ao76=abrirOrdem;abrirOrdem=function(o,pre){const r=_ao76.apply(this,a
 .cs5 .tr5 .e.ok+.se:before,.cs5 .tr5 .e.ok+.se:after{background:#86EFAC;border-color:#86EFAC}
 .cs5 .tr5 .e.ok+.se:after{background:transparent}`;document.head.appendChild(s);}catch(e){}})();
 try{csNucleo.versao='v376';}catch(e){}
+
+</script>
+<script>
+/* ===================== v377 · relatório: tempos como no card (branco e cinza, compacto, A4) · página rola inteira ·
+   "+" só no mouse · hora com a lista · "Dentro do previsto" só com dados =====================
+   1) RELATÓRIO DA OP — PREVISTO × REALIZADO: mesma leitura dos cards da fila (Tempos | Previsto | Realizado), em
+      branco e cinza, menor: Setup, Envase (um por dia quando houve fim de turno: "Fim de turno 07/10" com início e fim
+      do turno; "Continua 08/10" com o início do dia seguinte), Total previsto, Total realizado e o desvio. O tanque
+      ao lado, no mesmo formato (Preparo, Fabricação, Liberação). Cabe numa folha A4.
+   2) ENVASE: a página inteira rola (não mais cada coluna); a faixa dos títulos continua fixa.
+   3) "+" da fila: só aparece ao passar o mouse na linha entre as OPs.
+   4) Hora de início: volta o campo de hora do navegador (lista de horas e minutos), minuto a minuto, com a sugestão
+      do próximo livre da máquina. 5) "Dentro do previsto" não aparece quando a OP ainda não tem dado realizado. */
+
+/* ---------- 2) página rola inteira ---------- */
+(function(){try{const s=document.createElement('style');s.textContent=`
+#tqgrid.dia .tqcol.cs5col{display:block!important;height:auto!important;max-height:none!important}
+#tqgrid.dia .tqcol.cs5col .tqb{overflow:visible!important;overflow-y:visible!important;overflow-x:visible!important;max-height:none}
+#tqgrid.dia{align-items:flex-start}`;document.head.appendChild(s);}catch(e){}})();
+try{cs76Alturas=function(){try{document.querySelectorAll('#tqgrid.dia .tqcol.cs5col').forEach(c=>{c.style.removeProperty('height');c.style.removeProperty('max-height');c.style.removeProperty('overflow');});}catch(e){}};}catch(e){}
+
+/* ---------- 3) "+" só no mouse ---------- */
+(function(){try{const s=document.createElement('style');s.textContent=`
+.cs5mais i{opacity:0;transform:scale(.6)}
+.cs5mais::before{background:#E5E7EB}
+.cs5mais:hover i{opacity:1;transform:scale(1)}`;document.head.appendChild(s);}catch(e){}})();
+
+/* ---------- 4) hora: campo do navegador, minuto a minuto ---------- */
+(function(){try{const s=document.createElement('style');s.textContent=`
+input.cs-hora[type=time]{font:700 17px ui-monospace,Menlo,monospace!important;letter-spacing:.02em;background-image:none;padding-right:8px!important;text-align:left}`;document.head.appendChild(s);}catch(e){}})();
+csLigaHora=function(){
+  const i=M('fHr');if(!i||i.dataset.cs77)return;i.dataset.cs77='1';
+  try{i.type='time';}catch(e){}
+  i.classList.add('cs-hora');i.setAttribute('step','60');i.removeAttribute('maxlength');i.removeAttribute('inputmode');i.removeAttribute('placeholder');
+  const sugere=()=>{try{if(typeof EDIT!=='undefined'&&EDIT)return;if(HORA_MANUAL)return;const maq=M('fMq')&&M('fMq').value,data=M('fDt')&&M('fDt').value;if(!maq||!data)return;
+    const t=csProxLivreMaq(maq,data);if(t==null)return;i.value=hhmm(t);
+    let d=i.parentElement.querySelector('.cs-hora-dica');if(!d){d=document.createElement('div');d.className='cs-hora-dica';i.parentElement.appendChild(d);}
+    d.textContent=`Próximo livre da ${maq}: ${hhmm(t)}`;try{calc();}catch(e){}}catch(e){}};
+  if(M('fMq'))M('fMq').addEventListener('change',sugere);
+  if(M('fDt'))M('fDt').addEventListener('change',sugere);
+  if(!i.dataset.pre)sugere();
+};
+
+/* ---------- 1) relatório: tempos como no card ---------- */
+(function(){try{const s=document.createElement('style');s.textContent=`
+.rt7{display:flex;gap:10px;margin:10px 0 12px}
+.rt7 .bx{flex:1;min-width:0;border:1px solid #DDE3EC;border-radius:10px;background:#fff;padding:8px 10px}
+.rt7 .bx .tt{font:700 11px Inter,sans-serif;letter-spacing:.06em;color:#374151;margin-bottom:6px;display:flex;justify-content:space-between}
+.rt7 .bx .tt span{font-weight:500;letter-spacing:0;color:#6B7280}
+.rt7 .g{display:grid;grid-template-columns:82px 1fr 1fr;gap:3px 6px;align-items:center;font-size:11.5px}
+.rt7 .g .h{font:600 10px Inter,sans-serif;letter-spacing:.05em;color:#6B7280;text-align:center;padding:2px 0}
+.rt7 .g .r{font-weight:600;color:#374151;background:#F3F4F6;border-radius:6px;padding:4px 7px;font-size:11px}
+.rt7 .g .c{display:grid;grid-template-columns:1fr 14px 1fr 1px 44px;align-items:center;gap:2px;background:#F8FAFC;border:1px solid #EEF1F5;border-radius:6px;padding:3px 7px;font:600 11.5px ui-monospace,Menlo,monospace;white-space:nowrap}
+.rt7 .g .c.rl{background:#fff}
+.rt7 .g .c .a{color:#9CA3AF;text-align:center}.rt7 .g .c .bar{height:12px;background:#E5E7EB}.rt7 .g .c .du{text-align:right;font:500 10.5px ui-monospace,Menlo,monospace;color:#6B7280}
+.rt7 .g .c .df{text-align:right;font:700 10.5px Inter,sans-serif}.rt7 .g .c .df.mais{color:#DC2626}.rt7 .g .c .df.menos{color:#15803D}
+.rt7 .g .vz{color:#9CA3AF}
+.rt7 .g .to{grid-column:1/-1;display:flex;justify-content:space-between;font-size:11.5px;padding:3px 7px 0;color:#374151}
+.rt7 .g .to b{font-family:ui-monospace,Menlo,monospace}
+.rt7 .fr{grid-column:1/-1;text-align:right;font:600 11px Inter,sans-serif;padding-top:2px}.rt7 .fr.ver{color:#DC2626}.rt7 .fr.vd{color:#15803D}.rt7 .fr.ci{color:#6B7280}
+.rt7 .nt{font-size:11px;color:#374151;margin-top:6px;display:flex;gap:10px;flex-wrap:wrap}.rt7 .nt .ok{color:#15803D}.rt7 .nt .mau{color:#B91C1C;font-weight:600}
+.rel .rt7 .bx{break-inside:avoid}`;document.head.appendChild(s);}catch(e){}})();
+function csRelTempos(o){
+  const esc=cs5esc;const vz='<span class="vz">—</span>';
+  const cel=(a,b,d,rl)=>{const dd=typeof d==='string'?d:(d==null||isNaN(d))?'':(d>0?`+${cs5min(d)}`:d<0?`−${cs5min(-d)}`:'');
+    const cls=typeof d==='number'?(d>0?'mais':d<0?'menos':''):'';
+    return `<div class="c ${rl?'rl':''}"><span>${a||vz}</span><span class="a">→</span><span>${b||vz}</span><span class="bar"></span><span class="${rl?'df '+cls:'du'}">${esc(dd)}</span></div>`;};
+  const row=(n,p,r)=>`<div class="r">${esc(n)}</div>${p}${r}`;
+  const uni=(v,d,rl)=>`<div class="c ${rl?'rl':''}" style="grid-template-columns:1fr 1px 44px"><span>${v||vz}</span><span class="bar"></span><span class="${rl?'df':'du'}">${esc(d||'')}</span></div>`;
+  const hdr=`<div></div><div class="h">PREVISTO</div><div class="h">REALIZADO</div>`;
+  /* ----- envase ----- */
+  const T=cs5Tempos(o);const turnos=turnosDe(o).slice().sort((a,b)=>(a.data+(a.ini||'')).localeCompare(b.data+(b.ini||'')));
+  const ant=turnos.filter(t=>t.data&&t.data<o.data);
+  let rows='',tp=0,tr=0,temReal=false;
+  /* setup: no primeiro dia */
+  const sDurPlan=+o.setup||0;
+  if(sDurPlan){
+    const pl=(ant[0]&&ant[0].plano)||{};const re=(ant[0]&&ant[0].real)||{};
+    const pIni=ant.length?(pl.inicio!=null?+pl.inicio:hm(ant[0].ini)-sDurPlan):csPrevIni(o);
+    const rIni=re.iniReal||(ant.length?'':o.iniReal)||'',rFim=re.setupFim||(ant.length?'':(fimSetup(o)||''))||'';
+    let d=null;if(rIni&&rFim){d=(hm(rFim)-hm(rIni))-sDurPlan;tr+=hm(rFim)-hm(rIni);temReal=true;}
+    tp+=sDurPlan;
+    rows+=row('Setup',cel(hhmm(pIni),hhmm(pIni+sDurPlan),cs5dur(sDurPlan)),cel(rIni,rFim,d,true));
+  }
+  if(ant.length){
+    const prev=caixasPrev(o);const env=+o.envase||0;
+    ant.forEach((t,i)=>{
+      const pl=t.plano||{};const sD=i===0?sDurPlan:0;
+      const pIni=pl.inicio!=null?+pl.inicio:hm(t.ini)-sD;
+      const feitasAntes=ant.slice(0,i).reduce((s,x)=>s+(+x.caixas||0),0);
+      const eDur=(prev&&i>0)?Math.max(5,Math.round(env*Math.max(0,1-feitasAntes/prev))):env;
+      const rDur=Math.max(0,hm(t.fim)-hm(t.ini));tr+=rDur;temReal=true;
+      rows+=row(`Fim de turno ${dCurto(t.data)}`,cel(hhmm(pIni+sD),hhmm(pIni+sD+eDur),cs5dur(eDur)),cel(t.ini,t.fim,cs5hmin(rDur),true));
+    });
+    const e=T.L[1];tp=sDurPlan+(+o.envase||0);
+    let rd=null;try{const er=envaseReal(o);if(er!=null){rd=er-T.eDur;tr+=er;temReal=true;}}catch(x){}
+    rows+=row(`Continua ${dCurto(o.data)}`,cel(e.p.a,e.p.b,e.p.d),cel(e.r.a,e.r.b,rd,true));
+  }else{
+    const e=T.L[1];tp+=T.eDur;
+    let rd=null;try{const er=envaseReal(o);if(er!=null){rd=er-T.eDur;tr+=er;temReal=true;}}catch(x){}
+    rows+=row('Envase',cel(e.p.a,e.p.b,e.p.d),cel(e.r.a,e.r.b,rd,true));
+  }
+  const concl=['concluida','finalizado'].includes(sit(o));
+  const dif=concl&&temReal?tr-tp:null;
+  const fr=dif==null?['ci',''+(temReal?'':'')]:dif>0?['ver',`Passou ${cs5min(dif)} do previsto`]:dif<0?['vd',`Terminou ${cs5min(-dif)} antes do previsto`]:['vd','No previsto'];
+  const envBox=`<div class="bx"><div class="tt">ENVASE · ${esc(o.maq||'sem máquina')}<span>${o.operador?esc(o.operador):''}</span></div><div class="g">${hdr}${rows}
+    <div class="to"><span>Total previsto <b>${cs5hmin(tp)}</b></span><span>Total realizado <b>${temReal?cs5hmin(tr):'—'}</b></span></div>
+    ${fr[1]?`<div class="fr ${fr[0]}">${fr[1]}</div>`:''}</div></div>`;
+  /* ----- tanque ----- */
+  let tqRows='',nota='',tit='TANQUE';
+  try{const b=csLoteDaOP(o);
+    if(b){tit=`TANQUE · ${esc(b.tanque||'sem tanque')} · LOTE ${esc(b.lote||'—')}`;
+      const fi=fabIniDe(b),ff=fabFimDe(b);const rp=(fi&&ff)?Math.max(0,hm(ff.hora)-hm(fi.hora)):null;
+      const prep=b.etapas&&b.etapas.total?+b.etapas.total:null;
+      const prazo=(b.ordens&&b.ordens.length)?Math.min(...b.ordens.map(x=>x.inicio==null?1e9:csPrevIni(x))):1e9;
+      const ap=APONTA[b.chave]||{};const lib=b.liberadoEm||ap.liberadoEm||'';
+      const dvp=(rp!=null&&prep)?(rp-prep>0?`+${cs5min(rp-prep)}`:rp-prep<0?`−${cs5min(prep-rp)}`:''):'';
+      tqRows=row('Preparo',uni(prep?cs5hmin(prep):'',''),uni(rp!=null?cs5hmin(rp):'',dvp,true))
+        +row('Fabricação',cel('',prazo<1e9?hhmm(prazo):'','prazo'),cel(fi?fi.hora:'',ff?ff.hora:'',(ff&&prazo<1e9)?hm(ff.hora)-prazo:null,true))
+        +row('Liberação',uni('',''),uni(lib?`${lib}`:'não liberado','',true));
+      const a=analiseOk(b);
+      nota=`<div class="nt">${a.pend.length?`<span>Falta medir: ${esc(a.pend.join(', '))}</span>`:a.fora.length?`<span class="mau">Fora do padrão: ${esc(a.fora.join(', '))}</span>`:`<span class="ok">✓ Análise conforme</span>`}${(b.liberadoPor||ap.liberadoPor)?`<span>Liberado por <b>${esc(b.liberadoPor||ap.liberadoPor)}</b></span>`:''}</div>`;
+    }else tqRows=`<div class="vz" style="grid-column:1/-1">Sem lote de tanque ligado a esta OP.</div>`;
+  }catch(x){tqRows=`<div class="vz" style="grid-column:1/-1">—</div>`;}
+  const tqBox=`<div class="bx"><div class="tt">${tit}</div><div class="g">${hdr}${tqRows}</div>${nota}</div>`;
+  return `<div class="rt7">${tqBox}${envBox}</div>`;
+}
+csPrevRealHTML=function(o){return `<div class="pbx prv" style="padding:10px 12px"><div class="pbtit"><b>PREVISTO × REALIZADO</b></div>${csRelTempos(o)}</div>`;};
+/* a folha precisa do CSS novo */
+try{const _ir77=csImprimeRelatorioOP;csImprimeRelatorioOP=function(o){
+  const _f=csFolhaModal;csFolhaModal=function(c){try{const css=[...document.querySelectorAll('style')].map(s=>s.textContent).filter(t=>t.includes('.rt7 .g .c')).join('\n');
+    c.html=String(c.html).replace('</head>',`<style>${css}\n.pbx.prv{margin:6px 0}.rt7 .bx{page-break-inside:avoid}</style></head>`);}catch(e){}return _f.apply(this,arguments);};
+  try{return _ir77.apply(this,arguments);}finally{csFolhaModal=_f;}};}catch(e){}
+try{csNucleo.versao='v377';}catch(e){}
 
 </script>
 </body>
