@@ -5460,7 +5460,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v393';
+const VERSAO_APP='v394';
 let DRAG=null;
 function render(){
   recomporTudo();
@@ -22607,7 +22607,7 @@ function gradeInicio(){
     ${HM.ed?'<div class="hm-secm"><button class="btn pri" id="hmAddM">＋ módulo no painel</button></div>':''}</div>`;
   hmLiga(el);
   /* o que vem de fora (vendas do Supabase e compras do módulo) chega depois */
-  if(mods.includes('ven'))Promise.race([hmDadosVen(),new Promise((_,r)=>setTimeout(()=>r(new Error('o servidor demorou para responder; recarregue a página')),25000))]).then(V=>hmPinta('ven',V)).catch(e=>hmPinta('ven',{erro:/tabelas|vendas_painel|function|schema cache|could not find/i.test(e.message)?'Falta a função de vendas no banco: rode o supabase-vendas-funcoes.sql no SQL Editor do Supabase.':e.message}));
+  if(mods.includes('ven'))Promise.race([hmDadosVen(),new Promise((_,r)=>setTimeout(()=>r(new Error('o servidor demorou para responder; recarregue a página')),25000))]).then(V=>hmPinta('ven',V)).catch(e=>hmPinta('ven',{erro:(/vendas_painel|schema cache|could not find the function/i.test(e.message)?'Falta a função de vendas no banco: rode o supabase-vendas-funcoes.sql no SQL Editor do Supabase e depois NOTIFY pgrst. ':'')+'Erro: '+e.message}));
   if(mods.includes('com'))hmDadosCom().then(D=>hmPinta('com',D)).catch(()=>hmPinta('com',{d:{}}));
 }
 function hmPinta(m,dados){document.querySelectorAll(`[data-cc^="${m}|"]`).forEach(c=>{c.innerHTML=hmBloco(m,c.dataset.cc.split('|')[1],dados);ligaMeta(c);});}
@@ -30138,6 +30138,9 @@ try{csNucleo.versao='v392';}catch(e){}
 </script>
 <script>
 try{csNucleo.versao='v393';}catch(e){}
+</script>
+<script>
+try{csNucleo.versao='v394';}catch(e){}
 </script>
 </body>
 </html>

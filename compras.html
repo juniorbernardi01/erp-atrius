@@ -1958,7 +1958,7 @@ function necLinhas(){
     const r=res[k]||res[x.nome]||{qtd:0,ops:0};const pi=(pedIns[k]||{qtd:0}).qtd;
     const saidas=r.qtd+pi,entradas=emCompra(k),virt=(fis||0)+entradas-saidas;
     const tot=meses.reduce((s,m)=>s+((CM[m]||{})[k]||0),0),dia=diasJan?tot/diasJan:0;
-    const cobre=dia>0?Math.floor(virt/dia):null;
+    const cobre=dia>0?Math.floor((fis||0)/dia):null;   /* cobertura pelo FÍSICO: quanto o que está em casa aguenta */
     const min=+DB.minimos[k]||0;
     const sug=Math.max(0,dia*cr*cob+min-virt);
     return {x,un,k,fis,ops:r.ops,res:r.qtd,ped:pi,npd:ped[k]||0,saidas,entradas,virt,dia,cobre,min,
@@ -1968,7 +1968,7 @@ function necLinhas(){
 const necFmt=v=>v==null?'—':nq(Math.round(v*100)/100);
 function necUnid(){const u=necCfg().nVer;return u==='dia'?['por dia',1]:u==='mes'?['por mês',30.4]:['por semana',7];}
 /* cores como no BI: vermelho abaixo do mínimo, laranja até 1,5× o mínimo, verde acima; sem mínimo, pela cobertura (7 e 14 dias) */
-function corCob(l){if(l.cobre==null)return 'cz';if(l.cobre<=0||l.virt<0)return 'vm';
+function corCob(l){if(l.cobre==null)return 'cz';if(l.cobre<=0||(l.fis||0)<=0)return 'vm';
   if(l.min>0){if(l.virt<l.min)return 'vm';if(l.virt<l.min*1.5)return 'lj';return 'vd';}
   return l.cobre<7?'vm':l.cobre<14?'lj':'vd';}
 async function telaNecessidade(){
@@ -1998,7 +1998,7 @@ async function telaNecessidade(){
         <button class="btn pri" id="sOk" style="width:100%;margin-top:10px;justify-content:center">aplicar</button></div></div>
   </div>
   <div class="cards"><div class="card w"><span>Não cobre as saídas</span><b>${naoCobre} ${naoCobre===1?'item':'itens'}</b><small>pedidos e OPs pedem mais do que há</small></div>
-    <div class="card a"><span>Cobertura menor que 14 dias</span><b>${curta} ${curta===1?'item':'itens'}</b><small>pela média de consumo</small></div>
+    <div class="card a"><span>Cobertura menor que 14 dias</span><b>${curta} ${curta===1?'item':'itens'}</b><small>físico ÷ consumo médio</small></div>
     <div class="card"><span>Já em compra</span><b>${rs(valEm)}</b><small>${DB.ocs.filter(o=>o.sit==='env').length} ordens enviadas</small></div>
     <div class="card"><span>Marcado para comprar</span><b>${rs(valMarc)}</b><small>${marc.length} ${marc.length===1?'item':'itens'} · pelo último preço</small></div></div>
   <div class="barra"><div class="busca">⌕<input id="nq" placeholder="Buscar item" value="${esc(NEC.q)}"></div>
@@ -2025,7 +2025,7 @@ async function telaNecessidade(){
     :`<div class="vazio">${NEC.so?'Nada precisa ser comprado com esses parâmetros. <button class="btn lk" id="nTodos">Ver todos os itens</button>':'Nenhum item com esse filtro.'}</div>`}</div>
   <div class="leg"><b>Saídas previstas</b>: os pedidos nas situações escolhidas, passados pela fórmula, mais as OPs de envase (embalagem) e de tanque (matéria-prima).
   <b>Entradas previstas</b>: o que está em ordens enviadas; clique no número para ver quais. <b>Virtual = físico + entradas − saídas.</b>
-  <b>Cobertura</b>: quantos dias o virtual aguenta no consumo médio, em dias inteiros. <b>Clique no item</b> para ver a previsão: o mês em curso, a tendência e quanto comprar para 1 semana até 4 meses.</div>
+  <b>Cobertura</b>: quantos dias o estoque físico (o que está em casa) aguenta no consumo médio, em dias inteiros. <b>Clique no item</b> para ver a previsão: o mês em curso, a tendência e quanto comprar para 1 semana até 4 meses.</div>
   <div class="rodfix"><div class="acoes">${marc.length?`<span class="cnt">↑ ${String(marc.length).padStart(2,'0')}</span><button class="btn pri" id="nGera">Gerar OC</button><button class="btn" id="nLimpa">Desmarcar</button>`:''}</div>
     ${marc.length?`<div class="sel"><b>${nf(valMarc,2)}</b><span>marcado (R$)</span></div>`:''}<div><b>${vis.length}</b><span>itens na lista</span></div></div>`;
   ligaNec(L);
