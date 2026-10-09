@@ -339,6 +339,36 @@ select.st-h,select.st-a,select.st-b{border-radius:999px;font-weight:600}
 .f2 .c5 .sepv{width:1px;height:12px;background:#CFCCC4;margin:0 8px}
 .ass2{display:grid;grid-template-columns:1fr 1fr;gap:30px;margin-top:auto;padding-top:26px;font-size:8.5pt;color:#444}.ass2 div{border-top:1px solid #777;padding-top:5px;text-align:center}
 
+/* necessidade v3 (09/10): filtros em cartões, 4 por linha, como o Tiny */
+.nfil{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:10px}
+.nfil>div{background:#fff;border:1px solid var(--line);border-radius:12px;padding:8px 12px;min-height:56px;display:flex;flex-direction:column;justify-content:center;position:relative;min-width:0}
+.nfil>div.pop-w{overflow:visible}
+.nfil label{display:block;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3);margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nfil .v{display:flex;align-items:center;gap:6px;font-size:13.5px;font-weight:600;color:var(--ink);min-height:24px;min-width:0}
+.nfil .v .k{font-weight:400;color:var(--ink3);font-size:12.5px}
+.nfil select,.nfil input{border:0;background:transparent;font:inherit;font-size:13.5px;font-weight:600;color:var(--ink);padding:0;height:24px;outline:none}
+.nfil select{appearance:none;-webkit-appearance:none;padding-right:16px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23555' stroke-width='1.5'/%3E%3C/svg%3E") right center/10px no-repeat;max-width:100%}
+.nfil input.n{width:48px;text-align:left}
+.nfil .seg{height:26px}.nfil .seg button{padding:4px 10px}
+.nfil .chip{border:0;padding:0;height:24px;font-weight:600;font-size:13.5px;color:var(--ink);border-radius:0;max-width:100%;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left}
+.nfil .chip::after{content:'▾';margin-left:4px;color:var(--ink3)}
+.nfil .card{display:block}
+.nfil4{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+.nfil4 .busca{height:48px;border-radius:12px;max-width:360px}
+.nfil4 .chip{height:38px;padding:0 16px}
+.nfil4 .btn.pri{height:40px;padding:0 20px;border-radius:999px;font-weight:700}
+.nfil4 .btn.pri.mud{box-shadow:0 0 0 3px #BFDBFE}
+.nfil4 .mud-t{font-size:12px;color:#1D4ED8}
+@media(max-width:1100px){.nfil{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:560px){.nfil{grid-template-columns:1fr}}
+/* colunas da tabela: físico em destaque, entradas azuis, saídas vermelhas; fórmula ao passar o mouse no título */
+.ntb2 th[data-tip]{position:relative;cursor:help}
+.ntb2 th[data-tip]:hover::after{content:attr(data-tip);position:absolute;top:100%;right:0;z-index:20;width:230px;white-space:normal;text-align:left;background:#111827;color:#fff;font-size:11.5px;font-weight:400;line-height:1.4;padding:7px 10px;border-radius:8px;box-shadow:0 8px 20px rgba(0,0,0,.2);margin-top:4px}
+.ntb2 td.cfis,.ntb2 th.cfis{background:#FFF8DC}.ntb2 td.cfis{font-weight:700;font-size:13.5px}
+.ntb2 td.cent,.ntb2 th.cent{background:#EFF6FF}.ntb2 td.cent{color:#1D4ED8}.ntb2 td.cent a{color:#1D4ED8;font-weight:700;text-decoration:underline dotted}
+.ntb2 td.csai,.ntb2 th.csai{background:#FEF2F2}.ntb2 td.csai{color:#B91C1C}.ntb2 td.csai a{color:#B91C1C;font-weight:700;text-decoration:underline dotted;cursor:pointer}
+.ntb2 tbody tr:hover td.cfis{background:#FFF1B8}.ntb2 tbody tr:hover td.cent{background:#DBEAFE}.ntb2 tbody tr:hover td.csai{background:#FEE2E2}
+.ntb2 th select.vsel{display:block;margin-top:3px;border:1px solid var(--line);border-radius:6px;font:inherit;font-size:10.5px;height:20px;padding:0 3px;background:#fff;color:var(--ink2);max-width:175px;width:175px}
 /* necessidade de compra v276 */
 .nparm{display:flex;gap:16px 20px;align-items:flex-end;flex-wrap:wrap;background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:12px}
 .nparm label{display:block;font-size:11.5px;color:var(--ink3);margin-bottom:5px}.nparm .l{display:flex;gap:6px;align-items:center}
@@ -1906,8 +1936,12 @@ function janelaReenviar(l){
    ===================================================================== */
 const NEC={q:'',tag:'',tags:[],so:true,sel:{},bal:null};
 /* v2 (07/10): colunas na ordem pedida, com interruptor para esconder; grupos em dropdown com caixas; item fixo à esquerda */
-const NEC_COLS=[['saidas','Saídas previstas'],['entradas','Entradas previstas'],['consumo','Consumo médio'],['fis','Estoque físico'],['virt','Estoque virtual'],['min','Estoque mínimo'],['cob','Cobertura (dias)'],['sug','Sugestão'],['comprar','Comprar']];
-function necColsOn(){const c=necCfg();const off=Array.isArray(c.colsOff)?c.colsOff:[];const ord=Array.isArray(c.colsOrd)?c.colsOrd:[];const ks=NEC_COLS.map(([k])=>k).filter(k=>!off.includes(k));return ks.slice().sort((a,b)=>{const ia=ord.indexOf(a),ib=ord.indexOf(b);return (ia<0?99:ia)-(ib<0?99:ib);});}
+const NEC_COLS=[['pedidos','Saídas · pedidos'],['ops','Saídas · OPs previstas'],['entradas','Entradas previstas'],['consumo','Consumo médio'],['fis','Estoque físico'],['virt','Estoque virtual'],['min','Estoque mínimo'],['cob','Cobertura (dias)'],['sug','Sugestão'],['comprar','Comprar']];
+/* fórmula de cada coluna: aparece ao passar o mouse no título */
+const NEC_TIP={pedidos:'Pedidos de venda nas situações escolhidas, passados pela fórmula do produto. Saída prevista.',ops:'OPs abertas que ainda não baixaram estoque: embalagem pelas caixas previstas (envase) e matéria-prima pelos tanques ainda não liberados. Clique para ver quais OPs.',entradas:'Ordens de compra enviadas e ainda não recebidas (saldo a receber). Clique para ver quais.',consumo:'Média dos últimos N meses (pedidos pela fórmula) ÷ dias do período, mostrada por dia, semana ou mês.',fis:'O que está em casa: estoque do ERP (entradas das OCs − baixas das OPs e ajustes).',virt:'Físico + entradas previstas − saídas previstas (ou só físico + entradas, pelo seletor).',min:'Estoque mínimo digitado por item. Entra na sugestão e na cor da cobertura.',cob:'Físico ÷ consumo médio por dia, em dias inteiros. Quantos dias o que está em casa aguenta.',sug:'Consumo por dia × (1 + crescimento) × dias a cobrir + mínimo − estoque virtual. Zero quando o virtual já cobre.',comprar:'Quantidade marcada para a ordem de compra. Vazio usa a sugestão ao marcar o item.'};
+function necColsOn(){const c=necCfg();let off=Array.isArray(c.colsOff)?c.colsOff:[];let ord=Array.isArray(c.colsOrd)?c.colsOrd:[];
+  /* quem guardou a coluna antiga "saidas" passa a ver as duas novas no lugar dela */
+  if(ord.includes('saidas')){ord=ord.flatMap(k=>k==='saidas'?['pedidos','ops']:k);}if(off.includes('saidas'))off=off.flatMap(k=>k==='saidas'?['pedidos','ops']:k);const ks=NEC_COLS.map(([k])=>k).filter(k=>!off.includes(k));return ks.slice().sort((a,b)=>{const ia=ord.indexOf(a),ib=ord.indexOf(b);return (ia<0?99:ia)-(ib<0?99:ib);});}
 /* arrastar o título muda a ordem das colunas (fica guardado para todos, no cfg) */
 function necArrasta(){const tab=document.querySelector('.ntb2');if(!tab)return;let de=null;tab.querySelectorAll('thead th[data-k]').forEach(th=>{th.draggable=true;th.title='Arraste para mudar a ordem';
   th.addEventListener('dragstart',()=>{de=th.dataset.k;th.classList.add('drg');});th.addEventListener('dragend',()=>{th.classList.remove('drg');de=null;});
@@ -1918,7 +1952,12 @@ let NDADOS={em:0,abertos:null,mes:null,fonte:'',erro:''};
 function necCfg(){const c=DB.cfg;
   if(c.nMeses==null)c.nMeses=3;if(!c.nVer)c.nVer='sem';if(c.nCampo==null)c.nCampo='faturamento';if(c.nVersoes==null)c.nVersoes=false;
   if(!Array.isArray(c.nSits))c.nSits=['Em aberto','Aprovado','Preparando envio','Pronto para envio'];if(c.nEnv==null)c.nEnv=true;if(c.nTq==null)c.nTq=true;
-  if(c.cobN==null)c.cobN=2;if(!c.cobU)c.cobU='s';if(c.cresc==null)c.cresc=0;return c;}
+  if(c.cobN==null)c.cobN=2;if(!c.cobU)c.cobU='s';if(c.cresc==null)c.cresc=0;if(!c.nVirt)c.nVirt='es';return c;}
+/* os filtros ficam num rascunho e só valem ao clicar em Gerar (como no Tiny) */
+const NEC_FK=['nMeses','nCampo','nVersoes','nVer','cresc','cobN','cobU','nSits','nEnv','nTq'];
+function necRascunho(){if(!NEC.f){const c=necCfg();NEC.f={};NEC_FK.forEach(k=>NEC.f[k]=JSON.parse(JSON.stringify(c[k])));}return NEC.f;}
+function necMudou(){const c=necCfg(),f=necRascunho();return NEC_FK.some(k=>JSON.stringify(c[k])!==JSON.stringify(f[k]));}
+function necPadrao(){return {nMeses:3,nCampo:'pedido',nVersoes:false,nVer:'sem',cresc:0,cobN:7,cobU:'d',nSits:['Em aberto','Aprovado','Preparando envio','Pronto para envio'],nEnv:true,nTq:true};}
 const mesesAtras=n=>{const d=new Date();d.setDate(1);d.setMonth(d.getMonth()-n);return ymd(d).slice(0,7);};
 const diasDoMes=m=>{const [a,b]=m.split('-').map(Number);return new Date(a,b,0).getDate();};
 async function necCarregar(forcar){
@@ -1956,12 +1995,12 @@ function necLinhas(){
     const un=unDe(x),k=x.sku;
     const _kx=x.tiny||('ERP-'+x.sku);const fis=sal[_kx]!==undefined?+sal[_kx]:null;
     const r=res[k]||res[x.nome]||{qtd:0,ops:0};const pi=(pedIns[k]||{qtd:0}).qtd;
-    const saidas=r.qtd+pi,entradas=emCompra(k),virt=(fis||0)+entradas-saidas;
+    const saidas=r.qtd+pi,entradas=emCompra(k),virt=(fis||0)+entradas-(c.nVirt==='e'?0:saidas);   /* modo 'e': só físico + entradas */
     const tot=meses.reduce((s,m)=>s+((CM[m]||{})[k]||0),0),dia=diasJan?tot/diasJan:0;
     const cobre=dia>0?Math.floor((fis||0)/dia):null;   /* cobertura pelo FÍSICO: quanto o que está em casa aguenta */
     const min=+DB.minimos[k]||0;
     const sug=Math.max(0,dia*cr*cob+min-virt);
-    return {x,un,k,fis,ops:r.ops,res:r.qtd,ped:pi,npd:ped[k]||0,saidas,entradas,virt,dia,cobre,min,
+    return {x,un,k,fis,ops:r.ops,res:r.qtd,det:r.det||[],ped:pi,npd:ped[k]||0,saidas,entradas,virt,dia,cobre,min,
       sug:sug>0?(un==='kg'?Math.ceil(sug*10)/10:Math.ceil(sug)):0,hist:CM};
   });
 }
@@ -1972,7 +2011,7 @@ function corCob(l){if(l.cobre==null)return 'cz';if(l.cobre<=0||(l.fis||0)<=0)ret
   if(l.min>0){if(l.virt<l.min)return 'vm';if(l.virt<l.min*1.5)return 'lj';return 'vd';}
   return l.cobre<7?'vm':l.cobre<14?'lj':'vd';}
 async function telaNecessidade(){
-  const c=necCfg();
+  const c=necCfg(),f=necRascunho();
   if(!NDADOS.abertos){$('app').innerHTML='<div class="vazio">Lendo pedidos e consumo…</div>';await necCarregar();}
   const L=necLinhas();const [ur,uf]=necUnid();
   const tags=[...new Set(L.map(l=>l.x.tipo))].filter(Boolean).sort();const q=NEC.q.toLowerCase();
@@ -1980,40 +2019,43 @@ async function telaNecessidade(){
   const naoCobre=L.filter(l=>l.virt<0).length,curta=L.filter(l=>l.cobre!=null&&l.cobre<14).length;
   const valEm=DB.ocs.filter(o=>o.sit==='env').reduce((s,o)=>s+contaOC(o).total,0);
   const marc=Object.keys(NEC.sel);const valMarc=marc.reduce((s,k)=>{const mp=melhorPreco(k);return s+(mp?mp.preco*(+NEC.sel[k]||0):0);},0);
-  const sitsTxt=c.nSits.map(s=>(NEC_SITS.find(x=>x[0]===s)||[s,s])[1]).join(', ');
+  const sitsTxt=f.nSits.map(s=>(NEC_SITS.find(x=>x[0]===s)||[s,s])[1]).join(', ');const mudou=necMudou();
   $('app').innerHTML=`<div class="migalha">Compras › Necessidade de compra</div>
-  <div class="topo"><h1>Necessidade de compra</h1><span class="salvo"></span><button class="btn" id="bSal">↻ Atualizar saldos do Tiny</button></div>
+  <div class="topo"><h1>Necessidade de compra</h1><span class="salvo"></span><span class="k" style="color:var(--ink3);font-size:12px">${NDADOS.em?'pedidos lidos às '+new Date(NDADOS.em).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}):''}</span><span style="flex:1"></span><button class="btn" id="bSal">↻ Sincronizar pedidos</button></div>
   ${NDADOS.erro?`<div class="aviso">⚠ <div>Não consegui ler os pedidos (${esc(NDADOS.erro)}). O consumo sai das OPs concluídas até resolver.</div></div>`:''}
   ${NDADOS.fonte==='ops'&&!NDADOS.erro?'<div class="aviso">ℹ <div>Ainda não há histórico de pedidos no ERP: o consumo sai das OPs concluídas. Depois da carga do Tiny, ele passa a sair dos pedidos pela fórmula.</div></div>':''}
-  <div class="nparm">
-    <div><label>Média de consumo dos últimos</label><span class="l"><input class="n" id="cN" value="${c.nMeses}" style="width:56px"> <span class="k">mês(es)</span></span></div>
-    <div><label>Data a ser considerada</label><select id="cCampo"><option value="pedido" ${c.nCampo==='pedido'?'selected':''}>Data do pedido</option><option value="faturamento" ${c.nCampo==='faturamento'?'selected':''}>Data do faturamento</option><option value="prevista" ${c.nCampo==='prevista'?'selected':''}>Data prevista</option></select></div>
-    <div><label>Formulações a considerar</label><select id="cVer"><option value="0" ${!c.nVersoes?'selected':''}>Formulações atuais</option><option value="1" ${c.nVersoes?'selected':''}>Considerar todas as versões</option></select></div>
-    <div><label>Ver consumo por</label><span class="seg">${[['dia','dia'],['sem','semana'],['mes','mês']].map(([k,r])=>`<button data-vu="${k}" class="${c.nVer===k?'on':''}">${r}</button>`).join('')}</span></div>
-    <div><label>Crescimento esperado %</label><input class="n" id="cCr" value="${nq(c.cresc)}" style="width:70px"></div>
-    <div><label>Comprar para cobrir</label><span class="l"><input class="n" id="bN" value="${c.cobN}" style="width:56px"><select id="bU"><option value="d" ${c.cobU==='d'?'selected':''}>dia(s)</option><option value="s" ${c.cobU==='s'?'selected':''}>semana(s)</option><option value="m" ${c.cobU==='m'?'selected':''}>mês(es)</option></select></span></div>
-    <div class="pop-w"><label>Considerar nas saídas</label><button class="chip" id="bSai" style="max-width:360px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(sitsTxt)}${c.nEnv?' · OPs Envase':''}${c.nTq?' · OPs Tanques':''} ▾</button>
-      <div class="pop" id="popSai" hidden style="width:280px"><h4>Pedidos nestas situações</h4>${NEC_SITS.map(([t,r])=>`<label class="chk2"><input type="checkbox" data-st="${esc(t)}" ${c.nSits.includes(t)?'checked':''}> ${r}</label>`).join('')}
-        <h4 style="margin-top:10px">Ordens de produção</h4><label class="chk2"><input type="checkbox" id="sEnv" ${c.nEnv?'checked':''}> OPs Envase</label><label class="chk2"><input type="checkbox" id="sTq" ${c.nTq?'checked':''}> OPs Tanques</label>
+  <div class="nfil">
+    <div><label>Data a ser considerada</label><div class="v"><select id="cCampo"><option value="pedido" ${f.nCampo==='pedido'?'selected':''}>Data do pedido</option><option value="faturamento" ${f.nCampo==='faturamento'?'selected':''}>Data do faturamento</option><option value="prevista" ${f.nCampo==='prevista'?'selected':''}>Data prevista</option></select></div></div>
+    <div><label>Média de consumo dos últimos</label><div class="v"><input class="n" id="cN" value="${f.nMeses}"><span class="k">mês(es)</span></div></div>
+    <div><label>Comprar para cobrir</label><div class="v"><input class="n" id="bN" value="${f.cobN}"><select id="bU"><option value="d" ${f.cobU==='d'?'selected':''}>dia(s)</option><option value="s" ${f.cobU==='s'?'selected':''}>semana(s)</option><option value="m" ${f.cobU==='m'?'selected':''}>mês(es)</option></select></div></div>
+    <div><label>Formulações a considerar</label><div class="v"><select id="cVer"><option value="0" ${!f.nVersoes?'selected':''}>Formulações atuais</option><option value="1" ${f.nVersoes?'selected':''}>Considerar todas as versões</option></select></div></div>
+    <div class="pop-w"><label>Considerar nas saídas</label><div class="v"><button class="chip" id="bSai" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(sitsTxt)}${f.nEnv?' · OPs Envase':''}${f.nTq?' · OPs Tanques':''}</button></div>
+      <div class="pop" id="popSai" hidden style="width:280px;top:100%;left:0"><h4>Pedidos nestas situações</h4>${NEC_SITS.map(([t,r])=>`<label class="chk2"><input type="checkbox" data-st="${esc(t)}" ${f.nSits.includes(t)?'checked':''}> ${r}</label>`).join('')}
+        <h4 style="margin-top:10px">Ordens de produção</h4><label class="chk2"><input type="checkbox" id="sEnv" ${f.nEnv?'checked':''}> OPs Envase</label><label class="chk2"><input type="checkbox" id="sTq" ${f.nTq?'checked':''}> OPs Tanques</label>
         <button class="btn pri" id="sOk" style="width:100%;margin-top:10px;justify-content:center">aplicar</button></div></div>
+    <div><label>Ver consumo por</label><div class="v"><span class="seg">${[['dia','dia'],['sem','semana'],['mes','mês']].map(([k,r])=>`<button data-vu="${k}" class="${f.nVer===k?'on':''}">${r}</button>`).join('')}</span></div></div>
+    <div><label>Crescimento esperado %</label><div class="v"><input class="n" id="cCr" value="${nq(f.cresc)}"></div></div>
+    <div class="pop-w"><label>Grupos</label><div class="v"><button class="chip" id="nGrp">${NEC.tags.length?esc(NEC.tags.length===1?NEC.tags[0]:NEC.tags.length+' grupos'):'Todos os grupos'}</button></div>
+      <div class="pop" id="popGrp" hidden style="width:260px;top:100%;left:0"><h4>Grupos</h4><label class="chk2"><input type="checkbox" id="gTodos" ${!NEC.tags.length?'checked':''}> Todos os grupos</label>${tags.map(t=>`<label class="chk2"><input type="checkbox" data-grp="${esc(t)}" ${NEC.tags.includes(t)?'checked':''}> ${esc(t)}</label>`).join('')}</div></div>
   </div>
-  <div class="cards"><div class="card w"><span>Não cobre as saídas</span><b>${naoCobre} ${naoCobre===1?'item':'itens'}</b><small>pedidos e OPs pedem mais do que há</small></div>
+  <div class="nfil"><div class="card w"><span>Não cobre as saídas</span><b>${naoCobre} ${naoCobre===1?'item':'itens'}</b><small>pedidos e OPs pedem mais do que há</small></div>
     <div class="card a"><span>Cobertura menor que 14 dias</span><b>${curta} ${curta===1?'item':'itens'}</b><small>físico ÷ consumo médio</small></div>
     <div class="card"><span>Já em compra</span><b>${rs(valEm)}</b><small>${DB.ocs.filter(o=>o.sit==='env').length} ordens enviadas</small></div>
     <div class="card"><span>Marcado para comprar</span><b>${rs(valMarc)}</b><small>${marc.length} ${marc.length===1?'item':'itens'} · pelo último preço</small></div></div>
-  <div class="barra"><div class="busca">⌕<input id="nq" placeholder="Buscar item" value="${esc(NEC.q)}"></div>
+  <div class="nfil4"><div class="busca">⌕<input id="nq" placeholder="Buscar item" value="${esc(NEC.q)}"></div>
     <button class="chip ${NEC.so?'on':''}" id="nSo">Precisa comprar</button>
-    <div class="pop-w"><button class="chip ${NEC.tags.length?'ativo':''}" id="nGrp">${NEC.tags.length?esc(NEC.tags.length===1?NEC.tags[0]:NEC.tags.length+' grupos'):'Todos os grupos'} ▾</button>
-      <div class="pop" id="popGrp" hidden style="width:260px"><h4>Grupos</h4><label class="chk2"><input type="checkbox" id="gTodos" ${!NEC.tags.length?'checked':''}> Todos os grupos</label>${tags.map(t=>`<label class="chk2"><input type="checkbox" data-grp="${esc(t)}" ${NEC.tags.includes(t)?'checked':''}> ${esc(t)}</label>`).join('')}</div></div>
-    <div class="pop-w" style="margin-left:auto"><button class="chip" id="nCols">Colunas ▾</button>
+    <span style="flex:1"></span>${mudou?'<span class="mud-t">filtros alterados · clique em Gerar</span>':''}<button class="btn" id="nLimpaF">Limpar filtros</button><button class="btn pri ${mudou?'mud':''}" id="nGerar">Gerar</button>
+    <div class="pop-w"><button class="chip" id="nCols">Colunas ▾</button>
       <div class="pop" id="popCols" hidden style="width:250px;left:auto;right:0"><h4>Mostrar colunas</h4>${NEC_COLS.map(([k,r])=>`<label class="sw2"><span>${esc(r)}</span><input type="checkbox" data-col="${k}" ${necColsOn().includes(k)?'checked':''}><i></i></label>`).join('')}</div></div></div>
-  <div class="caixa rolx necrol">${vis.length?(()=>{const CO=necColsOn();const TH={saidas:'Saídas<br>previstas',entradas:'Entradas<br>previstas',consumo:'Consumo<br>médio',fis:'Estoque<br>físico',virt:'Estoque<br>virtual',min:'Estoque<br>mínimo',cob:'Cobertura<br>(dias)',sug:'Sugestão',comprar:'Comprar'};
-    return `<table class="ntb ntb2"><thead><tr><th class="fx1"></th><th class="fx2">Item</th>${CO.map(k=>`<th class="n" data-k="${k}">${TH[k]}</th>`).join('')}</tr></thead><tbody>
+  <div class="caixa rolx necrol">${vis.length?(()=>{const CO=necColsOn();const TH={pedidos:'Saídas<br>pedidos',ops:'Saídas<br>OPs previstas',entradas:'Entradas<br>previstas',consumo:'Consumo<br>médio',fis:'Estoque<br>físico',virt:`Estoque virtual<select class="vsel" id="nVirt" draggable="false"><option value="es" ${c.nVirt!=='e'?'selected':''}>físico + entradas − saídas</option><option value="e" ${c.nVirt==='e'?'selected':''}>físico + entradas</option></select>`,min:'Estoque<br>mínimo',cob:'Cobertura<br>(dias)',sug:'Sugestão',comprar:'Comprar'};
+    const CL={fis:'cfis',entradas:'cent',pedidos:'csai',ops:'csai'};
+    return `<table class="ntb ntb2"><thead><tr><th class="fx1"></th><th class="fx2">Item</th>${CO.map(k=>`<th class="n ${CL[k]||''}" data-k="${k}" data-tip="${esc(NEC_TIP[k]||'')}">${TH[k]}</th>`).join('')}</tr></thead><tbody>
     ${vis.map(l=>{const m=l.k in NEC.sel;const C={
-        saidas:`<td class="n">${l.saidas?necFmt(l.saidas):'—'}${l.saidas?`<span class="mini">${[l.ops?l.ops+' OP'+(l.ops>1?'s':''):'',l.npd?l.npd+' pedido'+(l.npd>1?'s':''):''].filter(Boolean).join(' · ')}</span>`:''}</td>`,
-        entradas:`<td class="n">${l.entradas?`<a class="epl" data-ep="${esc(l.k)}">${necFmt(l.entradas)}</a>`:'<span class="k">0</span>'}</td>`,
+        pedidos:`<td class="n csai">${l.ped?necFmt(l.ped)+`<span class="mini">${l.npd} pedido${l.npd>1?'s':''}</span>`:'<span class="k">—</span>'}</td>`,
+        ops:`<td class="n csai">${l.res?`<a data-op="${esc(l.k)}">${necFmt(l.res)}</a><span class="mini">${l.ops} OP${l.ops>1?'s':''}</span>`:'<span class="k">—</span>'}</td>`,
+        entradas:`<td class="n cent">${l.entradas?`<a class="epl" data-ep="${esc(l.k)}">${necFmt(l.entradas)}</a>`:'<span class="k">—</span>'}</td>`,
         consumo:`<td class="n">${l.dia?necFmt(l.dia*uf):'—'}${l.dia?`<span class="mini">${ur}</span>`:''}</td>`,
-        fis:`<td class="n">${l.fis==null?'<span class="k">—</span>':necFmt(l.fis)}</td>`,
+        fis:`<td class="n cfis">${l.fis==null?'<span class="k">—</span>':necFmt(l.fis)}</td>`,
         virt:`<td class="n" style="font-weight:700;${l.virt<0?'color:var(--danger)':''}">${necFmt(l.virt)}</td>`,
         min:`<td class="n"><input class="n" data-min="${esc(l.k)}" value="${l.min?nq(l.min):''}" placeholder="0" style="width:74px;height:30px"></td>`,
         cob:`<td class="n"><span class="cob ${corCob(l)}">${l.cobre==null?'—':Math.max(0,l.cobre)+' dias'}</span></td>`,
@@ -2023,22 +2065,26 @@ async function telaNecessidade(){
       <td class="fx2"><b>${esc(l.x.nome)}</b><span class="s">${esc(l.k)} · ${esc(l.x.tipo||'')} · ${l.un}</span></td>
       ${CO.map(k=>C[k]).join('')}</tr>`;}).join('')}</tbody></table>`;})()
     :`<div class="vazio">${NEC.so?'Nada precisa ser comprado com esses parâmetros. <button class="btn lk" id="nTodos">Ver todos os itens</button>':'Nenhum item com esse filtro.'}</div>`}</div>
-  <div class="leg"><b>Saídas previstas</b>: os pedidos nas situações escolhidas, passados pela fórmula, mais as OPs de envase (embalagem) e de tanque (matéria-prima).
-  <b>Entradas previstas</b>: o que está em ordens enviadas; clique no número para ver quais. <b>Virtual = físico + entradas − saídas.</b>
-  <b>Cobertura</b>: quantos dias o estoque físico (o que está em casa) aguenta no consumo médio, em dias inteiros. <b>Clique no item</b> para ver a previsão: o mês em curso, a tendência e quanto comprar para 1 semana até 4 meses.</div>
+  <div class="leg"><b>Saídas</b>: pedidos nas situações escolhidas (pela fórmula) e OPs abertas que ainda não baixaram estoque — clique no número para ver as OPs. <b>Entradas</b>: ordens enviadas; clique para ver quais.
+  <b>Virtual</b>: ${c.nVirt==='e'?'físico + entradas':'físico + entradas − saídas'} (muda no título da coluna). <b>Cobertura</b>: quantos dias o físico aguenta no consumo médio. Passe o mouse no título de cada coluna para ver a conta. <b>Clique no item</b> para a previsão de 1 semana a 4 meses.</div>
   <div class="rodfix"><div class="acoes">${marc.length?`<span class="cnt">↑ ${String(marc.length).padStart(2,'0')}</span><button class="btn pri" id="nGera">Gerar OC</button><button class="btn" id="nLimpa">Desmarcar</button>`:''}</div>
     ${marc.length?`<div class="sel"><b>${nf(valMarc,2)}</b><span>marcado (R$)</span></div>`:''}<div><b>${vis.length}</b><span>itens na lista</span></div></div>`;
   ligaNec(L);
 }
 function ligaNec(L){
-  const c=necCfg(),re=()=>telaNecessidade();const set=(k,v,rel)=>{c[k]=v;salvar();if(rel){NDADOS.abertos=null;}re();};
+  const c=necCfg(),f=necRascunho(),re=()=>telaNecessidade();
+  /* os parâmetros mexem só no rascunho; a conta e a busca acontecem no Gerar */
+  const set=(k,v)=>{f[k]=v;re();};
   $('cN').onchange=e=>set('nMeses',Math.max(1,Math.min(24,Math.round(num(e.target.value)))));
-  $('cCampo').onchange=e=>set('nCampo',e.target.value,true);$('cVer').onchange=e=>set('nVersoes',e.target.value==='1');
+  $('cCampo').onchange=e=>set('nCampo',e.target.value);$('cVer').onchange=e=>set('nVersoes',e.target.value==='1');
   document.querySelectorAll('[data-vu]').forEach(b=>b.onclick=()=>set('nVer',b.dataset.vu));
   $('cCr').onchange=e=>set('cresc',num(e.target.value));$('bN').onchange=e=>set('cobN',Math.max(0,Math.round(num(e.target.value))));$('bU').onchange=e=>set('cobU',e.target.value);
   $('bSai').onclick=ev=>{ev.stopPropagation();$('popSai').hidden=!$('popSai').hidden;};
   if(!window._necDoc){window._necDoc=1;document.addEventListener('click',()=>{['popGrp','popCols'].forEach(id=>{const p=$(id);if(p)p.hidden=true;});});}$('popSai').onclick=ev=>ev.stopPropagation();
-  $('sOk').onclick=()=>{c.nSits=[...document.querySelectorAll('[data-st]')].filter(i=>i.checked).map(i=>i.dataset.st);c.nEnv=$('sEnv').checked;c.nTq=$('sTq').checked;salvar();NDADOS.abertos=null;re();};
+  $('sOk').onclick=()=>{f.nSits=[...document.querySelectorAll('[data-st]')].filter(i=>i.checked).map(i=>i.dataset.st);f.nEnv=$('sEnv').checked;f.nTq=$('sTq').checked;re();};
+  $('nGerar').onclick=async()=>{const precisaLer=JSON.stringify([c.nCampo,c.nSits])!==JSON.stringify([f.nCampo,f.nSits]);NEC_FK.forEach(k=>c[k]=JSON.parse(JSON.stringify(f[k])));salvar();
+    if(precisaLer||!NDADOS.abertos){NDADOS.abertos=null;}re();};
+  $('nLimpaF').onclick=()=>{Object.assign(f,necPadrao());NEC.q='';NEC.tags=[];NEC.so=true;$('nGerar').onclick();};
   $('nq').oninput=e=>{NEC.q=e.target.value;clearTimeout(window._tn);window._tn=setTimeout(()=>{re();const i=$('nq');i.focus();i.setSelectionRange(i.value.length,i.value.length);},250);};
   $('nSo').onclick=()=>{NEC.so=!NEC.so;re();};if($('nTodos'))$('nTodos').onclick=()=>{NEC.so=false;re();};
   $('nGrp').onclick=ev=>{ev.stopPropagation();$('popGrp').hidden=!$('popGrp').hidden;$('popCols').hidden=true;};$('popGrp').onclick=ev=>ev.stopPropagation();
@@ -2046,17 +2092,28 @@ function ligaNec(L){
   document.querySelectorAll('[data-grp]').forEach(i=>i.onchange=()=>{NEC.tags=[...document.querySelectorAll('[data-grp]')].filter(x=>x.checked).map(x=>x.dataset.grp);re();const p=$('popGrp');if(p)p.hidden=false;});
   $('nCols').onclick=ev=>{ev.stopPropagation();$('popCols').hidden=!$('popCols').hidden;$('popGrp').hidden=true;};$('popCols').onclick=ev=>ev.stopPropagation();
   necArrasta();
+  const vs=$('nVirt');if(vs){vs.onclick=ev=>ev.stopPropagation();vs.onmousedown=ev=>ev.stopPropagation();vs.onchange=()=>{c.nVirt=vs.value;salvar();re();};}
   document.querySelectorAll('[data-col]').forEach(i=>i.onchange=()=>{c.colsOff=NEC_COLS.map(([k])=>k).filter(k=>{const el=document.querySelector(`[data-col="${k}"]`);return el&&!el.checked;});salvar();re();const p=$('popCols');if(p)p.hidden=false;});
   const P={};L.forEach(l=>P[l.k]=l);
   document.querySelectorAll('[data-nk]').forEach(b=>b.onclick=ev=>{ev.stopPropagation();const k=b.dataset.nk;if(k in NEC.sel)delete NEC.sel[k];else NEC.sel[k]=P[k]?P[k].sug:0;re();});
   document.querySelectorAll('[data-cp]').forEach(i=>{i.onclick=ev=>ev.stopPropagation();i.onchange=()=>{const k=i.dataset.cp,v=num(i.value);if(v>0)NEC.sel[k]=v;else delete NEC.sel[k];re();};});
   document.querySelectorAll('[data-min]').forEach(i=>{i.onclick=ev=>ev.stopPropagation();i.onchange=()=>{const k=i.dataset.min,v=num(i.value);if(v>0)DB.minimos[k]=v;else delete DB.minimos[k];salvar();re();};});
   document.querySelectorAll('[data-ep]').forEach(a=>a.onclick=ev=>{ev.stopPropagation();balaoEntradas(a,a.dataset.ep);});
-  document.querySelectorAll('[data-nl]').forEach(r=>r.onclick=ev=>{if(ev.target.closest('input,.ck,.ckc,a'))return;previsaoItem(P[r.dataset.nl]);});
+  document.querySelectorAll('[data-op]').forEach(a=>a.onclick=ev=>{ev.stopPropagation();balaoOPs(a,P[a.dataset.op]);});
+  document.querySelectorAll('[data-nl]').forEach(r=>r.onclick=ev=>{if(ev.target.closest('input,select,.ck,.ckc,a'))return;previsaoItem(P[r.dataset.nl]);});
   if($('nLimpa'))$('nLimpa').onclick=()=>{NEC.sel={};re();};if($('nGera'))$('nGera').onclick=()=>gavetaGerar();
-  $('bSal').onclick=async()=>{const ids=N.insumos().map(x=>String(x.tiny||'').replace(/\D/g,'')).filter(Boolean);
-    if(N.teste)return toast('Versão de teste: a leitura do Tiny está desligada.',true);
-    $('bSal').disabled=true;$('bSal').textContent='Lendo o Tiny…';try{await N.lerSaldos(ids);await necCarregar(true);toast('Saldos e pedidos lidos do Tiny.');}catch(e){toast('Tiny: '+e.message,true);}re();};
+  $('bSal').onclick=async()=>{if(N.teste)return toast('Versão de teste: a leitura do Tiny está desligada.',true);
+    $('bSal').disabled=true;$('bSal').textContent='Lendo pedidos…';try{await necCarregar(true);toast('Pedidos lidos do Tiny.');}catch(e){toast('Tiny: '+e.message,true);}re();};
+}
+/* balão com as OPs que ainda vão consumir o item (reserva) */
+function balaoOPs(el,l){
+  const old=document.getElementById('nBal');if(old)old.remove();if(!l)return;
+  const det={};(l.det||[]).forEach(d=>{det[d.o]=(det[d.o]||0)+(+d.q||0);});
+  const ls=Object.entries(det).sort((a,b)=>b[1]-a[1]);
+  const b=document.createElement('div');b.id='nBal';b.className='nbal';
+  b.innerHTML=`<h4>OPs previstas · ${esc(l.x.nome)} <button id="nBx">✕</button></h4><table><thead><tr><th>OP / tanque</th><th class="n">Vai consumir</th></tr></thead><tbody>${ls.map(([o,q])=>`<tr><td>${esc(o)}</td><td class="n">${nq(Math.round(q*100)/100)} ${esc(l.un)}</td></tr>`).join('')||'<tr><td colspan="2" class="k">Nenhuma OP aberta pede este item.</td></tr>'}</tbody><tfoot><tr><td><b>Total</b></td><td class="n"><b>${nq(Math.round(l.res*100)/100)} ${esc(l.un)}</b></td></tr></tfoot></table><div class="k" style="font-size:11px;color:var(--ink3);margin-top:6px">OPs abertas que ainda não baixaram estoque: embalagem pelas caixas previstas, matéria-prima pelos tanques não liberados.</div>`;
+  document.body.appendChild(b);const r=el.getBoundingClientRect();b.style.left=Math.max(8,Math.min(innerWidth-360,r.left-150))+'px';b.style.top=(r.bottom+6)+'px';
+  b.onclick=ev=>ev.stopPropagation();$('nBx').onclick=()=>b.remove();
 }
 document.addEventListener('click',()=>{const p=document.getElementById('popSai');if(p)p.hidden=true;const b=document.getElementById('nBal');if(b)b.remove();});
 function balaoEntradas(el,sku){
