@@ -362,7 +362,7 @@ select.st-h,select.st-a,select.st-b{border-radius:999px;font-weight:600}
 @media(max-width:1100px){.nfil{grid-template-columns:repeat(2,1fr)}.cards4{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:600px){.nfil,.cards4{grid-template-columns:1fr}}
 /* colunas: cor na fonte (saídas vermelhas, entradas azuis), só o físico com fundo leve; fórmula ao passar o mouse no título */
-.ntb2 th[data-tip]{position:relative;cursor:help}
+.ntb2 th[data-tip]{position:relative}.ntb2 th.so{cursor:pointer;user-select:none}.ntb2 th.so:hover{color:var(--ink)}.ntb2 th.so.on{color:var(--ink);font-weight:700}
 .ntb2 th[data-tip]:hover::after{content:attr(data-tip);position:absolute;top:100%;right:0;z-index:20;width:230px;white-space:normal;text-align:left;background:#111827;color:#fff;font-size:11.5px;font-weight:400;line-height:1.4;padding:7px 10px;border-radius:8px;box-shadow:0 8px 20px rgba(0,0,0,.2);margin-top:4px}
 .ntb2 td.cfis,.ntb2 th.cfis{background:#FBFAF4}.ntb2 td.cfis{font-weight:700;font-size:13.5px}.ntb2 tbody tr:hover td.cfis{background:#F3F1E4}
 .ntb2 th.cent{color:#1D4ED8}.ntb2 td.cent{color:#1D4ED8;font-weight:600}.ntb2 td.cent a{color:#1D4ED8;font-weight:700;text-decoration:underline dotted}
@@ -2015,7 +2015,11 @@ async function telaNecessidade(){
   const L=necLinhas();const [ur,uf]=necUnid();
   const tags=[...new Set(L.map(l=>l.x.tipo))].filter(Boolean).sort();const q=NEC.q.toLowerCase();
   if(NEC.tagsF==null)NEC.tagsF=NEC.tags.slice();
-  const vis=L.filter(l=>(!NEC.tags.length||NEC.tags.includes(l.x.tipo||''))&&(!q||(l.k+' '+l.x.nome).toLowerCase().includes(q))&&(!NEC.so||l.sug>0||l.virt<0));
+  let vis=L.filter(l=>(!NEC.tags.length||NEC.tags.includes(l.x.tipo||''))&&(!q||(l.k+' '+l.x.nome).toLowerCase().includes(q))&&(!NEC.so||l.sug>0||l.virt<0));
+  /* ordenar pelo título clicado (segundo clique inverte); sem clique, pela ordem do cadastro */
+  if(NEC.ord){const K={item:l=>l.x.nome,pedidos:l=>l.ped,ops:l=>l.res,entradas:l=>l.entradas,consumo:l=>l.dia,fis:l=>l.fis==null?-1e18:l.fis,virt:l=>l.virt,min:l=>l.min,cob:l=>l.cobre==null?1e18:l.cobre,sug:l=>l.sug,comprar:l=>+NEC.sel[l.k]||0}[NEC.ord.k];
+    if(K)vis=vis.slice().sort((a,b)=>{const x=K(a),y=K(b);return (typeof x==='string'?x.localeCompare(y):(x-y))*NEC.ord.d;});}
+  const seta=k=>NEC.ord&&NEC.ord.k===k?(NEC.ord.d>0?' ↑':' ↓'):'';
   const naoCobre=L.filter(l=>l.virt<0).length,curta=L.filter(l=>l.cobre!=null&&l.cobre<14).length;
   const valEm=DB.ocs.filter(o=>o.sit==='env').reduce((s,o)=>s+contaOC(o).total,0);
   const marc=Object.keys(NEC.sel);const valMarc=marc.reduce((s,k)=>{const mp=melhorPreco(k);return s+(mp?mp.preco*(+NEC.sel[k]||0):0);},0);
@@ -2054,7 +2058,7 @@ async function telaNecessidade(){
       <div class="pop" id="popCols" hidden style="width:250px;left:auto;right:0"><h4>Mostrar colunas</h4>${NEC_COLS.map(([k,r])=>`<label class="sw2"><span>${esc(r)}</span><input type="checkbox" data-col="${k}" ${necColsOn().includes(k)?'checked':''}><i></i></label>`).join('')}</div></div></div>
   <div class="caixa rolx necrol">${vis.length?(()=>{const CO=necColsOn();const TH={pedidos:'Saídas<br>pedidos',ops:'Saídas<br>OPs previstas',entradas:'Entradas<br>previstas',consumo:'Consumo<br>médio',fis:'Estoque<br>físico',virt:`Estoque<br>virtual`,min:'Estoque<br>mínimo',cob:'Cobertura<br>(dias)',sug:'Sugestão',comprar:'Comprar'};
     const CL={fis:'cfis',entradas:'cent',pedidos:'csai',ops:'csai'};
-    return `<table class="ntb ntb2"><thead><tr><th class="fx1"></th><th class="fx2">Item</th>${CO.map(k=>`<th class="n ${CL[k]||''}" data-k="${k}" data-tip="${esc(NEC_TIP[k]||'')}">${TH[k]}</th>`).join('')}</tr></thead><tbody>
+    return `<table class="ntb ntb2"><thead><tr><th class="fx1"></th><th class="fx2 so" data-so="item">Item${seta('item')}</th>${CO.map(k=>`<th class="n so ${CL[k]||''} ${NEC.ord&&NEC.ord.k===k?'on':''}" data-k="${k}" data-so="${k}" data-tip="${esc(NEC_TIP[k]||'')}">${TH[k]}${seta(k)}</th>`).join('')}</tr></thead><tbody>
     ${vis.map(l=>{const m=l.k in NEC.sel;const C={
         pedidos:`<td class="n csai">${l.ped?necFmt(l.ped)+`<span class="mini">${l.npd} pedido${l.npd>1?'s':''}</span>`:'<span class="k">—</span>'}</td>`,
         ops:`<td class="n csai">${l.res?`<a data-op="${esc(l.k)}">${necFmt(l.res)}</a><span class="mini">${l.ops} OP${l.ops>1?'s':''}</span>`:'<span class="k">—</span>'}</td>`,
@@ -2102,6 +2106,7 @@ function ligaNec(L){
   $('nSo').onclick=()=>{NEC.so=!NEC.so;re();};if($('nTodos'))$('nTodos').onclick=()=>{NEC.so=false;re();};
   $('nCols').onclick=ev=>{ev.stopPropagation();$('popCols').hidden=!$('popCols').hidden;$('popGrp').hidden=true;$('popSai').hidden=true;};$('popCols').onclick=ev=>ev.stopPropagation();
   necArrasta();
+  document.querySelectorAll('.ntb2 th[data-so]').forEach(th=>th.onclick=()=>{const k=th.dataset.so;NEC.ord=NEC.ord&&NEC.ord.k===k?{k,d:-NEC.ord.d}:{k,d:k==='item'?1:-1};re();});
   document.querySelectorAll('[data-col]').forEach(i=>i.onchange=()=>{c.colsOff=NEC_COLS.map(([k])=>k).filter(k=>{const el=document.querySelector(`[data-col="${k}"]`);return el&&!el.checked;});salvar();re();const p=$('popCols');if(p)p.hidden=false;});
   const P={};L.forEach(l=>P[l.k]=l);
   document.querySelectorAll('[data-nk]').forEach(b=>b.onclick=ev=>{ev.stopPropagation();const k=b.dataset.nk;if(k in NEC.sel)delete NEC.sel[k];else NEC.sel[k]=P[k]?P[k].sug:0;re();});
@@ -2153,6 +2158,10 @@ function previsaoItem(l){
     for(let k=0;k<4&&rest>0;k++){const [m,v]=fut[k];const dd=diasDoMes(m);vai+=v*Math.min(rest,dd)/dd;rest-=Math.min(rest,dd);}
     if(rest>0)vai+=rest*l.dia;
     const comprar=Math.max(0,vai+l.min-l.virt);return {r,vai,comprar:l.un==='kg'?Math.ceil(comprar*10)/10:Math.ceil(comprar)};});
+  /* de onde vem o consumo: cada produto vendido nos últimos N meses, caixas × unidades por caixa × quanto do insumo vai em cada unidade */
+  const meses=[];for(let k=c.nMeses;k>=1;k--)meses.push(mesesAtras(k));const diasJan=meses.reduce((s,m)=>s+diasDoMes(m),0);
+  const orig={};if(NDADOS.fonte==='vendas')meses.forEach(m=>Object.entries(NDADOS.mes[m]||{}).forEach(([cod,cx])=>{const r=N.explodir({[cod]:cx},m+'-15',c.nVersoes);const q=(r[l.k]||{}).qtd||0;if(!(q>0))return;const p=(N.produtos()||[]).find(x=>String(x.codigo)===String(cod))||{};const o=orig[cod]||(orig[cod]={cod,nome:p.descricao||p.nome||cod,un:+p.un_cx||1,cx:0,q:0});o.cx+=+cx;o.q+=q;}));
+  const origL=Object.values(orig).sort((a,b)=>b.q-a.q);const origT=origL.reduce((s,o)=>s+o.q,0);
   gaveta(`<div class="gt"><h2>Previsão · ${esc(l.x.nome)}</h2><button class="btn sm" id="gX" style="margin-left:auto">Fechar ✕</button></div><div class="gc">
     <div class="k" style="margin-bottom:6px">consumo por mês, em ${l.un} · azul claro é a previsão · fonte: ${NDADOS.fonte==='vendas'?'pedidos de venda pela fórmula':'OPs concluídas'}</div>
     <div class="ngraf">${barras}</div>
@@ -2162,6 +2171,10 @@ function previsaoItem(l){
       <span class="k">crescimento ${base==='ano'?(yoy*100>=0?'+':'')+nq(Math.round(yoy*1000)/10)+'% (ano contra ano)':(+c.cresc||0)+'% (dos parâmetros)'}</span></div>
     <table class="tv"><thead><tr><th>Comprar para</th><th class="n">Vai consumir</th><th class="n">Estoque físico</th><th class="n">Estoque virtual</th><th class="n">Comprar</th><th></th></tr></thead><tbody>
     ${hor.map((h,i)=>`<tr><td>${h.r}</td><td class="n">${necFmt(h.vai)}</td><td class="n">${necFmt(l.fis)}</td><td class="n">${necFmt(l.virt)}</td><td class="n"><b>${h.comprar?nq(h.comprar):'—'}</b></td><td>${h.comprar?`<button class="btn sm" data-usa="${i}">usar</button>`:''}</td></tr>`).join('')}</tbody></table>
+    ${origL.length?`<div class="k" style="margin:14px 0 6px;font-weight:600;color:var(--ink)">De onde vem o consumo · últimos ${c.nMeses} ${c.nMeses>1?'meses':'mês'} (${diasJan} dias)</div>
+    <table class="tv"><thead><tr><th>Produto vendido</th><th class="n">Caixas/fardos</th><th class="n">Un. por cx</th><th class="n">Por unidade</th><th class="n">${esc(l.un)} no período</th><th class="n">Por dia</th></tr></thead><tbody>
+    ${origL.map(o=>`<tr><td>${esc(o.nome)}<span class="s" style="display:block;font-size:10.5px;color:var(--ink3)">${esc(o.cod)}</span></td><td class="n">${nq(o.cx)}</td><td class="n">${o.un}</td><td class="n">${nq(Math.round(o.q/(o.cx*o.un)*10000)/10000)}</td><td class="n"><b>${necFmt(o.q)}</b></td><td class="n">${necFmt(o.q/diasJan)}</td></tr>`).join('')}</tbody>
+    <tfoot><tr><td><b>Total</b></td><td></td><td></td><td></td><td class="n"><b>${necFmt(origT)}</b></td><td class="n"><b>${necFmt(origT/diasJan)}</b></td></tr></tfoot></table>`:''}
     <div class="leg">O mês em curso é o que já foi consumido mais o que falta na média. Os meses seguintes usam a média${' '}ou o mesmo mês do ano passado vezes o crescimento, o que pega o pico de fim de ano. <b>Usar</b> leva a quantidade para a coluna Comprar.</div></div>`);
   $('gX').onclick=()=>gaveta(null);
   document.querySelectorAll('[data-bs]').forEach(b=>b.onclick=()=>{NEC.base=b.dataset.bs;previsaoItem(l);});
