@@ -5460,7 +5460,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v392';
+const VERSAO_APP='v393';
 let DRAG=null;
 function render(){
   recomporTudo();
@@ -18394,6 +18394,7 @@ const PERM_MODS=[
     {k:'vendas.ped',n:'Pedidos de venda',acoes:true},
     {k:'vendas.carga',n:'Carga do Tiny',acoes:true},
     {k:'vendas.necprod',n:'Necessidade de produção',acoes:true},
+    {k:'vendas.perf',n:'Performance de vendas (metas, ranking, relatórios)',acoes:true},
     {k:'vendas.cfg',n:'Configurações de vendas (estoque reservado)',acoes:true}]},
   {id:'compras',nome:'Compras',itens:[
     {k:'compras.oc',n:'Ordens de compra',acoes:true,
@@ -19714,7 +19715,9 @@ const CS_MOD=[
  {sep:true},
  {id:'planejamento',nome:'Planejamento',ic:'plan',fase:'fase 11'},
  {id:'vendas',nome:'Vendas',ic:'loj',pgs:[
-   {n:'Pedidos de venda',mod:'vendas',fin:'pedidos',perm:'vendas.ped',ic:'loj'}]},
+   {n:'Performance de vendas',mod:'vendas',fin:'performance',perm:'vendas.perf',ic:'loj'},
+   {n:'Pedidos de venda',mod:'vendas',fin:'pedidos',perm:'vendas.ped',ic:'loj'},
+   {n:'Relatórios',mod:'vendas',fin:'relatorios',perm:'vendas.perf',ic:'loj'}]},
  {id:'logistica',nome:'Logística',ic:'log',fase:'fase 13'}
 ];
 let CS_ABERTO='pcp', CS_FIX=true;
@@ -24750,7 +24753,7 @@ try{Object.assign(csNucleo,{
   abrirOrigem:(c,r)=>csEAbrirOrigem(c,r),
   abrir:p=>csIr(p),
   cfgVendas:()=>({...CS_CFGV}),
-  salvarCfgVendas:o=>{if(o&&['prev','ped'].includes(o.reservaPor))CS_CFGV.reservaPor=o.reservaPor;agendarSalvar();return {...CS_CFGV};}
+  salvarCfgVendas:o=>{if(o&&['prev','ped'].includes(o.reservaPor))CS_CFGV.reservaPor=o.reservaPor;['metas','rankRegras','rankFora','cfgNovo'].forEach(k=>{if(o&&o[k]!==undefined)CS_CFGV[k]=o[k];});agendarSalvar();return {...CS_CFGV};}
 });}catch(e){}
 
 </script>
@@ -30132,6 +30135,9 @@ csRelTempos=function(o){
 /*.rt7g .rt7c*/`;document.head.appendChild(s);}catch(e){}})();
 
 try{csNucleo.versao='v392';}catch(e){}
+</script>
+<script>
+try{csNucleo.versao='v393';}catch(e){}
 </script>
 </body>
 </html>
