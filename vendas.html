@@ -1052,7 +1052,10 @@ function pfDU(de,ate){let n=0;for(let d=perD(de);perYmd(d)<=ate;d.setDate(d.getD
 function pfMesDU(ym){const [a,m]=ym.split('-').map(Number);return pfDU(ym+'-01',perYmd(new Date(a,m,0)));}
 /* previsto até a data: dias úteis do mês até a data ÷ dias úteis do mês */
 function pfPrevPct(ate){const ym=pfYm(ate);const fim=perYmd(new Date(+ym.slice(0,4),+ym.slice(5,7),0));const a=ate<fim?ate:fim;return Math.min(1,pfDU(ym+'-01',a)/Math.max(1,pfMesDU(ym)));}
-function pfMetaDe(nome,ym){const m=(pfCfg().metas||{})[ym]||{};const k=Object.keys(m).find(x=>semAc(x)===semAc(nome));return k?+m[k]||0:0;}
+function pfMetaDe(nome,ym){const m=(pfCfg().metas||{})[ym]||{};const n=semAc(nome);const t2=s=>semAc(s).split(/\s+/).slice(0,2).join(' ');const k=Object.keys(m).find(x=>semAc(x)===n)||Object.keys(m).find(x=>t2(x)===t2(nome));return k?+m[k]||0:0;}
+/* metas iniciais (out/26 e meses anteriores), só se ainda não há nenhuma gravada */
+const PF_METAS0={'AIRTON - AWJ REPRESENTAÇÕES LTDA':50000,'BALCÃO':15000,'DANIEL VAZ':100000,'DORALINO CAMPOS':140000,'EDNARDO - PRADO REPRESENTAÇÃO':30000,'EDUARDO N HAERTEL & CIA LTDA':30000,'ESSENCIAL PRODUTOS DE LIMPEZA LTDA':260000,'EVERTON G. DA SILVA E CIA LTDA':150000,'HENRIQUE - H. BASSANI LAND LTDA':30000,'KLEBER FERNANDES DA SILVA':50000,'LEANDRO BENCKENSTEIN':150000,'LEONARDO - E. G. MATOS CONSULTORIA':75000,'TEV COMERCIO E REPRESENTAÇÕES':55000,'THIAGO - BERCAS REPRESENTAÇÕES LTDA':100000,'UNIT COMPANIES LTDA':400000,'VANESSA BECK':75000};
+function pfMetasIniciais(){try{const c=pfCfg();if(c.metas&&Object.keys(c.metas).length)return;const metas={};['2026-05','2026-06','2026-07','2026-08','2026-09','2026-10'].forEach(m=>{metas[m]={};Object.entries(PF_METAS0).forEach(([n,v])=>{const vd=PF.vend.find(x=>semAc(x.nome)===semAc(n)||semAc(x.nome).split(/\s+/).slice(0,2).join(' ')===semAc(n).split(/\s+/).slice(0,2).join(' '));metas[m][vd?vd.nome:n]=v;});});pfSalvaCfg({metas});}catch(e){}}
 /* ---------- representantes ativos (cadastro) ---------- */
 async function pfVendedores(){
   try{const c=await N.ler('cadastros');const l=(c&&c.vendedores||[]).filter(v=>v&&v.ativo!==false).map(v=>({nome:v.tinyNome||v.nome,id:v.id,fone:v.fone||'',acesso:v.acesso===true}));
@@ -1066,8 +1069,11 @@ async function pfCarregar(){
   PF.carregando=true;PF.erro='';pfDesenha();
   try{const fx=perFaixa(PF.per);const hoje=perHoje();const de=fx.de||hoje.slice(0,7)+'-01';let ate=fx.ate||hoje;if(ate>hoje)ate=hoje;PF.fx={de,ate};   /* o mês em curso vai até hoje */
     const hDe=(()=>{const d=perD(de);d.setMonth(d.getMonth()-13);d.setDate(1);return perYmd(d);})();
-    const [d,h]=await Promise.all([fn({acao:'perf_pedidos',de,ate,itens:true}),fn({acao:'perf_pedidos',de:hDe,ate,itens:false})]);
-    PF.dados=d;PF.hist=h;PF.vend=await pfVendedores();
+    const ck='erp.perf.'+de+'|'+ate;let cache=null;try{cache=JSON.parse(sessionStorage.getItem(ck)||'null');}catch(e){}
+    if(cache&&!PF.forca&&Date.now()-cache.t<10*60*1000){PF.dados=cache.d;PF.hist=cache.h;}
+    else{const [d,h]=await Promise.all([fn({acao:'perf_pedidos',de,ate,itens:true}),fn({acao:'perf_pedidos',de:hDe,ate,itens:false})]);PF.dados=d;PF.hist=h;
+      try{Object.keys(sessionStorage).filter(k=>k.startsWith('erp.perf.')).forEach(k=>sessionStorage.removeItem(k));sessionStorage.setItem(ck,JSON.stringify({t:Date.now(),d,h}));}catch(e){}}
+    PF.forca=false;PF.vend=await pfVendedores();pfMetasIniciais();
   }catch(e){PF.erro=e.message;PF.dados=null;}
   PF.carregando=false;pfDesenha();
 }
@@ -1095,20 +1101,20 @@ function pfCalc(){
 /* ---------- tela ---------- */
 function telaPerformance(arg){
   if(arg){return telaRepresentante(decodeURIComponent(arg));}
-  $('app').innerHTML=`<div class="migalha">Vendas › Performance de vendas</div>
+  $('app').innerHTML=`<div class="migalha"><a href="#performance" class="mlk">Vendas</a> › Performance de vendas</div>
   <div class="topo"><h1>Performance de vendas</h1><span class="salvo"></span><span class="k" style="color:var(--ink3);font-size:12px">pedidos válidos pela data de entrada · cancelados e não entregues fora</span><span style="flex:1"></span><button class="btn" id="pfAtu">⟳ Atualizar</button></div>
   <div class="barra" id="pfBarra"></div>
   <div class="sts" id="pfAbas"></div>
   <div id="pfCorpo"><div class="vazio">Carregando…</div></div>`;
-  $('pfAtu').onclick=pfCarregar;
+  $('pfAtu').onclick=()=>{PF.forca=true;pfCarregar();};
   if(!PF.dados)pfCarregar();else pfDesenha();
 }
 function pfDesenha(){
   const b=$('pfBarra'),a=$('pfAbas'),c=$('pfCorpo');if(!b||!c)return;
   const cfg=pfCfg();
-  b.innerHTML=`${perBotao('pfPer',PF.per)}${colsBotao('pfCols')}
+  b.innerHTML=`${perBotao('pfPer',PF.per)}
     <button class="btn" id="pfNovo" title="Quem conta como cliente novo">Cliente novo: <b>${({1:'sem compra há 30 dias',3:'sem compra há 3 meses',6:'sem compra há 6 meses',12:'sem compra há 12 meses'})[+cfg.cfgNovo||6]||'sem compra há 6 meses'}</b> ▾</button>
-    <span style="flex:1"></span><span id="pfHoje" style="color:var(--ink3);font-size:12px"></span>`;
+    <span style="flex:1"></span><span id="pfHoje" style="color:var(--ink3);font-size:12px"></span>${colsBotao('pfCols')}`;
   $('pfPer').onclick=ev=>{ev.stopPropagation();abrirPeriodo(ev.currentTarget,PF.per,{campos:[['pedido','Data do pedido']]},st=>{PF.per=st.m==='sem'?perNovo('mes'):st;PF.dados=null;pfCarregar();});};
   $('pfNovo').onclick=ev=>{ev.stopPropagation();const p=document.createElement('div');p.className='pfpop';p.innerHTML='<div class="t">Cliente novo = sem compra há mais de</div>'+[[1,'30 dias'],[3,'3 meses'],[6,'6 meses'],[12,'12 meses']].map(([k,n])=>`<label><input type="radio" name="pfnv" data-k="${k}" ${(+cfg.cfgNovo||6)===k?'checked':''}> ${n}</label>`).join('')+'<div class="t" style="margin-top:6px">Vale para a Performance, a ficha do representante e o relatório de clientes sem compra.</div>';
     document.body.appendChild(p);const r=ev.currentTarget.getBoundingClientRect();p.style.left=r.left+'px';p.style.top=(r.bottom+6)+'px';
@@ -1130,6 +1136,18 @@ function pfLigaOrd(tab,re){tab.querySelectorAll('[data-so]').forEach(th=>th.oncl
 const pfPill=(st,txt)=>`<span class="pfpill ${st}">${txt}</span>`;
 const pfBarra=(p,mk,cor)=>`<div class="pfprog"><div class="t"><i style="width:${Math.min(100,p*100)}%;background:${cor}"></i><u style="left:${Math.min(100,mk*100)}%"></u></div><b style="color:${cor}">${pfPc(p)}</b></div>`;
 const pfCor=st=>({mau:'#B91C1C',amb:'#B45309',ok:'#15803D',azul:'#1D4ED8',dest:'#92400E'})[st]||'#1D4ED8';
+/* colunas arrastáveis: arrasta o título, a ordem fica guardada neste aparelho */
+function pfArrasta(tab,k){
+  if(!tab)return;const ths=[...tab.querySelectorAll('thead tr:first-child > th')];const rot=ths.map(t=>colsNorm(t.textContent));
+  let ordem=null;try{ordem=JSON.parse(localStorage.getItem('erp.colord.'+k)||'null');}catch(e){}
+  const aplica=ord=>{if(!ord)return;const idx=ord.map(r=>rot.indexOf(r)).filter(i=>i>=0);rot.forEach((r,i)=>{if(!idx.includes(i))idx.push(i);});
+    tab.querySelectorAll('tr').forEach(tr=>{const c=[...tr.children];if(c.length!==ths.length)return;idx.forEach(i=>tr.appendChild(c[i]));});};
+  aplica(ordem);
+  let de=null;tab.querySelectorAll('thead tr:first-child > th').forEach(th=>{th.draggable=true;th.addEventListener('dragstart',e=>{de=th;e.dataTransfer.effectAllowed='move';th.classList.add('drg');});
+    th.addEventListener('dragover',e=>{e.preventDefault();th.classList.add('drgo');});th.addEventListener('dragleave',()=>th.classList.remove('drgo'));
+    th.addEventListener('drop',e=>{e.preventDefault();th.classList.remove('drgo');if(!de||de===th)return;const cur=[...tab.querySelectorAll('thead tr:first-child > th')].map(t=>colsNorm(t.textContent));const a=cur.indexOf(colsNorm(de.textContent)),b=cur.indexOf(colsNorm(th.textContent));cur.splice(b,0,cur.splice(a,1)[0]);try{localStorage.setItem('erp.colord.'+k,JSON.stringify(cur));}catch(x){}pfDesenha();});
+    th.addEventListener('dragend',()=>{th.classList.remove('drg');de=null;});});
+}
 /* ---------- aba Performance ---------- */
 function pfTabPerf(c,D,colBt){
   const l=D.lista;const meta=l.reduce((s,x)=>s+x.meta,0),real=l.reduce((s,x)=>s+x.real,0),cli=l.reduce((s,x)=>s+x.cli,0),nov=l.reduce((s,x)=>s+x.novos,0),ped=l.reduce((s,x)=>s+x.ped,0);
@@ -1138,14 +1156,14 @@ function pfTabPerf(c,D,colBt){
   const cols=[['nome','Representante'],['meta','Meta do mês',1],['prevR','Previsto até a data',1],['real','Realizado',1],['pr','% da meta',1],['st','Status'],['ped','Pedidos',1],['cli','Clientes atendidos',1],['novos','Clientes novos',1],['tk','Ticket médio',1],['fat','Faturado',1]];
   const top=pfSort(l,'razao',-1).slice(0,3).map(x=>x.nome);
   const lin=pfSort(l,PF.ord.k==='st'?'razao':PF.ord.k,PF.ord.d);
-  c.innerHTML=`<div class="pfkpis">${k('Meta da empresa',pfRs(meta),'soma das metas dos ativos')}${k('Realizado',pfRs(real),`${pfPc(meta?real/meta:0)} da meta · previsto ${pfPc(D.prev)}`,meta?real/meta:0)}${k(`Projeção do mês · <select id="pfProjB" class="pfsel"><option value="ped" ${PF.projBase!=='fat'?'selected':''}>pedidos de venda</option><option value="fat" ${PF.projBase==='fat'?'selected':''}>faturamento</option></select>`,pfRs(proj),`${pfPc(meta?proj/meta:0)} da meta no ritmo atual · ${PF.projBase==='fat'?'faturado':'pedidos'} até a data ${pfRs(base)}`)}${k('Falta por dia útil',pfRs(Math.max(0,meta-real)/resto),`${D.duMes-D.du} dias úteis restantes`)}${k('Clientes atendidos',nf(cli),`${nov} novos · ${ped} pedidos válidos`)}${k('Ticket médio',cli?pfRs(real/cli):'—','realizado ÷ clientes atendidos')}</div>
+  c.innerHTML=`<div class="pfkpis">${k('Meta geral',pfRs(meta),'soma das metas dos representantes')}${k('Realizado',pfRs(real),`${pfPc(meta?real/meta:0)} da meta · previsto ${pfPc(D.prev)}`,meta?real/meta:0)}${k(`Projeção · <select id="pfProjB" class="pfsel"><option value="ped" ${PF.projBase!=='fat'?'selected':''}>pedidos de venda</option><option value="fat" ${PF.projBase==='fat'?'selected':''}>faturamento</option></select>`,pfRs(proj),`${pfPc(meta?proj/meta:0)} da meta no ritmo atual · ${PF.projBase==='fat'?'faturado':'pedidos'} até a data ${pfRs(base)}`)}${k('Falta por dia útil',pfRs(Math.max(0,meta-real)/resto),`${D.duMes-D.du} dias úteis restantes`)}${k('Clientes atendidos',nf(cli),`${nov} novos · ${ped} pedidos válidos`)}${k('Ticket médio',cli?pfRs(real/cli):'—','realizado ÷ clientes atendidos')}</div>
   <div class="caixa"><div class="rol"><table class="tv" id="pfTb"><thead>${pfCab(cols)}</thead><tbody>${lin.map(x=>{const st=x.meta?pfStatus(x.razao):['mau','‼ Sem meta'];const cor=pfCor(st[0]);
     return `<tr class="pfrep" data-n="${esc(x.nome)}"><td><b>${esc(x.nome)}</b>${x.fora?'<span class="k" style="display:block;font-size:11px;color:var(--ink3)">fora do cadastro ativo</span>':''}</td><td class="n m">${pfRs(x.meta)}</td><td class="n m">${pfRs(x.prevR)}</td><td class="n m"><b>${pfRs(x.real)}</b></td><td style="min-width:200px">${pfBarra(x.pr,D.prev,cor)}</td><td>${pfPill(st[0],top.includes(x.nome)&&st[0]==='dest'?'🏆 Destaque do mês':st[1])}</td><td class="n m">${x.ped}</td><td class="n m">${x.cli}</td><td class="n m">${x.novos?'<b style="color:#15803D">+'+x.novos+'</b>':'0'}</td><td class="n m">${x.cli?pfRs(x.tk):'—'}</td><td class="n m">${pfRs(x.fat)}</td></tr>`;}).join('')}</tbody>
-    <tfoot><tr><td>Empresa</td><td class="n m">${pfRs(meta)}</td><td class="n m">${pfRs(meta*D.prev)}</td><td class="n m">${pfRs(real)}</td><td>${pfBarra(meta?real/meta:0,D.prev,'#1B4F9C')}</td><td>${meta?pfPill(...pfStatus(real/(meta*D.prev||1))):''}</td><td class="n m">${ped}</td><td class="n m">${cli}</td><td class="n m">+${nov}</td><td class="n m">${cli?pfRs(real/cli):'—'}</td><td class="n m">${pfRs(l.reduce((s,x)=>s+x.fat,0))}</td></tr></tfoot></table></div>
+    <tfoot><tr><td>Geral</td><td class="n m">${pfRs(meta)}</td><td class="n m">${pfRs(meta*D.prev)}</td><td class="n m">${pfRs(real)}</td><td>${pfBarra(meta?real/meta:0,D.prev,'#1B4F9C')}</td><td>${meta?pfPill(...pfStatus(real/(meta*D.prev||1))):''}</td><td class="n m">${ped}</td><td class="n m">${cli}</td><td class="n m">+${nov}</td><td class="n m">${cli?pfRs(real/cli):'—'}</td><td class="n m">${pfRs(l.reduce((s,x)=>s+x.fat,0))}</td></tr></tfoot></table></div>
   <div class="k" style="padding:9px 14px;color:var(--ink3);font-size:12px">Clique no título para ordenar e no representante para abrir a ficha. Só representantes ativos. Ticket médio = realizado ÷ clientes atendidos. Previsto = meta × dias úteis até a data ÷ dias úteis do mês.</div></div>`;
   pfLigaOrd(c,()=>pfDesenha());c.querySelectorAll('.pfrep').forEach(tr=>tr.onclick=()=>ir('performance',encodeURIComponent(tr.dataset.n)));
   if($('pfProjB'))$('pfProjB').onchange=e=>{PF.projBase=e.target.value;pfDesenha();};
-  const rot=colsTabela($('pfTb'),'vendas.perf',[]);colBt.onclick=()=>colsPainel('vendas.perf',rot,[],['Representante'],()=>pfDesenha());
+  const rot=colsTabela($('pfTb'),'vendas.perf',[]);colBt.onclick=()=>colsPainel('vendas.perf',rot,[],['Representante'],()=>pfDesenha());pfArrasta($('pfTb'),'vendas.perf');
 }
 /* ---------- aba Pedidos e faturado ---------- */
 function pfTabPed(c,D,colBt){
@@ -1155,7 +1173,7 @@ function pfTabPed(c,D,colBt){
     <tfoot><tr><td>Totais</td><td class="n m">${S('cli')}</td><td class="n m">${S('ped')}</td><td class="n m">${nf(S('real'),2)}</td><td class="n m">${S('canc')}</td><td class="n m">${nf(S('aberto'),2)}</td><td class="n m">${S('fatN')}</td><td class="n m">${nf(S('fat'),2)}</td><td class="n m">${S('real')?pfPc(S('fat')/S('real')):'—'}</td></tr></tfoot></table></div>
   <div class="k" style="padding:9px 14px;color:var(--ink3);font-size:12px">Venda = pedidos entrados no período pela data do pedido (sem cancelados). Faturamento = notas emitidas no período, qualquer data de pedido.</div></div>`;
   pfLigaOrd(c,()=>pfDesenha());c.querySelectorAll('.pfrep').forEach(tr=>tr.onclick=()=>ir('performance',encodeURIComponent(tr.dataset.n)));
-  const rot=colsTabela($('pfTb'),'vendas.perf.ped',[]);colBt.onclick=()=>colsPainel('vendas.perf.ped',rot,[],['Representante'],()=>pfDesenha());
+  const rot=colsTabela($('pfTb'),'vendas.perf.ped',[]);colBt.onclick=()=>colsPainel('vendas.perf.ped',rot,[],['Representante'],()=>pfDesenha());pfArrasta($('pfTb'),'vendas.perf.ped');
 }
 /* ---------- aba Ranking ---------- */
 const pfFora=()=>new Set(pfCfg().rankFora||[]);
@@ -1169,7 +1187,7 @@ function pfTabRank(c,D,colBt){
     <tfoot><tr><td></td><td>Time (quem entra no ranking)</td><td class="n m" style="color:var(--ink3)">${pfPc(D.prev)}</td><td>${pfBarra(prT,D.prev,'#1B4F9C')}</td><td>${pfPill(stT[0],stT[1])}</td><td class="n m">${pfRs(meta)}</td><td class="n m">${pfRs(real)}</td></tr></tfoot></table></div>
   <div class="k" style="padding:9px 14px;color:var(--ink3);font-size:12px">% Meta prevista = dias úteis até ${br(PF.fx.ate)} ÷ dias úteis do mês. % Realizado = realizado no mês até a data ÷ meta do mês. Status = realizado ÷ previsto, pelas faixas em Configurações › Vendas › Regras do ranking. O PDF sai com as colunas e os representantes que estão na tela.</div></div>`;
   c.querySelectorAll('.pfrep').forEach(tr=>tr.onclick=()=>ir('performance',encodeURIComponent(tr.dataset.n)));
-  const rot=colsTabela($('pfTb'),'vendas.perf.rank',['Meta (R$)','Realizado (R$)']);colBt.onclick=()=>colsPainel('vendas.perf.rank',rot,['Meta (R$)','Realizado (R$)'],['Representante','Status'],()=>pfDesenha());
+  const rot=colsTabela($('pfTb'),'vendas.perf.rank',['Meta (R$)','Realizado (R$)']);colBt.onclick=()=>colsPainel('vendas.perf.rank',rot,['Meta (R$)','Realizado (R$)'],['Representante','Status'],()=>pfDesenha());pfArrasta($('pfTb'),'vendas.perf.rank');
   $('pfQuem').onclick=ev=>{ev.stopPropagation();const p=document.createElement('div');p.className='pfpop';const todos=D.lista.filter(x=>!x.fora);
     p.innerHTML='<div class="t">Entram no ranking enviado ao grupo</div>'+todos.map(x=>`<label><input type="checkbox" data-n="${esc(x.nome)}" ${fora.has(x.nome)?'':'checked'}> ${esc(x.nome)}</label>`).join('')+'<div class="t" style="margin-top:6px">Desmarcados saem do ranking e da conta do time. Fica guardado para todos.</div>';
     document.body.appendChild(p);const r=ev.currentTarget.getBoundingClientRect();p.style.left=r.left+'px';p.style.top=(r.bottom+6)+'px';
@@ -1255,12 +1273,12 @@ function telaRepresentante(nome){
   const semC=[...x.cliHist].filter(c=>!x.cliSet.has(c)).map(c=>{const p=(PF.hist&&PF.hist.pedidos||[]).filter(q=>(q.cliente_doc||q.cliente)===c&&pfValido(q));const u=p.map(q=>q.data_pedido).sort().pop();const nome=(p[0]||{}).cliente||c;const cid=(p[0]||{}).cidade||'';const media=p.reduce((s,q)=>s+(+q.total||0),0)/Math.max(1,mesesNovo);return {nome,cid,u,media};}).sort((a,b)=>b.media-a.media);
   const tab=(h,rows,vazio)=>`<table class="tv" style="border:0;border-radius:0"><thead><tr>${h.map((t,i)=>`<th class="${i?'n':''}">${t}</th>`).join('')}</tr></thead><tbody>${rows||`<tr><td colspan="${h.length}" class="k" style="color:var(--ink3)">${vazio}</td></tr>`}</tbody></table>`;
   const k=(t,v,s,bar)=>`<div class="pfkpi"><span>${t}</span><b>${v}</b>${s?`<small>${s}</small>`:''}${bar!=null?`<div class="bar"><i style="width:${Math.min(100,bar*100)}%"></i><u style="left:${D.prev*100}%"></u></div>`:''}</div>`;
-  $('app').innerHTML=`<div class="migalha">Vendas › Performance de vendas › ${esc(x.nome)}</div>
+  $('app').innerHTML=`<div class="migalha"><a href="#performance" class="mlk">Vendas</a> › <a href="#performance" class="mlk">Performance de vendas</a> › ${esc(x.nome)}</div>
   <div class="topo"><button class="btn" id="pfVolta">‹ Voltar</button><h1>${esc(x.nome)}</h1>${pfPill(st[0],st[1])}<span class="k" style="color:var(--ink3);font-size:12px">${perRotulo(PF.per)} · ${x.cli} clientes atendidos · ${x.ped} pedidos válidos</span><span style="flex:1"></span><button class="btn" id="pfPeds">Ver os ${x.ped} pedidos</button></div>
   <div class="pfkpis">${k('Meta do mês',pfRs(x.meta),`${pfRs(x.meta/Math.max(1,D.duMes))} por dia útil`)}${k('Realizado',pfRs(x.real),`${pfPc(x.pr)} da meta · previsto até a data ${pfPc(D.prev)}`,x.pr)}${k('Projeção',pfRs(D.du?x.real/D.du*D.duMes:0),`${pfPc(x.meta&&D.du?x.real/D.du*D.duMes/x.meta:0)} da meta no ritmo atual`)}${k('Faturado',pfRs(x.fat),'notas emitidas no período')}${k('Clientes atendidos',x.cli,`<b style="color:#15803D">+${x.novos} novos</b> · ${semC.length} sem compra no período`)}${k('Ticket médio',x.cli?pfRs(x.tk):'—','realizado ÷ clientes atendidos')}</div>
   <div class="caixa" style="padding:12px 14px;position:relative"><div class="pfsec" style="margin-top:0">Meta × realizado · 12 meses <span style="font-weight:500;text-transform:none;letter-spacing:0;display:flex;gap:14px"><span><i class="pfleg" style="background:#D1D5DB"></i> meta</span><span><i class="pfleg" style="background:#1B4F9C"></i> abaixo</span><span><i class="pfleg" style="background:#15803D"></i> bateu (${hist.slice(0,11).filter(h=>h.meta&&h.real>=h.meta).length} de ${hist.slice(0,11).filter(h=>h.meta).length} com meta)</span><span><i class="pfleg" style="background:#B45309"></i> mês atual</span></span></div>${svg}</div>
   <div class="pfduas"><div class="caixa"><div class="pfsec">Top 5 clientes do período</div>${tab(['Cliente','Pedidos','Valor','% do período'],topC.map(c=>`<tr><td><b>${esc(c.nome)}</b><span class="k" style="display:block;font-size:11px;color:var(--ink3)">${esc(c.cid)}</span></td><td class="n m">${c.n}</td><td class="n m">${pfRs(c.v)}</td><td class="n m">${pfPc(x.real?c.v/x.real:0)}</td></tr>`).join(''),'Sem pedidos no período.')}</div>
-    <div class="caixa"><div class="pfsec">Top 5 produtos vendidos</div>${tab(['Produto','Unidades','Valor','% do período'],topP.map(p=>`<tr><td><b>${esc(p.nome)}</b><span class="k" style="display:block;font-size:11px;color:var(--ink3)">${esc(p.sku||'')}</span></td><td class="n m">${nf(p.q)}</td><td class="n m">${pfRs(p.v)}</td><td class="n m">${pfPc(x.real?p.v/x.real:0)}</td></tr>`).join(''),'Os itens dos pedidos ainda não foram lidos do Tiny.')}</div></div>
+    <div class="caixa"><div class="pfsec">Top 5 produtos vendidos</div>${tab(['Produto','Qtde (cx/fd)','Valor','% do período'],topP.map(p=>`<tr><td><b>${esc(p.nome)}</b><span class="k" style="display:block;font-size:11px;color:var(--ink3)">${esc(p.sku||'')}</span></td><td class="n m">${nf(p.q)}</td><td class="n m">${pfRs(p.v)}</td><td class="n m">${pfPc(x.real?p.v/x.real:0)}</td></tr>`).join(''),'Os itens dos pedidos ainda não foram lidos do Tiny.')}</div></div>
   <div class="caixa" style="margin-top:12px"><div class="pfsec">Clientes que não compraram no período <span style="font-weight:500;text-transform:none;letter-spacing:0">compraram nos últimos ${mesesNovo} meses · ${semC.length} no total</span><button class="btn sm" id="pfSemTodos">ver todos › Relatórios › Clientes sem compra</button></div>${tab(['Cliente','Última compra','Média mensal'],semC.slice(0,5).map(c=>`<tr><td><b>${esc(c.nome)}</b><span class="k" style="display:block;font-size:11px;color:var(--ink3)">${esc(c.cid)}</span></td><td class="n m">${br(c.u)}</td><td class="n m">${pfRs(c.media)}</td></tr>`).join(''),'Todos os clientes dos últimos meses compraram no período.')}</div>`;
   $('pfVolta').onclick=()=>ir('performance');$('pfPeds').onclick=()=>{V.q=x.nome;V.per=JSON.parse(JSON.stringify(PF.per));V.pagina=0;ir('pedidos');};
   $('pfSemTodos').onclick=()=>ir('relatorios','semcompra/'+encodeURIComponent(x.nome));
@@ -1274,7 +1292,7 @@ function telaRelatorios(arg){
   const linhas=[];D.lista.filter(x=>!x.fora&&(!vend||semAc(x.nome)===semAc(vend))).forEach(x=>{[...x.cliHist].filter(c=>!x.cliSet.has(c)).forEach(c=>{const p=(PF.hist&&PF.hist.pedidos||[]).filter(q=>(q.cliente_doc||q.cliente)===c&&pfValido(q)&&semAc(q.vendedor||'')===semAc(x.nome));const u=p.map(q=>q.data_pedido).sort().pop();const nome=(p[0]||{}).cliente||c;const cid=(p[0]||{}).cidade||'';
     const meses=u?Math.max(0,Math.round((perD(PF.fx.ate)-perD(u))/2592e6)):0;linhas.push({nome,cid,rep:x.nome,u,meses,media:p.reduce((s,q)=>s+(+q.total||0),0)/Math.max(1,mesesNovo),n:p.length});});});
   const l=linhas.filter(r=>!q||semAc(r.nome+' '+r.cid).includes(q)).sort((a,b)=>b.media-a.media);
-  $('app').innerHTML=`<div class="migalha">Vendas › Relatórios › Clientes sem compra</div>
+  $('app').innerHTML=`<div class="migalha"><a href="#performance" class="mlk">Vendas</a> › Relatórios › Clientes sem compra</div>
   <div class="topo"><h1>Clientes sem compra</h1><span class="k" style="color:var(--ink3);font-size:12px">compraram nos últimos ${mesesNovo} meses e não têm pedido válido em ${perRotulo(PF.per)}</span><span style="flex:1"></span><button class="btn" id="pfXls">Exportar Excel</button></div>
   <div class="barra">${perBotao('pfPer2',PF.per)}<select class="btn" id="pfRelRep"><option value="">Todos os representantes</option>${D.lista.filter(x=>!x.fora).map(x=>`<option ${semAc(x.nome)===semAc(vend)?'selected':''}>${esc(x.nome)}</option>`).join('')}</select><div class="busca">⌕<input id="pfRelQ" placeholder="cliente ou cidade" value="${esc(PF.relQ||'')}"></div><span style="flex:1"></span><span class="k" style="color:var(--ink3);font-size:12px"><b>${l.length}</b> clientes</span></div>
   <div class="caixa"><div class="rol"><table class="tv"><thead><tr><th>Cliente</th><th>Cidade</th><th>Representante</th><th class="n">Última compra</th><th class="n">Meses sem comprar</th><th class="n">Média mensal</th><th class="n">Pedidos (${mesesNovo} m)</th></tr></thead><tbody>${l.map(r=>`<tr><td><b>${esc(r.nome)}</b></td><td>${esc(r.cid)}</td><td>${esc(r.rep)}</td><td class="n m">${br(r.u)}</td><td class="n m">${r.meses}</td><td class="n m">${pfRs(r.media)}</td><td class="n m">${r.n}</td></tr>`).join('')||'<tr><td colspan="7" class="k" style="color:var(--ink3)">Ninguém ficou sem comprar.</td></tr>'}</tbody></table></div></div>`;
@@ -1293,11 +1311,13 @@ function pfTeste(c){
 try{const _fn=fn;fn=async function(c){if(c&&c.acao==='perf_pedidos'&&N.teste)return pfTeste(c);return _fn.apply(this,arguments);};}catch(e){}
 (function(){try{const s=document.createElement('style');s.textContent=`
 .pfkpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px;margin-bottom:12px}
-.pfkpi{background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-width:0}.pfkpi span{display:flex;gap:6px;align-items:center;flex-wrap:wrap;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3);font-weight:600}
+.pfkpi{background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-width:0}.pfkpi span{display:flex;gap:6px;align-items:center;white-space:nowrap;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3);font-weight:600}
 .pfkpi b{display:block;font:700 20px/1.1 'JetBrains Mono',monospace;margin-top:3px}.pfsel{border:0;background:transparent;color:#1D4ED8;font:600 10.5px Inter,system-ui,sans-serif;text-transform:uppercase;letter-spacing:.06em;cursor:pointer;padding:0}.pfkpi small{display:block;color:var(--ink3);margin-top:2px;font-size:11.5px}
 .pfkpi .bar{height:6px;background:var(--line);border-radius:4px;margin-top:7px;position:relative}.pfkpi .bar i{display:block;height:100%;background:#1B4F9C;border-radius:4px}.pfkpi .bar u{position:absolute;top:-2px;width:2px;height:10px;background:#B45309}
 .pfpill{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:3px 9px;font-size:11px;font-weight:700;white-space:nowrap}.pfpill.ok{background:#DCFCE7;color:#15803D}.pfpill.amb{background:#FEF3C7;color:#B45309}.pfpill.mau{background:#FEE2E2;color:#B91C1C}.pfpill.dest{background:#FDE68A;color:#92400E}.pfpill.azul{background:#DBEAFE;color:#1D4ED8}
 .pfprog{display:flex;align-items:center;gap:8px}.pfprog .t{flex:1;height:7px;background:var(--line);border-radius:4px;min-width:60px;position:relative}.pfprog .t i{display:block;height:100%;border-radius:4px}.pfprog .t u{position:absolute;top:-2px;width:2px;height:11px;background:#3F4757}.pfprog b{min-width:46px;text-align:right;font-family:'JetBrains Mono',monospace;font-size:12.5px}
+.mlk{color:var(--ink3);text-decoration:none}.mlk:hover{color:#1D4ED8;text-decoration:underline}
+.tv th.drg{opacity:.5}.tv th.drgo{box-shadow:inset 3px 0 0 #1D4ED8}
 .pfrep{cursor:pointer}.pfrep:hover td{background:#EAF1FB}.tv tfoot td{font-weight:700;background:var(--line3);padding:8px}.tv td.m{font-family:'JetBrains Mono',monospace;font-size:12.5px}.tv td.n,.tv th.n{text-align:right}
 .pfpop{position:fixed;z-index:400;background:#fff;border:1px solid var(--line2);border-radius:12px;box-shadow:0 12px 30px rgba(15,23,42,.18);padding:10px;min-width:240px;max-height:70vh;overflow:auto}.pfpop label{display:flex;gap:8px;align-items:center;padding:5px 6px;border-radius:6px;cursor:pointer;font-size:12.5px}.pfpop label:hover{background:var(--line3)}.pfpop .t{font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3);font-weight:600;padding:4px 6px}
 .pfmask{position:fixed;inset:0;background:rgba(15,23,42,.6);z-index:600;display:flex;align-items:center;justify-content:center;padding:20px}

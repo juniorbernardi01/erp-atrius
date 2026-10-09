@@ -431,6 +431,7 @@ select.st-h,select.st-a,select.st-b{border-radius:999px;font-weight:600}
 .colsp .cf{display:flex;gap:8px;padding-top:14px;flex-wrap:wrap}
 .colsp .btn.lk{background:none;border:0;text-decoration:underline}
 
+.drg{opacity:.5}.drgo{box-shadow:inset 3px 0 0 #1D4ED8}
 </style></head><body>
 <div class="app" id="app"><div class="vazio">Carregando…</div></div>
 <div class="veu" id="veu"></div><div class="gaveta" id="gav"></div>
@@ -967,9 +968,18 @@ function telaOrdens(){
   ligaLista(lista);
   /* colunas visíveis, como no Tiny: a grade encolhe junto */
   colsGrade(document.querySelector('.lo'),'compras',COLS_C_TRILHAS,[]);
+  gradeArrasta(document.querySelector('.lo'),'compras',COLS_C_TRILHAS);
   if($('bCols'))$('bCols').onclick=()=>colsPainel('compras',['Nº OC','Data','Previsão','Fornecedor','Total','Situação','Marcadores','NF','Integração'],[],['Nº OC','Fornecedor'],telaOrdens);
 }
 const COLS_C_TRILHAS=['40px','26px','70px','88px','96px','minmax(200px,1fr)','104px','170px','130px','70px','84px'];
+/* lista em grade: arrasta o título e a ordem das colunas fica guardada neste aparelho (as 2 primeiras — ⋯ e marcar — ficam) */
+function gradeArrasta(caixa,k,trilhas){if(!caixa)return;const h=caixa.querySelector('.h');if(!h)return;const n=h.children.length;
+  let ord=null;try{ord=JSON.parse(localStorage.getItem('erp.colord.'+k)||'null');}catch(e){}
+  if(Array.isArray(ord)&&ord.length===n){[h,...caixa.querySelectorAll('.r')].forEach(r=>{const c=[...r.children];if(c.length!==n)return;ord.forEach(i=>r.appendChild(c[i]));r.style.gridTemplateColumns=ord.filter(i=>c[i].style.display!=='none').map(i=>trilhas[i]).join(' ');});}
+  const idxDe=el=>[...h.children].indexOf(el);let de=null;[...h.children].forEach((c,i)=>{if(i<2)return;c.draggable=true;c.title=(c.title||'')+' · arraste para mudar a ordem';
+    c.addEventListener('dragstart',()=>{de=c;c.classList.add('drg');});c.addEventListener('dragend',()=>{c.classList.remove('drg');de=null;});
+    c.addEventListener('dragover',e=>{e.preventDefault();c.classList.add('drgo');});c.addEventListener('dragleave',()=>c.classList.remove('drgo'));
+    c.addEventListener('drop',e=>{e.preventDefault();c.classList.remove('drgo');if(!de||de===c||idxDe(c)<2)return;const atual=(Array.isArray(ord)&&ord.length===n)?ord.slice():[...Array(n).keys()];const a=idxDe(de),b=idxDe(c);atual.splice(b,0,atual.splice(a,1)[0]);try{localStorage.setItem('erp.colord.'+k,JSON.stringify(atual));}catch(x){}render();});});}
 function ligaLista(lista){
   const re=()=>telaOrdens();
   if($('bNova'))$('bNova').onclick=()=>novaOC();
@@ -1897,7 +1907,12 @@ function janelaReenviar(l){
 const NEC={q:'',tag:'',tags:[],so:true,sel:{},bal:null};
 /* v2 (07/10): colunas na ordem pedida, com interruptor para esconder; grupos em dropdown com caixas; item fixo à esquerda */
 const NEC_COLS=[['saidas','Saídas previstas'],['entradas','Entradas previstas'],['consumo','Consumo médio'],['fis','Estoque físico'],['virt','Estoque virtual'],['min','Estoque mínimo'],['cob','Cobertura (dias)'],['sug','Sugestão'],['comprar','Comprar']];
-function necColsOn(){const c=necCfg();const off=Array.isArray(c.colsOff)?c.colsOff:[];return NEC_COLS.filter(([k])=>!off.includes(k)).map(([k])=>k);}
+function necColsOn(){const c=necCfg();const off=Array.isArray(c.colsOff)?c.colsOff:[];const ord=Array.isArray(c.colsOrd)?c.colsOrd:[];const ks=NEC_COLS.map(([k])=>k).filter(k=>!off.includes(k));return ks.slice().sort((a,b)=>{const ia=ord.indexOf(a),ib=ord.indexOf(b);return (ia<0?99:ia)-(ib<0?99:ib);});}
+/* arrastar o título muda a ordem das colunas (fica guardado para todos, no cfg) */
+function necArrasta(){const tab=document.querySelector('.ntb2');if(!tab)return;let de=null;tab.querySelectorAll('thead th[data-k]').forEach(th=>{th.draggable=true;th.title='Arraste para mudar a ordem';
+  th.addEventListener('dragstart',()=>{de=th.dataset.k;th.classList.add('drg');});th.addEventListener('dragend',()=>{th.classList.remove('drg');de=null;});
+  th.addEventListener('dragover',e=>{e.preventDefault();th.classList.add('drgo');});th.addEventListener('dragleave',()=>th.classList.remove('drgo'));
+  th.addEventListener('drop',e=>{e.preventDefault();th.classList.remove('drgo');if(!de||de===th.dataset.k)return;const c=necCfg();const ord=necColsOn();ord.splice(ord.indexOf(th.dataset.k),0,ord.splice(ord.indexOf(de),1)[0]);c.colsOrd=ord;salvar();telaNecessidade();});});}
 const NEC_SITS=[['Em aberto','Em aberto'],['Aprovado','Aprovado'],['Preparando envio','Em separação'],['Pronto para envio','Separado'],['Faturado','Faturado'],['Enviado','Em rota']];
 let NDADOS={em:0,abertos:null,mes:null,fonte:'',erro:''};
 function necCfg(){const c=DB.cfg;
@@ -1993,7 +2008,7 @@ async function telaNecessidade(){
     <div class="pop-w" style="margin-left:auto"><button class="chip" id="nCols">Colunas ▾</button>
       <div class="pop" id="popCols" hidden style="width:250px;left:auto;right:0"><h4>Mostrar colunas</h4>${NEC_COLS.map(([k,r])=>`<label class="sw2"><span>${esc(r)}</span><input type="checkbox" data-col="${k}" ${necColsOn().includes(k)?'checked':''}><i></i></label>`).join('')}</div></div></div>
   <div class="caixa rolx necrol">${vis.length?(()=>{const CO=necColsOn();const TH={saidas:'Saídas<br>previstas',entradas:'Entradas<br>previstas',consumo:'Consumo<br>médio',fis:'Estoque<br>físico',virt:'Estoque<br>virtual',min:'Estoque<br>mínimo',cob:'Cobertura<br>(dias)',sug:'Sugestão',comprar:'Comprar'};
-    return `<table class="ntb ntb2"><thead><tr><th class="fx1"></th><th class="fx2">Item</th>${CO.map(k=>`<th class="n">${TH[k]}</th>`).join('')}</tr></thead><tbody>
+    return `<table class="ntb ntb2"><thead><tr><th class="fx1"></th><th class="fx2">Item</th>${CO.map(k=>`<th class="n" data-k="${k}">${TH[k]}</th>`).join('')}</tr></thead><tbody>
     ${vis.map(l=>{const m=l.k in NEC.sel;const C={
         saidas:`<td class="n">${l.saidas?necFmt(l.saidas):'—'}${l.saidas?`<span class="mini">${[l.ops?l.ops+' OP'+(l.ops>1?'s':''):'',l.npd?l.npd+' pedido'+(l.npd>1?'s':''):''].filter(Boolean).join(' · ')}</span>`:''}</td>`,
         entradas:`<td class="n">${l.entradas?`<a class="epl" data-ep="${esc(l.k)}">${necFmt(l.entradas)}</a>`:'<span class="k">0</span>'}</td>`,
@@ -2030,6 +2045,7 @@ function ligaNec(L){
   $('gTodos').onchange=()=>{NEC.tags=[];re();$('popGrp').hidden=false;};
   document.querySelectorAll('[data-grp]').forEach(i=>i.onchange=()=>{NEC.tags=[...document.querySelectorAll('[data-grp]')].filter(x=>x.checked).map(x=>x.dataset.grp);re();const p=$('popGrp');if(p)p.hidden=false;});
   $('nCols').onclick=ev=>{ev.stopPropagation();$('popCols').hidden=!$('popCols').hidden;$('popGrp').hidden=true;};$('popCols').onclick=ev=>ev.stopPropagation();
+  necArrasta();
   document.querySelectorAll('[data-col]').forEach(i=>i.onchange=()=>{c.colsOff=NEC_COLS.map(([k])=>k).filter(k=>{const el=document.querySelector(`[data-col="${k}"]`);return el&&!el.checked;});salvar();re();const p=$('popCols');if(p)p.hidden=false;});
   const P={};L.forEach(l=>P[l.k]=l);
   document.querySelectorAll('[data-nk]').forEach(b=>b.onclick=ev=>{ev.stopPropagation();const k=b.dataset.nk;if(k in NEC.sel)delete NEC.sel[k];else NEC.sel[k]=P[k]?P[k].sug:0;re();});
