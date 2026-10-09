@@ -1044,7 +1044,7 @@ const pfSalvaCfg=o=>{try{N.salvarCfgVendas(o);}catch(e){toast('Não consegui gra
 const pfRegras=()=>{const c=pfCfg();return Array.isArray(c.rankRegras)&&c.rankRegras.length?c.rankRegras:[[0,60,'mau','‼ Buscar atenção'],[60,90,'amb','⚠ Acelerar'],[90,100,'ok','✔ Dentro do objetivo'],[100,120,'azul','🚀 Acima do objetivo'],[120,1e9,'dest','🏆 Destaque da semana']];};
 const pfStatus=razao=>{const r=razao*100;const R=pfRegras();const f=R.find(x=>r>=x[0]&&r<x[1])||R[R.length-1];return [f[2],f[3]];};
 const pfPc=v=>(isFinite(v)?v*100:0).toFixed(1).replace('.',',')+'%';
-const pfRs=v=>'R$ '+nf(Math.round(+v||0));
+const pfRs=v=>'R$ '+nf(Math.round((+v||0)*100)/100,2);   /* com centavos, para bater com o Tiny */
 const pfYm=s=>String(s||'').slice(0,7);
 const pfValido=p=>!PF_INVALIDAS.some(s=>semAc(s)===semAc(p.situacao));
 /* dias úteis (segunda a sexta) entre duas datas, inclusive */
