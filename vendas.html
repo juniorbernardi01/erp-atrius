@@ -722,7 +722,7 @@ const PAGINA_INICIAL='pedidos';
 /* nome no Tiny → nome da Atrius, com a cor da aba */
 const SITS=[['Em aberto','Em aberto','#1D6FE8'],['Aprovado','Aprovado','#16A34A'],['Preparando envio','Em separação','#D97706'],
   ['Pronto para envio','Separado','#0369A1'],['Faturado','Faturado','#6B21A8'],['Enviado','Em rota','#C2410C'],['Entregue','Entregue','#545C69'],
-  ['Não Entregue','Não entregue','#B3261E'],['Cancelado','Cancelado','#B3261E'],['Dados incompletos','Dados incompletos','#8B93A1']];
+  ['Não Entregue','Não entregue','#B3261E'],['Cancelado','Cancelado','#B3261E'],['Dados incompletos','Dados incompletos','#8B93A1'],['Em devolução','Em devolução','#9A3412']];
 const semAc=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
 const SIT_POR=Object.fromEntries(SITS.map(s=>[semAc(s[0]),s]));
 const sitDe=t=>SIT_POR[semAc(t)]||[t,t||'—','#8B93A1'];
@@ -863,7 +863,7 @@ async function desenhaCarga(){
       ${e.fase!=='parada'?`<button class="btn" id="cgR">${CG.rodando?'■ Parar de rodar por aqui':'▶ Rodar por aqui enquanto a tela estiver aberta'}</button>`:''}
       ${e.fase==='ok'?'<button class="btn" id="cgU">⟳ Ler o que mudou agora</button>':''}</div>`:''}</div></div>
   <div class="leg"><b>Como funciona:</b> a carga lê do Tiny, mês a mês, do mês atual para trás, e depois abre cada pedido para trazer os itens. Quem faz é o agendador do Supabase (a cada minuto),
-  mesmo com o computador desligado; o botão <b>Rodar por aqui</b> ajuda a andar mais rápido enquanto a tela estiver aberta. Se o Tiny pedir uma pausa por excesso de consultas, a carga espera e continua sozinha.
+  mesmo com o computador desligado, <b>só das 20h às 6h</b> e devagar (uma chamada a cada 2,5 s), para não pesar no Tiny durante o dia; o botão <b>Rodar por aqui</b> ajuda a andar mais rápido enquanto a tela estiver aberta. Se o Tiny pedir uma pausa por excesso de consultas, a carga espera e continua sozinha.
   Terminada a carga, o ERP lê só o que mudou, a cada 10 minutos.</div>`;
   if($('cgI'))$('cgI').onclick=async()=>{const n=+$('cgA').value;if(!confirm(`Começar a carga de ${n} anos de pedidos do Tiny?`))return;
     try{await fn({acao:'vendas_iniciar',anos:n});toast('Carga começou.');}catch(x){toast(x.message,true);}desenhaCarga();};
@@ -874,7 +874,7 @@ async function desenhaCarga(){
 }
 async function rodar(){
   while(CG.rodando&&PAG==='carga'){
-    try{const r=await fn({acao:'vendas_passo'});if(r.parado||(r.estado&&r.estado.fase==='ok')){CG.rodando=false;}}
+    try{const r=await fn({acao:'vendas_passo',manual:true});if(r.parado||(r.estado&&r.estado.fase==='ok')){CG.rodando=false;}}
     catch(e){toast(e.message,true);CG.rodando=false;}
     await desenhaCarga();await new Promise(r=>setTimeout(r,1500));
   }
@@ -1022,11 +1022,201 @@ function telaCfgVendas(){
   <div class="topo" style="margin-top:22px"><h1>Regras do ranking</h1></div>
   <div class="k" style="margin:-8px 0 14px;color:var(--ink3)">Faixas de realizado ÷ previsto que dão o status na Performance e no ranking enviado aos representantes.</div>
   <div class="caixa" style="padding:16px 18px;max-width:760px"><div style="display:flex;gap:8px;flex-wrap:wrap">${pfRegras().map(r=>`<span class="pfpill ${r[2]}">${r[3]} · ${r[0]}%${r[1]>=1e9?' ou mais':' a '+r[1]+'%'}</span>`).join('')}</div>
-    ${pe?'<button class="btn" id="cfgRegras" style="margin-top:12px">Editar regras</button>':''}</div>`;
+    ${pe?'<button class="btn" id="cfgRegras" style="margin-top:12px">Editar regras</button>':''}</div>
+  <div class="topo" style="margin-top:22px"><h1>Representante fixo por cliente</h1></div>
+  <div class="k" style="margin:-8px 0 14px;color:var(--ink3)">Quando o Tiny não deixa mais trocar o vendedor do pedido (já faturado), a correção fica aqui: todo pedido deste cliente conta para o representante escolhido, na Performance, no ranking, nas metas e na ficha. O Tiny não muda.</div>
+  <div class="caixa" style="padding:16px 18px;max-width:760px">${(()=>{const R=Array.isArray(c.repFixo)?c.repFixo:[];return R.length?`<table class="tv" style="border:0;border-radius:0"><thead><tr><th>Cliente (parte do nome ou CNPJ)</th><th>Conta para</th><th></th></tr></thead><tbody>${R.map((r,i)=>`<tr><td><b>${esc(r.cliente||'')}</b>${r.doc?`<span class="k" style="display:block;font-size:11px;color:var(--ink3)">${esc(r.doc)}</span>`:''}</td><td>${esc(r.rep)}</td><td class="n">${pe?`<button class="btn sm" data-rfx="${i}">Tirar</button>`:''}</td></tr>`).join('')}</tbody></table>`:'<div class="k" style="color:var(--ink3);font-size:12.5px">Nenhum cliente com representante fixo.</div>';})()}
+    ${pe?`<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;align-items:center"><input class="pfinp" id="rfCli" placeholder="Cliente (parte do nome, ex.: DCO)" style="width:240px;text-align:left"><input class="pfinp" id="rfDoc" placeholder="CNPJ (opcional)" style="width:160px;text-align:left"><input class="pfinp" id="rfRep" list="rfReps" placeholder="Representante" style="width:260px;text-align:left"><datalist id="rfReps">${(PF.vend||[]).map(x=>`<option value="${esc(x.nome)}">`).join('')}</datalist><button class="btn pri" id="rfAdd">Adicionar</button></div>`:''}</div>`;
   if($('cfgRegras'))$('cfgRegras').onclick=()=>pfModalRegras(()=>telaCfgVendas());
+  const rfSalva=R=>{try{N.salvarCfgVendas({repFixo:R});PF.dados=null;}catch(e){toast(e.message,true);}telaCfgVendas();};
+  document.querySelectorAll('[data-rfx]').forEach(b=>b.onclick=()=>{const R=(c.repFixo||[]).slice();R.splice(+b.dataset.rfx,1);rfSalva(R);toast('Tirado.');});
+  if($('rfAdd'))$('rfAdd').onclick=()=>{const cli=$('rfCli').value.trim(),doc=$('rfDoc').value.trim(),rp=$('rfRep').value.trim();if(!(cli||doc)||!rp)return toast('Diga o cliente e o representante.',true);rfSalva((c.repFixo||[]).concat([{cliente:cli,doc,rep:rp}]));toast(`Pedidos de "${cli||doc}" passam a contar para ${rp}.`);};
+  if(!(PF.vend||[]).length)pfVendedores().then(l=>{PF.vend=l;const d=$('rfReps');if(d)d.innerHTML=l.map(x=>`<option value="${esc(x.nome)}">`).join('');});
   document.querySelectorAll('[data-rp]').forEach(b=>b.onclick=()=>{try{N.salvarCfgVendas({reservaPor:b.dataset.rp});NP.ap=null;NP.f.per.campo='';NP.dados=null;
     toast('A reserva agora conta pela '+(b.dataset.rp==='prev'?'data prevista':'data do pedido')+'.');}catch(e){toast(e.message,true);}telaCfgVendas();});
 }
+
+/* ===== 10/10: Evolução de vendas ===== */
+/* =====================================================================
+   VENDAS › EVOLUÇÃO DE VENDAS (10/10)
+   Duas abas: Análise relativa (dois anos lado a lado, mês a mês, com o %
+   de crescimento) e Venda × Faturamento (o que entrou em pedidos contra o
+   que saiu em nota, por ano, mais a matriz anos × meses). Os totais mensais
+   vêm da função vendas_mensal (pedidos nas situações da Performance pela data
+   do pedido; faturamento pela data de emissão). O mês em curso fica fora das
+   comparações porque é parcial. PDF = a tela como está.
+   ===================================================================== */
+const EV={aba:'ar',base:'V',ver:'vp',a1:null,a2:null,vf:null,dados:null,erro:'',carregando:false,fech:{}};
+const EV_M=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'],EV_ML=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+const evRs=v=>'R$ '+Math.round(+v||0).toLocaleString('pt-BR');
+const evRsc=v=>'R$ '+(+v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+const evRsk=v=>v>=1e6?(v/1e6).toLocaleString('pt-BR',{maximumFractionDigits:2})+' mi':Math.round(v/1000).toLocaleString('pt-BR')+' mil';
+const evPc=v=>(v>0?'+':'')+((+v||0)*100).toFixed(1).replace('.',',')+'%';
+const evHoje=()=>{const h=perHoje();return {ano:+h.slice(0,4),mes:+h.slice(5,7)-1};};   /* mes = índice 0–11 do mês em curso */
+const evD=()=>EV.dados?(EV.base==='V'?EV.dados.V:EV.dados.F):{};
+const evAnos=()=>Object.keys(EV.dados?EV.dados.V:{}).map(Number).sort();
+async function evCarregar(){
+  EV.carregando=true;EV.erro='';evDesenha();
+  try{const sits=pfSitsOn();const ck='erp.evol.'+sits.join('|');let c=null;try{c=JSON.parse(sessionStorage.getItem(ck)||'null');}catch(e){}
+    let linhas;if(c&&!EV.forca&&Date.now()-c.t<10*60*1000)linhas=c.l;else{const r=await fn({acao:'vendas_mensal',sits});linhas=r&&r.linhas||[];try{Object.keys(sessionStorage).filter(k=>k.startsWith('erp.evol.')).forEach(k=>sessionStorage.removeItem(k));sessionStorage.setItem(ck,JSON.stringify({t:Date.now(),l:linhas}));}catch(e){}}
+    EV.forca=false;const V={},F={};const {ano,mes}=evHoje();
+    linhas.forEach(x=>{const a=+String(x.ym).slice(0,4),m=+String(x.ym).slice(5,7)-1;if(!(a>=2018))return;(V[a]||(V[a]=Array(12).fill(null)))[m]=+x.vendas||0;(F[a]||(F[a]=Array(12).fill(null)))[m]=+x.faturamento||0;});
+    /* meses sem nenhum pedido viram zero nos anos fechados; no ano em curso só até hoje */
+    Object.keys(V).forEach(a=>{for(let m=0;m<12;m++){const futuro=+a>ano||(+a===ano&&m>mes);if(futuro){V[a][m]=null;F[a][m]=null;}else{if(V[a][m]==null)V[a][m]=0;if(!F[a])F[a]=Array(12).fill(null);if(F[a][m]==null)F[a][m]=0;}}});
+    EV.dados={V,F};const ys=Object.keys(V).map(Number).sort();
+    if(!EV.a2||!V[EV.a2]){EV.a2=ys[ys.length-1];EV.a1=V[EV.a2-1]?EV.a2-1:ys[Math.max(0,ys.length-2)];}
+    if(!EV.vf||!V[EV.vf])EV.vf=EV.a2;
+  }catch(e){EV.erro=e.message;EV.dados=null;}
+  EV.carregando=false;evDesenha();
+}
+function telaEvolucao(){
+  $('app').innerHTML=`<div class="migalha"><a href="#performance" class="mlk">Vendas</a> › Evolução de vendas</div>
+  <div class="topo"><h1>Evolução de vendas</h1><span class="salvo"></span><span class="k" style="color:var(--ink3);font-size:12px">comparativo ano a ano, mês a mês · pedidos pela data do pedido, nas situações da Performance · notas pela data de emissão</span><span style="flex:1"></span><button class="btn" id="evAtu">⟳ Atualizar</button><button class="btn" id="evPdf">⎙ PDF da tela</button></div>
+  <div class="sts" id="evAbas"></div><div id="evCorpo"></div>`;
+  $('evAtu').onclick=()=>{EV.forca=true;evCarregar();};$('evPdf').onclick=evPdf;
+  if(!EV.dados)evCarregar();else evDesenha();
+}
+function evDesenha(){
+  const a=$('evAbas'),c=$('evCorpo');if(!a||!c)return;
+  a.innerHTML=[['ar','Análise relativa'],['mx','Venda × Faturamento']].map(([k,n])=>`<button data-aba="${k}" class="${EV.aba===k?'on':''}">${n}</button>`).join('');
+  a.querySelectorAll('[data-aba]').forEach(b=>b.onclick=()=>{EV.aba=b.dataset.aba;evDesenha();});
+  if(EV.carregando){c.innerHTML='<div class="vazio">Somando os meses…</div>';return;}
+  if(EV.erro){c.innerHTML=`<div class="aviso">⚠ <div>${esc(EV.erro)}<br><small>A função <b>vendas_mensal</b> precisa estar no banco (supabase-vendas-funcoes.sql) e a função tiny publicada com a ação <b>vendas_mensal</b>.</small></div></div>`;return;}
+  if(!EV.dados)return;
+  if(EV.aba==='ar')evAnalise(c);else evVendaFat(c);
+}
+/* ---------- peças ---------- */
+const evSel=(id,rot,ops,val,cls)=>`<div class="evSel"><label>${rot}</label><select id="${id}" class="evBig ${cls||''}">${ops.map(([v,n])=>`<option value="${v}" ${String(val)===String(v)?'selected':''}>${n}</option>`).join('')}</select></div>`;
+const evKpi=(t,v,s,cls,bar)=>`<div class="pfkpi ${cls||''}"><span>${t}</span><b>${v}</b>${s?`<small>${s}</small>`:''}${bar!=null?`<div class="evbar"><i style="width:${Math.min(100,Math.max(0,bar*100))}%"></i></div>`:''}</div>`;
+const evSec=(id,tit,sub,extra)=>`<div class="pfsec evtog ${EV.fech[id]?'fechado':''}" data-tog="${id}" style="margin:0;cursor:pointer"><span class="car">▾</span>${tit}<span class="k" style="font-weight:500;text-transform:none;letter-spacing:0;color:var(--ink3)">${sub||''}</span><span style="flex:1"></span>${extra||''}<span class="k" style="font-weight:500;text-transform:none;letter-spacing:0;color:var(--ink3);margin-left:12px">${EV.fech[id]?'expandir':'recolher'}</span></div>`;
+function evLigaTog(c){c.querySelectorAll('.evtog').forEach(h=>h.onclick=ev=>{if(ev.target.closest('select,button,a'))return;EV.fech[h.dataset.tog]=!EV.fech[h.dataset.tog];evDesenha();});}
+const evPeriodo=n=>n>=12?'ano inteiro':n<=0?'nenhum mês fechado':n===6?'1º semestre':n<6?`jan–${EV_M[n-1].toLowerCase()}`:n===7?'1º semestre + julho':`jan–${EV_M[n-1].toLowerCase()}`;
+const evCor=()=>{const cs=getComputedStyle(document.documentElement);const g=k=>cs.getPropertyValue(k).trim();return {azul:g('--selt')||'#1B4F9C',ink3:g('--ink3')||'#6B7280',line:g('--line')||'#E5E7EB',ok:'#15803D',mau:'#B91C1C',amb:'#B45309',bg:'#fff'};};
+/* linha suave entre pontos (curva de Bézier com o controle no meio) */
+const evCurva=pts=>{if(pts.length<2)return '';let d='M'+pts[0].join(' ');for(let k=1;k<pts.length;k++){const a=pts[k-1],b=pts[k];const cx=(a[0]+b[0])/2;d+=` C${cx} ${a[1]},${cx} ${b[1]},${b[0]} ${b[1]}`;}return d;};
+function evTip(svg,fn_){const tip=svg.parentElement.querySelector('.evtip');svg.querySelectorAll('rect[data-i]').forEach(rc=>{rc.onmouseenter=()=>{tip.innerHTML=fn_(+rc.dataset.i);tip.style.display='block';};rc.onmousemove=ev=>{const b=svg.parentElement.getBoundingClientRect();tip.style.left=Math.min(b.width-300,ev.clientX-b.left+12)+'px';tip.style.top=(ev.clientY-b.top-34)+'px';};rc.onmouseleave=()=>tip.style.display='none';});}
+
+/* ---------- aba Análise relativa ---------- */
+function evDadosAR(){const d=evD();const {ano,mes}=evHoje();const r1=d[EV.a1]||Array(12).fill(null);const r2=(d[EV.a2]||Array(12).fill(null)).map((v,i)=>EV.a2===ano&&i>=mes?null:v);
+  const n2=r2.filter(v=>v!=null).length;const t1=r1.reduce((s,v)=>s+(v||0),0),t2=r2.reduce((s,v)=>s+(v||0),0),t1p=r1.slice(0,n2).reduce((s,v)=>s+(v||0),0);
+  const pcs=r2.map((v,i)=>v!=null&&r1[i]?v/r1[i]-1:null);return {r1,r2,n2,t1,t2,t1p,pcs,acum:t1p?t2/t1p-1:0,ano,mes};}
+function evAnalise(c){
+  const ys=evAnos();const {r1,r2,n2,t1,t2,t1p,pcs,acum,ano,mes}=evDadosAR();const per=evPeriodo(n2);const pv=pcs.filter(v=>v!=null);const mi=pv.length?pcs.indexOf(Math.max(...pv)):-1;const sobe=pv.filter(v=>v>=0).length;
+  const baseN=EV.base==='V'?'Pedidos de venda':'Faturamento';
+  const tab=`<table class="tv evtab"><thead><tr><th>Mês</th><th class="a1"><span class="evchip">${EV.a1}</span></th><th class="a2"><span class="evchip">${EV.a2}</span></th><th>Diferença</th><th>%</th></tr></thead><tbody>${EV_M.map((m,i)=>{const a=r1[i],b=r2[i];const emCurso=EV.a2===ano&&i===mes;const ok=a!=null&&b!=null;const p=pcs[i];const bruto=(evD()[EV.a2]||[])[i];
+    return `<tr style="${emCurso?'opacity:.6':''}"><td>${EV_ML[i]}${emCurso?' <span class="k" style="font-size:10.5px;color:var(--ink3)">em curso · parcial</span>':''}</td><td class="m a1">${a!=null?evRsc(a):'—'}</td><td class="m a2"><b>${b!=null?evRsc(b):emCurso&&bruto!=null?evRsc(bruto):'—'}</b></td><td class="m" style="color:${ok?(b-a>=0?'var(--ok,#15803D)':'var(--danger,#B91C1C)'):'var(--ink3)'}">${ok?(b-a>=0?'+':'−')+evRsc(Math.abs(b-a)).replace('R$ ',''):'—'}</td><td>${p==null?'<span class="pfpill" style="background:var(--line2);color:var(--ink3)">—</span>':`<span class="pfpill ${p>=0?'ok':'mau'}">${evPc(p)}</span>`}</td></tr>`;}).join('')}</tbody>
+    <tfoot><tr><td>Mesmo período (${per})</td><td class="m a1">${evRsc(t1p)}</td><td class="m a2">${evRsc(t2)}</td><td class="m" style="color:${t2-t1p>=0?'var(--ok,#15803D)':'var(--danger,#B91C1C)'}">${(t2-t1p>=0?'+':'−')+evRsc(Math.abs(t2-t1p)).replace('R$ ','')}</td><td><span class="pfpill ${acum>=0?'ok':'mau'}">${evPc(acum)}</span></td></tr>
+    <tr><td>Ano inteiro</td><td class="m a1">${evRsc(t1)}</td><td class="m a2">${n2<12&&n2>0?'<span style="color:var(--ink3)">proj. '+evRsc(t2/n2*12)+'</span>':evRsc(t2)}</td><td></td><td>${n2>0?`<span class="pfpill ${(n2<12?t2/n2*12:t2)>=t1?'ok':'mau'}">${evPc(t1?(n2<12?t2/n2*12:t2)/t1-1:0)}</span>`:''}</td></tr></tfoot></table>`;
+  const svg=evSvgAR(r1,r2,pcs);
+  c.innerHTML=`<div class="evTopo">${evSel('evA1','Ano 1',ys.map(y=>[y,y]),EV.a1,'roxo')}${evSel('evA2','Ano 2',ys.map(y=>[y,y]),EV.a2,'azul')}${evSel('evBase','Análise sobre',[['V','Pedidos de venda'],['F','Faturamento']],EV.base,'navy')}</div>
+  <div class="evKpis">${evKpi('Total do ano 1',evRsc(t1),`${EV.a1} · 12 meses`,'roxo')}${evKpi('Total do ano 2',evRsc(t2),`${EV.a2} · ${n2} ${n2===1?'mês fechado':'meses fechados'}${n2<12&&n2>0?' · projeção do ano '+evRsc(t2/n2*12):''}`,'azul')}${evKpi('Crescimento acumulado do período',evPc(acum),`${per} · ${evRsc(Math.abs(t2-t1p))} a ${acum>=0?'mais':'menos'} que o mesmo período de ${EV.a1}`,'dest',acum)}</div>
+  <div class="caixa" style="margin-top:12px">${evSec('arTab','Mês a mês',`${baseN} · ${EV.a2} contra ${EV.a1} · diferença em R$ e %`)}${EV.fech.arTab?'':`<div class="rol">${tab}</div>`}</div>
+  <div class="caixa" style="margin-top:12px">${evSec('arGraf','Evolução mês a mês',`${baseN} · ${per}`,`<span class="evleg"><i style="background:#C7CBD3"></i>${EV.a1}<i style="background:#1B4F9C;margin-left:12px"></i>${EV.a2}<i style="background:#15803D;height:3px;width:16px;margin-left:12px;vertical-align:3px"></i>% crescimento</span>`)}${EV.fech.arGraf?'':`<div class="evgraf">${svg}<div class="evtip"></div></div>`}</div>
+  <div class="evDest">${evDq('↗',sobe===n2?'Crescimento em todos os meses':`Cresceu em ${sobe} de ${n2} meses`,`${EV.a2} × ${EV.a1}, mês a mês`,sobe===n2||!n2?'':`${n2-sobe} ${n2-sobe>1?'meses abaixo':'mês abaixo'}`)}${evDq('◎','Crescimento acumulado do período',evPc(acum),per)}${mi>=0?evDq('✓',`${EV_ML[mi]} foi o melhor mês`,evPc(pcs[mi]),`acima de ${EV_ML[mi].toLowerCase()}/${EV.a1}`):''}</div>`;
+  $('evA1').onchange=e=>{EV.a1=+e.target.value;evDesenha();};$('evA2').onchange=e=>{EV.a2=+e.target.value;evDesenha();};$('evBase').onchange=e=>{EV.base=e.target.value;evDesenha();};
+  evLigaTog(c);const g=c.querySelector('svg');if(g)evTip(g,i=>`<b>${EV_ML[i]}</b> · ${EV.a1}: ${r1[i]!=null?evRsc(r1[i]):'—'} · ${EV.a2}: <b>${r2[i]!=null?evRsc(r2[i]):'—'}</b>${pcs[i]!=null?' · '+evPc(pcs[i]):''}`);
+}
+const evDq=(ic,t,v,s)=>`<div class="evdq"><div class="ic">${ic}</div><div><b>${t}</b><strong>${v}</strong><small>${s||''}</small></div></div>`;
+function evSvgAR(r1,r2,pcs,semEixo){
+  const W=900,H=330,pl=semEixo?16:60,pr=56,pt=28,pb=34;const max=Math.max(1,...r1.map(v=>v||0),...r2.map(v=>v||0))*1.15;const y=v=>pt+(H-pt-pb)-(v/max)*(H-pt-pb);const bw=(W-pl-pr)/12;const x=i=>pl+i*bw;
+  const pv=pcs.filter(v=>v!=null);const pmax=Math.max(.2,...pv.map(Math.abs))*1.25;const yp=v=>pt+(H-pt-pb)/2-(v/pmax)*(H-pt-pb)/2;const C=evCor();
+  let g='';[.25,.5,.75,1].forEach(f=>{const v=max/1.15*f;g+=`<line x1="${pl}" x2="${W-pr}" y1="${y(v)}" y2="${y(v)}" stroke="${C.line}" stroke-dasharray="3 3"/>${semEixo?'':`<text x="${pl-6}" y="${y(v)+4}" text-anchor="end" font-size="10" fill="${C.ink3}">${evRsk(v)}</text>`}`;});
+  [0,pmax/1.25].forEach(v=>{g+=`<text x="${W-pr+6}" y="${yp(v)+4}" font-size="10" fill="${C.ink3}">${evPc(v).replace(',0%','%')}</text>`;});
+  r1.forEach((v,i)=>{if(v==null)return;g+=`<rect x="${x(i)+bw*0.14}" y="${y(v)}" width="${bw*0.32}" height="${Math.max(0,y(0)-y(v))}" fill="#C7CBD3" rx="3"/>`;});
+  r2.forEach((v,i)=>{if(v==null)return;g+=`<rect x="${x(i)+bw*0.52}" y="${y(v)}" width="${bw*0.32}" height="${Math.max(0,y(0)-y(v))}" fill="#1B4F9C" rx="3"/>`;});
+  const pts=pcs.map((v,i)=>v==null?null:[x(i)+bw/2,yp(v)]).filter(Boolean);
+  if(pts.length>1)g+=`<path d="${evCurva(pts)}" fill="none" stroke="${C.ok}" stroke-width="3" stroke-linecap="round"/>`;
+  pcs.forEach((v,i)=>{if(v==null)return;const px=x(i)+bw/2,py=yp(v);const t=evPc(v);const w=t.length*7+12;g+=`<circle cx="${px}" cy="${py}" r="4.5" fill="${v>=0?C.ok:C.mau}" stroke="#fff" stroke-width="2"/><rect x="${px-w/2}" y="${py-30}" width="${w}" height="18" rx="6" fill="${v>=0?C.ok:C.mau}"/><text x="${px}" y="${py-17}" text-anchor="middle" font-size="11" font-weight="700" fill="#fff">${t}</text>`;});
+  EV_M.forEach((m,i)=>{g+=`<text x="${x(i)+bw/2}" y="${H-12}" text-anchor="middle" font-size="11" font-weight="600" fill="${C.ink3}">${m.toUpperCase()}</text><rect data-i="${i}" x="${x(i)}" y="0" width="${bw}" height="${H}" fill="transparent" style="cursor:pointer"/>`;});
+  return `<svg viewBox="0 0 ${W} ${H}" class="evsvg">${g}</svg>`;
+}
+
+/* ---------- aba Venda × Faturamento ---------- */
+function evDadosVF(){const {ano,mes}=evHoje();const y=EV.vf;const v=(EV.dados.V[y]||Array(12).fill(null)).map((x,i)=>y===ano&&i>=mes?null:x),f=(EV.dados.F[y]||Array(12).fill(null)).map((x,i)=>y===ano&&i>=mes?null:x);
+  const tv=v.reduce((s,x)=>s+(x||0),0),tf=f.reduce((s,x)=>s+(x||0),0);const n=v.filter(x=>x!=null).length;return {y,v,f,tv,tf,n,ano,mes};}
+function evVendaFat(c){
+  const ys=evAnos();const {y,v,f,tv,tf,n,ano,mes}=evDadosVF();const d=evD();const Vd=EV.dados.V;
+  const tab=`<table class="tv evtab"><thead><tr><th>Mês</th><th class="f1"><span class="evchip">Pedidos de venda</span></th><th class="f2"><span class="evchip">Faturamento</span></th><th>Diferença</th><th>% faturado</th></tr></thead><tbody>${EV_M.map((m,i)=>{const a=v[i],b=f[i];const ok=a!=null&&b!=null;const p=ok&&a?b/a:null;const emCurso=y===ano&&i===mes;const ba=(EV.dados.V[y]||[])[i],bb=(EV.dados.F[y]||[])[i];
+    return `<tr style="${emCurso?'opacity:.6':''}"><td>${EV_ML[i]}${emCurso?' <span class="k" style="font-size:10.5px;color:var(--ink3)">em curso · parcial</span>':''}</td><td class="m f1">${a!=null?evRsc(a):emCurso&&ba!=null?evRsc(ba):'—'}</td><td class="m f2">${b!=null?evRsc(b):emCurso&&bb!=null?evRsc(bb):'—'}</td><td class="m" style="color:${ok?(b-a>=0?'var(--ok,#15803D)':'#B45309'):'var(--ink3)'}">${ok?(b-a>=0?'+':'−')+evRsc(Math.abs(b-a)).replace('R$ ',''):'—'}</td><td>${p==null?'<span class="pfpill" style="background:var(--line2);color:var(--ink3)">—</span>':`<span class="pfpill ${p>=1?'ok':'amb'}">${Math.round(p*100)}%</span>`}</td></tr>`;}).join('')}</tbody>
+    <tfoot><tr><td>Total (${n} ${n===1?'mês':'meses'})</td><td class="m f1">${evRsc(tv)}</td><td class="m f2">${evRsc(tf)}</td><td class="m" style="color:${tf-tv>=0?'var(--ok,#15803D)':'#B45309'}">${(tf-tv>=0?'+':'−')+evRsc(Math.abs(tf-tv)).replace('R$ ','')}</td><td><span class="pfpill ${tf>=tv?'ok':'amb'}">${tv?Math.round(tf/tv*100):0}%</span></td></tr></tfoot></table>`;
+  /* matriz anos × meses */
+  const TH={vp:'valores + %',v:'só valores',p:'só %'};
+  let mx=`<table class="tv evmx"><thead><tr><th>Ano</th>${EV_M.map(m=>`<th class="n">${m}</th>`).join('')}<th class="n tot">Total / acumulado</th></tr></thead><tbody>`;
+  ys.forEach(yy=>{const r=d[yy]||[],ant=d[yy-1];const ate=yy===ano?mes:r.filter(x=>x!=null).length;const tot=r.slice(0,ate).reduce((s,x)=>s+(x||0),0);const totAnt=ant?ant.slice(0,ate).reduce((s,x)=>s+(x||0),0):0;const pt=totAnt?tot/totAnt-1:null;
+    mx+=`<tr class="${yy===EV.vf?'sel':''}" data-ano="${yy}" style="cursor:pointer"><td class="ano">${yy}</td>${r.map((x,i)=>{if(x==null)return '<td class="n vazio">—</td>';const emCurso=yy===ano&&i===mes;const p=ant&&ant[i]?x/ant[i]-1:null;return `<td class="n ${emCurso?'agora':''}" title="${EV_ML[i]} de ${yy}: ${evRsc(x)}${emCurso?' (mês em curso, parcial)':''}">${EV.ver!=='p'?`<b>${evRs(x)}</b>`:''}${EV.ver!=='v'&&p!=null?`<i class="${p>=0?'up':'dn'}">${evPc(p)}</i>`:(EV.ver==='p'?'<i>—</i>':'')}</td>`;}).join('')}<td class="n tot"><b>${evRs(tot)}</b><i class="${pt==null?'':pt>=0?'up':'dn'}">${pt==null?'base':evPc(pt)}${yy===ano?' · até '+(ate?EV_M[ate-1].toLowerCase():'—'):''}</i></td></tr>`;});
+  mx+='</tbody></table>';
+  c.innerHTML=`<div class="evTopo">${evSel('evVf','Ano',ys.map(x=>[x,x]),EV.vf,'navy')}<span class="k" style="color:var(--ink3);font-size:12px;align-self:center">o que entrou em pedidos contra o que saiu em nota, mês a mês · clicar num ano da matriz também troca</span></div>
+  <div class="evKpis">${evKpi('Vendido no ano',evRsc(tv),`${y} · ${n} ${n===1?'mês fechado':'meses fechados'}`,'azul')}${evKpi('Faturado no ano',evRsc(tf),'notas emitidas no mesmo período','verde')}${evKpi('% faturado do vendido',tv?(tf/tv*100).toFixed(1).replace('.',',')+'%':'—',`${evRsc(Math.abs(tv-tf))} ${tf>=tv?'faturados a mais que o vendido (carteira de meses anteriores)':'vendidos e ainda não faturados (carteira em aberto)'}`,'dest',tv?tf/tv:0)}</div>
+  <div class="caixa" style="margin-top:12px">${evSec('vfTab','Mês a mês','pedidos de venda × faturamento · diferença e % faturado')}${EV.fech.vfTab?'':`<div class="rol">${tab}</div>`}</div>
+  <div class="caixa" style="margin-top:12px">${evSec('vfGraf',`Venda × Faturamento · ${y}`,'',`<span class="evleg"><i style="background:#1B4F9C"></i>pedidos de venda<i style="background:#15803D;margin-left:12px"></i>faturamento<i style="background:#B45309;height:3px;width:16px;margin-left:12px;vertical-align:3px"></i>% faturado do vendido</span>`)}${EV.fech.vfGraf?'':`<div class="evgraf">${evSvgVF(v,f)}<div class="evtip"></div></div>`}</div>
+  <div class="caixa" style="margin-top:12px"><div class="pfsec" style="margin:0"><span class="seg" id="evSegBase">${[['V','Pedidos de venda'],['F','Faturamento']].map(([k,r])=>`<button data-b="${k}" class="${EV.base===k?'on':''}">${r}</button>`).join('')}</span><span style="text-transform:none;letter-spacing:0;font-weight:500">anos × meses</span><span class="k" style="font-weight:500;text-transform:none;letter-spacing:0;color:var(--ink3)">% contra o mesmo mês do ano anterior · a célula com borda azul é o mês em curso</span><span style="flex:1"></span><span class="seg" id="evSegVer">${Object.entries(TH).map(([k,r])=>`<button data-v="${k}" class="${EV.ver===k?'on':''}">${r}</button>`).join('')}</span></div><div class="rol">${mx}</div>
+  <div class="k" style="padding:9px 14px;color:var(--ink3);font-size:12px"><b>Total</b> = soma dos 12 meses; no ano em curso, o acumulado até o último mês fechado, comparado com o mesmo período do ano anterior.</div></div>`;
+  $('evVf').onchange=e=>{EV.vf=+e.target.value;evDesenha();};
+  c.querySelectorAll('#evSegBase button').forEach(b=>b.onclick=()=>{EV.base=b.dataset.b;evDesenha();});c.querySelectorAll('#evSegVer button').forEach(b=>b.onclick=()=>{EV.ver=b.dataset.v;evDesenha();});
+  c.querySelectorAll('tr[data-ano]').forEach(tr=>tr.onclick=()=>{EV.vf=+tr.dataset.ano;evDesenha();window.scrollTo({top:0,behavior:'smooth'});});
+  evLigaTog(c);const g=c.querySelector('svg');if(g)evTip(g,i=>`<b>${EV_ML[i]} ${y}</b> · vendido ${v[i]!=null?evRsc(v[i]):'—'} · faturado <b>${f[i]!=null?evRsc(f[i]):'—'}</b>${v[i]&&f[i]!=null?' · '+Math.round(f[i]/v[i]*100)+'% faturado':''}`);
+}
+function evSvgVF(v,f,semEixo){
+  const W=900,H=300,pl=semEixo?16:60,pr=56,pt=24,pb=34;const max=Math.max(1,...v.map(x=>x||0),...f.map(x=>x||0))*1.15;const yy=x=>pt+(H-pt-pb)-(x/max)*(H-pt-pb);const bw=(W-pl-pr)/12;const xx=i=>pl+i*bw;const yp=p=>pt+(H-pt-pb)-(Math.min(1.6,p)/1.6)*(H-pt-pb);const C=evCor();
+  let g='';[.25,.5,.75,1].forEach(k=>{const val=max/1.15*k;g+=`<line x1="${pl}" x2="${W-pr}" y1="${yy(val)}" y2="${yy(val)}" stroke="${C.line}" stroke-dasharray="3 3"/>${semEixo?'':`<text x="${pl-6}" y="${yy(val)+4}" text-anchor="end" font-size="10" fill="${C.ink3}">${evRsk(val)}</text>`}`;});
+  [0.5,1,1.5].forEach(p=>{g+=`<text x="${W-pr+6}" y="${yp(p)+4}" font-size="10" fill="${C.ink3}">${Math.round(p*100)}%</text>`;});g+=`<line x1="${pl}" x2="${W-pr}" y1="${yp(1)}" y2="${yp(1)}" stroke="${C.amb}" stroke-dasharray="2 4" opacity=".6"/>`;
+  v.forEach((x,i)=>{if(x==null)return;g+=`<rect x="${xx(i)+bw*0.14}" y="${yy(x)}" width="${bw*0.32}" height="${Math.max(0,yy(0)-yy(x))}" fill="#1B4F9C" rx="3"/>`;});
+  f.forEach((x,i)=>{if(x==null)return;g+=`<rect x="${xx(i)+bw*0.52}" y="${yy(x)}" width="${bw*0.32}" height="${Math.max(0,yy(0)-yy(x))}" fill="#15803D" rx="3"/>`;});
+  const ps=v.map((x,i)=>x&&f[i]!=null?[xx(i)+bw/2,yp(f[i]/x),f[i]/x]:null).filter(Boolean);
+  if(ps.length>1)g+=`<polyline points="${ps.map(p=>p[0]+','+p[1]).join(' ')}" fill="none" stroke="${C.amb}" stroke-width="2.5" stroke-linejoin="round"/>`;
+  ps.forEach(p=>{const t=Math.round(p[2]*100)+'%';g+=`<circle cx="${p[0]}" cy="${p[1]}" r="4" fill="${C.amb}" stroke="#fff" stroke-width="2"/><rect x="${p[0]-18}" y="${p[1]-26}" width="36" height="16" rx="5" fill="${C.amb}"/><text x="${p[0]}" y="${p[1]-14}" text-anchor="middle" font-size="10.5" font-weight="700" fill="#fff">${t}</text>`;});
+  EV_M.forEach((m,i)=>{g+=`<text x="${xx(i)+bw/2}" y="${H-12}" text-anchor="middle" font-size="11" font-weight="600" fill="${C.ink3}">${m.toUpperCase()}</text><rect data-i="${i}" x="${xx(i)}" y="0" width="${bw}" height="${H}" fill="transparent" style="cursor:pointer"/>`;});
+  return `<svg viewBox="0 0 ${W} ${H}" class="evsvg">${g}</svg>`;
+}
+
+/* ---------- PDF: a tela como está (anos, base, o que está expandido) ---------- */
+function evPdf(){
+  if(!EV.dados)return toast('Ainda carregando.',true);
+  const corpo=$('evCorpo');if(!corpo)return;
+  const clone=corpo.cloneNode(true);
+  /* na folha: sem controles; o seletor vira o texto escolhido */
+  clone.querySelectorAll('select').forEach(s=>{const o=s.options[s.selectedIndex];const b=document.createElement('b');b.textContent=o?o.textContent:'';b.style.cssText='display:inline-block;background:#0E1B33;color:#fff;border-radius:8px;padding:6px 12px;font:800 16px Inter,sans-serif';s.replaceWith(b);});
+  clone.querySelectorAll('.seg').forEach(s=>{const on=s.querySelector('.on');const b=document.createElement('b');b.textContent=on?on.textContent:'';s.replaceWith(b);});
+  clone.querySelectorAll('.evtip,.car,.evTopo .k').forEach(e=>e.remove());clone.querySelectorAll('.evtog .k:last-child').forEach(e=>e.remove());
+  clone.querySelectorAll('[title]').forEach(e=>e.removeAttribute('title'));
+  const tit=EV.aba==='ar'?`Análise relativa · ${EV.a2} × ${EV.a1} · ${EV.base==='V'?'Pedidos de venda':'Faturamento'}`:`Venda × Faturamento · ${EV.vf}`;
+  const css=[...document.querySelectorAll('style')].map(s=>s.textContent).join('\n');
+  const folha=`<div id="evFolha" style="background:#fff;color:#111;width:297mm;min-height:200mm;padding:12mm 14mm;box-sizing:border-box;font-family:Inter,system-ui,sans-serif;font-size:12px"><div style="display:flex;justify-content:space-between;align-items:baseline;border-bottom:2px solid #1B4F9C;padding-bottom:8px;margin-bottom:12px"><div><div style="font:800 11px Inter,sans-serif;letter-spacing:.08em;color:#1B4F9C">ATRIUS · VENDAS · EVOLUÇÃO DE VENDAS</div><div style="font:800 22px/1.2 Inter,sans-serif;color:#0E1B33;margin-top:2px">${esc(tit)}</div></div><div style="font-size:11px;color:#64748B">emitido em ${br(perHoje())}</div></div>${clone.innerHTML}</div>`;
+  const html=`<div class="pfmask on" id="evMF"><div class="pfmod"><div class="fh"><b>${esc(tit)}</b><small>a tela como está</small><span style="flex:1"></span><button class="btn sm" data-x>Fechar ✕</button></div><div class="fb" id="evFb">${folha}</div>
+    <div class="ff"><div class="zoom"><button type="button" id="evZm">−</button><span id="evZl">100%</span><button type="button" id="evZp">+</button><button type="button" id="evZ1" style="width:auto;padding:0 8px;font-size:11px">ajustar</button></div><span style="flex:1"></span><button class="btn pri" id="evPrint">⎙ Imprimir / Salvar PDF</button></div></div></div>`;
+  document.body.insertAdjacentHTML('beforeend',html);const m=$('evMF');m.querySelectorAll('[data-x]').forEach(b=>b.onclick=()=>m.remove());
+  let z=1;const setZ=v=>{z=v;$('evFolha').style.zoom=z;$('evZl').textContent=Math.round(z*100)+'%';};const ajusta=()=>setZ(Math.min(1,($('evFb').clientWidth-36)/1123));setTimeout(ajusta,30);
+  $('evZm').onclick=()=>setZ(Math.max(.4,z-.1));$('evZp').onclick=()=>setZ(Math.min(2.5,z+.1));$('evZ1').onclick=ajusta;
+  $('evPrint').onclick=()=>{const w=window.open('','_blank');if(!w)return toast('O navegador bloqueou a janela de impressão.',true);
+    w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${esc(tit)}</title><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap"><style>${css}\n@page{size:A4 landscape;margin:0}body{margin:0;background:#fff}#evFolha{min-height:210mm}.evtog{cursor:default}.evgraf svg{max-width:1000px}</style></head><body>${folha}</body></html>`);w.document.close();setTimeout(()=>{w.focus();w.print();},700);};
+}
+(function(){try{const s=document.createElement('style');s.textContent=`
+.evTopo{display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap;margin-bottom:12px}
+.evSel label{display:block;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3);font-weight:600;margin-bottom:5px}
+select.evBig{height:42px;border:0;border-radius:10px;padding:0 36px 0 14px;font:800 17px Inter,sans-serif;color:#fff;appearance:none;-webkit-appearance:none;background:#0E1B33 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='7'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%23fff' stroke-width='2'/%3E%3C/svg%3E") right 12px center/12px no-repeat;cursor:pointer}
+select.evBig.roxo{background-color:#7E2A6C}select.evBig.azul{background-color:#1B4F9C}select.evBig.navy{font-size:14px}
+.evKpis{display:grid;grid-template-columns:1fr 1fr 1.3fr;gap:10px}@media(max-width:800px){.evKpis{grid-template-columns:1fr}}
+.evKpis .pfkpi b{display:block;font:700 20px/1.2 'JetBrains Mono',monospace;margin-top:5px}.evKpis .pfkpi small{display:block;font-size:11.5px;color:var(--ink3);margin-top:3px}
+.pfkpi.roxo{border-color:#7E2A6C;border-left-width:5px}.pfkpi.azul{border-color:#1B4F9C;border-left-width:5px}.pfkpi.verde{border-color:#15803D;border-left-width:5px}
+.pfkpi.dest{background:#0E1B33;color:#fff;border-color:#0E1B33}.pfkpi.dest span,.pfkpi.dest small{color:#C9D4EA;white-space:normal}.pfkpi.dest b{font-size:30px;color:#fff}
+.evbar{height:6px;background:rgba(255,255,255,.2);border-radius:3px;margin-top:8px;overflow:hidden}.evbar i{display:block;height:100%;background:#4ADE80;border-radius:3px}
+.evtog .car{color:var(--ink3);font-size:12px;width:12px;display:inline-block;transition:transform .15s}.evtog.fechado .car{transform:rotate(-90deg)}.evtog:hover{background:var(--line3)}
+.evleg{font-size:12px;color:var(--ink3);text-transform:none;letter-spacing:0;font-weight:400}.evleg i{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-2px;margin-right:5px}
+.evgraf{padding:10px 14px 4px;position:relative}.evsvg{display:block;width:100%;max-width:1060px;height:auto;margin:0 auto}
+.evtip{position:absolute;display:none;background:#111827;color:#fff;font-size:12px;padding:6px 9px;border-radius:7px;pointer-events:none;white-space:nowrap;z-index:5}
+.evchip{display:inline-block;color:#fff;font:800 12px Inter,sans-serif;padding:3px 10px;border-radius:999px;background:#9CA3AF}
+.evtab{border:0;border-radius:0}.evtab th,.evtab td{text-align:center}.evtab th:first-child,.evtab td:first-child{text-align:left}
+.evtab th.a1,.evtab td.a1{background:#F1F2F5;color:#4B5563}.evtab th.a2,.evtab td.a2{background:#EAF2FF;color:#1B4F9C}.evtab th.a2 .evchip{background:#1B4F9C}.evtab td.a2 b{color:#1B4F9C}
+.evtab th.f1,.evtab td.f1{background:#EAF2FF;color:#1B4F9C}.evtab th.f2,.evtab td.f2{background:#E8F7EE;color:#15803D}.evtab th.f1 .evchip{background:#1B4F9C}.evtab th.f2 .evchip{background:#15803D}
+.evtab tfoot td{background:var(--line3);font-weight:700;border-top:1px solid var(--line)}
+.pfpill.amb{background:#FEF3C7;color:#B45309}
+.evDest{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px}@media(max-width:800px){.evDest{grid-template-columns:1fr}}
+.evdq{border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:flex;gap:12px;align-items:center;background:#fff}.evdq .ic{width:40px;height:40px;border-radius:50%;border:2px solid #1B4F9C;display:grid;place-items:center;color:#1B4F9C;font-weight:800;flex:none}
+.evdq b{display:block;font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink2)}.evdq strong{display:block;font:800 20px Inter,sans-serif;color:#1B4F9C}.evdq small{color:var(--ink3);font-size:11.5px}
+.evmx{border:0;border-radius:0}.evmx td{padding:5px 8px;line-height:1.25;white-space:nowrap}.evmx td b{display:block;font:500 11.5px 'JetBrains Mono',monospace}.evmx td i{display:block;font:500 10.5px 'JetBrains Mono',monospace;font-style:normal;color:var(--ink3)}
+.evmx td i.up{color:#15803D}.evmx td i.dn{color:#B91C1C}.evmx td.ano{font:700 13px Inter,sans-serif}.evmx th.tot,.evmx td.tot{border-left:1px solid var(--line);background:var(--line3)}.evmx td.tot b{font-weight:700}
+.evmx td.vazio{color:var(--ink3)}.evmx td.agora{box-shadow:inset 0 0 0 2px #1B4F9C;border-radius:4px}.evmx tr.sel td.ano{color:#1B4F9C}.evmx tbody tr:hover td{background:var(--line3)}
+`;document.head.appendChild(s);}catch(e){}})();
 
 /* ===== v393: Performance de vendas ===== */
 /* =====================================================================
@@ -1037,7 +1227,11 @@ function telaCfgVendas(){
    Metas e regras moram em cfgVendas (estado do ERP): N.cfgVendas()/salvarCfgVendas().
    ===================================================================== */
 const PF={per:perNovo('mes'),aba:'perf',dados:null,hist:null,erro:'',carregando:false,vend:[],ord:{k:'pr',d:-1},rep:null,rPer:null};
-const PF_INVALIDAS=['Cancelado','Não Entregue','Nao Entregue','Dados incompletos'];
+/* situações do Tiny; na Performance entram as marcadas no dropdown (guardado para todos em cfgVendas.perfSits).
+   Padrão: tudo menos Cancelado e Não entregue */
+const PF_SITS=['Em aberto','Aprovado','Preparando envio','Pronto para envio','Faturado','Enviado','Entregue','Não entregue','Dados incompletos','Em devolução','Cancelado'];
+const PF_SITS_PADRAO=PF_SITS.filter(s=>!['Cancelado','Não entregue'].includes(s));
+const pfSitsOn=()=>{const c=pfCfg();return Array.isArray(c.perfSits)&&c.perfSits.length?c.perfSits:PF_SITS_PADRAO;};
 const PF_ABERTOS=['Em aberto','Aprovado','Preparando envio','Pronto para envio'];
 const pfCfg=()=>{try{return N.cfgVendas?N.cfgVendas():{};}catch(e){return {};}};
 const pfSalvaCfg=o=>{try{N.salvarCfgVendas(o);}catch(e){toast('Não consegui gravar: '+e.message,true);}};
@@ -1046,7 +1240,13 @@ const pfStatus=razao=>{const r=razao*100;const R=pfRegras();const f=R.find(x=>r>
 const pfPc=v=>(isFinite(v)?v*100:0).toFixed(1).replace('.',',')+'%';
 const pfRs=v=>'R$ '+nf(Math.round((+v||0)*100)/100,2);   /* com centavos, para bater com o Tiny */
 const pfYm=s=>String(s||'').slice(0,7);
-const pfValido=p=>!PF_INVALIDAS.some(s=>semAc(s)===semAc(p.situacao));
+const pfValido=p=>{const on=pfSitsOn().map(semAc);const st=semAc(p.situacao);return !PF_SITS.map(semAc).includes(st)||on.includes(st);};   /* situação desconhecida conta */
+/* representante fixo por cliente: o Tiny não deixa trocar o vendedor de pedido faturado, então a
+   correção mora aqui (Configurações › Vendas) e vale em tudo que a Performance calcula. O nome que
+   veio do Tiny fica guardado em vendedor_tiny para a conferência mostrar a troca */
+const pfRepFixo=()=>Array.isArray(pfCfg().repFixo)?pfCfg().repFixo:[];
+function pfAplicaRep(lista){const R=pfRepFixo();if(!lista)return;lista.forEach(p=>{if(p.vendedor_tiny==null)p.vendedor_tiny=p.vendedor||'';const c=semAc(p.cliente),d=String(p.cliente_doc||'').replace(/\D/g,'');
+  const r=R.find(x=>(x.doc&&d&&x.doc.replace(/\D/g,'')===d)||(x.cliente&&c.includes(semAc(x.cliente))));p.vendedor=r?r.rep:p.vendedor_tiny;});}
 /* dias úteis (segunda a sexta) entre duas datas, inclusive */
 function pfDU(de,ate){let n=0;for(let d=perD(de);perYmd(d)<=ate;d.setDate(d.getDate()+1)){const w=d.getDay();if(w>0&&w<6)n++;}return n;}
 function pfMesDU(ym){const [a,m]=ym.split('-').map(Number);return pfDU(ym+'-01',perYmd(new Date(a,m,0)));}
@@ -1079,6 +1279,7 @@ async function pfCarregar(){
 }
 /* números por representante no período */
 function pfCalc(){
+  pfAplicaRep(PF.dados&&PF.dados.pedidos);pfAplicaRep(PF.hist&&PF.hist.pedidos);
   const {de,ate}=PF.fx;const ym=pfYm(ate);const prev=pfPrevPct(ate);const cfg=pfCfg();const mesesNovo=+cfg.cfgNovo||6;
   const antesDe=(()=>{const d=perD(de);d.setMonth(d.getMonth()-mesesNovo);return perYmd(d);})();
   const peds=(PF.dados&&PF.dados.pedidos||[]);const hist=(PF.hist&&PF.hist.pedidos||[]);
@@ -1102,7 +1303,7 @@ function pfCalc(){
 function telaPerformance(arg){
   if(arg){return telaRepresentante(decodeURIComponent(arg));}
   $('app').innerHTML=`<div class="migalha"><a href="#performance" class="mlk">Vendas</a> › Performance de vendas</div>
-  <div class="topo"><h1>Performance de vendas</h1><span class="salvo"></span><span class="k" style="color:var(--ink3);font-size:12px">pedidos válidos pela data de entrada · cancelados e não entregues fora</span><span style="flex:1"></span><button class="btn" id="pfAtu">⟳ Atualizar</button></div>
+  <div class="topo"><h1>Performance de vendas</h1><span class="salvo"></span><span class="k" style="color:var(--ink3);font-size:12px">pedidos pela data de entrada, nas situações marcadas</span><span style="flex:1"></span><button class="btn" id="pfAtu">⟳ Atualizar</button></div>
   <div class="barra" id="pfBarra"></div>
   <div class="sts" id="pfAbas"></div>
   <div id="pfCorpo"><div class="vazio">Carregando…</div></div>`;
@@ -1113,9 +1314,15 @@ function pfDesenha(){
   const b=$('pfBarra'),a=$('pfAbas'),c=$('pfCorpo');if(!b||!c)return;
   const cfg=pfCfg();
   b.innerHTML=`${perBotao('pfPer',PF.per)}
+    <button class="btn" id="pfSit" title="Quais situações de pedido entram na conta">Situações: <b>${pfSitsOn().length} de ${PF_SITS.length}</b> ▾</button>
     <button class="btn" id="pfNovo" title="Quem conta como cliente novo">Cliente novo: <b>${({1:'sem compra há 30 dias',3:'sem compra há 3 meses',6:'sem compra há 6 meses',12:'sem compra há 12 meses'})[+cfg.cfgNovo||6]||'sem compra há 6 meses'}</b> ▾</button>
     <span style="flex:1"></span><span id="pfHoje" style="color:var(--ink3);font-size:12px"></span>${colsBotao('pfCols')}`;
   $('pfPer').onclick=ev=>{ev.stopPropagation();abrirPeriodo(ev.currentTarget,PF.per,{campos:[['pedido','Data do pedido']]},st=>{PF.per=st.m==='sem'?perNovo('mes'):st;PF.dados=null;pfCarregar();});};
+  $('pfSit').onclick=ev=>{ev.stopPropagation();const p=document.createElement('div');p.className='pfpop';const on=pfSitsOn();
+    p.innerHTML='<div class="t">Pedidos que entram na Performance</div>'+PF_SITS.map(st=>`<label><input type="checkbox" data-st="${st}" ${on.includes(st)?'checked':''}> ${st}</label>`).join('')+'<div class="t" style="margin-top:6px">Vale para todos. Desmarcados saem do realizado, do ranking, das metas e da conferência com o Tiny.</div>';
+    document.body.appendChild(p);const r=ev.currentTarget.getBoundingClientRect();p.style.left=r.left+'px';p.style.top=(r.bottom+6)+'px';
+    p.querySelectorAll('input').forEach(i=>i.onchange=()=>{const l=[...p.querySelectorAll('input')].filter(x=>x.checked).map(x=>x.dataset.st);if(!l.length){i.checked=true;return toast('Deixe pelo menos uma situação.',true);}pfSalvaCfg({perfSits:l});pfDesenha();const b=$('pfSit');if(b)b.innerHTML=`Situações: <b>${l.length} de ${PF_SITS.length}</b> ▾`;});
+    setTimeout(()=>document.addEventListener('click',function f(e){if(!p.contains(e.target)){p.remove();document.removeEventListener('click',f);}}),0);};
   $('pfNovo').onclick=ev=>{ev.stopPropagation();const p=document.createElement('div');p.className='pfpop';p.innerHTML='<div class="t">Cliente novo = sem compra há mais de</div>'+[[1,'30 dias'],[3,'3 meses'],[6,'6 meses'],[12,'12 meses']].map(([k,n])=>`<label><input type="radio" name="pfnv" data-k="${k}" ${(+cfg.cfgNovo||6)===k?'checked':''}> ${n}</label>`).join('')+'<div class="t" style="margin-top:6px">Vale para a Performance, a ficha do representante e o relatório de clientes sem compra.</div>';
     document.body.appendChild(p);const r=ev.currentTarget.getBoundingClientRect();p.style.left=r.left+'px';p.style.top=(r.bottom+6)+'px';
     p.querySelectorAll('input').forEach(i=>i.onchange=()=>{pfSalvaCfg({cfgNovo:+i.dataset.k});p.remove();pfDesenha();});
@@ -1295,8 +1502,10 @@ function telaRepresentante(nome){
   const tip=$('pfTip'),g=$('pfG');g.querySelectorAll('rect[data-i]').forEach(r=>{r.onmouseenter=()=>{const h=hist[+r.dataset.i];tip.innerHTML=`<b>${h.rot}</b> · meta ${h.meta?pfRs(h.meta):'—'} · realizado <b>${pfRs(h.real)}</b>${h.meta?' · '+pfPc(h.real/h.meta):''}`;tip.style.display='block';};r.onmousemove=ev=>{const b=g.parentElement.getBoundingClientRect();tip.style.left=(ev.clientX-b.left+12)+'px';tip.style.top=(ev.clientY-b.top-34)+'px';};r.onmouseleave=()=>tip.style.display='none';});
 }
 /* ---------- Relatórios › Clientes sem compra ---------- */
+const pfRelAbas=rel=>`<div class="sts" style="margin-bottom:10px">${[['semcompra','Clientes sem compra'],['tiny','Conferência com o Tiny']].map(([k,n])=>`<button data-rel="${k}" class="${rel===k?'on':''}">${n}</button>`).join('')}</div>`;
 function telaRelatorios(arg){
   const [rel,argRep]=(arg||'semcompra').split('/');const vend=argRep?decodeURIComponent(argRep):'';
+  if(rel==='tiny')return telaConferenciaTiny();
   if(!PF.dados){$('app').innerHTML='<div class="vazio">Carregando…</div>';pfCarregar().then(()=>telaRelatorios(arg));return;}
   const D=pfCalc();const cfg=pfCfg();const mesesNovo=+cfg.cfgNovo||6;const q=semAc(PF.relQ||'');
   const linhas=[];D.lista.filter(x=>!x.fora&&(!vend||semAc(x.nome)===semAc(vend))).forEach(x=>{[...x.cliHist].filter(c=>!x.cliSet.has(c)).forEach(c=>{const p=(PF.hist&&PF.hist.pedidos||[]).filter(q=>(q.cliente_doc||q.cliente)===c&&pfValido(q)&&semAc(q.vendedor||'')===semAc(x.nome));const u=p.map(q=>q.data_pedido).sort().pop();const nome=(p[0]||{}).cliente||c;const cid=(p[0]||{}).cidade||'';
@@ -1304,13 +1513,81 @@ function telaRelatorios(arg){
   const l=linhas.filter(r=>!q||semAc(r.nome+' '+r.cid).includes(q)).sort((a,b)=>b.media-a.media);
   $('app').innerHTML=`<div class="migalha"><a href="#performance" class="mlk">Vendas</a> › Relatórios › Clientes sem compra</div>
   <div class="topo"><h1>Clientes sem compra</h1><span class="k" style="color:var(--ink3);font-size:12px">compraram nos últimos ${mesesNovo} meses e não têm pedido válido em ${perRotulo(PF.per)}</span><span style="flex:1"></span><button class="btn" id="pfXls">Exportar Excel</button></div>
+  ${pfRelAbas('semcompra')}
   <div class="barra">${perBotao('pfPer2',PF.per)}<select class="btn" id="pfRelRep"><option value="">Todos os representantes</option>${D.lista.filter(x=>!x.fora).map(x=>`<option ${semAc(x.nome)===semAc(vend)?'selected':''}>${esc(x.nome)}</option>`).join('')}</select><div class="busca">⌕<input id="pfRelQ" placeholder="cliente ou cidade" value="${esc(PF.relQ||'')}"></div><span style="flex:1"></span><span class="k" style="color:var(--ink3);font-size:12px"><b>${l.length}</b> clientes</span></div>
   <div class="caixa"><div class="rol"><table class="tv"><thead><tr><th>Cliente</th><th>Cidade</th><th>Representante</th><th class="n">Última compra</th><th class="n">Meses sem comprar</th><th class="n">Média mensal</th><th class="n">Pedidos (${mesesNovo} m)</th></tr></thead><tbody>${l.map(r=>`<tr><td><b>${esc(r.nome)}</b></td><td>${esc(r.cid)}</td><td>${esc(r.rep)}</td><td class="n m">${br(r.u)}</td><td class="n m">${r.meses}</td><td class="n m">${pfRs(r.media)}</td><td class="n m">${r.n}</td></tr>`).join('')||'<tr><td colspan="7" class="k" style="color:var(--ink3)">Ninguém ficou sem comprar.</td></tr>'}</tbody></table></div></div>`;
+  document.querySelectorAll('[data-rel]').forEach(b=>b.onclick=()=>ir('relatorios',b.dataset.rel));
   $('pfPer2').onclick=ev=>{ev.stopPropagation();abrirPeriodo(ev.currentTarget,PF.per,{campos:[['pedido','Data do pedido']]},st=>{PF.per=st.m==='sem'?perNovo('mes'):st;PF.dados=null;pfCarregar().then(()=>telaRelatorios(arg));});};
   $('pfRelRep').onchange=e=>ir('relatorios','semcompra'+(e.target.value?'/'+encodeURIComponent(e.target.value):''));
   $('pfRelQ').oninput=e=>{PF.relQ=e.target.value;clearTimeout(PF._t);PF._t=setTimeout(()=>telaRelatorios(arg),250);};
   $('pfXls').onclick=()=>{const csv=['Cliente;Cidade;Representante;Última compra;Meses sem comprar;Média mensal;Pedidos',...l.map(r=>[r.nome,r.cid,r.rep,br(r.u),r.meses,Math.round(r.media),r.n].join(';'))].join('\n');const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,﻿'+encodeURIComponent(csv);a.download='clientes-sem-compra.csv';a.click();};
 }
+
+/* ---------- Relatórios › Conferência com o Tiny ----------
+   Lê o "Relatório de vendas" exportado do Tiny (xls: Nº do pedido, Cliente, Vendedor, Data, Valor,
+   Frete, Total), busca no ERP os pedidos do mesmo período e mostra onde os dois divergem: por
+   representante e pedido a pedido (só no Tiny, só no ERP, valor ou representante diferente). */
+const CT={arq:'',tiny:null,erp:null,erro:'',lendo:false,de:'',ate:''};
+function telaConferenciaTiny(){
+  const R=pfRepFixo();
+  $('app').innerHTML=`<div class="migalha"><a href="#performance" class="mlk">Vendas</a> › Relatórios › Conferência com o Tiny</div>
+  <div class="topo"><h1>Conferência com o Tiny</h1><span class="k" style="color:var(--ink3);font-size:12px">exporte no Tiny Vendas › Performance › relatório de vendas do mês e solte o arquivo aqui</span></div>
+  ${pfRelAbas('tiny')}
+  <div class="barra"><label class="btn pri" style="cursor:pointer">⇪ Abrir relatório do Tiny (.xls)<input type="file" id="ctArq" accept=".xls,.xlsx,.csv" hidden></label>${CT.arq?`<span class="k" style="font-size:12.5px"><b>${esc(CT.arq)}</b> · ${CT.tiny?CT.tiny.length+' pedidos · '+br(CT.de)+' a '+br(CT.ate):''}</span>`:''}<span style="flex:1"></span>${R.length?`<span class="k" style="font-size:12px;color:var(--ink3)">${R.length} representante(s) fixo(s) por cliente aplicados · <a href="#config" class="mlk">Configurações › Vendas</a></span>`:''}</div>
+  <div id="ctCorpo">${CT.lendo?'<div class="vazio">Lendo…</div>':CT.erro?`<div class="aviso">⚠ <div>${esc(CT.erro)}</div></div>`:CT.tiny&&CT.erp?ctResultado():'<div class="vazio">Nenhum arquivo aberto ainda. O ERP compara pedido a pedido com o que o Tiny contou.</div>'}</div>`;
+  document.querySelectorAll('[data-rel]').forEach(b=>b.onclick=()=>ir('relatorios',b.dataset.rel));
+  $('ctArq').onchange=e=>{const f=e.target.files[0];if(f)ctLer(f);};
+  ctLiga();
+}
+async function ctLer(f){
+  CT.arq=f.name;CT.lendo=true;CT.erro='';CT.tiny=null;CT.erp=null;telaConferenciaTiny();
+  try{
+    if(!window.XLSX){await new Promise((ok,er)=>{const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';s.onload=ok;s.onerror=()=>er(new Error('Não consegui carregar o leitor de planilhas (sem internet?).'));document.head.appendChild(s);});if(!window.XLSX)throw new Error('O leitor de planilhas não carregou.');}
+    const buf=await f.arrayBuffer();const wb=window.XLSX.read(buf,{type:'array'});const sh=wb.Sheets[wb.SheetNames[0]];const rows=window.XLSX.utils.sheet_to_json(sh,{header:1,raw:true});
+    const cab=rows.findIndex(r=>r&&r.some(c=>/n[º°o]\.? do pedido|^pedido$/i.test(String(c))));if(cab<0)throw new Error('Não achei a coluna "Nº do pedido" no arquivo. É o relatório de vendas da Performance do Tiny?');
+    const H=rows[cab].map(c=>semAc(c));const ix=re=>H.findIndex(h=>re.test(h));
+    const iN=ix(/pedido/),iC=ix(/cliente/),iV=ix(/vendedor/),iD=ix(/^data/),iT=H.lastIndexOf('total')>=0?H.lastIndexOf('total'):ix(/valor/);
+    const dataDe=v=>{if(v==null||v==='')return '';if(typeof v==='number'){const d=new Date(Math.round((v-25569)*86400000));return d.toISOString().slice(0,10);}const m=String(v).match(/(\d{2})\/(\d{2})\/(\d{4})/);return m?`${m[3]}-${m[2]}-${m[1]}`:String(v).slice(0,10);};
+    const numDe=v=>typeof v==='number'?v:+String(v||'').replace(/\./g,'').replace(',','.')||0;
+    CT.tiny=rows.slice(cab+1).filter(r=>r&&r[iN]!=null&&String(r[iN]).trim()&&!/^total/i.test(String(r[iN]))).map(r=>({numero:String(r[iN]).replace(/\D/g,''),cliente:String(r[iC]||''),vendedor:String(r[iV]||''),data:dataDe(r[iD]),total:Math.round(numDe(r[iT])*100)/100}));
+    if(!CT.tiny.length)throw new Error('O arquivo não tem pedidos.');
+    const ds=CT.tiny.map(x=>x.data).filter(Boolean).sort();CT.de=ds[0]||'';CT.ate=ds[ds.length-1]||'';
+    await ctBuscaErp();
+  }catch(e){CT.erro=e.message;}
+  CT.lendo=false;telaConferenciaTiny();
+}
+/* o período do ERP é o mês inteiro dos pedidos do arquivo, para pegar também o que o Tiny não listou */
+async function ctBuscaErp(){const de=CT.de.slice(0,7)+'-01';const ate=perYmd(new Date(+CT.ate.slice(0,4),+CT.ate.slice(5,7),0));
+  const r=await fn({acao:'perf_pedidos',de,ate,itens:false});CT.erp=(r&&r.pedidos||[]).filter(p=>p.data_pedido>=de&&p.data_pedido<=ate);pfAplicaRep(CT.erp);}
+function ctResultado(){
+  const T=CT.tiny,E=CT.erp;const porNum={};E.forEach(p=>porNum[String(p.numero).replace(/\D/g,'')]=p);const noTiny=new Set(T.map(t=>t.numero));
+  const difs=[];
+  T.forEach(t=>{const p=porNum[t.numero];
+    if(!p)return difs.push({tipo:'Só no Tiny',t,p:null,txt:'o ERP não tem este pedido (falta sincronizar ou veio depois)'});
+    if(!pfValido(p))return difs.push({tipo:'Só no Tiny',t,p,txt:`no ERP está "${p.situacao}", que não conta`});
+    if(Math.abs((+p.total||0)-t.total)>=0.01)difs.push({tipo:'Valor diferente',t,p,txt:`Tiny ${pfRs(t.total)} · ERP ${pfRs(p.total)}`});
+    if(semAc(p.vendedor)!==semAc(t.vendedor))difs.push({tipo:'Representante diferente',t,p,txt:`Tiny ${t.vendedor} · ERP ${p.vendedor}${p.vendedor_tiny&&semAc(p.vendedor_tiny)!==semAc(p.vendedor)?' (fixo por cliente)':''}`});});
+  E.forEach(p=>{const n=String(p.numero).replace(/\D/g,'');if(!noTiny.has(n)&&pfValido(p))difs.push({tipo:'Só no ERP',t:null,p,txt:`"${p.situacao}" no ERP; o Tiny não contou (excluído lá?)`});});
+  /* por representante */
+  const V={};const lin=n=>V[n]||(V[n]={nome:n,tiny:0,nT:0,erp:0,nE:0});
+  T.forEach(t=>{const l=lin(t.vendedor||'Sem representante');l.tiny+=t.total;l.nT++;});
+  E.forEach(p=>{if(!pfValido(p))return;const l=lin(p.vendedor||'Sem representante');l.erp+=+p.total||0;l.nE++;});
+  const reps=Object.values(V).map(l=>({...l,dif:l.erp-l.tiny})).sort((a,b)=>Math.abs(b.dif)-Math.abs(a.dif));
+  const sT=reps.reduce((s,x)=>s+x.tiny,0),sE=reps.reduce((s,x)=>s+x.erp,0);
+  const cor=d=>Math.abs(d)<0.01?'#15803D':'#B91C1C';
+  const ordem={'Só no Tiny':1,'Só no ERP':2,'Valor diferente':3,'Representante diferente':4};difs.sort((a,b)=>ordem[a.tipo]-ordem[b.tipo]||((b.t?b.t.total:b.p.total)-(a.t?a.t.total:a.p.total)));
+  const faltam=T.filter(t=>!porNum[t.numero]);
+  return `${faltam.length?`<div class="aviso" style="margin-bottom:10px">ℹ <div><b>${faltam.length} pedido(s) do relatório não estão no ERP</b> (${pfRs(faltam.reduce((s,x)=>s+x.total,0))}). Dá para importá-los daqui: entram com número, data, cliente, representante e total — sem itens, sem CNPJ e sem cidade — e contam na Performance, nas metas e no ranking. Se a carga pela API trouxer esses meses depois, o pedido real substitui o importado. ${pode('vendas.carga','editar')?'<button class="btn pri sm" id="ctImp" style="margin-left:8px">Importar os '+faltam.length+' que faltam</button>':''}</div></div>`:''}<div class="pfkpis"><div class="pfkpi"><span>Tiny</span><b>${pfRs(sT)}</b><small>${T.length} pedidos no relatório</small></div><div class="pfkpi"><span>ERP</span><b>${pfRs(sE)}</b><small>${E.filter(pfValido).length} pedidos válidos no mês</small></div><div class="pfkpi"><span>Diferença</span><b style="color:${cor(sE-sT)}">${pfRs(sE-sT)}</b><small>${difs.length} divergência(s) pedido a pedido</small></div></div>
+  <div class="caixa"><div class="pfsec">Por representante</div><div class="rol"><table class="tv" style="border:0;border-radius:0"><thead><tr><th>Representante</th><th class="n">Tiny</th><th class="n">ERP</th><th class="n">Diferença</th></tr></thead><tbody>${reps.map(x=>`<tr><td><b>${esc(x.nome)}</b></td><td class="n m">${pfRs(x.tiny)}<span class="k" style="display:block;font-size:11px;color:var(--ink3)">${x.nT} pedidos</span></td><td class="n m">${pfRs(x.erp)}<span class="k" style="display:block;font-size:11px;color:var(--ink3)">${x.nE} pedidos</span></td><td class="n m" style="color:${cor(x.dif)};font-weight:700">${Math.abs(x.dif)<0.01?'✔ bate':pfRs(x.dif)}</td></tr>`).join('')}</tbody><tfoot><tr><td>Total</td><td class="n m">${pfRs(sT)}</td><td class="n m">${pfRs(sE)}</td><td class="n m" style="color:${cor(sE-sT)}">${pfRs(sE-sT)}</td></tr></tfoot></table></div></div>
+  <div class="caixa" style="margin-top:12px"><div class="pfsec">Pedido a pedido <span style="font-weight:500;text-transform:none;letter-spacing:0">${difs.length?difs.length+' divergências':'nenhuma divergência'}</span>${difs.length?'<button class="btn sm" id="ctXls">Exportar Excel</button>':''}</div><div class="rol"><table class="tv" style="border:0;border-radius:0"><thead><tr><th>O que</th><th>Pedido</th><th>Cliente</th><th>Representante</th><th class="n">Valor</th><th>Detalhe</th></tr></thead><tbody>${difs.map(d=>{const t=d.t,p=d.p;const c={'Só no Tiny':'mau','Só no ERP':'amb','Valor diferente':'azul','Representante diferente':'ok'}[d.tipo];return `<tr><td>${pfPill(c,d.tipo)}</td><td class="m">${esc(t?t.numero:p.numero)}<span class="k" style="display:block;font-size:11px;color:var(--ink3)">${br(t?t.data:p.data_pedido)}</span></td><td><b>${esc(t?t.cliente:p.cliente)}</b></td><td>${esc(t?t.vendedor:p.vendedor)}</td><td class="n m">${pfRs(t?t.total:p.total)}</td><td style="font-size:12px;color:var(--ink3)">${esc(d.txt)}</td></tr>`;}).join('')||'<tr><td colspan="6" class="k" style="color:var(--ink3)">Tudo igual ao Tiny.</td></tr>'}</tbody></table></div>
+  <div class="k" style="padding:9px 14px;color:var(--ink3);font-size:12px"><b>Só no Tiny</b>: o Tiny contou e o ERP não (falta sincronizar, ou está numa situação que o ERP não conta). <b>Só no ERP</b>: o ERP conta e o Tiny não listou (provável excluído no Tiny). <b>Representante diferente</b> aparece também quando a troca foi feita de propósito pelo representante fixo por cliente.</div></div>`;
+}
+function ctLiga(){const bi=$('ctImp');if(bi)bi.onclick=async()=>{const porNum={};CT.erp.forEach(p=>porNum[String(p.numero).replace(/\D/g,'')]=p);const faltam=CT.tiny.filter(t=>!porNum[t.numero]);if(!confirm(`Importar ${faltam.length} pedidos do relatório para o ERP?`))return;bi.disabled=true;bi.textContent='Importando…';
+    try{let imp=0;for(let i=0;i<faltam.length;i+=1000){const r=await fn({acao:'vendas_importar',pedidos:faltam.slice(i,i+1000)});imp+=r.importados||0;}toast(`${imp} pedido(s) importados.`);try{Object.keys(sessionStorage).filter(k=>k.startsWith('erp.perf.')).forEach(k=>sessionStorage.removeItem(k));}catch(e){}PF.dados=null;CT.lendo=true;telaConferenciaTiny();await ctBuscaErp();CT.lendo=false;telaConferenciaTiny();}catch(e){toast('Não consegui importar: '+e.message,true);bi.disabled=false;bi.textContent='Tentar de novo';}};
+  const b=$('ctXls');if(!b)return;b.onclick=()=>{const T=CT.tiny,E=CT.erp;const porNum={};E.forEach(p=>porNum[String(p.numero).replace(/\D/g,'')]=p);const l=[['O que','Pedido','Cliente','Representante Tiny','Representante ERP','Valor Tiny','Valor ERP','Situação ERP']];
+  T.forEach(t=>{const p=porNum[t.numero];if(!p||!pfValido(p)||Math.abs((+p.total||0)-t.total)>=0.01||semAc(p.vendedor)!==semAc(t.vendedor))l.push([!p?'Só no Tiny':!pfValido(p)?'Só no Tiny':Math.abs((+p.total||0)-t.total)>=0.01?'Valor diferente':'Representante diferente',t.numero,t.cliente,t.vendedor,p?p.vendedor:'',t.total,p?p.total:'',p?p.situacao:'']);});
+  const noTiny=new Set(T.map(t=>t.numero));E.forEach(p=>{const n=String(p.numero).replace(/\D/g,'');if(!noTiny.has(n)&&pfValido(p))l.push(['Só no ERP',n,p.cliente,'',p.vendedor,'',p.total,p.situacao]);});
+  const csv=l.map(r=>r.map(v=>String(v).replace(/;/g,',')).join(';')).join('\n');const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,﻿'+encodeURIComponent(csv);a.download='conferencia-tiny.csv';a.click();};}
 /* ---------- teste (sem servidor) ---------- */
 function pfTeste(c){
   if(!TST)telaPedidos();const P=(TST&&TST.pedidos)||[];
@@ -1340,11 +1617,15 @@ try{const _fn=fn;fn=async function(c){if(c&&c.acao==='perf_pedidos'&&N.teste)ret
 .pfduas{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}@media(max-width:900px){.pfduas{grid-template-columns:1fr}}
 `;document.head.appendChild(s);}catch(e){}})();
 
+
+
+
 function render(){
   const {pag,arg}=lerHash();PAG=pag;
   if(!N){$('app').innerHTML=`<div class="vazio"><b>Abra este módulo pelo ERP.</b></div>`;return;}
   gaveta(null);
   if(pag==='performance'){if(!pode('vendas.perf','ver'))return $('app').innerHTML='<div class="vazio">Você não tem acesso à Performance de vendas.</div>';return telaPerformance(arg);}
+  if(pag==='evolucao'){if(!pode('vendas.perf','ver'))return $('app').innerHTML='<div class="vazio">Você não tem acesso à Evolução de vendas.</div>';return telaEvolucao();}
   if(pag==='relatorios'){if(!pode('vendas.perf','ver'))return $('app').innerHTML='<div class="vazio">Você não tem acesso aos relatórios de vendas.</div>';return telaRelatorios(arg);}
   if(pag==='necprod'){if(!pode('vendas.necprod','ver')&&!pode('vendas.ped','ver'))return $('app').innerHTML='<div class="vazio">Você não tem acesso a esta página.</div>';return telaNecProd();}
   if(pag==='config'){if(!pode('vendas.cfg','ver'))return $('app').innerHTML='<div class="vazio">Você não tem acesso às configurações de vendas.</div>';return telaCfgVendas();}

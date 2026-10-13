@@ -5460,7 +5460,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v394';
+const VERSAO_APP='v397';
 let DRAG=null;
 function render(){
   recomporTudo();
@@ -19716,6 +19716,7 @@ const CS_MOD=[
  {id:'planejamento',nome:'Planejamento',ic:'plan',fase:'fase 11'},
  {id:'vendas',nome:'Vendas',ic:'loj',pgs:[
    {n:'Performance de vendas',mod:'vendas',fin:'performance',perm:'vendas.perf',ic:'loj'},
+   {n:'Evolução de vendas',mod:'vendas',fin:'evolucao',perm:'vendas.perf',ic:'loj'},
    {n:'Pedidos de venda',mod:'vendas',fin:'pedidos',perm:'vendas.ped',ic:'loj'},
    {n:'Relatórios',mod:'vendas',fin:'relatorios',perm:'vendas.perf',ic:'loj'}]},
  {id:'logistica',nome:'Logística',ic:'log',fase:'fase 13'}
@@ -24753,7 +24754,7 @@ try{Object.assign(csNucleo,{
   abrirOrigem:(c,r)=>csEAbrirOrigem(c,r),
   abrir:p=>csIr(p),
   cfgVendas:()=>({...CS_CFGV}),
-  salvarCfgVendas:o=>{if(o&&['prev','ped'].includes(o.reservaPor))CS_CFGV.reservaPor=o.reservaPor;['metas','rankRegras','rankFora','cfgNovo'].forEach(k=>{if(o&&o[k]!==undefined)CS_CFGV[k]=o[k];});agendarSalvar();return {...CS_CFGV};}
+  salvarCfgVendas:o=>{if(o&&['prev','ped'].includes(o.reservaPor))CS_CFGV.reservaPor=o.reservaPor;['metas','rankRegras','rankFora','cfgNovo','repFixo','perfSits'].forEach(k=>{if(o&&o[k]!==undefined)CS_CFGV[k]=o[k];});agendarSalvar();return {...CS_CFGV};}
 });}catch(e){}
 
 </script>
@@ -30140,7 +30141,7 @@ try{csNucleo.versao='v392';}catch(e){}
 try{csNucleo.versao='v393';}catch(e){}
 </script>
 <script>
-try{csNucleo.versao='v394';}catch(e){}
+try{csNucleo.versao='v397';}catch(e){}
 </script>
 </body>
 </html>
