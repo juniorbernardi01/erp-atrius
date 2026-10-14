@@ -1500,7 +1500,7 @@ function telaRepresentante(nome){
   <div class="caixa"><div class="pfsec">Clientes que não compraram no período <span style="font-weight:500;text-transform:none;letter-spacing:0">compraram nos últimos ${mesesNovo} meses · ${semC.length} no total</span><button class="btn sm" id="pfSemTodos">ver todos › Relatórios › Clientes sem compra</button></div>${tab(['Cliente','Última compra','Média mensal'],semC.slice(0,5).map(c=>`<tr><td><b>${esc(c.nome)}</b><span class="k" style="display:block;font-size:11px;color:var(--ink3)">${esc(c.cid)}</span></td><td class="n m">${br(c.u)}</td><td class="n m">${pfRs(c.media)}</td></tr>`).join(''),'Todos os clientes dos últimos meses compraram no período.')}</div></div></div>`;
   $('pfVolta').onclick=()=>ir('performance');$('pfPeds').onclick=()=>{PR.per=null;PR.dados=null;PR.chave='';ir('performance',encodeURIComponent(x.nome+'/pedidos'));};
   $('pfPerR').onclick=ev=>{ev.stopPropagation();abrirPeriodo(ev.currentTarget,PF.per,{campos:[['pedido','Data do pedido']]},st=>{PF.per=st.m==='sem'?perNovo('mes'):st;PF.dados=null;$('app').innerHTML='<div class="vazio">Carregando…</div>';pfCarregar().then(()=>telaRepresentante(x.nome));});};
-  $('pfPdfR').onclick=()=>pfPdfTela('Representante: '+x.nome,`Período ${perRotulo(PF.per)} · ${x.cli} clientes atendidos · ${x.ped} pedidos válidos`,$('pfRepCorpo'));
+  $('pfPdfR').onclick=()=>pfPdfTela(x.nome,`Período ${br(PF.fx.de)} a ${br(PF.fx.ate)}`,$('pfRepCorpo'),'landscape',{rot:'Representante',arq:`Vendas - ${pfPrimNome(x.nome)} - ${pfArqPer(PF.fx.de,PF.fx.ate)}`});
   $('pfSemTodos').onclick=()=>ir('relatorios','semcompra/'+encodeURIComponent(x.nome));
   const tip=$('pfTip'),g=$('pfG');g.querySelectorAll('rect[data-i]').forEach(r=>{r.onmouseenter=()=>{const h=hist[+r.dataset.i];tip.innerHTML=`<b>${h.rot}</b> · meta ${h.meta?pfRs(h.meta):'—'} · realizado <b>${pfRs(h.real)}</b>${h.meta?' · '+pfPc(h.real/h.meta):''}`;tip.style.display='block';};r.onmousemove=ev=>{const b=g.parentElement.getBoundingClientRect();tip.style.left=(ev.clientX-b.left+12)+'px';tip.style.top=(ev.clientY-b.top-34)+'px';};r.onmouseleave=()=>tip.style.display='none';});
 }
@@ -1623,22 +1623,42 @@ try{const _fn=fn;fn=async function(c){if(c&&c.acao==='perf_pedidos'&&N.teste)ret
    A ficha do representante vira PDF do jeito que está: copia o conteúdo da tela (sem os botões)
    para uma folha A4 deitada, com os mesmos estilos da página. Assim o PDF nunca fica diferente
    do que o gerente está vendo. */
-function pfPdfTela(tit,sub,origem,ori){ori=ori||'landscape';const LARG={landscape:1600,portrait:1060},ZP={landscape:.66,portrait:.69};
+/* PDF de uma tela: prévia no modal; "Salvar PDF" e "Imprimir" usam a MESMA imagem da prévia
+   (html2canvas), então o papel sai exatamente igual ao que se vê. opt: {rot, arq} */
+function pfLib(src,nome){return window[nome]?Promise.resolve():new Promise((ok,er)=>{const s=document.createElement('script');s.src=src;s.onload=ok;s.onerror=()=>er(new Error('Não consegui carregar '+nome));document.head.appendChild(s);});}
+function pfPdfTela(tit,sub,origem,ori,opt){ori=ori||'landscape';opt=opt||{};const LARG={landscape:1600,portrait:1060};
   const cl=origem.cloneNode(true);cl.querySelectorAll('button,.btn,select,#pfTip,.migalha').forEach(e=>e.remove());
   cl.querySelectorAll('[id]').forEach(e=>e.removeAttribute('id'));
   let logo='';try{logo=(parent.document.querySelector('img[data-logo]')||{}).src||'';}catch(e){}
-  const cab=`<div style="background:#1B4F9C;color:#fff;margin:0 0 14px;padding:14px 20px;border-radius:10px;display:flex;justify-content:space-between;align-items:center;gap:20px"><div style="display:flex;align-items:center;gap:18px">${logo?`<span style="background:#fff;border-radius:8px;padding:6px 10px;display:inline-flex"><img src="${logo}" style="height:38px" alt="Atrius"></span>`:''}<div><div style="font:800 24px/1.15 Inter,sans-serif">${esc(tit)}</div><div style="font-size:13px;opacity:.92;margin-top:3px">${sub}</div></div></div><div style="font-size:11px;opacity:.85;text-align:right">emitido em ${br(perHoje())} às ${new Date().toTimeString().slice(0,5)}</div></div>`;
+  const cab=`<div style="background:#1B4F9C;color:#fff;padding:14px 22px;border-radius:10px;display:flex;justify-content:space-between;align-items:center;gap:20px"><div style="display:flex;align-items:center;gap:18px">${logo?`<span style="background:#fff;border-radius:8px;padding:6px 10px;display:inline-flex"><img src="${logo}" style="height:38px" alt="Atrius"></span>`:''}<div>${opt.rot?`<div style="font:700 10.5px Inter,sans-serif;letter-spacing:.1em;text-transform:uppercase;opacity:.8">${esc(opt.rot)}</div>`:''}<div style="font:800 25px/1.15 Inter,sans-serif">${esc(tit)}</div></div></div><div style="text-align:right;font:700 17px/1.3 Inter,sans-serif">${sub}</div></div>
+    <div style="text-align:right;font-size:10.5px;color:#64748B;margin:5px 2px 10px">emitido em ${br(perHoje())} às ${new Date().toTimeString().slice(0,5)}</div>`;
   const folha=`<div id="pfFolhaT" style="background:#fff;color:#111;width:${LARG[ori]}px;padding:22px;box-sizing:border-box;font-family:Inter,system-ui,sans-serif">${cab}${cl.innerHTML}</div>`;
-  const estilos=[...document.querySelectorAll('style')].map(s=>s.outerHTML).join('');
-  document.body.insertAdjacentHTML('beforeend',`<div class="pfmask on" id="pfMT"><div class="pfmod"><div class="fh"><b>${esc(tit)}</b><small>o PDF sai igual à tela</small><span style="flex:1"></span><button class="btn sm" data-x>Fechar ✕</button></div>
-    <div class="fb" id="pfFbT">${folha}</div><div class="ff"><span class="pfori"><button class="btn sm ${ori==='portrait'?'on':''}" data-ori="portrait">Em pé</button><button class="btn sm ${ori==='landscape'?'on':''}" data-ori="landscape">Deitado</button></span><span style="flex:1"></span><button class="btn pri" id="pfPrT">⎙ Imprimir / Salvar PDF</button></div></div></div>`);
+  const arq=(opt.arq||tit).replace(/[\\/:*?"<>|]+/g,'-');
+  document.body.insertAdjacentHTML('beforeend',`<div class="pfmask on" id="pfMT"><div class="pfmod"><div class="fh"><b>${esc(tit)}</b><small>sai exatamente como está aqui</small><span style="flex:1"></span><button class="btn sm" data-x>Fechar ✕</button></div>
+    <div class="fb" id="pfFbT">${folha}</div><div class="ff"><span class="pfori"><button class="btn sm ${ori==='portrait'?'on':''}" data-ori="portrait">Em pé</button><button class="btn sm ${ori==='landscape'?'on':''}" data-ori="landscape">Deitado</button></span><span style="flex:1"></span><button class="btn" id="pfPdfS">⤓ Salvar PDF</button><button class="btn pri" id="pfPrT">⎙ Imprimir</button></div></div></div>`);
   const m=$('pfMT');m.querySelectorAll('[data-x]').forEach(b=>b.onclick=()=>m.remove());
-  m.querySelectorAll('[data-ori]').forEach(b=>b.onclick=()=>{m.remove();pfPdfTela(tit,sub,origem,b.dataset.ori);});
+  m.querySelectorAll('[data-ori]').forEach(b=>b.onclick=()=>{m.remove();pfPdfTela(tit,sub,origem,b.dataset.ori,opt);});
   setTimeout(()=>{const f=$('pfFolhaT');f.style.zoom=Math.min(1,($('pfFbT').clientWidth-36)/LARG[ori]);},30);
-  $('pfPrT').onclick=()=>{const w=window.open('','_blank');if(!w)return toast('O navegador bloqueou a janela de impressão.',true);
-    w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${esc(tit)}</title><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap">${estilos}<style>@page{size:A4 ${ori};margin:7mm}html,body{background:#fff!important;margin:0}#pfFolhaT{zoom:${ZP[ori]}}*{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}.pfkpi,tr,.pfkpis{break-inside:avoid}.caixa,table,.rol,tbody{break-inside:auto!important;overflow:visible!important;max-height:none!important}thead{display:table-header-group}tfoot{display:table-row-group}</style></head><body>${folha}</body></html>`);
-    w.document.close();setTimeout(()=>{w.focus();w.print();},700);};
+  /* fatia a imagem em páginas A4 (margem 7 mm), cortando sempre entre linhas */
+  async function paginas(){await pfLib('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js','html2canvas');
+    const W=LARG[ori],mmW=(ori==='portrait'?210:297)-14,mmH=(ori==='portrait'?297:210)-14,pxMm=W/mmW,pgH=Math.floor(mmH*pxMm);
+    const box=document.createElement('div');box.style.cssText='position:fixed;left:-20000px;top:0;z-index:-1';box.innerHTML=folha;document.body.appendChild(box);
+    try{const f=box.firstElementChild;const t0=f.getBoundingClientRect().top;
+      const cortes=[...f.querySelectorAll('tr,.pfkpis,.pfsec,.prbt,.caixa,.pfduas,#pfFolhaT>div,table')].map(e=>Math.round(e.getBoundingClientRect().bottom-t0)).concat([Math.round(f.getBoundingClientRect().height)]).sort((a,b)=>a-b);
+      const cv=await html2canvas(f,{scale:2,backgroundColor:'#ffffff',useCORS:true,logging:false});const k=cv.width/W,total=cv.height/k;
+      const pags=[];let ini=0;while(ini<total-2){let fim=ini+pgH;if(fim>=total)fim=total;else{const ok=cortes.filter(c=>c>ini+80&&c<=fim);if(ok.length)fim=ok[ok.length-1];}
+        const c=document.createElement('canvas');c.width=cv.width;c.height=Math.ceil((fim-ini)*k);const g=c.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,c.width,c.height);g.drawImage(cv,0,Math.round(ini*k),cv.width,c.height,0,0,cv.width,c.height);
+        pags.push({url:c.toDataURL('image/jpeg',.93),mmH:(fim-ini)/pxMm});ini=fim;}
+      return {pags,mmW};}finally{box.remove();}}
+  const ocupado=async(b,fz)=>{const t=b.textContent;b.disabled=true;b.textContent='gerando…';try{await fz();}catch(e){toast(e.message||String(e),true);}finally{b.disabled=false;b.textContent=t;}};
+  $('pfPdfS').onclick=ev=>ocupado(ev.currentTarget,async()=>{const {pags,mmW}=await paginas();await pfLib('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js','jspdf');
+    const doc=new jspdf.jsPDF({orientation:ori,unit:'mm',format:'a4'});pags.forEach((p,i)=>{if(i)doc.addPage('a4',ori);doc.addImage(p.url,'JPEG',7,7,mmW,p.mmH);});doc.setProperties({title:arq});doc.save(arq+'.pdf');});
+  $('pfPrT').onclick=ev=>ocupado(ev.currentTarget,async()=>{const {pags,mmW}=await paginas();const fr=document.createElement('iframe');fr.style.cssText='position:fixed;right:0;bottom:0;width:0;height:0;border:0';document.body.appendChild(fr);
+    const d=fr.contentWindow.document;d.open();d.write(`<!doctype html><html><head><meta charset="utf-8"><title>${esc(arq)}</title><style>@page{size:A4 ${ori};margin:7mm}html,body{margin:0;background:#fff}img{display:block;width:${mmW}mm}img+img{break-before:page}</style></head><body>${pags.map(p=>`<img src="${p.url}">`).join('')}</body></html>`);d.close();
+    await new Promise(r=>setTimeout(r,400));const tt=document.title;document.title=arq;fr.contentWindow.focus();fr.contentWindow.print();document.title=tt;setTimeout(()=>fr.remove(),60000);});
 }
+function pfArqPer(de,ate){const fimMes=perYmd(new Date(+de.slice(0,4),+de.slice(5,7),0));return de.slice(8)==='01'&&ate===fimMes?de.slice(5,7)+'-'+de.slice(0,4):br(de).replace(/\//g,'-')+' a '+br(ate).replace(/\//g,'-');}
+const pfPrimNome=n=>{const w=String(n).split(/[\s-]+/).filter(Boolean)[0]||n;return w.charAt(0).toUpperCase()+w.slice(1).toLowerCase();};
 /* ---------- Relatório de pedidos do representante (v398) ----------
    Abre pelo "Ver os N pedidos" da ficha. Serve para o acerto do mês:
    - prêmio de meta: o que ENTROU de venda no período (data do pedido), nas situações válidas;
@@ -1702,7 +1722,7 @@ function telaPedRep(nome){
     cidade:p=>`<td>${esc(p.cidade||'')}</td>`,uf:p=>`<td>${esc(p.uf||'')}</td>`,situacao:p=>{const s=sitDe(p.situacao);return `<td><span class="prst" style="--c:${s[2]}"><i></i>${esc(s[1])}</span></td>`;},
     marcadores:p=>`<td>${Array.isArray(p.marcadores)?p.marcadores.map(m=>`<span class="mk3" style="--c:${esc(m.cor||'#8B93A1')}"><i></i>${esc(m.nome)}</span>`).join(''):'<span style="color:var(--ink3)">…</span>'}</td>`,
     total:p=>`<td class="n m"><b>${pfRs(p.total)}</b></td>`,sem_ipi:p=>`<td class="n m">${pfRs(prSI(p))}</td>`,data_faturamento:p=>`<td class="m">${p.data_faturamento?br(p.data_faturamento):'—'}</td>`,data_prevista:p=>`<td class="m">${p.data_prevista?br(p.data_prevista):'—'}</td>`};
-  const iT=cols.indexOf('total');const rotRod=`${lis.length} pedido${lis.length===1?'':'s'} ${porFat?'faturados':'entrados'} de ${faixa}`;
+  const iT=cols.indexOf('total');const rotRod=`${lis.length} pedido${lis.length===1?'':'s'} realizado${lis.length===1?'':'s'} no período`;
   const iS=cols.indexOf('sem_ipi');const rod=iS>=0&&iT>=0&&iS===iT+1?`${iT?`<td colspan="${iT}">${rotRod}</td>`:''}<td class="n m">${pfRs(soma(lis))}</td><td class="n m">${pfRs(lis.reduce((s,p)=>s+prSI(p),0))}</td>${cols.length-iT-2?`<td colspan="${cols.length-iT-2}"></td>`:''}`:iT<0?`<td colspan="${cols.length}">${rotRod} · ${pfRs(soma(lis))}</td>`:`${iT?`<td colspan="${iT}">${rotRod}</td>`:''}<td class="n m">${pfRs(soma(lis))}</td>${cols.length-iT-1?`<td colspan="${cols.length-iT-1}">${iT?'':rotRod}</td>`:''}`;
   $('app').innerHTML=`<div class="migalha"><a href="#performance" class="mlk">Vendas</a> › <a href="#performance" class="mlk">Performance de vendas</a> › <a href="#performance/${encodeURIComponent(nomeOk)}" class="mlk">${esc(nomeOk)}</a> › Pedidos</div>
   <div class="topo"><button class="btn" id="prVolta">‹ Voltar</button><h1>Pedidos · ${esc(nomeOk)}</h1><span style="flex:1"></span>
@@ -1711,7 +1731,7 @@ function telaPedRep(nome){
   <div class="pfkpis prkp">${k('Meta do período',pfRs(meta),meses.length>1?`${meses.length} meses somados`:'meta do mês')}
     ${k('Venda realizada',pfRs(vend),`${pfPc(pr)} da meta · ${vendL.length} pedido${vendL.length===1?'':'s'}`,pr,'prmeta')}
     
-    ${k('Bloqueados',pfRs(soma(blV)),blV.length?`${blV.length} pedido${blV.length===1?'':'s'} · já somado na venda realizada`:'nenhum pedido bloqueado',null,blV.length?'prbk':'')}</div>
+    ${k('Bloqueados',pfRs(soma(blV)),blV.length?`${blV.length} pedido${blV.length===1?'':'s'} · já somado na venda realizada`:'nenhum pedido bloqueado',null,blV.length?'prbk':'')}${k('Subtotal sem bloqueados',pfRs(vend-soma(blV)),`${vendL.length-blV.length} pedido${vendL.length-blV.length===1?'':'s'}`)}</div>
   <div class="caixa"><div class="rol"><table class="tv" id="prTb"><thead><tr>${cols.map(c=>{const d=PR_COLS.find(x=>x[0]===c);return th(c,d[1],d[2]);}).join('')}</tr></thead>
     <tbody>${lin.map(p=>`<tr class="prlin" data-id="${esc(p.id)}">${cols.map(c=>CEL[c](p)).join('')}</tr>`).join('')||`<tr><td colspan="${cols.length}" class="k" style="color:var(--ink3)">Nenhum pedido no período, nas situações escolhidas.</td></tr>`}</tbody>
     <tfoot><tr>${rod}</tr></tfoot></table></div>
@@ -1728,7 +1748,7 @@ function telaPedRep(nome){
     setTimeout(()=>document.addEventListener('click',function f(e){if(!p.contains(e.target)){p.remove();document.removeEventListener('click',f);}}),0);};
   $('app').querySelectorAll('[data-pso]').forEach(t=>t.onclick=()=>{const kk=t.dataset.pso;PR.ord=PR.ord.k===kk?{k:kk,d:-PR.ord.d}:{k:kk,d:kk==='total'||kk.startsWith('data')?-1:1};telaPedRep(nomeOk);});
   $('app').querySelectorAll('.prlin').forEach(tr=>tr.onclick=()=>{try{abrirPedido(tr.dataset.id);}catch(e){}});
-  $('prPdf').onclick=()=>pfPdfTela('Representante: '+nomeOk,`Período ${faixa}${porFat?' · lista pela data do faturamento':''}`,$('prCorpo'),'portrait');
+  $('prPdf').onclick=()=>pfPdfTela(nomeOk,`Período ${faixa}`,$('prCorpo'),'portrait',{rot:'Representante',arq:`Vendas - ${pfPrimNome(nomeOk)} - ${pfArqPer(de,ate)}`});
   $('prCol').onclick=ev=>{ev.stopPropagation();const p=document.createElement('div');p.className='pfpop';
     p.innerHTML='<div class="t">Colunas da lista</div>'+PR_COLS.map(c=>`<label><input type="checkbox" data-c="${c[0]}" ${cols.includes(c[0])?'checked':''}> ${c[1]}</label>`).join('')+'<div class="t" style="margin-top:6px"><a href="#" id="prColPad">voltar ao padrão</a></div>';
     document.body.appendChild(p);const r=ev.currentTarget.getBoundingClientRect();p.style.left=Math.min(r.left,innerWidth-260)+'px';p.style.top=(r.bottom+6)+'px';
@@ -1740,7 +1760,7 @@ function telaPedRep(nome){
 (function(){try{const s=document.createElement('style');s.textContent=`
 .prsub{font-size:12.5px;color:var(--ink3);margin:-4px 0 10px}.prsub b{color:var(--ink2)}
 .prst{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--c);white-space:nowrap}.prst i{width:8px;height:8px;border-radius:50%;background:var(--c)}
-.prlin{cursor:pointer}.prkp .pfkpi b{white-space:nowrap;font-size:20px}.prkp{grid-template-columns:repeat(3,1fr)}.prkp .pfkpi{padding:9px 10px}.pfkpi.prbk{border-color:#FCA5A5;background:#FEF2F2}.pfkpi.prbk b{color:#B91C1C}.prbloq{border-top:2px solid #FCA5A5;background:#FEF2F2}.prbloq .prbt{padding:10px 14px;font-weight:800;color:#B91C1C;font-size:13px;text-transform:uppercase;letter-spacing:.05em}.prbloq .prbt small{text-transform:none;letter-spacing:0;font-weight:600;color:#7F1D1D;margin-left:8px;font-size:12px}.prbloq table{border:0;border-radius:0}.pfori{display:inline-flex;gap:4px}.pfori .btn.on{background:#1B4F9C;color:#fff;border-color:#1B4F9C}
+.prlin{cursor:pointer}.prkp .pfkpi b{white-space:nowrap;font-size:20px}.prkp{grid-template-columns:repeat(4,1fr)}.prkp .pfkpi{padding:9px 10px}.pfkpi.prbk{border-color:#FCA5A5;background:#FEF2F2}.pfkpi.prbk b{color:#B91C1C}.prbloq{border-top:2px solid #FCA5A5;background:#FEF2F2}.prbloq .prbt{padding:10px 14px;font-weight:800;color:#B91C1C;font-size:13px;text-transform:uppercase;letter-spacing:.05em}.prbloq .prbt small{text-transform:none;letter-spacing:0;font-weight:600;color:#7F1D1D;margin-left:8px;font-size:12px}.prbloq table{border:0;border-radius:0}.pfori{display:inline-flex;gap:4px}.pfori .btn.on{background:#1B4F9C;color:#fff;border-color:#1B4F9C}
 .prselo{display:inline-block;margin-left:6px;padding:2px 8px;border-radius:999px;font-size:10px;font-weight:800;letter-spacing:0;text-transform:none;vertical-align:1px}
 .prselo.ok{background:#DCFCE7;color:#15803D}.prselo.mau{background:#FEE2E2;color:#B91C1C}.prselo.cz{background:var(--line3,#F1F5F9);color:var(--ink2)}
 .pfkpi.prmeta{border-color:#93C5FD}.pfkpi.prcom{border-color:#C4B5FD}
