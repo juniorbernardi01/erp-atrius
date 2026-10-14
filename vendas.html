@@ -1637,57 +1637,71 @@ function pfPdfTela(tit,sub,origem){
     w.document.close();setTimeout(()=>{w.focus();w.print();},700);};
 }
 /* ---------- Relatório de pedidos do representante (v398) ----------
-   Abre pelo "Ver os N pedidos" da ficha. Mostra meta, vendido, faturado e cada pedido com a
-   situação ao lado. As situações escolhidas aqui valem só para este relatório (o padrão é o
-   mesmo da Performance), para o gerente poder olhar, por exemplo, só o que está em aberto. */
-const PR={sits:null,ord:{k:'data_pedido',d:-1}};
+   Abre pelo "Ver os N pedidos" da ficha. Serve para o acerto do mês:
+   - prêmio de meta: o que ENTROU de venda no período (data do pedido), nas situações válidas;
+   - comissão (paga dia 15): o que FATUROU no período (data da nota), do dia 1º ao último dia do mês.
+   O período e a data que manda na lista (pedido ou faturamento) se escolhem aqui, sem mexer na
+   Performance. As situações também valem só para este relatório (o padrão é o da Performance). */
+const PR={sits:null,ord:{k:'data_pedido',d:-1},per:null,dados:null,chave:'',carregando:false};
+async function prCarrega(){const {de,ate}=perFaixa(PR.per);const k=de+'|'+ate;if(PR.chave===k&&PR.dados)return;
+  /* o período da Performance já está na memória: não busca de novo */
+  if(PF.fx&&PF.fx.de===de&&PF.fx.ate===ate&&PF.dados){PR.dados=PF.dados.pedidos||[];PR.chave=k;return;}
+  PR.carregando=true;try{const r=await fn({acao:'perf_pedidos',de,ate,itens:false});PR.dados=r.pedidos||[];pfAplicaRep(PR.dados);PR.chave=k;}finally{PR.carregando=false;}}
 function telaPedRep(nome){
   if(!PF.dados){$('app').innerHTML='<div class="vazio">Carregando…</div>';pfCarregar().then(()=>telaPedRep(nome));return;}
-  const D=pfCalc();const x=D.lista.find(r=>semAc(r.nome)===semAc(nome));if(!x){$('app').innerHTML=`<div class="vazio">Representante não encontrado. <button class="btn" onclick="ir('performance')">Voltar</button></div>`;return;}
-  const {de,ate}=PF.fx;const sel=(PR.sits||pfSitsOn()).map(semAc);const conhecida=st=>PF_SITS.map(semAc).includes(st);
-  const doRep=(PF.dados.pedidos||[]).filter(p=>semAc(p.vendedor||'')===semAc(x.nome)&&p.data_pedido>=de&&p.data_pedido<=ate);
-  const lis=doRep.filter(p=>{const st=semAc(p.situacao);return !conhecida(st)||sel.includes(st);});
+  if(!PR.per){PR.per=JSON.parse(JSON.stringify(PF.per));if(!PR.per||PR.per.m==='sem')PR.per=perNovo('mes');PR.per.campo='pedido';}
+  const {de,ate}=perFaixa(PR.per);
+  if(PR.chave!==de+'|'+ate||!PR.dados){$('app').innerHTML='<div class="vazio">Carregando os pedidos do período…</div>';prCarrega().then(()=>telaPedRep(nome)).catch(e=>{$('app').innerHTML=`<div class="vazio">Não consegui ler os pedidos: ${esc(e.message)}</div>`;});return;}
+  const nomeOk=(PF.vend.find(v=>semAc(v.nome)===semAc(nome))||{}).nome||nome;
+  const sel=(PR.sits||pfSitsOn()).map(semAc);const conhecida=st=>PF_SITS.map(semAc).includes(st);
+  const ok=p=>{const st=semAc(p.situacao);return !conhecida(st)||sel.includes(st);};
+  const doRep=(PR.dados||[]).filter(p=>semAc(p.vendedor||'')===semAc(nomeOk)&&ok(p));
+  const naFaixa=d=>d&&d>=de&&d<=ate;
+  const vendL=doRep.filter(p=>naFaixa(p.data_pedido)),fatL=doRep.filter(p=>naFaixa(p.data_faturamento));
   const soma=l=>l.reduce((s,p)=>s+(+p.total||0),0);
-  const vend=soma(lis),aberto=soma(lis.filter(p=>PF_ABERTOS.some(s=>semAc(s)===semAc(p.situacao))));
-  const fatL=lis.filter(p=>p.data_faturamento);const fat=soma(fatL);
-  /* resumo por situação: todas as situações do representante no período, marcadas ou não */
-  const porS={};doRep.forEach(p=>{const s=sitDe(p.situacao);const k=semAc(p.situacao);(porS[k]=porS[k]||{t:p.situacao,n:0,v:0,cor:s[2],nome:s[1]});porS[k].n++;porS[k].v+=+p.total||0;});
+  const vend=soma(vendL),fat=soma(fatL),aberto=soma(vendL.filter(p=>PF_ABERTOS.some(s=>semAc(s)===semAc(p.situacao))));
+  /* meta: soma das metas dos meses do período (normalmente um mês só) */
+  const meses=[];for(let d=perD(de.slice(0,7)+'-01');perYmd(d)<=ate;d.setMonth(d.getMonth()+1))meses.push(perYmd(d).slice(0,7));
+  const meta=meses.reduce((s,ym)=>s+pfMetaDe(nomeOk,ym),0);const pr=meta?vend/meta:0;
+  const fechado=ate<perHoje();const bateu=meta&&vend>=meta;
+  const porFat=PR.per.campo==='fat';const lis=porFat?fatL:vendL;
   const ordK=PR.ord.k;const lin=lis.slice().sort((a,b)=>{const u=a[ordK],w=b[ordK];const r=(ordK==='total')?(+u||0)-(+w||0):String(u||'').localeCompare(String(w||''));return r*PR.ord.d||String(b.numero).localeCompare(String(a.numero));});
   const th=(k,n,num)=>`<th class="so2 ${num?'n':''} ${ordK===k?'on':''}" data-pso="${k}">${n}${ordK===k?(PR.ord.d>0?' ▲':' ▼'):''}</th>`;
-  const k=(t,v,s,bar)=>`<div class="pfkpi"><span>${t}</span><b>${v}</b>${s?`<small>${s}</small>`:''}${bar!=null?`<div class="bar"><i style="width:${Math.min(100,bar*100)}%"></i><u style="left:${D.prev*100}%"></u></div>`:''}</div>`;
-  const pr=x.meta?vend/x.meta:0;
-  $('app').innerHTML=`<div class="migalha"><a href="#performance" class="mlk">Vendas</a> › <a href="#performance" class="mlk">Performance de vendas</a> › <a href="#performance/${encodeURIComponent(x.nome)}" class="mlk">${esc(x.nome)}</a> › Pedidos</div>
-  <div class="topo"><button class="btn" id="prVolta">‹ Voltar</button><h1>Pedidos · ${esc(x.nome)}</h1><span class="k" style="color:var(--ink3);font-size:12px">${perRotulo(PF.per)} · pela data do pedido</span><span style="flex:1"></span>
-    <button class="btn" id="prSit">Situações: <b>${(PR.sits||pfSitsOn()).length} de ${PF_SITS.length}</b> ▾</button><button class="btn" id="prPdf">⎙ PDF</button></div>
+  const k=(t,v,s,bar,cls)=>`<div class="pfkpi ${cls||''}"><span>${t}</span><b>${v}</b>${s?`<small>${s}</small>`:''}${bar!=null?`<div class="bar"><i style="width:${Math.min(100,bar*100)}%"></i></div>`:''}</div>`;
+  const faixa=`${br(de)} a ${br(ate)}`;
+  const selo=!meta?'<span class="prselo cz">sem meta</span>':bateu?'<span class="prselo ok">bateu a meta</span>':fechado?'<span class="prselo mau">não bateu a meta</span>':`<span class="prselo cz">faltam ${pfRs(meta-vend)}</span>`;
+  $('app').innerHTML=`<div class="migalha"><a href="#performance" class="mlk">Vendas</a> › <a href="#performance" class="mlk">Performance de vendas</a> › <a href="#performance/${encodeURIComponent(nomeOk)}" class="mlk">${esc(nomeOk)}</a> › Pedidos</div>
+  <div class="topo"><button class="btn" id="prVolta">‹ Voltar</button><h1>Pedidos · ${esc(nomeOk)}</h1><span style="flex:1"></span>
+    ${perBotao('prPer',PR.per)}<button class="btn" id="prSit">Situações: <b>${(PR.sits||pfSitsOn()).length} de ${PF_SITS.length}</b> ▾</button><button class="btn" id="prPdf">⎙ PDF</button></div>
   <div id="prCorpo">
-  <div class="pfkpis">${k('Meta do mês',pfRs(x.meta),`${pfRs(x.meta/Math.max(1,D.duMes))} por dia útil`)}${k('Total vendido',pfRs(vend),`${pfPc(pr)} da meta · ${lis.length} pedido${lis.length===1?'':'s'}`,pr)}${k('Faturado',pfRs(fat),`${fatL.length} pedido${fatL.length===1?'':'s'} com nota · ${pfPc(vend?fat/vend:0)} do vendido`)}${k('Em aberto',pfRs(aberto),'ainda não faturado')}${k('Ticket médio',lis.length?pfRs(vend/lis.length):'—','por pedido')}</div>
-  <div class="prsit">${Object.entries(porS).sort((a,b)=>b[1].v-a[1].v).map(([kk,s])=>`<span class="prchip ${(!conhecida(kk)||sel.includes(kk))?'on':''}" data-pst="${esc(s.t)}" style="--c:${s.cor}"><i></i>${esc(s.nome)} <b>${s.n}</b> · ${pfRs(s.v)}</span>`).join('')||'<span class="k" style="color:var(--ink3)">Nenhum pedido no período.</span>'}</div>
-  <div class="caixa"><div class="rol"><table class="tv" id="prTb"><thead><tr>${th('data_pedido','Data')}${th('numero','Pedido')}${th('cliente','Cliente')}${th('cidade','Cidade')}${th('situacao','Situação')}${th('total','Valor',1)}${th('data_faturamento','Faturado em')}</tr></thead>
-    <tbody>${lin.map(p=>{const s=sitDe(p.situacao);return `<tr class="prlin" data-id="${esc(p.id)}"><td class="m">${br(p.data_pedido)}</td><td class="m"><b>${esc(p.numero||'')}</b></td><td><b>${esc(p.cliente||'')}</b></td><td>${esc(p.cidade||'')}</td><td><span class="prst" style="--c:${s[2]}"><i></i>${esc(s[1])}</span></td><td class="n m"><b>${pfRs(p.total)}</b></td><td class="m">${p.data_faturamento?br(p.data_faturamento):'—'}</td></tr>`;}).join('')||'<tr><td colspan="7" class="k" style="color:var(--ink3)">Nenhum pedido nas situações escolhidas.</td></tr>'}</tbody>
-    <tfoot><tr><td colspan="5">${lis.length} pedido${lis.length===1?'':'s'}</td><td class="n m">${pfRs(vend)}</td><td class="m">${pfRs(fat)} faturado</td></tr></tfoot></table></div>
-  <div class="k" style="padding:9px 14px;color:var(--ink3);font-size:12px">Pedidos entrados no período pela data do pedido, nas situações marcadas. As situações escolhidas aqui valem só para este relatório. Toque num pedido para abrir.</div></div></div>`;
-  $('prVolta').onclick=()=>ir('performance',encodeURIComponent(x.nome));
-  const troca=l=>{PR.sits=l;telaPedRep(nome);};
+  <div class="prsub">${faixa} · lista pela <b>${porFat?'data do faturamento':'data do pedido'}</b> · situações: ${(PR.sits||pfSitsOn()).join(', ')}</div>
+  <div class="pfkpis">${k('Meta do período',pfRs(meta),meses.length>1?`${meses.length} meses somados`:'meta do mês')}
+    ${k('Vendido no período',pfRs(vend),`base do prêmio de meta · ${pfPc(pr)} da meta · ${vendL.length} pedido${vendL.length===1?'':'s'} entrados`,pr,'prmeta')}
+    ${k('Faturado no período',pfRs(fat),`base da comissão · ${fatL.length} pedido${fatL.length===1?'':'s'} com nota de ${faixa}`,null,'prcom')}
+    ${k('Em aberto',pfRs(aberto),'vendido e ainda não faturado')}${k('Ticket médio',vendL.length?pfRs(vend/vendL.length):'—','vendido ÷ pedidos')}</div>
+  <div class="caixa"><div class="rol"><table class="tv" id="prTb"><thead><tr>${th('data_pedido','Data do pedido')}${th('numero','Pedido')}${th('cliente','Cliente')}${th('cidade','Cidade')}${th('situacao','Situação')}${th('total','Valor',1)}${th('data_faturamento','Faturado em')}</tr></thead>
+    <tbody>${lin.map(p=>{const s=sitDe(p.situacao);return `<tr class="prlin" data-id="${esc(p.id)}"><td class="m">${br(p.data_pedido)}</td><td class="m"><b>${esc(p.numero||'')}</b></td><td><b>${esc(p.cliente||'')}</b></td><td>${esc(p.cidade||'')}</td><td><span class="prst" style="--c:${s[2]}"><i></i>${esc(s[1])}</span></td><td class="n m"><b>${pfRs(p.total)}</b></td><td class="m">${p.data_faturamento?br(p.data_faturamento):'—'}</td></tr>`;}).join('')||'<tr><td colspan="7" class="k" style="color:var(--ink3)">Nenhum pedido no período, nas situações escolhidas.</td></tr>'}</tbody>
+    <tfoot><tr><td colspan="5">${lis.length} pedido${lis.length===1?'':'s'} ${porFat?'faturados':'entrados'} de ${faixa}</td><td class="n m">${pfRs(soma(lis))}</td><td></td></tr></tfoot></table></div>
+  <div class="k" style="padding:9px 14px;color:var(--ink3);font-size:12px">Prêmio de meta = vendas que entraram no período (data do pedido), sem as situações desmarcadas. Comissão = o que foi faturado no período (data da nota), qualquer que seja a data do pedido. Para ver a lista do que faturou, escolha "Data do faturamento" no Período.</div></div></div>`;
+  $('prVolta').onclick=()=>ir('performance',encodeURIComponent(nomeOk));
+  $('prPer').onclick=ev=>{ev.stopPropagation();abrirPeriodo(ev.currentTarget,PR.per,{campos:[['pedido','Data do pedido'],['fat','Data do faturamento']]},st=>{PR.per=st.m==='sem'?perNovo('mes'):st;if(!PR.per.campo)PR.per.campo='pedido';PR.ord.k=PR.per.campo==='fat'?'data_faturamento':'data_pedido';telaPedRep(nomeOk);});};
   $('prSit').onclick=ev=>{ev.stopPropagation();const p=document.createElement('div');p.className='pfpop';const on=(PR.sits||pfSitsOn());
     p.innerHTML='<div class="t">Pedidos do relatório</div>'+PF_SITS.map(st=>`<label><input type="checkbox" data-st="${st}" ${on.includes(st)?'checked':''}> ${st}</label>`).join('')+'<div class="t" style="margin-top:6px"><a href="#" id="prPad">voltar ao padrão da Performance</a></div>';
     document.body.appendChild(p);const r=ev.currentTarget.getBoundingClientRect();p.style.left=Math.min(r.left,innerWidth-260)+'px';p.style.top=(r.bottom+6)+'px';
-    p.querySelectorAll('input').forEach(i=>i.onchange=()=>{const l=[...p.querySelectorAll('input')].filter(z=>z.checked).map(z=>z.dataset.st);if(!l.length){i.checked=true;return toast('Deixe pelo menos uma situação.',true);}p.remove();troca(l);});
-    p.querySelector('#prPad').onclick=e=>{e.preventDefault();p.remove();troca(null);};
+    p.querySelectorAll('input').forEach(i=>i.onchange=()=>{const l=[...p.querySelectorAll('input')].filter(z=>z.checked).map(z=>z.dataset.st);if(!l.length){i.checked=true;return toast('Deixe pelo menos uma situação.',true);}PR.sits=l;telaPedRep(nomeOk);});
+    p.querySelector('#prPad').onclick=e=>{e.preventDefault();p.remove();PR.sits=null;telaPedRep(nomeOk);};
     setTimeout(()=>document.addEventListener('click',function f(e){if(!p.contains(e.target)){p.remove();document.removeEventListener('click',f);}}),0);};
-  /* o resumo por situação também liga e desliga, com um toque */
-  $('app').querySelectorAll('[data-pst]').forEach(ch=>ch.onclick=()=>{const t=ch.dataset.pst;const on=(PR.sits||pfSitsOn()).slice();const nm=PF_SITS.find(s=>semAc(s)===semAc(t));if(!nm)return;
-    const i=on.findIndex(s=>semAc(s)===semAc(nm));if(i>=0){if(on.length===1)return toast('Deixe pelo menos uma situação.',true);on.splice(i,1);}else on.push(nm);troca(on);});
-  $('app').querySelectorAll('[data-pso]').forEach(t=>t.onclick=()=>{const kk=t.dataset.pso;PR.ord=PR.ord.k===kk?{k:kk,d:-PR.ord.d}:{k:kk,d:kk==='total'||kk.startsWith('data')?-1:1};telaPedRep(nome);});
+  $('app').querySelectorAll('[data-pso]').forEach(t=>t.onclick=()=>{const kk=t.dataset.pso;PR.ord=PR.ord.k===kk?{k:kk,d:-PR.ord.d}:{k:kk,d:kk==='total'||kk.startsWith('data')?-1:1};telaPedRep(nomeOk);});
   $('app').querySelectorAll('.prlin').forEach(tr=>tr.onclick=()=>{try{abrirPedido(tr.dataset.id);}catch(e){}});
-  $('prPdf').onclick=()=>pfPdfTela('Pedidos · '+x.nome,`${perRotulo(PF.per)} · situações: ${(PR.sits||pfSitsOn()).join(', ')}`,$('prCorpo'));
+  $('prPdf').onclick=()=>pfPdfTela('Pedidos · '+nomeOk,`${faixa} · lista pela ${porFat?'data do faturamento':'data do pedido'}`,$('prCorpo'));
 }
 (function(){try{const s=document.createElement('style');s.textContent=`
-.prsit{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
-.prchip{display:inline-flex;align-items:center;gap:6px;padding:6px 11px;border-radius:999px;border:1.5px solid var(--line);font-size:12px;cursor:pointer;color:var(--ink3);background:var(--surface,#fff);user-select:none}
-.prchip i{width:9px;height:9px;border-radius:50%;background:var(--c);opacity:.35}.prchip b{font-family:'JetBrains Mono',monospace}
-.prchip.on{color:var(--ink);border-color:var(--c);background:color-mix(in srgb,var(--c) 9%,transparent)}.prchip.on i{opacity:1}
+.prsub{font-size:12.5px;color:var(--ink3);margin:-4px 0 10px}.prsub b{color:var(--ink2)}
 .prst{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--c);white-space:nowrap}.prst i{width:8px;height:8px;border-radius:50%;background:var(--c)}
 .prlin{cursor:pointer}
+.prselo{display:inline-block;margin-left:6px;padding:2px 8px;border-radius:999px;font-size:10px;font-weight:800;letter-spacing:0;text-transform:none;vertical-align:1px}
+.prselo.ok{background:#DCFCE7;color:#15803D}.prselo.mau{background:#FEE2E2;color:#B91C1C}.prselo.cz{background:var(--line3,#F1F5F9);color:var(--ink2)}
+.pfkpi.prmeta{border-color:#93C5FD}.pfkpi.prcom{border-color:#C4B5FD}
 `;document.head.appendChild(s);}catch(e){}})();
 
 
