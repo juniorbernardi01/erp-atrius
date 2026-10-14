@@ -1,0 +1,843 @@
+<!doctype html>
+<html lang="pt-BR"><head>
+<meta charset="utf-8">
+<title>Tanques · teste</title><link rel="manifest" href="tanqueteste.webmanifest"><meta name="theme-color" content="#0E1B33"><link rel="icon" href="icone-192.png"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@600;700&display=swap">
+<style>
+/* Layout: tablet 10,1" deitado (1280×800), interativo: os botões mudam o status, os três pontinhos abrem a barra lateral, Formulação e Modo de Fazer e Análise abrem na tela toda. Foco do cartão: status, produto, tanque, volume, hora de pronto, máquina e o botão. */
+:root{--bg:#F3F4F6;--card:#fff;--fg:#0E1B33;--ink2:#374151;--ink3:#6B7280;--line:#E5E7EB;--line2:#F1F2F4;--navy:#0E1B33;--azul:#1B4F9C;--ok:#15803D;--okbg:#DCFCE7;--amb:#B45309;--ambbg:#FEF3C7;--mau:#B91C1C;--maubg:#FEE2E2;--cinza:#6B7280;--cinzabg:#E5E7EB;--roxo:#6D28D9;--roxobg:#EDE9FE;--lar:#EA580C;--azbg:#DBEAFE;--az:#1D4ED8;--proxbg:#D9DDE4;--proxfg:#374151;--larbg:#FFEDD5;--font:Inter,system-ui,sans-serif;--mono:'JetBrains Mono',ui-monospace,monospace}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#0B0F17;--card:#1F2636;--fg:#E7E9EE;--ink2:#C9CDD6;--ink3:#8B93A1;--line:#3A4558;--line2:#2C3546;--okbg:#16432B;--ok:#4ADE80;--ambbg:#4A360C;--amb:#FBBF24;--maubg:#4C1D21;--mau:#F87171;--cinzabg:#384255;--cinza:#9CA3AF;--roxobg:#36295E;--roxo:#C4B5FD;--azbg:#1A3260;--az:#93C5FD;--proxbg:#141A26;--proxfg:#AEB5C2;--larbg:#4D2810;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0B0F17;--card:#1F2636;--fg:#E7E9EE;--ink2:#C9CDD6;--ink3:#8B93A1;--line:#3A4558;--line2:#2C3546;--okbg:#16432B;--ok:#4ADE80;--ambbg:#4A360C;--amb:#FBBF24;--maubg:#4C1D21;--mau:#F87171;--cinzabg:#384255;--cinza:#9CA3AF;--roxobg:#36295E;--roxo:#C4B5FD;--azbg:#1A3260;--az:#93C5FD;--proxbg:#141A26;--proxfg:#AEB5C2;--larbg:#4D2810;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.35 var(--font)}
+.wrap{max-width:1300px;margin:0 auto;padding-block:12px 50px;padding-inline:16px}
+.nota{font-size:12px;color:var(--ink3);margin-bottom:10px}.nota b{color:var(--fg)}
+.tablet{width:1280px;max-width:100%;margin:0 auto 20px;background:var(--bg);border:10px solid #111;border-radius:22px;overflow:hidden;box-shadow:0 20px 50px rgba(0,0,0,.25);position:relative}
+.tela{width:1260px;max-width:100%;height:780px;display:flex;flex-direction:column;overflow:hidden;background:var(--bg);position:relative}
+.top{background:var(--navy);color:#fff;display:flex;align-items:center;gap:12px;padding:0 18px;height:62px;flex:none}
+.top .logo{background:#fff;border-radius:8px;padding:3px 10px;font:800 20px var(--font);color:#1B4F9C;letter-spacing:-.02em}
+.top .ola{font-size:16px;color:#C9D4EA}.top .ola b{color:#fff}
+.top .res{display:flex;gap:6px;margin:0 auto}.top .res span{font-size:12px;padding:5px 10px;border-radius:999px;font-weight:600}.top .res span b{font-family:var(--mono)}
+.top .res .ok{background:var(--okbg);color:var(--ok)}.top .res .amb{background:var(--ambbg);color:var(--amb)}.top .res .az{background:#DBEAFE;color:#1D4ED8}.top .res .rx{background:var(--roxobg);color:var(--roxo)}.top .res .cz{background:rgba(255,255,255,.14);color:#fff}
+.top .hora{text-align:right}.top .hora b{display:block;font:700 26px/1 var(--mono)}.top .hora small{font-size:11px;color:#C9D4EA}
+.top .menu{width:38px;height:38px;border-radius:50%;background:#2B3A57;display:grid;place-items:center;font-size:20px;color:#fff}
+.grade{flex:1;display:grid;grid-template-columns:repeat(24,1fr);grid-template-rows:1fr 1fr;gap:10px;padding:10px 12px;min-height:0}
+.tq{background:var(--card);border:1px solid var(--line);border-radius:14px;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+.tq.c8{grid-column:span 8}.tq.c7{grid-column:span 7}.tq.c5{grid-column:span 5}
+.tq .cab{background:var(--navy);color:#fff;display:flex;align-items:center;gap:8px;padding:0 10px 0 14px;height:46px;flex:none}
+.tq .cab b{font:800 24px/1 var(--font)}
+.tq .cab .pts{margin-left:auto;width:32px;height:32px;border-radius:50%;background:#2B3A57;display:grid;place-items:center;font-size:18px;cursor:pointer}
+.st{margin:8px 12px 0;padding:8px 12px;border-radius:10px;font:800 13.5px var(--font);letter-spacing:.02em;display:flex;justify-content:space-between;align-items:center;gap:6px;white-space:nowrap}
+.st span:first-child{overflow:hidden;text-overflow:ellipsis}.st .t{font:700 14px var(--mono)}
+.st.ok{background:var(--okbg);color:var(--ok)}.st.amb{background:var(--ambbg);color:var(--amb)}.st.mau{background:var(--maubg);color:var(--mau)}.st.cz{background:var(--cinzabg);color:var(--cinza)}.st.az{background:var(--azbg);color:var(--az)}.st.rx{background:var(--roxobg);color:var(--roxo)}
+.prod{padding:9px 14px 0;font:800 22px/1.05 var(--font);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:none}.tiles,.st,.prox{flex:none}.prod small{display:block;font:500 12px var(--font);color:var(--ink3);margin-top:4px}
+.tiles{display:grid;grid-template-columns:1fr 1.2fr 1fr;gap:8px;padding:9px 12px 0}
+.tiles div{background:var(--line2);border-radius:10px;padding:7px 10px;min-width:0}
+.tiles div span{display:block;font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3);font-weight:700;white-space:nowrap}
+.tiles div b{display:block;font:700 19px/1.2 var(--mono);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--ink2)}
+.tiles div.dest b{font-size:26px;font-weight:800;color:var(--fg)}.tiles div.dest span{color:var(--ink2)}
+.acoes{margin:auto 12px 8px;display:flex;flex-direction:column;gap:6px;padding-top:9px}
+.acao{height:48px;border-radius:12px;border:0;font:800 16px var(--font);color:#fff;background:var(--ok);display:grid;place-items:center;text-align:center;line-height:1.1;padding:0 8px;cursor:pointer;user-select:none}
+.acao.amb{background:var(--amb)}.acao.az{background:var(--azul)}.acao.rx{background:var(--roxo)}.acao.off{background:var(--cinzabg);color:var(--ink3);cursor:default}
+.sub2{display:flex;gap:6px}.sub2 div{flex:1;height:34px;white-space:nowrap;border-radius:9px;border:1.5px solid var(--line);display:grid;place-items:center;font:700 12.5px var(--font);color:var(--ink2);background:var(--card);cursor:pointer}
+.sub2 div.feito{border-color:var(--okbg);background:var(--okbg);color:var(--ok)}.sub2 div.pend{border-color:#FDE68A;background:#FFFBEB;color:#92400E}.pd{font-style:normal;color:#F59E0B;margin-left:4px;font-size:15px;line-height:1}.sub2 div{white-space:nowrap;display:flex;align-items:center;justify-content:center;gap:3px}.sub2 .pd{display:inline;height:auto;background:none;border:0;padding:0}
+.prox{background:var(--proxbg);padding:8px 12px;font-size:12px;color:var(--proxfg);display:flex;gap:8px;align-items:center;white-space:nowrap;overflow:hidden}
+.prox i{font-style:normal;border:1.5px solid var(--proxfg);color:var(--proxfg);font:700 10px var(--font);letter-spacing:.05em;padding:2px 8px;border-radius:999px;flex:none}
+.prox b{color:var(--fg);font-weight:600;overflow:hidden;text-overflow:ellipsis}.prox .h{margin-left:auto;font:700 12.5px var(--mono);color:var(--fg)}
+.tq.c5 .cab{height:42px}.tq.c5 .cab b{font-size:21px}.tq.c5 .st{font-size:12.5px;padding:8px 10px}.tq.c5 .st .t{font-size:13px}
+.tq.c5 .prod{font-size:17px}.tq.c5 .tiles{grid-template-columns:1fr 1.15fr 0.9fr;gap:5px;padding:9px 8px 0}.tq.c5 .tiles div{padding:6px 7px}.tq.c5 .tiles div b{font-size:14px}.tq.c5 .tiles div.dest b{font-size:19px}.tq.c5 .acoes{margin:auto 8px 8px}
+.tq.c5 .acao{height:44px;font-size:14px}.tq.c5 .sub2 div{font-size:11.5px;padding:0 4px}.tq.c5 .prox{font-size:11.5px}
+.acao small{display:block;font:500 10px var(--font);color:var(--ink3);margin-top:1px}.acao.off{cursor:pointer}
+/* barra lateral */
+.sombra{position:absolute;inset:0;background:rgba(14,27,51,.45);display:none}.sombra.on{display:block}
+.drawer{position:absolute;top:0;right:0;bottom:0;width:520px;background:var(--card);box-shadow:-20px 0 40px rgba(0,0,0,.25);display:none;flex-direction:column}.drawer.on{display:flex}
+.drawer .dh{background:var(--navy);color:#fff;padding:14px 16px;position:relative}.drawer .dh b{display:block;font-size:26px}.drawer .dh small{color:#C9D4EA;font-size:13px}.drawer .dh .x{position:absolute;right:14px;top:16px;width:32px;height:32px;border-radius:50%;background:#2B3A57;display:grid;place-items:center;cursor:pointer}
+.dbtn{display:flex;gap:10px;padding:14px 16px 6px}.dbtn .acao{flex:1;height:56px;font-size:15.5px}
+.meta{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding:10px 16px 0}.meta div{background:var(--line2);border-radius:10px;padding:9px 10px}.meta span{display:block;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3);font-weight:700}.meta b{display:block;font:800 22px var(--mono)}.meta small{color:var(--ink3);font-size:11.5px}
+.dbar{height:8px;background:var(--line2);border-radius:4px;margin:10px 16px 0;overflow:hidden}.dbar i{display:block;height:100%;background:var(--ok)}
+.lista{flex:1;overflow:auto;padding:0 16px 14px;font-size:13.5px}.lista h4{margin:14px 0 6px;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3)}
+.lista .li{display:flex;gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid var(--line2)}.lista .li.agora{background:var(--okbg);margin:0 -8px;padding:9px 8px;border-radius:8px;border:0}
+.lista em{font-style:normal;font:700 14px var(--mono);width:48px;color:var(--ink2);flex:none}.lista .li>div{flex:1;min-width:0}.lista small{display:block;color:var(--ink3);font-size:11.5px}.lista s{color:var(--ink3)}
+.pill{display:inline-block;border-radius:999px;padding:4px 10px;font:700 12px var(--font)}.pill.ok{background:var(--okbg);color:var(--ok)}.pill.mau{background:var(--maubg);color:var(--mau)}.pill.cz{background:var(--cinzabg);color:var(--cinza)}.pill.amb{background:var(--ambbg);color:var(--amb)}
+/* tela cheia */
+.full{position:absolute;inset:0;background:var(--bg);display:none;flex-direction:column}.full.on{display:flex}
+.full .fh{background:var(--navy);color:#fff;display:flex;align-items:center;gap:12px;padding:0 18px;height:62px;flex:none}.full .fh b{font-size:19px}.full .fh small{color:#C9D4EA;font-size:13px}.full .fh .x{margin-left:auto;width:36px;height:36px;border-radius:50%;background:#2B3A57;display:grid;place-items:center;font-size:18px;cursor:pointer}
+.full .fb{flex:1;display:grid;grid-template-columns:1.35fr 1fr;gap:12px;padding:12px;min-height:0}
+.box{background:var(--card);border:1px solid var(--line);border-radius:14px;display:flex;flex-direction:column;min-height:0;overflow:hidden}
+.box h3{margin:0;padding:10px 14px;font:800 12px var(--font);letter-spacing:.07em;text-transform:uppercase;color:var(--ink3);border-bottom:1px solid var(--line);display:flex;gap:10px;align-items:center}.box h3 span{margin-left:auto;font-weight:600;text-transform:none;letter-spacing:0;color:var(--ink2)}
+.box .bb{padding:6px 14px;overflow:auto;flex:1}
+.box .bf{display:flex;gap:8px;padding:10px 12px;border-top:1px solid var(--line);flex:none}.box .bf .acao{height:48px;padding:0 18px}.box .bf .acao.sec{background:transparent;border:1.5px solid var(--line);color:var(--ink2)}.box .bf .acao.lar{background:var(--lar);width:48px;padding:0;font-size:22px}
+table.t{width:100%;border-collapse:collapse;font-size:14px}.t th{font:600 10.5px var(--font);letter-spacing:.05em;text-transform:uppercase;color:var(--ink3);text-align:left;padding:6px 8px;border-bottom:1px solid var(--line)}.t td{padding:9px 8px;border-bottom:1px solid var(--line2);vertical-align:middle}
+.t td.m{font:700 14px var(--mono)}.t .in{display:inline-block;border:1.5px solid var(--line);border-radius:9px;padding:8px 10px;min-width:96px;font:700 15px var(--mono);background:var(--bg);color:var(--fg)}
+.t .in.vazio{color:var(--ink3);font-weight:500}.ck{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:8px;border:2px solid var(--line);color:#fff;font-weight:800;cursor:pointer}.ck.on{background:var(--ok);border-color:var(--ok)}
+.modo{list-style:none;margin:0;padding:0}.modo li{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--line2);font-size:14px;line-height:1.4;cursor:pointer}.modo li em{font-style:normal;width:30px;height:30px;border-radius:50%;background:var(--navy);color:#fff;display:grid;place-items:center;font:800 13px var(--font);flex:none}.modo li.feito em{background:var(--ok)}.modo li.feito{color:var(--ink3)}
+.modo li small{display:block;color:var(--ink3);font-size:12px}
+.full .ff{display:flex;gap:8px;padding:10px 12px 12px;border-top:1px solid var(--line);background:var(--card);flex:none}.full .ff .acao{height:50px;padding:0 22px}
+.toast{position:absolute;left:50%;bottom:18px;transform:translateX(-50%);background:#111827;color:#fff;padding:10px 16px;border-radius:10px;font-size:13px;display:none}
+.leg{font-size:13px;color:var(--ink2);line-height:1.6;max-width:1280px;margin:0 auto}
+@keyframes pisca{0%,100%{background:#F97316;color:#fff}50%{background:#FFEDD5;color:#C2410C}}.tiles .pisca{animation:pisca 1s steps(1,end) infinite}.tiles .pisca span,.tiles .pisca b{color:inherit}@media (prefers-reduced-motion:reduce){.tiles .pisca{animation:none;background:#F97316;color:#fff}}
+/* v10 */
+:root{--bok:#15803D;--brx:#6D28D9;--bamb:#B45309;--baz:#1B4F9C}
+.acao{background:var(--bok)}.acao.amb{background:var(--bamb)}.acao.az{background:var(--baz)}.acao.rx{background:var(--brx)}.acao.off{background:var(--cinzabg);color:var(--ink3)}.ic.ok{background:var(--bok)!important}.ck.on{background:var(--bok);border-color:var(--bok)}.dbar i{background:var(--bok)}
+:root[data-theme="dark"]{--bok:#16A34A;--brx:#7C3AED;--bamb:#D97706;--baz:#2563EB}
+.top .tema{width:40px;height:40px;border-radius:50%;background:#2B3A57;display:grid;place-items:center;color:#fff;cursor:pointer;margin-right:4px}
+.sub2 div{background:var(--card)!important;border:1.5px solid var(--line)!important;color:var(--ink2)!important;gap:8px!important;font-size:13px}
+.ic{font-style:normal;width:20px;height:20px;border-radius:50%;display:inline-grid;place-items:center;flex:none;font:800 12px/1 var(--font)}
+.ic.ok{background:var(--ok);color:#fff}
+.ic.pend{border:2px solid #F59E0B;position:relative}.ic.pend::after{content:"";width:9px;height:9px;border-radius:50%;background:#F59E0B;animation:pulsa 1.1s ease-in-out infinite}
+@keyframes pulsa{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.15;transform:scale(.6)}}
+.meta .mt{cursor:pointer;border:2px solid transparent;transition:border-color .15s}.meta .mt.on{border-color:var(--fg)}
+.meta .mt.ok{background:var(--okbg)}.meta .mt.ok span,.meta .mt.ok b{color:var(--ok)}
+.meta .mt.amb{background:var(--larbg)}.meta .mt.amb span,.meta .mt.amb b{color:var(--lar)}.meta .mt.ok.on{border-color:var(--ok)}.meta .mt.amb.on{border-color:var(--lar)}
+.lista h4.h-ok{color:var(--ok)}.lista h4.h-amb{color:var(--lar)}
+.lh,.lr{display:grid;grid-template-columns:52px 1fr 74px 62px 96px;gap:8px;align-items:center}
+.lh{font:700 10px var(--font);letter-spacing:.06em;text-transform:uppercase;color:var(--ink3);padding:4px 8px;border-bottom:1px solid var(--line)}
+.lr{padding:9px 8px;border-bottom:1px solid var(--line2)}.lr.agora{background:var(--okbg);border-radius:8px;border:0}
+.lr em{font:700 14px var(--mono);font-style:normal;color:var(--ink2)}.lr b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.lr small{display:block;color:var(--ink3);font-size:11.5px}.lr .m{font:600 12.5px var(--mono);color:var(--ink2)}.lr i{font-style:normal}.lr.feito b{color:var(--ink3)}
+.pill.amb{background:var(--larbg);color:var(--lar)}
+.vz{padding:12px 8px;color:var(--ink3)}
+:root[data-theme="dark"] .tablet{border-color:#000}:root[data-theme="dark"] body{background:var(--bg)}
+:root[data-theme="dark"] .tq{border-color:#3A4558}:root[data-theme="dark"] .tq .cab,:root[data-theme="dark"] .top,:root[data-theme="dark"] .drawer .dh,:root[data-theme="dark"] .full .fh{background:#0F1F3D}
+@keyframes pisca{0%,100%{background:#F97316;color:#fff}50%{background:var(--larbg);color:var(--lar)}}
+.st{color:#fff!important;box-shadow:0 2px 8px rgba(0,0,0,.12)}.st .t{color:#fff;opacity:.95}
+.st.ok{background:#16A34A}.st.amb{background:#F59E0B;color:#1F1300!important}.st.amb .t{color:#1F1300}.st.mau{background:#DC2626}.st.cz{background:#64748B}.st.az{background:#2563EB}.st.rx{background:#7C3AED}
+.box .bf .acao.lar{width:auto!important;padding:0 16px 0 10px!important;font-size:15px!important;display:flex;align-items:center;gap:8px}.acao.lar .ex{width:24px;height:24px;border-radius:50%;background:#fff;color:var(--lar);display:grid;place-items:center;font:900 15px/1 var(--font)}
+/* PIN, calculadora, histórico, menu */
+.top .menu{cursor:pointer}
+.pop{position:absolute;top:58px;right:14px;background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:0 16px 40px rgba(0,0,0,.35);display:none;min-width:280px;overflow:hidden;z-index:5}.pop.on{display:block}
+.pop div{padding:15px 18px;font:700 15px var(--font);color:var(--fg);border-bottom:1px solid var(--line2);cursor:pointer}.pop div small{display:block;font-weight:500;font-size:12px;color:var(--ink3)}.pop div:last-child{border:0}
+.modal{position:absolute;inset:0;background:rgba(5,10,20,.6);display:none;place-items:center;z-index:9}.modal.on{display:grid}
+.mc{background:var(--card);border-radius:20px;box-shadow:0 30px 60px rgba(0,0,0,.4);padding:16px;border:1px solid var(--line)}
+.mh{display:flex;align-items:flex-start;gap:10px;margin-bottom:10px}.mh>span:first-child{flex:1}.mh b{font-size:20px;display:block}.mh small{display:block;color:var(--ink3);font-size:13px;margin-top:2px}.mh .x{width:36px;height:36px;border-radius:50%;background:var(--line2);display:grid;place-items:center;cursor:pointer;font-size:18px;flex:none}
+.pin{width:380px}
+.dots{display:flex;gap:16px;justify-content:center;margin:14px 0 6px}.dots i{width:20px;height:20px;border-radius:50%;border:2.5px solid var(--ink3)}.dots i.on{background:var(--baz);border-color:var(--baz)}
+.msg{text-align:center;font-size:12.5px;color:var(--ink3);min-height:18px;margin-bottom:10px}.msg.erro{color:var(--mau);font-weight:700}
+.kp{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.kp div{height:64px;border-radius:14px;background:var(--line2);display:grid;place-items:center;font:800 26px var(--font);color:var(--fg);cursor:pointer;user-select:none}.kp div:active{transform:scale(.97)}
+.calc{width:400px}.vis{background:var(--line2);border-radius:14px;padding:12px 16px;text-align:right;margin-bottom:12px}.vis small{display:block;color:var(--ink3);font:600 15px var(--mono);min-height:20px;overflow:hidden;white-space:nowrap}.vis b{display:block;font:800 38px/1.1 var(--mono);overflow:hidden;white-space:nowrap}
+.kp.k4{grid-template-columns:repeat(4,1fr)}.kp.k4 div{height:58px}.kp.k4 .op{background:var(--baz);color:#fff}.kp.k4 .c{color:var(--mau)}.kp.k4 .z{grid-column:span 2}.kp.k4 .ig{background:var(--bok);color:#fff}
+.dbtn.d2{padding-top:0}.dbtn.d2 .acao{height:46px;font-size:14.5px}.acao.sec{background:transparent!important;border:1.5px solid var(--line);color:var(--ink2)!important}
+.lr.feito{background:var(--okbg);border-radius:8px;border:0;margin-bottom:4px}.lr.feito b{color:var(--fg)!important}.lr.feito em{color:var(--ok)}
+.pill.okc{background:var(--bok);color:#fff}
+.t.hist td small{display:block;color:var(--ink3);font-size:12px}.quem{display:inline-block;background:var(--line2);border-radius:999px;padding:4px 10px;font-weight:700;font-size:12.5px}
+.tq.c6{grid-column:span 6}.tq.c6 .cab{height:44px}.tq.c6 .cab b{font-size:22px}.tq.c6 .st{font-size:12.5px;padding:8px 10px}.tq.c6 .st .t{font-size:13px}
+.tq.c6 .prod{font-size:18px}.tq.c6 .tiles{grid-template-columns:1fr 1.15fr .95fr;gap:6px;padding:9px 10px 0}.tq.c6 .tiles div{padding:6px 8px}.tq.c6 .tiles div b{font-size:15px}.tq.c6 .tiles div.dest b{font-size:21px}.tq.c6 .acoes{margin:auto 10px 8px}
+.tq.c6 .acao{height:46px;font-size:15px}.tq.c6 .sub2 div{font-size:12px;padding:0 4px}.tq.c6 .prox{font-size:11.5px}
+.tq.pul{border:2px solid #0D9488}.tq.pul .cab{background:#0F766E!important}.tq .cab .tag{font:800 10px var(--font);letter-spacing:.08em;text-transform:uppercase;background:rgba(255,255,255,.18);padding:3px 8px;border-radius:999px}
+.lr[data-p]{cursor:pointer}.dica{font-size:12px;color:var(--ink3);padding:10px 2px}
+/* drawer animado */
+.drawer{display:flex!important;transform:translateX(105%);transition:transform .32s cubic-bezier(.2,.9,.25,1),box-shadow .32s;box-shadow:none}.drawer.on{transform:none;box-shadow:-24px 0 50px rgba(0,0,0,.35)}
+.sombra{display:block!important;opacity:0;pointer-events:none;transition:opacity .28s;backdrop-filter:blur(2px)}.sombra.on{opacity:1;pointer-events:auto}
+.drawer.on .dbtn,.drawer.on .meta,.drawer.on .dbar,.drawer.on .lista{animation:entra .38s cubic-bezier(.2,.9,.25,1) both}.drawer.on .dbtn.d2{animation-delay:.05s}.drawer.on .meta{animation-delay:.09s}.drawer.on .dbar{animation-delay:.12s}.drawer.on .lista{animation-delay:.15s}
+@keyframes entra{from{opacity:0;transform:translateX(24px)}to{opacity:1;transform:none}}
+.tq .cab .pts{transition:transform .12s,background .2s}.tq .cab .pts:active{transform:scale(.86);background:#3E5277}
+.modal{transition:opacity .2s}.modal.on .mc{animation:sobe .24s cubic-bezier(.2,.9,.25,1)}@keyframes sobe{from{opacity:0;transform:translateY(16px) scale(.98)}to{opacity:1;transform:none}}
+.acao{transition:transform .1s,filter .15s}.acao:active{transform:scale(.97);filter:brightness(1.1)}
+/* folha e troca */
+.folha{width:420px;display:flex;flex-direction:column;gap:10px}.folha .acao{height:54px}
+.troca{width:720px}.tqs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}.mini{white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+.tqs .op{border:2px solid var(--line);border-radius:14px;padding:12px;cursor:pointer;display:flex;flex-direction:column;gap:3px;background:var(--line2);transition:border-color .15s,transform .1s}.tqs .op:active{transform:scale(.97)}.tqs .op:hover{border-color:var(--baz)}
+.tqs .op b{font-size:20px}.tqs .op small{color:var(--ink3);font:600 12px var(--mono)}.tqs .op em{font-style:normal;font-size:12px;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.tqs .op.off{opacity:.38;cursor:not-allowed}
+.mini{align-self:flex-start;font:700 11px var(--font);padding:3px 8px;border-radius:999px;color:#fff}.mini.ok{background:#16A34A}.mini.amb{background:#F59E0B;color:#1F1300}.mini.mau{background:#DC2626}.mini.cz{background:#64748B}.mini.az{background:#2563EB}.mini.rx{background:#7C3AED}
+.modal.gen{position:absolute}
+/* abas e visão PCP */
+.abas{display:flex;gap:6px;margin:0 auto 12px;max-width:1280px}.ab{padding:9px 16px;border-radius:999px;border:1.5px solid var(--line);font:700 13px var(--font);cursor:pointer;color:var(--ink2);background:var(--card)}.ab.on{background:var(--baz);border-color:var(--baz);color:#fff}
+.pcpw{max-width:1280px;margin:0 auto 20px;background:var(--bg);border:1px solid var(--line);border-radius:16px;padding:14px;position:relative;min-height:600px}
+.pcpbar{display:flex;align-items:baseline;gap:12px;margin-bottom:12px}.pcpbar b{font-size:22px}.pcpbar span{color:var(--ink3);font-size:13px}
+.pcpg{display:flex;gap:12px;overflow-x:auto;padding-bottom:8px;align-items:flex-start}
+.pcol{flex:0 0 270px;background:var(--line2);border-radius:14px;padding:8px;border:2px dashed transparent;transition:border-color .15s,background .15s}.pcol.alvo{border-color:var(--baz);background:var(--azbg)}
+.pcab{display:flex;align-items:baseline;justify-content:space-between;padding:2px 4px 8px}.pcab b{font-size:15px}.pcab span{font:600 12px var(--mono);color:var(--ink3)}
+.pcard .tq{min-height:0}.capx{margin-left:auto;font:600 12px var(--mono);color:#C9D4EA}.pcard .tq .acoes,.pcard .tq .prox,.pcard .tq .pts{display:none}.pcard .tq{padding-bottom:10px}.pcard.arr{cursor:grab}
+.pfh{display:flex;justify-content:space-between;font:800 11px var(--font);letter-spacing:.07em;text-transform:uppercase;color:var(--ink3);padding:12px 4px 6px}.pfh span{font-weight:600;letter-spacing:0;text-transform:none}
+.pfila{display:flex;flex-direction:column;gap:6px}.pl{display:flex;gap:8px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 10px;cursor:grab;transition:transform .1s,box-shadow .15s}.pl:hover{box-shadow:0 4px 14px rgba(0,0,0,.18)}.pl.arrast{opacity:.4}
+.pl em{font:700 13px var(--mono);font-style:normal;color:var(--ink2)}.pl>div{flex:1;min-width:0}.pl b{display:block;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.pl small{color:var(--ink3);font-size:11.5px}
+.pl .mv{width:28px;height:28px;border-radius:8px;display:grid;place-items:center;background:var(--line2);cursor:pointer;font-weight:800;color:var(--baz)}
+.pvz{border:1.5px dashed var(--line);border-radius:10px;padding:12px;text-align:center;color:var(--ink3);font-size:12px}.pfeito{font-size:12px;color:var(--ok);font-weight:700;padding:10px 4px 2px}
+.top{position:relative}.top .titc{position:absolute;left:50%;transform:translateX(-50%);font:800 19px var(--font);letter-spacing:.01em;color:#fff;white-space:nowrap}.top .ola b{font-size:17px}
+.drawer.larga{width:640px}
+.atual{margin:14px 16px 4px;padding:14px;border-radius:14px;background:var(--line2);display:flex;flex-direction:column;gap:4px}.atual .mini{margin-bottom:4px}.atual>b{font-size:20px}.atual>small{color:var(--ink3);font-size:12.5px}
+.ag{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:8px}.ag div{background:var(--card);border-radius:10px;padding:7px 10px}.ag span{display:block;font:700 9.5px var(--font);letter-spacing:.06em;text-transform:uppercase;color:var(--ink3)}.ag b{font:700 17px var(--mono)}
+.dlist{display:flex;flex-direction:column;gap:10px;padding:12px 16px}.drawer.on .dlist,.drawer.on .atual{animation:entra .38s cubic-bezier(.2,.9,.25,1) both}.drawer.on .dlist{animation-delay:.08s}
+.dbig{display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:14px;border:1.5px solid var(--line);background:var(--card);cursor:pointer;transition:transform .1s,border-color .15s}.dbig:active{transform:scale(.98)}.dbig:hover{border-color:var(--baz)}
+.dbig b{display:block;font-size:17px}.dbig small{color:var(--ink3);font-size:12.5px}.dbig.off{opacity:.45}
+.dic{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;font:800 20px var(--font);font-style:normal;color:#fff;flex:none}.dic.az{background:var(--baz)}.dic.amb{background:var(--bamb)}.dic.cz{background:#64748B}.dic.rx{background:var(--brx)}
+.lh.g,.lr.g{grid-template-columns:58px 48px 1fr 70px 56px 96px}.tqn{font-size:12.5px;white-space:nowrap}
+.lr.g.feito{background:transparent!important;padding:5px 8px;margin:0;border-bottom:1px solid var(--line2);border-radius:0;opacity:.62;font-size:12px}.lr.g.feito b{color:var(--ink2)!important;font-size:12px;font-weight:600}.lr.g.feito em{color:var(--ink3)!important;font-size:12px}.lr.g.feito .m{font-size:11.5px}.lr.g.feito small{font-size:10.5px}
+.lr.g.feito .sit{font-size:11.5px;color:var(--ink3);display:flex;align-items:center;gap:4px}
+.est{font-style:normal;font-size:15px;line-height:1}.est.ok{color:#F5B301}.est.atr{color:#DC2626}
+.lista h4.h-cz{color:var(--ink3)}
+.top .menu{width:40px;height:40px;border-radius:50%;background:#2B3A57;display:grid;place-items:center;font-size:20px;color:#fff;cursor:pointer;margin-left:8px;transition:transform .12s}.top .menu:active{transform:scale(.88)}
+.lr.g>span{min-width:0;overflow:hidden}.lr.g .mini{display:inline-block;max-width:100%}.lh.g,.lr.g{grid-template-columns:58px 48px 1fr 68px 54px 112px}
+.ckl{display:flex;align-items:center;gap:8px;font:700 13px var(--font);color:var(--ink2);padding:2px 2px 2px;cursor:pointer}.ckl span{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ckl em{font:700 12px var(--mono);font-style:normal;color:var(--ink3)}.ckl.pend span{color:#D97706}:root[data-theme="dark"] .ckl.pend span{color:#FBBF24}.ckl.ok span{color:var(--ok)}
+.tq.c6 .prod{font-size:20px}.tq.c6 .tiles div b{font-size:16px}.tq.c6 .tiles div.dest b{font-size:23px}.tq.c6 .acao{height:52px;font-size:16px}.tq .acoes{gap:8px}
+.lr.g.feito{padding:5px 8px!important;background:transparent!important;opacity:.72;font-size:12px}.lr.g.feito b{color:var(--ink2)!important;font-weight:600;font-size:12.5px}.lr.g.feito em{color:var(--ink3)!important;font-size:12px}.lr.g.feito .m{font-size:11.5px;color:var(--ink3)}.lr.g.feito small{font-size:10.5px}.lr.g.feito .sit{font-size:11.5px;color:var(--ink3);display:flex;align-items:center;gap:4px}
+.lr.g.agora{background:transparent!important;box-shadow:inset 3px 0 0 var(--bok);border-radius:0!important;border-bottom:1px solid var(--line2)!important}
+.hgw{max-width:1280px;margin:0 auto 20px;display:flex;flex-direction:column;gap:12px}
+.hgh{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px 18px}
+.hgh .kick{font:800 11px var(--font);letter-spacing:.08em;text-transform:uppercase;color:var(--ink3)}.hgh h2{margin:4px 0 2px;font:800 28px var(--font)}.hgh h2 span{font:700 18px var(--mono);color:var(--ink2);margin-left:8px}.hgsub{color:var(--ink3);font-size:13px}
+.hgst{text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:8px}.hgst .mini{font-size:13px;padding:5px 12px}.hgatr{font-size:13px;color:var(--ink2);display:flex;gap:6px;align-items:center}
+.hgkpi{display:grid;grid-template-columns:1fr 1.6fr 1fr 1fr;gap:10px}.hgkpi div{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px}.hgkpi span{font:700 10.5px var(--font);letter-spacing:.07em;text-transform:uppercase;color:var(--ink3)}.hgkpi b{display:block;font:800 24px var(--mono);margin:3px 0}.hgkpi b.perc{font:800 17px var(--font);padding:4px 0}.hgkpi b.perc i{font-style:normal;color:var(--baz);margin:0 4px}.hgkpi small{color:var(--ink3);font-size:12px}
+.hgbox{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px}.hgbox h3{margin:0 0 10px;font:800 12px var(--font);letter-spacing:.07em;text-transform:uppercase;color:var(--ink3);display:flex;gap:10px}.hgbox h3 span{margin-left:auto;text-transform:none;letter-spacing:0;font-weight:600;color:var(--ink2)}
+.hgcols{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.gantt{position:relative;padding-top:20px}.gx{position:relative;height:16px;margin-left:150px;font:600 11px var(--mono);color:var(--ink3)}.gx span{position:absolute;transform:translateX(-50%);top:-16px}
+.gl{display:flex;align-items:center;height:30px}.gl em{width:150px;flex:none;font-style:normal;font-size:12.5px;color:var(--ink2)}.gt{flex:1;position:relative;height:100%;border-bottom:1px solid var(--line2)}
+.gt i{position:absolute;top:7px;height:16px;border-radius:5px}.gt b{position:absolute;top:7px;font:700 11.5px var(--mono);color:var(--ink2);white-space:nowrap}
+.gt i.rx{background:#7C3AED}.gt i.az{background:#2563EB}.gt i.cz{background:#64748B}.gt i.ok{background:#16A34A}.gt i.ok2{background:#0D9488}.gt i.amb{background:#F59E0B}.gt i.az2{background:#0EA5E9}
+.gprazo{position:absolute;top:4px;bottom:0;left:calc(150px + (100% - 150px) * var(--p));border-left:2px dashed #DC2626}.gprazo span{position:absolute;bottom:-18px;left:-34px;font:700 11px var(--font);color:#DC2626;white-space:nowrap}
+.gantt{padding-bottom:20px}
+.t td.ok0{color:var(--ink3)}.t td.mau0{color:var(--mau);font-weight:800}.t tr.aj td{background:var(--ambbg)}.t td small{display:block;color:var(--ink3);font-size:11.5px}
+.hgnota{margin-top:10px;padding:10px 12px;border-radius:10px;background:var(--line2);font-size:13px}
+.tl .onde{display:inline-block;font:800 11.5px var(--font);padding:3px 9px;border-radius:999px;background:var(--line2)}.tl .onde.pcp{background:#334155;color:#fff}.tl .onde.pul{background:#0F766E;color:#fff}.tl .onde.q{background:#F59E0B;color:#1F1300}.tl .onde.env{background:#2563EB;color:#fff}
+.tl tr.prob td{background:var(--maubg)}
+/* v22 */
+details.hgbox>summary{list-style:none;cursor:pointer}details.hgbox>summary::-webkit-details-marker{display:none}
+details.hgbox>summary h3{margin:0}details.hgbox[open]>summary h3{margin-bottom:10px}details.hgbox>summary h3::before{content:'▸';display:inline-block;margin-right:6px;transition:transform .2s;color:var(--ink3)}details.hgbox[open]>summary h3::before{content:'▾'}
+.hgcols{align-items:start}.hgtg{display:flex;gap:6px}.hgtg span{font:700 12px var(--font);padding:5px 10px;border-radius:999px;border:1.5px solid var(--line);cursor:pointer;color:var(--ink2)}
+.hglib{display:flex;align-items:center;gap:12px;margin-top:12px;padding:12px;border-radius:12px;background:var(--okbg)}.hglib .av{width:40px;height:40px;border-radius:50%;background:var(--bok);color:#fff;display:grid;place-items:center;font:800 18px var(--font);flex:none}.hglib>div:nth-child(2){flex:1}.hglib small{display:block;color:var(--ink2);font-size:12px;margin-top:2px}
+.envg{display:grid;grid-template-columns:1fr;gap:12px}.envk{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.envk div{background:var(--line2);border-radius:12px;padding:10px 12px}.envk span{font:700 10.5px var(--font);letter-spacing:.07em;text-transform:uppercase;color:var(--ink3)}.envk b{display:block;font:800 20px var(--mono);margin:2px 0}.envk small{color:var(--ink3);font-size:12px}
+.envg{grid-template-columns:1.2fr 1fr}.envg .envk{grid-column:1/-1}
+/* formulação com digitação */
+.t.form input.in{width:110px;min-width:0;font:700 15px var(--mono);outline:none}.t.form input.in:focus{border-color:var(--baz);background:var(--card)}.t.form input.in:disabled{opacity:.8}.t.form input.nome{width:180px;font:600 14px var(--font)}
+.t.form tr.okr td{color:var(--ink2)}.t.form tr.ajr td{background:var(--ambbg)}.t.form td small{display:block;color:var(--ink3);font-size:11px;margin-top:2px}
+.addr td{border-bottom:0!important;padding-top:10px!important}.addaj{display:inline-block;padding:8px 14px;border-radius:10px;border:1.5px dashed var(--line);font:700 13px var(--font);color:var(--baz);cursor:pointer}
+.fdica{font-size:12px;color:var(--ink3);padding:8px 0}.acao.ico{width:52px;padding:0!important;display:grid;place-items:center}.acao.mau{background:#DC2626}
+/* ajuste e liberação */
+.ckl.aj span{color:#F87171}.sub2.sim div{font-size:11px!important;color:var(--ink3)!important;border-style:dashed!important;height:30px}
+.pcard.libv{cursor:pointer;position:relative}.pcard.libv .tq{box-shadow:0 0 0 2px #F59E0B}.libtag{margin-top:6px;text-align:center;font:800 12px var(--font);color:#1F1300;background:#F59E0B;border-radius:8px;padding:6px}
+.mc.lib{width:820px}.libg{display:grid;grid-template-columns:1.2fr 1fr;gap:16px}.libg h4{margin:4px 0 8px;font:800 11px var(--font);letter-spacing:.07em;text-transform:uppercase;color:var(--ink3)}
+.libg label{display:block;font:700 12px var(--font);color:var(--ink2);margin-bottom:10px}.libg label .in{display:block;width:100%;margin-top:4px;font:600 15px var(--font)}.obsop{margin-top:10px;background:var(--line2);border-radius:10px;padding:10px;font-size:13px}.obsop b{display:block;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3);margin-bottom:3px}
+.ajf{padding:8px 10px;border-radius:8px;background:var(--ambbg);margin-bottom:6px;font-size:13px}.ajf small{float:right;color:var(--ink3)}.libinfo{margin-top:10px;font-size:12.5px;color:var(--ink3)}
+.libb{display:flex;gap:10px;margin-top:14px}.libb .acao{height:52px;padding:0 22px}.acao.sec2{background:transparent!important;border:2px solid #DC2626;color:#F87171!important}
+.pconc{display:flex;flex-direction:column;gap:2px;margin-top:4px}.pc{display:flex;gap:8px;align-items:center;padding:5px 8px;border-radius:8px;opacity:.7;font-size:12px}.pc em{font:600 11.5px var(--mono);font-style:normal;color:var(--ink3)}.pc>div{flex:1;min-width:0}.pc b{display:block;font-weight:600;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.pc small{color:var(--ink3);font-size:10.5px}
+.pfeito{cursor:pointer;color:var(--ink3)!important}
+[hidden]{display:none!important}.pcard .tq.c6 .tiles div.dest b{font-size:18px}.pcard .tq.c6 .tiles div b{font-size:14px}.pcard .tq.c6 .prod{font-size:17px}
+/* v23 */
+.pfeito{background:var(--okbg);color:var(--ok)!important;border-radius:10px;padding:8px 10px!important;margin-top:8px;font-weight:800}.pconc{background:var(--okbg);border-radius:10px;padding:4px;margin-top:4px}.pc{opacity:.8}
+.pkb{display:inline-block;padding:8px 12px;border-radius:9px;border:1.5px solid var(--baz);color:var(--baz);font:700 13px var(--font);cursor:pointer;background:var(--card)}.pkb.big{display:block;margin-top:4px;font-size:15px;padding:11px 12px}.ajn{font-weight:700}
+.mc.pick{width:560px;max-height:640px;display:flex;flex-direction:column}.busca{width:100%;font:600 16px var(--font);padding:12px;margin-bottom:10px;outline:none}.pkl{overflow:auto;max-height:440px;display:flex;flex-direction:column;gap:4px}.pki{display:flex;gap:12px;align-items:center;padding:12px;border-radius:10px;background:var(--line2);cursor:pointer}.pki:active{transform:scale(.99)}.pki em{font:700 12px var(--mono);font-style:normal;color:var(--ink3)}.pki b{font-size:15px}
+.mc.prob{width:680px;max-height:760px;overflow:auto}.mc.prob h4{margin:14px 0 8px;font:800 12px var(--font);letter-spacing:.06em;text-transform:uppercase;color:var(--ink3)}.obr{color:#DC2626;text-transform:none;letter-spacing:0}
+.chips{display:flex;flex-wrap:wrap;gap:8px}.chips span{padding:10px 14px;border-radius:999px;border:1.5px solid var(--line);font:700 14px var(--font);cursor:pointer;background:var(--line2);color:var(--ink2)}.chips.big span{padding:14px 18px;font-size:15px;border-radius:14px}.chips span.on{background:var(--baz);border-color:var(--baz);color:#fff}
+textarea.obs{width:100%;min-height:80px;font:500 15px var(--font);resize:vertical;outline:none}
+.fres{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.fres div{background:var(--line2);border-radius:10px;padding:10px}.fres span{font:700 10.5px var(--font);letter-spacing:.06em;text-transform:uppercase;color:var(--ink3)}.fres b{display:block;font:800 22px var(--mono)}.fres .mau b{color:#DC2626}.fres .amb b{color:#D97706}
+.dic.lar{background:var(--lar)}
+.abas{align-items:center}.ab.sim{background:#F59E0B;border-color:#F59E0B;color:#1F1300}
+#tour{visibility:hidden;position:fixed;left:50%;bottom:18px;transform:translateX(-50%) translateY(140%);width:min(620px,calc(100% - 32px));background:#0F172A;color:#fff;border-radius:18px;padding:16px 18px;box-shadow:0 20px 60px rgba(0,0,0,.5);z-index:99;transition:transform .35s cubic-bezier(.2,.9,.25,1);border:1px solid #334155}#tour.on{transform:translateX(-50%);visibility:visible}
+#tour .tt{display:flex;justify-content:space-between;font:800 11px var(--font);letter-spacing:.07em;text-transform:uppercase;color:#F59E0B}#tour .tt em{font-style:normal;color:#94A3B8}#tour>b{display:block;font-size:19px;margin:6px 0 4px}#tour p{margin:0;color:#CBD5E1;font-size:14px;line-height:1.5}
+#tour .tb{display:flex;gap:8px;margin-top:12px}#tour .tb span{padding:10px 14px;border-radius:10px;border:1px solid #334155;cursor:pointer;font-weight:700;font-size:14px}#tour .tb .nx{background:#F59E0B;color:#1F1300;border-color:#F59E0B}
+.foco{outline:4px solid #F59E0B!important;outline-offset:3px;animation:focop 1.2s ease-in-out infinite;border-radius:14px}@keyframes focop{50%{outline-color:rgba(245,158,11,.25)}}
+/* histórico com abas */
+.hgabas{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.hgabas [data-ha]{padding:10px 16px;border-radius:12px;background:var(--card);border:1.5px solid var(--line);cursor:pointer;font:800 15px var(--font)}.hgabas [data-ha] small{font-weight:600;color:var(--ink3);margin-left:6px;font-size:12px}.hgabas [data-ha].on{border-color:var(--baz);box-shadow:inset 0 -3px 0 var(--baz)}
+.mini2{font:700 12px var(--font);padding:6px 10px;border-radius:999px;border:1.5px solid var(--line);cursor:pointer;color:var(--ink2)}
+.hgpane{display:flex;flex-direction:column;gap:12px}.hgpane[hidden]{display:none!important}
+.hgsec{font:800 15px var(--font);margin-top:4px}.hgsec span{font-weight:500;color:var(--ink3);font-size:13px;margin-left:8px}
+.pblocos{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.pb{border-radius:14px;padding:12px 14px}.pb.cz{background:var(--line2)}.pb.amb{background:var(--ambbg)}.pb.mau{background:var(--maubg)}
+.pbh{display:flex;justify-content:space-between;margin-bottom:8px}.pbh b{font:800 13px var(--font);letter-spacing:.04em;text-transform:uppercase}.pbh span{font:800 13px var(--font)}.pb.amb .pbh{color:var(--amb)}.pb.mau .pbh{color:var(--mau)}
+.pbi{font-size:13.5px;margin-top:4px}.pbi small{display:block;color:var(--ink3);font-size:12px;margin:2px 0 0 10px}
+.hgtot{font-size:13.5px;color:var(--ink2)}.hgtot small{color:var(--ink3)}.red{color:#DC2626!important}.hgkpi b.red{color:#DC2626}
+.t.pxr td.okc{color:var(--ok);font-weight:800}.t.pxr td.redc{color:#DC2626;font-weight:800}.hggantt{margin-top:14px}
+.acao.lar{background:var(--lar)!important}#tour .tb span[style]{border:0;padding:0}.hgw .t td.m{white-space:nowrap}
+.modal.sem .mc{animation:none!important}
+.est.ok{color:#16A34A!important}.selo{display:inline-block;font:800 11px var(--font);padding:3px 8px;border-radius:999px;background:var(--maubg);color:var(--mau);white-space:nowrap;margin-right:4px}
+#tour .tb span.sp,.libb .sp{flex:1;border:0!important;padding:0!important}
+.pmenu{position:absolute;z-index:30;width:240px;background:var(--card);border:1px solid var(--line);border-radius:12px;box-shadow:0 16px 40px rgba(0,0,0,.35);overflow:hidden;animation:sobe .18s ease}.pmenu div{padding:12px 14px;font:700 14px var(--font);cursor:pointer;border-bottom:1px solid var(--line2)}.pmenu div:last-child{border:0}.pmenu div:hover{background:var(--line2)}.pmenu .dest{color:#D97706}.pmenu .off{color:var(--ink3);cursor:default}
+.pcard .tq .pts{display:grid!important;cursor:pointer}.pcard.libv{cursor:default}.pl .mv{color:var(--ink2);font-size:16px}
+.acao.cz2{background:#475569}
+/* v25 */
+details.hggrp{border-top:2px solid var(--line);padding-top:6px}details.hggrp>summary{list-style:none;cursor:pointer;display:flex;align-items:baseline;gap:12px;padding:8px 2px}details.hggrp>summary::-webkit-details-marker{display:none}
+details.hggrp>summary .gt1{font:800 20px var(--font)}details.hggrp>summary .gt1::before{content:'▸';display:inline-block;margin-right:8px;color:var(--baz);transition:transform .2s}details.hggrp[open]>summary .gt1::before{content:'▾'}
+.gt2{color:var(--ink3);font-size:13px}.hgabas .sp{flex:1}details.hggrp>.hgpane,details.hggrp>.hgbox{margin-top:6px}
+.pmenu{width:260px}.pmenu .novo{color:#0D9488;border-top:2px solid var(--line)}.pmenu .novo i{font:800 10px var(--font);font-style:normal;background:#0D9488;color:#fff;border-radius:999px;padding:2px 6px;margin-left:4px;vertical-align:2px}.pmenu .novo small{display:block;font-weight:500;color:var(--ink3);font-size:11.5px;margin-top:2px}.pmenu .novo.off{opacity:.55}.pmenu .perigo{color:#DC2626}
+.pcard{cursor:pointer}
+.pcpbar .nv{font-style:normal;font-weight:800;color:#0D9488}
+.pmenu hr{border:0;border-top:1px solid var(--line);margin:4px 0}.pmenu div{border-bottom:0!important;padding:10px 16px!important;font-weight:500!important;font-size:14.5px!important}.pmenu .novo{border-top:0!important;font-weight:700!important}
+.cfgg{display:grid;grid-template-columns:1fr 1.2fr;gap:12px;align-items:start}.cfgn{width:76px;font:700 15px var(--mono);text-align:right;outline:none}.cfgn:focus{border-color:var(--baz)}
+.tog{display:inline-block;padding:6px 14px;border-radius:999px;background:var(--line2);font:700 13px var(--font);cursor:pointer;color:var(--ink2)}.tog.on{background:#0D9488;color:#fff}
+#cfgWrap .libb{margin-top:12px}
+/* modo tablet: tela inteira, sem moldura (abre com ?tablet) */
+body.modo-tab .nota,body.modo-tab .abas,body.modo-tab .leg{display:none!important}
+body.modo-tab .wrap{padding:0;max-width:none}body.modo-tab .tablet{width:100vw;max-width:none;height:100vh;margin:0;border:0;border-radius:0;box-shadow:none}
+body.modo-tab .tela{width:100vw;max-width:none;height:100vh}
+.tq.c6 .acao{height:48px}.tq .acoes{gap:6px}.sub2 div{height:32px}
+/* quiosque: sem puxar para atualizar, sem selecionar texto, sem zoom de toque duplo */
+body.modo-tab{overscroll-behavior:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;touch-action:manipulation;overflow:hidden}
+body.modo-tab input,body.modo-tab textarea{user-select:text;-webkit-user-select:text}
+</style>
+</head><body>
+<div class="wrap">
+<div class="nota"><b>Versão de teste</b> · hora real do aparelho · as ordens de teste são criadas a partir de agora · tudo o que vocês fizerem fica gravado neste aparelho até tocar em "Reiniciar teste" · PINs: 1234 Marcos · 2222 João · 3333 Luan · 5555 Mariane · para a tela cheia no tablet, use "Adicionar à tela inicial"</div>
+
+<div class="abas"><div class="ab on" data-v="tab">Tablet do operador dos tanques</div><div class="ab" data-v="pcp">PCP · página Tanques (gestor e envase)</div><div class="ab" data-v="cfg">Configurações · tempos</div><span style="flex:1"></span><div class="ab" id="bRe">↺ Reiniciar teste</div></div>
+<div class="hgw" id="geralWrap" hidden>
+  <div class="hgh">
+    <div><span class="kick">Histórico geral do lote · exemplo</span><h2>LAVA ROUPAS LÍQUIDO <span>lote 380</span></h2>
+      <div class="hgsub">Tudo vem da <b>OP 0170</b>, emitida em 12/10 às 16:40 por Junior · 3.800 L · para terça, 13/10/2026</div></div>
+    <div class="hgst"><span class="mini az">Envasado</span><div class="hgatr"><span class="selo">atrasado +15 min</span> liberado às 10:15, prazo 10:00</div></div>
+  </div>
+  <div class="hgkpi">
+    <div><span>Pronto até</span><b>10:00</b><small>liberado às 10:15</small></div>
+    <div><span>Percurso</span><b class="perc">TQ 3 <i>→</i> PULMÃO <i>→</i> MAQ 4</b><small>trocado do TQ 1 para o TQ 3 pelo PCP</small></div>
+    <div><span>Atraso total</span><b class="red">+15 min</b><small>7 min de problema · 51 min na qualidade</small></div>
+    <div><span>Envasado</span><b>1.900</b><small>frascos 2 L · 380 cx · 11:02</small></div>
+  </div>
+  <div class="hgabas"><span class="gt2">Toque no título de cada parte para recolher ou expandir</span><span class="sp"></span><span class="mini2" data-hg="abrir">Abrir tudo</span><span class="mini2" data-hg="fechar">Recolher tudo</span></div>
+
+  <!-- ===== TANQUE ===== -->
+  <details class="hggrp" open><summary><span class="gt1">Tanque</span><span class="gt2">TQ 3 → Pulmão · produção, problemas, matérias-primas e qualidade</span></summary><div class="hgpane">
+    <details class="hgbox" open><summary><h3>Previsto × realizado · tanque</h3></summary>
+      <table class="t pxr"><thead><tr><th>Etapa</th><th>Onde</th><th>Previsto</th><th>Realizado</th><th>Tempo</th><th>Dif.</th><th>Quem</th></tr></thead><tbody>
+        <tr><td>Limpeza</td><td>TQ 3</td><td class="m">05:50 → 06:20</td><td class="m">05:50 → 06:15</td><td class="m">0:25</td><td class="m okc">−5 min</td><td>Marcos</td></tr>
+        <tr><td>Enchimento</td><td>TQ 3</td><td class="m">06:20 → 06:50</td><td class="m">06:16 → 06:51</td><td class="m">0:35</td><td class="m redc">+5 min</td><td>Marcos</td></tr>
+        <tr><td>Separação das MPs</td><td>TQ 3</td><td class="m">durante o enchimento</td><td class="m">06:20 → 06:50</td><td class="m">0:30</td><td class="m okc">no tempo</td><td>João</td></tr>
+        <tr><td>Preparo</td><td>TQ 3</td><td class="m">06:50 → 08:20</td><td class="m">07:01 → 08:21</td><td class="m">1:20</td><td class="m okc">−10 min</td><td>Marcos</td></tr>
+        <tr><td>Descanso</td><td>Pulmão</td><td class="m">1:00</td><td class="m">08:24 → 09:24</td><td class="m">1:00</td><td class="m okc">no tempo</td><td>—</td></tr>
+        <tr><td>Análise e liberação</td><td>Qualidade</td><td class="m">até 10:00</td><td class="m">09:24 → 10:15</td><td class="m">0:51</td><td class="m redc">+15 min</td><td>Mariane</td></tr>
+      </tbody></table>
+      <div class="hggantt">
+    <div class="gantt">
+      <div class="gx"><span style="left:8.33%">06:00</span><span style="left:25.00%">07:00</span><span style="left:41.67%">08:00</span><span style="left:58.33%">09:00</span><span style="left:75.00%">10:00</span><span style="left:91.67%">11:00</span></div>
+      <div class="gl"><em>Limpeza · TQ 3</em><div class="gt"><i class="rx" style="left:5.56%;width:6.94%"></i><b style="left:13.30%">0:25</b></div></div>
+      <div class="gl"><em>Enchimento · TQ 3</em><div class="gt"><i class="az" style="left:12.78%;width:9.72%"></i><b style="left:23.30%">0:35</b></div></div>
+      <div class="gl"><em>Separação das MPs</em><div class="gt"><i class="cz" style="left:13.89%;width:8.33%"></i><b style="left:23.02%">durante o enchimento</b></div></div>
+      <div class="gl"><em>Espera cheio</em><div class="gt"><i class="cz" style="left:22.50%;width:2.78%"></i><b style="left:26.08%">0:10</b></div></div>
+      <div class="gl"><em>Preparo · TQ 3</em><div class="gt"><i class="ok" style="left:25.28%;width:22.22%"></i><b style="left:48.30%">1:20 (prev. 1:30)</b></div></div>
+      <div class="gl"><em>Descanso · Pulmão</em><div class="gt"><i class="ok2" style="left:48.33%;width:16.67%"></i><b style="left:65.80%">1:00</b></div></div>
+      <div class="gl"><em>Análise e liberação</em><div class="gt"><i class="amb" style="left:65.00%;width:14.17%"></i><b style="left:79.97%">0:51</b></div></div>
+      <div class="gl"><em>Envase · MAQ 4</em><div class="gt"><i class="az2" style="left:79.17%;width:13.06%"></i><b style="left:93.02%">0:47</b></div></div>
+      <div class="gprazo" style="--p:0.7500"><span>prazo 10:00</span></div>
+    </div>
+      </div>
+    </details>
+    <div class="hgsec">Problemas relatados no lote <span>motivo | detalhe — tempo</span></div>
+    <div class="pblocos">
+      <div class="pb cz"><div class="pbh"><b>Limpeza / enchimento</b><span>+5 min</span></div><div class="pbi">• <b>Utilidades</b> | Pressão de água baixa — +5 min<small>“enchimento mais lento hoje cedo” · Marcos</small></div></div>
+      <div class="pb amb"><div class="pbh"><b>Preparo</b><span>1 problema · 7 min</span></div><div class="pbi">• <b>Equipamento</b> | Agitador — parou 7 min<small>“desarmou o disjuntor, religado” · Marcos 07:35</small></div></div>
+      <div class="pb mau"><div class="pbh"><b>Qualidade</b><span>+15 min</span></div><div class="pbi">• <b>Ajuste de MP</b> | Pedido do químico — +1,1 kg espessante<small>viscosidade 640 cP na 1ª análise · Mariane 09:38</small></div></div>
+    </div>
+    <div class="hgtot">Total de atraso: <b class="red">+15 min</b> <small>(7 min de agitador já descontados no preparo, que fechou no tempo)</small> · Fechamento do preparo: <b>sem atraso</b> · observação: “agitador desarmou 1×”</div>
+    <div class="hgcols">
+      <details class="hgbox" open><summary><h3>Matérias-primas usadas <span>separadas por João · 06:20–06:50</span></h3></summary>
+        <table class="t"><thead><tr><th>Matéria-prima</th><th>Lote da MP</th><th>Previsto</th><th>Usado</th><th>Dif.</th></tr></thead><tbody>
+        <tr><td>Tensoativo LAS 90 <small>MP-0150</small></td><td class="m">L24-1102</td><td class="m">228 kg</td><td class="m">228 kg</td><td class="m ok0">0</td></tr>
+        <tr><td>Espessante CMC <small>MP-0102</small></td><td class="m">L24-0877</td><td class="m">15,2 kg</td><td class="m">15,4 kg</td><td class="m">+0,2</td></tr>
+        <tr><td>Fragrância Brisa <small>MP-0110</small></td><td class="m">L24-0990</td><td class="m">11,4 kg</td><td class="m">11,4 kg</td><td class="m ok0">0</td></tr>
+        <tr><td>Corante azul <small>MP-0120</small></td><td class="m">L24-0712</td><td class="m">0,38 kg</td><td class="m">0,38 kg</td><td class="m ok0">0</td></tr>
+        <tr><td>Conservante <small>MP-0130</small></td><td class="m">L24-0655</td><td class="m">3,8 kg</td><td class="m">3,8 kg</td><td class="m ok0">0</td></tr>
+        <tr class="aj"><td>Espessante CMC <small>MP de ajuste · pedido da Mariane · motivo: pedido do químico</small></td><td class="m">L24-0877</td><td class="m">1,1 kg</td><td class="m">1,1 kg</td><td class="m">+1,1</td></tr>
+        </tbody></table></details>
+      <details class="hgbox" open><summary><h3>Análise e liberação <span>2 análises</span></h3></summary>
+        <table class="t"><thead><tr><th>Ensaio</th><th>Especificação</th><th>1ª análise</th><th>Reanálise</th></tr></thead><tbody>
+        <tr><td>Aspecto</td><td>Líquido viscoso</td><td><span class="pill ok">conforme</span></td><td>—</td></tr>
+        <tr><td>Cor / odor</td><td>Azul · Brisa</td><td><span class="pill ok">conforme</span></td><td>—</td></tr>
+        <tr><td>pH</td><td>7,0 a 8,5</td><td class="m">7,6</td><td>—</td></tr>
+        <tr><td>Viscosidade</td><td>800 a 1.200 cP</td><td class="m mau0">640</td><td class="m">910 <span class="pill ok">ok</span></td></tr>
+        <tr><td>Teor de ativo</td><td>8,0 a 9,0 %</td><td class="m">8,4</td><td>—</td></tr>
+        </tbody></table>
+        <div class="hglib"><div class="av">M</div><div><b>Liberado por Mariane</b> (químico) · 13/10 10:15 · com PIN<small>“Viscosidade baixa na 1ª análise; ajuste de 1,1 kg de espessante. Reanálise dentro da faixa.” · certificado nº 380/26</small></div><span class="mini ok">liberado</span></div>
+      </details>
+    </div>
+
+  </div>
+
+  </details>
+
+  <!-- ===== ENVASE ===== -->
+  <details class="hggrp" open><summary><span class="gt1">Envase</span><span class="gt2">MAQ 4 · operadora Carla · setup, problemas, produção e embalagens</span></summary><div class="hgpane">
+    <details class="hgbox" open><summary><h3>Previsto × realizado · envase MAQ 4 <span>operadora Carla</span></h3></summary>
+      <table class="t pxr"><thead><tr><th>Etapa</th><th>Previsto</th><th>Realizado</th><th>Tempo</th><th>Dif.</th></tr></thead><tbody>
+        <tr><td>Setup</td><td class="m">09:45 → 10:00</td><td class="m">09:50 → 10:12</td><td class="m">0:22</td><td class="m redc">+7 min</td></tr>
+        <tr><td>Envase</td><td class="m">10:00 → 10:50</td><td class="m">10:15 → 11:02</td><td class="m">0:47</td><td class="m redc">+12 min</td></tr>
+      </tbody></table>
+      <div class="hgtot">Total previsto <b>1:05</b> · realizado <b>1:12</b> · começou 15 min depois porque o lote só foi liberado às 10:15</div>
+    </details>
+    <div class="hgsec">Problemas relatados no envase <span>motivo | detalhe — tempo</span></div>
+    <div class="pblocos">
+      <div class="pb cz"><div class="pbh"><b>Setup</b><span>+7 min</span></div><div class="pbi">• <b>Outro</b> | Troca de formato 2 L — +7 min</div></div>
+      <div class="pb amb"><div class="pbh"><b>Envase</b><span>1 pausa · 6 min</span></div><div class="pbi">• <b>Parada</b> | Troca da bobina de rótulo — 6 min</div><div class="pbi">• <b>Aguardando lote</b> | Tanque não liberado — 15 min<small>vem do tanque: ajuste do químico</small></div></div>
+      <div class="pb mau"><div class="pbh"><b>Quebra</b><span>6 fr</span></div><div class="pbi">• <b>Rótulo</b> | Rótulo torto — 6 frascos (0,3 %)</div></div>
+    </div>
+    <div class="hgcols">
+      <details class="hgbox" open><summary><h3>Produção</h3></summary>
+        <div class="envk"><div><span>Produzido</span><b>1.900 fr</b><small>380 cx · previsto 1.900</small></div><div><span>Perdas</span><b>6 fr</b><small>0,3 %</small></div><div><span>Sobra no pulmão</span><b>0 L</b><small>pulmão livre às 11:02</small></div><div><span>Estoque</span><b>380 cx</b><small>entrada 11:05 · val. 10/2028</small></div></div></details>
+      <details class="hgbox" open><summary><h3>Embalagens usadas</h3></summary>
+        <table class="t"><thead><tr><th>Embalagem</th><th>Lote</th><th>Usado</th></tr></thead><tbody>
+          <tr><td>Frasco 2 L soprado</td><td class="m">SP-2210</td><td class="m">1.906 un</td></tr>
+          <tr><td>Tampa azul 38 mm</td><td class="m">TP-0915</td><td class="m">1.906 un</td></tr>
+          <tr><td>Rótulo Lava Roupas 2 L</td><td class="m">RT-0388</td><td class="m">1.912 un</td></tr>
+          <tr><td>Caixa 5 × 2 L</td><td class="m">CX-1020</td><td class="m">380 un</td></tr></tbody></table></details>
+    </div>
+
+
+  </div>
+  </details>
+
+  <details class="hggrp" open><summary><span class="gt1">Linha do tempo completa</span><span class="gt2">24 registros · tanque, qualidade e envase juntos, em ordem</span></summary>
+    <div class="hgbox"><table class="t hist tl"><thead><tr><th>Data</th><th>Hora</th><th>Onde</th><th>Quem</th><th>Registro</th><th>Detalhe</th></tr></thead><tbody>
+    <tr class=""><td class="m">12/10</td><td class="m">16:40</td><td><span class="onde pcp">PCP</span></td><td>Junior</td><td><b>OP 0170 emitida</b></td><td>MAQ 4 · TQ 1 · 3.800 L · pronto até 10:00</td></tr>
+    <tr class=""><td class="m">12/10</td><td class="m">17:05</td><td><span class="onde pcp">PCP</span></td><td>Junior</td><td><b>Trocou de tanque</b></td><td>TQ 1 → TQ 3 · arrastado na página Tanques</td></tr>
+    <tr class=""><td class="m">13/10</td><td class="m">05:50</td><td><span class="onde ">TQ 3</span></td><td>Marcos</td><td><b>Iniciou a limpeza</b></td><td></td></tr>
+    <tr class=""><td class="m">13/10</td><td class="m">06:15</td><td><span class="onde ">TQ 3</span></td><td>Marcos</td><td><b>Concluiu a limpeza</b></td><td>levou 0:25</td></tr>
+    <tr class=""><td class="m">13/10</td><td class="m">06:16</td><td><span class="onde ">TQ 3</span></td><td>Marcos</td><td><b>Iniciou o enchimento</b></td><td></td></tr>
+    <tr class="prob"><td class="m">13/10</td><td class="m">06:40</td><td><span class="onde ">TQ 3</span></td><td>Marcos</td><td><b>Registrou problema</b></td><td>Utilidades | Pressão de água baixa — 5 min</td></tr>
+    <tr class=""><td class="m">13/10</td><td class="m">06:50</td><td><span class="onde ">TQ 3</span></td><td>João</td><td><b>Salvou a separação</b></td><td>5 de 5 MPs · lotes gravados · baixa no estoque</td></tr>
+    <tr class=""><td class="m">13/10</td><td class="m">06:51</td><td><span class="onde ">TQ 3</span></td><td>Marcos</td><td><b>Concluiu o enchimento</b></td><td>levou 0:35</td></tr>
+    <tr class=""><td class="m">13/10</td><td class="m">07:01</td><td><span class="onde ">TQ 3</span></td><td>Marcos</td><td><b>Iniciou o preparo</b></td><td>ficou cheio esperando 0:10 · lote 380 gerado</td></tr>
+    <tr class="prob"><td class="m">13/10</td><td class="m">07:35</td><td><span class="onde ">TQ 3</span></td><td>Marcos</td><td><b>Registrou problema</b></td><td>Equipamento | Agitador — parou 7 min · "desarmou o disjuntor"</td></tr>
+    <tr class=""><td class="m">13/10</td><td class="m">08:21</td><td><span class="onde ">TQ 3</span></td><td>Marcos</td><td><b>Concluiu o preparo</b></td><td>1:20 (previsto 1:30) · obs: "agitador desarmou 1×"</td></tr>
+    <tr class=""><td class="m">13/10</td><td class="m">08:24</td><td><span class="onde pul">Pulmão</span></td><td>Marcos</td><td><b>Transferiu para o pulmão</b></td><td>TQ 3 liberado para limpeza</td></tr>
+    <tr class=""><td class="m">13/10</td><td class="m">09:24</td><td><span class="onde pul">Pulmão</span></td><td>sistema</td><td><b>Descanso concluído</b></td><td>1:00</td></tr>
+    <tr class=""><td class="m">13/10</td><td class="m">09:30</td><td><span class="onde q">Qualidade</span></td><td>Marcos</td><td><b>Enviou a análise</b></td><td>viscosidade 640 cP · abaixo da faixa</td></tr>
+    <tr class=""><td class="m">13/10</td><td class="m">09:38</td><td><span class="onde q">Qualidade</span></td><td>Mariane</td><td><b>Pediu ajuste</b></td><td>+ 1,1 kg Espessante CMC (MP-0102) · "agitar 15 min"</td></tr>
+    <tr class=""><td class="m">13/10</td><td class="m">09:50</td><td><span class="onde env">MAQ 4</span></td><td>Carla</td><td><b>Setup iniciado</b></td><td>troca de formato 2 L</td></tr>
+    <tr class=""><td class="m">13/10</td><td class="m">09:52</td><td><span class="onde pul">Pulmão</span></td><td>João</td><td><b>Lançou MP de ajuste</b></td><td>Espessante CMC 1,1 kg · lote L24-0877</td></tr>
+    <tr class=""><td class="m">13/10</td><td class="m">10:10</td><td><span class="onde q">Qualidade</span></td><td>João</td><td><b>Enviou a reanálise</b></td><td>viscosidade 910 cP</td></tr>
+    <tr class=""><td class="m">13/10</td><td class="m">10:12</td><td><span class="onde env">MAQ 4</span></td><td>Carla</td><td><b>Setup concluído</b></td><td>0:22 · +7 min</td></tr>
+    <tr class=""><td class="m">13/10</td><td class="m">10:15</td><td><span class="onde q">Qualidade</span></td><td>Mariane</td><td><b>Lote liberado</b></td><td>15 min após o prazo · certificado 380/26</td></tr>
+    <tr class=""><td class="m">13/10</td><td class="m">10:15</td><td><span class="onde env">MAQ 4</span></td><td>Carla</td><td><b>Envase iniciado</b></td><td>esperou o lote 15 min</td></tr>
+    <tr class=""><td class="m">13/10</td><td class="m">10:32</td><td><span class="onde env">MAQ 4</span></td><td>Carla</td><td><b>Pausa</b></td><td>Troca da bobina de rótulo — 6 min</td></tr>
+    <tr class=""><td class="m">13/10</td><td class="m">11:02</td><td><span class="onde env">MAQ 4</span></td><td>Carla</td><td><b>Envase concluído</b></td><td>1.900 frascos (380 cx) · 6 perdas</td></tr>
+    <tr class=""><td class="m">13/10</td><td class="m">11:05</td><td><span class="onde pcp">Estoque</span></td><td>sistema</td><td><b>Entrada no estoque</b></td><td>380 cx · baixa das embalagens</td></tr>
+    </tbody></table></div>
+  </details>
+</div>
+<div class="pcpw" id="cfgWrap" hidden></div>
+<div class="pcpw" id="pcpWrap" hidden><div class="pcpbar"><b>Tanques</b><span>Hoje · tocar no cartão abre a ficha do lote, como hoje · os 3 risquinhos ⋮ são os de hoje, com a opção nova <em class="nv">Enviar para o pulmão</em> · arrastar entre colunas continua trocando a programação</span></div><div class="pcpg" id="pcpGrade"></div></div>
+<div class="tablet"><div class="tela" id="tela">
+  <div class="top"><span class="logo">Atrius</span><span class="ola"><b id="sauda">Boa tarde!</b></span><span class="titc">Tanques — Programação do dia</span><span style="flex:1"></span><div class="tema" id="tema" title="Claro / escuro"></div><div class="hora"><b id="relogio">16:48</b><small>Terça feira, 13 de outubro de 2026</small></div><div class="menu" id="menuTop">⋮</div></div>
+  <div class="grade" id="grade"></div>
+  <div class="sombra" id="sombra"></div>
+  <div class="drawer" id="drawer"></div>
+  <div class="full" id="fForm"></div>
+  <div class="full" id="fAna"></div>
+  <div class="full" id="fHist"></div>
+  <div class="modal" id="mPin"></div>
+  <div class="modal" id="mCalc"></div>
+  <div class="toast" id="toast"></div>
+</div></div>
+
+<div class="leg"><b>Roteiro de teste</b> (ordens criadas para agora):<br>
+<b>TQ 1</b> liberado para limpeza → Iniciar/Concluir limpeza → Iniciar/Concluir enchimento → separe as MPs (digite os lotes) → Iniciar preparo → marque os passos → Concluir preparo.<br>
+<b>TQ 2</b> limpo, lava louças (vai para o pulmão): encha, separe, prepare e, ao concluir, <b>Transferir para o pulmão</b>.<br>
+<b>TQ 3</b> cheio esperando preparo · <b>TQ 4</b> preparando lava roupas (passo 3 de 6) · <b>TQ 5</b> enchendo, só 1 MP separada.<br>
+<b>TQ 6</b> não liberado e com "Pronto até" para daqui 3 min (vai piscar) → na aba PCP toque no cartão e libere ou peça ajuste (PIN 5555) · <b>TQ 7</b> liberado esperando o envase.<br>
+Teste também: pausa e retomar, registrar problema, MP de ajuste do cadastro, menu ⋮ do topo (produção do dia), modo claro/escuro e a aba <b>Configurações · tempos</b>.</div>
+</div>
+
+<script>
+/* no tablet (tela de toque) abre só a tela do operador; no computador abre com as abas. ?pc força o computador, ?tablet força o tablet */
+const MODO_TAB=/[?&]tablet/.test(location.search)||(!/[?&]pc/.test(location.search)&&matchMedia('(pointer:coarse)').matches);
+if(MODO_TAB)document.body.classList.add('modo-tab');
+/* quiosque: tela sempre ligada e operador sem saída */
+(function quiosque(){
+  let trava=null;const pede=async()=>{try{if('wakeLock' in navigator&&document.visibilityState==='visible'){trava=await navigator.wakeLock.request('screen');trava.addEventListener('release',()=>{trava=null;});}}catch(e){}};
+  pede();document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')pede();});document.addEventListener('pointerdown',()=>{if(!trava)pede();},{passive:true});
+  if(!MODO_TAB)return;
+  document.addEventListener('contextmenu',e=>e.preventDefault());
+  history.pushState(null,'',location.href);window.addEventListener('popstate',()=>history.pushState(null,'',location.href));
+  const tela=()=>{const d=document.documentElement;if(!document.fullscreenElement&&d.requestFullscreen)d.requestFullscreen({navigationUI:'hide'}).catch(()=>{});};
+  document.addEventListener('pointerdown',tela,{passive:true});
+})();
+
+/* dados de exemplo: cada tanque tem a fila do dia (lotes) e o estado do lote atual */
+let T=[];
+const ST={limpar:['rx','Liberado para limpeza'],limpando:['rx','Limpando'],encher:['cz','Limpo · encher'],enchendo:['az','Enchendo'],cheio:['cz','Cheio · aguardando preparo'],atras:['mau','Atrasado · cheio'],prep:['ok','Preparando'],descanso:['ok','Em descanso'],analise:['amb','Descansou · fazer análise'],naolib:['amb','Tanque não liberado'],liberado:['az','Tanque liberado'],envasando:['az','Envasando'],livre:['cz','Livre'],transf:['ok','Preparo concluído · mandar para o pulmão'],ajuste:['mau','Ajuste pedido pelo químico'],pausa:['cz','Pausado']};
+let AGORA=(()=>{const d=new Date();return d.getHours()*60+d.getMinutes();})();const hm=m=>{m=((m%1440)+1440)%1440;return String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0');};const dur=m=>Math.floor(m/60)+':'+String(m%60).padStart(2,'0');const min=h=>+h.slice(0,2)*60+ +h.slice(3);
+const nl=v=>v.toLocaleString('pt-BR');const esc=s=>String(s).replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]));
+function toast(t){const e=document.getElementById('toast');e.textContent=t;e.style.display='block';clearTimeout(e._t);e._t=setTimeout(()=>e.style.display='none',1800);}
+/* ===== VERSÃO DE TESTE: hora real, ordens de teste, tempos nas Configurações, grava no aparelho ===== */
+const AGORA0=(()=>{const d=new Date();return d.getHours()*60+d.getMinutes();})();
+const CFG_PADRAO={pisca:5,descPadrao:20,
+  tq:{'TQ 1':[30,50],'TQ 2':[30,50],'TQ 3':[30,50],'TQ 4':[30,50],'TQ 5':[30,60],'PULMÃO':[30,60],'TQ 6':[40,110],'TQ 7':[40,110]},
+  prod:{'AMACIANTE AZUL':[90,20,0],'AMACIANTE ROSA':[90,20,0],'L.L NEUTRO':[80,60,1],'LAVA ROUPAS LÍQUIDO':[90,60,1],'DESINFETANTE FLORAL':[70,20,0],'DES EUCALIPTO':[75,20,0],'ÁGUA SANITÁRIA':[120,0,0]}};
+let CFG=JSON.parse(JSON.stringify(CFG_PADRAO));
+function aplicaCfg(x){const c=CFG.prod[x.p];if(c){x.prev=c[0];x.desc=c[1]||CFG.descPadrao;x.pul=!!c[2];}return x;}
+function ordensTeste(){const N=AGORA0;const H=m=>hm(Math.max(0,Math.min(1439,N+m)));let op=200;const o=(p,vol,pr,maq,lote)=>aplicaCfg({p,lote:lote||null,op:String(++op).padStart(4,'0'),vol,pronto:H(pr),maq});
+  return [
+   {id:'TQ 1',cls:'c6',cap:3800,st:'limpar',ini:H(-5),sep:0,passo:0,fila:[o('AMACIANTE AZUL',3800,120,'MAQ 2'),o('AMACIANTE ROSA',3800,240,'MAQ 2')],feitos:[{p:'AMACIANTE AZUL',lote:498,op:'0190',vol:3800,h:H(-60),maq:'MAQ 2',pronto:H(-70),atr:0}]},
+   {id:'TQ 2',cls:'c6',cap:3800,st:'encher',ini:H(-3),sep:0,passo:0,fila:[o('L.L NEUTRO',3800,100,'MAQ 1'),o('L.L NEUTRO',3800,220,'MAQ 1')],feitos:[]},
+   {id:'TQ 3',cls:'c6',cap:3800,st:'cheio',ini:H(-20),sep:5,passo:0,fila:[o('DESINFETANTE FLORAL',3800,60,'MAQ 2')],feitos:[]},
+   {id:'TQ 4',cls:'c6',cap:3800,st:'prep',ini:H(-30),sep:5,passo:2,fila:[o('LAVA ROUPAS LÍQUIDO',3800,70,'MAQ 4',501)],feitos:[]},
+   {id:'TQ 5',cls:'c6',cap:4600,st:'enchendo',ini:H(-15),sep:1,passo:0,fila:[o('DES EUCALIPTO',4600,90,'MAQ 1'),o('DESINFETANTE FLORAL',4600,200,'MAQ 1')],feitos:[]},
+   {id:'PULMÃO',cls:'c6',cap:4600,pul:true,st:'livre',ini:'',sep:0,passo:0,fila:[],feitos:[]},
+   {id:'TQ 6',cls:'c6',cap:10000,st:'naolib',ini:H(-10),sep:5,passo:6,fila:[o('ÁGUA SANITÁRIA',10000,3,'MAQ 3',3601)],feitos:[{p:'ÁGUA SANITÁRIA',lote:3600,op:'0185',vol:10000,h:H(-40),maq:'MAQ 3',pronto:H(-90),atr:25}]},
+   {id:'TQ 7',cls:'c6',cap:10000,st:'liberado',ini:H(-5),sep:5,passo:6,fila:[o('ÁGUA SANITÁRIA',10000,40,'MAQ 3',3602)],feitos:[]}];}
+const CHAVE='atrius-tanques-teste-'+new Date().toISOString().slice(0,10);
+function salvaTeste(){try{localStorage.setItem(CHAVE,JSON.stringify({T,LOGL,CFG}));}catch(e){}}
+function carregaTeste(){try{const d=JSON.parse(localStorage.getItem(CHAVE)||'null');if(d&&d.T){return d;}}catch(e){}return null;}
+function reiniciarTeste(){if(!confirm('Apagar o teste e começar de novo com as ordens de teste?'))return;try{localStorage.removeItem(CHAVE);}catch(e){}location.reload();}
+/* tela de configurações dos tempos */
+function telaCfg(){const W=document.getElementById('cfgWrap');const n=(v,k)=>`<input class="in cfgn" inputmode="numeric" value="${v}" data-k="${k}">`;
+  W.innerHTML=`<div class="pcpbar"><b>Configurações · tempos dos tanques</b><span>no sistema fica em Configurações › Tanques e na ficha de cada produto · aqui grava só neste aparelho, para o teste</span></div>
+  <div class="cfgg"><div class="hgbox"><h3>Geral</h3><table class="t"><tbody>
+    <tr><td>"Pronto até" começa a piscar antes de</td><td>${n(CFG.pisca,'pisca')} min</td></tr>
+    <tr><td>Descanso padrão (produto sem tempo próprio)</td><td>${n(CFG.descPadrao,'descPadrao')} min</td></tr></tbody></table>
+    <h3 style="margin-top:16px">Por tanque</h3><table class="t"><thead><tr><th>Tanque</th><th>Capacidade</th><th>Limpeza prevista</th><th>Enchimento previsto</th></tr></thead><tbody>
+    ${T.map(t=>`<tr><td><b>${t.id}</b>${t.pul?' <small>pulmão</small>':''}</td><td class="m">${nl(t.cap)} L</td><td>${n(CFG.tq[t.id][0],'tq|'+t.id+'|0')} min</td><td>${n(CFG.tq[t.id][1],'tq|'+t.id+'|1')} min</td></tr>`).join('')}</tbody></table></div>
+  <div class="hgbox"><h3>Por produto (vem da ficha do produto)</h3><table class="t"><thead><tr><th>Produto</th><th>Preparo previsto</th><th>Descanso</th><th>Descansa no pulmão</th></tr></thead><tbody>
+    ${Object.entries(CFG.prod).map(([p,c])=>`<tr><td><b>${esc(p)}</b></td><td>${n(c[0],'prod|'+p+'|0')} min</td><td>${n(c[1],'prod|'+p+'|1')} min</td><td><span class="tog ${c[2]?'on':''}" data-pul="${esc(p)}">${c[2]?'sim':'não'}</span></td></tr>`).join('')}</tbody></table>
+    <div class="fdica">Mudou um tempo? Vale na hora para os lotes que ainda não começaram aquela etapa.</div></div></div>
+  <div class="libb"><span class="sp"></span><div class="acao sec" id="cfgPad">Voltar aos tempos padrão</div><div class="acao mau" id="cfgRe">Reiniciar o teste (apaga tudo)</div></div>`;
+  W.querySelectorAll('.cfgn').forEach(e=>e.onchange=()=>{const v=Math.max(0,parseInt(e.value)||0);const k=e.dataset.k.split('|');
+    if(k.length===1)CFG[k[0]]=v;else CFG[k[0]][k[1]][+k[2]]=v;T.forEach(t=>t.fila.forEach(aplicaCfg));desenha();toast('Tempo salvo');});
+  W.querySelectorAll('[data-pul]').forEach(e=>e.onclick=()=>{const c=CFG.prod[e.dataset.pul];c[2]=c[2]?0:1;T.forEach(t=>t.fila.forEach(aplicaCfg));desenha();telaCfg();});
+  W.querySelector('#cfgPad').onclick=()=>{CFG=JSON.parse(JSON.stringify(CFG_PADRAO));T.forEach(t=>t.fila.forEach(aplicaCfg));desenha();telaCfg();toast('Tempos padrão');};
+  W.querySelector('#cfgRe').onclick=reiniciarTeste;}
+function lote(t){return t.fila[0];}
+function statusDe(t){if(t.pausa)return 'pausa';if(t.st==='cheio'&&lote(t)&&min(lote(t).pronto)-lote(t).prev<AGORA)return 'atras';if(t.st==='descanso'&&AGORA-min(t.ini)>=((lote(t)&&lote(t).desc)||20))return 'analise';return t.st;}
+function cartao(t){const l=lote(t);const s=statusDe(t);const [cor,rot]=ST[s];
+  let tempo='';if(s==='prep'||s==='limpando'||s==='enchendo'||s==='descanso')tempo=dur(AGORA-min(t.ini))+(s==='limpando'?' / '+dur(CFG.tq[t.id][0]):s==='enchendo'?' / '+dur(CFG.tq[t.id][1]):s==='prep'?' / '+dur(l.prev):s==='descanso'?' / '+dur((l&&l.desc)||20):'');else if(s==='atras')tempo=dur(AGORA-(min(l.pronto)-l.prev));else if(t.ini)tempo=(s==='envasando'||s==='cheio'?'desde ':'')+t.ini;
+  let rotulo=rot;if(s==='envasando')rotulo='Envasando · '+l.maq;
+  const atr=l&&!['liberado','envasando','livre'].includes(s)&&AGORA>=min(l.pronto)-CFG.pisca;
+  const B={limpar:`<div class="acao rx" data-a="limpando">Iniciar limpeza</div>`,limpando:`<div class="acao rx" data-a="fimLimp">Concluir limpeza</div>`,encher:`<div class="acao az" data-a="enchendo">Iniciar enchimento</div>`,enchendo:`<div class="acao az" data-a="cheio">Concluir enchimento</div>`,cheio:`<div class="acao" data-a="prep">Iniciar preparo</div>`,atras:`<div class="acao" data-a="prep">Iniciar preparo</div>`,prep:`<div class="acao" data-a="descanso">Concluir preparo</div>`,descanso:`<div class="acao off">Descansando · análise às ${l?hm(min(t.ini)+((l.desc)||20)):''}</div>`,transf:`<div class="acao" data-a="pulmao">Transferir para o pulmão</div>`,analise:`<div class="acao amb" data-a="ana">${t.reana?'Refazer análise':'Preencher análise'}</div>`,ajuste:`<div class="acao mau" data-a="form">Lançar ajuste</div>`,naolib:`<div class="acao off">Esperando a liberação<small>a Mariane libera ou pede ajuste</small></div>`,liberado:`<div class="acao off" data-a="simEnv">Esperando o envase puxar<small>toque para simular: envase começou</small></div>`,envasando:`<div class="acao off" data-a="simFim">O envase conclui o tanque<small>toque para simular: envase concluído</small></div>`,livre:`<div class="acao off">Nenhum lote na fila</div>`};
+  if(s==='pausa'){rotulo='Pausado · '+t.pausa.mot;tempo=dur(AGORA-t.pausa.ini);}
+  if(t.pul&&s==='livre')rotulo='Vazio · pronto para receber';if(s==='analise'&&t.reana)rotulo='Ajustado · refazer análise';
+  let btn=B[s]||'';if(s==='pausa')btn=`<div class="acao az" data-a="retomar">▶ Retomar</div>`;if(t.pul&&s==='livre')btn=`<div class="acao off">Recebe quando um tanque transferir</div>`;
+  const sub=s==='naolib'?`<div class="sub2 sim"><div data-a="simLib">simular: liberou</div><div data-a="simAj">simular: pediu ajuste</div></div>`:s==='transf'?`<div class="sub2"><div data-a="aqui">Descansar aqui no tanque</div></div>`:s==='limpar'?`<div class="sub2"><div data-a="encher">Não precisa limpar</div></div>`:'';
+  const fOk=t.sep>=MP.length;const ANTES=['limpar','limpando','encher','enchendo','cheio','atras','prep'];
+  const ajp=(t.aj||[]).filter(a=>a.pedido&&!a.lanc);
+  const ck=s==='ajuste'&&ajp.length?`<div class="ckl aj" data-a="form"><i class="ic pend"></i><span>+ ${nl(ajp[0].q)} kg ${esc(ajp[0].mp)} · ${esc(ajp[0].pedido)}</span></div>`:l&&ANTES.includes(s)&&!l.de?`<div class="ckl ${fOk?'ok':'pend'}" data-a="form">${fOk?'<i class="ic ok">✓</i>':'<i class="ic pend"></i>'}<span>${fOk?'Matérias-primas separadas':'Separar matérias-primas'}${s==='prep'?' · passo '+Math.min(t.passo+1,6)+' de 6':''}</span><em>${t.sep}/${MP.length}</em></div>`:'';
+  const prox=t.fila[1];
+  return `<div class="tq ${t.cls}${t.pul?' pul':''}" data-t="${t.id}"><div class="cab"><b>${t.id}</b>${t.pul?'<span class="tag">descanso</span>':''}<span class="pts" data-a="menu">⋮</span></div>
+    <div class="st ${cor}"><span>${rotulo}</span><span class="t">${tempo}</span></div>
+    ${l?`<div class="prod">${esc(l.p)}<small>${l.lote?'lote '+l.lote+' · ':''}OP ${l.op}${t.pul&&l.de?' · veio do '+l.de:''}${!t.pul&&l.pul?' · descansa no pulmão':''}</small></div>
+    <div class="tiles"><div><span>Volume (L)</span><b>${nl(l.vol)}</b></div><div class="dest${atr?' pisca':''}"><span>${s==='envasando'?'Envase até':'Pronto até'}</span><b>${l.pronto}</b></div><div><span>${s==='envasando'?'Máquina':'Vai para'}</span><b>${l.maq}</b></div></div>`:`<div class="prod" style="color:var(--ink3)">—</div><div class="tiles"></div>`}
+    <div class="acoes">${ck}${btn}${sub}</div>
+    <div class="prox"><i>DEPOIS</i>${t.pul?(()=>{const v=T.find(x=>!x.pul&&lote(x)&&lote(x).pul&&['prep','transf','cheio','atras','enchendo','encher'].includes(statusDe(x)));return v?`<b>${v.id} · ${esc(lote(v).p)}</b><span class="h">${lote(v).pronto}</span>`:'nenhum tanque mandando';})():prox?`<b>${esc(prox.p)}</b> · ${nl(prox.vol)} L<span class="h">${prox.pronto}</span>`:'nada mais hoje'}</div></div>`;}
+function desenha(){document.getElementById('grade').innerHTML=T.map(cartao).join('');
+  const c={prep:0,naolib:0,lib:0,env:0,limp:0,ench:0};T.forEach(t=>{const s=statusDe(t);if(s==='prep'||s==='descanso'||s==='analise')c.prep++;else if(s==='naolib')c.naolib++;else if(s==='liberado')c.lib++;else if(s==='envasando')c.env++;else if(s==='limpando'||s==='limpar')c.limp++;else if(s==='enchendo'||s==='encher'||s==='cheio'||s==='atras')c.ench++;});
+  document.getElementById('relogio').textContent=hm(AGORA);
+  document.getElementById('grade').querySelectorAll('[data-a]').forEach(b=>b.onclick=()=>acao(b.closest('.tq').dataset.t,b.dataset.a));pcp();}
+const REG={pulmao:'Transferiu para o pulmão',aqui:'Deixou descansar no próprio tanque',limpando:'Iniciou a limpeza',fimLimp:'Concluiu a limpeza',encher:'Não precisou limpar (mesmo produto)',enchendo:'Iniciou o enchimento',cheio:'Concluiu o enchimento',prep:'Iniciou o preparo',descanso:'Concluiu o preparo'};
+const LOGL=[];
+function log(t,o,quem,ex,lt){const l=lt||lote(t);const e={h:hm(AGORA),o,quem,p:l?l.p:'',lote:l&&l.lote?l.lote:'',op:l?l.op:'',ex:ex||'',tq:t.id};t.hist.unshift(e);LOGL.unshift(e);}
+function histLote(x){const a=LOGL.filter(e=>(x.op&&e.op===x.op)||(x.lote&&e.lote===x.lote));a.sort((p,q)=>q.h.localeCompare(p.h));const lt=a.find(e=>e.lote);abrirHist(a,'Histórico do lote '+((x.lote||(lt&&lt.lote))||'—')+' · '+x.p+(x.op?' · OP '+x.op:''),true);}
+function acao(id,a){const t=T.find(x=>x.id===id);const s=statusDe(t);
+  if(a==='menu')return abrirDrawer(t);if(a==='retomar')return retomar(t);if(t.pausa&&a!=='form'&&a!=='ana')return toast(t.id+' está pausado. Toque em Retomar.');if(a==='loteh')return lote(t)?histLote(lote(t)):toast('Pulmão vazio.');
+  if(a==='pulmao'){const P=T.find(x=>x.pul);if(!livreP(P))return toast('Pulmão ocupado: '+lote(P).p+' ('+ST[statusDe(P)][1].toLowerCase()+'). Espere esvaziar.');}if(a==='form')return abrirForm(t,'sep');if(a==='modo')return abrirForm(t,'modo');
+  if(a==='ana'){if(s!=='analise'&&!['naolib','liberado','envasando'].includes(s))return toast('A análise é depois do descanso.');return abrirAna(t);}
+  if(a==='prep'&&t.sep<MP.length)return toast('Separe as '+(MP.length-t.sep)+' matérias-primas que faltam antes de iniciar o preparo.');
+  if(a==='descanso'&&t.passo<6)return toast('Marque todos os passos do Modo de Fazer antes de concluir.');
+  if(a==='descanso')return fecharPreparo(t,obs=>pedirPin(t.id+' · Concluir preparo',q=>{t._obs=obs;exec(t,a,q);}));
+  if(REG[a])return pedirPin(t.id+' · '+REG[a],quem=>exec(t,a,quem));
+  exec(t,a,null);}
+function exec(t,a,quem){const l=lote(t);let ex='';
+  if(a==='limpando'){t.st='limpando';t.ini=hm(AGORA);}
+  if(a==='fimLimp'){ex='levou '+dur(AGORA-min(t.ini));t.st='encher';t.ini=hm(AGORA);}
+  if(a==='encher'){t.st='encher';t.ini=hm(AGORA);}
+  if(a==='enchendo'){t.st='enchendo';t.ini=hm(AGORA);}
+  if(a==='cheio'){ex='levou '+dur(AGORA-min(t.ini));t.st='cheio';t.ini=hm(AGORA);}
+  if(a==='prep'){ex='ficou cheio esperando '+dur(AGORA-min(t.ini));t.st='prep';t.ini=hm(AGORA);if(!l.lote)l.lote=Math.floor(1000+Math.random()*900);}
+  if(a==='descanso'){ex='levou '+dur(AGORA-min(t.ini))+' (previsto '+dur(l.prev)+')'+(t._obs?' · '+t._obs:'');t._obs='';t.st=l.pul&&!t.pul?'transf':'descanso';t.ini=hm(AGORA);}
+  if(a==='aqui'){t.st='descanso';t.ini=hm(AGORA);}
+  if(a==='pulmao'){const P=T.find(x=>x.pul);const lt={...l,de:t.id};P.fila.unshift(lt);P.sep=0;P.passo=0;P.st='descanso';P.ini=hm(AGORA);log(t,'Transferiu para o pulmão',quem,'',l);log(P,'Recebeu do '+t.id,quem,'',lt);
+    t.feitos.push({p:l.p,lote:l.lote,op:l.op,vol:l.vol,h:hm(AGORA),maq:'Pulmão',tr:1});t.fila.shift();t.sep=0;t.passo=0;t.ini=hm(AGORA);t.st=t.fila[0]?'limpar':'livre';toast(t.id+' liberado · lote foi para o pulmão');AGORA+=1;desenha();return;}
+  if(a==='simAj'){pedirAjuste(t,'Espessante CMC','2,5','agitar 15 min e refazer o teor','Mariane','MP-0102');return;}
+  if(a==='simLib'){l.lib=hm(AGORA);t.st='liberado';t.ini=hm(AGORA);t.reana=false;log(t,'Tanque liberado',quem||'Mariane');toast('Lote liberado por '+(quem||'Mariane')+' · TANQUE LIBERADO');}
+  if(a==='simEnv'){t.st='envasando';t.ini=hm(AGORA);log(t,'Envase começou na '+l.maq,'Envase · '+l.maq);toast(l.maq+' começou a envasar');}
+  if(a==='simFim'){log(t,'Envase concluído','Envase · '+l.maq);t.feitos.push({p:l.p,lote:l.lote,op:l.op,vol:l.vol,h:hm(AGORA),maq:l.maq,pronto:l.pronto,atr:Math.max(0,min(l.lib||hm(AGORA))-min(l.pronto))});t.fila.shift();t.sep=0;t.passo=0;t.ini=hm(AGORA);const prox=t.fila[0];t.st=prox?'limpar':'livre';toast(prox?'Envase concluído · próximo lote já na tela: '+prox.p:'Envase concluído · nada mais hoje');}
+  if(REG[a]){log(t,REG[a],quem,ex);toast(REG[a]+' · '+quem);}
+  AGORA+=1;desenha();if(a==='prep')abrirForm(t,'modo');}
+/* PIN */
+const OPS={'1234':'Marcos','2222':'João','3333':'Luan','5555':'Mariane'};
+function pedirPin(titulo,ok){const m=document.getElementById('mPin');let v='';let msg='PIN de teste: 1234 Marcos · 2222 João · 5555 Mariane',erro=false;const cont=document.querySelector('.tablet').hidden?document.getElementById('pcpWrap'):document.getElementById('tela');if(m.parentNode!==cont)cont.appendChild(m);
+  const pinta=()=>{m.classList.toggle('sem',m.classList.contains('on'));m.innerHTML=`<div class="mc pin"><div class="mh"><span><b>Digite seu PIN</b><small>${esc(titulo)}</small></span><span class="x" data-k="x">×</span></div>
+    <div class="dots">${[0,1,2,3].map(i=>`<i class="${i<v.length?'on':''}"></i>`).join('')}</div><div class="msg ${erro?'erro':''}">${msg}</div>
+    <div class="kp">${['1','2','3','4','5','6','7','8','9','C','0','⌫'].map(k=>`<div data-k="${k}">${k}</div>`).join('')}</div></div>`;
+    m.querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>tecla(b.dataset.k));};
+  const tecla=k=>{if(k==='x'){m.classList.remove('on');return;}if(k==='C')v='';else if(k==='⌫')v=v.slice(0,-1);else if(v.length<4)v+=k;
+    if(v.length===4){const n=OPS[v];if(n){m.classList.remove('on');ok(n);return;}msg='PIN não encontrado, tente de novo';erro=true;v='';}else{erro=false;}
+    pinta();};
+  pinta();m.classList.add('on');}
+/* calculadora */
+function abrirCalc(){const m=document.getElementById('mCalc');let e='';let ant='';
+  const num=x=>x.replace(/\./g,'');
+  const calc=x=>{const y=x.replace(/×/g,'*').replace(/÷/g,'/').replace(/−/g,'-').replace(/,/g,'.');if(!/^[0-9.+\-*/ ]+$/.test(y))return null;try{const z=Function('return ('+y+')')();return isFinite(z)?z:null;}catch(_){return null;}};
+  const fmt=z=>(+z.toFixed(4)).toLocaleString('pt-BR',{maximumFractionDigits:4});
+  const pinta=()=>{m.classList.toggle('sem',m.classList.contains('on'));m.innerHTML=`<div class="mc calc"><div class="mh"><span><b>Calculadora</b></span><span class="x" data-k="x">×</span></div>
+    <div class="vis"><small>${esc(ant)||'&nbsp;'}</small><b>${esc(e)||'0'}</b></div>
+    <div class="kp k4">${['C','⌫','%','÷','7','8','9','×','4','5','6','−','1','2','3','+','0',',','='].map(k=>`<div data-k="${k}" class="${'÷×−+'.includes(k)?'op':''}${k==='='?'ig':''}${k==='C'?' c':''}${k==='0'?' z':''}">${k}</div>`).join('')}</div></div>`;
+    m.querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>tecla(b.dataset.k));};
+  const tecla=k=>{if(k==='x'){m.classList.remove('on');return;}
+    if(k==='C'){e='';ant='';}else if(k==='⌫'){e=e.slice(0,-1);}
+    else if(k==='='){const z=calc(num(e));if(z!==null){ant=e+' =';e=num(fmt(z));}}
+    else if(k==='%'){const z=calc(num(e));if(z!==null){ant=e+' %';e=num(fmt(z/100));}}
+    else e+=k;pinta();};
+  pinta();m.classList.add('on');}
+/* histórico */
+function abrirHist(lista,titulo,comTq){const f=document.getElementById('fHist');
+  const rows=lista.map(x=>`<tr><td class="m">${x.h}</td>${comTq?`<td><b>${x.tq}</b></td>`:''}<td><b>${esc(x.o)}</b>${x.ex?`<small>${esc(x.ex)}</small>`:''}</td><td>${esc(x.p)}${x.lote?`<small>lote ${x.lote}</small>`:''}</td><td><span class="quem">${esc(x.quem)}</span></td></tr>`).join('')||'<tr><td colspan="5" style="color:var(--ink3)">Nada registrado hoje</td></tr>';
+  f.innerHTML=`<div class="fh"><b>${titulo}</b><small>${comTq?'tudo o que aconteceu com este lote, em qualquer tanque · vai para o histórico geral do lote':'hoje · cada etapa fica gravada com hora e quem fez (PIN)'}</small><span class="x" id="hX">×</span></div>
+  <div class="fb" style="grid-template-columns:1fr"><div class="box"><div class="bb"><table class="t hist"><thead><tr><th>Hora</th>${comTq?'<th>Tanque</th>':''}<th>O que aconteceu</th><th>Produto</th><th>Quem</th></tr></thead><tbody>${rows}</tbody></table></div></div></div>`;
+  f.classList.add('on');f.querySelector('#hX').onclick=()=>f.classList.remove('on');}
+function histTodos(){const a=[];T.forEach(t=>t.hist.forEach(x=>a.push({...x,tq:t.id})));a.sort((x,y)=>y.h.localeCompare(x.h));abrirHist(a,'Histórico de todos os tanques');}
+/* ---------- trocar de tanque ---------- */
+const NAO_COMECOU=['limpar','encher','livre'],PRODUZIDO=['transf','descanso','analise','naolib','liberado'];
+function podeMover(o,idx){const s=statusDe(o);return idx>0||NAO_COMECOU.includes(s)||PRODUZIDO.includes(s);}
+function livreP(d){return !lote(d)||NAO_COMECOU.includes(statusDe(d));}
+function moverLote(oid,idx,did,quem){const o=T.find(x=>x.id===oid),d=T.find(x=>x.id===did);const x=o.fila[idx];
+  if(!x||o===d)return false;
+  if(!podeMover(o,idx)){toast('Esse lote já começou no '+o.id+' — não dá para trocar.');return false;}
+  if(x.vol>d.cap){toast(x.p+' tem '+nl(x.vol)+' L e o '+d.id+' só leva '+nl(d.cap)+' L.');return false;}
+  const so=statusDe(o);if(idx===0&&PRODUZIDO.includes(so)){
+    if(!livreP(d)){toast('O '+d.id+' está com '+lote(d).p+' em andamento — não dá para receber.');return false;}
+    o.fila.shift();d.fila.unshift({...x,de:o.id});d.st=so==='transf'?'descanso':so;d.ini=so==='transf'?hm(AGORA):o.ini;d.sep=o.sep;d.passo=o.passo;
+    o.feitos.push({p:x.p,lote:x.lote,op:x.op,vol:x.vol,h:hm(AGORA),maq:d.id,tr:1});o.sep=0;o.passo=0;o.ini=hm(AGORA);o.st=o.fila[0]?'limpar':'livre';
+    log(d,'Transferiu do '+o.id+' para o '+d.id,quem,'',x);o.hist.unshift(d.hist[0]);
+    toast(x.p+' foi para o '+d.id+' · '+o.id+(o.fila[0]?' liberado para limpeza':' livre'));AGORA+=1;desenha();return true;}
+  o.fila.splice(idx,1);if(idx===0){o.sep=0;o.passo=0;if(!o.fila.length)o.st='livre';}
+  const ocupado=lote(d)&&!NAO_COMECOU.includes(statusDe(d));let pos=d.fila.length;
+  for(let i=ocupado?1:0;i<d.fila.length;i++){if(min(d.fila[i].pronto)>min(x.pronto)){pos=i;break;}}
+  d.fila.splice(pos,0,x);if(d.st==='livre'){d.st='limpar';d.ini=hm(AGORA);}if(pos===0&&d.st!=='livre'){d.sep=0;d.passo=0;}
+  log(d,'Trocou de tanque: '+o.id+' → '+d.id,quem,'',x);if(!o.hist.includes(d.hist[0]))o.hist.unshift(d.hist[0]);
+  toast(x.p+' foi do '+o.id+' para o '+d.id+' · '+quem);AGORA+=1;desenha();return true;}
+function modal(cont,html){let m=cont.querySelector(':scope > .modal.gen');if(!m){m=document.createElement('div');m.className='modal gen';cont.appendChild(m);}m.classList.toggle('sem',m.classList.contains('on'));
+  m.innerHTML=html;m.classList.add('on');m.onclick=e=>{if(e.target===m||e.target.closest('[data-fechar]'))m.classList.remove('on');};return m;}
+function escolherTanque(cont,oid,idx,depois){const o=T.find(x=>x.id===oid);const x=o.fila[idx];
+  if(!podeMover(o,idx))return toast('Esse lote já começou no '+o.id+' — não dá para trocar.');
+  const transf=idx===0&&PRODUZIDO.includes(statusDe(o));const m=modal(cont,`<div class="mc troca"><div class="mh"><span><b>${transf?'Transferir o lote pronto':'Trocar de tanque'}</b><small>${esc(x.p)} · ${nl(x.vol)} L · pronto até ${x.pronto} · hoje no ${o.id}</small></span><span class="x" data-fechar>×</span></div>
+    <div class="tqs">${T.map(d=>{const cabe=x.vol<=d.cap,eu=d===o,ocup=transf&&!eu&&!livreP(d);const s=statusDe(d);const lt=lote(d);
+      return `<div class="op ${!cabe||eu||ocup?'off':''}" data-d="${d.id}"><b>${d.id}</b><small>${nl(d.cap)} L</small><span class="mini ${ST[s][0]}">${eu?'está aqui':!cabe?'não cabe':ocup?'ocupado':(t=>t.pul&&s==='livre'?'vazio':ST[s][1])(d)}</span><em>${lt?esc(lt.p):'sem lote'}${d.fila.length>1?' · +'+(d.fila.length-1)+' na fila':''}</em></div>`;}).join('')}</div></div>`);
+  m.querySelectorAll('.op:not(.off)').forEach(b=>b.onclick=()=>{m.classList.remove('on');depois(b.dataset.d);});}
+function opcoesLote(t,idx,feito){const x=feito?t.feitos[idx]:t.fila[idx];fechaDrawer();histLote(x);}
+function fechaDrawer(){document.getElementById('drawer').classList.remove('on','larga');document.getElementById('sombra').classList.remove('on');}
+/* ---------- visão do PCP (gestor) ---------- */
+const PCP_AB=new Set();
+function pcp(){const g=document.getElementById('pcpGrade');if(!g)return;
+  g.innerHTML=T.map(t=>{const l=lote(t);const fila=t.fila.slice(l?1:0);const s=statusDe(t);
+    const cur=l&&NAO_COMECOU.includes(s);
+    return `<div class="pcol" data-tq="${t.id}"><div class="pcard ${cur?'arr':''}" ${cur?`draggable="true" data-o="${t.id}" data-i="0"`:''}>${cartao(t).replace(/data-t=/g,'data-pt=').replace(/data-a=/g,'data-x=').replace('<span class="pts"','<span class="capx">'+nl(t.cap)+' L</span><span class="pts"')}</div>
+      <div class="pfh">Fila <span>${fila.length} lote${fila.length===1?'':'s'}</span></div>
+      <div class="pfila">${fila.map((x,i)=>`<div class="pl" draggable="true" data-o="${t.id}" data-i="${i+1}"><em>${x.pronto}</em><div><b>${esc(x.p)}</b><small>${nl(x.vol)} L · ${x.maq}${x.lote?' · lote '+x.lote:''}</small></div><span class="mv" title="Opções">⋮</span></div>`).join('')||'<div class="pvz">Solte um lote aqui</div>'}</div>
+      ${(()=>{const c=t.feitos.filter(f=>!f.tr);if(!c.length)return '';const ab=PCP_AB.has(t.id);return `<div class="pfeito" data-ab="${t.id}">${ab?'▾':'▸'} ✓ ${c.length} concluído${c.length>1?'s':''} hoje</div>${ab?`<div class="pconc">${c.map(f=>`<div class="pc"><em>${f.h}</em><div><b>${esc(f.p)}</b><small>lote ${f.lote} · ${f.maq}</small></div>${estrela(f)}</div>`).join('')}</div>`:''}`;})()}</div>`;}).join('');
+  g.querySelectorAll('[data-ab]').forEach(e=>e.onclick=()=>{const k=e.dataset.ab;PCP_AB.has(k)?PCP_AB.delete(k):PCP_AB.add(k);pcp();});
+  g.querySelectorAll('.pcol').forEach(c=>{const t=T.find(x=>x.id===c.dataset.tq);if(statusDe(t)==='naolib'){const k=c.querySelector('.pcard');k.classList.add('libv');k.insertAdjacentHTML('beforeend','<div class="libtag">Aguardando liberação</div>');}const pc=c.querySelector('.pcard');pc.onclick=()=>fichaLote(t);const p=c.querySelector('.pcard .pts');if(p)p.onclick=ev=>{ev.stopPropagation();menuPCP(t,p);};});
+  const W=document.getElementById('pcpWrap');
+  g.querySelectorAll('[draggable=true]').forEach(e=>{e.ondragstart=ev=>{ev.dataTransfer.setData('text/plain',e.dataset.o+'|'+e.dataset.i);e.classList.add('arrast');};e.ondragend=()=>e.classList.remove('arrast');
+    const mv=e.querySelector('.mv');if(mv)mv.onclick=ev=>{ev.stopPropagation();menuPCP(T.find(x=>x.id===e.dataset.o),mv,+e.dataset.i);};});
+  g.querySelectorAll('.pcol').forEach(c=>{c.ondragover=ev=>{ev.preventDefault();c.classList.add('alvo');};c.ondragleave=()=>c.classList.remove('alvo');
+    c.ondrop=ev=>{ev.preventDefault();c.classList.remove('alvo');const [o,i]=ev.dataTransfer.getData('text/plain').split('|');moverLote(o,+i,c.dataset.tq,'PCP · Junior');};});}
+/* ---------- cadastro de matérias-primas (vem do sistema) ---------- */
+const CADMP=[['MP-0101','Base amaciante QUAT 80'],['MP-0102','Espessante CMC'],['MP-0103','Espessante (poliacrilato)'],['MP-0110','Fragrância Brisa'],['MP-0111','Fragrância Lavanda'],['MP-0112','Fragrância Talco'],['MP-0120','Corante azul'],['MP-0121','Corante rosa'],['MP-0130','Conservante isotiazolinona'],['MP-0140','Ácido cítrico'],['MP-0141','Soda cáustica 50 %'],['MP-0150','Tensoativo LAS 90'],['MP-0151','Lauril éter sulfato de sódio'],['MP-0160','Cloreto de sódio (sal)'],['MP-0170','Hipoclorito de sódio 12 %'],['MP-0180','Amida 90'],['MP-0190','EDTA'],['MP-0200','Glicerina']];
+function escolherMP(cont,titulo,ok){let q='';
+  const pinta=()=>{const l=CADMP.filter(m=>(m[0]+' '+m[1]).toLowerCase().includes(q.toLowerCase()));
+    const m=modal(cont,`<div class="mc pick"><div class="mh"><span><b>${titulo}</b><small>lista do cadastro de matérias-primas · não dá para digitar um nome novo</small></span><span class="x" data-fechar>×</span></div>
+      <input class="in busca" id="pkQ" placeholder="buscar pelo nome ou código" value="${esc(q)}"><div class="pkl">${l.map(m=>`<div class="pki" data-c="${m[0]}"><em>${m[0]}</em><b>${esc(m[1])}</b></div>`).join('')||'<div class="vz">nada encontrado</div>'}</div></div>`);
+    const i=m.querySelector('#pkQ');i.oninput=()=>{q=i.value;const p=i.selectionStart;pinta();const j=document.querySelector('#pkQ');j.focus();j.setSelectionRange(p,p);};
+    m.querySelectorAll('.pki').forEach(e=>e.onclick=()=>{m.classList.remove('on');const x=CADMP.find(c=>c[0]===e.dataset.c);ok({cod:x[0],mp:x[1]});});};
+  pinta();}
+/* ---------- registrar problema ---------- */
+const MOTP={'Matéria-prima':['Falta de MP','MP fora do padrão','MP errada separada','Outro'],'Equipamento':['Agitador','Bomba','Válvula / registro','Balança','Outro'],'Vazamento':['Tanque','Mangueira / conexão','Outro'],'Utilidades':['Falta de água','Falta de energia','Ar comprimido','Outro'],'Qualidade':['Aguardando químico','Análise fora','Outro'],'Pessoas':['Refeição','Reunião','Falta de operador','Outro'],'Outro':['Outro']};
+function registrarProblema(t){const tela=document.getElementById('tela');const st={mot:'',sub:'',min:0,obs:'',parou:true};
+  const pinta=()=>{const m=modal(tela,`<div class="mc prob"><div class="mh"><span><b>Registrar problema · ${t.id}</b><small>${lote(t)?esc(lote(t).p)+' · ':''}${ST[statusDe(t)][1]} · avisa o PCP e o químico</small></span><span class="x" data-fechar>×</span></div>
+    <h4>1. O que aconteceu?</h4><div class="chips big">${Object.keys(MOTP).map(k=>`<span class="${st.mot===k?'on':''}" data-mot="${k}">${k}</span>`).join('')}</div>
+    ${st.mot?`<h4>2. Detalhe</h4><div class="chips">${MOTP[st.mot].map(k=>`<span class="${st.sub===k?'on':''}" data-sub="${k}">${k}</span>`).join('')}</div>`:''}
+    ${st.sub?`<h4>3. Quanto tempo parou?</h4><div class="chips">${[0,5,10,15,30,60].map(n=>`<span class="${st.min===n?'on':''}" data-min="${n}">${n?n+' min':'não parou'}</span>`).join('')}<span class="${st.min===-1?'on':''}" data-min="-1">ainda parado</span></div>
+    <h4>4. Observação ${st.sub==='Outro'?'<b class="obr">obrigatória</b>':'(se precisar)'}</h4><textarea class="in obs" id="pObs" placeholder="escreva o que aconteceu">${esc(st.obs)}</textarea>`:''}
+    <div class="libb"><span style="flex:1"></span><div class="acao lar ${st.sub?'':'off'}" id="pOk"><span class="ex">!</span>Registrar problema</div></div></div>`);
+    m.querySelectorAll('[data-mot]').forEach(e=>e.onclick=()=>{st.mot=e.dataset.mot;st.sub=MOTP[st.mot].length===1?MOTP[st.mot][0]:'';pinta();});
+    m.querySelectorAll('[data-sub]').forEach(e=>e.onclick=()=>{st.sub=e.dataset.sub;pinta();});
+    m.querySelectorAll('[data-min]').forEach(e=>e.onclick=()=>{st.min=+e.dataset.min;pinta();});
+    const o=m.querySelector('#pObs');if(o)o.oninput=()=>st.obs=o.value;
+    m.querySelector('#pOk').onclick=()=>{if(!st.sub)return toast('Escolha o que aconteceu.');if(st.sub==='Outro'&&!st.obs.trim())return toast('Escreva o que aconteceu.');
+      pedirPin(t.id+' · Registrar problema',q=>{m.classList.remove('on');t.probs=t.probs||[];const p={etapa:ST[statusDe(t)][1],mot:st.mot,sub:st.sub,min:st.min,obs:st.obs,h:hm(AGORA),quem:q};t.probs.push(p);
+        log(t,'Registrou problema: '+st.mot+' | '+st.sub,q,(st.min>0?'parou '+st.min+' min':st.min===-1?'ainda parado':'não parou')+(st.obs?' · '+st.obs:''));toast('Problema registrado · PCP e químico avisados');desenha();});};};
+  pinta();}
+/* ---------- fechamento do preparo: atraso / ajuste pedem motivo ---------- */
+const MOTATR=['Falta de MP','Equipamento','Aguardando químico','Ajuste de MP','Operador em outra tarefa','Limpeza / enchimento demorou','Outro'];
+const MOTAJ=['Pedido do químico','MP fora do padrão','Erro de pesagem','Água / temperatura','Outro'];
+function fecharPreparo(t,ok){const l=lote(t);const tela=document.getElementById('tela');const real=AGORA-min(t.ini),atr=real-l.prev;const ajs=(t.aj||[]).filter(a=>a.lanc||a.ok);
+  const st={ma:'',mj:'',obs:''};
+  const pinta=()=>{const m=modal(tela,`<div class="mc prob"><div class="mh"><span><b>Concluir preparo · ${t.id}</b><small>${esc(l.p)} · lote ${l.lote||'—'}</small></span><span class="x" data-fechar>×</span></div>
+    <div class="fres"><div><span>Previsto</span><b>${dur(l.prev)}</b></div><div class="${atr>0?'mau':''}"><span>Real</span><b>${dur(real)}</b></div><div class="${atr>0?'mau':''}"><span>${atr>0?'Atraso':'Folga'}</span><b>${atr>0?'+'+dur(atr):dur(-atr)}</b></div><div class="${ajs.length?'amb':''}"><span>MP de ajuste</span><b>${ajs.length}</b></div></div>
+    ${atr>0?`<h4>Por que atrasou? <b class="obr">obrigatório</b></h4><div class="chips">${MOTATR.map(k=>`<span class="${st.ma===k?'on':''}" data-ma="${k}">${k}</span>`).join('')}</div>`:''}
+    ${ajs.length?`<h4>Por que entrou MP de ajuste? <b class="obr">obrigatório</b></h4><div class="chips">${MOTAJ.map(k=>`<span class="${st.mj===k?'on':''}" data-mj="${k}">${k}</span>`).join('')}</div>`:''}
+    <h4>Observação ${(st.ma==='Outro'||st.mj==='Outro')?'<b class="obr">obrigatória</b>':'(se teve algo diferente)'}</h4><textarea class="in obs" id="cObs" placeholder="escreva aqui">${esc(st.obs)}</textarea>
+    <div class="libb"><span style="flex:1"></span><div class="acao" id="cOk">Concluir preparo</div></div></div>`);
+    m.querySelectorAll('[data-ma]').forEach(e=>e.onclick=()=>{st.ma=e.dataset.ma;pinta();});m.querySelectorAll('[data-mj]').forEach(e=>e.onclick=()=>{st.mj=e.dataset.mj;pinta();});
+    const o=m.querySelector('#cObs');o.oninput=()=>st.obs=o.value;
+    m.querySelector('#cOk').onclick=()=>{if(atr>0&&!st.ma)return toast('Escolha o motivo do atraso.');if(ajs.length&&!st.mj)return toast('Escolha o motivo do ajuste.');if((st.ma==='Outro'||st.mj==='Outro')&&!st.obs.trim())return toast('Escreva a observação.');
+      m.classList.remove('on');ok([st.ma&&'atraso: '+st.ma,st.mj&&'ajuste: '+st.mj,st.obs].filter(Boolean).join(' · '));};};
+  pinta();}
+/* ---------- simulado: ajuste do químico (refaz do zero a cada passo, sem repetir registros) ---------- */
+function simulado(){const t=T.find(x=>x.id==='TQ 2');{const o=T.find(x=>x!==t&&x.fila.some(f=>f.op==='0176'));let x;if(o){const i=o.fila.findIndex(f=>f.op==='0176');x=o.fila.splice(i,1)[0];delete x.de;if(i===0){o.st=o.fila[0]?'limpar':'livre';o.ini=hm(AGORA);}}if(!t.fila.some(f=>f.op==='0176'))t.fila.unshift(x||{p:'L.L NEUTRO',lote:1777,op:'0176',vol:3800,pronto:'14:54',maq:'MAQ 1',prev:80});t.pausa=null;desenha();}const tabs=v=>document.querySelector('.ab[data-v="'+v+'"]').click();
+  const snap={t:JSON.parse(JSON.stringify(t)),log:LOGL.slice(),hist:t.hist.slice(),agora:AGORA};
+  const volta=()=>{const h=snap.hist.slice();Object.keys(t).forEach(k=>delete t[k]);Object.assign(t,JSON.parse(JSON.stringify(snap.t)));t.hist=h;LOGL.length=0;snap.log.forEach(e=>LOGL.push(e));AGORA=snap.agora;};
+  const fecharTudo=()=>{document.querySelectorAll('.modal.on,.full.on').forEach(m=>m.classList.remove('on'));fechaDrawer();document.querySelectorAll('.pmenu').forEach(m=>m.remove());};
+  const foco=sel=>{document.querySelectorAll('.foco').forEach(e=>e.classList.remove('foco'));const e=document.querySelector(sel);if(e){e.classList.add('foco');e.scrollIntoView({block:'center',behavior:'smooth'});}};
+  /* [título, texto, estado (roda em sequência), tela] */
+  const P=[
+   ['Ponto de partida','O operador do <b>TQ 2</b> enviou a análise do L.L NEUTRO. O teor de ativo deu 4,7 % (faixa 5,0 a 6,0). O cartão fica amarelo: <b>Tanque não liberado</b>.',
+     ()=>{t.st='naolib';t.reana=false;t.aj=(t.aj||[]).filter(a=>!a.pedido);t.ini=hm(AGORA);},()=>{tabs('tab');desenha();foco('#grade [data-t="TQ 2"]');}],
+   ['1 · A Mariane vê o tanque','Na página <b>Tanques</b> do envase/PCP, o TQ 2 aparece com borda amarela e o selo <b>Aguardando liberação</b>. Ela toca no cartão, como faz hoje.',
+     ()=>{},()=>{tabs('pcp');pcp();foco('.pcol[data-tq="TQ 2"] .pcard');}],
+   ['2 · Ela abre a ficha do lote','Abre a ficha com a análise. Vê os resultados enviados pelo tanque e a observação do operador. O teor está fora: ela decide <b>Pedir ajuste</b>.',
+     ()=>{},()=>{tabs('pcp');abrirLiberacao(t);}],
+   ['3 · Ela pede o ajuste','Escolhe a MP <b>da lista do cadastro</b>, a quantidade e a orientação. Confirma com o PIN dela.',
+     ()=>{},()=>{tabs('pcp');abrirLiberacao(t,'aj');}],
+   ['4 · O tanque recebe o pedido','No tablet, o TQ 2 fica <b>vermelho</b>: “Ajuste pedido pelo químico”, com “+ 2,5 kg Espessante CMC · Mariane” e o botão <b>Lançar ajuste</b>.',
+     ()=>{AGORA+=2;pedirAjuste(t,'Espessante CMC','2,5','agitar 15 min e refazer o teor','Mariane','MP-0102',true);},()=>{tabs('tab');desenha();foco('#grade [data-t="TQ 2"]');}],
+   ['5 · O operador abre a Formulação','A linha do ajuste já vem destacada, com a MP e a quantidade pedidas. Ele digita o <b>lote da MP</b> e o <b>peso</b> que colocou e toca no ✓.',
+     ()=>{const a=t.aj.find(a=>a.pedido&&!a.lanc);a.lote='L24-0877';a.kg='2,5';a.ok=true;},()=>{tabs('tab');abrirForm(t);foco('#fForm tr.ajr');}],
+   ['6 · Lança o ajuste com PIN','Toca em <b>Lançar ajuste</b> e digita o PIN. O cartão vira <b>Ajustado · refazer análise</b>.',
+     ()=>{AGORA+=3;t.aj.filter(a=>a.ok&&!a.lanc).forEach(a=>{a.lanc=hm(AGORA);log(t,'Lançou MP de ajuste · '+a.mp+' '+a.kg+' kg','Marcos','lote '+a.lote);});t.st='analise';t.reana=true;t.ini=hm(AGORA);},()=>{tabs('tab');desenha();foco('#grade [data-t="TQ 2"]');}],
+   ['7 · Refaz a análise e envia','Depois de agitar, coleta nova amostra, preenche e toca em <b>Enviar reanálise</b> (PIN). Volta a <b>Tanque não liberado</b>.',
+     ()=>{AGORA+=15;t.st='naolib';t.ini=hm(AGORA);log(t,'Enviou a reanálise','Marcos','teor 5,4 %');},()=>{tabs('tab');desenha();foco('#grade [data-t="TQ 2"]');}],
+   ['8 · A Mariane libera','Ela toca no cartão de novo: agora mostra <b>reanálise</b> e o ajuste que entrou. Toca em <b>Liberar lote</b> e digita o PIN.',
+     ()=>{},()=>{tabs('pcp');abrirLiberacao(t);}],
+   ['9 · Tanque liberado','O TQ 2 fica azul, <b>Tanque liberado</b>, e o envase já pode puxar. Cada passo ficou <b>uma vez</b> no histórico do lote, com hora e quem fez.',
+     ()=>{AGORA+=3;exec(t,'simLib','Mariane');},()=>{tabs('tab');desenha();histLote(lote(t));}]];
+  let i=0;let b=document.getElementById('tour');if(!b){b=document.createElement('div');b.id='tour';document.body.appendChild(b);}
+  const pinta=()=>{fecharTudo();volta();for(let k=0;k<=i;k++)P[k][2]();desenha();P[i][3]();
+    b.innerHTML=`<div class="tt"><span>Simulado · ajuste do químico</span><em>${i+1} de ${P.length}</em></div><b>${P[i][0]}</b><p>${P[i][1]}</p><div class="tb"><span data-t="x">Sair</span><span class="sp"></span>${i?'<span data-t="v">Voltar</span>':''}<span class="nx" data-t="n">${i<P.length-1?'Próximo passo →':'Concluir'}</span></div>`;b.classList.add('on');
+    b.querySelectorAll('[data-t]').forEach(e=>e.onclick=()=>{const k=e.dataset.t;if(k==='x'||(k==='n'&&i===P.length-1)){b.classList.remove('on');document.querySelectorAll('.foco').forEach(e=>e.classList.remove('foco'));if(k==='x'){fecharTudo();volta();desenha();}return;}if(k==='n')i++;if(k==='v')i=Math.max(0,i-1);pinta();});};
+  pinta();}
+/* ---------- pausa do tanque ---------- */
+/* os mesmos grupos de motivo da pausa do envase (Configurações › Motivos de desvio, etapa "pausa") */
+const MOTPAUSA={'Parada programada':['Reunião','DSS','Refeição','Treinamento','Limpeza programada','Sem programação'],'Problema de equipamento':['Manutenção corretiva','Bomba de ar','Fechadora de caixas','Datadora','Fechador','Rotuladora','Esteira','Troca de kit de envase','Outro equipamento'],'Falta de material':['Frasco','Tampa','Rótulo','Caixa','Filme','Matéria-prima','Corante','Fragrância'],'Problema externo':['Falta de energia','Falta de água','Compressores','Chuva ou clima','Fornecedor não entregou']};
+function pausar(t){const tela=document.getElementById('tela');const st={mot:'',sub:'',obs:''};
+  const pinta=()=>{const m=modal(tela,`<div class="mc prob"><div class="mh"><span><b>Pausar · ${t.id}</b><small>${lote(t)?esc(lote(t).p)+' · ':''}${ST[statusDe(t)][1]} · mesmos motivos da pausa do envase · o tempo da etapa para de contar</small></span><span class="x" data-fechar>×</span></div>
+    <h4>1. Motivo <b class="obr">obrigatório</b></h4><div class="chips big">${Object.keys(MOTPAUSA).map(k=>`<span class="${st.mot===k?'on':''}" data-m="${k}">${k}</span>`).join('')}</div>
+    ${st.mot?`<h4>2. Detalhe <b class="obr">obrigatório</b></h4><div class="chips">${MOTPAUSA[st.mot].map(k=>`<span class="${st.sub===k?'on':''}" data-s="${k}">${k}</span>`).join('')}</div>`:''}
+    <h4>Observação (se precisar)</h4><textarea class="in obs" id="zObs" placeholder="escreva aqui">${esc(st.obs)}</textarea>
+    <div class="libb"><span class="sp"></span><div class="acao cz2 ${st.sub?'':'off'}" id="zOk">⏸ Pausar</div></div></div>`);
+    m.querySelectorAll('[data-m]').forEach(e=>e.onclick=()=>{st.mot=e.dataset.m;st.sub='';pinta();});m.querySelectorAll('[data-s]').forEach(e=>e.onclick=()=>{st.sub=e.dataset.s;pinta();});
+    const o=m.querySelector('#zObs');o.oninput=()=>st.obs=o.value;
+    m.querySelector('#zOk').onclick=()=>{if(!st.mot||!st.sub)return toast('Escolha o motivo e o detalhe da pausa.');
+      pedirPin(t.id+' · Pausar',q=>{m.classList.remove('on');t.pausa={mot:st.sub,grupo:st.mot,obs:st.obs,ini:AGORA,quem:q};log(t,'Pausou · '+st.mot+' | '+st.sub,q,st.obs);toast(t.id+' pausado · '+st.sub);desenha();});};};
+  pinta();}
+function retomar(t){pedirPin(t.id+' · Retomar',q=>{const p=t.pausa;const d=AGORA-p.ini;if(t.ini)t.ini=hm(min(t.ini)+d);log(t,'Retomou · pausa de '+dur(d),q,(p.grupo?p.grupo+' | ':'')+p.mot+(p.obs?' · '+p.obs:''));t.pausa=null;toast(t.id+' retomado');AGORA+=1;desenha();});}
+/* ---------- menu dos 3 risquinhos no PCP (o mesmo do envase) ---------- */
+function menuPCP(t,ancora,idx){idx=idx||0;document.querySelectorAll('.pmenu').forEach(m=>m.remove());const W=document.getElementById('pcpWrap');const l=t.fila[idx];const s=statusDe(t);
+  const P=T.find(x=>x.pul);const prod=idx===0&&!t.pul&&PRODUZIDO.includes(s);const podeP=prod&&livreP(P)&&l&&l.vol<=P.cap;
+  const m=document.createElement('div');m.className='pmenu';
+  m.innerHTML=l?`<div data-pm="hist">Histórico</div><div data-pm="x">Editar OP</div><div data-pm="x">Desfazer último passo</div><hr>
+    <div data-pm="x">PDF OP Envase</div><div data-pm="x">PDF OP Tanque</div><div data-pm="x">PDF Certificado</div><div data-pm="x">Etiqueta Cod Barras</div><div data-pm="x">Etiqueta amostra</div><hr>
+    <div data-pm="x">Dividir lote</div><div data-pm="x">Fim de turno</div>${t.pul?'':`<div data-pm="pul" class="novo ${podeP?'':'off'}">Enviar para o pulmão <i>novo</i><small>${!prod?'só lote com a produção concluída':!podeP?'pulmão ocupado agora':'leva o lote pronto e libera o '+t.id}</small></div>`}<hr>
+    <div data-pm="x" class="perigo">Excluir</div>`:'<div class="off">sem lote neste tanque</div>';
+  W.appendChild(m);const r=ancora.getBoundingClientRect(),w=W.getBoundingClientRect();m.style.top=(r.bottom-w.top+6)+'px';m.style.left=Math.max(8,r.right-w.left-260)+'px';
+  m.querySelectorAll('[data-pm]').forEach(e=>e.onclick=ev=>{ev.stopPropagation();const k=e.dataset.pm;if(e.classList.contains('off'))return toast(!prod?'Só dá para enviar ao pulmão o lote com a produção concluída.':'Pulmão ocupado agora.');m.remove();
+    if(k==='hist'){document.querySelector('.ab[data-v=tab]').click();histLote(l);}if(k==='x')toast('Opção que já existe hoje no PCP (sem mudança).');
+    if(k==='pul')pedirPin('Enviar '+l.p+' para o pulmão',q=>moverLote(t.id,0,P.id,q));});
+  setTimeout(()=>document.addEventListener('click',function f(ev){if(!m.contains(ev.target)){m.remove();document.removeEventListener('click',f);}}),0);}
+function fichaLote(t){const s=statusDe(t);if(s==='naolib')return abrirLiberacao(t);toast('Abre a ficha do lote, igual hoje no PCP (formulação, análise, liberar).');}
+/* barra lateral do tanque: só o próprio tanque */
+function abrirDrawer(t){const l=lote(t);const d=document.getElementById('drawer');const s=statusDe(t);
+  const P=T.find(x=>x.pul);const transf=l&&!t.pul&&PRODUZIDO.includes(s);const pode=transf&&livreP(P)&&l.vol<=P.cap;
+  d.innerHTML=`<div class="dh"><b>${t.id}</b><small>${nl(t.cap)} L${t.pul?' · pulmão':''}</small><span class="x" id="dX">×</span></div>
+  ${l?`<div class="atual"><span class="mini ${ST[s][0]}">${ST[s][1]}</span><b>${esc(l.p)}</b><small>${l.lote?'lote '+l.lote+' · ':''}OP ${l.op}${l.de?' · veio do '+l.de:''}</small>
+    <div class="ag"><div><span>Volume</span><b>${nl(l.vol)} L</b></div><div><span>Pronto até</span><b>${l.pronto}</b></div><div><span>Vai para</span><b>${l.maq}</b></div></div></div>`:`<div class="atual"><b style="color:var(--ink3)">Sem lote agora</b></div>`}
+  <div class="dlist">
+    <div class="dbig" id="dF"><i class="dic az">≡</i><span><b>Formulação e Modo de Fazer</b><small>separação das MPs e passo a passo</small></span></div>
+    <div class="dbig" id="dA"><i class="dic amb">✓</i><span><b>Análise</b><small>preencher e enviar para liberação</small></span></div>
+    <div class="dbig" id="dZ"><i class="dic cz">${t.pausa?'▶':'⏸'}</i><span><b>${t.pausa?'Retomar':'Pausar'}</b><small>${t.pausa?'pausado desde '+hm(t.pausa.ini)+' · '+esc(t.pausa.mot):'mesmos motivos da pausa do envase'}</small></span></div>
+    <div class="dbig" id="dP"><i class="dic lar">!</i><span><b>Registrar problema</b><small>equipamento, MP, vazamento… avisa PCP e químico</small></span></div>
+    <div class="dbig" id="dH"><i class="dic cz">◷</i><span><b>Histórico do tanque</b><small>tudo o que foi feito hoje, com quem fez</small></span></div>
+    ${t.pul?'':`<div class="dbig ${pode?'':'off'}" id="dT"><i class="dic rx">⇄</i><span><b>Transferir para o pulmão</b><small>${!transf?'só lote com a produção concluída':!pode?'pulmão ocupado agora':'leva o lote pronto e libera este tanque'}</small></span></div>`}
+  </div>`;
+  d.classList.add('on');document.getElementById('sombra').classList.add('on');
+  document.getElementById('dX').onclick=fechaDrawer;document.getElementById('sombra').onclick=fechaDrawer;
+  document.getElementById('dF').onclick=()=>{fechaDrawer();abrirForm(t,'sep');};
+  document.getElementById('dA').onclick=()=>{fechaDrawer();acao(t.id,'ana');};
+  document.getElementById('dH').onclick=()=>{fechaDrawer();abrirHist(t.hist,'Histórico · '+t.id,false);};
+  document.getElementById('dP').onclick=()=>{fechaDrawer();registrarProblema(t);};
+  document.getElementById('dZ').onclick=()=>{fechaDrawer();t.pausa?retomar(t):pausar(t);};
+  if(document.getElementById('dT'))document.getElementById('dT').onclick=()=>{if(!pode)return toast(!transf?'Só dá para transferir para o pulmão o lote que terminou a produção. Outras trocas são feitas pelo PCP.':'Pulmão ocupado agora.');pedirPin('Transferir '+l.p+' para o pulmão',q=>{fechaDrawer();moverLote(t.id,0,P.id,q);});};}
+function trocarComPin(t,idx){const x=t.fila[idx];const tela=document.getElementById('tela');
+  escolherTanque(tela,t.id,idx,did=>pedirPin('Trocar '+x.p+' para o '+did,q=>{fechaDrawer();moverLote(t.id,idx,did,q);}));}
+/* menu principal (⋮ ao lado da hora): produção do dia de todos os tanques */
+function estrela(x){return x.atr>0?`<span class="selo">atrasado +${x.atr} min</span>`:`<i class="est ok" title="no prazo">★</i>`;}
+function abrirGeral(ver){ver=ver||'todos';const d=document.getElementById('drawer');
+  const pend=[],conc=[];T.forEach(t=>{t.fila.forEach((x,i)=>pend.push({t,x,i}));t.feitos.forEach(x=>{if(!x.tr)conc.push({t,x});});});
+  pend.sort((a,b)=>min(a.x.pronto)-min(b.x.pronto));conc.sort((a,b)=>b.x.h.localeCompare(a.x.h));
+  const sm=a=>a.reduce((s,o)=>s+o.x.vol,0);const totL=sm(pend)+sm(conc),feitL=sm(conc);const noPrazo=conc.filter(o=>!(o.x.atr>0)).length;
+  const cab=`<div class="lh g"><span>Tanque</span><span>Pronto</span><span>Produto</span><span>Volume</span><span>Máquina</span><span>Situação</span></div>`;
+  const lp=pend.map(o=>{const s=statusDe(o.t);const ag=o.i===0;return `<div class="lr g ${ag?'agora':''}" data-tq="${o.t.id}" data-ix="${o.i}"><b class="tqn">${o.t.id}</b><em>${o.x.pronto}</em><div><b>${esc(o.x.p)}</b><small>${o.x.lote?'lote '+o.x.lote+' · ':''}OP ${o.x.op}</small></div><span class="m">${nl(o.x.vol)} L</span><span class="m">${o.x.maq}</span><span>${ag?`<i class="mini ${ST[s][0]}">${s==='envasando'?'envasando':ST[s][1].split(' · ')[0].toLowerCase()}</i>`:'<i class="pill amb">pendente</i>'}</span></div>`;}).join('')||'<div class="vz">Nada pendente</div>';
+  const lc=conc.map(o=>`<div class="lr g feito" data-tq="${o.t.id}" data-h="${o.x.h}"><b class="tqn">${o.t.id}</b><em>${o.x.h}</em><div><b>${esc(o.x.p)}</b><small>lote ${o.x.lote}${o.x.atr>0?' · '+o.x.atr+' min de atraso':''}</small></div><span class="m">${nl(o.x.vol)} L</span><span class="m">${o.x.maq}</span><span class="sit">${estrela(o.x)}${o.x.atr>0?'':'no prazo'}</span></div>`).join('')||'<div class="vz">Nenhum concluído ainda</div>';
+  const cabC=cab.replace('<span>Pronto</span>','<span>Concluiu</span>');const blocos=ver==='conc'?`<h4 class="h-cz">Concluídos hoje</h4>${cabC}${lc}`:ver==='pend'?`<h4 class="h-amb">Pendentes</h4>${cab}${lp}`:`<h4 class="h-amb">Pendentes</h4>${cab}${lp}<h4 class="h-cz">Concluídos hoje</h4>${cabC}${lc}`;
+  d.innerHTML=`<div class="dh"><b>Produção do dia</b><small>todos os tanques</small><span class="x" id="dX">×</span></div>
+  <div class="meta"><div class="mt ${ver==='todos'?'on':''}" data-v="todos"><span>Meta do dia</span><b>${pend.length+conc.length} lotes</b><small>${nl(totL)} L</small></div><div class="mt ok ${ver==='conc'?'on':''}" data-v="conc"><span>Concluídos</span><b>${conc.length}</b><small>${nl(feitL)} L · <i class="est ok">★</i> ${noPrazo} no prazo</small></div><div class="mt amb ${ver==='pend'?'on':''}" data-v="pend"><span>Pendentes</span><b>${pend.length}</b><small>${nl(totL-feitL)} L</small></div></div>
+  <div class="dbar"><i style="width:${totL?feitL/totL*100:0}%"></i></div>
+  <div class="dbtn d2"><div class="acao sec" id="dC">Calculadora</div></div>
+  <div class="dica" style="text-align:right"><span id="dRe" style="text-decoration:underline;cursor:pointer">Reiniciar o teste (gestor)</span></div>
+  <div class="lista">${blocos}<div class="dica">Toque num lote para ver o histórico dele. Troca de tanque é feita pelo PCP.</div></div>`;
+  d.classList.add('on','larga');document.getElementById('sombra').classList.add('on');
+  document.getElementById('dX').onclick=fechaDrawer;document.getElementById('sombra').onclick=fechaDrawer;
+  d.querySelectorAll('.mt').forEach(m=>m.onclick=()=>abrirGeral(m.dataset.v===ver?'todos':m.dataset.v));
+  document.getElementById('dC').onclick=()=>abrirCalc();document.getElementById('dRe').onclick=reiniciarTeste;
+  d.querySelectorAll('.lr[data-ix]').forEach(r=>r.onclick=()=>opcoesLote(T.find(t=>t.id===r.dataset.tq),+r.dataset.ix,false));
+  d.querySelectorAll('.lr.feito').forEach(r=>r.onclick=()=>{const t=T.find(t=>t.id===r.dataset.tq);const x=t.feitos.find(f=>f.h===r.dataset.h);fechaDrawer();histLote(x);});}
+/* formulação */
+const MP=[['Base amaciante QUAT 80',190,'L24-0931'],['Espessante',11.4,'L24-0877'],['Fragrância',15.2,''],['Corante',0.38,''],['Conservante',3.8,'']];
+const MODO=['Ligar a agitação com o tanque no nível inicial|água do enchimento','Adicionar a base aos poucos|agitar 15 min até homogeneizar','Adicionar o espessante com a agitação ligada|esperar engrossar · 10 min','Adicionar a fragrância e o corante|agitar 5 min','Adicionar o conservante|agitar 5 min','Completar com água até o volume do lote|3.800 L · depois: descanso de 20 min e amostra'];
+function mpEstado(t){if(!t.mk){t.mk=MP.map((m,i)=>i<(t.sep||0));t.mv=MP.map((m,i)=>i<(t.sep||0)?{lote:m[2]||'L24-'+(1000+i*37),kg:nl(m[1])}:{lote:m[2]||'',kg:''});}if(!t.aj)t.aj=[];t.sep=t.mk.filter(Boolean).length;}
+const ICALC='<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="5" y="2.5" width="14" height="19" rx="2.5"/><rect x="8" y="5.5" width="8" height="4" rx="1"/><path d="M8.5 13h.01M12 13h.01M15.5 13h.01M8.5 16.5h.01M12 16.5h.01M15.5 16.5h.01"/></svg>';
+function abrirForm(t,aba){const l=lote(t);if(!l)return toast('Sem lote neste tanque.');const f=document.getElementById('fForm');mpEstado(t);const s=statusDe(t);const modoAj=s==='ajuste';
+  const linhaAj=(a,j)=>`<tr class="ajr"><td>${a.pedido||a.ok?`<b class="ajn">${esc(a.mp)}</b>`:`<span class="pkb" data-pk="${j}">${a.mp?esc(a.mp):'Escolher MP do cadastro'} ▾</span>`}${a.pedido?`<small>pedido por ${esc(a.pedido)}${a.obs?' · '+esc(a.obs):''}</small>`:'<small>MP de ajuste</small>'}</td><td class="m">${a.q?nl(a.q)+' kg':'—'}</td><td><input class="in" data-aj="${j}" data-c="lote" value="${esc(a.lote||'')}" placeholder="lote" ${a.ok?'disabled':''}></td><td><input class="in" inputmode="decimal" data-aj="${j}" data-c="kg" value="${esc(a.kg||'')}" placeholder="kg" ${a.ok?'disabled':''}></td><td><span class="ck ${a.ok?'on':''}" data-akj="${j}">${a.ok?'✓':''}</span></td></tr>`;
+  f.innerHTML=`<div class="fh"><b>Formulação e Modo de Fazer · ${esc(l.p)}</b><small>${t.id}${l.lote?' · lote '+l.lote:''} · ${nl(l.vol)} L · ${t.sep} de ${MP.length} separadas</small><span class="x" id="fX">×</span></div>
+  <div class="fb"><div class="box"><h3>Separação das matérias-primas <span>previsto para ${nl(l.vol)} L · água não pesa: completa no tanque</span></h3><div class="bb"><table class="t form"><thead><tr><th>Matéria-prima</th><th>Previsto</th><th>Lote da MP</th><th>Separado</th><th></th></tr></thead><tbody>
+    ${MP.map((m,i)=>{const ok=t.mk[i],v=t.mv[i];return `<tr class="${ok?'okr':''}"><td>${m[0]}</td><td class="m">${nl(m[1])} kg</td><td><input class="in" data-i="${i}" data-c="lote" value="${esc(v.lote)}" placeholder="lote" ${ok?'disabled':''}></td><td><input class="in" inputmode="decimal" data-i="${i}" data-c="kg" value="${esc(v.kg)}" placeholder="kg" ${ok?'disabled':''}></td><td><span class="ck ${ok?'on':''}" data-k="${i}">${ok?'✓':''}</span></td></tr>`;}).join('')}
+    ${t.aj.map(linhaAj).join('')}
+    <tr class="addr"><td colspan="5"><span class="addaj" id="fAj">+ MP de ajuste</span></td></tr>
+    </tbody></table><div class="fdica">Digite o lote e o peso de cada MP e toque no ✓. Pode separar enquanto o tanque enche.</div></div>
+    <div class="bf"><div class="acao sec ico" data-calc title="Calculadora">${ICALC}</div><div class="acao lar" data-prob><span class="ex">!</span>Registrar problema</div><span style="flex:1"></span><div class="acao ${modoAj?'mau':''}" id="fS">${modoAj?'Lançar ajuste':'Salvar separação'}</div></div></div>
+  <div class="box"><h3>Modo de Fazer <span>${s==='prep'?'passo '+Math.min(t.passo+1,6)+' de 6':'começa no Iniciar preparo'}</span></h3><div class="bb"><ol class="modo">${MODO.map((p,i)=>{const [a,b]=p.split('|');return `<li class="${i<t.passo?'feito':''}" data-p="${i}"><em>${i<t.passo?'✓':i+1}</em><div>${a}<small>${b}</small></div></li>`;}).join('')}</ol></div></div></div>`;
+  f.classList.add('on');f.querySelector('#fX').onclick=()=>{f.classList.remove('on');desenha();};
+  f.querySelectorAll('input[data-i]').forEach(e=>e.oninput=()=>{t.mv[+e.dataset.i][e.dataset.c]=e.value;});
+  f.querySelectorAll('input[data-aj]').forEach(e=>e.oninput=()=>{t.aj[+e.dataset.aj][e.dataset.c]=e.value;});
+  f.querySelectorAll('[data-k]').forEach(c=>c.onclick=()=>{const i=+c.dataset.k,v=t.mv[i];if(!t.mk[i]){if(!v.lote)return toast('Digite o lote da '+MP[i][0]+'.');if(!v.kg)v.kg=nl(MP[i][1]);}t.mk[i]=!t.mk[i];t.sep=t.mk.filter(Boolean).length;abrirForm(t,aba);});
+  f.querySelectorAll('[data-akj]').forEach(c=>c.onclick=()=>{const a=t.aj[+c.dataset.akj];if(!a.ok&&(!a.mp||!a.lote||!a.kg))return toast('Preencha a MP, o lote e o peso do ajuste.');a.ok=!a.ok;abrirForm(t,aba);});
+  f.querySelector('#fAj').onclick=()=>escolherMP(document.getElementById('tela'),'MP de ajuste',x=>{t.aj.push({mp:x.mp,cod:x.cod,lote:'',kg:'',ok:false});abrirForm(t,aba);});
+  f.querySelectorAll('[data-pk]').forEach(e=>e.onclick=()=>escolherMP(document.getElementById('tela'),'MP de ajuste',x=>{Object.assign(t.aj[+e.dataset.pk],x);abrirForm(t,aba);}));
+  f.querySelectorAll('.modo li').forEach(li=>li.onclick=()=>{if(statusDe(t)!=='prep')return toast('Os passos são marcados durante o preparo.');const i=+li.dataset.p;t.passo=i<t.passo?i:i+1;abrirForm(t,aba);});
+  f.querySelector('[data-prob]').onclick=()=>registrarProblema(t);f.querySelector('[data-calc]').onclick=()=>abrirCalc();
+  f.querySelector('#fS').onclick=()=>{
+    if(modoAj){const pend=t.aj.filter(a=>a.pedido&&!a.ok);if(pend.length)return toast('Lance o lote e o peso do ajuste pedido e toque no ✓.');
+      return pedirPin(t.id+' · Lançar ajuste',q=>{t.aj.filter(a=>a.ok&&!a.lanc).forEach(a=>{a.lanc=hm(AGORA);log(t,'Lançou MP de ajuste · '+a.mp+' '+a.kg+' kg',q,'lote '+a.lote);});t.st='analise';t.reana=true;t.ini=hm(AGORA);f.classList.remove('on');toast('Ajuste lançado · agora refaça a análise');AGORA+=1;desenha();});}
+    pedirPin(t.id+' · Salvar separação',q=>{t.aj.filter(a=>a.ok&&!a.lanc).forEach(a=>{a.lanc=hm(AGORA);log(t,'Lançou MP de ajuste · '+a.mp+' '+a.kg+' kg',q,'lote '+a.lote);});log(t,'Salvou a separação · '+t.sep+' de '+MP.length+' MPs',q);f.classList.remove('on');toast('Separação salva · '+q);desenha();});};}
+/* liberação pelo químico (tela da Mariane: lote aguardando liberação no envase/PCP) */
+function abrirLiberacao(t,modoIni){const l=lote(t);const W=document.getElementById('pcpWrap');mpEstado(t);let modo=modoIni||'ver';let lmp={cod:'MP-0102',mp:'Espessante CMC'};
+  const pinta=()=>{const m=modal(W,`<div class="mc lib"><div class="mh"><span><b>Liberar lote · ${esc(l.p)}</b><small>${t.id} · lote ${l.lote||'—'} · OP ${l.op} · análise enviada às ${t.ini}${t.reana?' · reanálise':''}</small></span><span class="x" data-fechar>×</span></div>
+    <div class="libg"><div><h4>Análise enviada pelo tanque</h4><table class="t"><tbody>
+      <tr><td>Cor / odor / aspecto</td><td><span class="pill ok">conforme</span></td></tr><tr><td>pH <small>6,5 a 7,5</small></td><td class="m">7,2</td></tr><tr><td>Viscosidade <small>15 a 25 s</small></td><td class="m">18</td></tr>
+      <tr><td>Teor de ativo <small>5,0 a 6,0 %</small></td><td class="m ${t.reana?'':'mau0'}">${t.reana?'5,4':'4,7 · fora'}</td></tr></tbody></table>
+      <div class="obsop"><b>Observação do operador</b>${t.reana?'Ajuste lançado conforme pedido. Reanálise dentro da faixa.':'Ativo deu 4,7 %, abaixo da faixa. Aguardo orientação.'}</div></div>
+    <div>${modo==='aj'?`<h4>Pedir ajuste</h4><label>Matéria-prima <small>(do cadastro)</small><span class="pkb big" id="lMp">${lmp.cod} · ${esc(lmp.mp)} ▾</span></label><label>Quantidade (kg)<input class="in" id="lQ" inputmode="decimal" value="2,5"></label><label>Orientação para o tanque<input class="in" id="lO" value="agitar 15 min e refazer o teor"></label>`
+      :`<h4>Ajustes já feitos</h4>${t.aj.filter(a=>a.lanc).map(a=>`<div class="ajf">${esc(a.mp)} · ${a.kg} kg · lote ${esc(a.lote)} <small>${a.lanc}</small></div>`).join('')||'<div class="vz">nenhum</div>'}<div class="libinfo">Ao liberar, o lote vai para o envase e o nome de quem liberou fica no certificado e no histórico geral do lote.</div>`}</div></div>
+    <div class="libb">${modo==='aj'?`<div class="acao sec" id="lV">Voltar</div><span style="flex:1"></span><div class="acao mau" id="lE">Enviar pedido de ajuste</div>`:`<div class="acao mau sec2" id="lA">Pedir ajuste</div><span style="flex:1"></span><div class="acao" id="lL">Liberar lote</div>`}</div></div>`);
+    const g=id=>m.querySelector('#'+id);
+    if(g('lA'))g('lA').onclick=()=>{modo='aj';pinta();};if(g('lV'))g('lV').onclick=()=>{modo='ver';pinta();};
+    if(g('lL'))g('lL').onclick=()=>pedirPin('Liberar lote · '+t.id,q=>{m.classList.remove('on');exec(t,'simLib',q);});
+    if(g('lMp'))g('lMp').onclick=()=>escolherMP(W,'MP para o ajuste',x=>{lmp=x;pinta();});
+    if(g('lE'))g('lE').onclick=()=>{const mp=lmp.mp,qq=g('lQ').value,ob=g('lO').value;pedirPin('Pedir ajuste · '+t.id,q=>{m.classList.remove('on');pedirAjuste(t,mp,qq,ob,q,lmp.cod);});};};
+  pinta();}
+function pedirAjuste(t,mp,q,obs,quem,cod,quieto){mpEstado(t);t.aj.push({mp,cod,q:parseFloat(String(q).replace(',','.'))||0,lote:'',kg:'',ok:false,pedido:quem,obs});t.st='ajuste';t.ini=hm(AGORA);log(t,'Químico pediu ajuste: + '+q+' kg de '+mp,quem,obs);if(!quieto){toast('Pedido de ajuste enviado ao '+t.id);AGORA+=1;desenha();}}
+/* análise */
+function abrirAna(t){const l=lote(t);const f=document.getElementById('fAna');const enviada=['naolib','liberado','envasando'].includes(statusDe(t));
+  f.innerHTML=`<div class="fh"><b>Análise · ${esc(l.p)}</b><small>${t.id} · lote ${l.lote||'—'} · preparo concluído ${t.ini}</small><span class="x" id="aX">×</span></div>
+  <div class="fb" style="grid-template-columns:1.5fr 1fr"><div class="box"><h3>Ensaios do produto <span>resultado fora da faixa fica vermelho na hora</span></h3><div class="bb"><table class="t"><thead><tr><th>Ensaio</th><th>Especificação</th><th>Resultado</th><th></th></tr></thead><tbody>
+    <tr><td>Cor</td><td>Incolor</td><td><span class="pill ok">Conforme</span> &nbsp;<span class="pill cz">Não conforme</span></td><td></td></tr>
+    <tr><td>Odor</td><td>Característico</td><td><span class="pill ok">Conforme</span> &nbsp;<span class="pill cz">Não conforme</span></td><td></td></tr>
+    <tr><td>Aspecto</td><td>Líquido límpido</td><td><span class="pill ok">Conforme</span> &nbsp;<span class="pill cz">Não conforme</span></td><td></td></tr>
+    <tr><td>pH</td><td>entre 6,5 e 7,5</td><td><span class="in">7,2</span></td><td><span class="pill ok">dentro</span></td></tr>
+    <tr><td>Viscosidade (copo Ford 5)</td><td>entre 15 e 25 s</td><td><span class="in">18</span></td><td><span class="pill ok">dentro</span></td></tr>
+    <tr><td>Teor de ativo</td><td>entre 5,0 e 6,0 %</td><td><span class="in">4,7</span></td><td><span class="pill mau">fora</span></td></tr></tbody></table></div></div>
+  <div class="box"><h3>Ajustes feitos no lote</h3><div class="bb"><table class="t"><thead><tr><th>Hora</th><th>O que entrou</th><th>Quanto</th></tr></thead><tbody>${((t.aj||[]).filter(a=>a.lanc).map(a=>`<tr><td class="m">${a.lanc}</td><td>${esc(a.mp)}<small>lote ${esc(a.lote)}</small></td><td class="m">${a.kg} kg</td></tr>`).join(''))||'<tr><td colspan="3" style="color:var(--ink3)">nenhum ajuste</td></tr>'}</tbody></table>
+    <div style="margin-top:10px"><span style="font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink3);font-weight:700">Observação para o químico</span><div class="in" style="display:block;min-height:70px;margin-top:6px;font:500 13px var(--font);color:var(--ink3)">Ativo deu 4,7 %, abaixo da faixa. Aguardo orientação.</div></div></div></div></div>
+  <div class="ff"><span style="flex:1"></span><div class="acao ${enviada?'off':'amb'}" id="aE">${enviada?'Análise já enviada':'ENVIAR ANÁLISE PARA LIBERAÇÃO'}</div></div>`;
+  f.classList.add('on');f.querySelector('#aX').onclick=()=>f.classList.remove('on');
+  f.querySelector('#aE').onclick=()=>{if(enviada)return;pedirPin(t.id+' · Enviar análise para liberação',q=>{t.st='naolib';t.ini=hm(AGORA);log(t,t.reana?'Enviou a reanálise':'Enviou a análise para liberação',q);f.classList.remove('on');toast('Análise enviada · tanque não liberado até o químico liberar');desenha();});};}
+const LUA='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>',SOL='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="4.5"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>';
+function escuro(){const t=document.documentElement.dataset.theme;return t?t==='dark':matchMedia('(prefers-color-scheme: dark)').matches;}
+function pintaTema(){document.getElementById('tema').innerHTML=escuro()?SOL:LUA;}
+document.getElementById('tema').onclick=()=>{document.documentElement.dataset.theme=escuro()?'light':'dark';try{localStorage.setItem('atrius-tanques-teste-tema',document.documentElement.dataset.theme)}catch(e){}pintaTema();};
+try{const v=localStorage.getItem('atrius-tanques-teste-tema');document.documentElement.dataset.theme=v||'dark';}catch(e){document.documentElement.dataset.theme='dark';}pintaTema();
+(()=>{const d=carregaTeste();if(d){T=d.T;LOGL.length=0;d.LOGL.forEach(e=>LOGL.push(e));CFG=d.CFG||CFG;}else{T=ordensTeste();T.forEach(t=>{t.hist=[];});}})();
+document.querySelectorAll('.abas .ab').forEach(a=>a.onclick=()=>{document.querySelectorAll('.abas .ab').forEach(b=>b.classList.toggle('on',b===a));const v=a.dataset.v;document.getElementById('pcpWrap').hidden=v!=='pcp';document.getElementById('geralWrap').hidden=true;document.getElementById('cfgWrap').hidden=v!=='cfg';if(v==='cfg')telaCfg();document.querySelector('.tablet').hidden=v!=='tab';});
+function sauda(){const h=Math.floor(AGORA/60);document.getElementById('sauda').textContent=h<12?'Bom dia!':h<18?'Boa tarde!':'Boa noite!';}sauda();setInterval(sauda,60000);
+document.getElementById('menuTop').onclick=()=>abrirGeral();
+document.querySelectorAll('[data-hg]').forEach(b=>b.onclick=()=>document.querySelectorAll('#geralWrap details').forEach(d=>d.open=b.dataset.hg==='abrir'));
+document.getElementById('bRe').onclick=reiniciarTeste;
+const _des=desenha;desenha=function(){_des();salvaTeste();};
+desenha();setInterval(()=>{const d=new Date();AGORA=d.getHours()*60+d.getMinutes();document.querySelector('.top .hora small').textContent=d.toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});desenha();},20000);
+(()=>{const d=new Date();document.querySelector('.top .hora small').textContent=d.toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});})();
+</script>
+
+</body></html>

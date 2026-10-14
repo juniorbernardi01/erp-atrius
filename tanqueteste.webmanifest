@@ -1,0 +1,15 @@
+{
+ "name": "Atrius · Tanques (teste)",
+ "short_name": "Tanques teste",
+ "id": "./tanqueteste",
+ "start_url": "./tanqueteste?tablet",
+ "scope": "./tanqueteste",
+ "display": "fullscreen",
+ "orientation": "landscape",
+ "background_color": "#0E1B33",
+ "theme_color": "#0E1B33",
+ "icons": [
+  {"src": "icone-192.png","sizes": "192x192","type": "image/png"},
+  {"src": "icone-512.png","sizes": "512x512","type": "image/png","purpose": "any maskable"}
+ ]
+}
