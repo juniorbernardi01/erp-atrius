@@ -5460,7 +5460,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v397';
+const VERSAO_APP='v398';
 let DRAG=null;
 function render(){
   recomporTudo();
@@ -30141,7 +30141,145 @@ try{csNucleo.versao='v392';}catch(e){}
 try{csNucleo.versao='v393';}catch(e){}
 </script>
 <script>
-try{csNucleo.versao='v397';}catch(e){}
+try{csNucleo.versao='v398';}catch(e){}
+</script>
+<script>/* =====================================================================
+   v398 — PÁGINA TANQUES NO LAYOUT NOVO
+   Desenho aprovado em 14/10 (o mesmo cartão do tablet dos tanques, sem os
+   botões). É só aparência: cada cartão lê os mesmos dados de hoje — o lote
+   (bateladas), o preparo e a liberação (APONTA) e as OPs de envase. Arrastar
+   entre colunas, os três pontinhos e as fichas continuam os mesmos, porque o
+   cartão novo mantém o mesmo elemento .bat[data-bat] que o resto do sistema
+   procura.
+   Por coluna: o lote da vez em destaque, a fila embaixo e os concluídos numa
+   faixa verde que abre e fecha (como no envase).
+   ===================================================================== */
+(function(){try{
+  const CS8_AB=new Set();                 /* colunas com os concluídos abertos */
+  let cs8Cache=null;                      /* bateladas do dia, uma vez por desenho */
+  const lotesDoDia=d=>{if(!cs8Cache||cs8Cache.d!==d){cs8Cache={d,l:bateladas(d)};setTimeout(()=>{cs8Cache=null;},0);}return cs8Cache.l;};
+  const agoraMin=()=>{const n=new Date();return n.getHours()*60+n.getMinutes();};
+  const minDe=h=>{const m=/^(\d{1,2}):(\d{2})/.exec(String(h||''));return m?(+m[1])*60+(+m[2]):null;};
+  const durMin=m=>m==null?'':`${Math.floor(m/60)}:${String(Math.max(0,Math.round(m))%60).padStart(2,'0')}`;
+  const ehHoje=d=>{try{return d===ymd(new Date());}catch(e){return false;}};
+  const maqsDe=b=>[...new Set((b.ordens||[]).map(o=>o.maq).filter(Boolean))];
+  /* situação do lote em palavras do chão de fábrica, a partir do que já é lançado hoje */
+  function cs8Sit(b){
+    const fi=fabIniDe(b),ff=fabFimDe(b);
+    if(b.status==='concluido')return {c:'cz',t:'Envase concluído',x:''};
+    if(b.status==='liberado'){
+      const env=(b.ordens||[]).find(o=>['preparacao','producao'].includes(sit(o)));
+      if(env)return {c:'az',t:'Envasando · '+env.maq,x:''};
+      return {c:'az',t:'Tanque liberado',x:b.liberadoEm||''};
+    }
+    if(ff)return {c:'amb',t:'Tanque não liberado',x:ff.hora||''};
+    if(fi){const i=minDe(fi.hora);return {c:'ok',t:'Preparando',x:(ehHoje(b.data)&&i!=null)?durMin(agoraMin()-i):(fi.hora||'')};}
+    return {c:'cz2',t:'Programado',x:''};
+  }
+  /* estrela do concluído: no prazo quando liberou até a hora em que o envase precisava */
+  function cs8Prazo(b){
+    const lib=minDe(b.liberadoEm);if(lib==null||!(b.prontoAte<1e9))return '';
+    const atr=lib-b.prontoAte;
+    return atr>0?`<span class="cs8-selo">atrasado +${atr>=60?durMin(atr):atr+' min'}</span>`:`<i class="cs8-est" title="no prazo">★</i>`;
+  }
+  const _cardBat=cardBat;
+  cardBat=function(b){
+    if(!b||b.origem==='saldo'||!b.tanque)return _cardBat.apply(this,arguments);   /* saldo segue no cartão antigo */
+    const seq=lotesDoDia(b.data).filter(x=>x.tanque===b.tanque&&x.origem!=='saldo').sort((x,y)=>x.prontoAte-y.prontoAte);
+    const atual=seq.find(x=>x.status!=='concluido');
+    const s=cs8Sit(b);const maqs=maqsDe(b).join(', ')||'—';
+    const pronto=b.prontoAte<1e9?hhmm(b.prontoAte):'—';
+    const fam=(typeof CORES!=='undefined'&&CORES[b.grupo])||'#94A3B8';
+    const base=`draggable="true" data-bat="${b.chave}" style="--bc:${(typeof COR_BAT!=='undefined'&&COR_BAT[b.status])||'#64748B'}"`;
+    if(b.status==='concluido'){
+      return `<div class="bat cs8 cs8-conc st-concluido" ${base}><em>${b.liberadoEm||pronto}</em>
+        <div class="cs8-tx"><b>${abrevTq(b.produto)}</b><small>lote ${b.lote||'—'} · ${maqs}</small>${cs8Prazo(b)}</div></div>`;
+    }
+    if(atual&&atual.chave!==b.chave){
+      return `<div class="bat cs8 cs8-fila st-${b.status}" ${base}><em>${pronto}</em>
+        <div class="cs8-tx"><b><i class="fam" style="background:${fam}"></i>${abrevTq(b.produto)}</b><small>${b.lote?'lote '+b.lote+' · ':''}${nf(b.volume)} L · ${maqs}</small></div>
+        ${s.c==='cz2'?'':`<span class="cs8-mini cs8-${s.c}">${s.t}</span>`}</div>`;
+    }
+    /* o lote da vez */
+    const pisca=ehHoje(b.data)&&b.status==='aguardando'&&b.prontoAte<1e9&&agoraMin()>=b.prontoAte-5;
+    let aviso='';
+    try{const an=analiseOk(b);const segura=(b.ordens||[]).filter(o=>!o.fimReal).length;
+      if(b.status==='aguardando'&&!an.ok&&an.fora.length)aviso=`<div class="cs8-av mau">Análise reprovada: ${an.fora.join(', ')}${segura?` · segura ${segura} OP${segura>1?'s':''}`:''}</div>`;
+      else if(b.status==='aguardando'&&fabFimDe(b)&&an.pend.length)aviso=`<div class="cs8-av">Falta medir ${an.pend.join(', ')} para liberar.</div>`;
+      else if(b.liberadoEm)aviso=`<div class="cs8-av ok">Liberado às ${b.liberadoEm}</div>`;}catch(e){}
+    if(b.excedeCap)aviso+=`<div class="cs8-av mau">Volume acima da capacidade (${nf(tqOf(b.tanque).cap)} L).</div>`;
+    const envO=b.status==='liberado'?(b.ordens||[]).find(o=>['preparacao','producao'].includes(sit(o))):null;const env=!!envO;
+    let ate=pronto;if(envO){try{ate=hhmm(fimPrev(envO));}catch(e){}}
+    return `<div class="bat cs8 cs8-cur st-${b.status}" ${base}>
+      <div class="cs8-st cs8-${s.c}"><span>${s.t}</span><em>${s.x}</em></div>
+      <div class="cs8-pr"><i class="fam" style="background:${fam}"></i>${abrevTq(b.produto)}</div>
+      <div class="cs8-sub">${b.lote?'lote '+b.lote:'lote a gerar'}</div>
+      <div class="cs8-ti"><div><span>Volume (L)</span><b>${nf(b.volume)}</b></div>
+        <div class="cs8-dest${pisca?' cs8-pisca':''}"><span>${env?'Envase até':'Pronto até'}</span><b>${env?ate:pronto}</b></div>
+        <div><span>${env?'Máquina':'Vai para'}</span><b>${maqs}</b></div></div>
+      ${aviso}</div>`;
+  };
+  /* depois de cada desenho: título da fila e a faixa verde dos concluídos, ordenados na coluna */
+  const _render=render;
+  render=function(){
+    const r=_render.apply(this,arguments);
+    try{const g=document.getElementById('tqgrid');if(!g||g.classList.contains('dia')||g.classList.contains('horiz'))return r;
+      g.querySelectorAll('.tqcol').forEach(col=>{
+        const tqb=col.querySelector('.tqb');if(!tqb||tqb.dataset.cs8)return;tqb.dataset.cs8='1';
+        const fila=tqb.querySelectorAll('.cs8-fila').length,conc=tqb.querySelectorAll('.cs8-conc').length;
+        if(!tqb.querySelector('.cs8'))return;
+        tqb.classList.add('cs8b');
+        if(fila)tqb.insertAdjacentHTML('beforeend',`<div class="cs8-fh">Fila <span>${fila} lote${fila>1?'s':''}</span></div>`);
+        if(conc){const k=col.dataset.tq;
+          tqb.insertAdjacentHTML('beforeend',`<div class="cs8-faixa" data-cs8ab="${k}">${CS8_AB.has(k)?'▾':'▸'} ✓ ${conc} concluído${conc>1?'s':''} hoje</div>`);
+          col.classList.toggle('cs8-aberto',CS8_AB.has(k));
+          tqb.querySelector('.cs8-faixa').onclick=ev=>{ev.stopPropagation();CS8_AB.has(k)?CS8_AB.delete(k):CS8_AB.add(k);
+            col.classList.toggle('cs8-aberto',CS8_AB.has(k));ev.currentTarget.innerHTML=`${CS8_AB.has(k)?'▾':'▸'} ✓ ${conc} concluído${conc>1?'s':''} hoje`;};}
+      });}catch(e){}
+    return r;
+  };
+  /* o "Pronto até" pisca de verdade: redesenha a página de tanques a cada minuto quando ela está aberta */
+  setInterval(()=>{try{if(S.page==='tanques'&&!document.querySelector('.modal.on,#modal.on')&&!document.body.classList.contains('arrastando'))render();}catch(e){}},60000);
+  const s=document.createElement('style');s.textContent=`
+#tqgrid .tqb.cs8b{display:flex;flex-direction:column;gap:8px}
+#tqgrid .bat.cs8{position:relative;opacity:1!important;filter:none!important;border-radius:12px!important;border:1px solid var(--line,#DDE3EC)!important;background:var(--surface,#fff)!important;box-shadow:none}
+#tqgrid .bat.cs8 .cs-pts{position:absolute!important;top:8px;right:8px;z-index:2}
+#tqgrid .bat.cs8-cur{order:1;padding:10px 12px 12px!important}
+#tqgrid .cs8-fh{order:2;display:flex;justify-content:space-between;font:800 10.5px/1 system-ui,sans-serif;letter-spacing:.07em;text-transform:uppercase;color:var(--ink3,#64748B);padding:6px 4px 0}
+#tqgrid .cs8-fh span{font-weight:600;letter-spacing:0;text-transform:none}
+#tqgrid .bat.cs8-fila{order:3}
+#tqgrid .cs8-faixa{order:4;background:#DCFCE7;color:#15803D;font:800 12px/1 system-ui,sans-serif;border-radius:10px;padding:10px 12px;cursor:pointer;user-select:none}
+#tqgrid .bat.cs8-conc{order:5;display:none!important}
+#tqgrid .tqcol.cs8-aberto .bat.cs8-conc{display:flex!important}
+#tqgrid .bat.cs8-fila,#tqgrid .bat.cs8-conc{display:flex;align-items:center;gap:9px;padding:9px 40px 9px 11px!important}
+#tqgrid .bat.cs8-conc{background:#F0FDF4!important;border-color:#BBF7D0!important;padding-top:6px!important;padding-bottom:6px!important}
+#tqgrid .cs8-fila>em,#tqgrid .cs8-conc>em{font:700 13px 'JetBrains Mono',ui-monospace,monospace;font-style:normal;color:var(--ink2,#334155);flex:none}
+#tqgrid .cs8-conc>em{font-size:11.5px;color:var(--ink3,#64748B)}
+#tqgrid .cs8-tx{flex:1;min-width:0}#tqgrid .cs8-tx b{display:block;font-size:12.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--ink,#0F172A)}
+#tqgrid .cs8-conc .cs8-tx b{font-weight:600;color:var(--ink2,#475569);font-size:12px}
+#tqgrid .cs8-tx small{display:block;font-size:11px;color:var(--ink3,#64748B);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#tqgrid .cs8-tx .fam,#tqgrid .cs8-pr .fam{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:middle}
+#tqgrid .cs8-mini{flex:none;font:700 10.5px system-ui,sans-serif;padding:3px 8px;border-radius:999px;color:#fff;white-space:nowrap}
+#tqgrid .cs8-st{display:flex;justify-content:space-between;align-items:center;gap:6px;padding:7px 10px;border-radius:9px;font:800 12px system-ui,sans-serif;color:#fff;margin-right:34px}
+#tqgrid .cs8-st em{font:700 12px 'JetBrains Mono',ui-monospace,monospace;font-style:normal;white-space:nowrap}
+#tqgrid .cs8-st span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#tqgrid .cs8-ok{background:#16A34A}#tqgrid .cs8-amb{background:#F59E0B;color:#1F1300}#tqgrid .cs8-az{background:#2563EB}#tqgrid .cs8-cz{background:#64748B}#tqgrid .cs8-cz2{background:#E2E8F0;color:#334155}#tqgrid .cs8-mau{background:#DC2626}
+#tqgrid .cs8-pr{font:800 17px/1.15 system-ui,sans-serif;margin-top:9px;color:var(--ink,#0F172A);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#tqgrid .cs8-sub{font-size:11.5px;color:var(--ink3,#64748B);margin-top:2px}
+#tqgrid .cs8-ti{display:grid;grid-template-columns:1fr 1.15fr .95fr;gap:6px;margin-top:9px}
+#tqgrid .cs8-ti>div{background:#F1F5F9;border-radius:9px;padding:6px 8px;min-width:0}
+#tqgrid .cs8-ti span{display:block;font:700 9px system-ui,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:#64748B;white-space:nowrap}
+#tqgrid .cs8-ti b{display:block;font:700 13.5px 'JetBrains Mono',ui-monospace,monospace;color:#334155;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#tqgrid .cs8-ti .cs8-dest b{font-size:19px;font-weight:800;color:#0F172A}
+@keyframes cs8pisca{0%,100%{background:#F97316;color:#fff}50%{background:#FFEDD5;color:#C2410C}}
+#tqgrid .cs8-ti .cs8-pisca{animation:cs8pisca 1s steps(1,end) infinite}#tqgrid .cs8-ti .cs8-pisca span,#tqgrid .cs8-ti .cs8-pisca b{color:inherit}
+#tqgrid .cs8-av{margin-top:8px;font-size:11.5px;padding:6px 9px;border-radius:8px;background:#F1F5F9;color:#334155}
+#tqgrid .cs8-av.mau{background:#FEE2E2;color:#B91C1C;font-weight:700}#tqgrid .cs8-av.ok{background:#F0FDF4;color:#15803D}
+#tqgrid .cs8-est{font-style:normal;color:#16A34A;font-size:14px;position:absolute;right:40px;top:50%;transform:translateY(-50%)}
+#tqgrid .cs8-selo{display:inline-block;margin-top:3px;font:800 10.5px system-ui,sans-serif;padding:3px 8px;border-radius:999px;background:#FEE2E2;color:#B91C1C;white-space:nowrap}
+body.escuro #tqgrid .cs8-ti>div,html.escuro #tqgrid .cs8-ti>div{background:rgba(148,163,184,.14)}
+`;document.head.appendChild(s);
+}catch(e){console.warn('v398 tanques',e);}})();
 </script>
 </body>
 </html>
