@@ -1622,18 +1622,19 @@ try{const _fn=fn;fn=async function(c){if(c&&c.acao==='perf_pedidos'&&N.teste)ret
    A ficha do representante vira PDF do jeito que está: copia o conteúdo da tela (sem os botões)
    para uma folha A4 deitada, com os mesmos estilos da página. Assim o PDF nunca fica diferente
    do que o gerente está vendo. */
-function pfPdfTela(tit,sub,origem){
+function pfPdfTela(tit,sub,origem,ori){ori=ori||'landscape';const LARG={landscape:1600,portrait:1060},ZP={landscape:.66,portrait:.69};
   const cl=origem.cloneNode(true);cl.querySelectorAll('button,.btn,select,#pfTip,.migalha').forEach(e=>e.remove());
   cl.querySelectorAll('[id]').forEach(e=>e.removeAttribute('id'));
   const cab=`<div style="background:#1B4F9C;color:#fff;margin:0 0 14px;padding:14px 20px;border-radius:10px;display:flex;justify-content:space-between;align-items:flex-end;gap:20px"><div><div style="font:800 12px Inter,sans-serif;letter-spacing:.08em;opacity:.85">ATRIUS · VENDAS</div><div style="font:800 24px/1.15 Inter,sans-serif;margin-top:3px">${esc(tit)}</div><div style="font-size:12px;opacity:.9;margin-top:3px">${sub}</div></div><div style="font-size:11px;opacity:.85;text-align:right">emitido em ${br(perHoje())} às ${new Date().toTimeString().slice(0,5)}</div></div>`;
-  const folha=`<div id="pfFolhaT" style="background:#fff;color:#111;width:1600px;padding:22px;box-sizing:border-box;font-family:Inter,system-ui,sans-serif">${cab}${cl.innerHTML}</div>`;
+  const folha=`<div id="pfFolhaT" style="background:#fff;color:#111;width:${LARG[ori]}px;padding:22px;box-sizing:border-box;font-family:Inter,system-ui,sans-serif">${cab}${cl.innerHTML}</div>`;
   const estilos=[...document.querySelectorAll('style')].map(s=>s.outerHTML).join('');
   document.body.insertAdjacentHTML('beforeend',`<div class="pfmask on" id="pfMT"><div class="pfmod"><div class="fh"><b>${esc(tit)}</b><small>o PDF sai igual à tela</small><span style="flex:1"></span><button class="btn sm" data-x>Fechar ✕</button></div>
-    <div class="fb" id="pfFbT">${folha}</div><div class="ff"><span style="flex:1"></span><button class="btn pri" id="pfPrT">⎙ Imprimir / Salvar PDF</button></div></div></div>`);
+    <div class="fb" id="pfFbT">${folha}</div><div class="ff"><span class="pfori"><button class="btn sm ${ori==='portrait'?'on':''}" data-ori="portrait">Em pé</button><button class="btn sm ${ori==='landscape'?'on':''}" data-ori="landscape">Deitado</button></span><span style="flex:1"></span><button class="btn pri" id="pfPrT">⎙ Imprimir / Salvar PDF</button></div></div></div>`);
   const m=$('pfMT');m.querySelectorAll('[data-x]').forEach(b=>b.onclick=()=>m.remove());
-  setTimeout(()=>{const f=$('pfFolhaT');f.style.zoom=Math.min(1,($('pfFbT').clientWidth-36)/1600);},30);
+  m.querySelectorAll('[data-ori]').forEach(b=>b.onclick=()=>{m.remove();pfPdfTela(tit,sub,origem,b.dataset.ori);});
+  setTimeout(()=>{const f=$('pfFolhaT');f.style.zoom=Math.min(1,($('pfFbT').clientWidth-36)/LARG[ori]);},30);
   $('pfPrT').onclick=()=>{const w=window.open('','_blank');if(!w)return toast('O navegador bloqueou a janela de impressão.',true);
-    w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${esc(tit)}</title><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap">${estilos}<style>@page{size:A4 landscape;margin:7mm}html,body{background:#fff!important;margin:0}#pfFolhaT{zoom:.66}.caixa,.pfkpi,table,tr{break-inside:avoid}</style></head><body>${folha}</body></html>`);
+    w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${esc(tit)}</title><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap">${estilos}<style>@page{size:A4 ${ori};margin:7mm}html,body{background:#fff!important;margin:0}#pfFolhaT{zoom:${ZP[ori]}}.caixa,.pfkpi,table,tr{break-inside:avoid}</style></head><body>${folha}</body></html>`);
     w.document.close();setTimeout(()=>{w.focus();w.print();},700);};
 }
 /* ---------- Relatório de pedidos do representante (v398) ----------
@@ -1642,7 +1643,25 @@ function pfPdfTela(tit,sub,origem){
    - comissão (paga dia 15): o que FATUROU no período (data da nota), do dia 1º ao último dia do mês.
    O período e a data que manda na lista (pedido ou faturamento) se escolhem aqui, sem mexer na
    Performance. As situações também valem só para este relatório (o padrão é o da Performance). */
-const PR={sits:null,ord:{k:'data_pedido',d:-1},per:null,dados:null,chave:'',carregando:false};
+const PR={sits:null,ord:{k:'data_pedido',d:-1},per:null,dados:null,chave:'',carregando:false,mk:{}};
+/* colunas da lista: o usuário escolhe quais aparecem (fica guardado neste navegador) */
+const PR_COLS=[['data_pedido','Data do pedido'],['numero','Pedido'],['cliente','Cliente'],['cidade','Cidade'],['uf','UF'],['situacao','Situação'],['marcadores','Marcadores'],['total','Valor',1],['data_faturamento','Faturado em'],['data_prevista','Previsto']];
+const PR_COLS_PAD=['data_pedido','numero','cliente','cidade','situacao','marcadores','total','data_faturamento'];
+function prCols(){try{const l=JSON.parse(localStorage.getItem('atrius-pr-cols')||'null');if(Array.isArray(l)&&l.length)return PR_COLS.map(c=>c[0]).filter(k=>l.includes(k));}catch(e){}return PR_COLS_PAD.slice();}
+function prColsSalva(l){try{localStorage.setItem('atrius-pr-cols',JSON.stringify(l));}catch(e){}}
+/* marcadores (bloqueado por crédito etc.), UF e previsto vêm da lista de pedidos de Vendas, que já os traz;
+   a leitura do relatório (perf_pedidos) não traz. Busca uma vez por representante e período. */
+async function prMarcadores(nome,de,ate){const ch=semAc(nome)+'|'+de+'|'+ate;if(PR.mk[ch])return PR.mk[ch];
+  const ps=(PR.dados||[]).filter(p=>semAc(p.vendedor||'')===semAc(nome));
+  if(!ps.length||ps.every(p=>Array.isArray(p.marcadores)))return PR.mk[ch]=Promise.resolve();
+  const q=String(nome).replace(/[^\p{L}\p{N} ]/gu,' ').split(/\s+/).sort((a,b)=>b.length-a.length)[0]||'';
+  const por={};
+  PR.mk[ch]=(async()=>{for(const campo of ['pedido','faturamento']){for(let pg=0;pg<30;pg++){
+      const r=await fn({acao:'vendas_lista',filtros:{de,ate,campoData:campo,q,pagina:pg,ordem:'data',dir:'desc'}});
+      (r.pedidos||[]).forEach(p=>por[p.id]=p);if(!r.pedidos||r.pedidos.length<100||(pg+1)*100>=(r.total||0))break;}}
+    ps.forEach(p=>{const x=por[p.id];p.marcadores=x&&Array.isArray(x.marcadores)?x.marcadores:(p.marcadores||[]);if(x){if(!p.uf)p.uf=x.uf;if(!p.data_prevista)p.data_prevista=x.data_prevista;}});})()
+    .catch(e=>{delete PR.mk[ch];throw e;});
+  return PR.mk[ch];}
 async function prCarrega(){const {de,ate}=perFaixa(PR.per);const k=de+'|'+ate;if(PR.chave===k&&PR.dados)return;
   /* o período da Performance já está na memória: não busca de novo */
   if(PF.fx&&PF.fx.de===de&&PF.fx.ate===ate&&PF.dados){PR.dados=PF.dados.pedidos||[];PR.chave=k;return;}
@@ -1665,23 +1684,29 @@ function telaPedRep(nome){
   const meta=meses.reduce((s,ym)=>s+pfMetaDe(nomeOk,ym),0);const pr=meta?vend/meta:0;
   const fechado=ate<perHoje();const bateu=meta&&vend>=meta;
   const porFat=PR.per.campo==='fat';const lis=porFat?fatL:vendL;
-  const ordK=PR.ord.k;const lin=lis.slice().sort((a,b)=>{const u=a[ordK],w=b[ordK];const r=(ordK==='total')?(+u||0)-(+w||0):String(u||'').localeCompare(String(w||''));return r*PR.ord.d||String(b.numero).localeCompare(String(a.numero));});
+  const ordK=PR.ord.k;const vK=(p,kk)=>kk==='marcadores'?(p.marcadores||[]).map(m=>m.nome).join(', '):p[kk];const lin=lis.slice().sort((a,b)=>{const u=vK(a,ordK),w=vK(b,ordK);const r=(ordK==='total')?(+u||0)-(+w||0):String(u||'').localeCompare(String(w||''));return r*PR.ord.d||String(b.numero).localeCompare(String(a.numero));});
   const th=(k,n,num)=>`<th class="so2 ${num?'n':''} ${ordK===k?'on':''}" data-pso="${k}">${n}${ordK===k?(PR.ord.d>0?' ▲':' ▼'):''}</th>`;
   const k=(t,v,s,bar,cls)=>`<div class="pfkpi ${cls||''}"><span>${t}</span><b>${v}</b>${s?`<small>${s}</small>`:''}${bar!=null?`<div class="bar"><i style="width:${Math.min(100,bar*100)}%"></i></div>`:''}</div>`;
   const faixa=`${br(de)} a ${br(ate)}`;
-  const selo=!meta?'<span class="prselo cz">sem meta</span>':bateu?'<span class="prselo ok">bateu a meta</span>':fechado?'<span class="prselo mau">não bateu a meta</span>':`<span class="prselo cz">faltam ${pfRs(meta-vend)}</span>`;
+  const cols=prCols();const mkOk=doRep.every(p=>Array.isArray(p.marcadores));
+  const CEL={data_pedido:p=>`<td class="m">${br(p.data_pedido)}</td>`,numero:p=>`<td class="m"><b>${esc(p.numero||'')}</b></td>`,cliente:p=>`<td><b>${esc(p.cliente||'')}</b></td>`,
+    cidade:p=>`<td>${esc(p.cidade||'')}</td>`,uf:p=>`<td>${esc(p.uf||'')}</td>`,situacao:p=>{const s=sitDe(p.situacao);return `<td><span class="prst" style="--c:${s[2]}"><i></i>${esc(s[1])}</span></td>`;},
+    marcadores:p=>`<td>${Array.isArray(p.marcadores)?p.marcadores.map(m=>`<span class="mk3" style="--c:${esc(m.cor||'#8B93A1')}"><i></i>${esc(m.nome)}</span>`).join(''):'<span style="color:var(--ink3)">…</span>'}</td>`,
+    total:p=>`<td class="n m"><b>${pfRs(p.total)}</b></td>`,data_faturamento:p=>`<td class="m">${p.data_faturamento?br(p.data_faturamento):'—'}</td>`,data_prevista:p=>`<td class="m">${p.data_prevista?br(p.data_prevista):'—'}</td>`};
+  const iT=cols.indexOf('total');const rotRod=`${lis.length} pedido${lis.length===1?'':'s'} ${porFat?'faturados':'entrados'} de ${faixa}`;
+  const rod=iT<0?`<td colspan="${cols.length}">${rotRod} · ${pfRs(soma(lis))}</td>`:`${iT?`<td colspan="${iT}">${rotRod}</td>`:''}<td class="n m">${pfRs(soma(lis))}</td>${cols.length-iT-1?`<td colspan="${cols.length-iT-1}">${iT?'':rotRod}</td>`:''}`;
   $('app').innerHTML=`<div class="migalha"><a href="#performance" class="mlk">Vendas</a> › <a href="#performance" class="mlk">Performance de vendas</a> › <a href="#performance/${encodeURIComponent(nomeOk)}" class="mlk">${esc(nomeOk)}</a> › Pedidos</div>
   <div class="topo"><button class="btn" id="prVolta">‹ Voltar</button><h1>Pedidos · ${esc(nomeOk)}</h1><span style="flex:1"></span>
-    ${perBotao('prPer',PR.per)}<button class="btn" id="prSit">Situações: <b>${(PR.sits||pfSitsOn()).length} de ${PF_SITS.length}</b> ▾</button><button class="btn" id="prPdf">⎙ PDF</button></div>
+    ${perBotao('prPer',PR.per)}<button class="btn" id="prSit">Situações: <b>${(PR.sits||pfSitsOn()).length} de ${PF_SITS.length}</b> ▾</button><button class="btn" id="prCol">Colunas: <b>${cols.length} de ${PR_COLS.length}</b> ▾</button><button class="btn" id="prPdf">⎙ PDF</button></div>
   <div id="prCorpo">
   <div class="prsub">${faixa} · lista pela <b>${porFat?'data do faturamento':'data do pedido'}</b> · situações: ${(PR.sits||pfSitsOn()).join(', ')}</div>
   <div class="pfkpis">${k('Meta do período',pfRs(meta),meses.length>1?`${meses.length} meses somados`:'meta do mês')}
     ${k('Vendido no período',pfRs(vend),`base do prêmio de meta · ${pfPc(pr)} da meta · ${vendL.length} pedido${vendL.length===1?'':'s'} entrados`,pr,'prmeta')}
     ${k('Faturado no período',pfRs(fat),`base da comissão · ${fatL.length} pedido${fatL.length===1?'':'s'} com nota de ${faixa}`,null,'prcom')}
     ${k('Em aberto',pfRs(aberto),'vendido e ainda não faturado')}${k('Ticket médio',vendL.length?pfRs(vend/vendL.length):'—','vendido ÷ pedidos')}</div>
-  <div class="caixa"><div class="rol"><table class="tv" id="prTb"><thead><tr>${th('data_pedido','Data do pedido')}${th('numero','Pedido')}${th('cliente','Cliente')}${th('cidade','Cidade')}${th('situacao','Situação')}${th('total','Valor',1)}${th('data_faturamento','Faturado em')}</tr></thead>
-    <tbody>${lin.map(p=>{const s=sitDe(p.situacao);return `<tr class="prlin" data-id="${esc(p.id)}"><td class="m">${br(p.data_pedido)}</td><td class="m"><b>${esc(p.numero||'')}</b></td><td><b>${esc(p.cliente||'')}</b></td><td>${esc(p.cidade||'')}</td><td><span class="prst" style="--c:${s[2]}"><i></i>${esc(s[1])}</span></td><td class="n m"><b>${pfRs(p.total)}</b></td><td class="m">${p.data_faturamento?br(p.data_faturamento):'—'}</td></tr>`;}).join('')||'<tr><td colspan="7" class="k" style="color:var(--ink3)">Nenhum pedido no período, nas situações escolhidas.</td></tr>'}</tbody>
-    <tfoot><tr><td colspan="5">${lis.length} pedido${lis.length===1?'':'s'} ${porFat?'faturados':'entrados'} de ${faixa}</td><td class="n m">${pfRs(soma(lis))}</td><td></td></tr></tfoot></table></div>
+  <div class="caixa"><div class="rol"><table class="tv" id="prTb"><thead><tr>${cols.map(c=>{const d=PR_COLS.find(x=>x[0]===c);return th(c,d[1],d[2]);}).join('')}</tr></thead>
+    <tbody>${lin.map(p=>`<tr class="prlin" data-id="${esc(p.id)}">${cols.map(c=>CEL[c](p)).join('')}</tr>`).join('')||`<tr><td colspan="${cols.length}" class="k" style="color:var(--ink3)">Nenhum pedido no período, nas situações escolhidas.</td></tr>`}</tbody>
+    <tfoot><tr>${rod}</tr></tfoot></table></div>
   <div class="k" style="padding:9px 14px;color:var(--ink3);font-size:12px">Prêmio de meta = vendas que entraram no período (data do pedido), sem as situações desmarcadas. Comissão = o que foi faturado no período (data da nota), qualquer que seja a data do pedido. Para ver a lista do que faturou, escolha "Data do faturamento" no Período.</div></div></div>`;
   $('prVolta').onclick=()=>ir('performance',encodeURIComponent(nomeOk));
   $('prPer').onclick=ev=>{ev.stopPropagation();abrirPeriodo(ev.currentTarget,PR.per,{campos:[['pedido','Data do pedido'],['fat','Data do faturamento']]},st=>{PR.per=st.m==='sem'?perNovo('mes'):st;if(!PR.per.campo)PR.per.campo='pedido';PR.ord.k=PR.per.campo==='fat'?'data_faturamento':'data_pedido';telaPedRep(nomeOk);});};
@@ -1693,12 +1718,19 @@ function telaPedRep(nome){
     setTimeout(()=>document.addEventListener('click',function f(e){if(!p.contains(e.target)){p.remove();document.removeEventListener('click',f);}}),0);};
   $('app').querySelectorAll('[data-pso]').forEach(t=>t.onclick=()=>{const kk=t.dataset.pso;PR.ord=PR.ord.k===kk?{k:kk,d:-PR.ord.d}:{k:kk,d:kk==='total'||kk.startsWith('data')?-1:1};telaPedRep(nomeOk);});
   $('app').querySelectorAll('.prlin').forEach(tr=>tr.onclick=()=>{try{abrirPedido(tr.dataset.id);}catch(e){}});
-  $('prPdf').onclick=()=>pfPdfTela('Pedidos · '+nomeOk,`${faixa} · lista pela ${porFat?'data do faturamento':'data do pedido'}`,$('prCorpo'));
+  $('prPdf').onclick=()=>pfPdfTela('Pedidos · '+nomeOk,`${faixa} · lista pela ${porFat?'data do faturamento':'data do pedido'}`,$('prCorpo'),'portrait');
+  $('prCol').onclick=ev=>{ev.stopPropagation();const p=document.createElement('div');p.className='pfpop';
+    p.innerHTML='<div class="t">Colunas da lista</div>'+PR_COLS.map(c=>`<label><input type="checkbox" data-c="${c[0]}" ${cols.includes(c[0])?'checked':''}> ${c[1]}</label>`).join('')+'<div class="t" style="margin-top:6px"><a href="#" id="prColPad">voltar ao padrão</a></div>';
+    document.body.appendChild(p);const r=ev.currentTarget.getBoundingClientRect();p.style.left=Math.min(r.left,innerWidth-260)+'px';p.style.top=(r.bottom+6)+'px';
+    p.querySelectorAll('input').forEach(i=>i.onchange=()=>{const l=[...p.querySelectorAll('input')].filter(z=>z.checked).map(z=>z.dataset.c);if(!l.length){i.checked=true;return toast('Deixe pelo menos uma coluna.',true);}prColsSalva(l);p.remove();telaPedRep(nomeOk);$('prCol').click();});
+    p.querySelector('#prColPad').onclick=e=>{e.preventDefault();p.remove();try{localStorage.removeItem('atrius-pr-cols');}catch(x){}telaPedRep(nomeOk);};
+    setTimeout(()=>document.addEventListener('click',function f(e){if(!p.contains(e.target)){p.remove();document.removeEventListener('click',f);}}),0);};
+  if(!mkOk&&cols.some(c=>c==='marcadores'||c==='uf'||c==='data_prevista'))prMarcadores(nomeOk,de,ate).then(()=>{if($('prTb'))telaPedRep(nomeOk);}).catch(()=>{doRep.forEach(p=>{if(!Array.isArray(p.marcadores))p.marcadores=[];});if($('prTb'))telaPedRep(nomeOk);toast('Não consegui ler os marcadores agora.',true);});
 }
 (function(){try{const s=document.createElement('style');s.textContent=`
 .prsub{font-size:12.5px;color:var(--ink3);margin:-4px 0 10px}.prsub b{color:var(--ink2)}
 .prst{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--c);white-space:nowrap}.prst i{width:8px;height:8px;border-radius:50%;background:var(--c)}
-.prlin{cursor:pointer}
+.prlin{cursor:pointer}.pfori{display:inline-flex;gap:4px}.pfori .btn.on{background:#1B4F9C;color:#fff;border-color:#1B4F9C}
 .prselo{display:inline-block;margin-left:6px;padding:2px 8px;border-radius:999px;font-size:10px;font-weight:800;letter-spacing:0;text-transform:none;vertical-align:1px}
 .prselo.ok{background:#DCFCE7;color:#15803D}.prselo.mau{background:#FEE2E2;color:#B91C1C}.prselo.cz{background:var(--line3,#F1F5F9);color:var(--ink2)}
 .pfkpi.prmeta{border-color:#93C5FD}.pfkpi.prcom{border-color:#C4B5FD}
