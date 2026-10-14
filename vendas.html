@@ -1634,7 +1634,7 @@ function pfPdfTela(tit,sub,origem,ori){ori=ori||'landscape';const LARG={landscap
   m.querySelectorAll('[data-ori]').forEach(b=>b.onclick=()=>{m.remove();pfPdfTela(tit,sub,origem,b.dataset.ori);});
   setTimeout(()=>{const f=$('pfFolhaT');f.style.zoom=Math.min(1,($('pfFbT').clientWidth-36)/LARG[ori]);},30);
   $('pfPrT').onclick=()=>{const w=window.open('','_blank');if(!w)return toast('O navegador bloqueou a janela de impressão.',true);
-    w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${esc(tit)}</title><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap">${estilos}<style>@page{size:A4 ${ori};margin:7mm}html,body{background:#fff!important;margin:0}#pfFolhaT{zoom:${ZP[ori]}}.caixa,.pfkpi,table,tr{break-inside:avoid}</style></head><body>${folha}</body></html>`);
+    w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${esc(tit)}</title><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap">${estilos}<style>@page{size:A4 ${ori};margin:7mm}html,body{background:#fff!important;margin:0}#pfFolhaT{zoom:${ZP[ori]}}*{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}.pfkpi,tr,.pfkpis{break-inside:avoid}.caixa,table,.rol,tbody{break-inside:auto!important;overflow:visible!important;max-height:none!important}thead{display:table-header-group}tfoot{display:table-row-group}</style></head><body>${folha}</body></html>`);
     w.document.close();setTimeout(()=>{w.focus();w.print();},700);};
 }
 /* ---------- Relatório de pedidos do representante (v398) ----------
@@ -1645,8 +1645,8 @@ function pfPdfTela(tit,sub,origem,ori){ori=ori||'landscape';const LARG={landscap
    Performance. As situações também valem só para este relatório (o padrão é o da Performance). */
 const PR={sits:null,ord:{k:'data_pedido',d:-1},per:null,dados:null,chave:'',carregando:false,mk:{}};
 /* colunas da lista: o usuário escolhe quais aparecem (fica guardado neste navegador) */
-const PR_COLS=[['data_pedido','Data do pedido'],['numero','Pedido'],['cliente','Cliente'],['cidade','Cidade'],['uf','UF'],['situacao','Situação'],['marcadores','Marcadores'],['total','Valor',1],['data_faturamento','Faturado em'],['data_prevista','Previsto']];
-const PR_COLS_PAD=['data_pedido','numero','cliente','cidade','situacao','marcadores','total','data_faturamento'];
+const PR_COLS=[['data_pedido','Data do pedido'],['numero','Pedido'],['cliente','Cliente'],['cidade','Cidade'],['uf','UF'],['situacao','Situação'],['total','Valor',1],['data_faturamento','Faturado em'],['data_prevista','Previsto']];
+const PR_COLS_PAD=['data_pedido','numero','cliente','cidade','situacao','total','data_faturamento'];
 function prCols(){try{const l=JSON.parse(localStorage.getItem('atrius-pr-cols')||'null');if(Array.isArray(l)&&l.length)return PR_COLS.map(c=>c[0]).filter(k=>l.includes(k));}catch(e){}return PR_COLS_PAD.slice();}
 function prColsSalva(l){try{localStorage.setItem('atrius-pr-cols',JSON.stringify(l));}catch(e){}}
 /* marcadores (bloqueado por crédito etc.), UF e previsto vêm da lista de pedidos de Vendas, que já os traz;
@@ -1674,7 +1674,10 @@ function telaPedRep(nome){
   const nomeOk=(PF.vend.find(v=>semAc(v.nome)===semAc(nome))||{}).nome||nome;
   const sel=(PR.sits||pfSitsOn()).map(semAc);const conhecida=st=>PF_SITS.map(semAc).includes(st);
   const ok=p=>{const st=semAc(p.situacao);return !conhecida(st)||sel.includes(st);};
-  const doRep=(PR.dados||[]).filter(p=>semAc(p.vendedor||'')===semAc(nomeOk)&&ok(p));
+  const doRepT=(PR.dados||[]).filter(p=>semAc(p.vendedor||'')===semAc(nomeOk)&&ok(p));
+  /* pedido com marcador de bloqueio (ex.: BLOQUEADO POR CRÉDITO) sai da lista e das somas e vai para o bloco de baixo */
+  const bloq=p=>Array.isArray(p.marcadores)&&p.marcadores.some(m=>semAc(m.nome||'').toLowerCase().includes('bloque'));
+  const doRep=doRepT.filter(p=>!bloq(p));
   const naFaixa=d=>d&&d>=de&&d<=ate;
   const vendL=doRep.filter(p=>naFaixa(p.data_pedido)),fatL=doRep.filter(p=>naFaixa(p.data_faturamento));
   const soma=l=>l.reduce((s,p)=>s+(+p.total||0),0);
@@ -1688,7 +1691,7 @@ function telaPedRep(nome){
   const th=(k,n,num)=>`<th class="so2 ${num?'n':''} ${ordK===k?'on':''}" data-pso="${k}">${n}${ordK===k?(PR.ord.d>0?' ▲':' ▼'):''}</th>`;
   const k=(t,v,s,bar,cls)=>`<div class="pfkpi ${cls||''}"><span>${t}</span><b>${v}</b>${s?`<small>${s}</small>`:''}${bar!=null?`<div class="bar"><i style="width:${Math.min(100,bar*100)}%"></i></div>`:''}</div>`;
   const faixa=`${br(de)} a ${br(ate)}`;
-  const cols=prCols();const mkOk=doRep.every(p=>Array.isArray(p.marcadores));
+  const cols=prCols();const mkOk=doRepT.every(p=>Array.isArray(p.marcadores));const bloqL=doRepT.filter(p=>bloq(p)&&naFaixa(porFat?p.data_faturamento:p.data_pedido)).sort((a,b)=>String(a.data_pedido).localeCompare(String(b.data_pedido)));
   const CEL={data_pedido:p=>`<td class="m">${br(p.data_pedido)}</td>`,numero:p=>`<td class="m"><b>${esc(p.numero||'')}</b></td>`,cliente:p=>`<td><b>${esc(p.cliente||'')}</b></td>`,
     cidade:p=>`<td>${esc(p.cidade||'')}</td>`,uf:p=>`<td>${esc(p.uf||'')}</td>`,situacao:p=>{const s=sitDe(p.situacao);return `<td><span class="prst" style="--c:${s[2]}"><i></i>${esc(s[1])}</span></td>`;},
     marcadores:p=>`<td>${Array.isArray(p.marcadores)?p.marcadores.map(m=>`<span class="mk3" style="--c:${esc(m.cor||'#8B93A1')}"><i></i>${esc(m.nome)}</span>`).join(''):'<span style="color:var(--ink3)">…</span>'}</td>`,
@@ -1707,6 +1710,8 @@ function telaPedRep(nome){
   <div class="caixa"><div class="rol"><table class="tv" id="prTb"><thead><tr>${cols.map(c=>{const d=PR_COLS.find(x=>x[0]===c);return th(c,d[1],d[2]);}).join('')}</tr></thead>
     <tbody>${lin.map(p=>`<tr class="prlin" data-id="${esc(p.id)}">${cols.map(c=>CEL[c](p)).join('')}</tr>`).join('')||`<tr><td colspan="${cols.length}" class="k" style="color:var(--ink3)">Nenhum pedido no período, nas situações escolhidas.</td></tr>`}</tbody>
     <tfoot><tr>${rod}</tr></tfoot></table></div>
+  ${bloqL.length?`<div class="prbloq"><div class="prbt">Bloqueados <small>${bloqL.length} pedido${bloqL.length===1?'':'s'} · ${pfRs(soma(bloqL))} · fora das somas acima</small></div><table class="tv"><thead><tr>${cols.map(c=>{const d=PR_COLS.find(x=>x[0]===c);return `<th class="${d[2]?'n':''}">${d[1]}</th>`;}).join('')}<th>Bloqueio</th></tr></thead>
+    <tbody>${bloqL.map(p=>`<tr class="prlin" data-id="${esc(p.id)}">${cols.map(c=>CEL[c](p)).join('')}<td><b style="color:#B91C1C">${esc(p.marcadores.filter(m=>semAc(m.nome||'').toLowerCase().includes('bloque')).map(m=>m.nome).join(', '))}</b></td></tr>`).join('')}</tbody></table></div>`:''}
   <div class="k" style="padding:9px 14px;color:var(--ink3);font-size:12px">Prêmio de meta = vendas que entraram no período (data do pedido), sem as situações desmarcadas. Comissão = o que foi faturado no período (data da nota), qualquer que seja a data do pedido. Para ver a lista do que faturou, escolha "Data do faturamento" no Período.</div></div></div>`;
   $('prVolta').onclick=()=>ir('performance',encodeURIComponent(nomeOk));
   $('prPer').onclick=ev=>{ev.stopPropagation();abrirPeriodo(ev.currentTarget,PR.per,{campos:[['pedido','Data do pedido'],['fat','Data do faturamento']]},st=>{PR.per=st.m==='sem'?perNovo('mes'):st;if(!PR.per.campo)PR.per.campo='pedido';PR.ord.k=PR.per.campo==='fat'?'data_faturamento':'data_pedido';telaPedRep(nomeOk);});};
@@ -1725,12 +1730,12 @@ function telaPedRep(nome){
     p.querySelectorAll('input').forEach(i=>i.onchange=()=>{const l=[...p.querySelectorAll('input')].filter(z=>z.checked).map(z=>z.dataset.c);if(!l.length){i.checked=true;return toast('Deixe pelo menos uma coluna.',true);}prColsSalva(l);p.remove();telaPedRep(nomeOk);$('prCol').click();});
     p.querySelector('#prColPad').onclick=e=>{e.preventDefault();p.remove();try{localStorage.removeItem('atrius-pr-cols');}catch(x){}telaPedRep(nomeOk);};
     setTimeout(()=>document.addEventListener('click',function f(e){if(!p.contains(e.target)){p.remove();document.removeEventListener('click',f);}}),0);};
-  if(!mkOk&&cols.some(c=>c==='marcadores'||c==='uf'||c==='data_prevista'))prMarcadores(nomeOk,de,ate).then(()=>{if($('prTb'))telaPedRep(nomeOk);}).catch(()=>{doRep.forEach(p=>{if(!Array.isArray(p.marcadores))p.marcadores=[];});if($('prTb'))telaPedRep(nomeOk);toast('Não consegui ler os marcadores agora.',true);});
+  if(!mkOk)prMarcadores(nomeOk,de,ate).then(()=>{if($('prTb'))telaPedRep(nomeOk);}).catch(()=>{doRepT.forEach(p=>{if(!Array.isArray(p.marcadores))p.marcadores=[];});if($('prTb'))telaPedRep(nomeOk);toast('Não consegui ler os marcadores agora.',true);});
 }
 (function(){try{const s=document.createElement('style');s.textContent=`
 .prsub{font-size:12.5px;color:var(--ink3);margin:-4px 0 10px}.prsub b{color:var(--ink2)}
 .prst{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--c);white-space:nowrap}.prst i{width:8px;height:8px;border-radius:50%;background:var(--c)}
-.prlin{cursor:pointer}.pfori{display:inline-flex;gap:4px}.pfori .btn.on{background:#1B4F9C;color:#fff;border-color:#1B4F9C}
+.prlin{cursor:pointer}.prbloq{border-top:2px solid #FCA5A5;background:#FEF2F2}.prbloq .prbt{padding:10px 14px;font-weight:800;color:#B91C1C;font-size:13px;text-transform:uppercase;letter-spacing:.05em}.prbloq .prbt small{text-transform:none;letter-spacing:0;font-weight:600;color:#7F1D1D;margin-left:8px;font-size:12px}.prbloq table{border:0;border-radius:0}.pfori{display:inline-flex;gap:4px}.pfori .btn.on{background:#1B4F9C;color:#fff;border-color:#1B4F9C}
 .prselo{display:inline-block;margin-left:6px;padding:2px 8px;border-radius:999px;font-size:10px;font-weight:800;letter-spacing:0;text-transform:none;vertical-align:1px}
 .prselo.ok{background:#DCFCE7;color:#15803D}.prselo.mau{background:#FEE2E2;color:#B91C1C}.prselo.cz{background:var(--line3,#F1F5F9);color:var(--ink2)}
 .pfkpi.prmeta{border-color:#93C5FD}.pfkpi.prcom{border-color:#C4B5FD}
