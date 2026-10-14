@@ -672,7 +672,7 @@ function colsTabela(tab,k,pad){
   const rot=ths.map(t=>colsNorm(t.textContent));const esc=[];
   rot.forEach((r,i)=>{if(r&&oc.has(r))esc.push(i);});
   ths.forEach((t,i)=>t.style.display=esc.includes(i)?'none':'');
-  tab.querySelectorAll('tbody > tr').forEach(tr=>{const tds=[...tr.children];if(tds.length!==ths.length)return;
+  tab.querySelectorAll('tbody > tr, tfoot > tr').forEach(tr=>{const tds=[...tr.children];if(tds.length!==ths.length)return;
     tds.forEach((td,i)=>td.style.display=esc.includes(i)?'none':'');});
   return rot.filter(Boolean);
 }
@@ -1327,7 +1327,7 @@ function pfDesenha(){
     document.body.appendChild(p);const r=ev.currentTarget.getBoundingClientRect();p.style.left=r.left+'px';p.style.top=(r.bottom+6)+'px';
     p.querySelectorAll('input').forEach(i=>i.onchange=()=>{pfSalvaCfg({cfgNovo:+i.dataset.k});p.remove();pfDesenha();});
     setTimeout(()=>document.addEventListener('click',function f(e){if(!p.contains(e.target)){p.remove();document.removeEventListener('click',f);}}),0);};
-  const abas=[['perf','Performance'],['ped','Venda × Faturamento'],['rank','Ranking'],['metas','Metas']];
+  const abas=[['perf','Performance'],['ped','Venda × Faturamento'],['rank','Ranking'],['novos','Clientes novos'],['metas','Metas']];
   a.innerHTML=abas.map(([k,n])=>`<button data-aba="${k}" class="${PF.aba===k?'on':''}">${n}</button>`).join('');
   a.querySelectorAll('[data-aba]').forEach(x=>x.onclick=()=>{PF.aba=x.dataset.aba;pfDesenha();});
   if(PF.carregando){c.innerHTML='<div class="vazio">Lendo os pedidos…</div>';return;}
@@ -1335,7 +1335,7 @@ function pfDesenha(){
   if(!PF.dados){c.innerHTML='';return;}
   const D=pfCalc();$('pfHoje').innerHTML=`até <b>${br(PF.fx.ate)}</b> · dia útil <b>${D.du} de ${D.duMes}</b> · meta prevista até a data <b>${pfPc(D.prev)}</b>`;
   const col=$('pfCols');
-  if(PF.aba==='perf')pfTabPerf(c,D,col);else if(PF.aba==='ped')pfTabPed(c,D,col);else if(PF.aba==='rank')pfTabRank(c,D,col);else pfTabMetas(c,D,col);
+  if(PF.aba==='perf')pfTabPerf(c,D,col);else if(PF.aba==='ped')pfTabPed(c,D,col);else if(PF.aba==='rank')pfTabRank(c,D,col);else if(PF.aba==='novos')pfTabNovos(c,D,col);else pfTabMetas(c,D,col);
 }
 const pfSort=(l,k,d)=>l.slice().sort((a,b)=>{const x=a[k],y=b[k];const r=typeof x==='string'?x.localeCompare(y):(+x||0)-(+y||0);return r*d;});
 function pfCab(cols,k){return '<tr>'+cols.map(([ck,n,num])=>`<th class="so2 ${num?'n':''} ${PF.ord.k===ck?'on':''}" data-so="${ck}">${n}${PF.ord.k===ck?(PF.ord.d>0?' ↑':' ↓'):''}</th>`).join('')+'</tr>';}
@@ -1354,6 +1354,32 @@ function pfArrasta(tab,k){
     th.addEventListener('dragover',e=>{e.preventDefault();th.classList.add('drgo');});th.addEventListener('dragleave',()=>th.classList.remove('drgo'));
     th.addEventListener('drop',e=>{e.preventDefault();th.classList.remove('drgo');if(!de||de===th)return;const cur=[...tab.querySelectorAll('thead tr:first-child > th')].map(t=>colsNorm(t.textContent));const a=cur.indexOf(colsNorm(de.textContent)),b=cur.indexOf(colsNorm(th.textContent));cur.splice(b,0,cur.splice(a,1)[0]);try{localStorage.setItem('erp.colord.'+k,JSON.stringify(cur));}catch(x){}pfDesenha();});
     th.addEventListener('dragend',()=>{th.classList.remove('drg');de=null;});});
+}
+/* ---------- aba Clientes novos: ranking pelo valor vendido a clientes novos ----------
+   cliente novo = comprou no período e não tinha pedido válido nos N meses antes (N escolhido aqui;
+   é o mesmo "Cliente novo" da barra). Clique na linha abre os clientes. */
+function pfTabNovos(c,D,colBt){
+  const cfg=pfCfg();const N=+cfg.cfgNovo||6;PF.novAb=PF.novAb||new Set();
+  const lista=D.lista.map(x=>{const cl={};(x.peds||[]).forEach(p=>{const k=p.cliente_doc||p.cliente;if(!x.novosSet||!x.novosSet.has(k))return;
+      const o=cl[k]||(cl[k]={nome:p.cliente||k,cid:p.cidade||'',pr:p.data_pedido,n:0,v:0});o.n++;o.v+=+p.total||0;if(p.data_pedido<o.pr)o.pr=p.data_pedido;});
+    const cls=Object.values(cl).sort((a,b)=>b.v-a.v);return {nome:x.nome,fora:x.fora,real:x.real,qt:cls.length,v:cls.reduce((s,o)=>s+o.v,0),ped:cls.reduce((s,o)=>s+o.n,0),cls};})
+    .filter(x=>!PF.novSo||x.qt>0).sort((a,b)=>b.v-a.v||b.qt-a.qt||a.nome.localeCompare(b.nome));
+  const tq=lista.reduce((s,x)=>s+x.qt,0),tv=lista.reduce((s,x)=>s+x.v,0),tp=lista.reduce((s,x)=>s+x.ped,0),com=lista.filter(x=>x.qt>0).length;
+  const MED=['🥇','🥈','🥉'];const k=(t,v,s)=>`<div class="pfkpi"><span>${t}</span><b>${v}</b>${s?`<small>${s}</small>`:''}</div>`;
+  const ops=[[1,'30 dias'],[3,'3 meses'],[6,'6 meses'],[12,'12 meses']];
+  c.innerHTML=`<div class="barra" style="margin:0 0 10px"><span class="k" style="font-size:12.5px;color:var(--ink2)">Cliente novo = sem compra há</span><span class="pfseg">${ops.map(([n,t])=>`<button class="btn sm ${N===n?'on':''}" data-nv="${n}">${t}</button>`).join('')}</span>
+    <label class="pfchk"><input type="checkbox" id="pfNovSo" ${PF.novSo?'checked':''}> só quem tem clientes novos</label><span style="flex:1"></span><button class="btn" id="pfNovPdf">⎙ PDF</button></div>
+  <div id="pfNovCorpo"><div class="pfkpis">${k('Valor em clientes novos',pfRs(tv),`${tp} pedido${tp===1?'':'s'}`)}${k('Clientes novos',nf(tq),`sem compra nos ${N===1?'30 dias':N+' meses'} antes do período`)}${k('Representantes com clientes novos',`${com} de ${D.lista.filter(x=>!x.fora).length}`,'')}</div>
+  <div class="caixa"><div class="rol"><table class="tv" id="pfNovTb"><thead><tr><th style="width:56px">#</th><th>Representante</th><th class="n">Clientes novos</th><th class="n">Pedidos</th><th class="n">Valor em clientes novos</th><th class="n">% do realizado</th></tr></thead><tbody>
+    ${lista.map((x,i)=>{const ab=PF.novAb.has(x.nome)&&x.qt;return `<tr class="pfnv ${i<3&&x.v>0?'pfmed'+i:''}" data-n="${esc(x.nome)}"><td class="m" style="font-size:${i<3&&x.v>0?'20px':'13px'}">${i<3&&x.v>0?MED[i]:i+1}</td><td><b>${esc(x.nome)}</b>${x.qt?`<span class="pfab">${ab?'▾':'▸'}</span>`:''}${x.fora?'<span class="k" style="display:block;font-size:11px;color:var(--ink3)">fora do cadastro ativo</span>':''}</td><td class="n m">${x.qt?'<b style="color:#15803D">+'+x.qt+'</b>':'0'}</td><td class="n m">${x.ped}</td><td class="n m"><b>${pfRs(x.v)}</b></td><td class="n m">${x.real?pfPc(x.v/x.real):'—'}</td></tr>
+      ${ab?`<tr class="pfnvd"><td></td><td colspan="5"><table class="pfnvt"><thead><tr><th>Cliente</th><th>Cidade</th><th class="n">1ª compra no período</th><th class="n">Pedidos</th><th class="n">Valor</th></tr></thead><tbody>${x.cls.map(o=>`<tr><td><b>${esc(o.nome)}</b></td><td>${esc(o.cid)}</td><td class="n m">${br(o.pr)}</td><td class="n m">${o.n}</td><td class="n m">${pfRs(o.v)}</td></tr>`).join('')}</tbody></table></td></tr>`:''}`;}).join('')||'<tr><td colspan="6" class="k" style="color:var(--ink3)">Nenhum representante com cliente novo no período.</td></tr>'}</tbody>
+    <tfoot><tr><td></td><td>Geral</td><td class="n m">+${tq}</td><td class="n m">${tp}</td><td class="n m">${pfRs(tv)}</td><td class="n m">${(()=>{const r=lista.reduce((s,x)=>s+x.real,0);return r?pfPc(tv/r):'—';})()}</td></tr></tfoot></table></div></div></div>
+  <div class="k" style="padding:9px 2px;color:var(--ink3);font-size:12px">Ranking pelo valor vendido a clientes novos no período (pedidos válidos, nas situações marcadas). Clique no representante para ver os clientes.</div>`;
+  c.querySelectorAll('[data-nv]').forEach(b=>b.onclick=()=>{pfSalvaCfg({cfgNovo:+b.dataset.nv});pfDesenha();});
+  $('pfNovSo').onchange=e=>{PF.novSo=e.target.checked;pfDesenha();};
+  c.querySelectorAll('.pfnv').forEach(tr=>tr.onclick=()=>{const n=tr.dataset.n;PF.novAb.has(n)?PF.novAb.delete(n):PF.novAb.add(n);pfDesenha();});
+  colBt.onclick=()=>toast('Nesta aba todas as colunas ficam.');
+  $('pfNovPdf').onclick=()=>pfPdfTela('Clientes novos',`Período ${br(PF.fx.de)} a ${br(PF.fx.ate)}<div style="font:600 12px Inter,sans-serif;opacity:.9">sem compra há ${N===1?'30 dias':N+' meses'}</div>`,$('pfNovCorpo'),'portrait',{rot:'Ranking',arq:`Clientes novos - ${pfArqPer(PF.fx.de,PF.fx.ate)}`});
 }
 /* ---------- aba Performance ---------- */
 function pfTabPerf(c,D,colBt){
@@ -1760,7 +1786,7 @@ function telaPedRep(nome){
 (function(){try{const s=document.createElement('style');s.textContent=`
 .prsub{font-size:12.5px;color:var(--ink3);margin:-4px 0 10px}.prsub b{color:var(--ink2)}
 .prst{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--c);white-space:nowrap}.prst i{width:8px;height:8px;border-radius:50%;background:var(--c)}
-.prlin{cursor:pointer}.prkp .pfkpi b{white-space:nowrap;font-size:20px}.prkp{grid-template-columns:repeat(4,1fr)}.prkp .pfkpi{padding:9px 10px}.pfkpi.prbk{border-color:#FCA5A5;background:#FEF2F2}.pfkpi.prbk b{color:#B91C1C}.prbloq{border-top:2px solid #FCA5A5;background:#FEF2F2}.prbloq .prbt{padding:10px 14px;font-weight:800;color:#B91C1C;font-size:13px;text-transform:uppercase;letter-spacing:.05em}.prbloq .prbt small{text-transform:none;letter-spacing:0;font-weight:600;color:#7F1D1D;margin-left:8px;font-size:12px}.prbloq table{border:0;border-radius:0}.pfori{display:inline-flex;gap:4px}.pfori .btn.on{background:#1B4F9C;color:#fff;border-color:#1B4F9C}
+.prlin{cursor:pointer}.pfseg{display:inline-flex;gap:4px}.pfseg .btn.on,.pfori .btn.on{background:#1B4F9C;color:#fff;border-color:#1B4F9C}.pfchk{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--ink2);margin-left:10px;cursor:pointer}.pfnv{cursor:pointer}.pfab{color:var(--ink3);margin-left:8px;font-size:11px}.pfmed0>td{background:#FEF9E7}.pfmed1>td{background:#F4F6F8}.pfmed2>td{background:#FBF1EA}.pfnvd>td{background:#FAFBFC;padding-top:2px}.pfnvt{width:100%;border-collapse:collapse;font-size:12.5px}.pfnvt th{font-size:10.5px;color:var(--ink3);text-transform:uppercase;letter-spacing:.05em;text-align:left;padding:5px 8px;border-bottom:1px solid var(--line)}.pfnvt th.n,.pfnvt td.n{text-align:right}.pfnvt td{padding:6px 8px;border-bottom:1px solid var(--line)}.prkp .pfkpi b{white-space:nowrap;font-size:20px}.prkp{grid-template-columns:repeat(4,1fr)}.prkp .pfkpi{padding:9px 10px}.pfkpi.prbk{border-color:#FCA5A5;background:#FEF2F2}.pfkpi.prbk b{color:#B91C1C}.prbloq{border-top:2px solid #FCA5A5;background:#FEF2F2}.prbloq .prbt{padding:10px 14px;font-weight:800;color:#B91C1C;font-size:13px;text-transform:uppercase;letter-spacing:.05em}.prbloq .prbt small{text-transform:none;letter-spacing:0;font-weight:600;color:#7F1D1D;margin-left:8px;font-size:12px}.prbloq table{border:0;border-radius:0}.pfori{display:inline-flex;gap:4px}.pfori .btn.on{background:#1B4F9C;color:#fff;border-color:#1B4F9C}
 .prselo{display:inline-block;margin-left:6px;padding:2px 8px;border-radius:999px;font-size:10px;font-weight:800;letter-spacing:0;text-transform:none;vertical-align:1px}
 .prselo.ok{background:#DCFCE7;color:#15803D}.prselo.mau{background:#FEE2E2;color:#B91C1C}.prselo.cz{background:var(--line3,#F1F5F9);color:var(--ink2)}
 .pfkpi.prmeta{border-color:#93C5FD}.pfkpi.prcom{border-color:#C4B5FD}
