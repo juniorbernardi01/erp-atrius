@@ -21,7 +21,7 @@
 <meta name="apple-mobile-web-app-title" content="PCP Atrius">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{
   --paper:#FFFFFF; --surface:#FFFFFF; --ink:#1A1D23; --ink2:#545C69; --ink3:#8B93A1;
@@ -32,7 +32,7 @@
 html,body{height:100%}
 body{font-family:'Inter',system-ui,sans-serif;background:var(--paper);color:var(--ink);
   -webkit-font-smoothing:antialiased;display:flex;flex-direction:column;height:100vh;overflow:hidden}
-.mono{font-family:'JetBrains Mono',ui-monospace,monospace;font-variant-numeric:tabular-nums}
+.mono{font-family:'Inter',ui-monospace,monospace;font-variant-numeric:tabular-nums}
 button{font:inherit;cursor:pointer;border:none;background:none;color:inherit}
 input,select,textarea{font:inherit;color:inherit}
 :focus-visible{outline:2px solid #2563EB;outline-offset:2px}
@@ -110,7 +110,7 @@ input,select,textarea{font:inherit;color:inherit}
 .gut{width:52px;flex-shrink:0;position:sticky;left:0;z-index:10;background:var(--surface);border-right:1px solid var(--line)}
 .guth{height:54px;position:sticky;top:0;z-index:22;background:var(--surface);border-bottom:1px solid var(--line)}
 .gutb .h{height:60px;display:flex;justify-content:flex-end;padding-right:6px}
-.gutb .h span{font-family:'JetBrains Mono';font-size:10px;color:var(--ink3);transform:translateY(-6px);font-weight:500}
+.gutb .h span{font-family:'Inter';font-size:10px;color:var(--ink3);transform:translateY(-6px);font-weight:500}
 
 .day{flex:1;min-width:288px;border-right:2px solid var(--line)}
 .day:last-child{border-right:none}
@@ -126,7 +126,7 @@ input,select,textarea{font:inherit;color:inherit}
   letter-spacing:.08em;color:var(--ink3);padding:4px 0;border-right:1px solid var(--line2)}
 .dmaqs i:last-child{border-right:none}
 .dmaqs i u{display:block;font-size:8.5px;font-weight:500;text-decoration:none;
-  font-family:'JetBrains Mono';color:var(--ink3);opacity:.75;margin-top:1px}
+  font-family:'Inter';color:var(--ink3);opacity:.75;margin-top:1px}
 .dmaqs i{padding:3px 0 4px}
 .dbody{display:flex}
 .mcol{flex:1;position:relative;border-right:1px solid var(--line2);cursor:copy}
@@ -141,7 +141,7 @@ input,select,textarea{font:inherit;color:inherit}
 .nowlbl{position:sticky;left:0;display:inline-block;background:#DC2626;color:#fff;font-size:9.5px;
   font-weight:700;padding:1px 5px 1px 4px;border-radius:0 4px 4px 0;transform:translateY(-50%)}
 .dl{position:absolute;left:1px;right:1px;border-top:2px dashed var(--ink);z-index:18;display:none;pointer-events:none}
-.dl::after{content:attr(data-t);position:absolute;left:0;top:2px;font-family:'JetBrains Mono';
+.dl::after{content:attr(data-t);position:absolute;left:0;top:2px;font-family:'Inter';
   font-size:9.5px;font-weight:700;background:var(--ink);color:#fff;padding:1px 4px;border-radius:3px}
 .addhint{position:absolute;left:2px;right:2px;display:none;align-items:center;gap:5px;z-index:9;
   pointer-events:none;transform:translateY(-11px)}
@@ -150,7 +150,7 @@ input,select,textarea{font:inherit;color:inherit}
   display:grid;place-items:center;font-size:15px;font-weight:700;line-height:1;z-index:2;flex-shrink:0;
   pointer-events:auto;cursor:pointer;box-shadow:0 1px 5px rgba(0,0,0,.3)}
 .addhint i:hover{background:#0B7F58;transform:scale(1.12)}
-.addhint span{font-family:'JetBrains Mono';font-size:10px;font-weight:700;background:#0E9F6E;color:#fff;
+.addhint span{font-family:'Inter';font-size:10px;font-weight:700;background:#0E9F6E;color:#fff;
   padding:1px 5px;border-radius:4px;z-index:2}
 
 .blk{position:absolute;left:2px;right:2px;border-radius:7px;overflow:hidden;cursor:pointer;z-index:3;
@@ -164,10 +164,10 @@ input,select,textarea{font:inherit;color:inherit}
 .blk .in{padding:4px 7px;overflow:hidden;flex:1;min-height:0;display:flex;flex-direction:column;gap:1px}
 .blk .t1{font-size:12.5px;font-weight:700;line-height:1.2;color:var(--bc);margin-top:1px;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.blk .t2{font-family:'JetBrains Mono';font-size:10.5px;font-weight:700;color:var(--ink2);white-space:nowrap}
-.blk .t3{font-family:'JetBrains Mono';font-size:10px;color:var(--ink3);white-space:nowrap;
+.blk .t2{font-family:'Inter';font-size:10.5px;font-weight:700;color:var(--ink2);white-space:nowrap}
+.blk .t3{font-family:'Inter';font-size:10px;color:var(--ink3);white-space:nowrap;
   overflow:hidden;text-overflow:ellipsis}
-.tagx{font-family:'JetBrains Mono';font-size:9.5px;font-weight:700;padding:1px 5px;border-radius:4px;
+.tagx{font-family:'Inter';font-size:9.5px;font-weight:700;padding:1px 5px;border-radius:4px;
   align-self:flex-start;margin-top:2px}
 .tagx.ex{background:#8A5A08;color:#fff}
 .tagx.atr{background:#C08A2E;color:#fff}
@@ -178,7 +178,7 @@ input,select,textarea{font:inherit;color:inherit}
 .bat.atrasada{background:#FEF6E0;border-color:#E0B84A;box-shadow:0 0 0 2px rgba(224,184,74,.3)}
 .bat .sptop{padding:2px 11px 8px}
 .bat .spn{font-family:'Barlow Condensed';font-size:19px;font-weight:700;line-height:1.1;color:var(--ink)}
-.bat .spq{font-family:'JetBrains Mono';font-size:17px;font-weight:700;color:var(--bc);margin-top:2px}
+.bat .spq{font-family:'Inter';font-size:17px;font-weight:700;color:var(--bc);margin-top:2px}
 .bat .spenv{background:#FEF3E7;color:#8A5A08;font-size:11.5px;font-weight:700;
   padding:7px 11px;border-top:1px solid #F0C89A;letter-spacing:.02em}
 .bat.st-pronto{opacity:.72}
@@ -221,7 +221,7 @@ input,select,textarea{font:inherit;color:inherit}
 .vergr > div:last-child{border-right:0}
 .vergr i{font-style:normal;display:block;font-size:9px;text-transform:uppercase;
   letter-spacing:.08em;color:var(--ink3);font-weight:700}
-.vergr b{font-family:'JetBrains Mono';font-size:15px;font-weight:600;display:block;
+.vergr b{font-family:'Inter';font-size:15px;font-weight:600;display:block;
   line-height:1.35}
 .vergr span{font-size:10.5px;color:var(--ink3)}
 .gisaude{margin-bottom:16px;padding-bottom:13px;border-bottom:1px solid var(--line2)}
@@ -268,7 +268,7 @@ input,select,textarea{font:inherit;color:inherit}
 .tpkpi > div:last-child{border-right:0}
 .tpkpi i{font-style:normal;display:block;font-size:9px;text-transform:uppercase;
   letter-spacing:.08em;color:var(--ink3);font-weight:700}
-.tpkpi b{font-family:'JetBrains Mono';font-size:21px;font-weight:600;display:block;
+.tpkpi b{font-family:'Inter';font-size:21px;font-weight:600;display:block;
   line-height:1.3}
 .tpkpi span{font-size:10.5px;color:var(--ink3)}
 .tpkpi .mau b{color:var(--danger)}
@@ -277,7 +277,7 @@ table.tptb th{text-align:left;padding:7px 14px;font-size:9px;text-transform:uppe
   letter-spacing:.08em;color:var(--ink3);font-weight:700;border-bottom:1px solid var(--line2)}
 table.tptb th.n{text-align:right}
 table.tptb td{padding:8px 14px;border-bottom:1px solid var(--line3)}
-table.tptb td.n{text-align:right;font-family:'JetBrains Mono'}
+table.tptb td.n{text-align:right;font-family:'Inter'}
 table.tptb tr.mau td{background:#FDF7F6}
 table.tptb tr.tt td{background:#F7F7F4;font-weight:600;border-bottom:0}
 .tpcau{padding:11px 14px 13px;border-top:1px solid var(--line2)}
@@ -291,7 +291,7 @@ table.tptb tr.tt td{background:#F7F7F4;font-weight:600;border-bottom:0}
 .tpcl .br i{display:block;height:100%;background:#8FB6D8}
 .tpcl.sem .br i{background:#D98C84}
 .tpcl.sem .nm{color:var(--danger);font-weight:500}
-.tpcl .vl{text-align:right;font-family:'JetBrains Mono';font-size:12px}
+.tpcl .vl{text-align:right;font-family:'Inter';font-size:12px}
 .tpcl .vl small{display:block;font-size:10px;color:var(--ink3);font-family:'Inter'}
 @media(max-width:600px){
   .tpcl{grid-template-columns:1fr auto;gap:2px 10px}
@@ -302,10 +302,10 @@ table.tptb tr.tt td{background:#F7F7F4;font-weight:600;border-bottom:0}
   background:#F4F5F7;padding:8px 13px}
 .tnh b{font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;
   color:var(--ink2)}
-.tnh .maq{font-family:'JetBrains Mono';font-size:11px;color:var(--ink3)}
+.tnh .maq{font-family:'Inter';font-size:11px;color:var(--ink3)}
 .tnorig{background:#F8F9FB;padding:5px 13px;font-size:11px;color:var(--ink3);
   border-bottom:1px solid var(--line3);line-height:1.5}
-.tnorig b{font-family:'JetBrains Mono';color:var(--ink2);font-weight:600}
+.tnorig b{font-family:'Inter';color:var(--ink2);font-weight:600}
 .tncab,.tnlin{display:grid;grid-template-columns:64px 1fr 1fr 74px;gap:11px;
   padding:6px 13px;align-items:center}
 .tncab{background:#FAFAF8;font-size:8.5px;font-weight:700;letter-spacing:.08em;
@@ -314,12 +314,12 @@ table.tptb tr.tt td{background:#F7F7F4;font-weight:600;border-bottom:0}
 .tnlin{border-top:1px solid var(--line3);font-size:12.5px}
 .tnlin:first-of-type{border-top:0}
 .tnlin .et{color:var(--ink2);font-weight:500}
-.tnlin .pv{font-family:'JetBrains Mono';font-size:12.5px;color:var(--ink3)}
-.tnlin .rl{font-family:'JetBrains Mono';font-size:13px}
+.tnlin .pv{font-family:'Inter';font-size:12.5px;color:var(--ink3)}
+.tnlin .rl{font-family:'Inter';font-size:13px}
 .tnlin .pv i,.tnlin .rl i{font-style:normal;display:block;font-size:11px;color:var(--ink3);
   font-family:'Inter';margin-top:1px}
 .tnlin .rl i{color:var(--ink2)}
-.tnlin .dv{font-family:'JetBrains Mono';font-size:11.5px;text-align:right;white-space:nowrap}
+.tnlin .dv{font-family:'Inter';font-size:11.5px;text-align:right;white-space:nowrap}
 .tnlin .dv b{color:var(--danger);font-weight:600}
 .tnlin .dv b.bom{color:var(--run)}
 .tnlin .dv span{color:var(--ink3);font-size:10.5px;font-family:'Inter'}
@@ -331,7 +331,7 @@ table.tptb tr.tt td{background:#F7F7F4;font-weight:600;border-bottom:0}
 .tntot{display:grid;grid-template-columns:64px 1fr 1fr 74px;gap:11px;padding:9px 13px;
   align-items:center;border:1px solid var(--line2);border-radius:9px;background:#FAFAF8;
   font-weight:600;font-size:12.5px;margin-top:2px}
-.tntot .pv,.tntot .rl,.tntot .dv{font-family:'JetBrains Mono'}
+.tntot .pv,.tntot .rl,.tntot .dv{font-family:'Inter'}
 .tntot .pv{color:var(--ink2);font-weight:400}
 .tntot .pv i,.tntot .rl i{font-style:normal;display:block;font-size:11px;font-weight:400;
   color:var(--ink3);font-family:'Inter'}
@@ -364,16 +364,16 @@ table.tptb tr.tt td{background:#F7F7F4;font-weight:600;border-bottom:0}
 .turnos > .tdia:first-child{border-top:0}
 .tdia b{font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;
   color:var(--ink2)}
-.tdia .maq{font-family:'JetBrains Mono';font-size:11px;color:var(--ink3)}
+.tdia .maq{font-family:'Inter';font-size:11px;color:var(--ink3)}
 .tl{display:grid;grid-template-columns:72px 116px 62px 1fr auto;gap:11px;align-items:center;
   padding:7px 13px;border-top:1px solid var(--line3);font-size:12.5px}
 .turnos > .tl:first-child{border-top:0}
 .tl .et{color:var(--ink2);font-weight:500}
-.tl .hr{font-family:'JetBrains Mono';font-size:13px;white-space:nowrap}
-.tl .du{font-family:'JetBrains Mono';font-size:12px;color:var(--ink2);text-align:right}
+.tl .hr{font-family:'Inter';font-size:13px;white-space:nowrap}
+.tl .du{font-family:'Inter';font-size:12px;color:var(--ink2);text-align:right}
 .tl .ob{font-size:11.5px;color:var(--ink3);min-width:0;overflow:hidden;
   text-overflow:ellipsis;white-space:nowrap}
-.tl .dv{font-family:'JetBrains Mono';font-size:11.5px;text-align:right;white-space:nowrap}
+.tl .dv{font-family:'Inter';font-size:11.5px;text-align:right;white-space:nowrap}
 .tl .dv b{color:var(--danger);font-weight:600}
 .tl .dv b.bom{color:var(--run)}
 .tl .dv span{color:var(--ink3);font-size:10.5px;font-family:'Inter'}
@@ -386,7 +386,7 @@ table.tptb tr.tt td{background:#F7F7F4;font-weight:600;border-bottom:0}
 .ttot{display:grid;grid-template-columns:72px 116px 62px 1fr auto;gap:11px;align-items:center;
   padding:9px 13px;border-top:2px solid var(--ink);background:#FAFAF8;font-weight:600;
   font-size:12.5px}
-.ttot .hr,.ttot .du,.ttot .dv{font-family:'JetBrains Mono'}
+.ttot .hr,.ttot .du,.ttot .dv{font-family:'Inter'}
 .ttot .dv b{color:var(--danger)} .ttot .dv b.bom{color:var(--run)}
 .tvazio{padding:14px 13px;font-size:12px;color:var(--ink3);text-align:center}
 .ckmp.troca{color:var(--roxo,#6D28D9)}
@@ -397,7 +397,7 @@ tr.trocada td{background:#F9F6FE}
 .troca .lado i{font-style:normal;font-size:9px;text-transform:uppercase;letter-spacing:.09em;
   color:#6B5AA0;font-weight:700;display:block}
 .troca .lado b{font-size:13px;font-weight:700;display:block;line-height:1.25;margin-top:2px}
-.troca .lado span{font-family:'JetBrains Mono';font-size:11px;color:var(--ink3)}
+.troca .lado span{font-family:'Inter';font-size:11px;color:var(--ink3)}
 .troca .seta{font-size:20px;color:var(--roxo,#6D28D9)}
 .troca .lado.sai b{color:var(--ink3);text-decoration:line-through}
 .ckmp{width:20px;text-align:center;font-weight:700;font-size:13px;line-height:1}
@@ -430,7 +430,7 @@ tr.semmp td{background:#FDF4F3}
 .prazolote{display:grid;grid-template-columns:auto 1fr;gap:14px;align-items:center;
   background:#FDF4EC;border:1px solid #EDDCC4;border-radius:10px;padding:11px 14px;
   margin-bottom:12px}
-.prazolote .hh{font-family:'JetBrains Mono';font-size:27px;font-weight:600;color:#9A5B12;
+.prazolote .hh{font-family:'Inter';font-size:27px;font-weight:600;color:#9A5B12;
   line-height:1}
 .prazolote .tx b{display:block;font-size:12.5px;color:#7A5B14}
 .prazolote .tx span{font-size:11.5px;color:#8A6B34}
@@ -444,7 +444,7 @@ tr.semmp td{background:#FDF4F3}
 .semtq{display:grid;grid-template-columns:auto 1fr auto;gap:11px;align-items:center;
   margin:0 0 12px;padding:7px 11px;border:1.5px solid #E8A9A2;border-radius:8px;
   animation:pisca 1.7s ease-in-out infinite;cursor:pointer;font-size:12px}
-.semtq .n{font-family:'JetBrains Mono';font-size:15px;font-weight:700;color:var(--danger)}
+.semtq .n{font-family:'Inter';font-size:15px;font-weight:700;color:var(--danger)}
 .semtq .tx{color:#7A2E27;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .semtq .tx b{color:#8E2C25}
 .semtq .bt{background:var(--danger);color:#fff;border:0;border-radius:6px;padding:5px 11px;
@@ -458,14 +458,14 @@ tr.semmp td{background:#FDF4F3}
 .bat .tqid .c:first-child b{color:#274B82}
 .bat .tqid i{font-style:normal;display:block;font-size:8px;text-transform:uppercase;
   letter-spacing:.09em;color:var(--ink3);line-height:1.4}
-.bat .tqid b{font-family:'JetBrains Mono';font-size:13px;font-weight:600;display:block;
+.bat .tqid b{font-family:'Inter';font-size:13px;font-weight:600;display:block;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.3}
 .bat .tqfr{margin:4px 11px 8px;font-size:11px;line-height:1.5}
-.bat .tqfr b{font-family:'JetBrains Mono';font-weight:600;color:var(--danger)}
+.bat .tqfr b{font-family:'Inter';font-weight:600;color:var(--danger)}
 .bat .tqfr b.neu{color:var(--ink2)}
 .bat .bfila{background:#F1F5F9;color:var(--ink2);font-size:10.5px;padding:6px 11px;
   line-height:1.4;border-top:1px solid var(--line2)}
-.bat .bfila b{color:var(--ink);font-family:'JetBrains Mono';font-weight:700}
+.bat .bfila b{color:var(--ink);font-family:'Inter';font-weight:700}
 .bat.trocar{border-color:#2563EB;box-shadow:0 0 0 2px rgba(37,99,235,.3);background:#EEF4FF}
 .vao.alvo{background:#CFEDDE;border-color:#0E9F6E;border-style:solid}
 .vaoslim.alvo::before{opacity:1;height:3px}
@@ -502,7 +502,7 @@ body.arrastando .vaoslim i{opacity:.4}
 .tqh{padding:11px 13px;background:var(--surface);border-bottom:1px solid var(--line);position:relative}
 .tqh .n{display:flex;align-items:baseline;gap:8px}
 .tqh .n b{font-family:'Barlow Condensed';font-size:20px;font-weight:700}
-.tqh .n span{font-family:'JetBrains Mono';font-size:10.5px;color:var(--ink3);margin-left:auto}
+.tqh .n span{font-family:'Inter';font-size:10.5px;color:var(--ink3);margin-left:auto}
 .tqh .s{font-size:11px;color:var(--ink3);margin-top:2px}
 .tqb{padding:10px;display:flex;flex-direction:column;gap:9px;min-height:70px}
 .bat{background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden;
@@ -519,12 +519,12 @@ body.arrastando .vaoslim i{opacity:.4}
 .bat .bh{padding:9px 11px 7px;display:flex;align-items:flex-start;gap:8px}
 .bat .bn{font-size:12.5px;font-weight:700;line-height:1.2;flex:1;color:var(--bc)}
 .bat .bn .fam{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:6px;vertical-align:middle}
-.bat .bm{padding:0 11px 9px;font-family:'JetBrains Mono';font-size:10.5px;color:var(--ink2);line-height:1.6}
+.bat .bm{padding:0 11px 9px;font-family:'Inter';font-size:10.5px;color:var(--ink2);line-height:1.6}
 .bat .bm .k{color:var(--ink3)}
 .bat .bm .kk{color:var(--ink3);opacity:.8;padding-left:10px;position:relative}
 .bat .bm .kk::before{content:'└';position:absolute;left:0;opacity:.5}
 .bat .ban{display:flex;gap:6px;padding:0 11px 9px;flex-wrap:wrap}
-.bat .ban span{font-family:'JetBrains Mono';font-size:10px;font-weight:700;background:var(--line3);
+.bat .ban span{font-family:'Inter';font-size:10px;font-weight:700;background:var(--line3);
   color:var(--ink2);padding:2px 7px;border-radius:5px}
 .bat .ban span.fora{background:#FBEAE8;color:var(--danger)}
 .bat .bo{border-top:1px solid var(--line2);padding:7px 11px;font-size:10.5px;color:var(--ink3);line-height:1.5}
@@ -549,7 +549,7 @@ body.arrastando .vaoslim i{opacity:.4}
 #errbox .errh{display:flex;align-items:center;gap:8px;padding:9px 12px;background:var(--danger);color:#fff}
 #errbox .errh b{flex:1;font-size:13px}
 #errbox .errh button{background:transparent;border:0;color:#fff;font-size:15px;cursor:pointer;padding:0 2px}
-#errbox .erri{padding:8px 12px;border-bottom:1px solid var(--line);font-family:'JetBrains Mono';
+#errbox .erri{padding:8px 12px;border-bottom:1px solid var(--line);font-family:'Inter';
   font-size:11px;line-height:1.45;color:var(--ink)}
 #errbox .errp{padding:8px 12px;color:var(--ink3);line-height:1.45}
 .tqh[data-col]:active{cursor:grabbing}
@@ -578,14 +578,14 @@ body.arrastando .tqcol{border-style:dashed}
 .diah{padding:9px 12px;background:var(--surface);border-bottom:1px solid var(--line);
   display:flex;align-items:baseline;gap:8px}
 .diah b{font-family:'Barlow Condensed';font-size:18px;font-weight:700;text-transform:capitalize}
-.diah span{font-family:'JetBrains Mono';font-size:10.5px;color:var(--ink3);margin-left:auto}
+.diah span{font-family:'Inter';font-size:10.5px;color:var(--ink3);margin-left:auto}
 .diab{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;padding:9px}
 .mqsub{min-width:0}
 .mqh{font-size:9.5px;font-weight:700;color:var(--ink3);text-align:center;
   padding-bottom:5px;border-bottom:1px solid var(--line2);margin-bottom:6px;letter-spacing:.06em}
-.mqh u{display:block;font-family:'JetBrains Mono';font-size:8.5px;font-weight:500;
+.mqh u{display:block;font-family:'Inter';font-size:8.5px;font-weight:500;
   text-decoration:none;opacity:.8;margin-top:1px}
-.mqh i{display:block;font-style:normal;font-family:'JetBrains Mono';font-size:8.5px;
+.mqh i{display:block;font-style:normal;font-family:'Inter';font-size:8.5px;
   font-weight:500;color:var(--ink3);opacity:.75;margin-top:1px}
 .diab .bat{margin-bottom:5px}
 .diab .bat .bn{font-size:11px}
@@ -595,7 +595,7 @@ body.arrastando .tqcol{border-style:dashed}
 .diab .bat .bsop,.diab .bat .bfin,.diab .bat .bw,.diab .bat .bvira,
 .diab .bat .bfila{font-size:9px;padding:4px 7px}
 .vao.mini{padding:5px 7px;flex-direction:column;gap:2px;text-align:center}
-.vao.mini span{font-family:'JetBrains Mono';font-size:9.5px;color:#0E7A50}
+.vao.mini span{font-family:'Inter';font-size:9.5px;color:#0E7A50}
 .vao.mini i{width:18px;height:18px;font-size:13px}
 .tqvazio{text-align:center;color:var(--ink3);font-size:11.5px;padding:20px 8px;line-height:1.55}
 
@@ -609,7 +609,7 @@ body.arrastando .tqcol{border-style:dashed}
 .olist .o:hover{border-color:var(--ink3);box-shadow:0 2px 8px rgba(0,0,0,.06)}
 .olist .o.fim{opacity:.5}
 .olist .o .n{font-size:12.5px;font-weight:600;line-height:1.25}
-.olist .o .m{font-family:'JetBrains Mono';font-size:10.5px;color:var(--ink3);margin-top:4px}
+.olist .o .m{font-family:'Inter';font-size:10.5px;color:var(--ink3);margin-top:4px}
 .empty{color:var(--ink3);font-size:12.5px;line-height:1.6;padding:20px 4px}
 .stq{display:inline-flex;align-items:center;padding:3px 9px;border-radius:100px;
   font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;white-space:nowrap}
@@ -642,7 +642,7 @@ table{width:100%;border-collapse:collapse;background:var(--surface);border:1px s
 th{background:var(--line3);text-align:left;padding:9px 12px;font-size:10px;font-weight:700;
   text-transform:uppercase;letter-spacing:.09em;color:var(--ink3);white-space:nowrap}
 td{padding:9px 12px;border-top:1px solid var(--line2)}
-td.n,th.n{text-align:right;font-family:'JetBrains Mono';white-space:nowrap}
+td.n,th.n{text-align:right;font-family:'Inter';white-space:nowrap}
 tr:hover td{background:#FCFBF8}
 tfoot td{background:var(--line3);font-weight:700;border-top:2px solid var(--line)}
 .pill{display:inline-block;padding:2px 8px;border-radius:100px;font-size:10.5px;font-weight:700}
@@ -691,11 +691,11 @@ tr.mot td{background:#FDFAF0;font-size:11px;color:#7A5C0B;padding:6px 12px}
    mesmo com .hidden=true. Vale para todo elemento grid ou flex que se esconde. */
 #dQuando[hidden]{display:none!important}
 .gsku{display:grid;grid-template-columns:96px 1fr;gap:9px}
-.gsku .sku{font-family:'JetBrains Mono';font-weight:700;text-align:center;letter-spacing:.04em}
-.pin{font-family:'JetBrains Mono';font-size:21px!important;letter-spacing:.35em;text-align:center;font-weight:700}
+.gsku .sku{font-family:'Inter';font-weight:700;text-align:center;letter-spacing:.04em}
+.pin{font-family:'Inter';font-size:21px!important;letter-spacing:.35em;text-align:center;font-weight:700}
 .sec{border-top:1px solid var(--line2);margin-top:4px;padding-top:14px}
 .calc{background:var(--paper);border:1px solid var(--line);border-radius:9px;padding:11px 13px;font-size:12.5px;line-height:1.75}
-.calc b{font-family:'JetBrains Mono';font-weight:700}
+.calc b{font-family:'Inter';font-weight:700}
 .calc .w{color:var(--danger);font-weight:600}
 .alert{background:#FEF9E7;border:1px solid #F0DFA8;border-radius:9px;padding:10px 12px;
   font-size:12.5px;color:#7A5C0B;line-height:1.45;margin-bottom:13px}
@@ -717,13 +717,13 @@ tr.mot td{background:#FDFAF0;font-size:11px;color:#7A5C0B;padding:6px 12px}
 .log table.htab{width:100%;border-collapse:collapse;font-size:11.5px;line-height:1.4}
 .log table.htab th{text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3);font-weight:600;padding:4px 6px;border-bottom:1px solid var(--line2);white-space:nowrap}
 .log table.htab td{padding:5px 6px;border-bottom:1px solid var(--line3);vertical-align:top}
-.log table.htab td.d,.log table.htab td.t{font-family:'JetBrains Mono';color:var(--ink3);white-space:nowrap}
+.log table.htab td.d,.log table.htab td.t{font-family:'Inter';color:var(--ink3);white-space:nowrap}
 .log table.htab td.qm{color:var(--ink2);font-weight:500;max-width:150px}
 .log table.htab td.m{color:var(--ink2)}.log table.htab td.m em{display:block;font-style:normal}
 .log table.htab tr.p-sis{background:#FAFAF8}.log table.htab tr.p-ed{background:#FFFBEB}.log table.htab tr.morta td{color:#6B7280;background:#FAFAFA}
 .log table.htab tr.turno{background:#FFF4E8}
 .log table.htab .hmais{color:#DC2626;font-weight:700}.log table.htab .hmenos{color:#15803D;font-weight:700}.log table.htab .hok{color:#15803D;font-weight:600}
-.log .e .t{font-family:'JetBrains Mono';color:var(--ink3)}
+.log .e .t{font-family:'Inter';color:var(--ink3)}
 .log .e .qm{color:var(--ink2);font-weight:500;overflow:hidden;text-overflow:ellipsis;
   white-space:nowrap}
 .log .e em{font-style:normal;color:var(--ink2);display:block}
@@ -740,7 +740,7 @@ tr.mot td{background:#FDFAF0;font-size:11px;color:#7A5C0B;padding:6px 12px}
 .log .e.ed{background:#fff8ec;border-left:3px solid var(--warn,#c47f17);
   padding:6px 0 6px 8px;margin:3px 0;border-radius:0 4px 4px 0}
 .log .e.ed .t{color:#a86a10}
-.log .e .dif{display:block;font-style:normal;font-family:'JetBrains Mono';
+.log .e .dif{display:block;font-style:normal;font-family:'Inter';
   font-size:11px;color:var(--ink2);margin-top:2px}
 .log .e .dif u{text-decoration:none;color:var(--ink3);display:inline-block;min-width:118px}
 .log .e .dif s{text-decoration:none;color:var(--ink3);padding:0 3px}
@@ -753,7 +753,7 @@ tr.mot td{background:#FDFAF0;font-size:11px;color:#7A5C0B;padding:6px 12px}
 .prevlin .pl{display:flex;align-items:center;gap:10px;padding:5px 11px;
   border-top:1px solid var(--line2)}
 .prevlin .pl .pe{width:70px;color:var(--ink3);font-size:11.5px}
-.prevlin .pl .pt{font-family:'JetBrains Mono';font-size:13.5px;color:var(--ink)}
+.prevlin .pl .pt{font-family:'Inter';font-size:13.5px;color:var(--ink)}
 .prevlin .pl .pd{color:var(--ink3);font-size:11.5px;margin-left:auto}
 .prevlin .pl.fim .pt{font-weight:600}
 .usu{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--ink2);font-weight:600}
@@ -801,7 +801,7 @@ body.tv .bat{cursor:default}
 .tvtop h1{font-family:'Barlow Condensed';font-size:23px;font-weight:700;text-transform:uppercase;
   letter-spacing:.03em;line-height:1;margin:0}
 .tvtop .sp{flex:1}
-.tvclock{font-family:'JetBrains Mono';font-weight:700;font-size:22px;letter-spacing:.02em;
+.tvclock{font-family:'Inter';font-weight:700;font-size:22px;letter-spacing:.02em;
   background:#12151A;color:#fff;padding:5px 12px;border-radius:8px;line-height:1}
 .tvhoje{font-family:'Barlow Condensed';font-size:16px;font-weight:600;text-transform:uppercase;
   letter-spacing:.05em;color:#4A5361}
@@ -838,7 +838,7 @@ body.tv .bat{cursor:default}
 .tvagora{margin:0 12px;border:2px solid var(--sit);border-radius:12px;overflow:hidden}
 .tvabar{display:flex;align-items:center;gap:10px;background:var(--sit);color:#fff;padding:5px 12px}
 .tvabar .t{flex:1;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em}
-.tvabar .d{font-family:'JetBrains Mono';font-size:13px;font-weight:700}
+.tvabar .d{font-family:'Inter';font-size:13px;font-weight:700}
 .tvabody{padding:10px 12px 11px}
 .tvprod{font-family:'Barlow Condensed';font-size:26px;font-weight:700;line-height:1.05;
   letter-spacing:.015em;text-transform:uppercase;margin-bottom:9px}
@@ -850,8 +850,8 @@ body.tv .bat{cursor:default}
 .tvpanel .dcel .lb{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.09em;
   color:#1D4ED8;opacity:.82;margin-bottom:2px}
 .tvpanel .dcel .vl{font-family:'Barlow Condensed';font-size:21px;font-weight:700;line-height:1;color:#1D4ED8}
-.tvpanel .dcel .vl .num{font-family:'JetBrains Mono';font-size:18px}
-.tvpanel .dcel .vl .lt{font-family:'JetBrains Mono';font-size:16px}
+.tvpanel .dcel .vl .num{font-family:'Inter';font-size:18px}
+.tvpanel .dcel .vl .lt{font-family:'Inter';font-size:16px}
 .tvpanel .d2{grid-column:span 2}
 .tvpanel .d3{grid-column:span 3}
 
@@ -860,7 +860,7 @@ body.tv .bat{cursor:default}
 .tvpanel .tcx.real{border-color:var(--sit)}
 .tvpanel .tcx .lb{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.09em;
   color:#8A93A1;margin-bottom:2px}
-.tvpanel .tcx .vl{font-family:'JetBrains Mono';font-size:16px;font-weight:700;line-height:1}
+.tvpanel .tcx .vl{font-family:'Inter';font-size:16px;font-weight:700;line-height:1}
 .tvpanel .tcx.prev .vl{color:#4A5361}
 .tvpanel .tcx .curso{font-size:12.5px;font-weight:600;color:#8A93A1}
 
@@ -869,7 +869,7 @@ body.tv .bat{cursor:default}
 .tvparada .t{font-family:'Barlow Condensed';font-size:20px;font-weight:600;color:#4A5361;
   text-transform:uppercase;letter-spacing:.02em}
 .tvparada .s{font-size:12.5px;color:#8A93A1;margin-top:3px}
-.tvparada .s b{font-family:'JetBrains Mono';color:#4A5361}
+.tvparada .s b{font-family:'Inter';color:#4A5361}
 
 .tvfilah{display:flex;align-items:center;gap:9px;padding:11px 14px 6px}
 .tvfilah span{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#8A93A1}
@@ -880,7 +880,7 @@ body.tv .bat{cursor:default}
   background:#fff;padding:7px 11px;flex-shrink:0}
 .tvoc .n{font-family:'Barlow Condensed';font-size:17px;font-weight:600;line-height:1.12;margin-bottom:2px;
   text-transform:uppercase;letter-spacing:.01em;display:flex;align-items:center;gap:8px}
-.tvoc .m{font-family:'JetBrains Mono';font-size:11px;color:#8A93A1;line-height:1.45}
+.tvoc .m{font-family:'Inter';font-size:11px;color:#8A93A1;line-height:1.45}
 .tvoc .m b{color:#4A5361;font-weight:700}
 .tvoc .m .hr{color:#12151A;font-weight:700}
 .tvoc.fim{background:#F4F6F8;opacity:.72}
@@ -935,7 +935,7 @@ body.tv .bat{cursor:default}
 .actp{font-size:12.5px;color:var(--ink3);line-height:1.5;margin:0 0 16px;max-width:620px}
 .o.sld{border-left:3px solid var(--pausa);cursor:pointer}
 .o.sld:hover{background:#FFFBEB}
-.sen{font-family:'JetBrains Mono';font-weight:700;background:#EAF2FE;color:#1D4ED8;
+.sen{font-family:'Inter';font-weight:700;background:#EAF2FE;color:#1D4ED8;
   padding:2px 7px;border-radius:5px;letter-spacing:.04em}
 .ordb.del:hover:not(:disabled){background:#FDECEE;border-color:var(--danger);color:var(--danger)}
 .vazioc{padding:26px 12px;text-align:center;color:var(--ink3);font-size:13px}
@@ -951,17 +951,17 @@ body.tv .bat{cursor:default}
 .perdb.vermelho .perdh{background:var(--danger)}
 .perdb.laranja .perdh{background:#B45309}
 .perdh span{flex:1}
-.perdh b{font-family:'JetBrains Mono';font-size:17px;letter-spacing:0}
+.perdh b{font-family:'Inter';font-size:17px;letter-spacing:0}
 .perdc{padding:12px 14px;background:var(--surface)}
 .perdm{padding-top:11px;margin-top:11px;border-top:1px solid var(--line2)}
 .perdm:first-child{padding-top:0;margin-top:0;border-top:0}
 .perdmh{display:flex;align-items:baseline;gap:9px;margin-bottom:6px}
 .perdmh span{font-family:'Barlow Condensed';font-size:17px;font-weight:700;flex:1}
-.perdmh b{font-family:'JetBrains Mono';font-size:13.5px}
+.perdmh b{font-family:'Inter';font-size:13.5px}
 .perdmh i{font-style:normal;font-size:11px;color:var(--ink3)}
 .perdl{display:flex;align-items:center;gap:9px;margin-bottom:4px}
 .perdl span{width:160px;font-size:12.5px;color:var(--ink2)}
-.perdl b{width:110px;text-align:right;font-family:'JetBrains Mono';font-size:11.5px;font-weight:700}
+.perdl b{width:110px;text-align:right;font-family:'Inter';font-size:11.5px;font-weight:700}
 .perdbar{flex:1;height:7px;background:var(--line2);border-radius:999px;overflow:hidden}
 .perdbar i{display:block;height:100%;background:var(--danger)}
 .perdb.laranja .perdbar i{background:#B45309}
@@ -1033,7 +1033,7 @@ body.tv .bat{cursor:default}
   background:var(--surface);color:var(--ink)}
 .cald:hover{border-color:#1D4ED8}
 .cald .cn{font-size:14px;font-weight:600;line-height:1.1}
-.cald .ch{font-family:'JetBrains Mono';font-size:10px;color:var(--ink3)}
+.cald .ch{font-family:'Inter';font-size:10px;color:var(--ink3)}
 .cald .cf{font-size:9px;color:var(--ink3);line-height:1.15}
 .cald.folga{background:var(--paper);border-style:dashed}
 .cald.folga .cn{color:var(--ink3);font-weight:500}
@@ -1226,7 +1226,7 @@ body.tv .bat{cursor:default}
 .tolx span{font-size:12px;color:var(--ink3)}
 .tolc{display:flex;align-items:center;gap:7px}
 .tolc input{width:74px;text-align:right;border:1px solid var(--line);border-radius:7px;
-  padding:7px 10px;font:inherit;font-family:'JetBrains Mono';font-size:14px}
+  padding:7px 10px;font:inherit;font-family:'Inter';font-size:14px}
 .tagm{display:inline-block;font-size:11px;background:#EAF2FE;color:#1D4ED8;
   padding:3px 8px;border-radius:999px;margin-right:3px}
 
@@ -1273,7 +1273,7 @@ body.tv .bat{cursor:default}
   font:inherit;cursor:pointer}
 .escit:hover{border-color:var(--bc,#2563EB);background:var(--line3)}
 .escit b{font-size:12.5px;font-weight:600;color:var(--ink)}
-.escit i{font-style:normal;font-family:'JetBrains Mono';font-size:10.5px;color:var(--ink3)}
+.escit i{font-style:normal;font-family:'Inter';font-size:10.5px;color:var(--ink3)}
 .escit span{grid-row:1/3;align-self:center;font-size:11.5px;color:var(--ink3);white-space:nowrap}
 .escit span.w{color:var(--danger);font-weight:600}
 .trocasai{background:var(--sunkbg,#F4F6F8);border:1px solid var(--line);border-radius:9px;
@@ -1294,14 +1294,14 @@ body.tv .bat{cursor:default}
   font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--ink3)}
 .linp{display:flex;align-items:center;gap:11px;padding:8px 13px;border-bottom:1px solid var(--line2)}
 .linp:last-of-type{border-bottom:0}
-.linp .h{width:104px;flex-shrink:0;font-family:'JetBrains Mono';font-size:11.5px;color:var(--ink3)}
+.linp .h{width:104px;flex-shrink:0;font-family:'Inter';font-size:11.5px;color:var(--ink3)}
 .linp .r{flex:1;font-size:13px;min-width:0}
 .linp .r i{font-style:normal;font-size:11.5px;color:var(--ink3)}
-.linp .m{flex-shrink:0;font-family:'JetBrains Mono';font-size:11.5px;color:var(--ink3);
+.linp .m{flex-shrink:0;font-family:'Inter';font-size:11.5px;color:var(--ink3);
   white-space:nowrap}
 .linf{padding:9px 13px;background:#EAF2FE;color:#1D4ED8;font-size:13px;font-weight:600;
   border-top:1px solid #BFD2FA}
-.linf b{font-family:'JetBrains Mono';font-size:15px}
+.linf b{font-family:'Inter';font-size:15px}
 
 /* ---------- certificado de análise ---------- */
 .cert{border:1px solid var(--line);border-radius:11px;overflow:hidden;margin:14px 0}
@@ -1322,7 +1322,7 @@ body.tv .bat{cursor:default}
 .certt td.n{text-align:right}
 .certt select,.certt input{width:100%;font:inherit;font-size:12.5px;padding:4px 7px;
   border:1px solid var(--line);border-radius:6px;background:var(--card);box-sizing:border-box}
-.certt input{font-family:'JetBrains Mono'}
+.certt input{font-family:'Inter'}
 .certt tr.fora input{border-color:var(--danger)}
 .certok{padding:9px 13px;background:#E6F6EE;color:#15803D;font-size:12.5px;font-weight:600;
   border-top:1px solid #BFE2CE}
@@ -1340,7 +1340,7 @@ body.tv .bat{cursor:default}
 .g3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
 .busca{width:100%;max-width:320px;font:inherit;font-size:13px;padding:8px 12px;
   border:1px solid var(--line);border-radius:9px}
-.tb input.tg{width:82px;text-align:right;font:inherit;font-family:'JetBrains Mono';font-size:12px;
+.tb input.tg{width:82px;text-align:right;font:inherit;font-family:'Inter';font-size:12px;
   padding:4px 7px;border:1px solid var(--line);border-radius:6px}
 
 /* ---------- plano semanal do sopro ---------- */
@@ -1351,14 +1351,14 @@ body.tv .bat{cursor:default}
   border-bottom:1px solid var(--line)}
 .semh span{flex:1;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;
   color:var(--ink3)}
-.semh b{font-family:'JetBrains Mono';font-size:14px}
+.semh b{font-family:'Inter';font-size:14px}
 .semc{padding:10px 14px;display:flex;flex-direction:column;gap:7px}
 .seml{display:flex;align-items:center;gap:10px}
 .seml .f{width:132px;font-size:12.5px;font-weight:600}
 .sembar{flex:1;height:8px;background:var(--line2);border-radius:999px;overflow:hidden;min-width:60px}
 .sembar i{display:block;height:100%;background:#B45309}
 .sembar i.ok{background:var(--run)}
-.seml .v{width:120px;text-align:right;font-family:'JetBrains Mono';font-size:12px}
+.seml .v{width:120px;text-align:right;font-family:'Inter';font-size:12px}
 .seml .s{width:110px;text-align:right;font-size:11.5px;font-weight:600}
 .seml .s.falta{color:#B45309}
 .seml .s.ok{color:var(--run)}
@@ -1402,7 +1402,7 @@ body.tv .bat{cursor:default}
 .inmh{display:flex;align-items:baseline;gap:8px}
 .inmh b{font-family:'Barlow Condensed';font-size:21px;font-weight:700;flex:1}
 .inmh span{font-size:11.5px;color:var(--ink3)}
-.inmh i{font-style:normal;font-family:'JetBrains Mono';font-size:13px;font-weight:700}
+.inmh i{font-style:normal;font-family:'Inter';font-size:13px;font-weight:700}
 .inms{font-size:11.5px;color:var(--ink3);margin-top:7px}
 .inatalhos{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
 .inat{font:inherit;text-align:left;border:1px solid var(--line);border-radius:12px;
@@ -1418,7 +1418,7 @@ body.tv .bat{cursor:default}
 .espl .r{width:150px;font-size:12.5px;color:var(--ink2);flex-shrink:0}
 .espl input{flex:1;min-width:0;font:inherit;font-size:12.5px;padding:6px 9px;
   border:1px solid var(--line);border-radius:7px}
-.espl input[type=number]{max-width:110px;text-align:right;font-family:'JetBrains Mono'}
+.espl input[type=number]{max-width:110px;text-align:right;font-family:'Inter'}
 
 .pausal{display:flex;align-items:center;gap:8px;margin-bottom:6px}
 .pausal input{width:118px;font:inherit;font-size:12.5px;padding:6px 9px;
@@ -1447,7 +1447,7 @@ body.tv .bat{cursor:default}
 .menu .mrodape{border-top:1px solid var(--line);padding:12px 14px;flex-shrink:0}
 .mquem{font-size:12px;color:var(--ink3);line-height:1.4;margin-bottom:9px}
 .mquem b{display:block;font-size:13.5px;color:var(--ink);font-weight:600}
-.mquem span{display:block;font-family:'JetBrains Mono';font-size:10.5px}
+.mquem span{display:block;font-family:'Inter';font-size:10.5px}
 .mquem:empty{display:none}
 .msair{width:100%;font:inherit;font-size:13px;font-weight:600;cursor:pointer;
   border:1px solid var(--line);border-radius:9px;padding:9px 12px;
@@ -1457,7 +1457,7 @@ body.tv .bat{cursor:default}
 .turnob{position:relative;height:6px;border-radius:999px;background:#BFE2CE;margin-top:5px;
   min-width:110px;overflow:hidden}
 .turnob i{position:absolute;top:0;bottom:0;background:#B45309;opacity:.85}
-.ivl{display:inline-block;font-family:'JetBrains Mono';font-size:11px;background:#FDF1E3;
+.ivl{display:inline-block;font-family:'Inter';font-size:11px;background:#FDF1E3;
   color:#8A5A08;border:1px solid #F0D5AC;border-radius:999px;padding:2px 8px;white-space:nowrap}
 
 .fnl{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
@@ -1486,7 +1486,7 @@ body.tv .bat{cursor:default}
 .funca input{flex:1;max-width:320px;font:inherit;font-size:13px;padding:7px 11px;
   border:1px solid var(--line);border-radius:8px}
 .senhal{display:flex;gap:8px}
-.senhal input{flex:1;font-family:'JetBrains Mono';letter-spacing:.04em}
+.senhal input{flex:1;font-family:'Inter';letter-spacing:.04em}
 
 .fmtopo{display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:14px}
 .fmtopo .fld{margin:0;min-width:260px}
@@ -1497,16 +1497,16 @@ body.tv .bat{cursor:default}
 .fmbal{flex:1;min-width:240px;border:1px solid #BFD2FA;background:#E8EFFD;color:#1D4ED8;
   border-radius:10px;padding:10px 13px;font-size:13px}
 .fmbal.ruim{border-color:#F5C2C7;background:#FDECEE;color:#B02A37}
-.fmbal b{font-family:'JetBrains Mono'}
+.fmbal b{font-family:'Inter'}
 input.fi{width:100%;font:inherit;font-size:12.5px;padding:5px 8px;border:1px solid var(--line);
   border-radius:7px;box-sizing:border-box}
-input.fi.num{max-width:110px;text-align:right;font-family:'JetBrains Mono'}
+input.fi.num{max-width:110px;text-align:right;font-family:'Inter'}
 tr.fmagua td{background:var(--surface);color:var(--ink3)}
 .fmlit{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:12px}
 .fmlith{display:flex;align-items:baseline;gap:10px;margin-bottom:8px}
 .fmlith b{font-family:'Barlow Condensed';font-size:20px;font-weight:700}
 .fmlith span{font-size:12px;color:var(--ink3);flex:1}
-.fmlith i{font-style:normal;font-family:'JetBrains Mono';font-size:12px;color:var(--ink2)}
+.fmlith i{font-style:normal;font-family:'Inter';font-size:12px;color:var(--ink2)}
 ol.proc{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:8px}
 ol.proc li{padding-left:4px}
 ol.proc textarea{width:100%;font:inherit;font-size:13px;padding:8px 11px;border:1px solid var(--line);
@@ -1524,32 +1524,32 @@ input.lido{background:var(--surface);color:var(--ink3);cursor:default}
 .opl .pgrande{flex:1;min-width:0;margin:0}
 .opl .pcx{width:120px;flex-shrink:0;margin:0}
 .cxbox{border:1px solid var(--line);border-radius:9px;padding:9px 12px;text-align:right;
-  background:var(--surface);font-family:'JetBrains Mono';font-size:13px;color:var(--ink3)}
+  background:var(--surface);font-family:'Inter';font-size:13px;color:var(--ink3)}
 .cxbox b{font-size:17px;color:var(--ink)}
 .g4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
 @media (max-width:900px){.g4{grid-template-columns:1fr 1fr}}
 /* caixa de "nada apontado": era alta como uma tabela de turnos cheia */
 .tvazio.compacto{padding:12px;font-size:12px}
 .fimbox{border:1.5px solid #1D4ED8;background:#EAF2FE;border-radius:9px;padding:8px 12px;
-  text-align:center;font-family:'JetBrains Mono';font-size:19px;font-weight:700;color:#1D4ED8}
+  text-align:center;font-family:'Inter';font-size:19px;font-weight:700;color:#1D4ED8}
 /* o que a pessoa esta confirmando, grande o bastante para ler de longe
    num tablet sujo de produto, sem campo nenhum para distrair */
 .confb{border:1px solid var(--line2);border-radius:10px;padding:16px 18px;
   text-align:center;background:var(--bg2,#f6f7f9)}
 .confb .cq{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3)}
-.confb .ch{font-family:'JetBrains Mono';font-size:38px;line-height:1.15;
+.confb .ch{font-family:'Inter';font-size:38px;line-height:1.15;
   color:var(--ink);margin:2px 0 4px}
 .confb .cw{font-size:12px;color:var(--ink2)}
 /* Duas frases curtas, sempre na mesma ordem: quando começou e quanto durou.
    Substituem o "Início −7h20 · Duração +3h10", que somava dois desvios de
    causas diferentes e ainda pintava de verde um adiantamento que não houve. */
 .frs{margin:5px 12px 9px;font-size:11.5px;line-height:1.55}
-.frs b{font-family:'JetBrains Mono';font-weight:600;color:var(--danger)}
+.frs b{font-family:'Inter';font-weight:600;color:var(--danger)}
 .frs b.bom{color:var(--run)}
 .frs b.neu{color:var(--ink2)}
 .bat.st-concluido{opacity:.55}
 .tempos2{display:flex;gap:18px;flex-wrap:wrap;margin:10px 0 14px;font-size:12.5px;color:var(--ink3)}
-.tempos2 b{font-family:'JetBrains Mono';font-size:14px;color:var(--ink2)}
+.tempos2 b{font-family:'Inter';font-size:14px;color:var(--ink2)}
 .tempos2 i{font-style:normal;font-size:11px}
 .exl{display:grid;grid-template-columns:1fr 120px 150px 34px;gap:10px;align-items:end;margin-bottom:8px}
 .exl .fld{margin:0}
@@ -1557,7 +1557,7 @@ input.lido{background:var(--surface);color:var(--ink3);cursor:default}
 .volbal.ok{background:#E6F6EE;border:1px solid #BFE2CE;color:#15803D}
 .volbal.falta{background:#FDF1E3;border:1px solid #F0D5AC;color:#8A5A08}
 .volbal.passou{background:#FDECEE;border:1px solid #F5C2C7;color:#B02A37}
-.volbal b{font-family:'JetBrains Mono'}
+.volbal b{font-family:'Inter'}
 
 .calc[hidden]{display:none!important}
 
@@ -1568,7 +1568,7 @@ input.lido{background:var(--surface);color:var(--ink3);cursor:default}
 .tsb{height:8px;background:var(--line2);border-radius:999px;overflow:hidden;margin-bottom:8px}
 .tsb i{display:block;height:100%;background:var(--run)}
 .tst{display:flex;gap:16px;flex-wrap:wrap;font-size:12.5px;color:var(--ink2)}
-.tst b{font-family:'JetBrains Mono'}
+.tst b{font-family:'Inter'}
 .tst .w{color:#B45309}
 .tst .okk,.okk{color:var(--run);font-weight:600}
 
@@ -1588,7 +1588,7 @@ input.lido{background:var(--surface);color:var(--ink3);cursor:default}
 .fabx .fld{margin:0}
 .linp .r{padding-left:2px}
 
-input.lmp{width:100%;font:inherit;font-family:'JetBrains Mono';font-size:12px;padding:4px 8px;
+input.lmp{width:100%;font:inherit;font-family:'Inter';font-size:12px;padding:4px 8px;
   border:1px solid var(--line);border-radius:6px;box-sizing:border-box}
 .certt th:nth-child(4){width:22%}
 
@@ -1612,10 +1612,10 @@ input.lmp{width:100%;font:inherit;font-family:'JetBrains Mono';font-size:12px;pa
 .cid span:first-child b{color:#274B82}
 .cid i{font-style:normal;display:block;font-size:8.5px;text-transform:uppercase;
   letter-spacing:.09em;color:var(--ink3);line-height:1.4}
-.cid b{font-family:'JetBrains Mono';font-size:13.5px;font-weight:600;display:block;
+.cid b{font-family:'Inter';font-size:13.5px;font-weight:600;display:block;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.35}
 .ccx{padding:7px 12px 0;font-size:12px;color:var(--ink3)}
-.ccx b{font-family:'JetBrains Mono';font-size:16px;color:var(--ink)}
+.ccx b{font-family:'Inter';font-size:16px;color:var(--ink)}
 table.cpr{width:calc(100% - 24px);margin:8px 12px 10px;border-collapse:collapse}
 table.cpr th{font-size:9.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--ink3);
   font-weight:600;text-align:left;padding:0 0 3px}
@@ -1624,7 +1624,7 @@ table.cpr{table-layout:fixed}
 table.cpr td{font-size:11.5px;padding:2px 0;border:0;white-space:nowrap;
   overflow:hidden;text-overflow:ellipsis}
 table.cpr th:nth-child(4),table.cpr td.dv{width:52px;text-align:right}
-table.cpr td.dv{font-family:'JetBrains Mono';font-size:11px}
+table.cpr td.dv{font-family:'Inter';font-size:11px}
 table.cpr td.dv b{font-weight:600;color:var(--danger)}
 table.cpr td.dv b.bom{color:var(--run)}
 table.cpr td.dv span{color:var(--ink3);font-size:9.5px;font-family:'Inter'}
@@ -1730,7 +1730,7 @@ body.comcasca .cs-pr .c{background:var(--line3);padding:6px 9px}
 body.comcasca .cs-pr .c.real{background:var(--surface)}
 body.comcasca .cs-pr i{font-style:normal;display:block;font-size:7.5px;font-weight:700;
   letter-spacing:.09em;text-transform:uppercase;color:var(--ink3);margin-bottom:1px}
-body.comcasca .cs-pr b{font-family:'JetBrains Mono';font-weight:700;font-size:12.5px;
+body.comcasca .cs-pr b{font-family:'Inter';font-weight:700;font-size:12.5px;
   display:block;letter-spacing:-.02em;line-height:1.2}
 body.comcasca .cs-pr span{font-size:9.5px;color:var(--ink3);display:block;margin-top:1px;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -1825,7 +1825,7 @@ body.comcasca .bat:not(.cs-min) .cs-ini{display:none}
 .cs-hist .l{display:grid;grid-template-columns:52px 1fr auto;gap:11px;padding:8px 0;
   border-top:1px solid var(--line3);font-size:12.5px;align-items:baseline}
 .cs-hist .l:first-child{border-top:0}
-.cs-hist .h{font-family:'JetBrains Mono';font-weight:700;color:var(--ink2);font-size:12px}
+.cs-hist .h{font-family:'Inter';font-weight:700;color:var(--ink2);font-size:12px}
 .cs-hist .e{color:var(--ink);line-height:1.4}
 .cs-hist .q{font-size:10.5px;color:var(--ink3);white-space:nowrap}
 .cs-hist .sec{font-size:9.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
@@ -1882,7 +1882,7 @@ body.comcasca .cs-pr .c{background:var(--line3);padding:8px 12px}
 body.comcasca .cs-pr .c.real{background:var(--surface)}
 body.comcasca .cs-pr i{font-style:normal;display:block;font-size:8px;font-weight:700;
   letter-spacing:.09em;text-transform:uppercase;color:var(--ink3);margin-bottom:2px}
-body.comcasca .cs-pr b{font-family:'JetBrains Mono';font-weight:700;font-size:15px;
+body.comcasca .cs-pr b{font-family:'Inter';font-weight:700;font-size:15px;
   display:block;letter-spacing:-.02em;line-height:1.2;color:var(--ink)}
 body.comcasca .cs-pr span{font-size:10.5px;display:block;margin-top:2px;color:var(--ink3);
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -1948,7 +1948,7 @@ body.comcasca .tqcol.cs-tq .cs-tqinfo{display:grid;grid-template-columns:auto 1f
   gap:3px 10px;font-size:11.5px;margin-top:7px}
 body.comcasca .tqcol.cs-tq .cs-tqinfo i{font-style:normal;font-size:8.5px;font-weight:700;
   letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);align-self:center}
-body.comcasca .tqcol.cs-tq .cs-tqinfo b{font-family:'JetBrains Mono';font-size:13px;
+body.comcasca .tqcol.cs-tq .cs-tqinfo b{font-family:'Inter';font-size:13px;
   font-weight:700}
 body.comcasca .cs-tqlib{margin-top:9px;border-radius:9px;padding:7px 10px;font-size:11.5px;
   display:flex;align-items:center;gap:7px;font-weight:600}
@@ -1966,9 +1966,9 @@ body.comcasca .bat.cs-min.cs-temlib .stq.programada{display:none}
 /* ---- relógio ---- */
 .cs-relogio{display:flex;align-items:baseline;gap:3px;padding:5px 11px;border-radius:9px;
   background:var(--line3);border:1px solid var(--line);margin-left:2px}
-.cs-relogio b{font-family:'JetBrains Mono';font-size:14px;font-weight:700;
+.cs-relogio b{font-family:'Inter';font-size:14px;font-weight:700;
   letter-spacing:-.02em}
-.cs-relogio i{font-style:normal;font-family:'JetBrains Mono';font-size:10px;
+.cs-relogio i{font-style:normal;font-family:'Inter';font-size:10px;
   color:var(--ink3)}
 
 /* ---- movimento: transições curtas, sem espalhafato ---- */
@@ -2007,7 +2007,7 @@ body.comcasca .cs-flag.pau{animation:csPulsa 2.4s ease-in-out infinite}
 .festa{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:#E7F5EC;
   border:2px solid #4FA877;color:#0B5C33;border-radius:14px;padding:14px 18px;margin:12px 0}
 .festa b{font-size:19px}
-.festa .t{margin-left:auto;font-family:'JetBrains Mono',ui-monospace,monospace;font-size:26px;
+.festa .t{margin-left:auto;font-family:'Inter',ui-monospace,monospace;font-size:26px;
   font-weight:700}
 .festa[hidden]{display:none}
 /* o teclado ocupa a largura toda da janela: tecla grande é tecla que não erra */
@@ -2049,7 +2049,7 @@ body.comcasca .cs-flag.pau{animation:csPulsa 2.4s ease-in-out infinite}
 .cs-opmenu .metaok{display:flex;align-items:center;gap:10px;background:#E7F5EC;
   border:2px solid #4FA877;color:#0B5C33;border-radius:13px;padding:12px 15px;margin-bottom:12px}
 .cs-opmenu .metaok b{font-size:18px}
-.cs-opmenu .metaok .t{margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:22px;
+.cs-opmenu .metaok .t{margin-left:auto;font-family:'Inter',monospace;font-size:22px;
   font-weight:700}
 .cs-opmenu .metapc{font-size:12px;color:var(--ink3);margin-bottom:12px}
 /* marcadores da fila */
@@ -2083,7 +2083,7 @@ body.comcasca .cs-flag.pau{animation:csPulsa 2.4s ease-in-out infinite}
   color:var(--ink3);margin:10px 0 5px}
 .cs-opmenu .it{display:flex;align-items:center;gap:10px;padding:9px 11px;
   border:1px solid var(--line);border-radius:11px;margin-bottom:6px}
-.cs-opmenu .it .hr{font-family:'JetBrains Mono';font-size:13px;color:var(--ink2);
+.cs-opmenu .it .hr{font-family:'Inter';font-size:13px;color:var(--ink2);
   width:52px;flex:none}
 .cs-opmenu .it .tx{flex:1;min-width:0}
 .cs-opmenu .it .tx b{display:block;font-size:14px;font-weight:600;color:var(--ink);
@@ -2157,7 +2157,7 @@ body.comcasca .cs-flag.pau{animation:csPulsa 2.4s ease-in-out infinite}
 .cs-oper .pz i{font-style:normal;display:block;font-size:9.5px;font-weight:700;
   letter-spacing:.09em;text-transform:uppercase;color:var(--ink3);margin-bottom:3px}
 .cs-oper .pz.alvo i{color:#92400E}
-.cs-oper .pz b{font-family:'JetBrains Mono';font-size:30px;font-weight:700;line-height:1;
+.cs-oper .pz b{font-family:'Inter';font-size:30px;font-weight:700;line-height:1;
   display:block}
 .cs-oper .pz.alvo b{color:#92400E}
 .cs-oper .pausado{margin-top:13px;background:#B3261E;color:#fff;border-radius:11px;
@@ -2182,7 +2182,7 @@ body.comcasca .cs-flag.pau{animation:csPulsa 2.4s ease-in-out infinite}
   font-weight:700;text-transform:uppercase;letter-spacing:.04em}
 .cs-oper .etcont .pt{width:12px;height:12px;border-radius:50%;background:currentColor;
   animation:csPulso 1.6s ease-in-out infinite}
-.cs-oper .etcont .vl{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:34px;
+.cs-oper .etcont .vl{font-family:'Inter',ui-monospace,monospace;font-size:34px;
   font-weight:700;line-height:1;letter-spacing:-.02em;margin-left:auto;
   font-variant-numeric:tabular-nums}
 .cs-oper .etcont .dd{width:100%;font-size:12.5px;opacity:.8}
@@ -2237,7 +2237,7 @@ body.comcasca .cs-flag.pau{animation:csPulsa 2.4s ease-in-out infinite}
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 /* relógio do dia no cabeçalho da máquina */
 .cs-oper .cab .relog{text-align:right;margin-right:4px;flex:none}
-.cs-oper .cab .relog b{display:block;font-family:'JetBrains Mono',ui-monospace,monospace;
+.cs-oper .cab .relog b{display:block;font-family:'Inter',ui-monospace,monospace;
   font-size:22px;font-weight:700;line-height:1;color:#fff}
 .cs-oper .cab .relog i{font-style:normal;font-size:11px;color:#9FB0CE;text-transform:capitalize}
 /* bloco da OP, separado do cabeçalho */
@@ -2370,7 +2370,7 @@ body.cs-operon .toast{z-index:400}
 .cs-pausa .mt:hover{border-color:var(--ink3);color:var(--ink)}
 .cs-pausa .mt.on{background:#0E1B33;color:#fff;border-color:#0E1B33;font-weight:600}
 .cs-pausa .pin{width:100%;border:1px solid var(--line);border-radius:10px;padding:12px 14px;
-  font-family:'JetBrains Mono';font-size:20px;letter-spacing:.3em;text-align:center;
+  font-family:'Inter';font-size:20px;letter-spacing:.3em;text-align:center;
   background:var(--surface);color:var(--ink)}
 .cs-pausa .pin:focus{outline:2px solid #1D6FE8;outline-offset:1px;border-color:transparent}
 .cs-pausa .er{color:#B3261E;font-size:12px;margin-top:8px;min-height:16px}
@@ -2388,7 +2388,7 @@ body.comcasca .cs-flag{display:flex;align-items:center;gap:7px;border-radius:8px
   padding:6px 9px;font-size:11.5px;margin-top:8px;font-weight:600}
 body.comcasca .cs-flag.atr{background:#FDECEA;color:#B3261E}
 body.comcasca .cs-flag.pau{background:#B3261E;color:#fff}
-body.comcasca .cs-flag b{font-family:'JetBrains Mono';font-weight:700}
+body.comcasca .cs-flag b{font-family:'Inter';font-weight:700}
 /* a frase de reprogramação sai do card: fica no histórico */
 body.comcasca .bat .bfila{display:none!important}
 /* ---- a linha da fila: quatro colunas, duas linhas ----
@@ -2407,10 +2407,10 @@ body.comcasca .bat.cs-min .cid .cs-br{display:none!important}
 body.comcasca .bat.cs-min .cid .cs-ci{display:flex;flex-direction:column;
   justify-content:center;background:#FEF6E9;border:1px solid #F0DCB4;grid-row:span 2}
 body.comcasca .bat.cs-min .cid .cs-ci i{color:#92400E;opacity:.85}
-body.comcasca .bat.cs-min .cid .cs-ci b{color:#92400E;font-family:'JetBrains Mono';
+body.comcasca .bat.cs-min .cid .cs-ci b{color:#92400E;font-family:'Inter';
   font-size:13.5px;letter-spacing:-.02em;line-height:1.2}
 body.comcasca .bat.cs-min .cid .cs-ci u{display:block;text-decoration:none;
-  font-family:'JetBrains Mono';font-size:10.5px;color:#B07A28;line-height:1.25;
+  font-family:'Inter';font-size:10.5px;color:#B07A28;line-height:1.25;
   opacity:.9}
 body.comcasca .bat.cs-min .cid .cs-ci i{font-size:7px;letter-spacing:.07em}
 body.comcasca .bat.cs-min .cid>span:nth-child(1){order:1}   /* Lote */
@@ -2427,7 +2427,7 @@ body.comcasca .bat .cid .cs-bp,body.comcasca .bat .cid .cs-br{background:var(--l
   border:1px solid var(--line)}
 body.comcasca .bat .cid .cs-bp i,body.comcasca .bat .cid .cs-br i{color:var(--ink3)}
 body.comcasca .bat .cid .cs-bp b,body.comcasca .bat .cid .cs-br b{color:var(--ink);
-  font-family:'JetBrains Mono';font-size:12px;letter-spacing:-.03em;white-space:nowrap}
+  font-family:'Inter';font-size:12px;letter-spacing:-.03em;white-space:nowrap}
 body.comcasca .bat .cid u{display:block;text-decoration:none;font-size:8.5px;
   color:var(--ink3);line-height:1.3;white-space:nowrap;overflow:hidden;
   text-overflow:ellipsis;margin-top:1px}
@@ -2457,7 +2457,7 @@ body.comcasca .cs-meta{display:none;align-items:center;gap:10px;font-size:10.5px
   color:var(--ink3);margin-top:5px}
 body.comcasca .cs-meta>span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;
   white-space:nowrap}
-body.comcasca .cs-meta em{font-style:normal;font-family:'JetBrains Mono';
+body.comcasca .cs-meta em{font-style:normal;font-family:'Inter';
   font-size:11.5px;font-weight:700;color:var(--ink2);white-space:nowrap;flex:none}
 /* Respiro interno medido: a moldura do card, o vão entre cabeçalho e
    grade, e o vão entre blocos. Três lugares onde sobravam dois ou três
@@ -3084,13 +3084,13 @@ body .body{flex-direction:column;flex-wrap:nowrap}body .body>*:not(#csPgBar){fle
 .od2l{display:flex;gap:6px;align-items:center;font-size:12.5px;color:var(--ink2);margin-top:6px}.od2l select,.od2l input{height:30px;border:1px solid var(--line);border-radius:7px;padding:0 6px}
 .od2abas{display:flex;gap:4px;border-bottom:1px solid var(--line);margin:6px 0 12px;flex-wrap:wrap}
 .od2abas button{position:relative;padding:9px 14px;font-size:13px;color:var(--ink2);background:none}
-.od2abas button b{font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--ink3);margin-left:5px;font-weight:500}
+.od2abas button b{font-family:'Inter',monospace;font-size:11.5px;color:var(--ink3);margin-left:5px;font-weight:500}
 .od2abas button::after{content:'';position:absolute;left:8px;right:8px;bottom:-1px;height:3px;border-radius:3px;background:transparent}
 .od2abas button:hover::after,.od2abas button.on::after{background:var(--cor)}.od2abas button.on{color:var(--ink);font-weight:600}.od2abas button:hover b{color:var(--cor)}
 .od2rol{overflow-x:auto}.od2t{width:100%;border-collapse:collapse;background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden}
 .od2t th{font-size:11px;font-weight:500;color:var(--ink3);text-align:left;padding:9px 8px;background:var(--line3,#F5F4F0);border-bottom:1px solid var(--line);white-space:nowrap}
 .od2t td{padding:9px 8px;border-bottom:1px solid var(--line2,#EFEEE9);font-size:13px;white-space:nowrap}
-.od2t td small{display:block;font-size:11px;color:var(--ink3)}.od2t .m{font-family:'JetBrains Mono',monospace;font-size:12.5px}
+.od2t td small{display:block;font-size:11px;color:var(--ink3)}.od2t .m{font-family:'Inter',monospace;font-size:12.5px}
 .od2t tbody tr{cursor:pointer}.od2t tbody tr:hover td{background:#F8FAFE}.od2t tr.aberta td,.od2t tr.sel td{background:#F4F8FF}
 .od2so{cursor:pointer;user-select:none}.od2so::after{content:'⇅';font-size:9px;margin-left:4px;opacity:.45}.od2so.asc::after{content:'▲';opacity:1}.od2so.desc::after{content:'▼';opacity:1}.od2so.asc,.od2so.desc{color:var(--ink)!important;font-weight:600!important}
 .od2ck{width:16px;height:16px;border:1.5px solid #C6C3BB;border-radius:4px;display:inline-block;vertical-align:middle;cursor:pointer}.od2ck.on{background:#0E1B33;border-color:#0E1B33}
@@ -3160,7 +3160,7 @@ body .body{flex-direction:column;flex-wrap:nowrap}body .body>*:not(#csPgBar){fle
 .cptabs button.on{color:var(--ink);font-weight:600;border-bottom-color:#1D6FE8}
 .cpetq{font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;background:#F3E8FF;color:#6B21A8;vertical-align:middle;margin-left:6px}
 .cpgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:4px 14px}
-.cpin{width:90px;height:30px;border:1px solid var(--line);border-radius:7px;text-align:right;padding:0 7px;font-family:'JetBrains Mono',monospace;font-size:12.5px;background:var(--surface)}
+.cpin{width:90px;height:30px;border:1px solid var(--line);border-radius:7px;text-align:right;padding:0 7px;font-family:'Inter',monospace;font-size:12.5px;background:var(--surface)}
 .cpsec{font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink3);font-weight:600;margin:0 0 8px;display:flex;gap:8px;align-items:center}
 .cpver{font-size:12.5px;padding:6px 0;border-top:1px solid var(--line2,#EFEEE9)}
 .cporig{display:flex;gap:8px;align-items:center;background:#F4F8FF;border:1px solid #CFDDF6;border-radius:10px;padding:9px 12px;font-size:12.5px;margin-bottom:14px;flex-wrap:wrap}.cporig a{color:#1D6FE8;font-weight:600;cursor:pointer}
@@ -3219,8 +3219,8 @@ html.cs-escuro #csGrupoTop{color:#E8ECF3}
 
 /* ===== v282 ===== */
 .oecards{display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;gap:10px;margin:4px 0 14px}.oecards div{border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:var(--surface)}
-.oecards span{display:block;font-size:11.5px;color:var(--ink3)}.oecards b{font-family:'JetBrains Mono',monospace;font-size:24px}.oecards .big b{font-size:34px}
-.od2t td.n{text-align:right;font-family:'JetBrains Mono',monospace}.od2t td small{display:block;font-size:10.5px;color:var(--ink3)}
+.oecards span{display:block;font-size:11.5px;color:var(--ink3)}.oecards b{font-family:'Inter',monospace;font-size:24px}.oecards .big b{font-size:34px}
+.od2t td.n{text-align:right;font-family:'Inter',monospace}.od2t td small{display:block;font-size:10.5px;color:var(--ink3)}
 .oeconta{border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-top:14px;background:var(--surface)}
 .oeln{font-size:13px;padding:7px 0;border-bottom:1px solid var(--line2,#EFEEE9)}.oeln.tot{font-size:14.5px;border-bottom:0}
 #csHamb,#csAvTop,#csGav,#csGavVeu{display:none}
@@ -3275,7 +3275,7 @@ html.cs-escuro #csGrupoTop{color:#E8ECF3}
 .hm-card{position:relative;border:1px solid var(--line);border-radius:16px;background:var(--surface);padding:14px 16px 12px;min-height:150px;display:flex;flex-direction:column;transition:box-shadow .15s}
 .hm-card:hover{box-shadow:0 8px 22px rgba(14,27,51,.06)}.hm-card.s2{grid-column:span 2}.hm-card.s3{grid-column:span 3}
 .hm-t{font-size:12.5px;font-weight:600;color:var(--ink2)}
-.hm-v{font-family:'JetBrains Mono',monospace;font-size:25px;font-weight:700;margin-top:6px;letter-spacing:-.02em}
+.hm-v{font-family:'Inter',monospace;font-size:25px;font-weight:700;margin-top:6px;letter-spacing:-.02em}
 .hm-sub{font-size:11.5px;color:var(--ink3);margin-top:2px}.hm-sub a{color:#1D6FE8;cursor:pointer;font-weight:600}
 .hm-dl{display:inline-flex;align-items:center;gap:3px;font-size:11.5px;font-weight:700;padding:2px 7px;border-radius:999px;margin-left:6px;vertical-align:middle;font-family:Inter,sans-serif}
 .hm-dl.up{background:#EAF6EE;color:#15803D}.hm-dl.dn{background:#FDECEC;color:#B3261E}
@@ -3283,7 +3283,7 @@ html.cs-escuro #csGrupoTop{color:#E8ECF3}
 .hm-tops{margin-top:8px;display:flex;flex-direction:column;gap:7px}.hm-tops .r{display:grid;grid-template-columns:18px 1fr auto;gap:8px;align-items:center;font-size:12.5px}
 .hm-tops .r i{font-style:normal;font-size:11px;color:var(--ink3);font-weight:700}.hm-tops .r .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .hm-tops .r .br{grid-column:2/4;height:6px;border-radius:999px;background:#F1F0EC;overflow:hidden;margin-top:-3px}.hm-tops .r .br b{display:block;height:100%;border-radius:999px}
-.hm-tops .r .vl{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600}
+.hm-tops .r .vl{font-family:'Inter',monospace;font-size:12px;font-weight:600}
 .hm-pilha{display:flex;height:14px;border-radius:999px;overflow:hidden;margin-top:12px;background:#F1F0EC}
 .hm-leg{display:flex;gap:12px;font-size:11px;color:var(--ink3);margin-top:6px;flex-wrap:wrap}.hm-leg span{display:inline-flex;align-items:center;gap:5px}.hm-leg i{width:10px;height:10px;border-radius:3px;display:inline-block}
 .hm-ck{display:flex;align-items:center;gap:10px;padding:9px 10px;border:1px solid var(--line);border-radius:10px;margin-bottom:6px;cursor:pointer;font-size:13px}
@@ -3299,10 +3299,10 @@ html.cs-escuro #csGrupoTop{color:#E8ECF3}
 #csCalc .ct{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}#csCalc .ct b{font-size:18px}
 #csCalc .ct button{width:44px;height:44px;border-radius:12px;background:#F5F4F0;font-size:24px;color:#545C69}
 #csCalc .cf{min-height:44px;max-height:120px;overflow:auto;font-size:13px;color:#8B93A1;padding:4px 6px}
-#csCalc .cf div{display:flex;justify-content:space-between;gap:10px;font-family:'JetBrains Mono',monospace;padding:2px 0}#csCalc .cf b{color:#1A1D23}
+#csCalc .cf div{display:flex;justify-content:space-between;gap:10px;font-family:'Inter',monospace;padding:2px 0}#csCalc .cf b{color:#1A1D23}
 #csCalc .cd{background:#F7F8FA;border-radius:14px;padding:12px 14px;margin:8px 0 12px;text-align:right}
-#csCalc .ce{font-family:'JetBrains Mono',monospace;font-size:34px;font-weight:700;color:#1A1D23;word-break:break-all;line-height:1.15}
-#csCalc .cr{font-family:'JetBrains Mono',monospace;font-size:17px;color:#1D6FE8;min-height:22px}
+#csCalc .ce{font-family:'Inter',monospace;font-size:34px;font-weight:700;color:#1A1D23;word-break:break-all;line-height:1.15}
+#csCalc .cr{font-family:'Inter',monospace;font-size:17px;color:#1D6FE8;min-height:22px}
 #csCalc .ck{display:grid;grid-template-columns:repeat(4,1fr);gap:9px}
 #csCalc .ck button{height:66px;border-radius:16px;background:#F1F0EC;font-size:26px;font-weight:600;color:#1A1D23;font-family:Inter,sans-serif}
 #csCalc .ck button:active{transform:scale(.97);filter:brightness(.95)}
@@ -3492,7 +3492,7 @@ body.cs-operon .cs-oper .big{min-height:clamp(64px,11vh,120px);font-size:clamp(1
 body.cs-operon .cs-oper .big.pau{flex:0 0 clamp(110px,22vw,200px)}
 .cs-oper .ativa{display:flex;align-items:center;justify-content:space-between;border:1px solid var(--line);border-radius:13px;padding:clamp(10px,1.4vh,16px) 16px;background:var(--surface)}
 .cs-oper .ativa i{font-style:normal;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3)}
-.cs-oper .ativa b{font-family:'JetBrains Mono',monospace;font-size:clamp(22px,3.4vh,38px);color:#0F6E56}
+.cs-oper .ativa b{font-family:'Inter',monospace;font-size:clamp(22px,3.4vh,38px);color:#0F6E56}
 /* menu: a calculadora é um bloco na barra, ao lado do X */
 .cs-opmenu .cab .calcb{margin-left:auto;display:inline-flex;align-items:center;gap:8px;background:#1E3A8A;color:#E6F1FB;border:1px solid #378ADD;border-radius:12px;padding:9px 14px;font:inherit;font-size:14px;font-weight:600;cursor:pointer}
 .cs-opmenu .cab .calcb svg{color:#B5D4F4}
@@ -3516,10 +3516,10 @@ body.cs-operon .modal input.kpalvo{outline:3px solid #1D6FE8;outline-offset:1px}
 .cs-desc .dl{font-size:clamp(14px,2vh,20px);color:#94A3B8;margin-top:.6vh}
 .cs-desc .dr,.cs-desc .da{font-size:clamp(12px,1.7vh,17px);letter-spacing:.08em;text-transform:uppercase;margin-top:4vh}
 .cs-desc .dr{color:#FAC775}.cs-desc .da{color:#9FE1CB}
-.cs-desc .dt{font:700 clamp(56px,11vh,120px)/1.05 'JetBrains Mono',monospace;color:#FAC775}
-.cs-desc .dc{font:700 clamp(40px,7.5vh,84px)/1.05 'JetBrains Mono',monospace;color:#9FE1CB}
+.cs-desc .dt{font:700 clamp(56px,11vh,120px)/1.05 'Inter',monospace;color:#FAC775}
+.cs-desc .dc{font:700 clamp(40px,7.5vh,84px)/1.05 'Inter',monospace;color:#9FE1CB}
 .cs-desc .dv{margin-top:6vh;font-size:clamp(13px,1.8vh,18px);color:#64748B}
-.cs-desc .dh{margin-top:1.5vh;font:500 clamp(13px,1.8vh,18px) 'JetBrains Mono',monospace;color:#475569}
+.cs-desc .dh{margin-top:1.5vh;font:500 clamp(13px,1.8vh,18px) 'Inter',monospace;color:#475569}
 .cs-desc.pau{background:#2A1D05}.cs-desc.pau .dm{color:#FAC775}
 
 /* ===== v298 · tela do operador aprovada ===== */
@@ -3528,7 +3528,7 @@ body.cs-operon .modal input.kpalvo{outline:3px solid #1D6FE8;outline-offset:1px}
 .cs-oper .cs-st .pt{width:clamp(12px,1.8vh,18px);height:clamp(12px,1.8vh,18px);border-radius:50%;background:rgba(255,255,255,.9);flex:none}
 .cs-oper .cs-st .rot{font:700 clamp(22px,3.2vh,34px) 'Barlow Condensed',sans-serif;letter-spacing:.04em;text-transform:uppercase;line-height:1.05}
 .cs-oper .cs-st .sub{font-size:clamp(12px,1.6vh,16px);opacity:.88;margin-top:2px}
-.cs-oper .cs-st .tm{margin-left:auto;font:700 clamp(28px,4.4vh,48px) 'JetBrains Mono',monospace}
+.cs-oper .cs-st .tm{margin-left:auto;font:700 clamp(28px,4.4vh,48px) 'Inter',monospace}
 .cs-oper .cs-st.set{background:#475569}.cs-oper .cs-st.rod{background:#15803D}.cs-oper .cs-st.pau{background:#CA8A04}
 .cs-oper .cs-st.atr{background:#DC2626}.cs-oper .cs-st.apo{background:#6D28D9}
 body.cs-operon .cs-oper .acoes{flex-direction:column;gap:clamp(8px,1.2vh,14px)}
@@ -3575,7 +3575,7 @@ body.cs-operon .cs-oper .big.pau{flex:none;width:100%;min-height:clamp(52px,6.8v
 .cs-matop th{font-size:clamp(11px,1.4vh,14px);font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#6B7280;text-align:left;padding:1vh .5vw;border-bottom:2px solid #1A1D23}
 .cs-matop th:last-child,.cs-matop td:last-child{text-align:right}
 .cs-matop td{padding:1.5vh .5vw;border-bottom:1px solid #D8DCE3}
-.cs-matop td:last-child{font:700 clamp(16px,2.4vh,24px) 'JetBrains Mono',monospace;white-space:nowrap}
+.cs-matop td:last-child{font:700 clamp(16px,2.4vh,24px) 'Inter',monospace;white-space:nowrap}
 .cs-matop .rd{padding:2vh 4vw;border-top:1px solid #D8DCE3;background:#fff}
 .cs-matop .rd button{width:100%;min-height:clamp(52px,8vh,80px);border-radius:14px;border:1.5px solid #B4B9C4;background:#fff;font:600 clamp(16px,2.2vh,22px) Inter,sans-serif}
 .cs-opmenu .cs-matb{display:flex;align-items:center;gap:10px;width:100%;background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:0 0 12px;font:600 15px Inter,sans-serif;color:var(--ink);cursor:pointer;text-align:left}
@@ -3584,7 +3584,7 @@ body.cs-operon .cs-oper .big.pau{flex:none;width:100%;min-height:clamp(52px,6.8v
 .cs-desc.on{background:#070B14;--cor:#60A5FA;--cor2:#BFDBFE;justify-content:flex-start;padding:5vh 5vw 4vh}
 .cs-desc.on.set{--cor:#94A3B8;--cor2:#CBD5E1}.cs-desc.on.rod{--cor:#5DCAA5;--cor2:#9FE1CB}.cs-desc.on.apo{--cor:#A78BFA;--cor2:#DDD6FE}
 .cs-desc.on.pau{--cor:#EAB308;--cor2:#FDE68A;background:#130F03}.cs-desc.on.atr{--cor:#EF4444;--cor2:#FCA5A5;background:#150606}
-.cs-desc .ag{font:700 clamp(40px,6vh,64px) 'JetBrains Mono',monospace}
+.cs-desc .ag{font:700 clamp(40px,6vh,64px) 'Inter',monospace}
 .cs-desc .dt2{font-size:clamp(13px,1.9vh,19px);color:#64748B;margin-top:.4vh}
 .cs-desc .np{margin-top:3vh;font:700 clamp(32px,5.4vh,58px)/1.05 'Barlow Condensed',sans-serif;letter-spacing:.02em;text-transform:uppercase;max-width:90vw}
 .cs-desc .nl{font-size:clamp(13px,1.8vh,18px);color:#94A3B8;margin-top:.8vh}
@@ -3593,11 +3593,11 @@ body.cs-operon .cs-oper .big.pau{flex:none;width:100%;min-height:clamp(52px,6.8v
 .cs-desc .ad{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
 .cs-desc .ad .m{font:700 clamp(32px,5.6vh,58px) 'Barlow Condensed',sans-serif;letter-spacing:.03em}
 .cs-desc .ad .s{margin-top:.6vh;font-size:clamp(12px,1.7vh,17px);font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--cor2)}
-.cs-desc .ad .t{margin-top:1.2vh;font:700 clamp(28px,4.8vh,50px) 'JetBrains Mono',monospace;color:var(--cor2)}
+.cs-desc .ad .t{margin-top:1.2vh;font:700 clamp(28px,4.8vh,50px) 'Inter',monospace;color:var(--cor2)}
 .cs-desc .ad .t2{font-size:clamp(11px,1.5vh,15px);color:#64748B;margin-top:.3vh}
 .cs-desc .pr{margin-top:auto;width:100%;display:flex;align-items:center;justify-content:space-between;border:1px solid #1E293B;background:#0F172A;border-radius:16px;padding:1.8vh 5vw}
 .cs-desc .pr i{font-style:normal;font-size:clamp(11px,1.5vh,15px);font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#94A3B8}
-.cs-desc .pr b{font:700 clamp(30px,4.6vh,48px) 'JetBrains Mono',monospace;color:#FAC775}
+.cs-desc .pr b{font:700 clamp(30px,4.6vh,48px) 'Inter',monospace;color:#FAC775}
 .cs-desc.atr .pr b{color:#FCA5A5}
 .cs-desc .tq{margin-top:2vh;display:flex;align-items:center;gap:8px;font-size:clamp(12px,1.6vh,16px);color:#475569}
 .cs-desc .tq svg{width:clamp(20px,2.6vh,26px);height:clamp(20px,2.6vh,26px)}
@@ -3774,7 +3774,7 @@ body.cs-semjanela #mask{visibility:hidden!important}
 /* ===== v345 · TV ===== */
 .tvagora{margin:10px 12px 0!important;border-radius:12px;box-shadow:0 1px 0 rgba(0,0,0,.03)}
 .tvabar{gap:12px!important;padding:7px 12px!important}
-.tvabar .tm{font-family:'JetBrains Mono';font-size:14px;font-weight:700;background:rgba(255,255,255,.18);border-radius:6px;padding:1px 8px}
+.tvabar .tm{font-family:'Inter';font-size:14px;font-weight:700;background:rgba(255,255,255,.18);border-radius:6px;padding:1px 8px}
 .tvabar .d{max-width:52%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .tvmaq.alerta{border:3px solid #DC2626!important;animation:csTvAlerta 2.4s ease-in-out infinite!important;background:#fff}
 .tvmaq.alerta .tvmh{background:#DC2626!important;color:#fff}
@@ -3838,7 +3838,7 @@ body.cs-semjanela #mask{visibility:hidden!important}
 .cp2t th.c,.cp2t td.c{text-align:center}.cp2t th small{display:block;text-transform:none;letter-spacing:0;font-weight:500;color:var(--ink3)}
 .cp2t td small{display:block;font-size:10.5px;margin-top:2px}
 .cp2r{font-weight:600;border-radius:999px;padding:1px 6px;display:inline-block!important}.cp2r.mau{background:#FDECEC;color:#B3261E}.cp2r.bom{background:#E7F5EC;color:#15803D}.cp2r.ok{background:#EEF2F8;color:#334155}
-.cp2in{height:30px;box-sizing:border-box;border:1px solid #1D4ED8;border-radius:7px;text-align:center;background:#F7FAFF;font:500 12.5px var(--mono,'JetBrains Mono'),monospace}
+.cp2in{height:30px;box-sizing:border-box;border:1px solid #1D4ED8;border-radius:7px;text-align:center;background:#F7FAFF;font:500 12.5px var(--mono,'Inter'),monospace}
 .cp2nome{border:0;background:none;padding:0;font:inherit;font-weight:700;color:var(--ink);cursor:pointer;text-align:left}.cp2nome:hover{color:#1D4ED8}
 .cp2tags{display:flex;gap:4px;flex-wrap:wrap}.cp2tags i{font-style:normal;font-size:10.5px;font-weight:700;border-radius:999px;padding:2px 8px;background:#EEF2F8;color:#334155}
 .cp2res{color:#B45309}
@@ -3864,6 +3864,7 @@ body.cs-semjanela #mask{visibility:hidden!important}
 /* ===== v360 ===== */
 .cp2sit{height:36px;border:1px solid var(--line);border-radius:10px;padding:0 10px;font:inherit;font-size:13px;background:#fff}
 </style>
+<style id="cs-num401">html body{font-variant-numeric:tabular-nums}</style>
 </head>
 <body>
 
@@ -5343,12 +5344,20 @@ function bateladas(data){
    limpeza (se trocou de produto) → enchimento → fabricação → descanso
    → análise. O envase só pode começar quando tudo isso terminou.
    ===================================================================== */
+/* v401: tempo do produto mãe NUM tanque: o da página Tempos de processo; sem ele, o geral de sempre */
+function csTempoTq(g,tq){const base=tempoG(g);const G=TEMPO_GRANEL[g]||{};const x=(G.tq&&tq&&G.tq[tq])||null;
+  const r={...base,limpMesmo:!!G.limpMesmo};
+  if(x){if(x.limp!=null)r.limpeza=+x.limp;if(x.prep!=null)r.fabricacao=+x.prep;r.descanso=G.temDesc===false?0:(x.desc!=null?+x.desc:(+base.descanso||0));}
+  else if(G.temDesc===false)r.descanso=0;
+  return r;}
+/* setup do produto na máquina: o da máquina; senão o do produto; senão o padrão */
+function csSetupDe(cod,maq){const tp=TEMPOS[String(cod)]||{};if(maq&&tp.s&&tp.s[maq]!=null)return +tp.s[maq];return tp.setup!=null?+tp.setup:SETUP_PADRAO;}
 function etapasDoLote(b){
-  const g=tempoG(b.produto);
+  const g=csTempoTq(b.produto,b.tanque);
   const ench=b.tanque?(tqOf(b.tanque)||{}).ench||0:0;
   const passos=[];
   /* a limpeza é do produto: desinfetante sai rápido, lava roupas não */
-  if(b.trocouProduto&&g.limpeza)passos.push({k:'limpeza',rot:'Limpeza',min:g.limpeza,
+  if((b.trocouProduto||g.limpMesmo)&&g.limpeza)passos.push({k:'limpeza',rot:'Limpeza',min:g.limpeza,
     nota:'trocou de produto'});
   if(ench)passos.push({k:'enchimento',rot:'Enchimento',min:ench,
     nota:'separação das MPs em paralelo'});
@@ -5460,7 +5469,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v398';
+const VERSAO_APP='v401';
 let DRAG=null;
 function render(){
   recomporTudo();
@@ -6152,7 +6161,7 @@ function atribuirTanque(b,destino){
       Este lote entra como batelada seguinte.</div>`:''}
     <div class="alert blue">Isto define o tanque de <b>${b.ordens.length}</b>
       OP${b.ordens.length>1?'s':''} de envase:
-      <ul style="margin:8px 0 0;padding-left:18px;font-family:'JetBrains Mono';font-size:11.5px;line-height:1.7">
+      <ul style="margin:8px 0 0;padding-left:18px;font-family:'Inter';font-size:11.5px;line-height:1.7">
       ${b.ordens.map(o=>`<li>${nomeCurto(o.codigo)} ·
         ${o.maq} ${hhmm(o.inicio)} · ${nf(o.litros)} L</li>`).join('')}</ul></div>`;
   M('mF').innerHTML=`<div style="flex:1"></div>
@@ -7383,7 +7392,7 @@ function sincronizarRecursos(){
     .forEach(r=>SOPRADORAS.push({id:r.id,nome:r.nome,cad:+r.cad||900}));
   TANQUES.length=0;
   recursosDe('tanque').filter(r=>r.ativo!==false)
-    .forEach(r=>TANQUES.push({id:r.id,cap:+r.cap||3800,ench:+r.ench||0,limp:+r.limp||0}));
+    .forEach(r=>TANQUES.push({id:r.id,cap:+r.cap||3800,ench:+r.ench||0,limp:+r.limp||0,pul:!!r.pul}));
 }
 
 /* ---------- tela ---------- */
@@ -12072,7 +12081,7 @@ if(M('mCorr'))M('mCorr').onclick=()=>corrigirRegistros(o);
     if(lp&&v&&!v.disabled&&(!(+v.value)||TANQUES.some(x=>x.cap===+v.value)||+v.value===lp))v.value=lp;
     /* sem máquina escolhida ainda, tempoDe já devolve o menor do produto */
     /* v357: o setup é do produto (cadastro); a máquina sem tempo para o produto só avisa */
-    try{const tp=TEMPOS[String(cod)]||{};if(!o&&M('fSet'))M('fSet').textContent=String(tp.setup!=null?tp.setup:SETUP_PADRAO);
+    try{const tp=TEMPOS[String(cod)]||{};if(!o&&M('fSet'))M('fSet').textContent=String(csSetupDe(cod,maq));
       if(maq&&tp.t&&Object.keys(tp.t).length&&!tp.t[maq])toast(`A ${maq} não tem tempo cadastrado para este produto.`,true);}catch(_){}
     const min=tempoDe(cod,maq),e=M('fEnv');
     if(min&&e&&!e.disabled){
@@ -15696,7 +15705,7 @@ async function abrirTinyCfg(){
     <span style="font-size:12.5px;color:var(--ink3)">${L.length} chamadas · <b style="color:${erros?'var(--danger)':'var(--ok,#15803D)'}">${erros} com erro</b></span><button class="btn sm" id="tcR">⟳ Atualizar</button></div>
     <div style="max-height:52vh;overflow:auto;border:1px solid var(--line);border-radius:10px"><table style="width:100%;border-collapse:collapse;font-size:12.5px"><thead><tr style="position:sticky;top:0;background:var(--line3,#F5F4F0)">
     <th style="text-align:left;padding:8px">Quando</th><th style="text-align:left;padding:8px">O quê</th><th style="text-align:left;padding:8px">Detalhe</th><th style="text-align:left;padding:8px">Quem</th><th style="text-align:right;padding:8px">Tempo</th><th style="text-align:left;padding:8px">Resultado</th></tr></thead><tbody>
-    ${L.map(x=>`<tr style="border-top:1px solid var(--line2,#EFEEE9)"><td style="padding:7px 8px;white-space:nowrap;font-family:'JetBrains Mono',monospace;font-size:11.5px">${new Date(x.em).toLocaleString('pt-BR')}</td>
+    ${L.map(x=>`<tr style="border-top:1px solid var(--line2,#EFEEE9)"><td style="padding:7px 8px;white-space:nowrap;font-family:'Inter',monospace;font-size:11.5px">${new Date(x.em).toLocaleString('pt-BR')}</td>
       <td style="padding:7px 8px">${escAttr(nomeCam(x.caminho))}</td><td style="padding:7px 8px;color:var(--ink3);max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escAttr(x.resumo||'')}</td>
       <td style="padding:7px 8px">${escAttr(x.quem||'')}</td><td style="padding:7px 8px;text-align:right">${x.ms!=null?(x.ms/1000).toFixed(1)+' s':''}</td>
       <td style="padding:7px 8px">${x.ok?'<span style="color:#15803D;font-weight:600">ok</span>':`<span style="color:var(--danger);font-weight:600">erro</span> <span style="color:var(--ink2)">${escAttr(x.erro||'')}</span>`}</td></tr>`).join('')||'<tr><td colspan="6" style="padding:16px;text-align:center;color:var(--ink3)">Nenhuma chamada registrada ainda.</td></tr>'}</tbody></table></div>
@@ -15792,7 +15801,8 @@ function guardarSaldos(itens){
 let ES_ABA='acabado';
 let ES_BUSCA='';
 
-const tinyDe=x=>String((x&&x.tiny)||'').replace(/\D/g,'');
+/* chave do estoque: número do Tiny (só dígitos) ou ERP-<SKU> inteiro para item cadastrado no ERP */
+const tinyDe=x=>{const v=String((x&&x.tiny)||'').trim();return /^ERP-/i.test(v)?v:v.replace(/\D/g,'');};
 /* o que uma OP consome: matéria-prima pela fórmula, embalagem pelo formato */
 /* =====================================================================
    O QUE A OP DE ENVASE CONSOME
@@ -18122,11 +18132,13 @@ async function autenticar(email,senha){
 }
 async function renovarSessao(){
   if(!SESSAO||!SESSAO.refresh_token)return false;
+  /* outra aba (ou o módulo) já renovou: usa a sessão nova que ficou guardada */
+  try{const g=JSON.parse(localStorage.getItem(SUPA_SESSAO)||'null');if(g&&g.access_token&&g.access_token!==SESSAO.access_token&&(+g.obtido||0)>Date.now()-50*60*1000){SESSAO=g;return true;}}catch(e){}
   try{
     const r=await fetch(`${SUPA.url}/auth/v1/token?grant_type=refresh_token`,{
       method:'POST',headers:{'apikey':SUPA.key,'Content-Type':'application/json'},
       body:JSON.stringify({refresh_token:SESSAO.refresh_token})});
-    if(!r.ok)return false;
+    if(!r.ok){try{const g=JSON.parse(localStorage.getItem(SUPA_SESSAO)||'null');if(g&&g.access_token&&g.access_token!==SESSAO.access_token){SESSAO=g;return true;}}catch(e){}return false;}
     SESSAO=await r.json();try{SESSAO.obtido=Date.now();}catch(e){}
     try{localStorage.setItem(SUPA_SESSAO,JSON.stringify(SESSAO));}catch(e){}
     return true;
@@ -18212,16 +18224,19 @@ function telaLogin(msg){
   try{
     const g=localStorage.getItem(LEMBRA_MAIL);
     if(g&&!M('lgMail').value){M('lgMail').value=g;M('lgSenha').focus();}
-    M('lgLembrar').checked=!!g;
+    M('lgLembrar').checked=!!g||!localStorage.getItem(LEMBRA_MAIL+'.nao');
   }catch(e){}
+  /* senha guardada no navegador (Edge/Chrome): preenche sozinho */
+  try{if(window.PasswordCredential&&navigator.credentials&&!M('lgSenha').value)navigator.credentials.get({password:true,mediation:'optional'}).then(c=>{if(c&&c.password){M('lgMail').value=c.id;M('lgSenha').value=c.password;}}).catch(()=>{});}catch(e){}
   const ir=async()=>{
     const e=norMail(M('lgMail').value),s=M('lgSenha').value;
     if(!e||!s){telaLogin('Informe e-mail e senha.');return;}
     M('lgK').disabled=true;M('lgK').textContent='Entrando…';
     try{
       await autenticar(e,s);
-      try{ M('lgLembrar').checked?localStorage.setItem(LEMBRA_MAIL,e)
-                                 :localStorage.removeItem(LEMBRA_MAIL); }catch(x){}
+      try{if(window.PasswordCredential&&navigator.credentials)navigator.credentials.store(new PasswordCredential({id:e,password:s,name:e})).catch(()=>{});}catch(x){}
+      try{ if(M('lgLembrar').checked){localStorage.setItem(LEMBRA_MAIL,e);localStorage.removeItem(LEMBRA_MAIL+'.nao');}
+           else{localStorage.removeItem(LEMBRA_MAIL);localStorage.setItem(LEMBRA_MAIL+'.nao','1');} }catch(x){}
       el.hidden=true;
       await iniciarComNuvem();
     }catch(err){
@@ -18347,7 +18362,7 @@ const FIN_COB_PAGINAS=[
    ===================================================================== */
 let MODULOS_ERP={financeiro:{estado:'ativo',arquivo:'financeiro.html'},
   compras:{estado:'ativo',arquivo:'compras.html'},estoque:{estado:'ativo',arquivo:'estoque.html'},
-  transportadores:{estado:'ativo',arquivo:'transportadores.html'},vendas:{estado:'ativo',arquivo:'vendas.html'},cadastros:{estado:'ativo',arquivo:'cadastros.html'}};
+  transportadores:{estado:'ativo',arquivo:'transportadores.html'},vendas:{estado:'ativo',arquivo:'vendas.html'},cadastros:{estado:'ativo',arquivo:'cadastros.html'},tempos:{estado:'ativo',arquivo:'tempos.html'}};
 /* na versão de teste o Financeiro nasce publicado e aponta para o arquivo
    de teste dele, para as 10 páginas darem para testar desde já */
 const MODULOS_TESTE=false;
@@ -19487,7 +19502,7 @@ try{
 if(M('assina'))M('assina').onclick=trocarOperador;
 try{
   /* sem endereço (voltou pelo ícone, login...), vale a última tela desta aba */
-  let r0=/^#op/.test(location.hash)?lerRota(location.hash):null;   /* v382: sempre abre no Início */
+  let r0=lerRota(location.hash)||(()=>{try{return lerRota(sessionStorage.getItem('erp.rota'));}catch(e){return null;}})();   /* v401: F5 fica na tela; aba nova abre no Início */
   if(!r0&&location.hash&&!/^#op/.test(location.hash)&&!MODO_TV){try{history.replaceState(null,'',location.pathname+location.search);}catch(e){}}
   if(r0&&!MODO_TV){
     S.page=r0.page;
@@ -19692,6 +19707,7 @@ const CS_MOD=[
    {n:'Todas as configurações',page:'admin',aba:'hub',ic:'cfg'},
    {n:'Calendário',page:'admin',aba:'calendario',ic:'cal'},
    {n:'Máquinas e tanques',page:'admin',aba:'maquinas',ic:'maq'},
+   {n:'Tempos de processo',mod:'tempos',fin:'tanques',ic:'maq'},
    {n:'Sopro e preformas',page:'admin',aba:'sopro',ic:'pref'},
    {n:'Motivos de desvio',page:'admin',aba:'motivos',ic:'mot'},
    {n:'Qualidade',page:'admin',aba:'qualidade',ic:'qua'},
@@ -22224,7 +22240,7 @@ function csFinMostrar(){
   }
   if(f.dataset.emb){delete f.dataset.emb;f.removeAttribute('srcdoc');}
   const atual=f.getAttribute('src')||'';
-  if(atual.split('#')[0]!==arq)f.setAttribute('src',arq+'#'+FIN_PAG);
+  if(atual.split('#')[0].split('?')[0]!==arq){let h=FIN_PAG;try{const g=JSON.parse(sessionStorage.getItem('erp.rotaMod')||'null');if(g&&g.mod===MOD_ATUAL&&String(g.h||'').split(/[/?&]/)[0]===FIN_PAG)h=g.h;sessionStorage.removeItem('erp.rotaMod');}catch(e){}f.setAttribute('src',arq+'#'+h);}
   /* v305: só manda o módulo para outra página quando o menu mudou a página; o
      redesenho de sempre não mexe (antes jogava a OC em edição de volta para a lista) */
   else if(f.dataset.pag!==FIN_PAG){f.dataset.pag=FIN_PAG;
@@ -22347,8 +22363,8 @@ try{
   display:flex;align-items:center;gap:9px;cursor:pointer;transition:.12s}
 .vao:hover{background:#E4F4EC;border-color:#7CC5A3}
 .vao .vt{flex:1;line-height:1.35}
-.vao .vt b{display:block;font-family:'JetBrains Mono';font-size:11.5px;font-weight:700;color:#0E7A50}
-.vao .vt span{font-family:'JetBrains Mono';font-size:10px;color:#5E9E80}
+.vao .vt b{display:block;font-family:'Inter';font-size:11.5px;font-weight:700;color:#0E7A50}
+.vao .vt span{font-family:'Inter';font-size:10px;color:#5E9E80}
 .vao i{font-style:normal;width:24px;height:24px;border-radius:50%;background:#0E9F6E;color:#fff;
   display:grid;place-items:center;font-size:16px;font-weight:700;line-height:1;flex-shrink:0}
 .vaoslim{height:8px;position:relative;cursor:pointer;display:flex;align-items:center;justify-content:center}
@@ -22506,7 +22522,7 @@ function hmBarras(vals,o){o=o||{};if(!vals.length)return '<div class="hm-vz">sem
   vals.forEach((v,i)=>{const h=Math.max(1,v/mx*(H-6)),x=i*(W/n)+(W/n-bw)/2;s+=`<rect x="${x}" y="${H-h}" width="${bw}" height="${h}" rx="3" fill="${o.hl&&o.hl(v,i)?'#C2410C':(o.cor||'#1D6FE8')}"><title>${o.tit?o.tit(i):''} ${hmNf(v)}</title></rect>`;});
   if(o.tend){const t=hmTend(vals);if(t){const Y=v=>H-v/mx*(H-6),X=i=>i*(W/n)+W/n/2;s+=`<line x1="${X(0)}" y1="${Y(t.a)}" x2="${X(n-1)}" y2="${Y(t.a+t.b*(n-1))}" stroke="#0E1B33" stroke-width="1.6" stroke-dasharray="5 4"/>`;}}
   return s+'</svg>';}
-function hmAnel(p,cor){const r=38,c=2*Math.PI*r;return `<svg viewBox="0 0 100 100" style="width:110px;height:110px;margin:4px auto 0"><circle cx="50" cy="50" r="${r}" fill="none" stroke="#F1F0EC" stroke-width="11"/><circle cx="50" cy="50" r="${r}" fill="none" stroke="${cor}" stroke-width="11" stroke-linecap="round" stroke-dasharray="${c*Math.max(0,Math.min(1,p))} ${c}" transform="rotate(-90 50 50)"/><text x="50" y="55" text-anchor="middle" font-family="JetBrains Mono,monospace" font-weight="700" font-size="16" fill="currentColor">${hmPc(p)}</text></svg>`;}
+function hmAnel(p,cor){const r=38,c=2*Math.PI*r;return `<svg viewBox="0 0 100 100" style="width:110px;height:110px;margin:4px auto 0"><circle cx="50" cy="50" r="${r}" fill="none" stroke="#F1F0EC" stroke-width="11"/><circle cx="50" cy="50" r="${r}" fill="none" stroke="${cor}" stroke-width="11" stroke-linecap="round" stroke-dasharray="${c*Math.max(0,Math.min(1,p))} ${c}" transform="rotate(-90 50 50)"/><text x="50" y="55" text-anchor="middle" font-family="Inter,monospace" font-weight="700" font-size="16" fill="currentColor">${hmPc(p)}</text></svg>`;}
 function hmTop(ls,cor,fmt){if(!ls.length)return '<div class="hm-vz">sem dados no período</div>';const mx=Math.max(...ls.map(x=>x[1]),1);
   return `<div class="hm-tops">${ls.map((x,i)=>`<div class="r"><i>${i+1}</i><span class="nm" title="${escAttr(x[0])}">${escAttr(x[0])}</span><span class="vl">${fmt?fmt(x[1]):hmNf(x[1])}</span><div class="br"><b style="width:${Math.max(2,x[1]/mx*100)}%;background:${cor}"></b></div></div>`).join('')}</div>`;}
 function hmPilha(parts){const t=parts.reduce((s,p)=>s+p[1],0)||1;return `<div class="hm-pilha">${parts.map(p=>`<div title="${p[0]}" style="width:${p[1]/t*100}%;background:${p[2]}"></div>`).join('')}</div><div class="hm-leg">${parts.map(p=>`<span><i style="background:${p[2]}"></i>${p[0]} ${hmNf(p[1])}</span>`).join('')}</div>`;}
@@ -23713,7 +23729,7 @@ function csSrvHTML(){
 }
 function csSrvLiga(){
   document.querySelectorAll('[data-srvliga]').forEach(b=>b.onclick=async()=>{const k=b.dataset.srvliga;b.disabled=true;b.textContent='Ligando…';
-    const ids=k==='estoque'?[...PRODUTOS.map(p=>tinyDe(p)),...(typeof INSUMOS!=='undefined'?INSUMOS:[]).map(x=>tinyDe(x))].map(x=>String(x||'').replace(/\D/g,'')).filter(Boolean):[];
+    const ids=k==='estoque'?[...PRODUTOS.map(p=>tinyDe(p)),...(typeof INSUMOS!=='undefined'?INSUMOS:[]).map(x=>tinyDe(x))].filter(x=>x&&!/^ERP-/i.test(x)).map(x=>String(x||'').replace(/\D/g,'')).filter(Boolean):[];
     const rep=+((M('srvRep_'+k)||{}).value||0);
     try{await chamarTiny({acao:'srv_ligar',job:k,ids,repetirMin:rep});toast(`${k==='estoque'?'Estoque':'Contatos'} ligado no servidor. Pode fechar o computador.`);}
     catch(e){toast('Servidor: '+e.message,true);}
@@ -24754,7 +24770,7 @@ try{Object.assign(csNucleo,{
   abrirOrigem:(c,r)=>csEAbrirOrigem(c,r),
   abrir:p=>csIr(p),
   cfgVendas:()=>({...CS_CFGV}),
-  salvarCfgVendas:o=>{if(o&&['prev','ped'].includes(o.reservaPor))CS_CFGV.reservaPor=o.reservaPor;['metas','rankRegras','rankFora','cfgNovo','repFixo','perfSits'].forEach(k=>{if(o&&o[k]!==undefined)CS_CFGV[k]=o[k];});agendarSalvar();return {...CS_CFGV};}
+  salvarCfgVendas:o=>{if(o&&['prev','ped'].includes(o.reservaPor))CS_CFGV.reservaPor=o.reservaPor;['metas','rankRegras','rankFora','cfgNovo','repFixo','perfSits','novosFora'].forEach(k=>{if(o&&o[k]!==undefined)CS_CFGV[k]=o[k];});agendarSalvar();return {...CS_CFGV};}
 });}catch(e){}
 
 </script>
@@ -26611,19 +26627,16 @@ gradeCadProd=function(){
   const R=CP2.rasc;const inp=(k,v,ph,w)=>`<input class="cp2in" data-ed="${escAttr(k)}" value="${escAttr(R[k]!=null?R[k]:(v==null?'':String(v)))}" placeholder="${ph}" style="width:${w||64}px">`;
   const th=(t,s)=>`<th class="c">${t}${s?`<small>${s}</small>`:''}</th>`;
   const cab=`<tr><th style="width:30px"><span class="od2ck ${vis.length&&vis.every(l=>CP2.sel.has(l.tipo+'|'+l.id))?'on':''}" id="cp2CkT"></span></th><th>SKU</th><th>Nome</th><th>Tags</th>
-    ${verMae?th('Enchimento','min')+th('Limpeza','min')+th('Preparo','min')+th('Descanso','min')+'<th>Produtos filhos</th>'
-      :`<th>Un</th><th class="n">Estoque</th><th class="n">Reservado</th>${verFilho?th('Litros','por cx')+th('Lote padrão','L')+th('Caixas','por lote')+th('Setup','min')+MQ.map(m=>th(m,'envase h:mm')).join(''):''}`}<th>Situação</th></tr>`;
+    ${verMae?'<th>Produtos filhos</th><th>Tempos</th>'
+      :`<th>Un</th><th class="n">Estoque</th><th class="n">Reservado</th>${verFilho?th('Litros','por cx')+'<th>Tempos</th>':''}`}<th>Situação</th></tr>`;
   const linha=l=>{const k=l.tipo+'|'+l.id,on=CP2.sel.has(k);let meio='';
     if(verMae){const g=tempoG(l.id),G=TEMPO_GRANEL[l.id]||{};
       const c=(f,v)=>`<td class="c">${ed?inp(`t|${l.id}|${f}`,v,'-'):(v==null||v===''?'-':nf(+v))}</td>`;
-      meio=c('enchimento',G.enchimento)+c('limpeza',g.limpeza)+c('fabricacao',g.fabricacao)+c('descanso',g.descanso)+`<td>${cpFilhas(l.id).length} produto${cpFilhas(l.id).length===1?'':'s'}</td>`;}
+      meio=`<td>${cpFilhas(l.id).length} produto${cpFilhas(l.id).length===1?'':'s'}</td><td><button class="btn sm" onclick="event.stopPropagation();csAbrirTempos('${escAttr(l.id)}')">Tempos do processo ›</button></td>`;}
     else{const est=l.tipo==='t'?'—':csEst(l.x.tiny);const res=l.tipo==='p'?CP2.res&&CP2.res['p|'+l.cod]:l.tipo==='i'?CP2.res&&CP2.res['i|'+l.cod]:null;
       meio=`<td>${l.tipo==='p'?cpEmb(l.x):escAttr(l.x.un||'')}</td><td class="n m">${est}</td><td class="n m cp2res">${res?nf(Math.round(res)):'—'}</td>`;
       if(verFilho){const p=l.x,tp=TEMPOS[String(p.codigo)]||{t:{}},lcx=(+p.litragem||0)*(+p.un_cx||0),cxl=tp.lote&&lcx?tp.lote/lcx:0;
-        meio+=`<td class="c m">${lcx?nf(lcx):'-'}</td><td class="c">${ed?inp(`p|${p.codigo}|lote`,tp.lote,'L',72):(tp.lote?nf(tp.lote):'-')}</td><td class="c m">${cxl?cxl.toLocaleString('pt-BR',{maximumFractionDigits:1}):'-'}</td>
-          <td class="c">${ed?inp(`p|${p.codigo}|setup`,tp.setup!=null?tp.setup:SETUP_PADRAO,'min',56):(tp.setup!=null?tp.setup:SETUP_PADRAO)}</td>`+
-          MQ.map(m=>{const pv=(tp.t||{})[m];
-            return `<td class="c">${ed?inp(`p|${p.codigo}|${m}`,pv?csHm(pv):'','h:mm'):`<b class="m">${pv?csHm(pv):'-'}</b>`}</td>`;}).join('');}}
+        meio+=`<td class="c m">${lcx?nf(lcx):'-'}</td><td><button class="btn sm" onclick="event.stopPropagation();csAbrirTempos('${escAttr(p.tanque||'')}')">Tempos do processo ›</button></td>`;}}
     return `<tr class="${on?'sel':''} ${l.ativo?'':'cpina'}"><td><span class="od2ck ${on?'on':''}" data-cp2ck="${escAttr(k)}"></span></td><td class="m">${escAttr(String(l.cod))}</td>
       <td><button class="cp2nome" data-cp2a="${escAttr(k)}">${escAttr(l.nome)}</button></td>
       <td><span class="cp2tags">${l.tags.map(t=>`<i>${escAttr(t)}</i>`).join('')}</span></td>${meio}
@@ -26637,11 +26650,11 @@ gradeCadProd=function(){
         <div class="cp2popb"><button class="btn sm" id="cp2TgL">Limpar</button><button class="btn sm pri" id="cp2TgG">Gerar</button></div></div>`:''}</div>
       <select id="cp2Sit" class="cp2sit" aria-label="Situação">${[['ativos','Ativos'],['inativos','Inativos'],['todos','Ativos e inativos']].map(([k,n])=>`<option value="${k}" ${CP2.sit===k?'selected':''}>${n}</option>`).join('')}</select>
       <span style="flex:1"></span>
-      ${(verMae||verFilho)?(ed?'<button class="btn" id="cp2EdX">Cancelar</button><button class="btn pri" id="cp2EdS">Salvar tempos</button>':'<button class="btn" id="cp2Ed">✎ Editar tempos</button>'):''}</div>
+      ${(verMae||verFilho)?'<button class="btn" onclick="csAbrirTempos(\'\')">Tempos de processo ›</button>':''}</div>
     ${CP2.sel.size?`<div class="cp2bulk"><b>${CP2.sel.size} selecionado${CP2.sel.size>1?'s':''}</b><span style="flex:1"></span>Adicionar tag:
       <select id="cp2BT"><option value="">escolha…</option>${[...new Set(cp2Linhas().flatMap(l=>l.tags))].filter(t=>t!=='Tanque').sort().map(t=>`<option>${escAttr(t)}</option>`).join('')}<option value="__nova">nova tag…</option></select>
       <button class="btn sm ina" id="cp2BI">Inativar</button><button class="btn sm" id="cp2BR">Reativar</button><button class="btn sm" id="cp2BX">Desmarcar</button></div>`:''}
-    ${verFilho?'<p class="cpleg" style="margin:4px 0 8px">Lote padrão, setup e o tempo de envase de um lote padrão em cada máquina. É daqui que sai a previsão do envase. O realizado fica em Relatórios › Previsto × realizado.</p>':''}
+    ${(verMae||verFilho)?'<p class="cpleg" style="margin:4px 0 8px">Os tempos (limpeza, enchimento, preparo, descanso, lote padrão, setup e envase) ficam em Configurações › Tempos de processo.</p>':''}
     ${verMae?'<p class="cpleg" style="margin:4px 0 8px">Tempos do tanque (min). Enchimento em branco usa o do tanque físico (TQ 1, TQ 6…). Somam na linha do tempo do lote.</p>':''}
     <div class="od2rol"><table class="od2t cp2t"><thead>${cab}</thead><tbody>${vis.map(linha).join('')||`<tr><td colspan="20" class="vazioc">${CP2.aba==='fab'&&CP2.sub==='frasco'?'Nenhum frasco fabricado ainda. Use ＋ Novo cadastro.':'Nada aqui com esses filtros.'}</td></tr>`}</tbody></table></div></div>`;
   /* ligações */
@@ -30141,7 +30154,7 @@ try{csNucleo.versao='v392';}catch(e){}
 try{csNucleo.versao='v393';}catch(e){}
 </script>
 <script>
-try{csNucleo.versao='v398';}catch(e){}
+try{csNucleo.versao='v401';}catch(e){}
 </script>
 <script>/* =====================================================================
    v398 — PÁGINA TANQUES NO LAYOUT NOVO
@@ -30253,7 +30266,7 @@ try{csNucleo.versao='v398';}catch(e){}
 #tqgrid .tqcol.cs8-aberto .bat.cs8-conc{display:flex!important}
 #tqgrid .bat.cs8-fila,#tqgrid .bat.cs8-conc{display:flex;align-items:center;gap:9px;padding:9px 40px 9px 11px!important}
 #tqgrid .bat.cs8-conc{background:#F0FDF4!important;border-color:#BBF7D0!important;padding-top:6px!important;padding-bottom:6px!important}
-#tqgrid .cs8-fila>em,#tqgrid .cs8-conc>em{font:700 13px 'JetBrains Mono',ui-monospace,monospace;font-style:normal;color:var(--ink2,#334155);flex:none}
+#tqgrid .cs8-fila>em,#tqgrid .cs8-conc>em{font:700 13px 'Inter',ui-monospace,monospace;font-style:normal;color:var(--ink2,#334155);flex:none}
 #tqgrid .cs8-conc>em{font-size:11.5px;color:var(--ink3,#64748B)}
 #tqgrid .cs8-tx{flex:1;min-width:0}#tqgrid .cs8-tx b{display:block;font-size:12.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--ink,#0F172A)}
 #tqgrid .cs8-conc .cs8-tx b{font-weight:600;color:var(--ink2,#475569);font-size:12px}
@@ -30261,7 +30274,7 @@ try{csNucleo.versao='v398';}catch(e){}
 #tqgrid .cs8-tx .fam,#tqgrid .cs8-pr .fam{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:middle}
 #tqgrid .cs8-mini{flex:none;font:700 10.5px system-ui,sans-serif;padding:3px 8px;border-radius:999px;color:#fff;white-space:nowrap}
 #tqgrid .cs8-st{display:flex;justify-content:space-between;align-items:center;gap:6px;padding:7px 10px;border-radius:9px;font:800 12px system-ui,sans-serif;color:#fff;margin-right:34px}
-#tqgrid .cs8-st em{font:700 12px 'JetBrains Mono',ui-monospace,monospace;font-style:normal;white-space:nowrap}
+#tqgrid .cs8-st em{font:700 12px 'Inter',ui-monospace,monospace;font-style:normal;white-space:nowrap}
 #tqgrid .cs8-st span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #tqgrid .cs8-ok{background:#16A34A}#tqgrid .cs8-amb{background:#F59E0B;color:#1F1300}#tqgrid .cs8-az{background:#2563EB}#tqgrid .cs8-cz{background:#64748B}#tqgrid .cs8-cz2{background:#E2E8F0;color:#334155}#tqgrid .cs8-mau{background:#DC2626}
 #tqgrid .cs8-pr{font:800 17px/1.15 system-ui,sans-serif;margin-top:9px;color:var(--ink,#0F172A);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -30269,7 +30282,7 @@ try{csNucleo.versao='v398';}catch(e){}
 #tqgrid .cs8-ti{display:grid;grid-template-columns:1fr 1.15fr .95fr;gap:6px;margin-top:9px}
 #tqgrid .cs8-ti>div{background:#F1F5F9;border-radius:9px;padding:6px 8px;min-width:0}
 #tqgrid .cs8-ti span{display:block;font:700 9px system-ui,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:#64748B;white-space:nowrap}
-#tqgrid .cs8-ti b{display:block;font:700 13.5px 'JetBrains Mono',ui-monospace,monospace;color:#334155;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#tqgrid .cs8-ti b{display:block;font:700 13.5px 'Inter',ui-monospace,monospace;color:#334155;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #tqgrid .cs8-ti .cs8-dest b{font-size:19px;font-weight:800;color:#0F172A}
 @keyframes cs8pisca{0%,100%{background:#F97316;color:#fff}50%{background:#FFEDD5;color:#C2410C}}
 #tqgrid .cs8-ti .cs8-pisca{animation:cs8pisca 1s steps(1,end) infinite}#tqgrid .cs8-ti .cs8-pisca span,#tqgrid .cs8-ti .cs8-pisca b{color:inherit}
@@ -30280,6 +30293,101 @@ try{csNucleo.versao='v398';}catch(e){}
 body.escuro #tqgrid .cs8-ti>div,html.escuro #tqgrid .cs8-ti>div{background:rgba(148,163,184,.14)}
 `;document.head.appendChild(s);
 }catch(e){console.warn('v398 tanques',e);}})();
+</script>
+<script>
+/* v400 · separa o saldo dos itens do ERP que caíram na mesma chave (ex.: "001").
+   Chave só de dígitos usada por UM item ERP: o saldo e o histórico passam para ERP-<SKU> (soma, não perde nada).
+   Usada por MAIS de um: não dá para saber de quem é cada parte — fica de fora e o item precisa de inventário. */
+let CS_EST_COLISAO=[];
+function csSepararErp(){try{
+  const todos=[...PRODUTOS,...(typeof INSUMOS!=='undefined'?INSUMOS:[])];
+  const reais=new Set(todos.map(x=>String(x.tiny||'').trim()).filter(v=>v&&!/^ERP-/i.test(v)).map(v=>v.replace(/\D/g,'')));
+  const g={};todos.forEach(x=>{const k=String(x.tiny||'').trim();if(!/^ERP-/i.test(k))return;const d=k.replace(/\D/g,'');if(!d||reais.has(d))return;const l=g[d]=g[d]||[];if(!l.some(y=>String(y.tiny).trim()===k))l.push(x);});
+  let mud=0;CS_EST_COLISAO=[];
+  Object.entries(g).forEach(([d,l])=>{if(ESTOQUE[d]===undefined&&!CS_ELOG.some(e=>String(e.id)===d))return;
+    if(l.length===1){const k=String(l[0].tiny).trim();ESTOQUE[k]=(+ESTOQUE[k]||0)+(+ESTOQUE[d]||0);delete ESTOQUE[d];CS_ELOG.forEach(e=>{if(String(e.id)===d)e.id=k;});mud++;}
+    else CS_EST_COLISAO.push({chave:d,itens:l.map(x=>(x.sku||x.codigo)+' · '+(x.nome||x.descricao)),saldo:+ESTOQUE[d]||0});});
+  if(mud)agendarSalvar();
+}catch(e){}}
+try{const _ae400=aplicarEstado;aplicarEstado=function(){const r=_ae400.apply(this,arguments);csSepararErp();return r;};}catch(e){}
+try{csNucleo.colisoesEstoque=()=>CS_EST_COLISAO.slice();}catch(e){}
+/* o cadastro pode chegar depois do estado (documento à parte): roda de novo, não repete nada */
+setTimeout(csSepararErp,6000);setTimeout(csSepararErp,20000);
+</script>
+<script>
+/* ================= v401 ================= */
+/* atalho do cadastro: abre Tempos de processo já no produto mãe */
+function csAbrirTempos(g){try{localStorage.setItem('tp3.sec','tanques');if(g)localStorage.setItem('tp3.g',g);}catch(e){}
+  const f=M('finFrame');const ja=S.page==='financeiro'&&MOD_ATUAL==='tempos';csIr({mod:'tempos',fin:'tanques'});
+  if(ja){try{f.contentWindow.location.reload();}catch(e){}}}
+/* o pulmão entra no cadastro dos tanques (uma vez), depois do TQ 5 */
+function csPulmao(){try{if(RECURSOS.some(r=>r.grupo==='tanque'&&r.pul))return;
+  const i=RECURSOS.findIndex(r=>r.grupo==='tanque'&&r.id==='TQ 5');const novo={id:'PULMÃO',nome:'Pulmão',grupo:'tanque',ini:'05:00',fim:'20:00',pausas:[],cap:4600,ench:20,pul:true,ativo:true};
+  if(i>=0)RECURSOS.splice(i+1,0,novo);else RECURSOS.push(novo);sincronizarRecursos();agendarSalvar();}catch(e){}}
+/* só depois que o estado do banco estiver carregado (PRONTO), para não gravar por cima */
+try{const _ae401=aplicarEstado;aplicarEstado=function(){const r=_ae401.apply(this,arguments);setTimeout(()=>{if(PRONTO)csPulmao();},0);return r;};}catch(e){}
+setTimeout(()=>{if(PRONTO)csPulmao();},8000);
+/* o módulo Tempos de processo lê e grava por aqui */
+try{
+  csNucleo.tpDados=()=>{const tanques=recursosDe('tanque').filter(r=>r.ativo!==false).map(r=>({id:r.id,cap:+r.cap||0,ench:+r.ench||0,pul:!!r.pul}));
+    const prods=PRODUTOS.filter(ativoProd);const grupos=[...new Set(prods.map(p=>p.tanque).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
+    return JSON.parse(JSON.stringify({tanques,grupos,granel:TEMPO_GRANEL,tempos:TEMPOS,
+      produtos:prods.map(p=>({codigo:String(p.codigo),descricao:p.descricao,tanque:p.tanque,litragem:p.litragem,un_cx:p.un_cx})),
+      maquinas:MAQUINAS.slice(),sopradoras:SOPRADORAS.map(s=>({id:s.id,nome:s.nome,cad:+s.cad||0})),
+      rotuladoras:recursosDe('rotulo').filter(r=>r.ativo!==false).map(r=>({id:r.id,nome:r.nome})),
+      frascos:FRASCOS.map(f=>({id:f.id,gramatura:f.gramatura,cadSop:f.cadSop||null})),setupPad:SETUP_PADRAO}));};
+  csNucleo.tpSalvar=o=>{
+    const tqs=recursosDe('tanque').filter(r=>r.ativo!==false);const prim=(tqs.find(r=>!r.pul)||tqs[0]||{}).id;
+    Object.entries(o.GR||{}).forEach(([g,x])=>{const p=(x.tq&&x.tq[prim])||{};const base=TEMPO_GRANEL[g]||{};
+      TEMPO_GRANEL[g]={...base,limpeza:+p.limp||0,fabricacao:+p.prep||0,descanso:x.temDesc?(+p.desc||0):0,tq:x.tq,limpMesmo:!!x.limpMesmo,temDesc:!!x.temDesc};});
+    const lim=m=>{const r={};Object.entries(m||{}).forEach(([k,v])=>{if(v!=null&&v!=='')r[k]=+v;});return r;};
+    (o.PR||[]).forEach(p=>{const k=String(p.c);const old=TEMPOS[k]||{};const tt=lim(p.t);const s={};Object.entries(lim(p.s)).forEach(([m,v])=>{if(tt[m]!=null)s[m]=v;});
+      const rt=lim(p.rt),rs={};Object.entries(lim(p.rs)).forEach(([m,v])=>{if(rt[m]!=null)rs[m]=v;});
+      TEMPOS[k]={...old,t:tt,s,lote:p.lote?+p.lote:(old.lote||null),sm:!!p.sm,rt,rs,rsm:!!p.rsm};});
+    (o.TQ||[]).forEach(x=>{const r=RECURSOS.find(y=>y.grupo==='tanque'&&y.id===x.id);if(r)r.ench=+x.ench||0;});sincronizarRecursos();
+    Object.entries(o.FR||{}).forEach(([id,x])=>{const f=FRASCOS.find(y=>y.id===id);if(f)f.cadSop={...x.s};});
+    agendarSalvar();try{recomporTudo();}catch(e){}try{render();}catch(e){}return true;};
+}catch(e){}
+/* F5 dentro de um módulo: guarda a sub-tela de dentro dele (ex.: #performance/DORALINO) */
+setInterval(()=>{try{if(S.page!=='financeiro')return;const f=M('finFrame');const h=String(f&&f.contentWindow&&f.contentWindow.location.hash||'').slice(1);
+  if(h)sessionStorage.setItem('erp.rotaMod',JSON.stringify({mod:MOD_ATUAL,h}));}catch(e){}},1500);
+/* versão nova: quem abre o ERP já na versão nova grava no banco "appVer". Todos os outros recebem isso
+   pela leitura do banco que já acontece (a cada poucos segundos) e atualizam na hora — sem aviso, sem
+   conferir arquivo nenhum. Só espera se a pessoa estiver digitando ou com janela aberta (no máximo 1 min).
+   O F5 da v401 mantém a tela e a sessão fica no aparelho: ninguém precisa entrar de novo. */
+const csVerNum=v=>+String(v||'').replace(/\D/g,'')||0;
+let CS_APPVER_BANCO='',CS_VER_NOVA='',CS_VER_DESDE=0,CS_ULT_TECLA=0;
+const csTeclou=()=>{CS_ULT_TECLA=Date.now();};
+try{document.addEventListener('keydown',csTeclou,true);document.addEventListener('input',csTeclou,true);}catch(e){}
+setInterval(()=>{try{const f=M('finFrame');const d=f&&f.contentWindow&&f.contentWindow.document;if(d&&!d.__csTec){d.__csTec=1;d.addEventListener('keydown',csTeclou,true);d.addEventListener('input',csTeclou,true);}}catch(e){}},2000);
+function csPodeAtualizar(){try{
+  if(Date.now()-CS_ULT_TECLA<20000)return false;
+  if(typeof csDigitando==='function'&&csDigitando())return false;
+  if(M('mask')&&M('mask').classList.contains('on'))return false;
+  const f=M('finFrame');const d=f&&!f.closest('[hidden]')&&f.contentWindow&&f.contentWindow.document;
+  if(d){const a=d.activeElement;if(a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName))return false;if(d.querySelector('.pfmask,.mask.on,.modal.on,[role=dialog]'))return false;}
+  const a=document.activeElement;if(a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName))return false;
+  return true;}catch(e){return false;}}
+function csAtualizarJa(){if(!CS_VER_NOVA)return;
+  let tablet=MODO_TV;try{tablet=tablet||!!csQuiosque()||/^#op/.test(location.hash);}catch(e){}
+  /* computador: no máximo 1 minuto de espera; tablet (sempre ligado) espera ficar parado */
+  if(!csPodeAtualizar()&&(tablet||Date.now()-CS_VER_DESDE<60000)){setTimeout(csAtualizarJa,5000);return;}
+  try{localStorage.setItem(CHAVE,estadoAtual());}catch(e){}
+  /* ?v= busca o arquivo novo (o GitHub guarda o velho em cache por alguns minutos) */
+  try{location.replace(location.pathname+'?v='+CS_VER_NOVA+location.hash);}catch(e){location.reload();}}
+function csVerConfere(txt){try{const m=/"appVer"\s*:\s*"(v\d+)"/.exec(String(txt||''));if(!m)return;
+  if(csVerNum(m[1])>csVerNum(CS_APPVER_BANCO))CS_APPVER_BANCO=m[1];
+  if(csVerNum(m[1])>csVerNum(VERSAO_APP)&&!CS_VER_NOVA){CS_VER_NOVA=m[1];CS_VER_DESDE=Date.now();setTimeout(csAtualizarJa,300);}}catch(e){}}
+/* grava a versão junto do estado (nunca para trás) */
+try{const _ea401=estadoAtual;estadoAtual=function(){const s=_ea401.apply(this,arguments);
+  const v=csVerNum(CS_APPVER_BANCO)>csVerNum(VERSAO_APP)?CS_APPVER_BANCO:VERSAO_APP;
+  return typeof s==='string'&&s[0]==='{'?'{"appVer":"'+v+'",'+s.slice(1):s;};}catch(e){}
+try{const _ae401v=aplicarEstado;aplicarEstado=function(txt){csVerConfere(txt);return _ae401v.apply(this,arguments);};}catch(e){}
+/* a primeira abertura da versão nova avisa todo mundo: grava logo depois de carregar */
+setTimeout(function pub(){try{if(!PRONTO||!ONLINE){setTimeout(pub,5000);return;}
+  if(csVerNum(CS_APPVER_BANCO)<csVerNum(VERSAO_APP)){CS_APPVER_BANCO=VERSAO_APP;ULTIMO='';agendarSalvar();}}catch(e){}},8000);
+/* os módulos abrem com a versão no endereço, para não ficar o arquivo velho em cache */
+try{const _sa401=Element.prototype.setAttribute;Element.prototype.setAttribute=function(n,v){if(n==='src'&&this.id==='finFrame'&&typeof v==='string'&&/\.html(#|$)/.test(v)&&!/\?v=/.test(v))v=v.replace(/\.html/,'.html?v='+VERSAO_APP);return _sa401.call(this,n,v);};}catch(e){}
 </script>
 </body>
 </html>
