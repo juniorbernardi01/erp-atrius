@@ -30389,5 +30389,100 @@ setTimeout(function pub(){try{if(!PRONTO||!ONLINE){setTimeout(pub,5000);return;}
 /* os módulos abrem com a versão no endereço, para não ficar o arquivo velho em cache */
 try{const _sa401=Element.prototype.setAttribute;Element.prototype.setAttribute=function(n,v){if(n==='src'&&this.id==='finFrame'&&typeof v==='string'&&/\.html(#|$)/.test(v)&&!/\?v=/.test(v))v=v.replace(/\.html/,'.html?v='+VERSAO_APP);return _sa401.call(this,n,v);};}catch(e){}
 </script>
+<script>
+/* v401 · AJUSTE DE JORNADA DO DIA
+   Antes: opções de dia (normal/meio período/outro horário) + máquinas; o Salvar lia os horários por
+   document.querySelector e pegava o campo errado quando havia outra tela com os mesmos campos atrás —
+   gravava o valor antigo ("não salva"). Agora tudo é lido de dentro da própria janela, por setor
+   (Envase, Tanques, Sopro, Rotulagem), e o Salvar só acende quando algo mudou de verdade.
+   Meio período (sábado 05:00–12:00) é só escrever o horário. "Não trabalha" pergunta: a fábrica toda ou só o setor. */
+let CS_JD_ABA='envase';
+const CS_JD_SET=[['envase','Envase'],['tanque','Tanques'],['sopro','Sopro'],['rotulo','Rotulagem']];
+function csJdRec(g){return recursosDe(g).filter(r=>r.ativo!==false).map(r=>r.id);}
+function csJdRotina(id){const r=RECURSOS.find(x=>x.id===id)||{};const j=JORNADA[id];return [hm(j?j[0]:(r.ini||'05:00')),hm(j?j[1]:(r.fim||'20:00'))];}
+function csJdAtual(id,s){const c=CALENDARIO[s];const d=diaDe(s);if(!d.trab)return {off:true,fab:true};
+  const ex=((c||{}).maq||{})[id];if(ex&&ex.trab===false)return {off:true};
+  if(ex)return {ini:hm(ex.ini||d.ini),fim:hm(ex.fim||d.fim),aj:true};
+  const [a,b]=csJdRotina(id);return {ini:Math.max(a,hm(d.ini)),fim:Math.min(b,hm(d.fim))};}
+abrirDia=function(s){
+  const d=new Date(s+'T00:00:00'),info=diaDe(s);const nomes=['domingo','segunda','terça','quarta','quinta','sexta','sábado'];
+  const pode=csPodeJornada();
+  const P={};let diaOff=null;let pergunta=false;   /* rascunho: nada vale até o Salvar */
+  const fabOff=()=>diaOff!==null?diaOff:!info.trab;
+  const valor=id=>{if(P[id]!==undefined&&P[id]!=='rotina')return P[id];const a=csJdAtual(id,s);if(a.fab||P[id]==='rotina'){if(a.fab&&fabOff())return null;const [x,y]=csJdRotina(id);return {ini:hhmm(x),fim:hhmm(y)};}return a.off?{trab:false}:{ini:hhmm(a.ini),fim:hhmm(a.fim)};};
+  const mudou=()=>Object.keys(P).length>0||(diaOff!==null&&diaOff!==!info.trab);
+  if(M('mAcao'))M('mAcao').innerHTML='';M('modal').classList.add('wide');
+  M('mTit').textContent=`${nomes[d.getDay()]}, ${d.getDate()} de ${MESES[d.getMonth()]}`;
+  M('mSub').hidden=!info.feriado;M('mSub').textContent=info.feriado?`${info.feriado} · feriado`:'';
+  const des=()=>{const ids=csJdRec(CS_JD_ABA);const off=fabOff();
+    const linhas=ids.map(id=>{const v=valor(id);const rot=csJdRotina(id);const parada=!v||v.trab===false;const mexeu=P[id]!==undefined;
+      const aj=((CALENDARIO[s]||{}).maq||{})[id];
+      return `<div class="jdl ${parada?'off':''} ${mexeu?'mx':''}"><b>${escAttr(id)}</b>
+        <span class="jdh"><input type="time" step="300" data-jdi="${escAttr(id)}" value="${parada||off?'':v.ini}" ${parada||off||!pode?'disabled':''}><span class="k">às</span>
+        <input type="time" step="300" data-jdf="${escAttr(id)}" value="${parada||off?'':v.fim}" ${parada||off||!pode?'disabled':''}></span>
+        <button type="button" class="btn sm" data-jdoff="${escAttr(id)}" ${off||!pode?'disabled':''}>${parada&&!off?'Volta a rodar':'Não roda hoje'}</button>
+        <span class="jdt">${off?'fábrica parada':mexeu?'<b>alterado</b> · falta salvar':parada?'não roda hoje':aj?`ajustado · rotina ${hhmm(rot[0])}–${hhmm(rot[1])}`:`rotina ${hhmm(rot[0])}–${hhmm(rot[1])}`}</span>
+        ${aj&&!mexeu&&!off&&pode?`<button type="button" class="linkb" data-jdclr="${escAttr(id)}">voltar à rotina</button>`:''}</div>`;}).join('')||'<div class="k" style="padding:14px">Nenhum recurso cadastrado neste setor.</div>';
+    const setor=(CS_JD_SET.find(x=>x[0]===CS_JD_ABA)||[])[1];
+    M('mB').innerHTML=`${pode?'':'<div class="alert" style="margin-bottom:10px">Só para consultar: ajustar a jornada precisa da permissão <b>Ajustar a jornada</b> (Pessoas › Permissões › PCP › Envase).</div>'}
+      <div class="jdtop"><div class="jdtabs">${CS_JD_SET.map(([k,n])=>`<button type="button" data-jdab="${k}" class="${CS_JD_ABA===k?'on':''}">${n}</button>`).join('')}</div>
+        ${off?`<button type="button" class="btn" id="jdVolta" ${pode?'':'disabled'}>Fábrica volta a trabalhar</button>`:`<button type="button" class="btn jdno" id="jdNao" ${pode?'':'disabled'}>Não trabalha…</button>`}</div>
+      ${pergunta?`<div class="jdq"><b>Não trabalha:</b> a fábrica toda ou só ${setor}?<span style="flex:1"></span>
+        <button type="button" class="btn sm" id="jdQTudo">Fábrica toda</button><button type="button" class="btn sm" id="jdQSet">Só ${setor}</button><button type="button" class="linkb" id="jdQX">cancelar</button></div>`:''}
+      ${off?`<div class="jdoff">Dia sem produção na fábrica toda${info.feriado?` (${escAttr(info.feriado)})`:''}.</div>`:''}
+      <div class="jdlist">${linhas}</div>
+      <p class="adp" style="margin-top:10px">Mexa só no que fugir da rotina. Sábado ou meio período: escreva o horário (ex.: 05:00 às 12:00).</p>`;
+    M('mF').innerHTML=`<div class="mfesq"><button class="btn sm" id="calMes">Ver o mês</button><button class="btn sm" id="calIr">Ver a programação deste dia</button></div>
+      <div class="mfdir"><button class="btn" id="calC">Fechar</button>${pode?`<button class="btn pri" id="calK" ${mudou()?'':'disabled'}>Salvar</button>`:''}</div>`;
+    const B=M('mB');
+    B.querySelectorAll('[data-jdab]').forEach(b=>b.onclick=()=>{CS_JD_ABA=b.dataset.jdab;pergunta=false;des();});
+    /* digitar não redesenha (perderia o foco): só marca e acende o Salvar */
+    B.querySelectorAll('[data-jdi],[data-jdf]').forEach(e=>{const f=()=>{const id=e.dataset.jdi||e.dataset.jdf;
+      const i=B.querySelector(`[data-jdi="${CSS.escape(id)}"]`).value,fi=B.querySelector(`[data-jdf="${CSS.escape(id)}"]`).value;
+      P[id]={ini:i,fim:fi};const l=e.closest('.jdl');l.classList.add('mx');l.querySelector('.jdt').innerHTML='<b>alterado</b> · falta salvar';if(M('calK'))M('calK').disabled=false;};
+      e.oninput=f;e.onchange=f;});
+    B.querySelectorAll('[data-jdoff]').forEach(b=>b.onclick=()=>{const id=b.dataset.jdoff;const v=valor(id);
+      if(!v||v.trab===false){const [a,c]=csJdRotina(id);P[id]={ini:hhmm(a),fim:hhmm(c)};}else P[id]={trab:false};des();});
+    B.querySelectorAll('[data-jdclr]').forEach(b=>b.onclick=()=>{P[b.dataset.jdclr]='rotina';des();});
+    if(M('jdNao'))M('jdNao').onclick=()=>{pergunta=true;des();};
+    if(M('jdVolta'))M('jdVolta').onclick=()=>{diaOff=false;des();};
+    if(M('jdQX'))M('jdQX').onclick=()=>{pergunta=false;des();};
+    if(M('jdQTudo'))M('jdQTudo').onclick=()=>{diaOff=true;pergunta=false;des();};
+    if(M('jdQSet'))M('jdQSet').onclick=()=>{ids.forEach(id=>P[id]={trab:false});pergunta=false;des();};
+    M('calC').onclick=fecharModal;
+    M('calIr').onclick=()=>{if(typeof CS_CAL_MODAL!=='undefined')CS_CAL_MODAL=false;fecharModal();S.page='envase';S.view='dia';S.ref=new Date(s+'T00:00:00');render();};
+    M('calMes').onclick=()=>{CAL_MES=new Date(s+'T00:00:00');if(typeof CS_CAL_MODAL!=='undefined'&&CS_CAL_MODAL)return csCalendarioModal();fecharModal();S.page='admin';ABA_ADMIN='calendario';render();};
+    if(M('calK'))M('calK').onclick=salvar;};
+  const salvar=()=>{if(!pode)return;
+    for(const [id,v] of Object.entries(P)){if(v&&v!=='rotina'&&v.trab!==false){if(!v.ini||!v.fim||hm(v.fim)<=hm(v.ini))return toast(`${id}: o fim tem que ser depois do início.`,true);}}
+    if(diaOff===true){CALENDARIO[s]={...(CALENDARIO[s]||{}),trab:false,ini:(CALENDARIO[s]||{}).ini||'05:00',fim:(CALENDARIO[s]||{}).fim||'20:00'};}
+    else{if(diaOff===false||!CALENDARIO[s]){const c=CALENDARIO[s]||{};CALENDARIO[s]={...c,trab:true,ini:c.ini||'05:00',fim:c.fim||'20:00'};}
+      Object.entries(P).forEach(([id,v])=>ajustarJornada(id,s,v==='rotina'?null:v));
+      /* o dia precisa caber o horário de quem roda (quem entra 04:30 abre o dia às 04:30) */
+      const c=CALENDARIO[s];if(c){Object.entries(P).forEach(([id,v])=>{if(v&&v!=='rotina'&&v.trab!==false){if(hm(v.ini)<hm(c.ini||'05:00'))c.ini=v.ini;if(hm(v.fim)>hm(c.fim||'20:00'))c.fim=v.fim;}});
+        if(!c.maq&&c.trab!==false&&c.ini==='05:00'&&c.fim==='20:00'&&!info.feriado&&diaDe(s).fonte!=='feriado'){}}}
+    try{registrarJornada&&registrarJornada(s,Object.keys(P));}catch(e){}
+    agendarSalvar();try{recomporTudo();}catch(e){}render();
+    toast(`${dCurto(s)} salvo.`);
+    if(typeof CS_CAL_MODAL!=='undefined'&&CS_CAL_MODAL){csCalendarioModal();return;}
+    try{gradeCalendario();}catch(e){}abrirDia(s);};
+  des();abrirMask();};
+try{const s=document.createElement('style');s.textContent=`
+.jdtop{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.jdtabs{display:flex;gap:4px;background:#F1F3F6;border-radius:10px;padding:3px;flex:1;max-width:480px}
+.jdtabs button{flex:1;border:0;background:transparent;border-radius:8px;padding:7px 10px;font-weight:600;font-size:13px;color:#4B5563;cursor:pointer}
+.jdtabs button.on{background:#fff;color:#111827;box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.jdno{color:#B91C1C;border-color:#F5C2C2}
+.jdq{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:#FEF6E9;border:1px solid #F0C98A;border-radius:10px;padding:9px 12px;margin-bottom:10px;font-size:13px}
+.jdoff{background:#FDECEC;border:1px solid #F5C2C2;color:#991B1B;border-radius:10px;padding:9px 12px;margin-bottom:10px;font-weight:600;font-size:13px}
+.jdlist{border:1px solid #E5E7EB;border-radius:10px;overflow:hidden}
+.jdl{display:grid;grid-template-columns:90px auto auto 1fr auto;gap:10px;align-items:center;padding:9px 12px;border-top:1px solid #EEF0F3}
+.jdl:first-child{border-top:0}.jdl b{font-size:14px}
+.jdl .jdh{display:flex;align-items:center;gap:6px}.jdl input[type=time]{width:112px}
+.jdl .jdt{font-size:12px;color:#6B7280;text-align:right}.jdl.mx{background:#FFFBEB}.jdl.mx .jdt b{color:#B45309}
+.jdl.off{background:#FAFAFA}.jdl.off b{color:#9CA3AF}
+@media (max-width:640px){.jdl{grid-template-columns:70px 1fr;}.jdl .jdt{text-align:left}}
+`;document.head.appendChild(s);}catch(e){}
+</script>
 </body>
 </html>
