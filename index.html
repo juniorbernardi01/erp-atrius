@@ -30518,5 +30518,42 @@ async function csLerPartes(v){
 }
 try{csNucleo.leituras=()=>({...CS_LEIT,ops:CS_OPS_OK,versao:CS_DOC_V});}catch(e){}
 </script>
+
+<script>
+/* ===== v402 · página Tanques =====
+   - selo no cabeçalho do tanque: LIBERADO (com a hora) ou NÃO LIBERADO, do lote da vez;
+   - o aviso verde "Liberado às" dentro do cartão sai (o selo já diz);
+   - fila em cinza (o que vem depois fica em segundo plano);
+   - a faixa "Programação do dia" não aparece aqui (fica no Envase e no botão Programação);
+ */
+(function(){try{const st=document.createElement('style');st.textContent=`
+.cs-tqsel{display:flex;align-items:center;justify-content:center;gap:6px;margin:8px 8px 0;padding:6px 10px;border-radius:9px;
+  font:800 12px/1.2 Inter,system-ui,sans-serif;letter-spacing:.05em;text-transform:uppercase;white-space:nowrap}
+.cs-tqsel.ok{background:#DCFCE7;color:#15803D;border:1px solid #86EFAC}
+.cs-tqsel.nao{background:#FEF3C7;color:#92400E;border:1px solid #FCD34D}
+.cs-tqsel svg{flex:none}
+#tqgrid .bat.cs8.cs8-fila{background:#EEF0F3!important;border:1px solid #E1E4E9!important;box-shadow:none!important}
+#tqgrid .bat.cs8.cs8-fila .cs8-tx b{color:#475467}
+#tqgrid .cs8-fh{background:#EEF0F3;border-radius:8px;padding:5px 9px;margin:6px 0 4px}
+body:has(#etsw [data-p="tanques"].on) #csTL{display:none!important}`;document.head.appendChild(st);}catch(e){}})();
+function csTqSelos(){try{
+  if(S.page!=='tanques'){return;}
+  const tl=document.getElementById('csTL');if(tl)tl.remove();
+  document.querySelectorAll('#tqgrid .tqcol[data-tq]').forEach(col=>{
+    const h=col.querySelector('.tqh');if(!h)return;col.querySelectorAll('.cs-tqsel').forEach(x=>x.remove());
+    const el=document.createElement('div');
+    const cur=col.querySelector('.cs8-cur[data-bat]');let b=null;
+    if(cur){const k=cur.dataset.bat,d=k.split('|')[0];try{b=bateladas(d).find(x=>x.chave===k);}catch(e){}}
+    if(!b)return;
+    const lib=b.status==='liberado'||!!b.liberadoEm;el.className='cs-tqsel '+(lib?'ok':'nao');
+    el.innerHTML=lib?`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Liberado${b.liberadoEm?' às '+b.liberadoEm:''}`:'Não liberado';
+    el.title=lib?'Tanque liberado para envasar':'Ainda não liberado para envasar';
+    h.insertAdjacentElement('afterend',el);
+    cur.querySelectorAll('.cs8-av.ok').forEach(a=>{if(/Liberado às/.test(a.textContent))a.remove();});
+  });
+}catch(e){}}
+try{const _rd402=render;render=function(){const r=_rd402.apply(this,arguments);csTqSelos();return r;};}catch(e){}
+try{const _pf402=csPintarFaixa;csPintarFaixa=function(){if(S.page!=='envase'){const t=document.getElementById('csTL');if(t)t.remove();return;}return _pf402.apply(this,arguments);};}catch(e){}
+</script>
 </body>
 </html>
