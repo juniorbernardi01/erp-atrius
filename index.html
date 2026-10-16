@@ -4401,7 +4401,7 @@ const GRUPOS_MOTIVO=[
 ];
 
 const grMot=id=>GRUPOS_MOTIVO.find(g=>g.id===id)||null;
-const gruposDe=et=>GRUPOS_MOTIVO.filter(g=>g.etapas.includes(et));
+const gruposDe=(et,setor)=>{const l=GRUPOS_MOTIVO.filter(g=>g.etapas.includes(et));return typeof csGruposSetor==='function'?csGruposSetor(l,setor):l;};
 const grMotNome=id=>(grMot(id)||{}).nome||id;
 
 /* O que a OP registrou por etapa:
@@ -5469,7 +5469,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v402';
+const VERSAO_APP='v403';
 let DRAG=null;
 function render(){
   recomporTudo();
@@ -17921,7 +17921,7 @@ function aplicarEstado(txt){
   if(Array.isArray(cad.gruposMotivo)&&cad.gruposMotivo.length){
     cad.gruposMotivo.forEach(sv=>{
       const g=GRUPOS_MOTIVO.find(x=>x.id===sv.id);
-      if(g){g.nome=sv.nome||g.nome;g.sub=sv.sub||g.sub;g.etapas=sv.etapas||g.etapas;}
+      if(g){g.nome=sv.nome||g.nome;g.sub=sv.sub||g.sub;g.etapas=sv.etapas||g.etapas;if(sv.setores)g.setores=sv.setores;}
       else GRUPOS_MOTIVO.push(sv);
     });
   }
@@ -25314,7 +25314,7 @@ async function csFnSemLogin(corpo){
   if(!r.ok&&!(d&&(d.erro||d.motivo)))throw new Error(r.status===404?'a função "tiny" não está instalada':'erro '+r.status);
   return d||{};
 }
-const csMaqDoTablet=()=>{try{if(typeof CS_OPMAQ!=='undefined'&&CS_OPMAQ)return CS_OPMAQ;const q=csQuiosque();return q?MAQUINAS[+q-1]||('MAQ '+q):'';}catch(e){return '';}};
+const csMaqDoTablet=()=>{try{if(typeof CS_OPMAQ!=='undefined'&&CS_OPMAQ)return CS_OPMAQ;const q=csQuiosque();if(q==='tq')return 'Tanques';return q?MAQUINAS[+q-1]||('MAQ '+q):'';}catch(e){return '';}};
 
 /* a tela: nomes em cima, PIN embaixo. semLogin = confere no servidor e abre a conexão */
 function csTelaNomes(ok,semLogin){
@@ -30155,7 +30155,7 @@ try{csNucleo.versao='v392';}catch(e){}
 try{csNucleo.versao='v393';}catch(e){}
 </script>
 <script>
-try{csNucleo.versao='v402';}catch(e){}
+try{csNucleo.versao='v403';}catch(e){}
 </script>
 <script>/* =====================================================================
    v398 — PÁGINA TANQUES NO LAYOUT NOVO
@@ -30554,6 +30554,515 @@ function csTqSelos(){try{
 }catch(e){}}
 try{const _rd402=render;render=function(){const r=_rd402.apply(this,arguments);csTqSelos();return r;};}catch(e){}
 try{const _pf402=csPintarFaixa;csPintarFaixa=function(){if(S.page!=='envase'){const t=document.getElementById('csTL');if(t)t.remove();return;}return _pf402.apply(this,arguments);};}catch(e){}
+</script>
+<script>
+/* ===================== v403 · TABLET DOS TANQUES (de verdade) =====================
+   A tela de teste (tanqueteste.html) virou o módulo tqop.html. O tablet abre tanques.html, que marca o
+   aparelho (erp.quiosque = 'tq') e cai em #optq: o ERP mostra o módulo em tela cheia.
+   Tudo o que o operador faz grava no lote (APONTA[chave]) e vai para o histórico geral do lote:
+     - o que o PCP já usava: fabIni / fabFim (preparo), analise.resultados, lotesMP, mpExtra (ajuste);
+     - o que é novo, dentro de APONTA[chave].tq: limpeza, enchimento, separação (lote e peso de cada MP),
+       passo do Modo de Fazer, pausa, problemas, análise enviada, ajustes pedidos pelo químico e lançados,
+       de onde veio (pulmão).
+   Cada botão pede o PIN; o nome de quem digitou fica no histórico. */
+const CS_TQ_KIOSK=()=>{try{return (typeof csQuiosque==='function'&&csQuiosque()==='tq')||location.hash==='#optq';}catch(e){return false;}};
+const csTqMin=h=>{const m=/^(\d{1,2}):(\d{2})/.exec(String(h||''));return m?(+m[1])*60+(+m[2]):null;};
+const csTqCarimbo=q=>({d:ymd(new Date()),h:relogio(),q:(q&&q.nome)||q||''});
+/* minutos desde um carimbo {d,h} (ou {data,hora}), contando a virada do dia */
+function csTqDesde(st){
+  if(!st)return null;const d=st.d||st.data,h=st.h||st.hora;const m=csTqMin(h);if(m==null)return null;
+  const hoje=ymd(new Date());let base=m;
+  if(d&&d!==hoje){const dd=Math.round((new Date(hoje+'T00:00:00')-new Date(d+'T00:00:00'))/864e5);base=m-dd*1440;}
+  return agoraMin()-base;
+}
+const csTqDur=m=>m==null?'':`${Math.floor(Math.max(0,m)/60)}:${String(Math.max(0,Math.round(m))%60).padStart(2,'0')}`;
+function csTqPasso(b,k){try{return ((b.etapas&&b.etapas.passos)||[]).find(p=>p.k===k)||null;}catch(e){return null;}}
+/* situação do lote no chão de fábrica, a partir do que já foi lançado */
+function csTqSt(b){
+  const at=APONTA[b.chave]||{},tq=at.tq||{};
+  const r={st:'limpar',ini:'',desde:null};
+  const set=(st,c)=>{r.st=st;if(c){r.ini=c.h||c.hora||'';r.desde=csTqDesde(c);}};
+  if(b.status==='concluido'){set('concluido');return r;}
+  const env=(b.ordens||[]).find(o=>['preparacao','producao'].includes(sit(o)));
+  const ajp=(tq.ajPed||[]).filter(a=>!a.lanc);
+  if(b.status==='liberado'){
+    if(env){set('envasando',{d:env.data,h:env.envIni||env.iniReal});r.maq=env.maq;}
+    else set('liberado',{d:at.liberadoData,h:b.liberadoEm});
+  }
+  else if(ajp.length)set('ajuste',ajp[ajp.length-1].em);
+  else if(tq.reana)set('analise',tq.reanaEm);
+  else if(tq.anaEnv)set('naolib',tq.anaEnv);
+  else if(at.fabFim){
+    const c={d:at.fabFim.data,h:at.fabFim.hora},desc=csTqDescanso(b),d=csTqDesde(c);
+    if(desc>0&&d!=null&&d<desc)set('descanso',c);else set('analise',c);
+  }
+  else if(at.fabIni)set('prep',{d:at.fabIni.data,h:at.fabIni.hora});
+  else if(tq.enchFim){
+    const pf=csTqPasso(b,'fabricacao');
+    const atrasou=ehHojeTq(b.data)&&pf&&pf.de!=null&&agoraMin()>pf.de;
+    set(atrasou?'atras':'cheio',tq.enchFim);
+    if(atrasou){r.desde=agoraMin()-pf.de;}
+  }
+  else if(tq.enchIni)set('enchendo',tq.enchIni);
+  else if(tq.limpFim||tq.limpNao)set('encher',tq.limpFim||tq.limpNao);
+  else if(tq.limpIni)set('limpando',tq.limpIni);
+  else set(csTqPasso(b,'limpeza')?'limpar':'encher');
+  if(tq.reana)r.reana=true;
+  if(tq.pausa)r.pausa=tq.pausa;
+  return r;
+}
+const ehHojeTq=d=>{try{return d===ymd(new Date());}catch(e){return false;}};
+function csTqDescanso(b){try{return +csTempoTq(b.produto,b.tanque).descanso||0;}catch(e){return 0;}}
+function csTqPreparo(b){try{return +csTempoTq(b.produto,b.tanque).fabricacao||0;}catch(e){return 0;}}
+const CS_TQ_NAO_COMECOU=['limpar','encher','livre'],CS_TQ_PRODUZIDO=['descanso','analise','naolib','liberado','ajuste'];
+function csTqEspec(g,k){try{const e=especDe(g)||{};const v=e[k];if(v==null)return '';return typeof v==='object'?(v.txt||((v.min!=null?v.min:'')+' a '+(v.max!=null?v.max:''))):String(v);}catch(e){return '';}}
+function csTqLote(b){
+  const at=APONTA[b.chave]||{},tq=at.tq||{},s=csTqSt(b);
+  const o0=(b.ordens||[])[0];
+  const maqs=[...new Set((b.ordens||[]).map(o=>o.maq).filter(Boolean))];
+  let mp=[];try{mp=mpDoLote(b).map(x=>({nome:x.nome,sku:x.sku||'',kg:+x.kg||0,un:x.un||'kg'}));}catch(e){}
+  let ens=[];try{const E=especDe(b.produto)||{};ens=ensaiosDe(b.produto).map(([k,rot])=>({k,rot,quali:QUALI.includes(k),esp:csTqEspec(b.produto,k),
+    min:(E[k]&&typeof E[k]==='object'&&E[k].min!=null)?+E[k].min:null,max:(E[k]&&typeof E[k]==='object'&&E[k].max!=null)?+E[k].max:null,
+    st:confereEnsaio(b.produto,k,((b.analise&&b.analise.resultados)||{})[k])}));}catch(e){}
+  const proc=((typeof FORMULAS!=='undefined'&&FORMULAS[b.produto]&&FORMULAS[b.produto].proc)||[]).filter(Boolean);
+  const pl=k=>{const p=csTqPasso(b,k);return p?{min:p.min,de:p.de!=null?hhmm(p.de):'',ate:p.ate!=null?hhmm(p.ate):''}:null;};
+  return {k:b.chave,data:b.data,p:b.produto,lote:b.lote||'',op:o0?rotuloOP(o0):'',vol:+b.volume||0,
+    pronto:b.prontoAte<1e9?hhmm(b.prontoAte):'—',prontoMin:b.prontoAte<1e9?b.prontoAte:null,
+    maq:maqs.join(', ')||'—',tanque:b.tanque,st:s.st,ini:s.ini,desde:s.desde,maqEnv:s.maq||'',reana:!!s.reana,pausa:s.pausa||null,
+    prev:csTqPreparo(b),desc:csTqDescanso(b),plan:{limp:pl('limpeza'),ench:pl('enchimento'),fab:pl('fabricacao'),desc:pl('descanso')},
+    tq:{...tq},mp,sep:tq.sep||{},lotesMP:at.lotesMP||{},proc,passo:+tq.passo||0,ens,res:((b.analise&&b.analise.resultados)||{}),
+    ajPed:tq.ajPed||[],extra:at.mpExtra||[],lib:b.liberadoEm||'',libPor:at.liberadoPor||'',de:tq.de||'',
+    log:(at.log||[]).slice(-60)};
+}
+function csTqFeito(b){
+  const at=APONTA[b.chave]||{},o0=(b.ordens||[])[0];
+  const fim=b.concluidoEm||((b.ordens||[]).map(o=>o.fimReal).filter(Boolean).sort().slice(-1)[0])||'';
+  const lib=csTqMin(b.liberadoEm),pr=b.prontoAte<1e9?b.prontoAte:null;
+  return {k:b.chave,p:b.produto,lote:b.lote||'',op:o0?rotuloOP(o0):'',vol:+b.volume||0,h:fim,
+    maq:[...new Set((b.ordens||[]).map(o=>o.maq).filter(Boolean))].join(', '),pronto:pr!=null?hhmm(pr):'',
+    atr:(lib!=null&&pr!=null&&lib>pr)?lib-pr:0,de:(at.tq||{}).de||'',log:(at.log||[]).slice(-60)};
+}
+/* os lotes do dia de cada tanque; hoje também traz o que sobrou dos 3 dias anteriores e já começou */
+function csTqDia(dia){
+  const hoje=ymd(new Date());dia=dia||hoje;
+  const tqs=recursosDe('tanque').filter(r=>r.ativo!==false);
+  let lotes=bateladas(dia).filter(b=>b.origem!=='saldo'&&b.tanque);
+  if(dia===hoje){
+    for(let i=1;i<=3;i++){const d=new Date();d.setDate(d.getDate()-i);const dd=ymd(d);
+      bateladas(dd).filter(b=>b.origem!=='saldo'&&b.tanque&&b.status!=='concluido').forEach(b=>{
+        const at=APONTA[b.chave]||{};const comecou=at.fabIni||at.fabFim||b.liberadoEm||Object.keys(at.tq||{}).length;
+        if(comecou){b._antes=true;lotes.push(b);}});}
+  }
+  return tqs.map(r=>{
+    const l=lotes.filter(b=>b.tanque===r.id).sort((a,b)=>(b._antes?0:1)-(a._antes?0:1)||a.prontoAte-b.prontoAte);
+    return {id:r.id,cap:+r.cap||0,pul:!!r.pul,
+      fila:l.filter(b=>b.status!=='concluido').map(csTqLote),feitos:l.filter(b=>b.status==='concluido').map(csTqFeito)};
+  });
+}
+function csTqAchar(k){const d=String(k||'').split('|')[0];try{return bateladas(d).find(b=>b.chave===k)||null;}catch(e){return null;}}
+/* PIN: o mesmo de toda a fábrica (operador ou pessoa do sistema) */
+function csTqQuem(pin){window.CS_PIN_MOTIVO='';const q=quemPorCredencial(String(pin||'').trim());
+  return q?{ok:true,nome:q.nome,q}:{ok:false,erro:window.CS_PIN_MOTIVO||'PIN não encontrado, tente de novo'};}
+/* move o lote (todas as OPs dele) para outro tanque, levando o que já foi lançado */
+function csTqMover(b,destino,quem,motivo){
+  const antigo=b.tanque,ap=APONTA[b.chave];
+  if(ap)delete APONTA[b.chave];
+  b.ordens.forEach(o=>{o.tanque=destino;registrar(o,'Tanque alterado',quem,`${antigo} → ${destino}${motivo?' · '+motivo:''}`);});
+  const nova=batDe(b.ordens[0]);
+  if(nova){const a=ap||{};APONTA[nova.chave]={...a,tq:{...(a.tq||{}),de:antigo,transf:csTqCarimbo(quem)}};return nova.chave;}
+  return null;
+}
+function csTqAcao(k,a,x,pin){
+  x=x||{};
+  const b=csTqAchar(k);if(!b)return {erro:'Esse lote não está mais na programação. A tela vai atualizar.'};
+  let quem=null;
+  if(a!=='passo'){const r=csTqQuem(pin);if(!r.ok)return {erro:r.erro,pin:true};quem=r.q;}
+  const at=APONTA[b.chave]||{},tq={...(at.tq||{})},s=csTqSt(b);
+  const log=[...(at.log||[])];
+  const L=(e,m,tudo)=>{log.push({t:relogio(),d:ymd(new Date()),e,op:quem?quem.nome:'',m:m||null,w:b.tanque});
+    if(tudo)b.ordens.forEach(o=>registrar(o,e,quem,`${b.tanque} · ${b.produto}${m?' · '+m:''}`));};
+  const C=()=>csTqCarimbo(quem);
+  const levou=c=>{const d=csTqDesde(c);return d!=null?'levou '+csTqDur(d):'';};
+  let novo={...at},msg='';
+  switch(a){
+    case 'limpIni':tq.limpIni=C();L('Iniciou a limpeza');msg='Limpeza iniciada';break;
+    case 'limpFim':tq.limpFim=C();L('Concluiu a limpeza',levou(tq.limpIni));msg='Limpeza concluída';break;
+    case 'limpNao':tq.limpNao=C();L('Não precisou limpar','mesmo produto');msg='Pode encher';break;
+    case 'enchIni':tq.enchIni=C();L('Iniciou o enchimento');msg='Enchimento iniciado';break;
+    case 'enchFim':tq.enchFim=C();L('Concluiu o enchimento',levou(tq.enchIni));msg='Tanque cheio';break;
+    case 'sep':{
+      const it=x.itens||{};tq.sep=it;const lm={...(at.lotesMP||{})};
+      Object.entries(it).forEach(([n,v])=>{if(v&&v.ok&&v.lote)lm[n]=v.lote;});
+      novo.lotesMP=lm;
+      const tot=(x.total!=null?x.total:Object.keys(it).length),ok=Object.values(it).filter(v=>v&&v.ok).length;
+      L('Salvou a separação',`${ok} de ${tot} MPs · `+Object.entries(it).filter(([n,v])=>v&&v.ok).map(([n,v])=>`${n}: lote ${v.lote||'—'} · ${v.kg||'—'} kg`).join(' · '));
+      msg='Separação salva';break;}
+    case 'passo':tq.passo=Math.max(0,+x.n||0);break;
+    case 'prepIni':
+      novo.fabIni={data:ymd(new Date()),hora:relogio()};
+      L('Iniciou o preparo',tq.enchFim?'ficou cheio esperando '+csTqDur(csTqDesde(tq.enchFim)):'',true);msg='Preparo iniciado';break;
+    case 'prepFim':{
+      const ini=at.fabIni?{d:at.fabIni.data,h:at.fabIni.hora}:null,d=csTqDesde(ini),prev=csTqPreparo(b);
+      novo.fabFim={data:ymd(new Date()),hora:relogio()};tq.prepObs=x.obs||'';
+      L('Concluiu o preparo',(d!=null?'levou '+csTqDur(d)+(prev?' (previsto '+csTqDur(prev)+')':''):'')+(x.obs?' · '+x.obs:''),true);
+      msg='Preparo concluído';break;}
+    case 'ana':{
+      const res={...((at.analise&&at.analise.resultados)||{}),...(x.res||{})};
+      const antes=(at.analise&&at.analise.resultados)||{};
+      const mud=Object.keys(x.res||{}).filter(kk=>String(antes[kk]??'')!==String(res[kk]??''));
+      novo.analise={...(at.analise||{}),resultados:res,em:relogio(),por:quem.nome};
+      tq.anaEnv=C();tq.anaObs=x.obs||'';const era=!!tq.reana;tq.reana=false;tq.anaN=(+tq.anaN||0)+1;
+      let fora=[];try{fora=ensaiosDe(b.produto).filter(([kk])=>confereEnsaio(b.produto,kk,res[kk])==='fora').map(([,r])=>r);}catch(e){}
+      L(era?'Enviou a reanálise':'Enviou a análise para liberação',
+        (mud.length?mud.map(kk=>{const e=(ENSAIOS.find(z=>z[0]===kk)||[kk,kk])[1];return `${e}: ${res[kk]}`;}).join(' · '):'')+(fora.length?' · fora: '+fora.join(', '):'')+(x.obs?' · '+x.obs:''),true);
+      msg=era?'Reanálise enviada':'Análise enviada';break;}
+    case 'ajLanc':{
+      const pend=(tq.ajPed||[]).map(z=>({...z}));const ext=[...(at.mpExtra||[])];
+      (x.itens||[]).forEach(v=>{const p=pend[v.i];if(!p||p.lanc)return;
+        const kg=+String(v.kg||'').replace(',','.')||+p.kg||0;
+        p.lanc={...C(),lote:v.lote||'',kg};
+        ext.push({nome:p.nome,kg,un:p.un||'kg',motivo:'Ajuste pedido por '+(p.por||'químico')+(p.obs?': '+p.obs:''),
+          quem:quem.nome,em:relogio(),dia:ymd(new Date()),lote:v.lote||''});
+        L('Lançou MP de ajuste',`${p.nome} · ${String(kg).replace('.',',')} ${p.un||'kg'} · lote ${v.lote||'—'}`,true);});
+      tq.ajPed=pend;novo.mpExtra=ext;
+      if(!pend.some(z=>!z.lanc)){tq.reana=true;tq.reanaEm=C();tq.anaEnv=null;}
+      msg='Ajuste lançado · refaça a análise';break;}
+    case 'ajPed':{
+      const l=[...(tq.ajPed||[])];l.push({nome:x.nome,sku:x.sku||'',kg:+String(x.kg||'').replace(',','.')||0,un:x.un||'kg',obs:x.obs||'',por:quem.nome,em:C()});
+      tq.ajPed=l;tq.anaEnv=null;
+      L('Químico pediu ajuste',`+ ${String(x.kg||'').replace('.',',')} ${x.un||'kg'} de ${x.nome}${x.obs?' · '+x.obs:''}`,true);
+      msg='Pedido de ajuste enviado ao '+b.tanque;break;}
+    case 'mpExtra':{
+      const ext=[...(at.mpExtra||[])];
+      (x.itens||[]).forEach(v=>{const kg=+String(v.kg||'').replace(',','.')||0;if(!v.nome||!kg)return;
+        ext.push({nome:v.nome,kg,un:'kg',motivo:'MP de ajuste lançada no tanque'+(v.obs?': '+v.obs:''),quem:quem.nome,em:relogio(),dia:ymd(new Date()),lote:v.lote||''});
+        L('Lançou MP de ajuste',`${v.nome} · ${String(kg).replace('.',',')} kg · lote ${v.lote||'—'}`,true);});
+      novo.mpExtra=ext;msg='MP de ajuste lançada';break;}
+    case 'pausa':
+      tq.pausa={ini:Date.now(),d:ymd(new Date()),h:relogio(),grupo:x.grupo||'',mot:x.mot||'',obs:x.obs||'',quem:quem.nome,etapa:s.st};
+      L('Pausou',`${x.grupo||''}${x.mot?' | '+x.mot:''}${x.obs?' · '+x.obs:''}`);msg=b.tanque+' pausado';break;
+    case 'retomar':{
+      const p=tq.pausa;if(!p)return {erro:'Este tanque não está pausado.'};
+      const dm=Math.max(0,Math.round((Date.now()-(+p.ini||Date.now()))/60000));
+      tq.pausas=[...(tq.pausas||[]),{...p,fim:relogio(),min:dm,quemFim:quem.nome}];tq.pausa=null;
+      L('Retomou',`pausa de ${csTqDur(dm)} · ${p.grupo||''}${p.mot?' | '+p.mot:''}`);msg=b.tanque+' retomado';break;}
+    case 'prob':
+      tq.probs=[...(tq.probs||[]),{h:relogio(),d:ymd(new Date()),grupo:x.grupo||'',mot:x.mot||'',min:+x.min||0,obs:x.obs||'',quem:quem.nome,etapa:s.st}];
+      L('Registrou problema',`${x.grupo||''} | ${x.mot||''} · ${(+x.min>0)?'parou '+x.min+' min':(+x.min===-1?'ainda parado':'não parou')}${x.obs?' · '+x.obs:''}`,true);
+      msg='Problema registrado · PCP e químico avisados';break;
+    case 'pulmao':{
+      const P=recursosDe('tanque').find(r=>r.pul&&r.ativo!==false);if(!P)return {erro:'Não há pulmão cadastrado.'};
+      if(!CS_TQ_PRODUZIDO.includes(s.st)&&s.st!=='prep')return {erro:'Só dá para mandar ao pulmão o lote com o preparo concluído.'};
+      if(b.volume>(+P.cap||0))return {erro:`O lote tem ${nf(b.volume)} L e o pulmão leva ${nf(P.cap)} L.`};
+      const ocup=csTqDia(b.data).find(t=>t.id===P.id);
+      if(ocup&&ocup.fila.some(l=>!CS_TQ_NAO_COMECOU.includes(l.st)))return {erro:'O pulmão está ocupado agora. Espere esvaziar.'};
+      APONTA[b.chave]={...novo,tq,log:[...log,{t:relogio(),d:ymd(new Date()),e:'Transferiu para o pulmão',op:quem.nome,m:`${b.tanque} → ${P.id} · ${b.tanque} liberado para limpeza`,w:b.tanque}]};
+      csTqMover(b,P.id,quem,'transferido para o pulmão');
+      agendarSalvar();try{render();}catch(e){}
+      return {ok:true,msg:`Lote foi para o pulmão · ${b.tanque} liberado para limpeza`};}
+    default:return {erro:'Ação desconhecida: '+a};
+  }
+  APONTA[b.chave]={...novo,tq,log};
+  agendarSalvar();try{render();}catch(e){}
+  return {ok:true,msg:msg?(msg+(quem?' · '+quem.nome:'')):''};
+}
+try{
+  csNucleo.tqDados=dia=>({dia:dia||ymd(new Date()),hoje:ymd(new Date()),agora:agoraMin(),pronto:typeof PRONTO!=='undefined'&&!!PRONTO,
+    online:typeof ONLINE!=='undefined'&&!!ONLINE,T:csTqDia(dia)});
+  csNucleo.tqAcao=(k,a,x,pin)=>{try{return csTqAcao(k,a,x,pin);}catch(e){console.warn('tqAcao',e);return {erro:'Não consegui gravar: '+e.message};}};
+  csNucleo.tqPin=pin=>csTqQuem(pin);
+  csNucleo.tqLogo=()=>LOGO;
+  /* motivos do setor Tanques (Configurações › Motivos de desvio) */
+  csNucleo.tqMotivos=et=>{try{const l=et==='problema'?[...gruposDe('pausa','tanque'),...gruposDe('parada','tanque')]:gruposDe(et,'tanque');
+    const vis={};return l.filter(g=>vis[g.nome]?false:(vis[g.nome]=1)).map(g=>({nome:g.nome,sub:[...(g.sub||[])]}));}catch(e){return [];}};
+  /* matérias-primas do cadastro (para o ajuste) */
+  csNucleo.tqInsumos=()=>{try{return insAtivos().filter(i=>['Matéria Prima','Corantes','Fragrâncias'].includes(i.tipo)).map(i=>({sku:i.sku,nome:i.nome}));}catch(e){return [];}};
+}catch(e){}
+
+/* ---------- o tablet: tanques.html → #optq → módulo em tela cheia ---------- */
+(function(){try{const s=document.createElement('style');s.textContent=`
+#csTqFrame{position:fixed;inset:0;width:100vw;height:100vh;border:0;z-index:850;background:#0B0F17;display:block}
+body.cs-tqon{overflow:hidden}
+body.cs-tqon #csPinOp,body.cs-tqon #login{z-index:2000!important}
+body.cs-tqon .toast,body.cs-tqon #toast{z-index:2100!important}`;document.head.appendChild(s);}catch(e){}})();
+function csTqAbre(){
+  try{
+    if(!CS_TQ_KIOSK()){const f=document.getElementById('csTqFrame');if(f){f.remove();document.body.classList.remove('cs-tqon');}return;}
+    if(typeof PRONTO!=='undefined'&&!PRONTO)return;
+    let f=document.getElementById('csTqFrame');
+    if(!f){f=document.createElement('iframe');f.id='csTqFrame';f.title='Tanques';f.setAttribute('src','tqop.html?v='+VERSAO_APP);
+      document.body.appendChild(f);document.body.classList.add('cs-tqon');}
+  }catch(e){}
+}
+function csTqAvisa(){try{const f=document.getElementById('csTqFrame');if(f&&f.contentWindow&&f.contentWindow.tqAtualiza)f.contentWindow.tqAtualiza();}catch(e){}}
+try{const _rd403=render;render=function(){const r=_rd403.apply(this,arguments);try{csTqAbre();csTqAvisa();}catch(e){}return r;};}catch(e){}
+window.addEventListener('hashchange',()=>{try{csTqAbre();}catch(e){}});
+setInterval(()=>{try{csTqAbre();}catch(e){}},1500);
+
+/* ---------- PCP: na ficha do lote, o que veio do tablet e o pedido de ajuste ---------- */
+function csTqPedirAjuste(b){
+  const ins=(csNucleo.tqInsumos&&csNucleo.tqInsumos())||[];
+  if(M('mAcao'))M('mAcao').innerHTML='';
+  M('mTit').textContent='Pedir ajuste ao tanque';M('mSub').hidden=false;
+  M('mSub').textContent=`${b.tanque} · ${b.produto}${b.lote?' · lote '+b.lote:''}`;
+  M('mB').innerHTML=`<div class="alert blue">O pedido aparece na hora no tablet dos tanques, em vermelho: <b>Ajuste pedido pelo químico</b>.
+    O operador lança o lote e o peso da MP, e refaz a análise.</div>
+    <div class="fld"><label>Matéria-prima <b>*</b> <span class="k">(do cadastro)</span></label>
+      <input class="inp" id="tqaMp" list="tqaLst" placeholder="digite para buscar"><datalist id="tqaLst">${ins.map(i=>`<option value="${escAttr(i.nome)}">${escAttr(i.sku)}</option>`).join('')}</datalist></div>
+    <div class="fld"><label>Quantidade (kg) <b>*</b></label><input class="inp" id="tqaKg" inputmode="decimal" placeholder="ex.: 2,5"></div>
+    <div class="fld"><label>Orientação para o tanque</label><input class="inp" id="tqaObs" placeholder="ex.: agitar 15 min e refazer o teor"></div>`;
+  M('mF').innerHTML=`<div class="mfesq"></div><div class="mfdir"><button class="btn" id="tqaC">Voltar</button><button class="btn warn" id="tqaK">Enviar pedido de ajuste</button></div>`;
+  M('tqaC').onclick=()=>abrirLote(csTqAchar(b.chave)||b);
+  M('tqaK').onclick=()=>{
+    const nome=cv('tqaMp').trim(),kg=cv('tqaKg').trim(),obs=cv('tqaObs').trim();
+    const i=ins.find(z=>z.nome.toLowerCase()===nome.toLowerCase());
+    if(!i){toast('Escolha a matéria-prima da lista do cadastro.',true);return;}
+    if(!(+kg.replace(',','.')>0)){toast('Informe a quantidade.',true);return;}
+    pedirPin('Pedir ajuste ao tanque',`<b>${b.tanque} · ${escAttr(b.produto)}</b>: + ${escAttr(kg)} kg de ${escAttr(i.nome)}. O nome de quem pediu fica no histórico do lote.`,
+      q=>{const pin=(q.op&&q.op.pin)||'';
+        /* grava direto (o PIN já foi conferido aqui) */
+        const at=APONTA[b.chave]||{},tq={...(at.tq||{})};
+        const l=[...(tq.ajPed||[])];l.push({nome:i.nome,sku:i.sku,kg:+kg.replace(',','.'),un:'kg',obs,por:q.nome,em:csTqCarimbo(q)});
+        tq.ajPed=l;tq.anaEnv=null;
+        APONTA[b.chave]={...at,tq,log:[...(at.log||[]),{t:relogio(),d:ymd(new Date()),e:'Químico pediu ajuste',op:q.nome,m:`+ ${kg} kg de ${i.nome}${obs?' · '+obs:''}`,w:b.tanque}]};
+        b.ordens.forEach(o=>registrar(o,'Químico pediu ajuste',q,`${b.tanque} · + ${kg} kg de ${i.nome}`));
+        agendarSalvar();fecharModal();render();toast('Pedido de ajuste enviado ao '+b.tanque+'.');});
+  };
+  abrirMask();
+}
+try{const _al403=abrirLote;abrirLote=function(b){
+  const r=_al403.apply(this,arguments);
+  try{
+    if(!b||b.origem==='saldo'||!b.tanque)return r;
+    const at=APONTA[b.chave]||{},tq=at.tq||{};
+    const pend=(tq.ajPed||[]).filter(a=>!a.lanc);
+    const info=[];
+    if(tq.anaEnv)info.push(`Análise ${(+tq.anaN||1)>1?'refeita':'enviada'} pelo tanque às <b>${escAttr(tq.anaEnv.h||'')}</b>${tq.anaEnv.q?' por '+escAttr(tq.anaEnv.q):''}${tq.anaObs?` · “${escAttr(tq.anaObs)}”`:''}`);
+    if(pend.length)info.push(`Ajuste pedido, esperando o tanque lançar: ${pend.map(a=>`<b>+ ${String(a.kg).replace('.',',')} ${escAttr(a.un||'kg')} ${escAttr(a.nome)}</b> (${escAttr(a.por||'')})`).join(', ')}`);
+    if(tq.reana)info.push('Ajuste lançado no tanque · <b>esperando a reanálise</b>');
+    if(info.length&&M('mB')&&!M('mB').querySelector('.cs-tqinfo'))M('mB').insertAdjacentHTML('afterbegin',`<div class="alert blue cs-tqinfo" style="margin-bottom:10px">${info.join('<br>')}</div>`);
+    if(b.status!=='liberado'&&b.status!=='concluido'&&M('mF')&&!M('mF').querySelector('#csTqAj')){
+      const esq=M('mF').querySelector('.mfesq')||M('mF');
+      const bt=document.createElement('button');bt.className='btn warn sm';bt.id='csTqAj';bt.textContent='Pedir ajuste ao tanque';
+      bt.onclick=()=>csTqPedirAjuste(b);esq.insertBefore(bt,esq.firstChild);
+    }
+  }catch(e){}
+  return r;};}catch(e){}
+
+/* ---------- Envase: selo "precisa de ajuste" para a química ---------- */
+function csTqPrecisamAjuste(){
+  const r=[];const hoje=ymd(new Date());const amanha=(()=>{const d=new Date();d.setDate(d.getDate()+1);return ymd(d);})();
+  [hoje,amanha].forEach(d=>{try{bateladas(d).forEach(b=>{
+    if(b.origem==='saldo'||!b.tanque||['liberado','concluido'].includes(b.status))return;
+    const tq=(APONTA[b.chave]||{}).tq||{};
+    if((tq.ajPed||[]).some(a=>!a.lanc))return;            /* já pedido: está com o tanque */
+    let fora=[];try{fora=analiseOk(b).fora||[];}catch(e){}
+    const des=b.analise&&b.analise.desvio;
+    if(fora.length&&!des)r.push({b,fora});
+  });}catch(e){}});
+  return r;
+}
+function csTqIrAjuste(b){
+  try{csIr({page:'tanques'});}catch(e){try{S.page='tanques';render();}catch(x){}}
+  setTimeout(()=>{try{const n=csTqAchar(b.chave)||b;try{ABA_LOTE='cert';}catch(e){}abrirLote(n);}catch(e){}},350);
+}
+(function(){try{const s=document.createElement('style');s.textContent=`
+#csAjSelo{display:inline-flex;align-items:center;gap:7px;border:1px solid #FCA5A5;background:#FEE2E2;color:#B91C1C;font:700 13px Inter,system-ui,sans-serif;
+  border-radius:999px;padding:6px 13px 6px 10px;cursor:pointer;white-space:nowrap}
+#csAjSelo:hover{background:#FECACA}
+#csAjSelo i{width:18px;height:18px;border-radius:50%;background:#DC2626;color:#fff;display:inline-grid;place-items:center;font:800 12px Inter,sans-serif;font-style:normal}
+.cs-ajpop{position:fixed;z-index:950;background:#fff;border:1px solid #E5E7EB;border-radius:12px;box-shadow:0 12px 32px rgba(15,23,42,.16);padding:6px;min-width:280px}
+.cs-ajpop button{display:flex;flex-direction:column;align-items:flex-start;gap:2px;width:100%;border:0;background:transparent;text-align:left;padding:9px 11px;border-radius:8px;cursor:pointer;font:600 13.5px Inter,sans-serif;color:#0F172A}
+.cs-ajpop button:hover{background:#F1F5F9}.cs-ajpop small{font-weight:500;color:#64748B;font-size:12px}`;document.head.appendChild(s);}catch(e){}})();
+function csTqSeloAjuste(){
+  try{
+    const slot=M('csSlBtn');if(!slot)return;
+    let b=document.getElementById('csAjSelo');
+    const l=(S.page==='envase'||S.page==='tanques')?csTqPrecisamAjuste():[];
+    if(!l.length){if(b)b.remove();return;}
+    if(!b){b=document.createElement('button');b.type='button';b.id='csAjSelo';}
+    if(b.parentNode!==slot)slot.insertBefore(b,slot.firstChild);
+    const tqs=[...new Set(l.map(x=>x.b.tanque))];
+    b.innerHTML=`<i>!</i>${l.length===1?`${escAttr(l[0].b.tanque)} precisa de ajuste`:`${tqs.length} tanques precisam de ajuste`}`;
+    b.title=l.map(x=>`${x.b.tanque} · ${x.b.produto} · fora: ${x.fora.join(', ')}`).join('\n');
+    b.onclick=ev=>{ev.stopPropagation();
+      if(l.length===1)return csTqIrAjuste(l[0].b);
+      document.querySelectorAll('.cs-ajpop').forEach(p=>p.remove());
+      const p=document.createElement('div');p.className='cs-ajpop';
+      p.innerHTML=l.map((x,i)=>`<button type="button" data-i="${i}">${escAttr(x.b.tanque)} · ${escAttr(x.b.produto)}<small>${x.b.lote?'lote '+escAttr(x.b.lote)+' · ':''}fora: ${escAttr(x.fora.join(', '))}</small></button>`).join('');
+      document.body.appendChild(p);const r=b.getBoundingClientRect();p.style.top=(r.bottom+6)+'px';p.style.left=Math.max(8,Math.min(r.left,innerWidth-p.offsetWidth-8))+'px';
+      p.querySelectorAll('[data-i]').forEach(e=>e.onclick=()=>{p.remove();csTqIrAjuste(l[+e.dataset.i].b);});
+      setTimeout(()=>document.addEventListener('click',function f(e){if(!p.contains(e.target)){p.remove();document.removeEventListener('click',f);}}),0);
+    };
+  }catch(e){}
+}
+try{const _bd403=csBarraDia;csBarraDia=function(){const r=_bd403.apply(this,arguments);csTqSeloAjuste();return r;};}catch(e){}
+try{const _rd403b=render;render=function(){const r=_rd403b.apply(this,arguments);try{csTqSeloAjuste();}catch(e){}return r;};}catch(e){}
+
+/* ---------- Configurações › PCP: o link do tablet dos tanques ---------- */
+try{const _cp403=abrirCfgPCP;abrirCfgPCP=function(){const r=_cp403.apply(this,arguments);
+  try{const tb=M('mB')&&M('mB').querySelector('table.tb tbody');
+    if(tb&&!tb.querySelector('[data-tqlink]')){const u=location.origin+location.pathname.replace(/[^/]*$/,'')+'tanques.html';
+      tb.insertAdjacentHTML('beforeend',`<tr data-tqlink="1"><td><b>Tanques</b></td><td class="mono" style="word-break:break-all">${escAttr(u)}</td><td class="n" style="white-space:nowrap"><button class="btn sm" data-cpl2="${escAttr(u)}">Copiar</button> <a class="btn sm" href="${escAttr(u)}" target="_blank" rel="noopener">Abrir</a></td></tr>`);
+      tb.querySelector('[data-cpl2]').onclick=e=>{try{navigator.clipboard.writeText(e.target.dataset.cpl2);toast('Link copiado.');}catch(x){prompt('Copie o link:',e.target.dataset.cpl2);}};}}catch(e){}
+  return r;};}catch(e){}
+/* versão nova no tablet dos tanques: espera o operador terminar (janela aberta ou digitando dentro da tela) */
+try{const _pa403=csPodeAtualizar;csPodeAtualizar=function(){
+  try{const f=document.getElementById('csTqFrame');const d=f&&f.contentWindow&&f.contentWindow.document;
+    if(d){const a=d.activeElement;if(a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName))return false;
+      if(d.querySelector('.modal.on,.full.on,.drawer.on'))return false;}}catch(e){}
+  return _pa403.apply(this,arguments);};}catch(e){}
+/* tablet dos tanques sem conexão: entra uma vez com a conta do tablet (e-mail e senha); a sessão fica
+   guardada e renova sozinha. Não abre a tela de nomes das máquinas nem a tela de operador de envase. */
+try{const _ao403=csAbrirOperador;csAbrirOperador=function(){try{if(csQuiosque()==='tq')return;}catch(e){}return _ao403.apply(this,arguments);};}catch(e){}
+try{const _tl403=telaLogin;telaLogin=function(msg){
+  let q=null;try{q=csQuiosque();}catch(e){}
+  if(q!=='tq')return _tl403.apply(this,arguments);
+  try{const p=document.getElementById('csPinOp');if(p)p.className='cs-pinop';}catch(e){}
+  const r=(typeof CS_TL0==='function'?CS_TL0:_tl403).call(this,msg||'');
+  try{const el=M('login');if(el){el.hidden=false;const p=el.querySelector('p');if(p)p.innerHTML='<b>Tablet dos Tanques</b><br>Feito uma vez só: entre com a conta do tablet. Depois ele abre sempre direto na tela dos tanques.';
+    el.classList.remove('cs-qset');const k=M('lgK');
+    const ir=async()=>{const e=norMail(M('lgMail').value),s=M('lgSenha').value;if(!e||!s){M('lgErro').textContent='Informe a conta e a senha do tablet.';M('lgErro').hidden=false;return;}
+      k.disabled=true;k.textContent='Entrando…';
+      try{await autenticar(e,s);el.hidden=true;await iniciarComNuvem();try{csTqAbre();}catch(x){}}
+      catch(err){k.disabled=false;k.textContent='Entrar';M('lgErro').textContent='A conta ou a senha não conferem.';M('lgErro').hidden=false;}};
+    if(k){k.textContent='Entrar';k.disabled=false;k.onclick=ev=>{try{ev.preventDefault();}catch(x){}ir();};}
+    if(M('lgSenha'))M('lgSenha').onkeydown=ev=>{if(ev.key==='Enter'){ev.preventDefault();ir();}};}}catch(e){}
+  return r;};}catch(e){}
+try{if(csQuiosque()==='tq'&&!SESSAO)telaLogin('');}catch(e){}
+
+</script>
+<script>
+/* ===================== v403 · motivos: onde cada um aparece (setores) =====================
+   Cada detalhe (nível 2) de cada grupo diz em quais setores aparece: Envase, Tanques, Sopro e
+   Rotulagem. Sem marcação nenhuma salva = aparece em todos (como era). A tela do Envase pede os
+   motivos do setor envase; o tablet dos tanques, os do setor tanques.
+   A página Configurações › Motivos de desvio foi reorganizada: regras em cartões, revisão
+   recolhida, e os grupos em cartões com os detalhes e as quatro chaves de setor. */
+const CS_SETORES=[['envase','Envase'],['tanque','Tanques'],['sopro','Sopro'],['rotulo','Rotulagem']];
+const csSubSetores=(g,s)=>(g&&g.setores&&Array.isArray(g.setores[s]))?g.setores[s]:CS_SETORES.map(x=>x[0]);
+function csGruposSetor(l,setor){
+  setor=setor||'envase';
+  return (l||[]).map(g=>({...g,sub:(g.sub||[]).filter(s=>csSubSetores(g,s).includes(setor))})).filter(g=>g.sub.length);
+}
+let CS_MOT_VER='todos';   /* filtro da página: todos ou um setor */
+(function(){try{const s=document.createElement('style');s.textContent=`
+.csm-wrap{display:flex;flex-direction:column;gap:18px;max-width:1180px}
+.csm-intro{font-size:13.5px;color:var(--ink2,#475467);line-height:1.5;margin:0}
+.csm-h{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.csm-h h3{margin:0;font:700 15px Inter,system-ui,sans-serif;color:var(--ink,#0F172A)}
+.csm-h .sp{flex:1}
+.csm-regras{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:10px}
+.csm-regras>.tolx,.csm-regras>.tol{margin:0!important;max-width:none!important;width:auto!important;display:flex!important;flex-direction:column!important;align-items:stretch!important;gap:10px;
+  border:1px solid var(--line,#E5E7EB)!important;border-radius:12px!important;padding:12px 14px!important;background:var(--surface,#fff)!important}
+.csm-regras>div>div:first-child b{display:block;font:700 13.5px Inter,sans-serif}
+.csm-regras>div>div:first-child span{display:block;font-size:12px;color:var(--ink3,#667085);line-height:1.4;margin-top:3px}
+.csm-regras .tolc{display:flex;align-items:center;gap:6px;margin-top:auto}
+.csm-regras .tolc input{width:90px!important;height:36px;border:1px solid var(--line,#D0D5DD);border-radius:9px;padding:0 10px;font:600 15px Inter,sans-serif;text-align:right}
+.csm-rev{border:1px solid #FECACA;background:#FEF2F2;border-radius:12px;padding:0}
+.csm-rev>summary{cursor:pointer;list-style:none;padding:12px 14px;font:600 13.5px Inter,sans-serif;color:#991B1B;display:flex;align-items:center;gap:8px}
+.csm-rev>summary::-webkit-details-marker{display:none}
+.csm-rev>summary::after{content:'▾';margin-left:auto;color:#B91C1C}
+.csm-rev[open]>summary::after{content:'▴'}
+.csm-rev>div{padding:0 14px 12px;background:#fff;border-radius:0 0 12px 12px}
+.csm-rev .alert{display:none}
+.csm-fil{display:inline-flex;border:1px solid var(--line,#E5E7EB);border-radius:10px;overflow:hidden}
+.csm-fil button{border:0;background:#fff;padding:7px 13px;font:600 12.5px Inter,sans-serif;color:var(--ink2,#475467);cursor:pointer}
+.csm-fil button+button{border-left:1px solid var(--line,#E5E7EB)}
+.csm-fil button.on{background:#1B4F9C;color:#fff}
+.csm-gs{display:grid;grid-template-columns:repeat(auto-fill,minmax(520px,1fr));gap:12px}
+@media (max-width:700px){.csm-gs{grid-template-columns:1fr}}
+.csm-g{border:1px solid var(--line,#E5E7EB);border-radius:14px;background:var(--surface,#fff);overflow:hidden;display:flex;flex-direction:column}
+.csm-gh{display:flex;align-items:flex-start;gap:10px;padding:12px 14px;border-bottom:1px solid var(--line2,#F1F2F4)}
+.csm-gh b{font:700 14.5px Inter,sans-serif;color:var(--ink,#0F172A)}
+.csm-gh .et{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.csm-gh .et span{font:600 11px Inter,sans-serif;background:#F1F5F9;color:#475467;border-radius:999px;padding:3px 8px}
+.csm-gh .sp{flex:1}
+.csm-t{width:100%;border-collapse:collapse}
+.csm-t th{font:700 10.5px Inter,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3,#667085);text-align:center;padding:8px 6px;background:#F8FAFC}
+.csm-t th:first-child{text-align:left;padding-left:14px}
+.csm-t td{border-top:1px solid var(--line2,#F1F2F4);padding:4px 6px;font-size:13px;text-align:center}
+.csm-t td:first-child{text-align:left;padding-left:14px;color:var(--ink,#0F172A)}
+.csm-t tr.off td:first-child{color:var(--ink4,#98A2B3)}
+.csm-ck{width:26px;height:26px;border-radius:9px;border:1.5px solid #D0D5DD;background:#fff;cursor:pointer;display:inline-grid;place-items:center;color:transparent;font:800 15px Inter,sans-serif;padding:0}
+.csm-ck.on{background:#1B4F9C;border-color:#1B4F9C;color:#fff}
+.csm-ck:focus-visible{outline:2px solid #1D6FE8;outline-offset:2px}
+.csm-vz{padding:14px;color:var(--ink3,#667085);font-size:13px}
+.csm-leg{font-size:12px;color:var(--ink3,#667085)}`;document.head.appendChild(s);}catch(e){}})();
+function csMotGrupos(){
+  const ver=CS_MOT_VER;
+  const gs=GRUPOS_MOTIVO.map(g=>{
+    const subs=(g.sub||[]).map(s=>({s,set:csSubSetores(g,s)}));
+    const vis=ver==='todos'?subs:subs.filter(x=>x.set.includes(ver));
+    return {g,subs:vis,tot:subs.length};
+  }).filter(x=>ver==='todos'||x.subs.length);
+  const etR=e=>{const x=(typeof ETAPAS!=='undefined'?ETAPAS:[]).find(z=>z[0]===e);return x?x[1]:e;};
+  return `<div class="csm-gs">${gs.map(({g,subs,tot})=>`<div class="csm-g" data-g="${escAttr(g.id)}">
+    <div class="csm-gh"><div><b>${escAttr(g.nome)}</b><div class="et"><span style="background:transparent;padding-left:0;color:var(--ink3,#667085)">Aparece em</span>${(g.etapas||[]).map(e=>`<span>${escAttr(etR(e))}</span>`).join('')||'<span>nenhuma etapa</span>'}</div></div>
+      <span class="sp"></span><button class="btn sm" data-gmed2="${escAttr(g.id)}">Editar</button></div>
+    ${subs.length?`<table class="csm-t"><thead><tr><th>Detalhe ${ver==='todos'?'':`<span style="text-transform:none;letter-spacing:0;font-weight:500">· ${subs.length} de ${tot}</span>`}</th>${CS_SETORES.map(([,r])=>`<th style="width:84px">${r}</th>`).join('')}</tr></thead><tbody>
+      ${subs.map(({s,set})=>`<tr class="${set.length?'':'off'}"><td>${escAttr(s)}</td>${CS_SETORES.map(([k,r])=>`<td><button type="button" class="csm-ck ${set.includes(k)?'on':''}" data-ms="${escAttr(g.id)}|${k}|${escAttr(s)}" aria-pressed="${set.includes(k)}" aria-label="${escAttr(s)} em ${r}">✓</button></td>`).join('')}</tr>`).join('')}
+    </tbody></table>`:`<div class="csm-vz">Nenhum detalhe neste setor.</div>`}
+  </div>`).join('')}</div>`;
+}
+function csMotLigar(box){
+  box.querySelectorAll('[data-gmed2]').forEach(b=>b.onclick=()=>modalGrupoMotivo(b.dataset.gmed2));
+  box.querySelectorAll('[data-ms]').forEach(b=>b.onclick=()=>{
+    const [gid,k,...r]=b.dataset.ms.split('|');const s=r.join('|');
+    const g=GRUPOS_MOTIVO.find(x=>x.id===gid);if(!g)return;
+    const cur=[...csSubSetores(g,s)];const i=cur.indexOf(k);if(i>=0)cur.splice(i,1);else cur.push(k);
+    g.setores={...(g.setores||{}),[s]:CS_SETORES.map(x=>x[0]).filter(x=>cur.includes(x))};
+    agendarSalvar();
+    const novo=csSubSetores(g,s).includes(k);b.classList.toggle('on',novo);b.setAttribute('aria-pressed',String(novo));
+    const tr=b.closest('tr');if(tr)tr.classList.toggle('off',!csSubSetores(g,s).length);
+  });
+}
+/* reorganiza a página: os campos de cima continuam os mesmos (com o que já os liga), só mudam de lugar */
+function csMotPagina(){
+  try{
+    if(typeof ABA_ADMIN==='undefined'||ABA_ADMIN!=='motivos')return;
+    const grid=M('adgrid');if(!grid||grid.querySelector('.csm-wrap'))return;
+    const st=[...grid.querySelectorAll('.st')].find(e=>/Motivos de desvio/i.test(e.textContent));if(!st)return;
+    const pai=st.parentNode;
+    const tol=[...pai.querySelectorAll(':scope > .tolx, :scope > .tol')];
+    const nRev=(typeof REVISAO_MOTIVO!=='undefined'?REVISAO_MOTIVO:[]).length;
+    const revAlert=[...pai.querySelectorAll(':scope > .alert')].find(a=>/esperando revis/i.test(a.textContent));
+    const revTab=revAlert?revAlert.nextElementSibling:null;
+    const gTitle=[...pai.querySelectorAll(':scope > .st')].find(e=>e.querySelector('#gmNovo'));
+    const gTab=gTitle?gTitle.nextElementSibling:null;const gNota=gTab?gTab.nextElementSibling:null;
+    const intro=st.nextElementSibling&&st.nextElementSibling.classList.contains('adp')?st.nextElementSibling:null;
+    const w=document.createElement('div');w.className='csm-wrap';
+    w.innerHTML=`<p class="csm-intro">O operador escolhe o <b>grupo</b> e marca o <b>detalhe</b> do que aconteceu. Em cada detalhe, marque em quais setores ele aparece: <b>Envase</b>, <b>Tanques</b>, <b>Sopro</b> e <b>Rotulagem</b>.</p>
+      <div><div class="csm-h" style="margin-bottom:8px"><h3>Regras</h3></div><div class="csm-regras" id="csmRegras"></div></div>
+      ${nRev?`<details class="csm-rev" id="csmRev"><summary>${nRev} descriç${nRev>1?'ões':'ão'} escritas em "Outro" esperando revisão</summary><div id="csmRevB"></div></details>`:''}
+      <div><div class="csm-h" style="margin-bottom:10px"><h3>Grupos e detalhes</h3>
+        <div class="csm-fil" role="group" aria-label="Ver por setor">${[['todos','Todos'],...CS_SETORES].map(([k,r])=>`<button type="button" class="${CS_MOT_VER===k?'on':''}" data-mver="${k}">${r}</button>`).join('')}</div>
+        <span class="sp"></span><button class="btn sm pri" id="csmNovo">+ Novo grupo</button></div>
+        <div id="csmGs">${csMotGrupos()}</div>
+        <div class="csm-leg" style="margin-top:8px">Toque na chave para ligar ou desligar o detalhe naquele setor. Grava na hora.</div></div>`;
+    st.insertAdjacentElement('afterend',w);
+    if(intro)intro.remove();
+    const rg=w.querySelector('#csmRegras');tol.forEach(x=>rg.appendChild(x));
+    if(revAlert){const rb=w.querySelector('#csmRevB');if(rb){if(revTab&&revTab.tagName==='TABLE')rb.appendChild(revTab);revAlert.remove();}}
+    [gTitle,gTab,gNota].forEach(x=>{if(x&&x.parentNode===pai&&x!==w)x.remove();});
+    w.querySelector('#csmNovo').onclick=()=>modalGrupoMotivo(null);
+    w.querySelectorAll('[data-mver]').forEach(b=>b.onclick=()=>{CS_MOT_VER=b.dataset.mver;
+      w.querySelectorAll('[data-mver]').forEach(x=>x.classList.toggle('on',x===b));
+      const gs=w.querySelector('#csmGs');gs.innerHTML=csMotGrupos();csMotLigar(gs);});
+    csMotLigar(w.querySelector('#csmGs'));
+  }catch(e){console.warn('motivos',e);}
+}
+try{const _ga403=gradeAdmin;gradeAdmin=function(){const r=_ga403.apply(this,arguments);csMotPagina();return r;};}catch(e){}
+/* renomear um detalhe no Editar leva junto os setores dele */
+try{const _mg403=modalGrupoMotivo;modalGrupoMotivo=function(id){
+  const g=id?GRUPOS_MOTIVO.find(x=>x.id===id):null;const antes=g?[...(g.sub||[])]:null;
+  const r=_mg403.apply(this,arguments);
+  try{const k=M('gmK');if(k&&g){const ok=k.onclick;k.onclick=function(){
+      const res=ok.apply(this,arguments);
+      try{if(g.setores){const novo={};(g.sub||[]).forEach((s,i)=>{const de=g.setores[s]?s:(antes[i]&&g.setores[antes[i]]?antes[i]:null);if(de)novo[s]=g.setores[de];});g.setores=novo;agendarSalvar();}}catch(e){}
+      return res;};}}catch(e){}
+  return r;};}catch(e){}
+
 </script>
 </body>
 </html>

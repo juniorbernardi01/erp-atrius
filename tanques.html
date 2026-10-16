@@ -1,0 +1,12 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Atrius · Tanques</title>
+<meta name="theme-color" content="#0E1B33"><link rel="icon" href="icone-192.png">
+</head><body style="margin:0;background:#0E1B33;color:#fff;font-family:system-ui,sans-serif;display:grid;place-items:center;height:100vh">
+<div>Abrindo os Tanques…</div>
+<script>
+/* marca este aparelho como o tablet dos tanques e abre a tela deles */
+try{localStorage.removeItem('erp.maqTablet');localStorage.setItem('erp.quiosque','tq');sessionStorage.removeItem('erp.qSaiu');}catch(e){}
+location.replace('./#optq');
+</script></body></html>
