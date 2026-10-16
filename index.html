@@ -5469,7 +5469,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v401';
+const VERSAO_APP='v402';
 let DRAG=null;
 function render(){
   recomporTudo();
@@ -18200,7 +18200,7 @@ async function conferirNuvem(){
   try{
     const v=await nuvemVersao();
     if(v==null||v===VERSAO_NUVEM)return;
-    const linha=await nuvemLer();
+    const linha=(typeof csLerPartes==='function'&&await csLerPartes(v))||await nuvemLer();
     if(!linha)return;
     VERSAO_NUVEM=linha.versao;
     aplicarRemoto(JSON.stringify(linha.dados));
@@ -25185,7 +25185,8 @@ setInterval(async()=>{
   try{if(!(CS_REMOTO_VEIO||window.CS_LER_JA)||!ONLINE||salvando)return;
     if(typeof csDigitando==='function'&&csDigitando())return;
     CS_REMOTO_VEIO=false;window.CS_LER_JA=false;
-    const linha=await nuvemLer();if(!linha)return;VERSAO_NUVEM=linha.versao;aplicarRemoto(JSON.stringify(linha.dados));}catch(e){}
+    let linha=null;try{const v=await nuvemVersao();if(v!=null&&typeof csLerPartes==='function')linha=await csLerPartes(v);}catch(e){}
+    if(!linha)linha=await nuvemLer();if(!linha)return;VERSAO_NUVEM=linha.versao;aplicarRemoto(JSON.stringify(linha.dados));}catch(e){}
 },2500);
 /* a tarja não aparece mais: se um dia a gravação falhar de vez, o aviso é o do canto ("não salvou") */
 try{const _to28=toast;toast=function(m,b){if(/gravou antes de voc/i.test(String(m||'')))return;return _to28.apply(this,arguments);};}catch(e){}
@@ -30154,7 +30155,7 @@ try{csNucleo.versao='v392';}catch(e){}
 try{csNucleo.versao='v393';}catch(e){}
 </script>
 <script>
-try{csNucleo.versao='v401';}catch(e){}
+try{csNucleo.versao='v402';}catch(e){}
 </script>
 <script>/* =====================================================================
    v398 — PÁGINA TANQUES NO LAYOUT NOVO
@@ -30386,6 +30387,11 @@ try{const _ae401v=aplicarEstado;aplicarEstado=function(txt){csVerConfere(txt);re
 /* a primeira abertura da versão nova avisa todo mundo: grava logo depois de carregar */
 setTimeout(function pub(){try{if(!PRONTO||!ONLINE){setTimeout(pub,5000);return;}
   if(csVerNum(CS_APPVER_BANCO)<csVerNum(VERSAO_APP)){CS_APPVER_BANCO=VERSAO_APP;ULTIMO='';agendarSalvar();}}catch(e){}},8000);
+/* sessão perdida no computador: antes o sistema seguia "offline" calado — nada carregava e os módulos diziam
+   "Precisa estar logado no banco". Agora abre a tela de login na hora (o tablet da máquina tem o PIN, fica como está). */
+setInterval(()=>{try{if(!temNuvem()||MODO_TV||!PRONTO)return;let q=false;try{q=!!csQuiosque()||/^#op/.test(location.hash);}catch(e){}if(q)return;
+  const venceu=!SESSAO||(typeof CS_SESSAO_VENCEU!=='undefined'&&CS_SESSAO_VENCEU);
+  if(venceu&&M('login')&&M('login').hidden)telaLogin('Sua sessão expirou. Entre de novo para continuar.');}catch(e){}},5000);
 /* os módulos abrem com a versão no endereço, para não ficar o arquivo velho em cache */
 try{const _sa401=Element.prototype.setAttribute;Element.prototype.setAttribute=function(n,v){if(n==='src'&&this.id==='finFrame'&&typeof v==='string'&&/\.html(#|$)/.test(v)&&!/\?v=/.test(v))v=v.replace(/\.html/,'.html?v='+VERSAO_APP);return _sa401.call(this,n,v);};}catch(e){}
 </script>
@@ -30483,6 +30489,34 @@ try{const s=document.createElement('style');s.textContent=`
 .jdl.off{background:#FAFAFA}.jdl.off b{color:#9CA3AF}
 @media (max-width:640px){.jdl{grid-template-columns:70px 1fr;}.jdl .jdt{text-align:left}}
 `;document.head.appendChild(s);}catch(e){}
+</script>
+
+<script>
+/* ===== v402 · leitura por partes =====
+   CS_DOC = o pacote como está no banco na versão CS_DOC_V (guardado a cada leitura inteira).
+   Versão nova no banco: busca em pcp_ops só as gravações que faltam e aplica com a mesma regra do banco. */
+let CS_DOC=null,CS_DOC_V=0,CS_DOC_EM=0,CS_OPS_OK=null,CS_LEIT={partes:0,inteiras:0};
+try{const _nl402=nuvemLer;nuvemLer=async function(){const l=await _nl402.apply(this,arguments);
+  try{if(l&&l.dados&&+l.versao>0){CS_DOC=l.dados;CS_DOC_V=+l.versao;CS_DOC_EM=Date.now();CS_LEIT.inteiras++;}}catch(e){}return l;};}catch(e){}
+async function csLerPartes(v){
+  try{
+    v=+v;if(!CS_DOC||CS_OPS_OK===false||!(v>CS_DOC_V)||v-CS_DOC_V>300)return null;
+    /* de 15 em 15 min lê inteiro mesmo assim: se algo escapou, corrige sozinho */
+    if(Date.now()-CS_DOC_EM>15*60000)return null;
+    const r=await fetch(`${SUPA.url}/rest/v1/pcp_ops?id=eq.${encodeURIComponent(SUPA.linha)}&versao=gt.${CS_DOC_V}&versao=lte.${v}&select=versao,ops,por&order=versao.asc`,{headers:cabecalhos()});
+    if(r.status===401){if(await renovarSessao())return csLerPartes(v);return null;}
+    if(!r.ok){const tx=await r.text().catch(()=>'');if(r.status===404||/PGRST20[0-9]|does not exist|pcp_ops/i.test(tx))CS_OPS_OK=false;return null;}
+    const l=await r.json();
+    /* tem que vir todas, em sequência; faltou uma (gravada pelo caminho antigo): lê inteiro */
+    if(!Array.isArray(l)||l.length!==v-CS_DOC_V)return null;
+    for(let i=0;i<l.length;i++)if(+l[i].versao!==CS_DOC_V+1+i)return null;
+    let d=CS_DOC;for(const x of l)d=csAplicaOps(d,Array.isArray(x.ops)?x.ops:[]);
+    if(!d||typeof d!=='object')return null;
+    CS_DOC=d;CS_DOC_V=v;CS_OPS_OK=true;CS_LEIT.partes++;
+    return {dados:d,versao:v,atualizado_por:String(l[l.length-1].por||'').split(' · ')[0]};
+  }catch(e){return null;}
+}
+try{csNucleo.leituras=()=>({...CS_LEIT,ops:CS_OPS_OK,versao:CS_DOC_V});}catch(e){}
 </script>
 </body>
 </html>
