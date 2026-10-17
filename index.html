@@ -2,6 +2,11 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
+<script>try{if(!sessionStorage.getItem('erp.qSaiu')&&(localStorage.getItem('erp.quiosque')==='tq'||location.hash==='#optq'))document.documentElement.classList.add('cs-tqboot');}catch(e){}</script>
+<style>html.cs-tqboot,html.cs-tqboot body{background:#0B1324!important}
+html.cs-tqboot body>*{visibility:hidden!important}
+html.cs-tqboot body>#csTqFrame,html.cs-tqboot body>#login,html.cs-tqboot body>#toast{visibility:visible!important}
+html.cs-tqboot body::before{content:'Abrindo os tanques…';position:fixed;inset:0;display:grid;place-items:center;color:#8BA0C4;font:600 18px system-ui,sans-serif}</style>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <!-- Adicionado à tela inicial do tablet, o sistema abre sem a barra do
      navegador: para o operador é um aplicativo, não uma aba. -->
@@ -5469,7 +5474,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v407';
+const VERSAO_APP='v412';
 let DRAG=null;
 function render(){
   recomporTudo();
@@ -15738,17 +15743,15 @@ function abrirCfgPCP(){
       <span><b>Travar a máquina para os operadores da linha</b><br><span class="k" style="font-size:12.5px">Ligado: o tablet de cada máquina só aceita o PIN de quem tem aquela linha no cadastro (Configurações › Operadores › Linha em que trabalha) e de quem está como <b>Sem linha fixa</b>, para cobrir.
       Desligado: qualquer operador cadastrado abre e assina em qualquer máquina. Nos dois casos, o histórico guarda quem digitou o PIN.</span></span></label>
     <button class="btn pri" id="opAbrir">Abrir tela do operador</button>
-    <div class="st" style="margin-top:18px">Link de cada máquina (tablet)</div>
-    <p class="adp">Abra o link no tablet da máquina e instale (Chrome › três pontinhos › Instalar app). Daí em diante o tablet abre sempre nela, e nem o Voltar nem outro endereço tiram de lá. Para sair: segurar o logo 3 s + PIN do master.</p>
-    <table class="tb" style="max-width:720px"><tbody>${MAQUINAS.map((m,i)=>{const u=csLinkMaq(i+1);return `<tr><td><b>${m}</b></td><td class="mono" style="word-break:break-all">${escAttr(u)}</td>
-      <td class="n" style="white-space:nowrap"><button class="btn sm" data-cplink="${escAttr(u)}">Copiar</button> <a class="btn sm" href="${escAttr(u)}" target="_blank" rel="noopener">Abrir</a></td></tr>`;}).join('')}</tbody></table>
-    ${csQuiosque()?`<p class="adp" style="margin-top:10px">Este aparelho está preso na <b>MAQ ${escAttr(csQuiosque())}</b>. <button class="btn sm" id="qDesl">Soltar este aparelho</button></p>`:''}`;
+    ${csTabletsHTML()}
+    ${csQuiosque()?`<p class="adp" style="margin-top:10px">Este aparelho está preso ${csQuiosque()==='tq'?'nos <b>Tanques</b>':'na <b>MAQ '+escAttr(csQuiosque())+'</b>'}. <button class="btn sm" id="qDesl">Soltar este aparelho</button></p>`:''}`;
     M('mB').querySelectorAll('[data-mkc]').forEach(c=>c.onchange=()=>{CAD_MK_OP[+c.dataset.mkc].cor=c.value;agendarSalvar();});
     M('mB').querySelectorAll('[data-mkx]').forEach(x=>x.onclick=()=>{if(!confirm('Tirar este marcador?'))return;CAD_MK_OP.splice(+x.dataset.mkx,1);agendarSalvar();des();});
     M('mkAdd').onclick=()=>{const n=M('mkNovo').value.trim();if(!n)return;if(CAD_MK_OP.some(m=>m.nome.toLowerCase()===n.toLowerCase()))return toast('Esse marcador já existe.',true);
       CAD_MK_OP.push({nome:n,cor:OD_MK_CORES[CAD_MK_OP.length%OD_MK_CORES.length]});agendarSalvar();des();};
     M('cfgTrava').onchange=e=>{CS_TRAVA_LINHA=e.target.checked;agendarSalvar();toast(CS_TRAVA_LINHA?'Cada máquina aceita só os operadores da linha e os sem linha fixa.':'Qualquer operador abre qualquer máquina.');};
     M('mB').querySelectorAll('[data-cplink]').forEach(b=>b.onclick=()=>{try{navigator.clipboard.writeText(b.dataset.cplink);toast('Link copiado.');}catch(e){prompt('Copie o link:',b.dataset.cplink);}});
+    try{csTabletsLiga();}catch(e){}
     if(M('qDesl'))M('qDesl').onclick=()=>{try{localStorage.removeItem('erp.quiosque');localStorage.removeItem('erp.maqTablet');}catch(e){}toast('Este aparelho não está mais preso na máquina.');des();};
     M('opAbrir').onclick=()=>pedirGestor(quem=>{
       try{(window.LOG_TELAOP=window.LOG_TELAOP||[]).push({em:new Date().toISOString(),por:quem});}catch(e){}
@@ -15916,6 +15919,8 @@ const CS_EDEP={deps:[{id:'fab',nome:'Fábrica',forn:'',fornId:'',princ:true}],sa
 const CS_CFGV={reservaPor:'prev'};
 /* v405 · Rastreabilidade: lote obrigatório (oc = recebimento da ordem de compra; producao = PCP e tablet dos tanques) */
 const CS_RASTRO={oc:true,producao:false};
+/* v408 · tema de cada tablet ('1','2','3' = máquinas do envase; 'tq' = tanques) */
+const CS_TABLETS={tema:{tq:'escuro'}};
 /* v294: histórico das leituras do Tiny (carga e atualizações) */
 const CS_TLOG=[];
 
@@ -17853,7 +17858,7 @@ function estadoAtual(){
       jornada:JORNADA,frascoProd:FRASCO_PROD,usuarios:USUARIOS,proxOp:PROX_OP,
       gruposMotivo:GRUPOS_MOTIVO,semana:SEMANA_PADRAO,tolAtraso:TOL_ATRASO},
     estoque:{saldos:ESTOQUE,em:ESTOQUE_EM,d:ESTOQUE_D},
-    filaTiny:FILA_TINY,revisaoMotivo:REVISAO_MOTIVO,estoqueLog:CS_ELOG,tinyLog:CS_TLOG,estoqueDep:CS_EDEP,cfgVendas:CS_CFGV,rastro:CS_RASTRO});
+    filaTiny:FILA_TINY,revisaoMotivo:REVISAO_MOTIVO,estoqueLog:CS_ELOG,tinyLog:CS_TLOG,estoqueDep:CS_EDEP,cfgVendas:CS_CFGV,rastro:CS_RASTRO,tablets:CS_TABLETS});
 }
 function aplicarEstado(txt){
   const d=JSON.parse(txt);
@@ -17896,6 +17901,7 @@ function aplicarEstado(txt){
   if(d.estoqueDep){const e=d.estoqueDep;if(Array.isArray(e.deps)&&e.deps.length)CS_EDEP.deps=e.deps;CS_EDEP.sal=e.sal||{};CS_EDEP.trSeq=+e.trSeq||0;}
   if(d.cfgVendas)Object.assign(CS_CFGV,d.cfgVendas);
   if(d.rastro)Object.assign(CS_RASTRO,d.rastro);
+  if(d.tablets&&d.tablets.tema)CS_TABLETS.tema={...d.tablets.tema};
   REVISAO_MOTIVO.length=0;(d.revisaoMotivo||[]).forEach(x=>REVISAO_MOTIVO.push(x));
   if(d.estoque){
     Object.keys(ESTOQUE).forEach(k=>delete ESTOQUE[k]);
@@ -30169,7 +30175,7 @@ try{csNucleo.versao='v392';}catch(e){}
 try{csNucleo.versao='v393';}catch(e){}
 </script>
 <script>
-try{csNucleo.versao='v407';}catch(e){}
+try{csNucleo.versao='v412';}catch(e){}
 </script>
 <script>/* =====================================================================
    v398 — PÁGINA TANQUES NO LAYOUT NOVO
@@ -31124,6 +31130,93 @@ try{csNucleo.tqOutroDia=(d,dir)=>csTqOutroDia(d,dir);
 <script>
 /* v407: clicar no menu abre a página pedida do módulo (não a sub-tela em que estava, como a ficha do vendedor) */
 try{const _ir407=csIr;csIr=function(p){if(p&&p.fin&&!p.acao)window.CS_FIN_FORCA=true;return _ir407.apply(this,arguments);};}catch(e){}
+</script>
+<script>
+/* ===================== v408 =====================
+   - Configurações › PCP › Tablets: todos os tablets (máquinas do envase e tanques) num lugar só, com o link
+     e o tema claro/escuro de cada um. O tablet não tem mais botão de tema.
+   - Tablet dos tanques: atraso (começou depois do programado ou passou do tempo previsto) pede o motivo e
+     fica gravado no lote (APONTA[chave].tq.atrasos), como no envase. "Registrar problema" saiu.
+   - Recarregar o tablet dos tanques: abre direto na tela dele (o sistema não aparece por trás) e pede o PIN. */
+function csTabletsHTML(){
+  const linhas=[...MAQUINAS.map((m,i)=>({q:String(i+1),nome:m,sub:'operador do envase',u:csLinkMaq(i+1)})),
+    {q:'tq',nome:'Tanques',sub:'operador dos tanques',u:location.origin+location.pathname.replace(/[^/]*$/,'')+'tanques.html'}];
+  const tm=q=>(CS_TABLETS.tema||{})[q]||(q==='tq'?'escuro':'claro');
+  return `<div class="st" style="margin-top:18px">Tablets</div>
+    <p class="adp">Abra o link no tablet e instale (Chrome › três pontinhos › Instalar app). Daí em diante ele abre sempre na tela dele, e nem o Voltar nem outro endereço tiram de lá. Para sair: segurar o logo 3 s + PIN do master.
+      O tema (claro ou escuro) de cada tablet é escolhido aqui e vale na hora, sem mexer no aparelho.</p>
+    <table class="tb cs-tabl" style="max-width:860px"><thead><tr><th>Tablet</th><th>Link</th><th>Tema</th><th></th></tr></thead><tbody>${linhas.map(x=>`<tr${x.q==='tq'?' data-tqlink="1"':''}>
+      <td><b>${escAttr(x.nome)}</b><br><span class="k" style="font-size:12px">${x.sub}</span></td>
+      <td class="mono" style="word-break:break-all;font-size:12px">${escAttr(x.u)}</td>
+      <td><span class="cs-tmseg">${['claro','escuro'].map(v=>`<button type="button" data-tbt="${x.q}|${v}" class="${tm(x.q)===v?'on':''}">${v==='claro'?'☀ Claro':'☾ Escuro'}</button>`).join('')}</span></td>
+      <td class="n" style="white-space:nowrap"><button class="btn sm" data-cplink="${escAttr(x.u)}">Copiar</button> <a class="btn sm" href="${escAttr(x.u)}" target="_blank" rel="noopener">Abrir</a></td></tr>`).join('')}</tbody></table>`;
+}
+function csTabletsLiga(){
+  try{M('mB').querySelectorAll('[data-tbt]').forEach(b=>b.onclick=()=>{const [q,v]=b.dataset.tbt.split('|');
+    CS_TABLETS.tema={...(CS_TABLETS.tema||{}),[q]:v};agendarSalvar();
+    b.parentNode.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));
+    toast(`${q==='tq'?'Tanques':(MAQUINAS[+q-1]||'MAQ '+q)}: tema ${v}.`);});}catch(e){}
+}
+(function(){try{const s=document.createElement('style');s.textContent=`
+.cs-tmseg{display:inline-flex;border:1px solid var(--line,#E4E2DC);border-radius:9px;overflow:hidden}
+.cs-tmseg button{border:0;background:transparent;padding:6px 12px;font:600 12.5px Inter,system-ui,sans-serif;color:var(--ink2,#475467);cursor:pointer;white-space:nowrap}
+.cs-tmseg button.on{background:#0E1B33;color:#fff}
+.cs-tabl td{vertical-align:middle}`;document.head.appendChild(s);}catch(e){}})();
+try{csNucleo.tablets=()=>JSON.parse(JSON.stringify(CS_TABLETS));}catch(e){}
+try{csNucleo.tolAtraso=()=>typeof TOL_ATRASO!=='undefined'?TOL_ATRASO:10;}catch(e){}
+
+/* o tema de cada tablet do envase vem da configuração (não do botão do aparelho) */
+function csTemaTablet(){
+  try{const q=csQuiosque();if(!q)return;
+    if(q==='tq'){if(document.documentElement.classList.contains('cs-escuro'))document.documentElement.classList.remove('cs-escuro');return;}
+    const esc=((CS_TABLETS.tema||{})[q]||'claro')==='escuro';
+    if(document.documentElement.classList.contains('cs-escuro')!==esc)csTema(esc);
+  }catch(e){}
+}
+try{const _rd408=render;render=function(){const r=_rd408.apply(this,arguments);csTemaTablet();return r;};}catch(e){}
+setTimeout(csTemaTablet,0);
+
+/* atraso informado no tablet dos tanques: fica no lote e no histórico */
+try{const _ta408=csTqAcao;csTqAcao=function(k,a,x,pin){
+  const r=_ta408.apply(this,arguments);
+  try{if(r&&r.ok&&x&&x.atraso&&a!=='pulmao'){
+    const at=APONTA[k];if(at){const z=x.atraso,q=csTqQuem(pin);const nome=q&&q.ok?q.nome:'';
+      const b=csTqAchar(k);
+      at.tq={...(at.tq||{}),atrasos:[...((at.tq||{}).atrasos||[]),{etapa:z.etapa,tipo:z.tipo,min:+z.min||0,grupo:z.grupo||'',mot:z.mot||'',obs:z.obs||'',quem:nome,d:ymd(new Date()),h:relogio()}]};
+      const txt=`${z.etapa} · ${z.tipo==='início'?'começou':'passou do tempo'} +${csTqDur(+z.min||0)} · ${z.grupo&&z.grupo!=='Outro'?z.grupo+' | ':''}${z.mot||''}${z.obs?' · '+z.obs:''}`;
+      at.log=[...(at.log||[]),{t:relogio(),d:ymd(new Date()),e:'Atraso',op:nome,m:txt,w:b?b.tanque:''}];
+      if(b)b.ordens.forEach(o=>registrar(o,'Atraso no tanque',q&&q.ok?q.q:null,`${b.tanque} · ${txt}`));
+      agendarSalvar();}}}catch(e){}
+  return r;};}catch(e){}
+
+/* tablet dos tanques: abre a tela dele já no começo (com "Carregando…" e o PIN), sem esperar o sistema montar */
+try{csTqAbre=function(){
+  try{
+    if(!CS_TQ_KIOSK()){const f=document.getElementById('csTqFrame');if(f){f.remove();document.body.classList.remove('cs-tqon');}
+      document.documentElement.classList.remove('cs-tqboot');return;}
+    let f=document.getElementById('csTqFrame');
+    if(!f){f=document.createElement('iframe');f.id='csTqFrame';f.title='Tanques';f.setAttribute('src','tqop.html?v='+VERSAO_APP);
+      document.body.appendChild(f);document.body.classList.add('cs-tqon');}
+    csTemaTablet();
+  }catch(e){}
+};}catch(e){}
+try{csTqAbre();}catch(e){}
+
+</script>
+<script>
+/* ===================== v411 · cores universais =====================
+   O padrão é o do tablet do envase (não muda mais). Tudo o mais acompanha:
+   azul aguardando · cinza em setup/preparando · verde produzindo/liberado/concluído · amarelo pausado
+   vermelho atrasado/problema · roxo apontar/finalizado. */
+(function(){try{const s=document.createElement('style');s.textContent=`
+.stq.programada,.stq.aguardando{background:#E8EFF9;color:#1B4F9C}
+.stq.preparacao{background:#E8EBEF;color:#475569}
+.stq.producao,.stq.liberado,.stq.concluida{background:#E6F4EA;color:#15803D}
+.stq.atrasada,.stq.atrasadaq{background:#FDECEA;color:#C81E1E}
+.stq.finalizado,.stq.pendente{background:#F1ECFC;color:#6D28D9}
+.bat.atrasada{background:#FEF2F2;border-color:#F3A9A9;box-shadow:0 0 0 2px rgba(220,38,38,.22)}
+.cs-tqsel.nao{background:#E8EFF9;color:#1B4F9C;border-color:#B7C9E6}`;document.head.appendChild(s);}catch(e){}})();
+
 </script>
 </body>
 </html>

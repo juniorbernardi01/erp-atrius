@@ -306,13 +306,116 @@ body.kbon .drawer .lista{padding-bottom:330px}
 .top .dnav button:active{background:#2B3A57}
 .top .dnav b{color:#fff;font:700 14.5px var(--font);padding:0 6px;white-space:nowrap;text-transform:none}
 
+/* ===== v408 ===== */
+/* topo: saudação ao lado da hora; sem botão de tema; ‹ desligado em hoje */
+.top .hgrp{display:flex;align-items:center;gap:14px;margin-right:4px}
+.top .ola2{font:700 16px var(--font);color:#C9D4EA;white-space:nowrap;text-align:right}
+.top .hora{text-align:left}.top .hora small{text-transform:none}
+.top .dnav button:disabled{opacity:.28;cursor:default}
+/* cartão: Pausar ao lado do Concluir */
+.arow{display:flex;gap:8px}.arow>.acao:first-child{flex:1;min-width:0;font-size:15px}
+.acao.pz{flex:none;width:auto!important;padding:0 14px!important;background:#475569!important;display:flex;align-items:center;gap:7px;font-size:15px}
+/* gaveta: tudo rola junto */
+.drawer{width:560px;max-width:92vw}.drawer.larga{width:680px}
+.drawer .dscroll{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding-bottom:24px;touch-action:pan-y}
+.drawer .dh b{font-size:24px}
+.atual{margin:14px 16px 6px}
+.dgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:8px 16px 4px}
+.dt{display:grid;grid-template-columns:48px 1fr;grid-template-rows:auto auto;column-gap:12px;align-items:center;padding:14px;border-radius:16px;border:1.5px solid var(--line);background:var(--card);cursor:pointer;min-height:78px;transition:transform .1s,border-color .15s;user-select:none}
+.dt:active{transform:scale(.97)}.dt .dic{grid-row:span 2;width:48px;height:48px;border-radius:14px}
+.dt b{font-size:16.5px;line-height:1.15;align-self:end}.dt small{color:var(--ink3);font-size:12.5px;line-height:1.25;align-self:start}
+.dt.lg,.dgrid .dt:last-child:nth-child(odd){grid-column:1/-1}.dt.off{opacity:.42}
+.dseg{display:flex;gap:4px;margin:16px 16px 6px;padding:4px;background:var(--line2);border-radius:14px}
+.dseg button{flex:1;border:0;background:transparent;color:var(--ink2);font:700 15px var(--font);padding:11px 8px;border-radius:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
+.dseg button span{font:700 12px var(--font);background:var(--line);color:var(--ink2);border-radius:999px;padding:2px 8px}
+.dseg button.on{background:var(--card);color:var(--fg);box-shadow:0 1px 3px rgba(0,0,0,.18)}.dseg button.on span{background:var(--baz);color:#fff}
+.dl{padding:0 16px}
+.ll{display:grid;grid-template-columns:66px 1fr auto;gap:12px;align-items:center;padding:11px 10px;border-bottom:1px solid var(--line2);cursor:pointer;border-radius:10px}
+.ll:active{background:var(--line2)}
+.ll em{font:800 17px var(--font);font-style:normal;color:var(--fg)}.ll em small{display:block;font:600 10px var(--font);letter-spacing:.04em;text-transform:uppercase;color:var(--ink3)}
+.ll .lm{min-width:0}.ll .lm b{display:block;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ll .lm small{display:block;color:var(--ink3);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ll i{font-style:normal;white-space:nowrap}.ll.fe em{color:var(--ok)}
+.dsep{margin:14px 0 4px;font:700 11.5px var(--font);letter-spacing:.06em;text-transform:uppercase;color:var(--ink3)}
+.dl .vz{padding:18px 4px;color:var(--ink3);font-size:14px}
+.tqg{margin:10px 0 6px}.tqg .tqgh{cursor:pointer}.tqg .tqgh em{font-style:normal;color:var(--ink3);font:700 20px var(--font);margin-left:4px}.tqg .ll{border-radius:0;margin:0 4px}
+.meta.m4{grid-template-columns:repeat(4,1fr);padding:14px 16px 0}.meta .mt.az{background:#DBEAFE}.meta .mt.az span,.meta .mt.az b{color:#1D4ED8}
+:root[data-theme="dark"] .meta .mt.az{background:#1A3260}:root[data-theme="dark"] .meta .mt.az span,:root[data-theme="dark"] .meta .mt.az b{color:#93C5FD}
+.dbar{display:flex}.dbar i.p{background:#60A5FA}
+.dleg{display:flex;gap:16px;padding:6px 16px 0;font-size:12px;color:var(--ink3)}.dleg i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px;background:var(--bok)}.dleg i.p{background:#60A5FA}
+.drawer .dbtn{padding:16px 16px 0}.drawer .dbtn .acao{display:flex;align-items:center;justify-content:center;gap:9px;height:54px}
+/* abrir o tablet: PIN */
+.trava{position:absolute;inset:0;z-index:40;background:var(--navy);display:none;place-items:center;color:#fff}
+.trava.on{display:grid}
+:root[data-theme="dark"] .trava{background:#0B1324}
+.trava .trc{width:380px;text-align:center}
+.trava .tlg{height:56px;width:auto;margin:0 auto 8px;display:block}
+.trava h1{margin:4px 0 2px;font:800 30px var(--font);letter-spacing:-.01em}
+.trava p{margin:0 0 6px;color:#C9D4EA;font-size:16px}
+.trava .dots i{border-color:#8BA0C4}.trava .dots i.on{background:#fff;border-color:#fff}
+.trava .msg{min-height:22px;color:#C9D4EA;font-size:14px;margin-bottom:12px}.trava .msg.erro{color:#FCA5A5}
+.trava .kp div{background:#1B2A45;color:#fff;height:68px}
+.trava .kp div:active{background:#2B3A57}
+.tload{display:flex;justify-content:center;padding:26px 0}.tload i{width:34px;height:34px;border-radius:50%;border:3.5px solid #2B3A57;border-top-color:#fff;animation:gira .9s linear infinite}
+@keyframes gira{to{transform:rotate(360deg)}}
+
+/* v408b: Concluídos em verde (não confunde com a fila) e o Histórico em abas */
+.dseg button.sg-conc.on{background:var(--bok);color:#fff}.dseg button.sg-conc.on span{background:rgba(255,255,255,.25);color:#fff}
+.dl.conc{background:var(--okbg);border-radius:14px;margin:0 16px;padding:4px 10px}.dl.conc .ll{border-bottom-color:rgba(21,128,61,.18)}
+.dl.conc .ll .lm b{color:var(--ok)}
+.hwrap{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0 0 30px;max-width:900px;width:100%;margin:0 auto}
+.hwrap .dseg{margin:16px 18px 10px}.hcorpo{padding:0 18px}
+.hcab{padding:6px 2px 10px}.hcab b{font-size:19px;display:block}.hcab small{color:var(--ink3);font-size:13px}
+.hl{display:grid;grid-template-columns:60px 1fr auto;gap:12px;align-items:start;padding:11px 4px;border-bottom:1px solid var(--line2)}
+.hl em{font:800 16px var(--font);font-style:normal}.hl b{display:block;font-size:15px}.hl small{display:block;color:var(--ink3);font-size:12.5px;margin-top:2px}
+.hl .quem{font-size:12.5px;color:var(--ink2);background:var(--line2);border-radius:999px;padding:4px 10px;white-space:nowrap}
+.hlote{border:1.5px solid var(--line);border-radius:14px;margin-bottom:10px;overflow:hidden;background:var(--card)}
+.hlote.fe{border-color:rgba(21,128,61,.45)}.hlote.on{border-color:var(--baz)}
+.hlh{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;padding:14px;cursor:pointer}
+.hlh b{display:block;font-size:16px}.hlh small{color:var(--ink3);font-size:12.5px}.hlh em{font-style:normal;font-size:18px;color:var(--ink3)}
+.hlb{padding:0 14px 6px;border-top:1px solid var(--line2)}
+.hcorpo .vz{padding:22px 4px;color:var(--ink3);font-size:15px}
+.pill.az{background:#DBEAFE;color:#1D4ED8}:root[data-theme="dark"] .pill.az{background:#1A3260;color:#93C5FD}
+
 .t td small{display:block;color:var(--ink3);font-size:11.5px;font-weight:500}
 .prod small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+
+/* ===== v411 · cores universais (as do tablet do envase) =====
+   azul #1B4F9C aguardando · cinza #475569 preparando · verde #15803D produzindo · amarelo #CA8A04 pausado
+   vermelho #DC2626 atrasado/problema · roxo #6D28D9 apontar. Botões: etapa #1D6FE8, concluir #15803D, apontar #6D28D9, pausar vermelho claro. */
+.st.agu,.mini.agu{background:#1B4F9C;color:#fff}.st.set,.mini.set{background:#475569;color:#fff}.st.rod,.mini.rod{background:#15803D;color:#fff}
+.st.pau,.mini.pau{background:#CA8A04;color:#fff}.st.atr,.mini.atr{background:#DC2626;color:#fff}.st.apo,.mini.apo{background:#6D28D9;color:#fff}
+.st.liv,.mini.liv{background:var(--cinzabg);color:var(--ink3)}
+.st .t{color:inherit!important}
+.acao.go{background:#1D6FE8!important;color:#fff}.acao.fim{background:#15803D!important;color:#fff}.acao.apo{background:#6D28D9!important;color:#fff}
+.acao.pau2{background:#CA8A04!important;color:#fff}
+.acao.pz{background:#FDECEA!important;color:#B3261E!important;border:1.5px solid #F3B4AE}
+:root[data-theme="dark"] .acao.pz{background:#3B1A1A!important;color:#FCA5A5!important;border-color:#7F2D2D}
+.acao.off{background:var(--cinzabg)!important;color:var(--ink3)!important}
+.dic.agu{background:#1B4F9C}.dic.apo{background:#6D28D9}
+.meta .mt.agu{background:#E8EFF9}.meta .mt.agu span,.meta .mt.agu b{color:#1B4F9C}
+:root[data-theme="dark"] .meta .mt.agu{background:#1A2A4A}:root[data-theme="dark"] .meta .mt.agu span,:root[data-theme="dark"] .meta .mt.agu b{color:#93B4E8}
+.dbar i.p,.dleg i.p{background:#1B4F9C}
+/* passou do "pronto até" (só depois da hora): laranja fixo, sem piscar */
+.tiles .atr{background:#F97316!important;border-color:#F97316!important}
+/* separar matérias-primas = apontar (roxo) */
+.ic.pend{border-color:#6D28D9}.ic.pend::after{background:#6D28D9;animation:none}
+.ckl.pend span{color:#6D28D9}:root[data-theme="dark"] .ckl.pend span{color:#C4B5FD}
+.st.liv,.mini.liv{color:var(--ink2)!important}
+/* PIN de abertura no tema claro */
+:root[data-theme="light"] .trava{background:#F3F4F6;color:#0E1B33}
+:root[data-theme="light"] .trava p,:root[data-theme="light"] .trava .msg{color:#475569}
+:root[data-theme="light"] .trava .dots i{border-color:#94A3B8}:root[data-theme="light"] .trava .dots i.on{background:#1B4F9C;border-color:#1B4F9C}
+:root[data-theme="light"] .trava .kp div{background:#fff;color:#0E1B33;border:1.5px solid #E5E7EB}
+:root[data-theme="light"] .trava .kp div:active{background:#E8EFF9}
+:root[data-theme="light"] .trava .msg.erro{color:#DC2626}
+:root[data-theme="light"] .tload i{border-color:#CBD5E1;border-top-color:#1B4F9C}
+.pill.agu{background:#E8EFF9;color:#1B4F9C}:root[data-theme="dark"] .pill.agu{background:#1A2A4A;color:#93B4E8}
 
 </style>
 </head><body>
 <div class="tela" id="tela">
-  <div class="top"><img class="logo" id="logo" alt="Atrius"><span class="ola"><b id="sauda">Bom dia!</b></span><div class="dias" id="dias"></div><span class="titc" id="titc">Tanques — Programação do dia</span><span style="flex:1"></span><div class="tema" id="tema" title="Claro / escuro"></div><div class="hora"><b id="relogio">--:--</b><small></small></div><div class="menu" id="menuTop" title="Produção do dia">⋮</div></div>
+  <div class="top"><img class="logo" id="logo" alt="Atrius"><div class="dias" id="dias"></div><span class="titc" id="titc">Tanques</span><span style="flex:1"></span><div class="hgrp"><span class="ola2" id="sauda">Bom dia!</span><div class="hora"><b id="relogio">--:--</b><small></small></div></div><div class="menu" id="menuTop" title="Produção dos tanques">⋮</div></div>
   <div class="grade" id="grade"></div>
   <div class="sombra" id="sombra"></div>
   <div class="drawer" id="drawer"></div>
@@ -321,6 +424,7 @@ body.kbon .drawer .lista{padding-bottom:330px}
   <div class="full" id="fHist"></div>
   <div class="modal" id="mPin"></div>
   <div class="modal" id="mCalc"></div>
+  <div class="trava" id="trava"></div>
   <div class="toast" id="toast"></div>
 </div>
 <script>
@@ -340,10 +444,14 @@ const ymd=d=>`${d.getFullYear()}-${p2(d.getMonth()+1)}-${p2(d.getDate())}`;
 const amanha=()=>{const d=new Date();d.setDate(d.getDate()+1);return ymd(d);};
 function toast(t){const e=$('toast');e.textContent=t;e.style.display='block';clearTimeout(e._t);e._t=setTimeout(()=>e.style.display='none',2600);}
 
-const ST={limpar:['rx','Liberado para limpeza'],limpando:['rx','Limpando'],encher:['cz','Limpo · encher'],enchendo:['az','Enchendo'],cheio:['cz','Cheio · aguardando preparo'],atras:['mau','Atrasado · cheio'],prep:['ok','Preparando'],descanso:['ok','Em descanso'],analise:['amb','Descansou · fazer análise'],naolib:['amb','Tanque não liberado'],liberado:['az','Tanque liberado'],envasando:['az','Envasando'],livre:['cz','Livre'],ajuste:['mau','Ajuste pedido pelo químico'],pausa:['cz','Pausado']};
+/* cores universais = as do tablet do envase:
+   agu azul (aguardando a próxima etapa) · set cinza (preparando o tanque: limpeza, enchimento) · rod verde (produzindo / envasando)
+   pau amarelo (pausado) · atr vermelho (atrasado ou com problema) · apo roxo (o operador precisa apontar: análise) · liv (livre) */
+const ST={limpar:['agu','Liberado para limpeza'],limpando:['set','Limpando'],encher:['agu','Limpo · encher'],enchendo:['set','Enchendo'],cheio:['agu','Cheio · aguardando preparo'],atras:['atr','Atrasado · cheio'],prep:['rod','Preparando'],descanso:['rod','Em descanso'],analise:['apo','Descansou · fazer análise'],naolib:['agu','Aguardando liberação'],liberado:['agu','Tanque liberado'],envasando:['rod','Envasando'],livre:['liv','Livre'],ajuste:['atr','Ajuste pedido pelo químico'],pausa:['pau','Pausado']};
 const NAO_COMECOU=['limpar','encher','livre'],PRODUZIDO=['descanso','analise','naolib','liberado','ajuste'];
 let DIA=null;            /* null = hoje; senão a data escolhida (próximo dia de produção etc.) */
 let D=null,T=[],AGORA=0;
+let OPER='';             /* quem abriu o tablet (PIN na abertura); recarregar pede de novo */
 const RASC={};           /* separação sendo digitada, por lote */
 
 /* ---------- dados ---------- */
@@ -379,20 +487,22 @@ function cartao(t){const l=lote(t);const s=statusDe(t);const [cor,rot]=ST[s]||['
   if(t.pul&&s==='livre')rotulo='Vazio · pronto para receber';
   if(s==='analise'&&l&&l.reana)rotulo='Ajustado · refazer análise';
   /* passou da hora: só laranja, sem piscar */
-  const atr=l&&!ehAmanha()&&!['liberado','envasando','livre'].includes(s)&&l.prontoMin!=null&&(l.data<D.hoje||AGORA>=l.prontoMin-5);
+  const atr=l&&!ehAmanha()&&!['liberado','envasando','livre'].includes(s)&&l.prontoMin!=null&&(l.data<D.hoje||AGORA>l.prontoMin);
   const descAte=l&&s==='descanso'&&l.ini?hm(min(l.ini)+(l.desc||0)):'';
-  const B={limpar:`<div class="acao rx" data-a="limpIni">Iniciar limpeza</div>`,limpando:`<div class="acao rx" data-a="limpFim">Concluir limpeza</div>`,
-    encher:`<div class="acao az" data-a="enchIni">Iniciar enchimento</div>`,enchendo:`<div class="acao az" data-a="enchFim">Concluir enchimento</div>`,
-    cheio:`<div class="acao" data-a="prepIni">Iniciar preparo</div>`,atras:`<div class="acao" data-a="prepIni">Iniciar preparo</div>`,
-    prep:`<div class="acao" data-a="prepFim">Concluir preparo</div>`,
+  const B={limpar:`<div class="acao go" data-a="limpIni">Iniciar limpeza</div>`,limpando:`<div class="acao go" data-a="limpFim">Concluir limpeza</div>`,
+    encher:`<div class="acao go" data-a="enchIni">Iniciar enchimento</div>`,enchendo:`<div class="acao go" data-a="enchFim">Concluir enchimento</div>`,
+    cheio:`<div class="acao go" data-a="prepIni">Iniciar preparo</div>`,atras:`<div class="acao go" data-a="prepIni">Iniciar preparo</div>`,
+    prep:`<div class="acao fim" data-a="prepFim">Concluir preparo</div>`,
     descanso:`<div class="acao off">Descansando · análise às ${descAte}</div>`,
-    analise:`<div class="acao amb" data-a="ana">${l&&l.reana?'Refazer análise':'Preencher análise'}</div>`,
-    ajuste:`<div class="acao mau" data-a="form">Lançar ajuste</div>`,
+    analise:`<div class="acao apo" data-a="ana">${l&&l.reana?'Refazer análise':'Preencher análise'}</div>`,
+    ajuste:`<div class="acao go" data-a="form">Lançar ajuste</div>`,
     naolib:`<div class="acao off">Esperando a liberação<small>o químico libera ou pede ajuste</small></div>`,
     liberado:`<div class="acao off">Esperando o envase puxar<small>quando a máquina começar, vira Envasando</small></div>`,
     envasando:`<div class="acao off">O envase conclui o tanque<small>ao concluir, o próximo lote aparece aqui</small></div>`,
     livre:`<div class="acao off">Nenhum lote na fila</div>`};
-  let btn=B[s]||'';if(passado()&&s!=='livre')btn=`<div class="acao off">Dia anterior<small>só consulta</small></div>`;else if(s==='pausa')btn=`<div class="acao az" data-a="retomar">Retomar</div>`;
+  let btn=B[s]||'';if(passado()&&s!=='livre')btn=`<div class="acao off">Dia anterior<small>só consulta</small></div>`;else if(s==='pausa')btn=`<div class="acao go" data-a="retomar">▶ Retomar</div>`;
+  /* depois de iniciar (limpeza, enchimento, preparo): o Pausar fica do lado */
+  else if(['limpando','enchendo','prep'].includes(s))btn=`<div class="arow">${btn}<div class="acao pz" data-a="pausar" title="Pausar"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1.2"/><rect x="14" y="5" width="4" height="14" rx="1.2"/></svg>Pausar</div></div>`;
   if(t.pul&&s==='livre')btn=`<div class="acao off">Recebe quando um tanque transferir</div>`;
   const sub=s==='limpar'&&!passado()?`<div class="sub2"><div data-a="limpNao">Não precisa limpar</div></div>`:'';
   const ANTES=['limpar','limpando','encher','enchendo','cheio','atras','prep'];
@@ -413,13 +523,16 @@ function topo(){
   const dt=DIA?new Date(DIA+'T12:00:00'):new Date();
   $('titc').innerHTML='Tanques';
   const cur=DIA||(D&&D.hoje)||ymd(new Date());
-  $('dias').innerHTML=`<button type="button" class="hj ${DIA?'':'on'}" data-hj="1">Hoje</button><span class="dnav"><button type="button" data-ir="-1" aria-label="Dia de produção anterior">‹</button><b>${esc(nomeDia(cur))}</b><button type="button" data-ir="1" aria-label="Próximo dia de produção">›</button></span>`;
+  /* só para a frente: de hoje, vai ao próximo dia de produção; o ‹ só volta até hoje */
+  const hoje=(D&&D.hoje)||ymd(new Date());
+  $('dias').innerHTML=`<button type="button" class="hj ${DIA?'':'on'}" data-hj="1">Hoje</button><span class="dnav"><button type="button" data-ir="-1" aria-label="Voltar para perto de hoje" ${DIA?'':'disabled'}>‹</button><b>${esc(nomeDia(cur))}</b><button type="button" data-ir="1" aria-label="Próximo dia de produção">›</button></span>`;
   $('dias').querySelector('[data-hj]').onclick=()=>{DIA=null;atualiza();};
-  $('dias').querySelectorAll('[data-ir]').forEach(b=>b.onclick=()=>{const n=(N&&N.tqOutroDia)?N.tqOutroDia(cur,+b.dataset.ir):cur;DIA=(D&&n===D.hoje)?null:n;atualiza();
-    if(DIA&&DIA>D.hoje)toast('Vendo '+nomeDia(DIA)+'. O que fizer aqui já vale para o lote desse dia.');else if(DIA)toast('Dia anterior: só consulta.');});
-  document.querySelector('.top .hora small').textContent=dt.toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  $('dias').querySelectorAll('[data-ir]').forEach(b=>b.onclick=()=>{if(b.disabled)return;let n=(N&&N.tqOutroDia)?N.tqOutroDia(cur,+b.dataset.ir):cur;
+    if(n<=hoje)n=hoje;DIA=n===hoje?null:n;atualiza();
+    if(DIA)toast('Vendo '+nomeDia(DIA)+'. O que fizer aqui já vale para o lote desse dia.');});
+  {const s=dt.toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long'});document.querySelector('.top .hora small').textContent=s.charAt(0).toUpperCase()+s.slice(1);}
   $('relogio').textContent=hm(AGORA);
-  const h=Math.floor(AGORA/60);$('sauda').textContent=h<12?'Bom dia!':h<18?'Boa tarde!':'Boa noite!';
+  const h=Math.floor(AGORA/60);$('sauda').textContent=(h<12?'Bom dia':h<18?'Boa tarde':'Boa noite')+(OPER?', '+OPER.split(' ')[0]:'')+'!';
   document.body.classList.toggle('vamh',!!DIA);
 }
 function desenha(){
@@ -430,7 +543,7 @@ function desenha(){
   $('grade').querySelectorAll('[data-a]').forEach(b=>b.onclick=()=>acao(b.closest('.tq').dataset.t,b.dataset.a));
 }
 function atualiza(){carrega();desenha();}
-window.tqAtualiza=()=>{try{atualiza();}catch(e){}};
+window.tqAtualiza=()=>{try{aplicaTema();atualiza();}catch(e){}};
 
 /* ---------- ações ---------- */
 const REG={limpIni:'Iniciar limpeza',limpFim:'Concluir limpeza',limpNao:'Não precisa limpar',enchIni:'Iniciar enchimento',enchFim:'Concluir enchimento',prepIni:'Iniciar preparo',prepFim:'Concluir preparo'};
@@ -441,11 +554,43 @@ function acao(id,a){const t=T.find(x=>x.id===id);if(!t)return;const s=statusDe(t
   if(!l)return toast('Sem lote neste tanque.');
   if(a==='form')return abrirForm(t,'sep');
   if(a==='ana'){if(!['analise','naolib','liberado','envasando'].includes(s))return toast('A análise é depois do descanso.');return abrirAna(t);}
+  if(a==='pausar')return pausar(t);
   if(a==='prepIni'&&(l.mp||[]).length&&sepOk(l)<l.mp.length)return toast('Separe as '+(l.mp.length-sepOk(l))+' matérias-primas que faltam antes de iniciar o preparo.');
   if(a==='prepFim'){const n=(l.proc||[]).length;if(n&&l.passo<n)return toast('Marque todos os passos do Modo de Fazer antes de concluir.');
-    return fecharPreparo(t,obs=>pedirPin(t.id+' · Concluir preparo',pin=>exec(t,'prepFim',pin,{obs})));}
-  if(REG[a])return pedirPin(t.id+' · '+REG[a],pin=>exec(t,a,pin));
+    return fecharPreparo(t,(obs,atraso)=>pedirPin(t.id+' · Concluir preparo',pin=>exec(t,'prepFim',pin,{obs,atraso})));}
+  if(REG[a]){
+    /* passou do tempo (começou depois do programado ou demorou mais que o previsto): pede o motivo, como no envase */
+    const q=atrasoDe(l,a,s);
+    const vai=atraso=>pedirPin(t.id+' · '+REG[a],pin=>exec(t,a,pin,atraso?{atraso}:{}));
+    if(q)return perguntaAtraso(t,q,vai);
+    return vai(null);}
 }
+/* ---------- atraso: tolerância das Configurações (Motivos › Atraso a partir de) ---------- */
+const TOL=()=>{try{return N.tolAtraso?+N.tolAtraso():10;}catch(e){return 10;}};
+const pausasDa=(l,st)=>((l.tq&&l.tq.pausas)||[]).filter(p=>p.etapa===st).reduce((s,p)=>s+(+p.min||0),0);
+function atrasoInicio(l,pk){const p=l.plan&&l.plan[pk];const pm=p&&min(p.de);if(pm==null||!D||l.data>D.hoje)return 0;
+  const dias=Math.round((new Date(D.hoje+'T12:00:00')-new Date(l.data+'T12:00:00'))/864e5);return AGORA+dias*1440-pm;}
+function atrasoDe(l,a,s){const tol=TOL();if(ehAmanha())return null;
+  const ini={limpIni:['limp','Limpeza'],enchIni:['ench','Enchimento'],prepIni:['fab','Preparo']}[a];
+  if(ini){/* começou logo depois da etapa anterior: o atraso veio de lá (já foi perguntado); só pergunta se ficou parado esperando */
+    if((s==='encher'||s==='cheio')&&l.desde!=null&&l.desde<=tol)return null;
+    const m=atrasoInicio(l,ini[0]);return m>tol?{tipo:'ini',etapa:ini[1],prog:l.plan[ini[0]].de,min:m}:null;}
+  const fim={limpFim:['limp','Limpeza','limpando'],enchFim:['ench','Enchimento','enchendo']}[a];
+  if(fim){const p=l.plan[fim[0]];if(!p||!p.min||l.desde==null)return null;const real=Math.max(0,l.desde-pausasDa(l,fim[2]));
+    return real-p.min>tol?{tipo:'dur',etapa:fim[1],prev:p.min,real,min:real-p.min}:null;}
+  return null;}
+const gruposAtraso=()=>{const g=motivosDe('liberacao');return g.length?g:motivosDe('pausa');};
+function perguntaAtraso(t,q,ok){const l=lote(t);const st={grupo:'',mot:'',obs:''};const G=gruposAtraso();
+  const pinta=()=>{const m=modal(`<div class="mc prob"><div class="mh"><span><b>${q.tipo==='ini'?esc(q.etapa)+' começando atrasado':esc(q.etapa)+' passou do tempo'} · ${esc(t.id)}</b><small>${esc(l.p)}${l.lote?' · lote '+esc(l.lote):''} · o motivo vai para o relatório de atrasos</small></span><span class="x" data-fechar>×</span></div>
+    <div class="fres">${q.tipo==='ini'?`<div><span>Programado</span><b>${esc(q.prog)}</b></div><div><span>Agora</span><b>${hm(AGORA)}</b></div>`:`<div><span>Previsto</span><b>${dur(q.prev)}</b></div><div class="mau"><span>Levou</span><b>${dur(q.real)}</b></div>`}<div class="mau"><span>Atraso</span><b>+${dur(q.min)}</b></div></div>
+    <h4>Por que atrasou? <b class="obr">obrigatório</b></h4>${chipsMotivo(G,st,'a')}
+    <h4>Observação ${st.mot==='Outro'?'<b class="obr">obrigatória</b>':'(se precisar)'}</h4><textarea class="in obs" id="atObs" placeholder="escreva aqui">${esc(st.obs)}</textarea>
+    <div class="libb"><span style="flex:1"></span><div class="acao ${st.mot?'':'off'}" id="atOk">Continuar</div></div></div>`);
+    ligaMotivo(m,st,'a',pinta);
+    const o=m.querySelector('#atObs');o.oninput=()=>st.obs=o.value;
+    m.querySelector('#atOk').onclick=()=>{if(!st.mot)return toast('Escolha o motivo do atraso.');if(st.mot==='Outro'&&!st.obs.trim())return toast('Escreva o motivo.');
+      m.classList.remove('on');ok({etapa:q.etapa,tipo:q.tipo==='ini'?'início':'tempo',min:q.min,grupo:st.grupo,mot:st.mot,obs:st.obs});};};
+  pinta();}
 function exec(t,a,pin,x){const l=lote(t);if(!l)return;
   const r=N.tqAcao(l.k,a,x||{},pin);
   if(!r||r.erro){toast((r&&r.erro)||'Não consegui gravar.');atualiza();return false;}
@@ -505,32 +650,18 @@ function ligaMotivo(m,st,pref,repinta){
   m.querySelectorAll(`[data-${pref}s]`).forEach(e=>e.onclick=()=>{st.mot=e.dataset[pref+'s'];repinta();});}
 const motivosDe=et=>{try{return (N.tqMotivos&&N.tqMotivos(et))||[];}catch(e){return [];}};
 
-/* ---------- registrar problema ---------- */
-function registrarProblema(t){const st={grupo:'',mot:'',min:0,obs:''};const G=motivosDe('problema');const l=lote(t);
-  const pinta=()=>{const m=modal(`<div class="mc prob"><div class="mh"><span><b>Registrar problema · ${esc(t.id)}</b><small>${l?esc(l.p)+' · ':''}${esc((ST[statusDe(t)]||['',''])[1])} · avisa o PCP e o químico</small></span><span class="x" data-fechar>×</span></div>
-    <h4>1. O que aconteceu?</h4>${chipsMotivo(G,st,'p')}
-    ${st.mot?`<h4>2. Quanto tempo parou?</h4><div class="chips">${[0,5,10,15,30,60].map(n=>`<span class="${st.min===n?'on':''}" data-min="${n}">${n?n+' min':'não parou'}</span>`).join('')}<span class="${st.min===-1?'on':''}" data-min="-1">ainda parado</span></div>
-    <h4>3. Observação ${st.mot==='Outro'?'<b class="obr">obrigatória</b>':'(se precisar)'}</h4><textarea class="in obs" id="pObs" placeholder="escreva o que aconteceu">${esc(st.obs)}</textarea>`:''}
-    <div class="libb"><span style="flex:1"></span><div class="acao lar ${st.mot?'':'off'}" id="pOk"><span class="ex">!</span>Registrar problema</div></div></div>`);
-    ligaMotivo(m,st,'p',pinta);
-    m.querySelectorAll('[data-min]').forEach(e=>e.onclick=()=>{st.min=+e.dataset.min;pinta();});
-    const o=m.querySelector('#pObs');if(o)o.oninput=()=>st.obs=o.value;
-    m.querySelector('#pOk').onclick=()=>{if(!st.mot)return toast('Escolha o que aconteceu.');if(st.mot==='Outro'&&!st.obs.trim())return toast('Escreva o que aconteceu.');
-      pedirPin(t.id+' · Registrar problema',pin=>{m.classList.remove('on');exec(t,'prob',pin,{grupo:st.grupo,mot:st.mot,min:st.min,obs:st.obs});});};};
-  if(!l)return toast('Sem lote neste tanque.');pinta();}
-
 /* ---------- fechamento do preparo: atraso e ajuste pedem motivo ---------- */
-function fecharPreparo(t,ok){const l=lote(t);const real=l.desde||0,atr=l.prev?real-l.prev:0;const G=motivosDe('liberacao');
+function fecharPreparo(t,ok){const l=lote(t);const real=Math.max(0,(l.desde||0)-pausasDa(l,'prep')),atr=l.prev?real-l.prev:0;const G=gruposAtraso();const tol=TOL();
   const ajs=(l.extra||[]).length;const st={grupo:'',mot:'',obs:''};
   const pinta=()=>{const m=modal(`<div class="mc prob"><div class="mh"><span><b>Concluir preparo · ${esc(t.id)}</b><small>${esc(l.p)} · lote ${esc(l.lote||'—')}</small></span><span class="x" data-fechar>×</span></div>
     <div class="fres"><div><span>Previsto</span><b>${l.prev?dur(l.prev):'—'}</b></div><div class="${atr>0?'mau':''}"><span>Real</span><b>${dur(real)}</b></div><div class="${atr>0?'mau':''}"><span>${atr>0?'Atraso':'Folga'}</span><b>${atr>0?'+'+dur(atr):dur(-atr)}</b></div><div class="${ajs?'amb':''}"><span>MP de ajuste</span><b>${ajs}</b></div></div>
-    ${atr>10?`<h4>Por que atrasou? <b class="obr">obrigatório</b></h4>${chipsMotivo(G,st,'a')}`:''}
+    ${atr>tol?`<h4>Por que atrasou? <b class="obr">obrigatório</b></h4>${chipsMotivo(G,st,'a')}`:''}
     <h4>Observação ${st.mot==='Outro'?'<b class="obr">obrigatória</b>':'(se teve algo diferente)'}</h4><textarea class="in obs" id="cObs" placeholder="escreva aqui">${esc(st.obs)}</textarea>
     <div class="libb"><span style="flex:1"></span><div class="acao" id="cOk">Concluir preparo</div></div></div>`);
     ligaMotivo(m,st,'a',pinta);
     const o=m.querySelector('#cObs');o.oninput=()=>st.obs=o.value;
-    m.querySelector('#cOk').onclick=()=>{if(atr>10&&!st.mot)return toast('Escolha o motivo do atraso.');if(st.mot==='Outro'&&!st.obs.trim())return toast('Escreva a observação.');
-      m.classList.remove('on');ok([st.mot&&('atraso: '+(st.grupo&&st.grupo!=='Outro'?st.grupo+' | ':'')+st.mot),st.obs].filter(Boolean).join(' · '));};};
+    m.querySelector('#cOk').onclick=()=>{if(atr>tol&&!st.mot)return toast('Escolha o motivo do atraso.');if(st.mot==='Outro'&&!st.obs.trim())return toast('Escreva a observação.');
+      m.classList.remove('on');ok(st.obs,atr>tol&&st.mot?{etapa:'Preparo',tipo:'tempo',min:atr,grupo:st.grupo,mot:st.mot,obs:st.obs}:null);};};
   pinta();}
 
 /* ---------- pausa ---------- */
@@ -538,65 +669,108 @@ function pausar(t){const st={grupo:'',mot:'',obs:''};const G=motivosDe('pausa');
   const pinta=()=>{const m=modal(`<div class="mc prob"><div class="mh"><span><b>Pausar · ${esc(t.id)}</b><small>${esc(l.p)} · ${esc((ST[statusDe(t)]||['',''])[1])} · mesmos motivos da pausa do envase</small></span><span class="x" data-fechar>×</span></div>
     <h4>1. Motivo <b class="obr">obrigatório</b></h4>${chipsMotivo(G,st,'z')}
     <h4>Observação ${st.mot==='Outro'?'<b class="obr">obrigatória</b>':'(se precisar)'}</h4><textarea class="in obs" id="zObs" placeholder="escreva aqui">${esc(st.obs)}</textarea>
-    <div class="libb"><span class="sp"></span><div class="acao cz2 ${st.mot?'':'off'}" id="zOk">Pausar</div></div></div>`);
+    <div class="libb"><span class="sp"></span><div class="acao pau2 ${st.mot?'':'off'}" id="zOk">Pausar</div></div></div>`);
     ligaMotivo(m,st,'z',pinta);
     const o=m.querySelector('#zObs');o.oninput=()=>st.obs=o.value;
     m.querySelector('#zOk').onclick=()=>{if(!st.mot)return toast('Escolha o motivo da pausa.');if(st.mot==='Outro'&&!st.obs.trim())return toast('Escreva o motivo.');
       pedirPin(t.id+' · Pausar',pin=>{m.classList.remove('on');exec(t,'pausa',pin,{grupo:st.grupo,mot:st.mot,obs:st.obs});});};};
   pinta();}
 
-/* ---------- barra lateral do tanque ---------- */
+/* ---------- os 3 pontinhos de cada tanque ---------- */
 function fechaDrawer(){$('drawer').classList.remove('on','larga');$('sombra').classList.remove('on');}
 function pulmao(){return T.find(x=>x.pul);}
 function pulmaoLivre(){const P=pulmao();if(!P)return false;const l=lote(P);return !l||NAO_COMECOU.includes(statusDe(P));}
-function abrirDrawer(t){const l=lote(t);const d=$('drawer');const s=statusDe(t);
+const IC={
+  form:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6M10 3v5.5L4.8 18a2 2 0 0 0 1.8 3h10.8a2 2 0 0 0 1.8-3L14 8.5V3"/><path d="M7.5 14h9"/></svg>',
+  ana:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3.5" width="14" height="18" rx="2.5"/><path d="M9 3.5h6v3H9z"/><path d="M8.5 13.5l2.3 2.3 4.7-4.8"/></svg>',
+  hl:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>',
+  ht:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"><path d="M8 6h12M8 12h12M8 18h12"/><circle cx="4" cy="6" r="1.2" fill="currentColor"/><circle cx="4" cy="12" r="1.2" fill="currentColor"/><circle cx="4" cy="18" r="1.2" fill="currentColor"/></svg>',
+  pul:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h13l-3.5-3.5M20 16H7l3.5 3.5"/></svg>',
+  calc:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="5" y="2.5" width="14" height="19" rx="2.5"/><rect x="8" y="5.5" width="8" height="4" rx="1"/><path d="M8.5 13h.01M12 13h.01M15.5 13h.01M8.5 16.5h.01M12 16.5h.01M15.5 16.5h.01"/></svg>',
+  sair:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8.5 10.5V7.5a3.5 3.5 0 0 1 7 0v3"/></svg>'};
+const dCurta=d=>{const x=new Date(d+'T12:00:00');return DSEM[x.getDay()].replace('-feira','')+', '+p2(x.getDate())+'/'+p2(x.getMonth()+1);};
+/* linha de lote (próximo ou concluído); toque abre o histórico do lote */
+function linhaLote(x,o){o=o||{};
+  const pill=o.feito?(x.atr>0?`<i class="pill mau">+${x.atr} min</i>`:'<i class="pill ok">no prazo</i>'):o.st?`<i class="mini ${(ST[o.st]||['cz'])[0]}">${esc(((ST[o.st]||['',o.st])[1]).split(' · ')[0])}</i>`:'<i class="pill cz">na fila</i>';
+  return `<div class="ll${o.feito?' fe':''}" data-lk="${esc(x.k)}"><em>${esc(o.feito?(x.h||'—'):x.pronto)}<small>${o.feito?'concluído':'pronto até'}</small></em>
+    <div class="lm"><b>${o.tq?esc(o.tq)+' · ':''}${esc(x.p)}</b><small>${x.lote?'lote '+esc(x.lote)+' · ':''}${x.op?'OP '+esc(x.op)+' · ':''}${nl(x.vol)} L · ${esc(x.maq||'—')}</small></div>${pill}</div>`;}
+function ligaLinhas(d,lista){d.querySelectorAll('.ll[data-lk]').forEach(r=>r.onclick=()=>{const x=lista.find(z=>z.k===r.dataset.lk);if(!x)return;fechaDrawer();histLote(x);});}
+function seg(abas,cur){return `<div class="dseg">${abas.map(([k,n,c])=>`<button type="button" data-sg="${k}" class="${cur===k?'on':''} sg-${k}">${n}<span>${c}</span></button>`).join('')}</div>`;}
+/* ---------- Histórico: aba do lote atual e aba do tanque no dia (só o dia) ---------- */
+function abrirHistTq(t,aba,aberto){const f=$('fHist');const l=lote(t);const dia=DIA||D.hoje;
+  const doDia=x=>(x.log||[]).filter(e=>(e.d||dia)===dia&&(!e.w||e.w===t.id));
+  const linhas=a=>ordLog(a.slice()).map(e=>`<div class="hl"><em>${esc(e.t||'')}</em><div><b>${esc(e.e||'')}</b>${e.m?`<small>${esc(e.m)}</small>`:''}</div><span class="quem">${esc(e.op||'sistema')}</span></div>`).join('');
+  /* lotes que tiveram alguma coisa neste tanque no dia (o atual e os feitos) */
+  const lotes=t.feitos.slice().reverse();   /* só os lotes finalizados no dia, o mais recente em cima */
+  let corpo='';
+  if(aba==='lote')corpo=l?`<div class="hcab"><b>${esc(l.p)}</b><small>${l.lote?'lote '+esc(l.lote)+' · ':''}OP ${esc(l.op)} · ${nl(l.vol)} L</small></div>${linhas(doDia(l))||'<div class="vz">Nada registrado hoje neste lote.</div>'}`:'<div class="vz">Sem lote agora neste tanque.</div>';
+  else corpo=lotes.map(x=>{const fe=true;const n=doDia(x).length;const on=aberto===x.k;
+    return `<div class="hlote${on?' on':''}${fe?' fe':''}"><div class="hlh" data-hk="${esc(x.k)}"><i class="pill ok">finalizado${x.h?' '+esc(x.h):''}</i><div><b>${esc(x.p)}</b><small>${x.lote?'lote '+esc(x.lote)+' · ':''}${nl(x.vol)} L · ${n} registro${n===1?'':'s'}</small></div><em>${on?'▴':'▾'}</em></div>${on?`<div class="hlb">${linhas(doDia(x))}</div>`:''}</div>`;}).join('')
+    ||`<div class="vz">Nenhum lote finalizado neste tanque ${ehAmanha()?'neste dia':'hoje'}.</div>`;
+  f.innerHTML=`<div class="fh"><b>Histórico · ${esc(t.id)}</b><small>${esc(nomeDia(dia))} · só o dia</small><span class="x" id="hX">×</span></div>
+  <div class="hwrap">${seg([['lote','Lote atual',l?doDia(l).length:0],['dia','Finalizados no dia',lotes.length]],aba)}<div class="hcorpo">${corpo}</div></div>`;
+  f.classList.add('on');f.querySelector('#hX').onclick=()=>f.classList.remove('on');
+  f.querySelectorAll('[data-sg]').forEach(b=>b.onclick=()=>abrirHistTq(t,b.dataset.sg));
+  f.querySelectorAll('[data-hk]').forEach(h=>h.onclick=()=>abrirHistTq(t,'dia',aberto===h.dataset.hk?null:h.dataset.hk));}
+function abrirDrawer(t,aba){const l=lote(t);const d=$('drawer');const s=statusDe(t);aba=aba||'prox';
   const P=pulmao();const transf=l&&!t.pul&&(PRODUZIDO.includes(s)||s==='prep');const pode=transf&&P&&pulmaoLivre()&&l.vol<=P.cap&&!ehAmanha();
-  d.innerHTML=`<div class="dh"><b>${esc(t.id)}</b><small>${nl(t.cap)} L${t.pul?' · pulmão':''}</small><span class="x" id="dX">×</span></div>
+  const cur=DIA||(D&&D.hoje);
+  /* próximos: o resto da fila do dia e o próximo dia de produção */
+  let px=[];try{if(D&&D.prox&&N.tqDados){const o=N.tqDados(D.prox).T.find(z=>z.id===t.id);px=o?o.fila:[];}}catch(e){}
+  const prox=t.fila.slice(1),feit=t.feitos.slice().reverse();
+  const todos=[...t.fila,...px,...t.feitos];
+  const anaOk=l&&['analise','naolib','liberado','envasando','ajuste'].includes(s);
+  const tile=(id,ic,cor,tit,sub,off)=>`<div class="dt ${off?'off':''}" id="${id}"><i class="dic ${cor}">${ic}</i><b>${tit}</b><small>${sub}</small></div>`;
+  d.innerHTML=`<div class="dh"><b>${esc(t.id)}</b><small>${nl(t.cap)} L de capacidade${t.pul?' · pulmão':''} · ${esc(curtoDia(cur))}</small><span class="x" id="dX">×</span></div>
+  <div class="dscroll">
   ${l?`<div class="atual"><span class="mini ${(ST[s]||['cz'])[0]}">${esc((ST[s]||['',s])[1])}</span><b>${esc(l.p)}</b><small>${l.lote?'lote '+esc(l.lote)+' · ':''}OP ${esc(l.op)}${l.de?' · veio do '+esc(l.de):''}</small>
     <div class="ag"><div><span>Volume</span><b>${nl(l.vol)} L</b></div><div><span>Pronto até</span><b>${esc(l.pronto)}</b></div><div><span>Vai para</span><b>${esc(l.maq)}</b></div></div></div>`:`<div class="atual"><b style="color:var(--ink3)">Sem lote agora</b></div>`}
-  <div class="dlist">
-    <div class="dbig" id="dF"><i class="dic az">≡</i><span><b>Formulação e Modo de Fazer</b><small>separação das MPs e passo a passo</small></span></div>
-    <div class="dbig" id="dA"><i class="dic amb">✓</i><span><b>Análise</b><small>preencher e enviar para liberação</small></span></div>
-    <div class="dbig" id="dZ"><i class="dic cz">${l&&l.pausa?'▶':'⏸'}</i><span><b>${l&&l.pausa?'Retomar':'Pausar'}</b><small>${l&&l.pausa?'pausado desde '+esc(l.pausa.h||'')+' · '+esc(l.pausa.mot||''):'mesmos motivos da pausa do envase'}</small></span></div>
-    <div class="dbig" id="dP"><i class="dic lar">!</i><span><b>Registrar problema</b><small>equipamento, MP, vazamento… avisa PCP e químico</small></span></div>
-    <div class="dbig" id="dL"><i class="dic cz">◷</i><span><b>Histórico do lote</b><small>tudo o que aconteceu com este lote</small></span></div>
-    <div class="dbig" id="dH"><i class="dic cz">☰</i><span><b>Histórico do tanque</b><small>tudo o que foi feito ${ehAmanha()?'para amanhã':'hoje'}, com quem fez</small></span></div>
-    ${t.pul?'':`<div class="dbig ${pode?'':'off'}" id="dT"><i class="dic rx">⇄</i><span><b>Transferir para o pulmão</b><small>${!transf?'só lote com o preparo concluído':!pode?'pulmão ocupado agora':'leva o lote pronto e libera este tanque'}</small></span></div>`}
+  <div class="dgrid">
+    ${tile('dF',IC.form,'agu','Formulação','separar MPs e modo de fazer',!l)}
+    ${tile('dA',IC.ana,'apo','Análise',anaOk?'preencher e enviar':'depois do descanso',!anaOk)}
+    ${tile('dH',IC.hl,'cz','Histórico','lote atual e os finalizados hoje',false)}
+    ${t.pul?'':`<div class="dt ${pode?'':'off'}" id="dT"><i class="dic agu">${IC.pul}</i><b>Transferir para o pulmão</b><small>${!transf?'só lote com o preparo concluído':!pode?'pulmão ocupado agora':'leva o lote pronto e libera este tanque'}</small></div>`}
+  </div>
+  ${seg([['prox','Próximos',prox.length+px.length],['conc','Concluídos',t.feitos.length]],aba)}
+  <div class="dl${aba==='conc'?' conc':''}">${aba==='prox'
+    ?(prox.map(x=>linhaLote(x)).join('')+(px.length?`<div class="dsep">${esc(dCurta(D.prox))} · próximo dia de produção</div>`+px.map(x=>linhaLote(x)).join(''):'')||'<div class="vz">Nada mais na fila deste tanque.</div>')
+    :(feit.map(x=>linhaLote(x,{feito:true})).join('')||`<div class="vz">Nenhum lote concluído ${ehAmanha()?'neste dia':'hoje'} neste tanque.</div>`)}</div>
   </div>`;
   d.classList.add('on');$('sombra').classList.add('on');
   $('dX').onclick=fechaDrawer;$('sombra').onclick=fechaDrawer;
-  $('dF').onclick=()=>{fechaDrawer();if(!l)return toast('Sem lote neste tanque.');abrirForm(t,'sep');};
-  $('dA').onclick=()=>{fechaDrawer();acao(t.id,'ana');};
-  $('dL').onclick=()=>{fechaDrawer();if(!l)return toast('Sem lote neste tanque.');histLote(l);};
-  $('dH').onclick=()=>{fechaDrawer();histTanque(t);};
-  $('dP').onclick=()=>{fechaDrawer();registrarProblema(t);};
-  $('dZ').onclick=()=>{fechaDrawer();if(!l)return toast('Sem lote neste tanque.');l.pausa?acao(t.id,'retomar'):pausar(t);};
+  d.querySelectorAll('[data-sg]').forEach(b=>b.onclick=()=>abrirDrawer(t,b.dataset.sg));
+  ligaLinhas(d,todos);
+  $('dF').onclick=()=>{if(!l)return toast('Sem lote neste tanque.');fechaDrawer();abrirForm(t,'sep');};
+  $('dA').onclick=()=>{if(!anaOk)return toast('A análise é depois do descanso.');fechaDrawer();acao(t.id,'ana');};
+  $('dH').onclick=()=>{fechaDrawer();abrirHistTq(t,l?'lote':'dia');};
   if($('dT'))$('dT').onclick=()=>{if(!pode)return toast(!transf?'Só dá para mandar ao pulmão o lote com o preparo concluído. Outras trocas são feitas pelo PCP.':'Pulmão ocupado agora.');
     pedirPin('Transferir '+l.p+' para o pulmão',pin=>{fechaDrawer();exec(t,'pulmao',pin);});};}
 
-/* ---------- menu do topo: programado × realizado de cada tanque ---------- */
-function estrela(x){return x.atr>0?`<span class="selo">atrasado +${x.atr} min</span>`:`<i class="est ok" title="no prazo">★</i>`;}
-function abrirGeral(){const d=$('drawer');
-  const pend=[],conc=[];T.forEach(t=>{t.fila.forEach((x,i)=>pend.push({t,x,i}));t.feitos.forEach(x=>conc.push({t,x}));});
-  const sm=a=>a.reduce((s,o)=>s+(+o.x.vol||0),0);const totL=sm(pend)+sm(conc),feitL=sm(conc);const noPrazo=conc.filter(o=>!(o.x.atr>0)).length;
-  const blocos=T.map(t=>{const vp=t.fila.reduce((s,x)=>s+x.vol,0)+t.feitos.reduce((s,x)=>s+x.vol,0),vf=t.feitos.reduce((s,x)=>s+x.vol,0);
-    const n=t.fila.length+t.feitos.length;
-    return `<div class="tqg"><div class="tqgh"><b>${esc(t.id)}</b><span>${t.feitos.length} de ${n} lote${n===1?'':'s'} · ${nl(vf)} de ${nl(vp)} L</span><i class="gbar"><i style="width:${vp?vf/vp*100:0}%"></i></i></div>
-      ${t.fila.map((x,i)=>{const s=i===0?statusDe(t):'';return `<div class="lr g ${i===0?'agora':''}" data-tq="${esc(t.id)}" data-ix="${i}"><em>${esc(x.pronto)}</em><div><b>${esc(x.p)}</b><small>${x.lote?'lote '+esc(x.lote)+' · ':''}OP ${esc(x.op)}</small></div><span class="m">${nl(x.vol)} L</span><span class="m">${esc(x.maq)}</span><span>${i===0?`<i class="mini ${(ST[s]||['cz'])[0]}">${esc(((ST[s]||['',s])[1]).split(' · ')[0].toLowerCase())}</i>`:'<i class="pill amb">programado</i>'}</span></div>`;}).join('')}
-      ${t.feitos.map((x,j)=>`<div class="lr g feito" data-tq="${esc(t.id)}" data-fx="${j}"><em>${esc(x.h||'')}</em><div><b>${esc(x.p)}</b><small>lote ${esc(x.lote||'—')}${x.atr>0?' · '+x.atr+' min de atraso':''}</small></div><span class="m">${nl(x.vol)} L</span><span class="m">${esc(x.maq)}</span><span class="sit">${estrela(x)}${x.atr>0?'':'realizado'}</span></div>`).join('')}
-      ${n?'':'<div class="vz">nada programado</div>'}</div>`;}).join('');
-  const prox=(D&&D.prox)||amanha();
-  d.innerHTML=`<div class="dh"><b>Produção ${DIA?'de '+esc(curtoDia(DIA)):'do dia'}</b><small>programado × realizado de cada tanque</small><span class="x" id="dX">×</span></div>
-  <div class="ddias"><button type="button" class="${DIA?'':'on'}" data-dg="0">Hoje</button><button type="button" class="${DIA&&!passado()?'on':''}" data-dg="1">${DIA&&!passado()?esc(nomeDia(DIA)):'Próximo dia · '+esc(curtoDia(D&&D.hoje&&!DIA?prox:prox))}</button></div>
-  <div class="meta"><div class="mt"><span>Programado</span><b>${pend.length+conc.length} lotes</b><small>${nl(totL)} L</small></div><div class="mt ok"><span>Realizado</span><b>${conc.length}</b><small>${nl(feitL)} L · <i class="est ok">★</i> ${noPrazo} no prazo</small></div><div class="mt amb"><span>Na fila</span><b>${pend.length}</b><small>${nl(totL-feitL)} L</small></div></div>
-  <div class="dbar"><i style="width:${totL?feitL/totL*100:0}%"></i></div>
-  <div class="dbtn d2"><div class="acao sec" id="dC">Calculadora</div></div>
-  <div class="lista">${blocos}<div class="dica">Toque num lote para ver o histórico dele. Troca de tanque é feita pelo PCP.</div></div>`;
+/* ---------- os 3 pontinhos do topo: o total de todos os tanques ---------- */
+function abrirGeral(aba){const d=$('drawer');aba=aba||'tq';
+  const pend=[],conc=[];T.forEach(t=>{t.fila.forEach((x,i)=>pend.push({t,x,st:i===0?statusDe(t):''}));t.feitos.forEach(x=>conc.push({t,x}));});
+  const sm=a=>a.reduce((s,o)=>s+(+o.x.vol||0),0);
+  const prod=pend.filter(o=>PRODUZIDO.includes(o.st)||o.st==='envasando');
+  const totL=sm(pend)+sm(conc),prodL=sm(prod)+sm(conc),concL=sm(conc);const noPrazo=conc.filter(o=>!(o.x.atr>0)).length;
+  const cur=DIA||(D&&D.hoje)||ymd(new Date());
+  const blocos=T.map(t=>{const vp=t.fila.reduce((s,x)=>s+x.vol,0)+t.feitos.reduce((s,x)=>s+x.vol,0),vf=t.feitos.reduce((s,x)=>s+x.vol,0);const n=t.fila.length+t.feitos.length;
+    return `<div class="tqg"><div class="tqgh" data-tqa="${esc(t.id)}"><b>${esc(t.id)}</b><span>${t.feitos.length} de ${n} concluído${n===1?'':'s'} · ${nl(vf)} de ${nl(vp)} L</span><i class="gbar"><i style="width:${vp?vf/vp*100:0}%"></i></i><em>›</em></div>
+      ${t.fila.map((x,i)=>linhaLote(x,{st:i===0?statusDe(t):''})).join('')}${t.feitos.slice().reverse().map(x=>linhaLote(x,{feito:true})).join('')}${n?'':'<div class="vz">nada programado</div>'}</div>`;}).join('');
+  const lc=conc.slice().sort((a,b)=>String(b.x.h||'').localeCompare(String(a.x.h||'')));
+  d.innerHTML=`<div class="dh"><b>Produção dos tanques</b><small>${esc(nomeDia(cur))} · todos os tanques</small><span class="x" id="dX">×</span></div>
+  <div class="dscroll">
+  <div class="meta m4"><div class="mt"><span>Programado</span><b>${pend.length+conc.length}</b><small>${nl(totL)} L</small></div><div class="mt agu"><span>Produzido</span><b>${prod.length+conc.length}</b><small>${nl(prodL)} L</small></div><div class="mt ok"><span>Concluído</span><b>${conc.length}</b><small>${nl(concL)} L · ${noPrazo} no prazo</small></div><div class="mt"><span>Falta</span><b>${pend.length-prod.length}</b><small>${nl(totL-prodL)} L</small></div></div>
+  <div class="dbar"><i style="width:${totL?concL/totL*100:0}%"></i><i class="p" style="width:${totL?(prodL-concL)/totL*100:0}%"></i></div>
+  <div class="dleg"><span><i class="c"></i>concluído (envasado)</span><span><i class="p"></i>produzido, esperando o envase</span></div>
+  ${seg([['tq','Por tanque',T.length],['conc','Concluídos',conc.length]],aba)}
+  <div class="dl">${aba==='tq'?blocos:(lc.map(o=>linhaLote(o.x,{feito:true,tq:o.t.id})).join('')||`<div class="vz">Nenhum lote concluído ${ehAmanha()?'neste dia':'hoje'}.</div>`)}</div>
+  <div class="dbtn"><div class="acao sec" id="dC">${IC.calc}Calculadora</div><div class="acao sec" id="dS">${IC.sair}Trocar de operador</div></div>
+  </div>`;
   d.classList.add('on','larga');$('sombra').classList.add('on');
-  $('dX').onclick=fechaDrawer;$('sombra').onclick=fechaDrawer;$('dC').onclick=()=>abrirCalc();
-  d.querySelectorAll('[data-dg]').forEach(b=>b.onclick=()=>{if(b.dataset.dg==='1'){if(!DIA||passado())DIA=(D&&D.prox)||amanha();}else DIA=null;atualiza();abrirGeral();});
-  d.querySelectorAll('.lr[data-ix]').forEach(r=>r.onclick=()=>{const t=T.find(z=>z.id===r.dataset.tq);fechaDrawer();histLote(t.fila[+r.dataset.ix]);});
-  d.querySelectorAll('.lr[data-fx]').forEach(r=>r.onclick=()=>{const t=T.find(z=>z.id===r.dataset.tq);fechaDrawer();histLote(t.feitos[+r.dataset.fx]);});}
+  $('dX').onclick=fechaDrawer;$('sombra').onclick=fechaDrawer;$('dC').onclick=()=>abrirCalc();$('dS').onclick=()=>{fechaDrawer();trava();};
+  d.querySelectorAll('[data-sg]').forEach(b=>b.onclick=()=>abrirGeral(b.dataset.sg));
+  d.querySelectorAll('[data-tqa]').forEach(h=>h.onclick=()=>{const t=T.find(z=>z.id===h.dataset.tqa);if(t){d.classList.remove('larga');abrirDrawer(t);}});
+  ligaLinhas(d,[...pend.map(o=>o.x),...conc.map(o=>o.x)]);}
 
 /* ---------- escolher MP do cadastro ---------- */
 function escolherMP(titulo,ok){let q='';const CAD=(N.tqInsumos&&N.tqInsumos())||[];
@@ -623,7 +797,7 @@ function abrirForm(t,aba){const l=lote(t);if(!l)return toast('Sem lote neste tan
     ${r.ext.map((a,j)=>`<tr class="ajr"><td><b class="ajn">${esc(a.nome)}</b><small>MP de ajuste</small></td><td class="m">—</td><td><input class="in" data-ex="${j}" data-c="lote" value="${esc(a.lote||'')}" placeholder="lote"></td><td><input class="in" inputmode="decimal" data-ex="${j}" data-c="kg" value="${esc(a.kg||'')}" placeholder="kg"></td><td><span class="ck" data-exx="${j}" title="tirar">×</span></td></tr>`).join('')}
     ${modoAj||ehAmanha()?'':`<tr class="addr"><td colspan="5"><span class="addaj" id="fAj">+ MP de ajuste</span></td></tr>`}
     </tbody></table><div class="fdica">Digite o lote e o peso de cada MP e toque no ✓. Pode separar enquanto o tanque enche.</div></div>
-    <div class="bf"><div class="acao sec ico" data-calc title="Calculadora">${ICALC}</div><div class="acao lar" data-prob><span class="ex">!</span>Registrar problema</div><span style="flex:1"></span><div class="acao ${modoAj?'mau':''}" id="fS">${modoAj?'Lançar ajuste':'Salvar separação'}</div></div></div>
+    <div class="bf"><div class="acao sec ico" data-calc title="Calculadora">${ICALC}</div><span style="flex:1"></span><div class="acao ${modoAj?'mau':''}" id="fS">${modoAj?'Lançar ajuste':'Salvar separação'}</div></div></div>
   <div class="box"><h3>Modo de Fazer <span>${s==='prep'&&proc.length?'passo '+Math.min(l.passo+1,proc.length)+' de '+proc.length:'começa no Iniciar preparo'}</span></h3><div class="bb"><ol class="modo">${proc.map((p,i)=>`<li class="${i<l.passo?'feito':''}" data-p="${i}"><em>${i<l.passo?'✓':i+1}</em><div>${esc(p)}</div></li>`).join('')||'<li style="color:var(--ink3)">Sem modo de fazer cadastrado para este produto.</li>'}</ol></div></div></div>`;
   f.classList.add('on');f.querySelector('#fX').onclick=()=>{f.classList.remove('on');desenha();};
   const nomes=(l.mp||[]).map(m=>m.nome);
@@ -636,7 +810,7 @@ function abrirForm(t,aba){const l=lote(t);if(!l)return toast('Sem lote neste tan
   if(f.querySelector('#fAj'))f.querySelector('#fAj').onclick=()=>escolherMP('MP de ajuste',x=>{r.ext.push({nome:x.nome,sku:x.sku,lote:'',kg:''});abrirForm(t,aba);});
   f.querySelectorAll('.modo li[data-p]').forEach(li=>li.onclick=()=>{if(statusDe(t)!=='prep')return toast('Os passos são marcados durante o preparo.');const i=+li.dataset.p;const n=i<l.passo?i:i+1;
     const res=N.tqAcao(l.k,'passo',{n});if(res&&res.erro)return toast(res.erro);atualiza();const nt=T.find(z=>z.id===t.id);if(nt)abrirForm(nt,aba);});
-  f.querySelector('[data-prob]').onclick=()=>registrarProblema(t);f.querySelector('[data-calc]').onclick=()=>abrirCalc();
+  f.querySelector('[data-calc]').onclick=()=>abrirCalc();
   f.querySelector('#fS').onclick=()=>{
     if(modoAj){const falta=pend.filter(a=>!(r.aj[a.i]&&r.aj[a.i].ok));if(falta.length)return toast('Lance o lote e o peso do ajuste pedido e toque no ✓.');
       return pedirPin(t.id+' · Lançar ajuste',pin=>{if(exec(t,'ajLanc',pin,{itens:pend.map(a=>({i:a.i,lote:r.aj[a.i].lote,kg:r.aj[a.i].kg}))})){delete RASC[l.k];f.classList.remove('on');}});}
@@ -657,7 +831,7 @@ function abrirAna(t){const l=lote(t);if(!l)return;const f=$('fAna');const enviad
       :`<input class="in" inputmode="decimal" data-e="${e.k}" value="${esc(R[e.k])}" ${enviada?'disabled':''} style="width:110px">`}</td><td>${s==='ok'?'<span class="pill ok">dentro</span>':s==='fora'?'<span class="pill mau">fora</span>':''}</td></tr>`;}).join('')||'<tr><td colspan="4" style="color:var(--ink3)">Este produto não tem ensaios cadastrados.</td></tr>'}</tbody></table></div></div>
   <div class="box"><h3>Ajustes feitos no lote</h3><div class="bb"><table class="t"><thead><tr><th>Hora</th><th>O que entrou</th><th>Quanto</th></tr></thead><tbody>${((l.extra||[]).map(a=>`<tr><td class="m">${esc(a.em||'')}</td><td>${esc(a.nome)}<small>${a.lote?'lote '+esc(a.lote):''}</small></td><td class="m">${nl(a.kg)} ${esc(a.un||'kg')}</td></tr>`).join(''))||'<tr><td colspan="3" style="color:var(--ink3)">nenhum ajuste</td></tr>'}</tbody></table>
     <div style="margin-top:10px"><span style="font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink3);font-weight:700">Observação para o químico</span><textarea class="in obs" id="aObs" ${enviada?'disabled':''} placeholder="se teve algo diferente" style="display:block;width:100%;min-height:70px;margin-top:6px">${esc(enviada?(l.tq.anaObs||''):obs)}</textarea></div></div></div></div>
-  <div class="ff"><span style="flex:1"></span><div class="acao ${enviada?'off':'amb'}" id="aE">${enviada?'Análise já enviada':l.reana?'ENVIAR REANÁLISE':'ENVIAR ANÁLISE PARA LIBERAÇÃO'}</div></div>`;
+  <div class="ff"><span style="flex:1"></span><div class="acao ${enviada?'off':'apo'}" id="aE">${enviada?'Análise já enviada':l.reana?'ENVIAR REANÁLISE':'ENVIAR ANÁLISE PARA LIBERAÇÃO'}</div></div>`;
   f.classList.add('on');f.querySelector('#aX').onclick=()=>f.classList.remove('on');
   f.querySelectorAll('input[data-e]').forEach(i=>{i.oninput=()=>{R[i.dataset.e]=i.value;};i.onchange=()=>{const p=i.selectionStart;pinta();};});
   f.querySelectorAll('[data-q]').forEach(b=>b.onclick=()=>{if(enviada)return;const [k,v]=b.dataset.q.split('|');R[k]=v;pinta();});
@@ -667,13 +841,26 @@ function abrirAna(t){const l=lote(t);if(!l)return;const f=$('fAna');const enviad
       if(exec(t,'ana',pin,{res,obs}))f.classList.remove('on');});};};
   pinta();}
 
-/* ---------- tema e relógio ---------- */
-const LUA='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>',SOL='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="4.5"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>';
-function escuro(){const t=document.documentElement.dataset.theme;return t?t==='dark':matchMedia('(prefers-color-scheme: dark)').matches;}
-function pintaTema(){$('tema').innerHTML=escuro()?SOL:LUA;}
-$('tema').onclick=()=>{document.documentElement.dataset.theme=escuro()?'light':'dark';try{localStorage.setItem('erp.tq.tema',document.documentElement.dataset.theme);}catch(e){}pintaTema();};
-try{document.documentElement.dataset.theme=localStorage.getItem('erp.tq.tema')||'dark';}catch(e){document.documentElement.dataset.theme='dark';}pintaTema();
+/* ---------- tema: vem das Configurações › PCP › Tablets (não tem botão aqui) ---------- */
+function aplicaTema(){let tm='escuro';try{const c=N&&N.tablets&&N.tablets();if(c&&c.tema&&c.tema.tq)tm=c.tema.tq;}catch(e){}
+  const v=tm==='claro'?'light':'dark';if(document.documentElement.dataset.theme!==v)document.documentElement.dataset.theme=v;}
+aplicaTema();
 try{if(N&&N.tqLogo)$('logo').src=N.tqLogo();}catch(e){}
+
+/* ---------- abrir o tablet: PIN de quem está no tanque (ao abrir e ao recarregar) ---------- */
+function trava(){OPER='';const m=$('trava');let v='',msg='',erro=false;
+  const pronto=()=>{try{return !!(N&&N.tqDados&&N.tqDados().pronto);}catch(e){return false;}};
+  const pinta=()=>{const ok=pronto();let lg='';try{lg=(N&&N.tqLogo&&N.tqLogo())||'';}catch(e){}
+    m.innerHTML=`<div class="trc">${lg?`<img src="${esc(lg)}" alt="Atrius" class="tlg">`:''}<h1>Tanques</h1><p>${ok?'Digite o seu PIN para abrir':'Carregando a programação…'}</p>
+      ${ok?`<div class="dots">${[0,1,2,3].map(i=>`<i class="${i<v.length?'on':''}"></i>`).join('')}</div><div class="msg ${erro?'erro':''}">${esc(msg)||'&nbsp;'}</div>
+      <div class="kp">${['1','2','3','4','5','6','7','8','9','C','0','⌫'].map(k=>`<div data-k="${k}">${k}</div>`).join('')}</div>`:'<div class="tload"><i></i></div>'}</div>`;
+    m.querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>tecla(b.dataset.k));
+    if(!ok)setTimeout(()=>{if(m.classList.contains('on')&&!m.querySelector('.kp'))pinta();},700);};
+  const tecla=k=>{if(k==='C')v='';else if(k==='⌫')v=v.slice(0,-1);else if(v.length<4)v+=k;
+    if(v.length===4){const r=N.tqPin(v);if(r&&r.ok){OPER=r.nome||'';m.classList.remove('on');document.body.classList.remove('travado');atualiza();toast('Olá, '+(OPER.split(' ')[0]||'')+'!');return;}
+      msg=(r&&r.erro)||'PIN não encontrado, tente de novo';erro=true;v='';}
+    else erro=false;pinta();};
+  document.body.classList.add('travado');m.classList.add('on');pinta();}
 $('menuTop').onclick=()=>abrirGeral();
 
 /* ---------- teclado próprio (o do tablet deitado cobre metade da tela) ----------
@@ -713,6 +900,7 @@ kbMarca();
 /* à meia-noite volta para hoje; a cada 20 s refaz (os tempos andam) */
 setInterval(()=>{if(DIA&&DIA<=ymd(new Date()))DIA=null;if(!document.querySelector('.modal.on,.full.on'))atualiza();else{carrega();topo();}},20000);
 atualiza();
+if(N)trava();
 
 </script>
 </body></html>
