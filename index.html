@@ -3895,7 +3895,7 @@ body.cs-semjanela #mask{visibility:hidden!important}
   <button class="btn sm" id="tv" title="Abrir a fila em tela cheia, para a TV">Tela da TV</button>
   <button class="btn sm" id="telaOp" title="Abrir a tela do operador de uma máquina">Tela do operador</button>
   <input type="file" id="arq" accept="application/json,.json" hidden>
-  <button class="btn sm" id="novoSaldo">+ Saldo no tanque</button>
+  <button class="btn sm" id="novoSaldo">+ Saldo de lote</button>
   <button class="btn pri" id="nova">+ Nova OP</button>
 </header>
 
@@ -5474,7 +5474,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v412';
+const VERSAO_APP='v413';
 let DRAG=null;
 function render(){
   recomporTudo();
@@ -24367,7 +24367,7 @@ relMotivos=function(){
       <div class="kpi"><div class="k">Tempo perdido</div><div class="v">${hmm(Math.round(r.custoTot.min))}</div><div class="s">setup e envase acima da meta e pausas</div></div>
       <div class="kpi"><div class="k">Litros perdidos</div><div class="v">${nf(Math.round(r.custoTot.l))} L</div><div class="s">quebra com motivo</div></div>
       <div class="kpi"><div class="k">Problema nº 1</div><div class="v" style="font-size:17px">${top?escAttr(top.s):'—'}</div><div class="s">${top?`${escAttr(top.g)} · ${top.ops} OP${top.ops>1?'s':''}`:''}</div></div></div>
-    <div class="csmf">${[['todos','Todas as etapas'],['setup','Setup'],['envase','Envase'],['pausa','Pausa'],['quebra','Quebra']].map(([k,n])=>`<button class="${CS_MOT_ET===k?'on':''}" data-cmet="${k}">${n}</button>`).join('')}
+    <div class="csmf">${[['todos','Todas as etapas'],['setup','Setup'],['envase','Envase'],['pausa','Pausa'],['quebra','Quebra'],['saldo','Saldo de lote']].map(([k,n])=>`<button class="${CS_MOT_ET===k?'on':''}" data-cmet="${k}">${n}</button>`).join('')}
       <span style="flex:1"></span><button class="${CS_MOT_SUB?'':'on'}" data-cmsub="0">Por grupo</button><button class="${CS_MOT_SUB?'on':''}" data-cmsub="1">Por subgrupo</button></div>
     ${csTabelaMotivos(r,CS_MOT_SUB)}
     <p class="adp" style="margin-top:10px">% das OPs da etapa: em quantas das OPs que tiveram problema naquela etapa o motivo apareceu (uma OP pode ter mais de um motivo, então a coluna soma mais de 100%). % do total e Acumulado: o peso de cada motivo entre todos os registrados — os primeiros, até uns 80%, são os que mais valem atacar. Principal: quantas vezes foi o motivo principal. Custo: minutos acima da meta (setup e envase) ou litros de quebra, divididos entre os motivos da OP.</p>`;
@@ -30175,7 +30175,7 @@ try{csNucleo.versao='v392';}catch(e){}
 try{csNucleo.versao='v393';}catch(e){}
 </script>
 <script>
-try{csNucleo.versao='v412';}catch(e){}
+try{csNucleo.versao='v413';}catch(e){}
 </script>
 <script>/* =====================================================================
    v398 — PÁGINA TANQUES NO LAYOUT NOVO
@@ -30258,6 +30258,10 @@ try{csNucleo.versao='v412';}catch(e){}
   render=function(){
     const r=_render.apply(this,arguments);
     try{const g=document.getElementById('tqgrid');if(!g||g.classList.contains('dia')||g.classList.contains('horiz'))return r;
+      window.cs8Pos(g);}catch(e){}
+    return r;
+  };
+  window.cs8Pos=function(g){try{
       g.querySelectorAll('.tqcol').forEach(col=>{
         const tqb=col.querySelector('.tqb');if(!tqb||tqb.dataset.cs8)return;tqb.dataset.cs8='1';
         const fila=tqb.querySelectorAll('.cs8-fila').length,conc=tqb.querySelectorAll('.cs8-conc').length;
@@ -30270,7 +30274,6 @@ try{csNucleo.versao='v412';}catch(e){}
           tqb.querySelector('.cs8-faixa').onclick=ev=>{ev.stopPropagation();CS8_AB.has(k)?CS8_AB.delete(k):CS8_AB.add(k);
             col.classList.toggle('cs8-aberto',CS8_AB.has(k));ev.currentTarget.innerHTML=`${CS8_AB.has(k)?'▾':'▸'} ✓ ${conc} concluído${conc>1?'s':''} hoje`;};}
       });}catch(e){}
-    return r;
   };
   /* o "Pronto até" pisca de verdade: redesenha a página de tanques a cada minuto quando ela está aberta */
   setInterval(()=>{try{if(S.page==='tanques'&&!document.querySelector('.modal.on,#modal.on')&&!document.body.classList.contains('arrastando'))render();}catch(e){}},60000);
@@ -31216,6 +31219,220 @@ try{csTqAbre();}catch(e){}
 .stq.finalizado,.stq.pendente{background:#F1ECFC;color:#6D28D9}
 .bat.atrasada{background:#FEF2F2;border-color:#F3A9A9;box-shadow:0 0 0 2px rgba(220,38,38,.22)}
 .cs-tqsel.nao{background:#E8EFF9;color:#1B4F9C;border-color:#B7C9E6}`;document.head.appendChild(s);}catch(e){}})();
+
+</script>
+<script>
+/* ===================== v413 · Envase e Tanques =====================
+   A página do envase continua igual. Em cima dela entra a faixa TANQUES, recolhida: ao expandir, mostra os
+   tanques do dia exatamente como na página Tanques (mesmo desenho, mesmos cliques). O seletor Envase|Tanques sai.
+   Selo na faixa: análise enviada pelo tanque esperando liberação, e lote que precisa de ajuste. */
+let CS_TQBAR_AB=false;try{CS_TQBAR_AB=sessionStorage.getItem('erp.tqbar')==='1';}catch(e){}
+try{CS_DIA_TIT.envase='Envase e Tanques';}catch(e){}
+/* as regras do #tqgrid valem também para a grade dos tanques dentro da faixa */
+function csTqBarCss(){
+  if(document.getElementById('csTqBarCss'))return;
+  const out=[];
+  for(const sh of [...document.styleSheets]){let rs;try{rs=sh.cssRules;}catch(e){continue;}
+    const walk=list=>{for(const r of [...list]){
+      if(r.cssRules&&r.media){continue;}
+      if(r.selectorText&&r.selectorText.includes('#tqgrid'))out.push(r.cssText.replace(/#tqgrid/g,'#csTqMini'));}};
+    walk(rs);}
+  const s=document.createElement('style');s.id='csTqBarCss';s.textContent=out.join('\n')+`
+#csTqBar{margin:0 0 14px;border:1px solid #E1E4E9;border-radius:12px;background:#EEF0F3;overflow:hidden}
+#csTqBar .tbh{display:flex;align-items:center;gap:10px;padding:7px 8px 7px 14px;cursor:pointer;user-select:none}
+#csTqBar .tbh b{font-size:14px;font-weight:700;color:var(--ink)}
+#csTqBar .tbh .sp{flex:1}
+/* selo no mesmo padrão dos demais (o "precisa de ajuste" do topo) */
+#csTqBar .tbs{display:inline-flex;align-items:center;gap:7px;border-radius:999px;padding:6px 13px 6px 10px;font:700 13px Inter,system-ui,sans-serif;white-space:nowrap;cursor:pointer;border:1px solid}
+#csTqBar .tbs i{font-style:normal;min-width:18px;height:18px;border-radius:999px;display:inline-grid;place-items:center;font:800 12px Inter,sans-serif;color:#fff;padding:0 3px;box-sizing:border-box}
+#csTqBar .tbs.ana{background:#FFEDD5;border-color:#FDBA74;color:#C2410C}#csTqBar .tbs.ana i{background:#EA580C}#csTqBar .tbs.ana:hover{background:#FED7AA}
+#csTqBar .tbs.aj{background:#FEE2E2;border-color:#FCA5A5;color:#B91C1C}#csTqBar .tbs.aj i{background:#DC2626}#csTqBar .tbs.aj:hover{background:#FECACA}
+#csTqBar .tbm{background:#F6F7F9}
+body.cs-envtq #csAjSelo{display:none!important}
+#csTqBar .tbb{display:inline-flex;align-items:center;gap:6px}
+#csTqBar .tbb svg{transition:transform .15s}
+#csTqBar.ab .tbb svg{transform:rotate(180deg)}
+#csTqBar .tbm{display:none;border-top:1px solid var(--line2,#EFEEE9);overflow-x:auto;padding:12px;background:var(--paper,#fff)}
+#csTqBar.ab .tbm{display:block}
+#csTqMini{display:flex;gap:12px;min-width:max-content;align-items:flex-start}`;
+  document.head.appendChild(s);
+}
+/* o que a faixa avisa sem abrir */
+function csTqBarAvisos(){
+  const r={ana:[],aj:[]};const d=ymd(S.ref||new Date());
+  try{bateladas(d).forEach(b=>{if(b.origem==='saldo'||!b.tanque||['liberado','concluido'].includes(b.status))return;
+    const tq=(APONTA[b.chave]||{}).tq||{};
+    if(tq.anaEnv&&!(tq.ajPed||[]).some(a=>!a.lanc))r.ana.push(b);});}catch(e){}
+  /* ajuste: quem define é o químico, e o pedido aparece no tablet e na página dos tanques; aqui não */
+  return r;
+}
+function csTqBar(){
+  try{
+    const wrap=M('tqwrap'),grid=M('tqgrid');
+    let bar=document.getElementById('csTqBar');
+    document.body.classList.toggle('cs-envtq',S.page==='envase');
+    if(S.page!=='envase'||!wrap||!grid||grid.classList.contains('horiz')){if(bar)bar.remove();return;}
+    try{const ns=M('novoSaldo');if(ns)ns.style.display='';const sw=M('csSlSw');if(sw)sw.style.display='none';}catch(e){}
+    csTqBarCss();
+    if(!bar){bar=document.createElement('div');bar.id='csTqBar';}
+    if(bar.parentNode!==wrap||wrap.firstChild!==bar)wrap.insertBefore(bar,wrap.firstChild);   /* bem no topo, antes dos nomes das máquinas */
+    const av=csTqBarAvisos();
+    const nome=l=>[...new Set(l.map(b=>b.tanque))].join(', ');
+    bar.classList.toggle('ab',CS_TQBAR_AB);
+    bar.innerHTML=`<div class="tbh" role="button" tabindex="0" aria-expanded="${CS_TQBAR_AB}"><b>Tanques</b>
+      ${av.ana.length?`<span class="tbs ana" title="${escAttr(av.ana.map(b=>b.tanque+' · '+b.produto).join('\n'))}"><i>${av.ana.length}</i>${av.ana.length===1?escAttr(av.ana[0].tanque)+' enviou a análise · liberar':'análises para liberar · '+escAttr(nome(av.ana))}</span>`:''}
+      ${av.aj.length?`<span class="tbs aj" title="${escAttr(av.aj.map(b=>b.tanque+' · '+b.produto).join('\n'))}"><i>${av.aj.length}</i>${av.aj.length===1?escAttr(av.aj[0].tanque)+' precisa de ajuste':'precisam de ajuste · '+escAttr(nome(av.aj))}</span>`:''}
+      <span class="sp"></span><button type="button" class="btn sm tbb">${CS_TQBAR_AB?'Recolher':'Expandir'}<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button></div>
+      <div class="tbm"></div>`;
+    const tg=()=>{CS_TQBAR_AB=!CS_TQBAR_AB;try{sessionStorage.setItem('erp.tqbar',CS_TQBAR_AB?'1':'0');}catch(e){}csTqBar();};
+    const h=bar.querySelector('.tbh');h.onclick=tg;
+    /* tocar no selo abre o tanque: análise → ficha do lote para liberar; ajuste → a ficha na aba do certificado */
+    bar.querySelectorAll('.tbs').forEach(s=>s.onclick=ev=>{ev.stopPropagation();const aj=s.classList.contains('aj');const l=aj?av.aj:av.ana;
+      if(!CS_TQBAR_AB){CS_TQBAR_AB=true;try{sessionStorage.setItem('erp.tqbar','1');}catch(e){}csTqBar();}
+      const b=l[0];if(!b)return;S.refTq=new Date(S.ref||new Date());
+      if(aj){try{ABA_LOTE='cert';}catch(e){}}
+      setTimeout(()=>{try{abrirLote(bateladas(ymd(S.ref||new Date())).find(x=>x.chave===b.chave)||b);}catch(e){}},50);});h.onkeydown=ev=>{if(ev.key==='Enter'||ev.key===' '){ev.preventDefault();tg();}};
+    if(!CS_TQBAR_AB)return;
+    /* desenha a grade dos tanques com a mesma função da página Tanques, num lugar à parte */
+    const box=bar.querySelector('.tbm');const g=document.createElement('div');g.className='tqgrid';box.appendChild(g);
+    const pg=S.page,rt=S.refTq;
+    grid.id='csTqEnvGrid';g.id='tqgrid';S.page='tanques';S.refTq=new Date(S.ref||new Date());
+    try{gradeTanques();try{if(window.cs8Pos)window.cs8Pos(g);}catch(e){}try{csTqSelos();}catch(e){}}
+    finally{S.page=pg;g.id='csTqMini';grid.id='tqgrid';}
+    /* os cliques nos cartões olham o dia dos tanques: o mesmo dia do envase */
+    S.refTq=new Date(S.ref||new Date());void rt;
+    const mini=g;const aviso=mini.querySelector('#tqAviso');if(aviso)aviso.remove();
+    mini.querySelectorAll('.bat[data-bat]').forEach(el=>{if(el.querySelector('.cs-pts'))return;const bt=document.createElement('button');
+      bt.className='cs-pts';bt.type='button';bt.innerHTML=csSvg('pts',2,15);bt.onclick=ev=>{S.refTq=new Date(S.ref||new Date());csCtxLote(ev,el.dataset.bat);};el.appendChild(bt);
+      el.addEventListener('click',ev=>{if(ev.target.closest('button'))return;ev.stopPropagation();ev.preventDefault();},true);});
+    try{csSaldoLiga(mini);}catch(e){}
+  }catch(e){console.warn('csTqBar',e);}
+}
+try{const _rd413=render;render=function(){const r=_rd413.apply(this,arguments);csTqBar();return r;};}catch(e){}
+/* sem o seletor Envase|Tanques; o Saldo de lote fica no topo do envase */
+try{const _bd413=csBarraDia;csBarraDia=function(){const r=_bd413.apply(this,arguments);
+  try{const sw=M('csSlSw');if(sw&&S.page==='envase')sw.style.display='none';
+    const ns=M('novoSaldo');if(ns&&S.page==='envase')ns.style.display='';}catch(e){}
+  return r;};}catch(e){}
+
+/* ===================== v413 · Saldo de lote =====================
+   O antigo "Saldo no tanque" vira "Saldo de lote": produto que volta a um tanque para ser envasado de novo
+   (retrabalho). Pede produto, lote, tanque, litros e o MOTIVO — motivos exclusivos deste botão
+   (Configurações › Motivos, etapa "Saldo de lote"). O cartão do saldo segue o desenho dos outros tanques,
+   com os três pontinhos: Envasar deste saldo, Histórico e Excluir. */
+try{if(typeof ETAPAS!=='undefined'&&!ETAPAS.some(e=>e[0]==='saldo'))ETAPAS.push(['saldo','Saldo de lote']);}catch(e){}
+const CS_MOT_SALDO=[
+  {id:'sl1',nome:'Devolução de cliente',etapas:['saldo'],sub:['Avaria no transporte','Vazamento / tampa','Produto fora do padrão','Troca comercial']},
+  {id:'sl2',nome:'Problema de qualidade',etapas:['saldo'],sub:['Reprovado na análise','Cor / odor','Viscosidade','Rótulo ou data errados']},
+  {id:'sl3',nome:'Retrabalho interno',etapas:['saldo'],sub:['Embalagem trocada','Reenvase em outro tamanho','Sobra de envase']}];
+function csMotSaldo(){try{if(GRUPOS_MOTIVO.some(g=>(g.etapas||[]).includes('saldo')))return false;
+  CS_MOT_SALDO.forEach(d=>{if(!GRUPOS_MOTIVO.some(g=>g.id===d.id))GRUPOS_MOTIVO.push({...d,etapas:d.etapas.slice(),sub:d.sub.slice()});});
+  try{agendarSalvar();}catch(e){}return true;}catch(e){return false;}}
+setTimeout(csMotSaldo,1800);
+try{const _ae413=aplicarEstado;aplicarEstado=function(){const r=_ae413.apply(this,arguments);try{csMotSaldo();}catch(e){}return r;};}catch(e){}
+const csSaldoDias=sd=>{try{const d=String(sd.data||'');if(!/^\d{4}-\d{2}-\d{2}$/.test(d))return null;
+  return Math.max(0,Math.round((new Date(ymd(new Date())+'T12:00:00')-new Date(d+'T12:00:00'))/864e5));}catch(e){return null;}};
+/* o lançamento */
+lancarSaldo=function(){
+  if(M('mAcao'))M('mAcao').innerHTML='';M('mTit').textContent='Saldo de lote';
+  M('mSub').textContent='Produto que volta para um tanque para ser envasado de novo (retrabalho).';M('mSub').hidden=false;M('modal').classList.remove('wide');
+  const G=GRUPOS_MOTIVO.filter(g=>(g.etapas||[]).includes('saldo'));
+  const st={grupo:'',mot:''};
+  const dia=ymd(S.page==='tanques'?S.refTq:(S.ref||new Date()));
+  const livre=t=>{try{return !bateladas(dia).some(b=>b.tanque===t.id&&b.status!=='concluido');}catch(e){return true;}};
+  M('mB').innerHTML=`
+    <div class="g2">
+      <div class="fld"><label>Produto <b>*</b></label>
+        <select id="sPr"><option value="">Selecione o produto…</option>${PROD_TANQUE.map(t=>`<option value="${escAttr(t)}">${escAttr(t)}</option>`).join('')}</select></div>
+      <div class="fld"><label>Lote <b>*</b></label><input id="sLt" placeholder="ex.: 385" autocomplete="off"></div>
+    </div>
+    <div class="g2">
+      <div class="fld"><label>Tanque <b>*</b></label>
+        <select id="sTq"><option value="">Selecione…</option>${TANQUES.map(t=>`<option value="${t.id}">${t.id} · ${nf(t.cap)} L${livre(t)?' · livre':' · ocupado hoje'}</option>`).join('')}</select></div>
+      <div class="fld"><label>Litros <b>*</b></label><input type="number" id="sVol" min="1" step="10" placeholder="3800"></div>
+    </div>
+    <div class="fld"><label>Motivo <b>*</b> <span class="k">(Configurações › Motivos · Saldo de lote)</span></label><div id="sMot"></div></div>
+    <div class="g2">
+      <div class="fld"><label>Data <b>*</b></label><input type="date" id="sDt" value="${dia}"></div>
+      <div class="fld"><label>Está no tanque desde</label><input type="time" id="sHr" step="300" value="${relogio()}"></div>
+    </div>
+    <div class="fld"><label>Observação</label><textarea id="sObs" placeholder="ex.: cliente devolveu 120 fd com a tampa vazando"></textarea></div>
+    <div class="calc" id="sCalc"></div>`;
+  const chip=(on,txt,attr)=>`<button type="button" class="btn sm" ${attr} style="border-radius:999px;margin:0 6px 6px 0;${on?'background:#1B4F9C;border-color:#1B4F9C;color:#fff':''}">${escAttr(txt)}</button>`;
+  const pintaMot=()=>{const g=G.find(x=>x.nome===st.grupo);
+    M('sMot').innerHTML=(G.length?G.map(x=>chip(st.grupo===x.nome,x.nome,`data-sg="${escAttr(x.nome)}"`)).join(''):'<span class="k">Nenhum motivo cadastrado para Saldo de lote. Cadastre em Configurações › Motivos.</span>')
+      +chip(st.grupo==='Outro','Outro','data-sg="Outro"')
+      +(g&&(g.sub||[]).length?`<div style="margin-top:4px;font-size:12px;font-weight:700;color:var(--ink2)">Detalhe <b style="color:#B91C1C">*</b></div><div style="margin-top:6px">${g.sub.map(s=>chip(st.mot===s,s,`data-ss="${escAttr(s)}"`)).join('')}</div>`:'');
+    M('sMot').querySelectorAll('[data-sg]').forEach(b=>b.onclick=()=>{st.grupo=b.dataset.sg;st.mot='';pintaMot();});
+    M('sMot').querySelectorAll('[data-ss]').forEach(b=>b.onclick=()=>{st.mot=b.dataset.ss;pintaMot();});};
+  pintaMot();
+  M('mF').innerHTML=`<div style="flex:1"></div><button class="btn" id="sC">Cancelar</button><button class="btn pri" id="sK">Criar saldo no tanque</button>`;
+  M('sC').onclick=fecharModal;
+  const upd=()=>{const t=tqOf(M('sTq').value),v=+M('sVol').value||0;
+    M('sCalc').innerHTML=!t||!v?'Informe tanque e litros.':v>t.cap?`<span class="w">O ${t.id} comporta ${nf(t.cap)} L.</span>`:`${nf(v)} L no ${t.id} · ocupa ${nf1(v/t.cap*100)}% da capacidade.`;};
+  ['sTq','sVol'].forEach(i=>M(i).addEventListener('input',upd));upd();
+  M('sK').onclick=()=>{
+    const tq=M('sTq').value,vol=+M('sVol').value||0,pr=M('sPr').value,lt=M('sLt').value.trim(),dt=M('sDt').value,obs=M('sObs').value.trim();
+    if(!pr||!lt||!tq||!vol||!dt){toast('Preencha produto, lote, tanque, litros e data.',true);return;}
+    const g=G.find(x=>x.nome===st.grupo);
+    if(!st.grupo){toast('Escolha o motivo do saldo.',true);return;}
+    if(g&&(g.sub||[]).length&&!st.mot){toast('Escolha o detalhe do motivo.',true);return;}
+    if(st.grupo==='Outro'&&!obs){toast('Escreva o motivo na observação.',true);return;}
+    if(vol>tqOf(tq).cap){toast(`O ${tq} comporta ${nf(tqOf(tq).cap)} L.`,true);return;}
+    let quem='';try{quem=(typeof nomeDaSessao==='function'&&nomeDaSessao())||'';}catch(e){}
+    saldo({tanque:tq,volume:vol,produto:pr,grupo:grupoDoTanque(pr),data:dt,lote:lt,
+      motivo:{grupo:st.grupo,mot:st.mot||''},obs,quem,criadoEm:new Date().toISOString(),
+      interrompidoEm:`${dCurto(dt)} ${M('sHr').value||relogio()}`});
+    fecharModal();render();toast(`Saldo de lote: ${nf(vol)} L de ${pr} (lote ${lt}) no ${tq}.`);
+  };
+  abrirMask();
+};
+try{M('novoSaldo').onclick=()=>lancarSaldo();M('novoSaldo').textContent='+ Saldo de lote';}catch(e){}
+
+/* o cartão do saldo: mesmo desenho dos lotes da página Tanques */
+try{const _cb413=cardBat;cardBat=function(b){
+  if(!b||b.origem!=='saldo'||!b.tanque)return _cb413.apply(this,arguments);
+  const sd=SALDOS.find(x=>x.id===b.saldoId)||{};
+  const dias=csSaldoDias(sd);const fam=(typeof CORES!=='undefined'&&CORES[b.grupo])||'#94A3B8';
+  const mot=sd.motivo?[sd.motivo.grupo,sd.motivo.mot].filter(Boolean).join(' | '):'';
+  return `<div class="bat cs8 cs8-cur cs-sld" data-csaldo="${escAttr(b.saldoId)}">
+    <div class="cs8-st" style="background:#6D28D9"><span>Saldo de lote</span><em>${sd.data?dCurto(sd.data):''}</em></div>
+    <div class="cs8-pr"><i class="fam" style="background:${fam}"></i>${abrevTq(b.produto)}</div>
+    <div class="cs8-sub">${sd.lote?'lote '+escAttr(sd.lote):'lote —'}${mot?' · '+escAttr(mot):''}</div>
+    <div class="cs8-ti"><div><span>Livre (L)</span><b>${nf(b.disponivel)}</b></div>
+      <div><span>Parado há</span><b>${dias==null?'—':dias+(dias===1?' dia':' dias')}</b></div>
+      <div><span>Rende</span><b>${nf(Math.floor(b.disponivel/5))} fd</b></div></div>
+    ${b.disponivel>0?`<div class="bpuxa cs-sldpx" data-puxa="${escAttr(b.saldoId)}">+ Envasar deste saldo</div>`:''}
+    <button class="cs-pts" type="button" data-sldm="${escAttr(b.saldoId)}" aria-label="Opções do saldo">${csSvg('pts',2,15)}</button>
+  </div>`;};}catch(e){}
+function csSaldoMenu(ev,id){
+  ev.stopPropagation();ev.preventDefault();
+  const sd=SALDOS.find(x=>x.id===id);if(!sd)return;
+  const c=document.getElementById('csCtx');if(!c)return;
+  const usa=ORDENS.filter(o=>o.saldoId===id&&ativa(o));
+  c.innerHTML=`<button data-sl="env">Envasar deste saldo</button><button data-sl="ver">Ver o saldo</button><div class="div"></div>
+    <button data-sl="del" style="color:#B91C1C">Excluir saldo</button>${usa.length?`<span class="cs-avisoctx">${usa.length} OP${usa.length>1?'s':''} puxa${usa.length>1?'m':''} deste saldo: exclua ou cancele antes.</span>`:''}`;
+  const r=ev.currentTarget.getBoundingClientRect();
+  c.style.left=Math.max(8,Math.min(innerWidth-234,r.right-214))+'px';c.style.top=Math.min(innerHeight-200,r.bottom+6)+'px';c.className='cs-ctx on';
+  c.querySelectorAll('[data-sl]').forEach(x=>x.onclick=e2=>{e2.stopPropagation();c.className='cs-ctx';const a=x.dataset.sl;
+    if(a==='env')abrirOrdem(null,{saldoId:sd.id,tanque:sd.tanque,data:ymd(S.page==='tanques'?S.refTq:(S.ref||new Date())),litros:dispDe(sd),prodTanque:sd.produto});
+    else if(a==='ver'){const mot=sd.motivo?[sd.motivo.grupo,sd.motivo.mot].filter(Boolean).join(' | '):'—';
+      if(M('mAcao'))M('mAcao').innerHTML='';M('mTit').textContent='Saldo de lote · '+sd.tanque;M('mSub').hidden=false;M('mSub').textContent=sd.produto+(sd.lote?' · lote '+sd.lote:'');
+      M('mB').innerHTML=`<table class="tb"><tbody><tr><td>Litros lançados</td><td class="n"><b>${nf(sd.volume)} L</b></td></tr><tr><td>Livre agora</td><td class="n"><b>${nf(dispDe(sd))} L</b></td></tr>
+        <tr><td>Motivo</td><td>${escAttr(mot)}</td></tr><tr><td>Desde</td><td>${escAttr(sd.interrompidoEm||sd.data||'')}</td></tr>${sd.quem?`<tr><td>Lançado por</td><td>${escAttr(sd.quem)}</td></tr>`:''}
+        ${sd.obs?`<tr><td>Observação</td><td>${escAttr(sd.obs)}</td></tr>`:''}<tr><td>OPs deste saldo</td><td>${usa.map(o=>rotuloOP(o)+' · '+o.maq).join(', ')||'nenhuma'}</td></tr></tbody></table>`;
+      M('mF').innerHTML='<div style="flex:1"></div><button class="btn" id="sdF">Fechar</button>';M('sdF').onclick=fecharModal;abrirMask();}
+    else if(a==='del'){if(usa.length)return toast(`Antes, exclua ou cancele ${usa.length===1?'a OP':'as OPs'} que puxa${usa.length>1?'m':''} deste saldo (${usa.map(o=>rotuloOP(o)).join(', ')}).`,true);
+      if(!confirm(`Excluir o saldo de ${nf(sd.volume)} L de ${sd.produto} no ${sd.tanque}?`))return;
+      const i=SALDOS.findIndex(x=>x.id===id);if(i>=0)SALDOS.splice(i,1);
+      try{(window.LOG_SALDO=window.LOG_SALDO||[]).push({em:new Date().toISOString(),saldo:sd});}catch(e){}
+      agendarSalvar();render();toast('Saldo excluído.');}});
+}
+/* liga os três pontinhos do saldo e o "+ Envasar" (também dentro da faixa do envase) */
+function csSaldoLiga(raiz){(raiz||document).querySelectorAll('[data-sldm]').forEach(b=>{if(b.dataset.lig)return;b.dataset.lig='1';b.onclick=ev=>csSaldoMenu(ev,b.dataset.sldm);});
+  (raiz||document).querySelectorAll('.cs-sldpx[data-puxa]').forEach(e=>{if(e.dataset.lig)return;e.dataset.lig='1';e.addEventListener('click',ev=>{ev.stopPropagation();
+    const sd=SALDOS.find(x=>x.id===e.dataset.puxa);if(sd)abrirOrdem(null,{saldoId:sd.id,tanque:sd.tanque,data:ymd(S.page==='tanques'?S.refTq:(S.ref||new Date())),litros:dispDe(sd),prodTanque:sd.produto});});});}
+try{const _rd413s=render;render=function(){const r=_rd413s.apply(this,arguments);try{csSaldoLiga();}catch(e){}return r;};}catch(e){}
 
 </script>
 </body>
