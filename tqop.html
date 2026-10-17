@@ -275,7 +275,7 @@ body{background:var(--bg);font-variant-numeric:tabular-nums}
 .top .dias button{border:0;background:transparent;color:#C9D4EA;font:700 14px var(--font);padding:8px 16px;border-radius:999px;cursor:pointer}
 .top .dias button.on{background:#fff;color:#0E1B33}
 .top .titc em.amh{font-style:normal;background:#F59E0B;color:#1F1300;padding:2px 12px;border-radius:8px}
-body.vamh .top{background:#16233D;box-shadow:inset 0 -3px 0 #F59E0B}
+
 .semn{grid-column:1/-1;grid-row:1/-1;display:grid;place-items:center;color:var(--ink3);font-size:18px;text-align:center;padding:40px}
 .ddias{display:flex;gap:6px;padding:10px 16px 0}.ddias button{flex:1;border:1.5px solid var(--line);background:var(--card);color:var(--ink2);border-radius:10px;padding:9px;font:700 14px var(--font);cursor:pointer}.ddias button.on{background:var(--azul);border-color:var(--azul);color:#fff}
 .tqg{margin:10px 0 4px;border:1px solid var(--line);border-radius:12px;overflow:hidden}
@@ -410,12 +410,50 @@ body.kbon .drawer .lista{padding-bottom:330px}
 :root[data-theme="light"] .trava .kp div:active{background:#E8EFF9}
 :root[data-theme="light"] .trava .msg.erro{color:#DC2626}
 :root[data-theme="light"] .tload i{border-color:#CBD5E1;border-top-color:#1B4F9C}
+/* v415: a hora fica sempre no mesmo lugar, à direita, depois da data (de hoje) */
+.top .hora{display:flex!important;align-items:baseline;gap:10px;text-align:right}
+.top .hora small{font-size:12.5px;color:#C9D4EA;white-space:nowrap}
+.top .hora b{display:inline-block!important;font:700 26px/1 var(--font)!important;min-width:76px;text-align:right}
+.top .hgrp{gap:18px}
+/* v415: um teclado só (letras e números), mais baixo; a página de trás rola */
+.kb{padding:6px 8px 8px!important;gap:5px!important}
+.kb .kbv{display:none!important}
+.kb .kbr{gap:5px!important}
+.kb button{height:44px!important;max-width:86px!important;font-size:18px!important;border-radius:9px!important}
+.kb button.ok{max-width:180px!important}.kb button.bs{max-width:110px!important}.kb button.sp{max-width:520px!important}
+body.kbon .full .fb{overflow-y:auto!important;padding-bottom:270px!important}
+body.kbon .full .bb{padding-bottom:270px!important;overflow-y:auto}
+body.kbon .drawer .dscroll{padding-bottom:270px}
+body.kbon .modal.gen,body.kbon .modal{overflow-y:auto;padding-bottom:270px!important}
+
+/* v416: teclado de lado a lado, as teclas alinhadas em 10 colunas; apagar à esquerda do espaço, OK à direita */
+.kb{padding:8px 10px 10px!important;gap:6px!important}
+.kb .kbr{display:grid!important;grid-template-columns:repeat(10,minmax(0,1fr));gap:6px!important}
+.kb button{max-width:none!important;width:100%;height:46px!important;font:700 19px var(--font)!important;border-radius:10px!important;box-shadow:0 2px 0 rgba(0,0,0,.35)}
+.kb button:active{transform:translateY(1px);box-shadow:none}
+.kb button.bs,.kb button.ok{grid-column:span 2}.kb button.sp{grid-column:span 6;font-size:15px!important;letter-spacing:.08em}
+.kb button.bs{background:#3A4558!important}.kb button.ok{background:#16A34A!important}
+.kb .kbr button.bs,.kb .kbr button.ok,.kb .kbr button.sp{max-width:none!important;width:100%}
+:root[data-theme="light"] .kb{background:#E5E8EE!important;border-top-color:#CBD2DC!important}
+:root[data-theme="light"] .kb button{background:#fff!important;color:#0E1B33!important;box-shadow:0 2px 0 #C3CAD5}
+:root[data-theme="light"] .kb button.bs{background:#CBD2DC!important}:root[data-theme="light"] .kb button.ok{background:#16A34A!important;color:#fff!important}
+
+/* v417: 11 colunas; números num tom diferente; acentos marcados quando ligados */
+.kb .kbr{grid-template-columns:repeat(11,minmax(0,1fr))!important}
+.kb button.sp{grid-column:span 7!important;text-transform:lowercase}
+.kb .kbr.nums button{background:#33476B!important}
+.kb button.ac{background:#2A3550!important;color:#C9D4EA!important;font-size:22px!important}
+.kb button.ac.on{background:#1D6FE8!important;color:#fff!important}
+:root[data-theme="light"] .kb .kbr.nums button{background:#DCE4F0!important}
+:root[data-theme="light"] .kb button.ac{background:#EEF1F5!important;color:#334155!important}
+:root[data-theme="light"] .kb button.ac.on{background:#1D6FE8!important;color:#fff!important}
+
 .pill.agu{background:#E8EFF9;color:#1B4F9C}:root[data-theme="dark"] .pill.agu{background:#1A2A4A;color:#93B4E8}
 
 </style>
 </head><body>
 <div class="tela" id="tela">
-  <div class="top"><img class="logo" id="logo" alt="Atrius"><div class="dias" id="dias"></div><span class="titc" id="titc">Tanques</span><span style="flex:1"></span><div class="hgrp"><span class="ola2" id="sauda">Bom dia!</span><div class="hora"><b id="relogio">--:--</b><small></small></div></div><div class="menu" id="menuTop" title="Produção dos tanques">⋮</div></div>
+  <div class="top"><img class="logo" id="logo" alt="Atrius"><div class="dias" id="dias"></div><span class="titc" id="titc">Tanques</span><span style="flex:1"></span><div class="hgrp"><span class="ola2" id="sauda">Bom dia!</span><div class="hora"><small></small><b id="relogio">--:--</b></div></div><div class="menu" id="menuTop" title="Produção dos tanques">⋮</div></div>
   <div class="grade" id="grade"></div>
   <div class="sombra" id="sombra"></div>
   <div class="drawer" id="drawer"></div>
@@ -447,7 +485,7 @@ function toast(t){const e=$('toast');e.textContent=t;e.style.display='block';cle
 /* cores universais = as do tablet do envase:
    agu azul (aguardando a próxima etapa) · set cinza (preparando o tanque: limpeza, enchimento) · rod verde (produzindo / envasando)
    pau amarelo (pausado) · atr vermelho (atrasado ou com problema) · apo roxo (o operador precisa apontar: análise) · liv (livre) */
-const ST={limpar:['agu','Liberado para limpeza'],limpando:['set','Limpando'],encher:['agu','Limpo · encher'],enchendo:['set','Enchendo'],cheio:['agu','Cheio · aguardando preparo'],atras:['atr','Atrasado · cheio'],prep:['rod','Preparando'],descanso:['rod','Em descanso'],analise:['apo','Descansou · fazer análise'],naolib:['agu','Aguardando liberação'],liberado:['agu','Tanque liberado'],envasando:['rod','Envasando'],livre:['liv','Livre'],ajuste:['atr','Ajuste pedido pelo químico'],pausa:['pau','Pausado']};
+const ST={limpar:['agu','Liberado para limpeza'],limpando:['set','Limpando'],encher:['agu','Limpo · encher'],enchendo:['set','Enchendo'],cheio:['agu','Cheio · aguardando preparo'],atras:['atr','Atrasado · cheio'],prep:['rod','Preparando'],descanso:['rod','Em descanso'],analise:['apo','Descansou · fazer análise'],naolib:['agu','Aguardando liberação'],liberado:['agu','Tanque liberado'],envasando:['rod','Envasando'],livre:['liv','Livre'],saldo:['apo','Saldo de lote'],ajuste:['atr','Ajuste pedido pelo químico'],pausa:['pau','Pausado']};
 const NAO_COMECOU=['limpar','encher','livre'],PRODUZIDO=['descanso','analise','naolib','liberado','ajuste'];
 let DIA=null;            /* null = hoje; senão a data escolhida (próximo dia de produção etc.) */
 let D=null,T=[],AGORA=0;
@@ -499,7 +537,8 @@ function cartao(t){const l=lote(t);const s=statusDe(t);const [cor,rot]=ST[s]||['
     naolib:`<div class="acao off">Esperando a liberação<small>o químico libera ou pede ajuste</small></div>`,
     liberado:`<div class="acao off">Esperando o envase puxar<small>quando a máquina começar, vira Envasando</small></div>`,
     envasando:`<div class="acao off">O envase conclui o tanque<small>ao concluir, o próximo lote aparece aqui</small></div>`,
-    livre:`<div class="acao off">Nenhum lote na fila</div>`};
+    livre:`<div class="acao off">Nenhum lote na fila</div>`,
+    saldo:`<div class="acao off">Esperando o envase puxar<small>saldo de lote${l&&l.mot?' · '+esc(l.mot):''}</small></div>`};
   let btn=B[s]||'';if(passado()&&s!=='livre')btn=`<div class="acao off">Dia anterior<small>só consulta</small></div>`;else if(s==='pausa')btn=`<div class="acao go" data-a="retomar">▶ Retomar</div>`;
   /* depois de iniciar (limpeza, enchimento, preparo): o Pausar fica do lado */
   else if(['limpando','enchendo','prep'].includes(s))btn=`<div class="arow">${btn}<div class="acao pz" data-a="pausar" title="Pausar"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1.2"/><rect x="14" y="5" width="4" height="14" rx="1.2"/></svg>Pausar</div></div>`;
@@ -514,8 +553,8 @@ function cartao(t){const l=lote(t);const s=statusDe(t);const [cor,rot]=ST[s]||['
   const prox=t.fila[1];
   return `<div class="tq c6${t.pul?' pul':''}${ehAmanha()?' amh':''}" data-t="${esc(t.id)}"><div class="cab"><b>${esc(t.id)}</b>${t.pul?'<span class="tag">descanso</span>':''}<span class="pts" data-a="menu">⋮</span></div>
     <div class="st ${cor}"><span>${esc(rotulo)}</span><span class="t">${tempo}</span></div>
-    ${l?`<div class="prod">${esc(l.p)}<small>${l.lote?'lote '+esc(l.lote)+' · ':''}OP ${esc(l.op)}${l.de?' · veio do '+esc(l.de):''}${l.data!==(DIA||D.hoje)?' · de '+l.data.slice(8,10)+'/'+l.data.slice(5,7):''}</small></div>
-    <div class="tiles"><div><span>Volume (L)</span><b>${nl(l.vol)}</b></div><div class="dest${atr?' atr':''}"><span>${s==='envasando'?'Envase até':'Pronto até'}</span><b>${esc(l.pronto)}</b></div><div><span>${s==='envasando'?'Máquina':'Vai para'}</span><b>${esc(s==='envasando'?(l.maqEnv||l.maq):l.maq)}</b></div></div>`
+    ${l?`<div class="prod">${esc(l.p)}<small>${l.saldo?`saldo de lote${l.lote?' · lote '+esc(l.lote):''}${l.mot?' · '+esc(l.mot):''}`:`${l.lote?'lote '+esc(l.lote)+' · ':''}OP ${esc(l.op)}`}${l.de?' · veio do '+esc(l.de):''}${l.data!==(DIA||D.hoje)?' · de '+l.data.slice(8,10)+'/'+l.data.slice(5,7):''}</small></div>
+    <div class="tiles">${l.saldo?`<div><span>Livre (L)</span><b>${nl(l.vol)}</b></div><div><span>Parado há</span><b>${l.dias==null?'—':l.dias+(l.dias===1?' dia':' dias')}</b></div><div><span>${s==='envasando'?'Máquina':'Vai para'}</span><b>${esc(s==='envasando'?(l.maqEnv||l.maq):l.maq)}</b></div></div>`:`<div><span>Volume (L)</span><b>${nl(l.vol)}</b></div><div class="dest${atr?' atr':''}"><span>${s==='envasando'?'Envase até':'Pronto até'}</span><b>${esc(l.pronto)}</b></div><div><span>${s==='envasando'?'Máquina':'Vai para'}</span><b>${esc(s==='envasando'?(l.maqEnv||l.maq):l.maq)}</b></div></div>`}`
     :`<div class="prod" style="color:var(--ink3)">—</div><div class="tiles"></div>`}
     <div class="acoes">${ck}${btn}${sub}</div>
     <div class="prox"><i>DEPOIS</i>${prox?`<b>${esc(prox.p)}</b> · ${nl(prox.vol)} L<span class="h">${esc(prox.pronto)}</span>`:'nada mais '+(ehAmanha()?'neste dia':'hoje')}</div></div>`;}
@@ -530,7 +569,7 @@ function topo(){
   $('dias').querySelectorAll('[data-ir]').forEach(b=>b.onclick=()=>{if(b.disabled)return;let n=(N&&N.tqOutroDia)?N.tqOutroDia(cur,+b.dataset.ir):cur;
     if(n<=hoje)n=hoje;DIA=n===hoje?null:n;atualiza();
     if(DIA)toast('Vendo '+nomeDia(DIA)+'. O que fizer aqui já vale para o lote desse dia.');});
-  {const s=dt.toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long'});document.querySelector('.top .hora small').textContent=s.charAt(0).toUpperCase()+s.slice(1);}
+  {const s=new Date().toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long'});document.querySelector('.top .hora small').textContent=s.charAt(0).toUpperCase()+s.slice(1);}
   $('relogio').textContent=hm(AGORA);
   const h=Math.floor(AGORA/60);$('sauda').textContent=(h<12?'Bom dia':h<18?'Boa tarde':'Boa noite')+(OPER?', '+OPER.split(' ')[0]:'')+'!';
   document.body.classList.toggle('vamh',!!DIA);
@@ -552,6 +591,7 @@ function acao(id,a){const t=T.find(x=>x.id===id);if(!t)return;const s=statusDe(t
   if(a==='retomar')return pedirPin(t.id+' · Retomar',pin=>exec(t,'retomar',pin));
   if(l&&l.pausa&&a!=='form'&&a!=='ana')return toast(t.id+' está pausado. Toque em Retomar.');
   if(!l)return toast('Sem lote neste tanque.');
+  if(l.saldo)return toast('Saldo de lote: o produto já está pronto no tanque. O envase puxa pelo PCP.');
   if(a==='form')return abrirForm(t,'sep');
   if(a==='ana'){if(!['analise','naolib','liberado','envasando'].includes(s))return toast('A análise é depois do descanso.');return abrirAna(t);}
   if(a==='pausar')return pausar(t);
@@ -716,17 +756,17 @@ function abrirDrawer(t,aba){const l=lote(t);const d=$('drawer');const s=statusDe
   const P=pulmao();const transf=l&&!t.pul&&(PRODUZIDO.includes(s)||s==='prep');const pode=transf&&P&&pulmaoLivre()&&l.vol<=P.cap&&!ehAmanha();
   const cur=DIA||(D&&D.hoje);
   /* próximos: o resto da fila do dia e o próximo dia de produção */
-  let px=[];try{if(D&&D.prox&&N.tqDados){const o=N.tqDados(D.prox).T.find(z=>z.id===t.id);px=o?o.fila:[];}}catch(e){}
+  let px=[];try{if(D&&D.prox&&N.tqDados){const o=N.tqDados(D.prox).T.find(z=>z.id===t.id);px=o?o.fila.filter(x=>!x.saldo):[];}}catch(e){}
   const prox=t.fila.slice(1),feit=t.feitos.slice().reverse();
   const todos=[...t.fila,...px,...t.feitos];
   const anaOk=l&&['analise','naolib','liberado','envasando','ajuste'].includes(s);
   const tile=(id,ic,cor,tit,sub,off)=>`<div class="dt ${off?'off':''}" id="${id}"><i class="dic ${cor}">${ic}</i><b>${tit}</b><small>${sub}</small></div>`;
   d.innerHTML=`<div class="dh"><b>${esc(t.id)}</b><small>${nl(t.cap)} L de capacidade${t.pul?' · pulmão':''} · ${esc(curtoDia(cur))}</small><span class="x" id="dX">×</span></div>
   <div class="dscroll">
-  ${l?`<div class="atual"><span class="mini ${(ST[s]||['cz'])[0]}">${esc((ST[s]||['',s])[1])}</span><b>${esc(l.p)}</b><small>${l.lote?'lote '+esc(l.lote)+' · ':''}OP ${esc(l.op)}${l.de?' · veio do '+esc(l.de):''}</small>
-    <div class="ag"><div><span>Volume</span><b>${nl(l.vol)} L</b></div><div><span>Pronto até</span><b>${esc(l.pronto)}</b></div><div><span>Vai para</span><b>${esc(l.maq)}</b></div></div></div>`:`<div class="atual"><b style="color:var(--ink3)">Sem lote agora</b></div>`}
+  ${l?`<div class="atual"><span class="mini ${(ST[s]||['cz'])[0]}">${esc((ST[s]||['',s])[1])}</span><b>${esc(l.p)}</b><small>${l.saldo?`saldo de lote${l.lote?' · lote '+esc(l.lote):''}${l.mot?' · '+esc(l.mot):''}`:`${l.lote?'lote '+esc(l.lote)+' · ':''}OP ${esc(l.op)}${l.de?' · veio do '+esc(l.de):''}`}</small>
+    ${l.saldo?`<div class="ag"><div><span>Livre</span><b>${nl(l.vol)} L</b></div><div><span>Parado há</span><b>${l.dias==null?'—':l.dias+(l.dias===1?' dia':' dias')}</b></div><div><span>Vai para</span><b>${esc(l.maq)}</b></div></div>`:`<div class="ag"><div><span>Volume</span><b>${nl(l.vol)} L</b></div><div><span>Pronto até</span><b>${esc(l.pronto)}</b></div><div><span>Vai para</span><b>${esc(l.maq)}</b></div></div>`}</div>`:`<div class="atual"><b style="color:var(--ink3)">Sem lote agora</b></div>`}
   <div class="dgrid">
-    ${tile('dF',IC.form,'agu','Formulação','separar MPs e modo de fazer',!l)}
+    ${tile('dF',IC.form,'agu','Formulação','separar MPs e modo de fazer',!l||l.saldo)}
     ${tile('dA',IC.ana,'apo','Análise',anaOk?'preencher e enviar':'depois do descanso',!anaOk)}
     ${tile('dH',IC.hl,'cz','Histórico','lote atual e os finalizados hoje',false)}
     ${t.pul?'':`<div class="dt ${pode?'':'off'}" id="dT"><i class="dic agu">${IC.pul}</i><b>Transferir para o pulmão</b><small>${!transf?'só lote com o preparo concluído':!pode?'pulmão ocupado agora':'leva o lote pronto e libera este tanque'}</small></div>`}
@@ -740,7 +780,7 @@ function abrirDrawer(t,aba){const l=lote(t);const d=$('drawer');const s=statusDe
   $('dX').onclick=fechaDrawer;$('sombra').onclick=fechaDrawer;
   d.querySelectorAll('[data-sg]').forEach(b=>b.onclick=()=>abrirDrawer(t,b.dataset.sg));
   ligaLinhas(d,todos);
-  $('dF').onclick=()=>{if(!l)return toast('Sem lote neste tanque.');fechaDrawer();abrirForm(t,'sep');};
+  $('dF').onclick=()=>{if(!l)return toast('Sem lote neste tanque.');if(l.saldo)return toast('Saldo de lote não tem formulação a fazer.');fechaDrawer();abrirForm(t,'sep');};
   $('dA').onclick=()=>{if(!anaOk)return toast('A análise é depois do descanso.');fechaDrawer();acao(t.id,'ana');};
   $('dH').onclick=()=>{fechaDrawer();abrirHistTq(t,l?'lote':'dia');};
   if($('dT'))$('dT').onclick=()=>{if(!pode)return toast(!transf?'Só dá para mandar ao pulmão o lote com o preparo concluído. Outras trocas são feitas pelo PCP.':'Pulmão ocupado agora.');
@@ -867,7 +907,10 @@ $('menuTop').onclick=()=>abrirGeral();
    Todo campo de texto da tela abre este teclado em vez do teclado do Android (inputmode="none").
    Campo numérico (peso, resultado) abre o teclado de números; os outros, letras e números. */
 const KB={el:null,sel:null};
-const KB_TXT=[['1','2','3','4','5','6','7','8','9','0'],['Q','W','E','R','T','Y','U','I','O','P'],['A','S','D','F','G','H','J','K','L','-'],['Z','X','C','V','B','N','M',',','.','/'],['ESPAÇO','⌫','OK']];
+/* v415: um teclado só para todos os campos (o peso e o lote usam o mesmo) */
+/* v417: 11 colunas — Ç ao lado do L, ? e os acentos (´ ~ ^ juntam com a próxima vogal: ´ + A = Á) */
+const KB_TXT=[['1','2','3','4','5','6','7','8','9','0','?'],['Q','W','E','R','T','Y','U','I','O','P','´'],['A','S','D','F','G','H','J','K','L','Ç','~'],['Z','X','C','V','B','N','M',',','.','-','^'],['⌫','ESPAÇO','OK']];
+const KB_ACENTO={'´':{A:'Á',E:'É',I:'Í',O:'Ó',U:'Ú'},'~':{A:'Ã',O:'Õ',N:'Ñ'},'^':{A:'Â',E:'Ê',O:'Ô'}};
 const KB_NUM=[['7','8','9'],['4','5','6'],['1','2','3'],[',','0','⌫'],['OK']];
 function kbMarca(){document.querySelectorAll('input:not([type=checkbox]):not([type=radio]):not([type=hidden]),textarea').forEach(i=>{
   if(i.dataset.kb)return;const im=(i.getAttribute('inputmode')||'').toLowerCase();
@@ -876,9 +919,9 @@ try{new MutationObserver(kbMarca).observe(document.body,{childList:true,subtree:
 const kbSeletor=el=>el.id?'#'+CSS.escape(el.id):[...el.attributes].filter(a=>/^data-(i|c|e|aj|ex|k)$/.test(a.name)).map(a=>`[${a.name}="${CSS.escape(a.value)}"]`).join('')||null;
 function kbPinta(){let k=$('kb');if(!k){k=document.createElement('div');k.id='kb';document.body.appendChild(k);
     k.addEventListener('pointerdown',ev=>{ev.preventDefault();const b=ev.target.closest('[data-kk]');if(b)kbTecla(b.dataset.kk);});}
-  const num=KB.el&&KB.el.dataset.kb==='num';const L=num?KB_NUM:KB_TXT;
+  const num=false;const L=KB_TXT;
   k.className='kb '+(num?'num':'txt')+(KB.el?' on':'');
-  k.innerHTML=`<div class="kbv"><span>${esc(KB.el?(KB.el.getAttribute('placeholder')||''):'')}</span><b>${esc(KB.el?KB.el.value:'')}</b></div>`+L.map(r=>`<div class="kbr">${r.map(x=>`<button type="button" data-kk="${esc(x)}" class="${x==='OK'?'ok':x==='⌫'?'bs':x==='ESPAÇO'?'sp':''}">${x==='⌫'?'⌫':esc(x)}</button>`).join('')}</div>`).join('');}
+  k.innerHTML=`<div class="kbv"><span>${esc(KB.el?(KB.el.getAttribute('placeholder')||''):'')}</span><b>${esc(KB.el?KB.el.value:'')}</b></div>`+L.map((r,ri)=>`<div class="kbr${ri===0?' nums':''}">${r.map(x=>`<button type="button" data-kk="${esc(x)}" class="${x==='OK'?'ok':x==='⌫'?'bs':x==='ESPAÇO'?'sp':KB_ACENTO[x]?'ac'+(KB.ac===x?' on':''):''}">${x==='⌫'?'⌫':x==='ESPAÇO'?'espaço':esc(x)}</button>`).join('')}</div>`).join('');}
 function kbAbre(el){KB.el=el;KB.sel=kbSeletor(el);document.body.classList.add('kbon');kbPinta();$('kb').classList.add('on');
   setTimeout(()=>{try{el.scrollIntoView({block:'center',behavior:'smooth'});}catch(e){}},30);}
 function kbFecha(){const el=KB.el;KB.el=null;const k=$('kb');if(k)k.classList.remove('on');document.body.classList.remove('kbon');
@@ -889,7 +932,9 @@ function kbTecla(x){const el=kbAlvo();if(!el)return kbFecha();
   const v=el.value,a=el.selectionStart??v.length,b=el.selectionEnd??v.length;
   let nv,pos;
   if(x==='⌫'){if(a!==b){nv=v.slice(0,a)+v.slice(b);pos=a;}else if(a>0){nv=v.slice(0,a-1)+v.slice(a);pos=a-1;}else return;}
-  else{const ch=x==='ESPAÇO'?' ':x;if(el.dataset.kb==='num'&&ch===','&&v.includes(','))return;nv=v.slice(0,a)+ch+v.slice(b);pos=a+ch.length;}
+  else if(KB_ACENTO[x]){KB.ac=KB.ac===x?null:x;kbPinta();return;}
+  else{let ch=x==='ESPAÇO'?' ':x;
+    if(KB.ac){const m=KB_ACENTO[KB.ac];ch=m[ch]||(KB.ac+ch);KB.ac=null;}if(el.dataset.kb==='num'&&ch===','&&v.includes(','))return;nv=v.slice(0,a)+ch+v.slice(b);pos=a+ch.length;}
   el.value=nv;try{el.setSelectionRange(pos,pos);}catch(e){}
   el.dispatchEvent(new Event('input',{bubbles:true}));
   const n=kbAlvo();if(n&&n!==el){try{n.focus();n.setSelectionRange(pos,pos);}catch(e){}}
