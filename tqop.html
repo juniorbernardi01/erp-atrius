@@ -448,6 +448,26 @@ body.kbon .modal.gen,body.kbon .modal{overflow-y:auto;padding-bottom:270px!impor
 :root[data-theme="light"] .kb button.ac{background:#EEF1F5!important;color:#334155!important}
 :root[data-theme="light"] .kb button.ac.on{background:#1D6FE8!important;color:#fff!important}
 
+/* v418: última linha ⌫ · espaço · ▾ (baixar o teclado) · OK; quadros do topo viram filtro */
+.kb button.sp{grid-column:span 6!important}
+.kb button.dn{background:#3A4558!important;font-size:22px!important}
+:root[data-theme="light"] .kb button.dn{background:#CBD2DC!important}
+.meta button.mt{font:inherit;text-align:left;color:var(--fg);cursor:pointer;border:2px solid transparent;background:var(--line2);border-radius:10px;padding:9px 10px}
+.meta .mt.fa{background:var(--line2)}
+.meta .mt.on{border-color:var(--fg)!important;box-shadow:0 0 0 3px rgba(29,111,232,.18)}
+.dfil{padding:12px 18px 2px;font-size:13px;color:var(--ink3);font-weight:600}
+.dfil button{border:0;background:transparent;color:var(--baz);font:700 13px var(--font);cursor:pointer;padding:0}
+
+/* v419: linha separada fica riscada e apagada; campo que falta pisca em vermelho */
+.t.form tr.okr td{opacity:.5}
+.t.form tr.okr td:first-child{text-decoration:line-through;text-decoration-thickness:2px}
+.t.form tr.okr td:last-child{opacity:1}
+.t.form tr.okr .in{background:transparent!important;border-color:transparent!important;color:var(--fg)!important}
+.in.falta{border-color:#DC2626!important;box-shadow:0 0 0 3px rgba(220,38,38,.25)!important}
+.fdica b{color:var(--fg)}
+
+/* v420: botão só com título (pulmão) fica centrado na altura */
+.dt b:last-child{grid-row:span 2;align-self:center}
 .pill.agu{background:#E8EFF9;color:#1B4F9C}:root[data-theme="dark"] .pill.agu{background:#1A2A4A;color:#93B4E8}
 
 </style>
@@ -505,7 +525,7 @@ const curtoDia=d=>DSEM[new Date(d+'T12:00:00').getDay()].replace('-feira','');
 function lote(t){return t.fila[0];}
 function statusDe(t){const l=lote(t);if(!l)return 'livre';if(l.pausa)return 'pausa';return l.st;}
 const sepDe=l=>{const r=RASC[l.k]||{};const it={};(l.mp||[]).forEach(m=>{const v=(r.itens&&r.itens[m.nome])||l.sep[m.nome]||{};it[m.nome]={lote:v.lote||l.lotesMP[m.nome]||'',kg:v.kg||'',ok:!!v.ok};});return it;};
-const sepOk=l=>{const it=sepDe(l);return Object.values(it).filter(v=>v.ok).length;};
+const sepOk=l=>Object.values(l.sep||{}).filter(v=>v&&v.ok).length;   /* v418: no cartão e no preparo conta só o que foi SALVO */
 const pausaMin=p=>p&&p.ini?Math.max(0,Math.round((Date.now()-p.ini)/60000)):0;
 
 /* ---------- cartão ---------- */
@@ -593,7 +613,7 @@ function acao(id,a){const t=T.find(x=>x.id===id);if(!t)return;const s=statusDe(t
   if(!l)return toast('Sem lote neste tanque.');
   if(l.saldo)return toast('Saldo de lote: o produto já está pronto no tanque. O envase puxa pelo PCP.');
   if(a==='form')return abrirForm(t,'sep');
-  if(a==='ana'){if(!['analise','naolib','liberado','envasando'].includes(s))return toast('A análise é depois do descanso.');return abrirAna(t);}
+  if(a==='ana'){if(!['analise','naolib','liberado','envasando'].includes(s))return toast(s==='descanso'?'A análise libera ao fim do descanso.':'Precisa finalizar o preparo antes da análise.');return abrirAna(t);}
   if(a==='pausar')return pausar(t);
   if(a==='prepIni'&&(l.mp||[]).length&&sepOk(l)<l.mp.length)return toast('Separe as '+(l.mp.length-sepOk(l))+' matérias-primas que faltam antes de iniciar o preparo.');
   if(a==='prepFim'){const n=(l.proc||[]).length;if(n&&l.passo<n)return toast('Marque todos os passos do Modo de Fazer antes de concluir.');
@@ -767,9 +787,9 @@ function abrirDrawer(t,aba){const l=lote(t);const d=$('drawer');const s=statusDe
     ${l.saldo?`<div class="ag"><div><span>Livre</span><b>${nl(l.vol)} L</b></div><div><span>Parado há</span><b>${l.dias==null?'—':l.dias+(l.dias===1?' dia':' dias')}</b></div><div><span>Vai para</span><b>${esc(l.maq)}</b></div></div>`:`<div class="ag"><div><span>Volume</span><b>${nl(l.vol)} L</b></div><div><span>Pronto até</span><b>${esc(l.pronto)}</b></div><div><span>Vai para</span><b>${esc(l.maq)}</b></div></div>`}</div>`:`<div class="atual"><b style="color:var(--ink3)">Sem lote agora</b></div>`}
   <div class="dgrid">
     ${tile('dF',IC.form,'agu','Formulação','separar MPs e modo de fazer',!l||l.saldo)}
-    ${tile('dA',IC.ana,'apo','Análise',anaOk?'preencher e enviar':'depois do descanso',!anaOk)}
-    ${tile('dH',IC.hl,'cz','Histórico','lote atual e os finalizados hoje',false)}
-    ${t.pul?'':`<div class="dt ${pode?'':'off'}" id="dT"><i class="dic agu">${IC.pul}</i><b>Transferir para o pulmão</b><small>${!transf?'só lote com o preparo concluído':!pode?'pulmão ocupado agora':'leva o lote pronto e libera este tanque'}</small></div>`}
+    ${tile('dA',IC.ana,'apo','Análise',anaOk?'preencher e enviar':s==='descanso'&&l&&l.ini?'libera às '+hm(min(l.ini)+(l.desc||0)):'precisa finalizar o preparo',!anaOk)}
+    ${tile('dH',IC.hl,'cz','Histórico','lote atual e finalizados do tanque no dia',false)}
+    ${t.pul?'':`<div class="dt ${pode?'':'off'}" id="dT"><i class="dic agu">${IC.pul}</i><b>Transferir para o pulmão</b></div>`}
   </div>
   ${seg([['prox','Próximos',prox.length+px.length],['conc','Concluídos',t.feitos.length]],aba)}
   <div class="dl${aba==='conc'?' conc':''}">${aba==='prox'
@@ -781,34 +801,40 @@ function abrirDrawer(t,aba){const l=lote(t);const d=$('drawer');const s=statusDe
   d.querySelectorAll('[data-sg]').forEach(b=>b.onclick=()=>abrirDrawer(t,b.dataset.sg));
   ligaLinhas(d,todos);
   $('dF').onclick=()=>{if(!l)return toast('Sem lote neste tanque.');if(l.saldo)return toast('Saldo de lote não tem formulação a fazer.');fechaDrawer();abrirForm(t,'sep');};
-  $('dA').onclick=()=>{if(!anaOk)return toast('A análise é depois do descanso.');fechaDrawer();acao(t.id,'ana');};
+  $('dA').onclick=()=>{if(!anaOk)return toast(s==='descanso'?'A análise libera ao fim do descanso.':'Precisa finalizar o preparo antes da análise.');fechaDrawer();acao(t.id,'ana');};
   $('dH').onclick=()=>{fechaDrawer();abrirHistTq(t,l?'lote':'dia');};
   if($('dT'))$('dT').onclick=()=>{if(!pode)return toast(!transf?'Só dá para mandar ao pulmão o lote com o preparo concluído. Outras trocas são feitas pelo PCP.':'Pulmão ocupado agora.');
     pedirPin('Transferir '+l.p+' para o pulmão',pin=>{fechaDrawer();exec(t,'pulmao',pin);});};}
 
 /* ---------- os 3 pontinhos do topo: o total de todos os tanques ---------- */
-function abrirGeral(aba){const d=$('drawer');aba=aba||'tq';
+function abrirGeral(fil){const d=$('drawer');fil=fil||'todos';
   const pend=[],conc=[];T.forEach(t=>{t.fila.forEach((x,i)=>pend.push({t,x,st:i===0?statusDe(t):''}));t.feitos.forEach(x=>conc.push({t,x}));});
   const sm=a=>a.reduce((s,o)=>s+(+o.x.vol||0),0);
-  const prod=pend.filter(o=>PRODUZIDO.includes(o.st)||o.st==='envasando');
+  const ehProd=st=>PRODUZIDO.includes(st)||st==='envasando';
+  const prod=pend.filter(o=>ehProd(o.st));
   const totL=sm(pend)+sm(conc),prodL=sm(prod)+sm(conc),concL=sm(conc);const noPrazo=conc.filter(o=>!(o.x.atr>0)).length;
   const cur=DIA||(D&&D.hoje)||ymd(new Date());
+  /* v418: tocar num quadro mostra só aquilo (Produzido, Concluído, Falta); Programado mostra tudo */
+  const vale=(feito,st)=>fil==='todos'||(fil==='conc'&&feito)||(fil==='prod'&&(feito||ehProd(st)))||(fil==='falta'&&!feito&&!ehProd(st));
   const blocos=T.map(t=>{const vp=t.fila.reduce((s,x)=>s+x.vol,0)+t.feitos.reduce((s,x)=>s+x.vol,0),vf=t.feitos.reduce((s,x)=>s+x.vol,0);const n=t.fila.length+t.feitos.length;
+    const fl=t.fila.map((x,i)=>({x,st:i===0?statusDe(t):''})).filter(o=>vale(false,o.st));const fe=t.feitos.slice().reverse().filter(()=>vale(true,''));
+    if(fil!=='todos'&&!fl.length&&!fe.length)return '';
     return `<div class="tqg"><div class="tqgh" data-tqa="${esc(t.id)}"><b>${esc(t.id)}</b><span>${t.feitos.length} de ${n} concluído${n===1?'':'s'} · ${nl(vf)} de ${nl(vp)} L</span><i class="gbar"><i style="width:${vp?vf/vp*100:0}%"></i></i><em>›</em></div>
-      ${t.fila.map((x,i)=>linhaLote(x,{st:i===0?statusDe(t):''})).join('')}${t.feitos.slice().reverse().map(x=>linhaLote(x,{feito:true})).join('')}${n?'':'<div class="vz">nada programado</div>'}</div>`;}).join('');
+      ${fl.map(o=>linhaLote(o.x,{st:o.st})).join('')}${fe.map(x=>linhaLote(x,{feito:true})).join('')}${n?'':'<div class="vz">nada programado</div>'}</div>`;}).join('')
+    ||`<div class="vz">${fil==='conc'?'Nenhum lote concluído':fil==='prod'?'Nenhum lote produzido':fil==='falta'?'Nada faltando':'Nada programado'} ${ehAmanha()?'neste dia':'hoje'}.</div>`;
   const lc=conc.slice().sort((a,b)=>String(b.x.h||'').localeCompare(String(a.x.h||'')));
   d.innerHTML=`<div class="dh"><b>Produção dos tanques</b><small>${esc(nomeDia(cur))} · todos os tanques</small><span class="x" id="dX">×</span></div>
   <div class="dscroll">
-  <div class="meta m4"><div class="mt"><span>Programado</span><b>${pend.length+conc.length}</b><small>${nl(totL)} L</small></div><div class="mt agu"><span>Produzido</span><b>${prod.length+conc.length}</b><small>${nl(prodL)} L</small></div><div class="mt ok"><span>Concluído</span><b>${conc.length}</b><small>${nl(concL)} L · ${noPrazo} no prazo</small></div><div class="mt"><span>Falta</span><b>${pend.length-prod.length}</b><small>${nl(totL-prodL)} L</small></div></div>
+  <div class="meta m4"><button type="button" class="mt ${fil==='todos'?'on':''}" data-fil="todos"><span>Programado</span><b>${pend.length+conc.length}</b><small>${nl(totL)} L</small></button><button type="button" class="mt agu ${fil==='prod'?'on':''}" data-fil="prod"><span>Produzido</span><b>${prod.length+conc.length}</b><small>${nl(prodL)} L</small></button><button type="button" class="mt ok ${fil==='conc'?'on':''}" data-fil="conc"><span>Concluído</span><b>${conc.length}</b><small>${nl(concL)} L · ${noPrazo} no prazo</small></button><button type="button" class="mt fa ${fil==='falta'?'on':''}" data-fil="falta"><span>Falta</span><b>${pend.length-prod.length}</b><small>${nl(totL-prodL)} L</small></button></div>
   <div class="dbar"><i style="width:${totL?concL/totL*100:0}%"></i><i class="p" style="width:${totL?(prodL-concL)/totL*100:0}%"></i></div>
   <div class="dleg"><span><i class="c"></i>concluído (envasado)</span><span><i class="p"></i>produzido, esperando o envase</span></div>
-  ${seg([['tq','Por tanque',T.length],['conc','Concluídos',conc.length]],aba)}
-  <div class="dl">${aba==='tq'?blocos:(lc.map(o=>linhaLote(o.x,{feito:true,tq:o.t.id})).join('')||`<div class="vz">Nenhum lote concluído ${ehAmanha()?'neste dia':'hoje'}.</div>`)}</div>
+  <div class="dfil">${fil==='todos'?'Tudo do dia, por tanque':fil==='prod'?'Só os produzidos (preparo pronto e concluídos)':fil==='conc'?'Só os concluídos (envasados)':'Só o que falta produzir'}${fil!=='todos'?' · <button type="button" data-fil="todos">mostrar tudo</button>':''}</div>
+  <div class="dl">${blocos}</div>
   <div class="dbtn"><div class="acao sec" id="dC">${IC.calc}Calculadora</div><div class="acao sec" id="dS">${IC.sair}Trocar de operador</div></div>
   </div>`;
   d.classList.add('on','larga');$('sombra').classList.add('on');
   $('dX').onclick=fechaDrawer;$('sombra').onclick=fechaDrawer;$('dC').onclick=()=>abrirCalc();$('dS').onclick=()=>{fechaDrawer();trava();};
-  d.querySelectorAll('[data-sg]').forEach(b=>b.onclick=()=>abrirGeral(b.dataset.sg));
+  d.querySelectorAll('[data-fil]').forEach(b=>b.onclick=()=>abrirGeral(fil===b.dataset.fil&&fil!=='todos'?'todos':b.dataset.fil));
   d.querySelectorAll('[data-tqa]').forEach(h=>h.onclick=()=>{const t=T.find(z=>z.id===h.dataset.tqa);if(t){d.classList.remove('larga');abrirDrawer(t);}});
   ligaLinhas(d,[...pend.map(o=>o.x),...conc.map(o=>o.x)]);}
 
@@ -824,7 +850,7 @@ function escolherMP(titulo,ok){let q='';const CAD=(N.tqInsumos&&N.tqInsumos())||
 /* ---------- formulação: separação, ajustes e Modo de Fazer ---------- */
 const ICALC='<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="5" y="2.5" width="14" height="19" rx="2.5"/><rect x="8" y="5.5" width="8" height="4" rx="1"/><path d="M8.5 13h.01M12 13h.01M15.5 13h.01M8.5 16.5h.01M12 16.5h.01M15.5 16.5h.01"/></svg>';
 function abrirForm(t,aba){const l=lote(t);if(!l)return toast('Sem lote neste tanque.');const f=$('fForm');const s=statusDe(t);const modoAj=s==='ajuste';
-  const r=RASC[l.k]||(RASC[l.k]={itens:sepDe(l),aj:{},ext:[]});
+  const r=RASC[l.k]||(RASC[l.k]={itens:sepDe(l),aj:{},ext:[],ini:null});if(!r.ini)r.ini=JSON.stringify([r.itens,r.aj,r.ext]);
   const pend=(l.ajPed||[]).map((a,i)=>({...a,i})).filter(a=>!a.lanc);
   const feitos=(l.ajPed||[]).filter(a=>a.lanc);
   const proc=l.proc||[];
@@ -836,15 +862,29 @@ function abrirForm(t,aba){const l=lote(t);if(!l)return toast('Sem lote neste tan
     ${feitos.map(a=>`<tr class="okr"><td>${esc(a.nome)}<small>ajuste lançado às ${esc(a.lanc.h||'')} · ${esc(a.lanc.q||'')}</small></td><td class="m">${nl(a.kg)} ${esc(a.un||'kg')}</td><td class="m">${esc(a.lanc.lote||'—')}</td><td class="m">${nl(a.lanc.kg)}</td><td><span class="ck on">✓</span></td></tr>`).join('')}
     ${r.ext.map((a,j)=>`<tr class="ajr"><td><b class="ajn">${esc(a.nome)}</b><small>MP de ajuste</small></td><td class="m">—</td><td><input class="in" data-ex="${j}" data-c="lote" value="${esc(a.lote||'')}" placeholder="lote"></td><td><input class="in" inputmode="decimal" data-ex="${j}" data-c="kg" value="${esc(a.kg||'')}" placeholder="kg"></td><td><span class="ck" data-exx="${j}" title="tirar">×</span></td></tr>`).join('')}
     ${modoAj||ehAmanha()?'':`<tr class="addr"><td colspan="5"><span class="addaj" id="fAj">+ MP de ajuste</span></td></tr>`}
-    </tbody></table><div class="fdica">Digite o lote e o peso de cada MP e toque no ✓. Pode separar enquanto o tanque enche.</div></div>
+    </tbody></table><div class="fdica">Para cada matéria-prima: digite o <b>lote</b> e o <b>peso que você separou</b> (o da balança) e toque no ✓. A linha fica riscada. Tocou errado? Toque no ✓ de novo para desfazer.</div></div>
     <div class="bf"><div class="acao sec ico" data-calc title="Calculadora">${ICALC}</div><span style="flex:1"></span><div class="acao ${modoAj?'mau':''}" id="fS">${modoAj?'Lançar ajuste':'Salvar separação'}</div></div></div>
   <div class="box"><h3>Modo de Fazer <span>${s==='prep'&&proc.length?'passo '+Math.min(l.passo+1,proc.length)+' de '+proc.length:'começa no Iniciar preparo'}</span></h3><div class="bb"><ol class="modo">${proc.map((p,i)=>`<li class="${i<l.passo?'feito':''}" data-p="${i}"><em>${i<l.passo?'✓':i+1}</em><div>${esc(p)}</div></li>`).join('')||'<li style="color:var(--ink3)">Sem modo de fazer cadastrado para este produto.</li>'}</ol></div></div></div>`;
-  f.classList.add('on');f.querySelector('#fX').onclick=()=>{f.classList.remove('on');desenha();};
+  f.classList.add('on');f.querySelector('#fX').onclick=()=>{
+    const sujo=JSON.stringify([r.itens,r.aj,r.ext])!==r.ini;
+    const sai=()=>{delete RASC[l.k];kbFecha();f.classList.remove('on');desenha();};
+    if(!sujo)return sai();
+    const m=modal(`<div class="mc prob"><div class="mh"><span><b>Sair sem salvar?</b><small>O que foi digitado na separação ainda não foi salvo.</small></span><span class="x" data-fechar>×</span></div>
+      <div class="libb"><div class="acao off" id="sxD" style="cursor:pointer">Sair sem salvar</div><span style="flex:1"></span><div class="acao fim" id="sxS">Salvar separação</div></div></div>`);
+    m.querySelector('#sxD').onclick=()=>{m.classList.remove('on');sai();};
+    m.querySelector('#sxS').onclick=()=>{m.classList.remove('on');f.querySelector('#fS').click();};};
   const nomes=(l.mp||[]).map(m=>m.nome);
   f.querySelectorAll('input[data-i]').forEach(e=>e.oninput=()=>{r.itens[nomes[+e.dataset.i]][e.dataset.c]=e.value;});
   f.querySelectorAll('input[data-aj]').forEach(e=>e.oninput=()=>{(r.aj[e.dataset.aj]||(r.aj[e.dataset.aj]={}))[e.dataset.c]=e.value;});
   f.querySelectorAll('input[data-ex]').forEach(e=>e.oninput=()=>{r.ext[+e.dataset.ex][e.dataset.c]=e.value;});
-  f.querySelectorAll('[data-k]').forEach(c=>c.onclick=()=>{const i=+c.dataset.k,v=r.itens[nomes[i]];if(!v.ok){if(!v.lote&&D&&D.rastro)return toast('Digite o lote da '+nomes[i]+' (rastreabilidade ligada).');if(!v.kg)v.kg=nl(l.mp[i].kg);}v.ok=!v.ok;abrirForm(t,aba);});
+  f.querySelectorAll('[data-k]').forEach(c=>c.onclick=()=>{const i=+c.dataset.k,v=r.itens[nomes[i]];if(!v.ok){
+      /* v419: o peso não é mais preenchido sozinho: o operador digita o que separou de verdade */
+      const foco=c2=>{const e=$('fForm').querySelector(`input[data-i="${i}"][data-c="${c2}"]`);if(e){e.classList.add('falta');e.focus();setTimeout(()=>e.classList.remove('falta'),1600);}};
+      if(!v.lote&&D&&D.rastro){toast('Digite o lote da '+nomes[i]+' antes do ✓.');return foco('lote');}
+      if(!String(v.kg||'').trim()){toast('Digite o peso que você separou de '+nomes[i]+' antes do ✓.');return foco('kg');}}
+    v.ok=!v.ok;
+    const kb=!!KB.on;abrirForm(t,aba);
+    if(kb){const nx=[...$('fForm').querySelectorAll('input[data-i]')].find(e=>!e.disabled&&!e.value);if(nx)nx.focus();}});
   f.querySelectorAll('[data-akj]').forEach(c=>c.onclick=()=>{const v=r.aj[c.dataset.akj]||(r.aj[c.dataset.akj]={});if(!v.ok&&(!v.kg||(D&&D.rastro&&!v.lote)))return toast(D&&D.rastro?'Preencha o lote e o peso do ajuste.':'Preencha o peso do ajuste.');v.ok=!v.ok;abrirForm(t,aba);});
   f.querySelectorAll('[data-exx]').forEach(c=>c.onclick=()=>{r.ext.splice(+c.dataset.exx,1);abrirForm(t,aba);});
   if(f.querySelector('#fAj'))f.querySelector('#fAj').onclick=()=>escolherMP('MP de ajuste',x=>{r.ext.push({nome:x.nome,sku:x.sku,lote:'',kg:''});abrirForm(t,aba);});
@@ -909,7 +949,7 @@ $('menuTop').onclick=()=>abrirGeral();
 const KB={el:null,sel:null};
 /* v415: um teclado só para todos os campos (o peso e o lote usam o mesmo) */
 /* v417: 11 colunas — Ç ao lado do L, ? e os acentos (´ ~ ^ juntam com a próxima vogal: ´ + A = Á) */
-const KB_TXT=[['1','2','3','4','5','6','7','8','9','0','?'],['Q','W','E','R','T','Y','U','I','O','P','´'],['A','S','D','F','G','H','J','K','L','Ç','~'],['Z','X','C','V','B','N','M',',','.','-','^'],['⌫','ESPAÇO','OK']];
+const KB_TXT=[['1','2','3','4','5','6','7','8','9','0','?'],['Q','W','E','R','T','Y','U','I','O','P','´'],['A','S','D','F','G','H','J','K','L','Ç','~'],['Z','X','C','V','B','N','M',',','.','-','^'],['⌫','ESPAÇO','▾','OK']];
 const KB_ACENTO={'´':{A:'Á',E:'É',I:'Í',O:'Ó',U:'Ú'},'~':{A:'Ã',O:'Õ',N:'Ñ'},'^':{A:'Â',E:'Ê',O:'Ô'}};
 const KB_NUM=[['7','8','9'],['4','5','6'],['1','2','3'],[',','0','⌫'],['OK']];
 function kbMarca(){document.querySelectorAll('input:not([type=checkbox]):not([type=radio]):not([type=hidden]),textarea').forEach(i=>{
@@ -921,13 +961,13 @@ function kbPinta(){let k=$('kb');if(!k){k=document.createElement('div');k.id='kb
     k.addEventListener('pointerdown',ev=>{ev.preventDefault();const b=ev.target.closest('[data-kk]');if(b)kbTecla(b.dataset.kk);});}
   const num=false;const L=KB_TXT;
   k.className='kb '+(num?'num':'txt')+(KB.el?' on':'');
-  k.innerHTML=`<div class="kbv"><span>${esc(KB.el?(KB.el.getAttribute('placeholder')||''):'')}</span><b>${esc(KB.el?KB.el.value:'')}</b></div>`+L.map((r,ri)=>`<div class="kbr${ri===0?' nums':''}">${r.map(x=>`<button type="button" data-kk="${esc(x)}" class="${x==='OK'?'ok':x==='⌫'?'bs':x==='ESPAÇO'?'sp':KB_ACENTO[x]?'ac'+(KB.ac===x?' on':''):''}">${x==='⌫'?'⌫':x==='ESPAÇO'?'espaço':esc(x)}</button>`).join('')}</div>`).join('');}
-function kbAbre(el){KB.el=el;KB.sel=kbSeletor(el);document.body.classList.add('kbon');kbPinta();$('kb').classList.add('on');
+  k.innerHTML=`<div class="kbv"><span>${esc(KB.el?(KB.el.getAttribute('placeholder')||''):'')}</span><b>${esc(KB.el?KB.el.value:'')}</b></div>`+L.map((r,ri)=>`<div class="kbr${ri===0?' nums':''}">${r.map(x=>`<button type="button" data-kk="${esc(x)}" class="${x==='OK'?'ok':x==='⌫'?'bs':x==='ESPAÇO'?'sp':x==='▾'?'dn':KB_ACENTO[x]?'ac'+(KB.ac===x?' on':''):''}">${x==='⌫'?'⌫':x==='ESPAÇO'?'espaço':esc(x)}</button>`).join('')}</div>`).join('');}
+function kbAbre(el){KB.on=true;KB.el=el;KB.sel=kbSeletor(el);document.body.classList.add('kbon');kbPinta();$('kb').classList.add('on');
   setTimeout(()=>{try{el.scrollIntoView({block:'center',behavior:'smooth'});}catch(e){}},30);}
-function kbFecha(){const el=KB.el;KB.el=null;const k=$('kb');if(k)k.classList.remove('on');document.body.classList.remove('kbon');
+function kbFecha(){KB.on=false;KB.ac=null;const el=KB.el;KB.el=null;const k=$('kb');if(k)k.classList.remove('on');document.body.classList.remove('kbon');
   if(el&&document.contains(el)){el.dispatchEvent(new Event('change',{bubbles:true}));el.blur();}}
 function kbAlvo(){if(KB.el&&document.contains(KB.el))return KB.el;if(KB.sel){const n=document.querySelector(KB.sel);if(n){KB.el=n;return n;}}return null;}
-function kbTecla(x){const el=kbAlvo();if(!el)return kbFecha();
+function kbTecla(x){if(x==='▾'||x==='OK')return kbFecha();const el=kbAlvo();if(!el)return;   /* v418: sem campo, o teclado fica; só fecha no OK ou na setinha */
   if(x==='OK')return kbFecha();
   const v=el.value,a=el.selectionStart??v.length,b=el.selectionEnd??v.length;
   let nv,pos;
@@ -940,7 +980,8 @@ function kbTecla(x){const el=kbAlvo();if(!el)return kbFecha();
   const n=kbAlvo();if(n&&n!==el){try{n.focus();n.setSelectionRange(pos,pos);}catch(e){}}
   kbPinta();}
 document.addEventListener('focusin',ev=>{const t=ev.target;if(t&&t.matches&&t.matches('input,textarea')&&!(t.dataset&&t.dataset.kb))kbMarca();if(t&&t.dataset&&t.dataset.kb&&!t.disabled&&!t.readOnly)kbAbre(t);});
-document.addEventListener('pointerdown',ev=>{if(!KB.el)return;const t=ev.target;if(t.closest&&(t.closest('#kb')||(t.dataset&&t.dataset.kb)))return;kbFecha();},true);
+/* v418: tocar fora não fecha o teclado (só o OK ou a setinha). Fecha sozinho quando a janela em que se digitava fecha. */
+setInterval(()=>{if(KB.on&&!document.querySelector('.full.on,.modal.on,.drawer.on'))kbFecha();},400);
 kbMarca();
 /* à meia-noite volta para hoje; a cada 20 s refaz (os tempos andam) */
 setInterval(()=>{if(DIA&&DIA<=ymd(new Date()))DIA=null;if(!document.querySelector('.modal.on,.full.on'))atualiza();else{carrega();topo();}},20000);
