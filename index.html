@@ -5469,7 +5469,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v406';
+const VERSAO_APP='v407';
 let DRAG=null;
 function render(){
   recomporTudo();
@@ -22250,11 +22250,11 @@ function csFinMostrar(){
   }
   if(f.dataset.emb){delete f.dataset.emb;f.removeAttribute('srcdoc');}
   const atual=f.getAttribute('src')||'';
-  if(atual.split('#')[0].split('?')[0]!==arq){let h=FIN_PAG;try{const g=JSON.parse(sessionStorage.getItem('erp.rotaMod')||'null');if(g&&g.mod===MOD_ATUAL&&String(g.h||'').split(/[/?&]/)[0]===FIN_PAG)h=g.h;sessionStorage.removeItem('erp.rotaMod');}catch(e){}f.setAttribute('src',arq+'#'+h);}
+  if(atual.split('#')[0].split('?')[0]!==arq){let h=FIN_PAG;try{const g=window.CS_RM_FEITO?null:JSON.parse(sessionStorage.getItem('erp.rotaMod')||'null');window.CS_RM_FEITO=true;if(g&&g.mod===MOD_ATUAL&&String(g.h||'').split(/[/?&]/)[0]===FIN_PAG)h=g.h;sessionStorage.removeItem('erp.rotaMod');}catch(e){}f.setAttribute('src',arq+'#'+h);}
   /* v305: só manda o módulo para outra página quando o menu mudou a página; o
      redesenho de sempre não mexe (antes jogava a OC em edição de volta para a lista) */
-  else if(f.dataset.pag!==FIN_PAG){f.dataset.pag=FIN_PAG;
-    try{const h=String(f.contentWindow.location.hash||'').slice(1).split(/[/?&]/)[0];if(h!==FIN_PAG)f.contentWindow.location.hash='#'+FIN_PAG;}
+  else if(f.dataset.pag!==FIN_PAG||window.CS_FIN_FORCA){f.dataset.pag=FIN_PAG;const forca=!!window.CS_FIN_FORCA;window.CS_FIN_FORCA=false;
+    try{const hh=String(f.contentWindow.location.hash||'').slice(1),h=hh.split(/[/?&]/)[0];if(h!==FIN_PAG||(forca&&hh!==FIN_PAG))f.contentWindow.location.hash='#'+FIN_PAG;}
     catch(e){f.setAttribute('src',arq+'#'+FIN_PAG);}
   }
 }
@@ -29730,7 +29730,8 @@ input.cs-hora{font:700 18px ui-monospace,Menlo,monospace!important;letter-spacin
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236B7280' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 7v5l3 2'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 9px center}
 input.cs-hora.ruim{border-color:#DC2626!important;color:#DC2626}
 .cs-hora-dica{font-size:11px;color:var(--ink3);margin-top:4px}`;document.head.appendChild(s);}catch(e){}})();
-const csHoraFmt=v=>{const d=String(v||'').replace(/\D/g,'').slice(0,4);if(!d)return '';if(d.length<=2)return d;return d.slice(0,2)+':'+d.slice(2);};
+/* v407: 500 → 5:00, 0500 → 05:00, 1230 → 12:30 (o blur completa para 05:00) */
+const csHoraFmt=v=>{const d=String(v||'').replace(/\D/g,'').slice(0,4);if(!d)return '';if(d.length<=2)return d;return d.slice(0,d.length-2)+':'+d.slice(-2);};
 const csHoraOk=v=>{const m=/^(\d{1,2}):(\d{2})$/.exec(String(v||''));if(!m)return false;return +m[1]<=23&&+m[2]<=59;};
 /* próximo horário livre da máquina no dia: depois da última OP (previsto encadeado), nunca antes da abertura; hoje nunca antes de agora */
 function csProxLivreMaq(maq,data){
@@ -29748,7 +29749,7 @@ function csLigaHora(){
   i.classList.add('cs-hora');i.setAttribute('inputmode','numeric');i.setAttribute('placeholder','hh:mm');i.setAttribute('maxlength','5');i.removeAttribute('step');
   let ult=csHoraOk(i.value)?i.value:'';
   i.addEventListener('input',()=>{const f=csHoraFmt(i.value);if(f!==i.value)i.value=f;i.classList.toggle('ruim',i.value.length===5&&!csHoraOk(i.value));if(csHoraOk(i.value)){ult=i.value;try{calc();}catch(e){}}});
-  i.addEventListener('blur',()=>{let v=i.value;if(/^\d{1,2}$/.test(v))v=v.padStart(2,'0')+':00';if(/^\d{2}:\d$/.test(v))v=v+'0';
+  i.addEventListener('blur',()=>{let v=i.value;if(/^\d{1,2}$/.test(v))v=v.padStart(2,'0')+':00';if(/^\d:\d{2}$/.test(v))v='0'+v;if(/^\d{2}:\d$/.test(v))v=v+'0';
     if(!csHoraOk(v)){v=ult;}i.value=v;i.classList.remove('ruim');try{calc();}catch(e){}});
   i.addEventListener('keydown',ev=>{if(ev.key!=='ArrowUp'&&ev.key!=='ArrowDown')return;ev.preventDefault();
     const m=csHoraOk(i.value)?hm(i.value):hm(ult||'07:00');const n=Math.max(0,Math.min(23*60+59,m+(ev.key==='ArrowUp'?5:-5)-(ev.key==='ArrowUp'?m%5:(m%5?m%5-5:0))));
@@ -30168,7 +30169,7 @@ try{csNucleo.versao='v392';}catch(e){}
 try{csNucleo.versao='v393';}catch(e){}
 </script>
 <script>
-try{csNucleo.versao='v406';}catch(e){}
+try{csNucleo.versao='v407';}catch(e){}
 </script>
 <script>/* =====================================================================
    v398 — PÁGINA TANQUES NO LAYOUT NOVO
@@ -31119,6 +31120,10 @@ function csTqOutroDia(d,dir){
 try{csNucleo.tqOutroDia=(d,dir)=>csTqOutroDia(d,dir);
   const _td405=csNucleo.tqDados;csNucleo.tqDados=function(dia){const r=_td405.apply(this,arguments);try{r.rastro=!!CS_RASTRO.producao;r.prox=csTqOutroDia(r.dia,1);r.ant=csTqOutroDia(r.dia,-1);}catch(e){}return r;};}catch(e){}
 
+</script>
+<script>
+/* v407: clicar no menu abre a página pedida do módulo (não a sub-tela em que estava, como a ficha do vendedor) */
+try{const _ir407=csIr;csIr=function(p){if(p&&p.fin&&!p.acao)window.CS_FIN_FORCA=true;return _ir407.apply(this,arguments);};}catch(e){}
 </script>
 </body>
 </html>

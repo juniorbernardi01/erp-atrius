@@ -312,7 +312,11 @@ function grava(k,v){const st=ED,p=k.split('|');
     if(!v){delete x[T][m];if(Sx&&x[Sx])delete x[Sx][m];}}
   else if(p[0]==='p'){const x=st.PR.find(y=>y.c===p[1]);if(p.length===3)x[p[2]]=v;else{const o=x[p[2]];if(v==null)delete o[p[3]];else o[p[3]]=v;const T={s:'t',rs:'rt'}[p[2]];if(T&&v!=null&&x[T][p[3]]==null)x[T][p[3]]=null;}}}
 function desenha(){nav();$('pn').innerHTML=({tanques:pgTanques,sopro:pgSopro,rotulo:pgRotulo}[SEC]||pgTanques)();liga();}
+const hmFmt=v=>{const d=String(v||'').replace(/\D/g,'').slice(0,4);if(d.length<=2)return d;return d.slice(0,d.length-2)+':'+d.slice(-2);};
+const ehHM=k=>/^p\|[^|]+\|(t|rt)\|/.test(String(k||''));
 function liga(){const pn=$('pn');
+  pn.querySelectorAll('.ni').forEach(e=>{if(!ehHM(e.dataset.k))return;e.setAttribute('placeholder',e.getAttribute('placeholder')||'h:mm');
+    e.addEventListener('input',()=>{if(/[^0-9:]/.test(e.value)&&!/,/.test(e.value))return;const f=hmFmt(e.value);if(f!==e.value){e.value=f;try{e.setSelectionRange(f.length,f.length);}catch(x){}}});});
   const on=(id,f)=>{const b=$(id);if(b)b.onclick=f;};
   on('bEd',()=>{ED=clone({GR,PR,TQ,FR});desenha();const f=pn.querySelector('.ni');if(f)f.focus();});
   on('bCan',()=>{ED=null;desenha();toast('Edição cancelada');});
