@@ -1129,7 +1129,7 @@ function telaMotivos(){
   /* 08/10: motivo novo para quem já tinha a lista */
   if(!DB.motivosCob.some(m=>/cheque em prazo/i.test(m.nome||''))){DB.motivosCob.push({id:uid(),nome:'Cheque em prazo de compensação',uso:'Exclusão do relatório',ativo:true});salvar();}
   const l=ordena(DB.motivosCob,(b,k)=>semAc(b[k]||''));
-  $('app').innerHTML=`<div class="migalha">Cadastros › Financeiro › Motivos das cobranças</div>
+  $('app').innerHTML=`<div class="migalha">Configurações › Financeiro › Gestão de cobranças</div>
   <div class="topo"><h1>Motivos das cobranças</h1><span class="salvo"></span>${ed?'<button class="btn pri" id="mNb">＋ Novo motivo</button>':''}</div>
   <div class="rolx">${l.length?`<table class="tv"><thead><tr><th style="width:34px"></th>${th('nome','Motivo')}${th('uso','Onde aparece')}<th>Observação</th><th>Situação</th></tr></thead><tbody>
   ${l.map(b=>`<tr data-mo="${b.id}"><td><button class="dots" data-mom="${b.id}">⋯</button></td><td><b>${esc(b.nome)}</b></td><td>${esc(b.uso||'—')}</td><td>${esc(b.obs||'—')}</td><td>${b.ativo===false?'<span class="k">inativo</span>':'ativo'}</td></tr>`).join('')}</tbody></table>`:'<div class="vazio">Nenhum motivo cadastrado.</div>'}</div>

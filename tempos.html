@@ -112,6 +112,8 @@ table.tt{width:100%;border-collapse:collapse;font-size:13px}
 .cmp .bx ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:3px}
 .breve-bx{padding:22px 18px;color:var(--ink3);font-size:13px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+tr.nusa td{color:var(--ink4,#98A2B3)}tr.nusa td b{color:var(--ink3,#667085)}tr.nusa .nr{font-style:italic;text-align:left}
 </style>
 
 <style>
@@ -181,7 +183,7 @@ body{background:#fff}.pg{padding-block:22px 40px}
 </style>
 </head><body>
 <div class="pg">
-  <div class="migalha">PCP › Configurações › <b>Tempos de processo</b></div>
+  <div class="migalha">Configurações › Produção › <b>Tempos de processo</b></div>
   <h1>Tempos de processo</h1>
   <div class="sub">Todos os tempos que a programação usa. Os itens vêm do cadastro; aqui se coloca só o tempo.</div>
   <div class="grd" style="margin-top:16px">
@@ -200,7 +202,8 @@ const MAQ=D0.maquinas,ROT=D0.rotuladoras.map(r=>r.id),ROTN=Object.fromEntries(D0
 let TQ=D0.tanques.map(t=>({id:t.id,cap:+t.cap||0,ench:+t.ench||0,pul:!!t.pul,novo:!!t.novo}));
 let GR={};D0.grupos.forEach(g=>{const v=D0.granel[g]||{};const temDesc=v.temDesc!=null?!!v.temDesc:(+v.descanso>0);const tq={};
   TQ.forEach(t=>{const x=(v.tq&&v.tq[t.id])||{};tq[t.id]={limp:x.limp!=null?+x.limp:(v.limpeza!=null?+v.limpeza:null),prep:x.prep!=null?+x.prep:(t.pul?0:(v.fabricacao!=null?+v.fabricacao:null)),desc:x.desc!=null?+x.desc:(temDesc&&+v.descanso?+v.descanso:null)};});
-  GR[g]={limpMesmo:!!v.limpMesmo,temDesc,tq,novo:!D0.granel[g]};});
+  const usa={};TQ.forEach(t=>{usa[t.id]=!(v.tqUsa&&v.tqUsa[t.id]===false);});
+  GR[g]={limpMesmo:!!v.limpMesmo,temDesc,tq,usa,novo:!D0.granel[g]};});
 let PR=D0.produtos.map(p=>{const tp=D0.tempos[p.codigo]||{};const t={...(tp.t||{})};const s={};Object.keys(t).forEach(m=>s[m]=(tp.s&&tp.s[m]!=null)?+tp.s[m]:(tp.setup!=null?+tp.setup:SETUP_PAD));
   return {c:p.codigo,d:p.descricao,g:p.tanque,lote:tp.lote||null,l:+p.litragem||0,u:+p.un_cx||0,t,s,sm:!!tp.sm,rt:{...(tp.rt||{})},rs:{...(tp.rs||{})},rsm:!!tp.rsm};});
 let FR={};D0.frascos.forEach(f=>FR[f.id]={gr:f.gramatura,s:Object.fromEntries(SOP.map(x=>[x.id,(f.cadSop&&f.cadSop[x.id]!==undefined)?f.cadSop[x.id]:(+x.cad||null)]))});
@@ -224,7 +227,7 @@ const ni=(k,v,ph,w,livre)=>`<input class="ni ${!livre&&(v==null||v==='')?'vz':''
 const tg=(k,on)=>`<span class="tg" role="switch" tabindex="0" aria-checked="${on}" data-tg="${esc(k)}"><span class="${on?'':'on'}">não</span><span class="${on?'on':''}">sim</span></span>`;
 const simNao=v=>v?'<span class="pill ok">sim</span>':'<span class="pill cz">não</span>';
 const vz=v=>v==null?'<span class="pill w">sem tempo</span>':dur(v);
-function pendG(g,st){st=st||{GR,PR};const x=st.GR[g];let n=0;Object.values(x.tq).forEach(t=>{if(t.limp==null)n++;if(t.prep==null)n++;if(x.temDesc&&t.desc==null)n++;});st.PR.filter(p=>p.g===g).forEach(p=>{if(!p.lote||!Object.keys(p.t).length)n++;});return n;}
+function pendG(g,st){st=st||{GR,PR};const x=st.GR[g];let n=0;Object.entries(x.tq).forEach(([id,t])=>{if(x.usa&&x.usa[id]===false)return;if(t.limp==null)n++;if(t.prep==null)n++;if(x.temDesc&&t.desc==null)n++;});st.PR.filter(p=>p.g===g).forEach(p=>{if(!p.lote||!Object.keys(p.t).length)n++;});return n;}
 const pendTE=()=>GRUPOS.filter(g=>pendG(g)).length;
 /* ---------- navegação ---------- */
 const SECS=[['tanques','Tanques e envase','por produto mãe','var(--c-prep)'],['sopro','Sopro','frascos por hora','#0F766E'],['rotulo','Rotulagem','frascos por hora','#9333EA']];
@@ -253,7 +256,7 @@ function pgTanques(){const st=S(),e=!!ED,g=st.GR[SEL],fs=st.PR.filter(p=>p.g===S
   const n=pendG(SEL,st);const t0=st.TQ[0];
   const c=(k,v)=>e?`<td class="n">${ni(k,v)}<span class="un">min</span></td>`:`<td class="n vt">${vz(v)}</td>`;
   /* blocos: média de cada etapa nos tanques (sem o pulmão) e no envase (produtos × máquinas) */
-  const tqR=st.TQ.filter(t=>!t.pul);const med=l=>{l=l.filter(v=>v!=null);return l.length?{m:l.reduce((a,b)=>a+b,0)/l.length,lo:Math.min(...l),hi:Math.max(...l),n:l.length}:null;};
+  const usaT=t=>!(g.usa&&g.usa[t.id]===false);const tqR=st.TQ.filter(t=>!t.pul&&usaT(t));const med=l=>{l=l.filter(v=>v!=null);return l.length?{m:l.reduce((a,b)=>a+b,0)/l.length,lo:Math.min(...l),hi:Math.max(...l),n:l.length}:null;};
   const mL=med(tqR.map(t=>g.tq[t.id].limp)),mE=med(tqR.map(t=>t.ench)),mP=med(tqR.map(t=>g.tq[t.id].prep)),mD=g.temDesc?med(tqR.map(t=>g.tq[t.id].desc)):null;
   const mV=med(fs.flatMap(p=>MAQ.filter(m=>p.t[m]!=null).map(m=>p.t[m]+(p.s[m]??SETUP_PAD))));
   const falta=!mL||!mP||!mV||(g.temDesc&&!mD);const tot=[mL,mE,mP,mD,mV].reduce((a,x)=>a+(x?x.m:0),0);
@@ -265,8 +268,11 @@ function pgTanques(){const st=S(),e=!!ED,g=st.GR[SEL],fs=st.PR.filter(p=>p.g===S
   <div class="sec"><div class="sech"><h3><i style="background:var(--c-prep)"></i>No tanque</h3><p>Tempo de cada etapa em cada tanque. O enchimento é do tanque e vale para todos os produtos.</p></div>
     <div class="chaves"><div class="ch"><div class="tt2"><i style="background:var(--c-limp)"></i><div>Mesmo produto no tanque<small>o lote anterior foi igual: limpa de novo?</small></div></div>${e?tg('g|limpMesmo',g.limpMesmo):simNao(g.limpMesmo)}</div>
       <div class="ch"><div class="tt2"><i style="background:var(--c-desc)"></i><div>Descanso<small>${g.temDesc?'tempo em cada tanque, na tabela':'este produto não descansa'}</small></div></div>${e?tg('g|temDesc',g.temDesc):simNao(g.temDesc)}</div></div>
-    <div class="rol"><table class="tt"><thead><tr><th>Tanque</th><th class="n">Capacidade</th><th class="n sep">Limpeza</th><th class="n">Enchimento<small>do tanque</small></th><th class="n">Preparo</th>${g.temDesc?'<th class="n">Descanso</th>':''}<th class="n sep">Pronto em</th></tr></thead><tbody>
-    ${tqs.map((t,i)=>{const x=g.tq[t.id];return `<tr><td><b>${t.id}</b>${t.novo?'<span class="tag-n">novo</span>':''}${t.pul?'<small style="display:block;color:var(--ink3);font-size:11.5px">recebe o lote pronto por transferência</small>':''}</td><td class="n m">${nf(t.cap)} L</td>${c(`q|${t.id}|limp`,x.limp).replace('<td class="n','<td class="n sep')}${e?`<td class="n">${ni('t|'+i,t.ench)}<span class="un">min</span></td>`:`<td class="n vt">${dur(t.ench)}</td>`}${c(`q|${t.id}|prep`,x.prep)}${g.temDesc?c(`q|${t.id}|desc`,x.desc):''}<td class="n sep vt"><b>${dur(pronto(t))}</b></td></tr>`;}).join('')}</tbody></table></div>
+    <div class="rol"><table class="tt"><thead><tr><th>Tanque</th><th class="c">Usa<small>este produto</small></th><th class="n">Capacidade</th><th class="n sep">Limpeza</th><th class="n">Enchimento<small>do tanque</small></th><th class="n">Preparo</th>${g.temDesc?'<th class="n">Descanso</th>':''}<th class="n sep">Pronto em</th></tr></thead><tbody>
+    ${tqs.map((t,i)=>{const x=g.tq[t.id];const u=usaT(t);const usa=`<td class="c">${e?tg('u|'+t.id,u):simNao(u)}</td>`;
+      const nome=`<td><b>${t.id}</b>${t.novo?'<span class="tag-n">novo</span>':''}${t.pul?'<small style="display:block;color:var(--ink3);font-size:11.5px">recebe o lote pronto por transferência</small>':''}</td>`;
+      if(!u)return `<tr class="nusa">${nome}${usa}<td class="n m">${nf(t.cap)} L</td><td class="sep nr" colspan="${g.temDesc?5:4}">este produto não é feito neste tanque</td></tr>`;
+      return `<tr>${nome}${usa}<td class="n m">${nf(t.cap)} L</td>${c(`q|${t.id}|limp`,x.limp).replace('<td class="n','<td class="n sep')}${e?`<td class="n">${ni('t|'+i,t.ench)}<span class="un">min</span></td>`:`<td class="n vt">${dur(t.ench)}</td>`}${c(`q|${t.id}|prep`,x.prep)}${g.temDesc?c(`q|${t.id}|desc`,x.desc):''}<td class="n sep vt"><b>${dur(pronto(t))}</b></td></tr>`;}).join('')}</tbody></table></div>
     ${st.TQ.some(t=>t.novo)?'<div class="aviso2">O <b>PULMÃO</b> (4.600 L) entra no Cadastro de tanques ao subir esta versão. No pulmão, "enchimento" é o tempo da transferência.</div>':''}</div>
   <div class="sec"><div class="sech"><h3><i style="background:var(--c-env)"></i>No envase</h3><p>Lote padrão e, em cada máquina, setup + tempo para envasar o lote padrão. Lote de outro tamanho: tempo proporcional.${e?' Máquina em branco = o produto não roda nela.':''}</p></div>
     <div class="rol"><table class="tt">${cabMaq(MAQ,e,1)}<tbody>
@@ -293,6 +299,7 @@ function pgRotulo(){const st=S(),e=!!ED;const gs=[...new Set(st.PR.map(p=>p.g))]
 function grava(k,v){const st=ED,p=k.split('|');
   if(p[0]==='g')st.GR[SEL][p[1]]=v;
   else if(p[0]==='q')st.GR[SEL].tq[p[1]][p[2]]=v;
+  else if(p[0]==='u')st.GR[SEL].usa[p[1]]=v;
   else if(p[0]==='t')st.TQ[+p[1]].ench=v;
   else if(p[0]==='f')st.FR[p[1]].s[p[2]]=v;
   else if(p[0]==='p'){const x=st.PR.find(y=>y.c===p[1]);if(p.length===3)x[p[2]]=v;else{const o=x[p[2]];if(v==null)delete o[p[3]];else o[p[3]]=v;const T={s:'t',rs:'rt'}[p[2]];if(T&&v!=null&&x[T][p[3]]==null)x[T][p[3]]=null;}}}

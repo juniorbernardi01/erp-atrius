@@ -5469,7 +5469,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v403';
+const VERSAO_APP='v405';
 let DRAG=null;
 function render(){
   recomporTudo();
@@ -14561,6 +14561,9 @@ function abrirLote(b){
       toast(`Falta medir: ${a.pend.join(', ')}.`,true);
       return;
     }
+    /* v405 · Rastreabilidade ligada: toda matéria-prima do lote precisa do lote do insumo */
+    try{if(CS_RASTRO.producao){const lm=(APONTA[b.chave]||{}).lotesMP||{};const sem=mpDoLote(b).filter(x=>!(String(lm[x.nome]||'').trim()));
+      if(sem.length){toast(`Rastreabilidade: falta o lote de ${sem.map(x=>x.nome).join(', ')}.`,true);return;}}}catch(e){}
     /* A observação passou a ser exigida só quando há o que explicar. Lote
        que deu tudo conforme e seguiu a fórmula não tem história para
        contar, e obrigar a escrever nesse caso só ensina a digitar "ok" —
@@ -15911,6 +15914,8 @@ const CS_PINBLOQ={};   /* v329: 'op:id' ou 'ac:email' -> {erros, h (PIN bloquead
    sendo um número só, e a OP, que sempre baixa da Fábrica, não precisa saber de depósito. */
 const CS_EDEP={deps:[{id:'fab',nome:'Fábrica',forn:'',fornId:'',princ:true}],sal:{},trSeq:0};
 const CS_CFGV={reservaPor:'prev'};
+/* v405 · Rastreabilidade: lote obrigatório (oc = recebimento da ordem de compra; producao = PCP e tablet dos tanques) */
+const CS_RASTRO={oc:true,producao:false};
 /* v294: histórico das leituras do Tiny (carga e atualizações) */
 const CS_TLOG=[];
 
@@ -17848,7 +17853,7 @@ function estadoAtual(){
       jornada:JORNADA,frascoProd:FRASCO_PROD,usuarios:USUARIOS,proxOp:PROX_OP,
       gruposMotivo:GRUPOS_MOTIVO,semana:SEMANA_PADRAO,tolAtraso:TOL_ATRASO},
     estoque:{saldos:ESTOQUE,em:ESTOQUE_EM,d:ESTOQUE_D},
-    filaTiny:FILA_TINY,revisaoMotivo:REVISAO_MOTIVO,estoqueLog:CS_ELOG,tinyLog:CS_TLOG,estoqueDep:CS_EDEP,cfgVendas:CS_CFGV});
+    filaTiny:FILA_TINY,revisaoMotivo:REVISAO_MOTIVO,estoqueLog:CS_ELOG,tinyLog:CS_TLOG,estoqueDep:CS_EDEP,cfgVendas:CS_CFGV,rastro:CS_RASTRO});
 }
 function aplicarEstado(txt){
   const d=JSON.parse(txt);
@@ -17890,6 +17895,7 @@ function aplicarEstado(txt){
   /* estado antigo não tem depósitos: fica a Fábrica sozinha */
   if(d.estoqueDep){const e=d.estoqueDep;if(Array.isArray(e.deps)&&e.deps.length)CS_EDEP.deps=e.deps;CS_EDEP.sal=e.sal||{};CS_EDEP.trSeq=+e.trSeq||0;}
   if(d.cfgVendas)Object.assign(CS_CFGV,d.cfgVendas);
+  if(d.rastro)Object.assign(CS_RASTRO,d.rastro);
   REVISAO_MOTIVO.length=0;(d.revisaoMotivo||[]).forEach(x=>REVISAO_MOTIVO.push(x));
   if(d.estoque){
     Object.keys(ESTOQUE).forEach(k=>delete ESTOQUE[k]);
@@ -19534,6 +19540,9 @@ function rotaAtual(){
   return '#'+r;
 }
 function lerRota(h){
+  /* v405: #ir=p:pagina:aba ou #ir=m:modulo:pagina (links do menu, guia nova) */
+  try{const mi=/^#?ir=([^&]+)/.exec(String(h||''));if(mi){const [k,a,b]=decodeURIComponent(mi[1]).split(':');
+    if(k==='p'&&a)h='#'+a+(b?'/'+b:'');else if(k==='m'&&a&&b)h='#m/'+a+'/'+b;else return null;}}catch(e){return null;}
   const p=String(h||'').replace(/^#/,'').split('/');
   if(p[0]==='m'&&p[1])return {page:'financeiro',mod:p[1],fin:p[2]||''};
   if(!ROTAS.includes(p[0])&&!['home','cadprod','oee'].includes(p[0]))return null;
@@ -19689,8 +19698,7 @@ const CS_MOD=[
    {n:'Transportadores',mod:'transportadores',fin:'lista',perm:'cad.transp',ic:'com'},
    {n:'Clientes e fornecedores',mod:'cadastros',fin:'clientes',perm:'cad.clientes',ic:'pes'},
    {n:'Vendedores',mod:'cadastros',fin:'vendedores',perm:'cad.vend',ic:'pes'},
-   {n:'Funcionários',mod:'cadastros',fin:'funcionarios',perm:'cad.func',ic:'pes'},
-   {n:'Motivos das cobranças',mod:'cadastros',fin:'motivos',perm:'cad.bancos',ic:'cob'}]},  /* v381: Bancos e FIDCs mora em Financeiro › Gestão de Cobranças › Carteira */
+   {n:'Funcionários',mod:'cadastros',fin:'funcionarios',perm:'cad.func',ic:'pes'}]},  /* v381: Bancos e FIDCs mora em Financeiro › Gestão de Cobranças › Carteira */
  {id:'estoque',nome:'Estoque',ic:'est',pgs:[
    {n:'Saldos',mod:'estoque',fin:'saldos',perm:'estoque.saldos',ic:'est'},
    {n:'Movimentos',page:'estoque',esaba:'mov',ic:'mov'},
@@ -19711,6 +19719,7 @@ const CS_MOD=[
    {n:'Sopro e preformas',page:'admin',aba:'sopro',ic:'pref'},
    {n:'Motivos de desvio',page:'admin',aba:'motivos',ic:'mot'},
    {n:'Qualidade',page:'admin',aba:'qualidade',ic:'qua'},
+   {n:'Rastreabilidade',acao:'rastro',ic:'qua'},
    {n:'Pessoas e permissões',page:'admin',aba:'pessoas',ic:'pes'},
    {n:'Produtos · grupos',acao:'cfgprod',ic:'tag'},
    {n:'PCP',acao:'cfgpcp',ic:'maq'},
@@ -19719,6 +19728,7 @@ const CS_MOD=[
    {n:'Compras',mod:'compras',fin:'config',perm:'compras.cfg',ic:'car'},
    {n:'Estoques',mod:'estoque',fin:'depositos',perm:'estoque.cfg',ic:'est'},
    {n:'Vendas',mod:'vendas',fin:'config',perm:'vendas.cfg',ic:'loj'},
+   {n:'Financeiro · Gestão de cobranças',mod:'cadastros',fin:'motivos',perm:'cad.bancos',ic:'cob'},
    {n:'Dados e versão',page:'admin',aba:'dados',ic:'dad'}]},
 /* Financeiro é um título: abre embaixo dele, no próprio menu, os
     submódulos. Cada submódulo abre as páginas dele no painel ao lado. */
@@ -23535,6 +23545,8 @@ const CS_CFG_INFO={
   'Máquinas e tanques':['producao','Máquinas de envase, tanques, capacidade, jornada e intervalo de almoço','almoço pausa capacidade maq tq'],
   'Sopro e preformas':['producao','Sopradoras, preformas e o que cada uma produz','frasco sopro'],
   'Motivos de desvio':['producao','Motivos de parada, perda e quebra que o operador escolhe','parada quebra perda vazamento'],
+  'Tempos de processo':['producao','Limpeza, enchimento, preparo, descanso e envase de cada produto, por tanque e por máquina','tempo tanque envase sopro rotulagem setup'],
+  'Rastreabilidade':['producao','Lote obrigatório nos itens da ordem de compra e nos insumos do PCP e do tablet dos tanques','lote rastreio obrigatório insumo'],
   'Qualidade':['producao','Critérios de análise do lote e limites de aprovação','análise laudo ph densidade liberação'],
   'PCP':['producao','Marcadores das OPs, tela do operador e regras do envase','marcador operador tablet'],
   'Pessoas e permissões':['geral','Quem acessa o sistema, o que cada um pode fazer e o PIN da fábrica','usuário senha pin acesso permissão'],
@@ -23543,6 +23555,7 @@ const CS_CFG_INFO={
   'Compras':['suprimentos','Aprovação, categorias, prazos e o que a ordem de compra pede','oc aprovação fornecedor'],
   'Estoques':['suprimentos','Depósitos onde o estoque fica guardado, inclusive no fornecedor','deposito depósito fornecedor saldo transferência'],
   'Vendas':['vendas','Estoque reservado: a reserva dos pedidos conta pela data prevista ou pela data do pedido','reserva reservado pedido'],
+  'Financeiro · Gestão de cobranças':['financas','Motivos das cobranças: os que aparecem ao excluir um cliente do relatório ou pausar a cobrança','motivo cobrança exclusão pausa relatório'],
   'Carga do Tiny':['vendas','Trazer o histórico de pedidos de venda do Tiny para o ERP','pedidos histórico importar'],
   'Integração Tiny':['integracoes','Token da API do Tiny e teste da conexão','token api'],
   'Integração WhatsApp':['integracoes','Número, token e modelo de mensagem da cobrança pelo WhatsApp','meta whatsapp cobrança modelo'],
@@ -26177,7 +26190,7 @@ function csDaRota(r){
 }
 const csHashLivre=()=>{try{return !csQuiosque()&&!MODO_TV&&!/^#(op\d|tv)/.test(location.hash);}catch(e){return false;}};
 try{const _ir48=csIr;csIr=function(p){const r=_ir48.apply(this,arguments);
-  try{const ro=csRota(p);if(ro&&!p.acao&&csHashLivre())history.replaceState(null,'','#ir='+encodeURIComponent(ro));}catch(e){}
+  /* v405: o endereço fica com a rota que o render marcou (#m/…, #pagina/aba): é ela que o voltar do navegador entende */
   return r;};}catch(e){}
 try{const _pi48=csPintar;csPintar=function(){const r=_pi48.apply(this,arguments);
   try{const fly=document.getElementById('csFly');const m=csAchaAberto(CS_ABERTO);
@@ -30155,7 +30168,7 @@ try{csNucleo.versao='v392';}catch(e){}
 try{csNucleo.versao='v393';}catch(e){}
 </script>
 <script>
-try{csNucleo.versao='v403';}catch(e){}
+try{csNucleo.versao='v405';}catch(e){}
 </script>
 <script>/* =====================================================================
    v398 — PÁGINA TANQUES NO LAYOUT NOVO
@@ -31062,6 +31075,49 @@ try{const _mg403=modalGrupoMotivo;modalGrupoMotivo=function(id){
       try{if(g.setores){const novo={};(g.sub||[]).forEach((s,i)=>{const de=g.setores[s]?s:(antes[i]&&g.setores[antes[i]]?antes[i]:null);if(de)novo[s]=g.setores[de];});g.setores=novo;agendarSalvar();}}catch(e){}
       return res;};}}catch(e){}
   return r;};}catch(e){}
+
+</script>
+<script>
+/* ===================== v405 =====================
+   - Rastreabilidade (Configurações › Produção): lote obrigatório ou não, no recebimento da ordem de compra e na
+     produção (ficha do lote no PCP e separação no tablet dos tanques).
+   - Tempos de processo: o produto mãe diz em quais tanques é feito (TEMPO_GRANEL[g].tqUsa = {TQ:false}).
+   - Tablet dos tanques: navegação por dia de produção (pula dia sem produção) e teclado próprio (no tqop.html). */
+function abrirRastro(){
+  if(M('mAcao'))M('mAcao').innerHTML='';M('modal').classList.remove('wide');
+  M('mTit').textContent='Rastreabilidade';M('mSub').hidden=false;M('mSub').textContent='lote obrigatório';
+  const linha=(k,tit,txt)=>`<label class="chk" style="display:flex;gap:12px;align-items:flex-start;margin:6px 0 16px;cursor:pointer">
+    <input type="checkbox" data-rs="${k}" ${CS_RASTRO[k]?'checked':''} style="margin-top:3px;width:18px;height:18px">
+    <span><b>${tit}</b><br><span class="k" style="font-size:12.5px">${txt}</span></span></label>`;
+  M('mB').innerHTML=`<p class="adp">Ligado: o sistema não deixa seguir sem o lote. Desligado: o lote continua aparecendo para preencher, mas não trava.</p>
+    ${linha('oc','Itens da ordem de compra','No recebimento, os itens que controlam lote (Compras › Configurações) exigem lote e validade.')}
+    ${linha('producao','Itens da produção (PCP e tablet dos tanques)','No tablet dos tanques, cada matéria-prima só fica separada com o lote digitado. No PCP, o lote só é liberado com o lote de todos os insumos preenchido.')}`;
+  M('mB').querySelectorAll('[data-rs]').forEach(c=>c.onchange=()=>{CS_RASTRO[c.dataset.rs]=c.checked;agendarSalvar();
+    toast(c.checked?'Lote obrigatório ligado.':'Lote obrigatório desligado.');});
+  M('mF').innerHTML='<div style="flex:1"></div><button class="btn pri" id="rsF">Fechar</button>';M('rsF').onclick=()=>fecharModal();
+  abrirMask();
+}
+try{const _ir405=csIr;csIr=function(p){if(p&&p.acao==='rastro'){CS_ABERTO='';try{csPintar();}catch(e){}return abrirRastro();}return _ir405.apply(this,arguments);};}catch(e){}
+try{csNucleo.rastro=()=>({...CS_RASTRO});}catch(e){}
+
+/* Tempos: grava em quais tanques o produto é feito */
+try{const _ts405=csNucleo.tpSalvar;csNucleo.tpSalvar=function(o){
+  const r=_ts405.apply(this,arguments);
+  try{Object.entries(o.GR||{}).forEach(([g,x])=>{const u={};Object.entries(x.usa||{}).forEach(([k,v])=>{if(v===false)u[k]=false;});
+    if(TEMPO_GRANEL[g])TEMPO_GRANEL[g].tqUsa=u;});agendarSalvar();}catch(e){}
+  return r;};}catch(e){}
+
+/* Tablet dos tanques: o próximo (ou anterior) dia com produção nos tanques; sem nenhum em 3 semanas, o próximo dia útil */
+function csTqTemLote(d){try{return bateladas(d).some(b=>b.origem!=='saldo'&&b.tanque);}catch(e){return false;}}
+function csTqOutroDia(d,dir){
+  dir=dir<0?-1:1;let util=null;
+  for(let i=1;i<=21;i++){const x=new Date((d||ymd(new Date()))+'T12:00:00');x.setDate(x.getDate()+dir*i);const dd=ymd(x);
+    if(csTqTemLote(dd))return dd;
+    if(!util){try{if(diaDe(dd).trab)util=dd;}catch(e){}}}
+  return util||(()=>{const x=new Date((d||ymd(new Date()))+'T12:00:00');x.setDate(x.getDate()+dir);return ymd(x);})();
+}
+try{csNucleo.tqOutroDia=(d,dir)=>csTqOutroDia(d,dir);
+  const _td405=csNucleo.tqDados;csNucleo.tqDados=function(dia){const r=_td405.apply(this,arguments);try{r.rastro=!!CS_RASTRO.producao;r.prox=csTqOutroDia(r.dia,1);r.ant=csTqOutroDia(r.dia,-1);}catch(e){}return r;};}catch(e){}
 
 </script>
 </body>

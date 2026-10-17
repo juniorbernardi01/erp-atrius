@@ -285,6 +285,27 @@ body.vamh .top{background:#16233D;box-shadow:inset 0 -3px 0 #F59E0B}
 .tqg .lr.g{grid-template-columns:52px 1fr 74px 64px 112px}
 .tqg .vz{padding:10px 12px;color:var(--ink3);font-size:13px}
 .pill.tq{cursor:pointer}
+/* teclado próprio */
+.kb{position:fixed;left:0;right:0;bottom:0;z-index:5000;background:#0B1324;border-top:1px solid #24324D;padding:8px 10px 12px;display:none;flex-direction:column;gap:7px;box-shadow:0 -12px 30px rgba(0,0,0,.35)}
+.kb.on{display:flex}
+.kb .kbv{display:flex;align-items:baseline;gap:10px;padding:2px 6px 4px;color:#8B93A1;font-size:12px;min-height:22px}.kb .kbv b{color:#fff;font:700 18px var(--font);letter-spacing:.02em}
+.kb .kbr{display:flex;gap:7px;justify-content:center}
+.kb button{flex:1;max-width:96px;height:50px;border:0;border-radius:10px;background:#24324D;color:#fff;font:700 20px var(--font);cursor:pointer;touch-action:manipulation}
+.kb button:active{background:#3B4E73}
+.kb button.ok{background:#16A34A;max-width:200px}.kb button.bs{background:#3A4558;max-width:150px}.kb button.sp{max-width:420px}
+.kb.num{left:auto;right:0;width:420px;border-left:1px solid #24324D;border-top-left-radius:16px}
+.kb.num button{max-width:none;height:56px;font-size:24px}
+body.kbon .full .bb{padding-bottom:330px}
+body.kbon .modal{align-items:flex-start!important;padding-top:16px!important}
+body.kbon .drawer .lista{padding-bottom:330px}
+.top .dias{display:inline-flex;align-items:center;gap:8px;margin-left:12px;background:transparent;padding:0}
+.top .dias .hj{border:1.5px solid #3B4E73;background:transparent;color:#C9D4EA;font:700 14px var(--font);padding:7px 14px;border-radius:999px;cursor:pointer}
+.top .dias .hj.on{background:#fff;border-color:#fff;color:#0E1B33}
+.top .dnav{display:inline-flex;align-items:center;background:#1B2A45;border-radius:999px;padding:3px}
+.top .dnav button{border:0;background:transparent;color:#fff;font:700 20px/1 var(--font);width:34px;height:32px;border-radius:999px;cursor:pointer}
+.top .dnav button:active{background:#2B3A57}
+.top .dnav b{color:#fff;font:700 14.5px var(--font);padding:0 6px;white-space:nowrap;text-transform:none}
+
 .t td small{display:block;color:var(--ink3);font-size:11.5px;font-weight:500}
 .prod small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
@@ -321,7 +342,7 @@ function toast(t){const e=$('toast');e.textContent=t;e.style.display='block';cle
 
 const ST={limpar:['rx','Liberado para limpeza'],limpando:['rx','Limpando'],encher:['cz','Limpo · encher'],enchendo:['az','Enchendo'],cheio:['cz','Cheio · aguardando preparo'],atras:['mau','Atrasado · cheio'],prep:['ok','Preparando'],descanso:['ok','Em descanso'],analise:['amb','Descansou · fazer análise'],naolib:['amb','Tanque não liberado'],liberado:['az','Tanque liberado'],envasando:['az','Envasando'],livre:['cz','Livre'],ajuste:['mau','Ajuste pedido pelo químico'],pausa:['cz','Pausado']};
 const NAO_COMECOU=['limpar','encher','livre'],PRODUZIDO=['descanso','analise','naolib','liberado','ajuste'];
-let DIA=null;            /* null = hoje; senão a data (amanhã) */
+let DIA=null;            /* null = hoje; senão a data escolhida (próximo dia de produção etc.) */
 let D=null,T=[],AGORA=0;
 const RASC={};           /* separação sendo digitada, por lote */
 
@@ -331,6 +352,10 @@ function carrega(){
   try{D=N.tqDados(DIA||undefined);T=D.T;AGORA=D.agora;return true;}catch(e){console.warn(e);T=[];return false;}
 }
 const ehAmanha=()=>!!DIA;
+const passado=()=>!!DIA&&D&&DIA<D.hoje;
+const DSEM=['domingo','segunda-feira','terça-feira','quarta-feira','quinta-feira','sexta-feira','sábado'];
+const nomeDia=d=>{const x=new Date(d+'T12:00:00');return DSEM[x.getDay()]+', '+x.getDate()+' de '+x.toLocaleDateString('pt-BR',{month:'long'});};
+const curtoDia=d=>DSEM[new Date(d+'T12:00:00').getDay()].replace('-feira','');
 function lote(t){return t.fila[0];}
 function statusDe(t){const l=lote(t);if(!l)return 'livre';if(l.pausa)return 'pausa';return l.st;}
 const sepDe=l=>{const r=RASC[l.k]||{};const it={};(l.mp||[]).forEach(m=>{const v=(r.itens&&r.itens[m.nome])||l.sep[m.nome]||{};it[m.nome]={lote:v.lote||l.lotesMP[m.nome]||'',kg:v.kg||'',ok:!!v.ok};});return it;};
@@ -367,9 +392,9 @@ function cartao(t){const l=lote(t);const s=statusDe(t);const [cor,rot]=ST[s]||['
     liberado:`<div class="acao off">Esperando o envase puxar<small>quando a máquina começar, vira Envasando</small></div>`,
     envasando:`<div class="acao off">O envase conclui o tanque<small>ao concluir, o próximo lote aparece aqui</small></div>`,
     livre:`<div class="acao off">Nenhum lote na fila</div>`};
-  let btn=B[s]||'';if(s==='pausa')btn=`<div class="acao az" data-a="retomar">Retomar</div>`;
+  let btn=B[s]||'';if(passado()&&s!=='livre')btn=`<div class="acao off">Dia anterior<small>só consulta</small></div>`;else if(s==='pausa')btn=`<div class="acao az" data-a="retomar">Retomar</div>`;
   if(t.pul&&s==='livre')btn=`<div class="acao off">Recebe quando um tanque transferir</div>`;
-  const sub=s==='limpar'?`<div class="sub2"><div data-a="limpNao">Não precisa limpar</div></div>`:'';
+  const sub=s==='limpar'&&!passado()?`<div class="sub2"><div data-a="limpNao">Não precisa limpar</div></div>`:'';
   const ANTES=['limpar','limpando','encher','enchendo','cheio','atras','prep'];
   const ajp=l?(l.ajPed||[]).filter(a=>!a.lanc):[];
   const tot=l?(l.mp||[]).length:0,feit=l?sepOk(l):0,fOk=tot>0&&feit>=tot;
@@ -383,12 +408,15 @@ function cartao(t){const l=lote(t);const s=statusDe(t);const [cor,rot]=ST[s]||['
     <div class="tiles"><div><span>Volume (L)</span><b>${nl(l.vol)}</b></div><div class="dest${atr?' atr':''}"><span>${s==='envasando'?'Envase até':'Pronto até'}</span><b>${esc(l.pronto)}</b></div><div><span>${s==='envasando'?'Máquina':'Vai para'}</span><b>${esc(s==='envasando'?(l.maqEnv||l.maq):l.maq)}</b></div></div>`
     :`<div class="prod" style="color:var(--ink3)">—</div><div class="tiles"></div>`}
     <div class="acoes">${ck}${btn}${sub}</div>
-    <div class="prox"><i>DEPOIS</i>${prox?`<b>${esc(prox.p)}</b> · ${nl(prox.vol)} L<span class="h">${esc(prox.pronto)}</span>`:'nada mais '+(ehAmanha()?'amanhã':'hoje')}</div></div>`;}
+    <div class="prox"><i>DEPOIS</i>${prox?`<b>${esc(prox.p)}</b> · ${nl(prox.vol)} L<span class="h">${esc(prox.pronto)}</span>`:'nada mais '+(ehAmanha()?'neste dia':'hoje')}</div></div>`;}
 function topo(){
   const dt=DIA?new Date(DIA+'T12:00:00'):new Date();
-  $('titc').innerHTML=`Tanques — ${DIA?'<em class="amh">Amanhã</em>':'Programação do dia'}`;
-  $('dias').innerHTML=`<button type="button" class="${DIA?'':'on'}" data-dia="">Hoje</button><button type="button" class="${DIA?'on':''}" data-dia="amanha">Amanhã</button>`;
-  $('dias').querySelectorAll('[data-dia]').forEach(b=>b.onclick=()=>{DIA=b.dataset.dia?amanha():null;atualiza();if(DIA)toast('Vendo a programação de amanhã. O que fizer aqui já vale para o lote de amanhã.');});
+  $('titc').innerHTML='Tanques';
+  const cur=DIA||(D&&D.hoje)||ymd(new Date());
+  $('dias').innerHTML=`<button type="button" class="hj ${DIA?'':'on'}" data-hj="1">Hoje</button><span class="dnav"><button type="button" data-ir="-1" aria-label="Dia de produção anterior">‹</button><b>${esc(nomeDia(cur))}</b><button type="button" data-ir="1" aria-label="Próximo dia de produção">›</button></span>`;
+  $('dias').querySelector('[data-hj]').onclick=()=>{DIA=null;atualiza();};
+  $('dias').querySelectorAll('[data-ir]').forEach(b=>b.onclick=()=>{const n=(N&&N.tqOutroDia)?N.tqOutroDia(cur,+b.dataset.ir):cur;DIA=(D&&n===D.hoje)?null:n;atualiza();
+    if(DIA&&DIA>D.hoje)toast('Vendo '+nomeDia(DIA)+'. O que fizer aqui já vale para o lote desse dia.');else if(DIA)toast('Dia anterior: só consulta.');});
   document.querySelector('.top .hora small').textContent=dt.toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
   $('relogio').textContent=hm(AGORA);
   const h=Math.floor(AGORA/60);$('sauda').textContent=h<12?'Bom dia!':h<18?'Boa tarde!':'Boa noite!';
@@ -557,15 +585,16 @@ function abrirGeral(){const d=$('drawer');
       ${t.fila.map((x,i)=>{const s=i===0?statusDe(t):'';return `<div class="lr g ${i===0?'agora':''}" data-tq="${esc(t.id)}" data-ix="${i}"><em>${esc(x.pronto)}</em><div><b>${esc(x.p)}</b><small>${x.lote?'lote '+esc(x.lote)+' · ':''}OP ${esc(x.op)}</small></div><span class="m">${nl(x.vol)} L</span><span class="m">${esc(x.maq)}</span><span>${i===0?`<i class="mini ${(ST[s]||['cz'])[0]}">${esc(((ST[s]||['',s])[1]).split(' · ')[0].toLowerCase())}</i>`:'<i class="pill amb">programado</i>'}</span></div>`;}).join('')}
       ${t.feitos.map((x,j)=>`<div class="lr g feito" data-tq="${esc(t.id)}" data-fx="${j}"><em>${esc(x.h||'')}</em><div><b>${esc(x.p)}</b><small>lote ${esc(x.lote||'—')}${x.atr>0?' · '+x.atr+' min de atraso':''}</small></div><span class="m">${nl(x.vol)} L</span><span class="m">${esc(x.maq)}</span><span class="sit">${estrela(x)}${x.atr>0?'':'realizado'}</span></div>`).join('')}
       ${n?'':'<div class="vz">nada programado</div>'}</div>`;}).join('');
-  d.innerHTML=`<div class="dh"><b>Produção ${DIA?'de amanhã':'do dia'}</b><small>programado × realizado de cada tanque</small><span class="x" id="dX">×</span></div>
-  <div class="ddias">${['Hoje','Amanhã'].map((r,i)=>`<button type="button" class="${(!!DIA)===(i===1)?'on':''}" data-dg="${i}">${r}</button>`).join('')}</div>
+  const prox=(D&&D.prox)||amanha();
+  d.innerHTML=`<div class="dh"><b>Produção ${DIA?'de '+esc(curtoDia(DIA)):'do dia'}</b><small>programado × realizado de cada tanque</small><span class="x" id="dX">×</span></div>
+  <div class="ddias"><button type="button" class="${DIA?'':'on'}" data-dg="0">Hoje</button><button type="button" class="${DIA&&!passado()?'on':''}" data-dg="1">${DIA&&!passado()?esc(nomeDia(DIA)):'Próximo dia · '+esc(curtoDia(D&&D.hoje&&!DIA?prox:prox))}</button></div>
   <div class="meta"><div class="mt"><span>Programado</span><b>${pend.length+conc.length} lotes</b><small>${nl(totL)} L</small></div><div class="mt ok"><span>Realizado</span><b>${conc.length}</b><small>${nl(feitL)} L · <i class="est ok">★</i> ${noPrazo} no prazo</small></div><div class="mt amb"><span>Na fila</span><b>${pend.length}</b><small>${nl(totL-feitL)} L</small></div></div>
   <div class="dbar"><i style="width:${totL?feitL/totL*100:0}%"></i></div>
   <div class="dbtn d2"><div class="acao sec" id="dC">Calculadora</div></div>
   <div class="lista">${blocos}<div class="dica">Toque num lote para ver o histórico dele. Troca de tanque é feita pelo PCP.</div></div>`;
   d.classList.add('on','larga');$('sombra').classList.add('on');
   $('dX').onclick=fechaDrawer;$('sombra').onclick=fechaDrawer;$('dC').onclick=()=>abrirCalc();
-  d.querySelectorAll('[data-dg]').forEach(b=>b.onclick=()=>{DIA=b.dataset.dg==='1'?amanha():null;atualiza();abrirGeral();});
+  d.querySelectorAll('[data-dg]').forEach(b=>b.onclick=()=>{if(b.dataset.dg==='1'){if(!DIA||passado())DIA=(D&&D.prox)||amanha();}else DIA=null;atualiza();abrirGeral();});
   d.querySelectorAll('.lr[data-ix]').forEach(r=>r.onclick=()=>{const t=T.find(z=>z.id===r.dataset.tq);fechaDrawer();histLote(t.fila[+r.dataset.ix]);});
   d.querySelectorAll('.lr[data-fx]').forEach(r=>r.onclick=()=>{const t=T.find(z=>z.id===r.dataset.tq);fechaDrawer();histLote(t.feitos[+r.dataset.fx]);});}
 
@@ -601,8 +630,8 @@ function abrirForm(t,aba){const l=lote(t);if(!l)return toast('Sem lote neste tan
   f.querySelectorAll('input[data-i]').forEach(e=>e.oninput=()=>{r.itens[nomes[+e.dataset.i]][e.dataset.c]=e.value;});
   f.querySelectorAll('input[data-aj]').forEach(e=>e.oninput=()=>{(r.aj[e.dataset.aj]||(r.aj[e.dataset.aj]={}))[e.dataset.c]=e.value;});
   f.querySelectorAll('input[data-ex]').forEach(e=>e.oninput=()=>{r.ext[+e.dataset.ex][e.dataset.c]=e.value;});
-  f.querySelectorAll('[data-k]').forEach(c=>c.onclick=()=>{const i=+c.dataset.k,v=r.itens[nomes[i]];if(!v.ok){if(!v.lote)return toast('Digite o lote da '+nomes[i]+'.');if(!v.kg)v.kg=nl(l.mp[i].kg);}v.ok=!v.ok;abrirForm(t,aba);});
-  f.querySelectorAll('[data-akj]').forEach(c=>c.onclick=()=>{const v=r.aj[c.dataset.akj]||(r.aj[c.dataset.akj]={});if(!v.ok&&(!v.lote||!v.kg))return toast('Preencha o lote e o peso do ajuste.');v.ok=!v.ok;abrirForm(t,aba);});
+  f.querySelectorAll('[data-k]').forEach(c=>c.onclick=()=>{const i=+c.dataset.k,v=r.itens[nomes[i]];if(!v.ok){if(!v.lote&&D&&D.rastro)return toast('Digite o lote da '+nomes[i]+' (rastreabilidade ligada).');if(!v.kg)v.kg=nl(l.mp[i].kg);}v.ok=!v.ok;abrirForm(t,aba);});
+  f.querySelectorAll('[data-akj]').forEach(c=>c.onclick=()=>{const v=r.aj[c.dataset.akj]||(r.aj[c.dataset.akj]={});if(!v.ok&&(!v.kg||(D&&D.rastro&&!v.lote)))return toast(D&&D.rastro?'Preencha o lote e o peso do ajuste.':'Preencha o peso do ajuste.');v.ok=!v.ok;abrirForm(t,aba);});
   f.querySelectorAll('[data-exx]').forEach(c=>c.onclick=()=>{r.ext.splice(+c.dataset.exx,1);abrirForm(t,aba);});
   if(f.querySelector('#fAj'))f.querySelector('#fAj').onclick=()=>escolherMP('MP de ajuste',x=>{r.ext.push({nome:x.nome,sku:x.sku,lote:'',kg:''});abrirForm(t,aba);});
   f.querySelectorAll('.modo li[data-p]').forEach(li=>li.onclick=()=>{if(statusDe(t)!=='prep')return toast('Os passos são marcados durante o preparo.');const i=+li.dataset.p;const n=i<l.passo?i:i+1;
@@ -611,7 +640,7 @@ function abrirForm(t,aba){const l=lote(t);if(!l)return toast('Sem lote neste tan
   f.querySelector('#fS').onclick=()=>{
     if(modoAj){const falta=pend.filter(a=>!(r.aj[a.i]&&r.aj[a.i].ok));if(falta.length)return toast('Lance o lote e o peso do ajuste pedido e toque no ✓.');
       return pedirPin(t.id+' · Lançar ajuste',pin=>{if(exec(t,'ajLanc',pin,{itens:pend.map(a=>({i:a.i,lote:r.aj[a.i].lote,kg:r.aj[a.i].kg}))})){delete RASC[l.k];f.classList.remove('on');}});}
-    const ex=r.ext.filter(a=>a.nome&&a.kg);if(r.ext.length&&ex.length!==r.ext.length)return toast('Preencha o lote e o peso da MP de ajuste (ou tire a linha).');
+    const ex=r.ext.filter(a=>a.nome&&a.kg);if(r.ext.length&&(ex.length!==r.ext.length||(D&&D.rastro&&ex.some(a=>!a.lote))))return toast('Preencha '+(D&&D.rastro?'o lote e ':'')+'o peso da MP de ajuste (ou tire a linha).');
     pedirPin(t.id+' · Salvar separação',pin=>{
       const okSep=exec(t,'sep',pin,{itens:r.itens,total:tot});
       if(okSep&&ex.length){const n=T.find(z=>z.id===t.id);if(n)exec(n,'mpExtra',pin,{itens:ex});}
@@ -646,6 +675,41 @@ $('tema').onclick=()=>{document.documentElement.dataset.theme=escuro()?'light':'
 try{document.documentElement.dataset.theme=localStorage.getItem('erp.tq.tema')||'dark';}catch(e){document.documentElement.dataset.theme='dark';}pintaTema();
 try{if(N&&N.tqLogo)$('logo').src=N.tqLogo();}catch(e){}
 $('menuTop').onclick=()=>abrirGeral();
+
+/* ---------- teclado próprio (o do tablet deitado cobre metade da tela) ----------
+   Todo campo de texto da tela abre este teclado em vez do teclado do Android (inputmode="none").
+   Campo numérico (peso, resultado) abre o teclado de números; os outros, letras e números. */
+const KB={el:null,sel:null};
+const KB_TXT=[['1','2','3','4','5','6','7','8','9','0'],['Q','W','E','R','T','Y','U','I','O','P'],['A','S','D','F','G','H','J','K','L','-'],['Z','X','C','V','B','N','M',',','.','/'],['ESPAÇO','⌫','OK']];
+const KB_NUM=[['7','8','9'],['4','5','6'],['1','2','3'],[',','0','⌫'],['OK']];
+function kbMarca(){document.querySelectorAll('input:not([type=checkbox]):not([type=radio]):not([type=hidden]),textarea').forEach(i=>{
+  if(i.dataset.kb)return;const im=(i.getAttribute('inputmode')||'').toLowerCase();
+  i.dataset.kb=(im==='decimal'||im==='numeric')?'num':'txt';i.setAttribute('inputmode','none');i.setAttribute('autocomplete','off');i.setAttribute('spellcheck','false');});}
+try{new MutationObserver(kbMarca).observe(document.body,{childList:true,subtree:true});}catch(e){}
+const kbSeletor=el=>el.id?'#'+CSS.escape(el.id):[...el.attributes].filter(a=>/^data-(i|c|e|aj|ex|k)$/.test(a.name)).map(a=>`[${a.name}="${CSS.escape(a.value)}"]`).join('')||null;
+function kbPinta(){let k=$('kb');if(!k){k=document.createElement('div');k.id='kb';document.body.appendChild(k);
+    k.addEventListener('pointerdown',ev=>{ev.preventDefault();const b=ev.target.closest('[data-kk]');if(b)kbTecla(b.dataset.kk);});}
+  const num=KB.el&&KB.el.dataset.kb==='num';const L=num?KB_NUM:KB_TXT;
+  k.className='kb '+(num?'num':'txt')+(KB.el?' on':'');
+  k.innerHTML=`<div class="kbv"><span>${esc(KB.el?(KB.el.getAttribute('placeholder')||''):'')}</span><b>${esc(KB.el?KB.el.value:'')}</b></div>`+L.map(r=>`<div class="kbr">${r.map(x=>`<button type="button" data-kk="${esc(x)}" class="${x==='OK'?'ok':x==='⌫'?'bs':x==='ESPAÇO'?'sp':''}">${x==='⌫'?'⌫':esc(x)}</button>`).join('')}</div>`).join('');}
+function kbAbre(el){KB.el=el;KB.sel=kbSeletor(el);document.body.classList.add('kbon');kbPinta();$('kb').classList.add('on');
+  setTimeout(()=>{try{el.scrollIntoView({block:'center',behavior:'smooth'});}catch(e){}},30);}
+function kbFecha(){const el=KB.el;KB.el=null;const k=$('kb');if(k)k.classList.remove('on');document.body.classList.remove('kbon');
+  if(el&&document.contains(el)){el.dispatchEvent(new Event('change',{bubbles:true}));el.blur();}}
+function kbAlvo(){if(KB.el&&document.contains(KB.el))return KB.el;if(KB.sel){const n=document.querySelector(KB.sel);if(n){KB.el=n;return n;}}return null;}
+function kbTecla(x){const el=kbAlvo();if(!el)return kbFecha();
+  if(x==='OK')return kbFecha();
+  const v=el.value,a=el.selectionStart??v.length,b=el.selectionEnd??v.length;
+  let nv,pos;
+  if(x==='⌫'){if(a!==b){nv=v.slice(0,a)+v.slice(b);pos=a;}else if(a>0){nv=v.slice(0,a-1)+v.slice(a);pos=a-1;}else return;}
+  else{const ch=x==='ESPAÇO'?' ':x;if(el.dataset.kb==='num'&&ch===','&&v.includes(','))return;nv=v.slice(0,a)+ch+v.slice(b);pos=a+ch.length;}
+  el.value=nv;try{el.setSelectionRange(pos,pos);}catch(e){}
+  el.dispatchEvent(new Event('input',{bubbles:true}));
+  const n=kbAlvo();if(n&&n!==el){try{n.focus();n.setSelectionRange(pos,pos);}catch(e){}}
+  kbPinta();}
+document.addEventListener('focusin',ev=>{const t=ev.target;if(t&&t.matches&&t.matches('input,textarea')&&!(t.dataset&&t.dataset.kb))kbMarca();if(t&&t.dataset&&t.dataset.kb&&!t.disabled&&!t.readOnly)kbAbre(t);});
+document.addEventListener('pointerdown',ev=>{if(!KB.el)return;const t=ev.target;if(t.closest&&(t.closest('#kb')||(t.dataset&&t.dataset.kb)))return;kbFecha();},true);
+kbMarca();
 /* à meia-noite volta para hoje; a cada 20 s refaz (os tempos andam) */
 setInterval(()=>{if(DIA&&DIA<=ymd(new Date()))DIA=null;if(!document.querySelector('.modal.on,.full.on'))atualiza();else{carrega();topo();}},20000);
 atualiza();

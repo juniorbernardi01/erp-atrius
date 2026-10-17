@@ -1706,7 +1706,7 @@ function receberOC(o){
     $('rOk').onclick=async()=>{
       const f=[];if(!st.nf)f.push('NF do fornecedor');
       if(!st.linhas.some(l=>l.chegou>0))f.push('quantidade que chegou');
-      st.linhas.forEach(l=>{if(l.lotes&&l.chegou>0){if(l.lotes.some(x=>!x.lote||(DB.cfg.loteValidade&&!/^\d{2}\/\d{4}$/.test(x.val))))f.push('lote e validade (mm/aaaa) de '+l.it.nome);
+      st.linhas.forEach(l=>{if(l.lotes&&l.chegou>0){if(((()=>{try{return !(N&&N.rastro)||N.rastro().oc!==false;}catch(e){return true;}})())&&l.lotes.some(x=>!x.lote||(DB.cfg.loteValidade&&!/^\d{2}\/\d{4}$/.test(x.val))))f.push('lote e validade (mm/aaaa) de '+l.it.nome);
         else if(Math.abs(l.lotes.reduce((s,x)=>s+(+x.qtd||0),0)-l.chegou)>1e-6)f.push('quantidade dos lotes de '+l.it.nome+' somando o que chegou');}});
       if(st.linhas.some(l=>l.extra&&!(l.chegou>0)))f.push('quantidade do item incluído (ou tire o item)');
       if(f.length)return toast('Falta: '+f.join(', '),true);
