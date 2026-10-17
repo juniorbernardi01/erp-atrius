@@ -114,6 +114,9 @@ table.tt{width:100%;border-collapse:collapse;font-size:13px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 
 tr.nusa td{color:var(--ink4,#98A2B3)}tr.nusa td b{color:var(--ink3,#667085)}tr.nusa .nr{font-style:italic;text-align:left}
+
+.mqc{display:flex;align-items:center;justify-content:center;gap:6px}.tg.sm{transform:scale(.82);transform-origin:center}
+td.mqoff .mqc span{color:var(--ink4,#98A2B3);font-size:12px;font-style:italic}
 </style>
 
 <style>
@@ -245,7 +248,10 @@ function abrirDD(btn){fecharDD();const r=btn.getBoundingClientRect();const d=doc
 function fora(e){const d=$('dd');if(d&&!d.contains(e.target)&&!e.target.closest('#gbt'))fecharDD();}
 function fecharDD(){const d=$('dd');if(d)d.remove();document.removeEventListener('mousedown',fora);}
 function acoes(){return `<div class="acoes">${ED?'<span class="modo-ed">editando</span><button type="button" class="btn" id="bCan">Cancelar</button><button type="button" class="btn pri" id="bSal">Salvar</button>':'<button type="button" class="btn" id="bPdf">⎙ PDF</button><button type="button" class="btn pri" id="bEd">Editar</button>'}</div>`;}
-const celMaq=(p,m,T,Sx,e)=>{const on=p[T][m]!=null;if(e)return `<td class="c sep">${ni(`p|${p.c}|${Sx}|${m}`,on?(p[Sx][m]??''):'',on?String(SETUP_PAD):'',46,1)}</td><td class="c">${ni(`p|${p.c}|${T}|${m}`,on?hm(p[T][m]):'','',58,1)}</td>`;
+const usaMaq=(p,m,T)=>{const k=T+'|'+m;return (p.uso&&k in p.uso)?!!p.uso[k]:p[T][m]!=null;};
+const celMaq=(p,m,T,Sx,e)=>{const on=p[T][m]!=null;if(e){const u=usaMaq(p,m,T);const sw=tg(`m|${p.c}|${T}|${m}`,u).replace('class="tg"','class="tg sm"');
+    if(!u)return `<td class="c sep mqoff" colspan="2"><div class="mqc">${sw}<span>não passa nesta máquina</span></div></td>`;
+    return `<td class="c sep"><div class="mqc">${sw}${ni(`p|${p.c}|${Sx}|${m}`,on?(p[Sx][m]??''):'',String(SETUP_PAD),46,1)}</div></td><td class="c">${ni(`p|${p.c}|${T}|${m}`,on?hm(p[T][m]):'','h:mm',58,1)}</td>`;}
   return on?`<td class="n sep vt" colspan="2">${dur(p[T][m]+(p[Sx][m]??SETUP_PAD))}<small>${p[Sx][m]??SETUP_PAD} + ${hm(p[T][m])}</small></td>`:'<td class="n sep nr" colspan="2">não passa</td>';};
 const cabMaq=(L,e,lote)=>{const r=e?'rowspan="2"':'';return `<tr><th ${r} style="min-width:230px">Produto</th>${lote?`<th ${r} class="n">Lote padrão</th>`:''}${L.map(m=>`<th colspan="2" class="${e?'c':'n'} sep">${m}${e?'':'<small>setup + tempo</small>'}</th>`).join('')}<th ${r} class="c sep">Mesmo item<small>faz setup?</small></th></tr>${e?`<tr>${L.map(()=>'<th class="c sep">Setup<small>min</small></th><th class="c">Tempo<small>h:mm</small></th>').join('')}</tr>`:''}`;};
 /* ---------- Tanques e envase (por produto mãe) ---------- */
@@ -274,7 +280,7 @@ function pgTanques(){const st=S(),e=!!ED,g=st.GR[SEL],fs=st.PR.filter(p=>p.g===S
       if(!u)return `<tr class="nusa">${nome}${usa}<td class="n m">${nf(t.cap)} L</td><td class="sep nr" colspan="${g.temDesc?5:4}">este produto não é feito neste tanque</td></tr>`;
       return `<tr>${nome}${usa}<td class="n m">${nf(t.cap)} L</td>${c(`q|${t.id}|limp`,x.limp).replace('<td class="n','<td class="n sep')}${e?`<td class="n">${ni('t|'+i,t.ench)}<span class="un">min</span></td>`:`<td class="n vt">${dur(t.ench)}</td>`}${c(`q|${t.id}|prep`,x.prep)}${g.temDesc?c(`q|${t.id}|desc`,x.desc):''}<td class="n sep vt"><b>${dur(pronto(t))}</b></td></tr>`;}).join('')}</tbody></table></div>
     ${st.TQ.some(t=>t.novo)?'<div class="aviso2">O <b>PULMÃO</b> (4.600 L) entra no Cadastro de tanques ao subir esta versão. No pulmão, "enchimento" é o tempo da transferência.</div>':''}</div>
-  <div class="sec"><div class="sech"><h3><i style="background:var(--c-env)"></i>No envase</h3><p>Lote padrão e, em cada máquina, setup + tempo para envasar o lote padrão. Lote de outro tamanho: tempo proporcional.${e?' Máquina em branco = o produto não roda nela.':''}</p></div>
+  <div class="sec"><div class="sech"><h3><i style="background:var(--c-env)"></i>No envase</h3><p>Lote padrão e, em cada máquina, setup + tempo para envasar o lote padrão. Lote de outro tamanho: tempo proporcional.${e?' Desligue a chave da máquina em que o produto não roda: ela some da programação desse produto.':''}</p></div>
     <div class="rol"><table class="tt">${cabMaq(MAQ,e,1)}<tbody>
     ${fs.map(p=>`<tr><td class="nm"><b>${esc(p.d)}</b><small>${esc(p.c)}${!Object.keys(p.t).length?' · <span class="pill w">sem máquina</span>':''}</small></td><td class="n">${e?ni(`p|${p.c}|lote`,p.lote,'L',70)+'<span class="un">L</span>':(p.lote?`<span class="vt">${nf(p.lote)} L</span>`:'<span class="pill w">sem lote</span>')}</td>${MAQ.map(m=>celMaq(p,m,'t','s',e)).join('')}<td class="c sep">${e?tg(`p|${p.c}|sm`,p.sm):simNao(p.sm)}</td></tr>`).join('')||`<tr><td colspan="9" class="nr">Nenhum produto filho cadastrado.</td></tr>`}</tbody></table></div></div>`;}
 /* ---------- Sopro ---------- */
@@ -302,6 +308,8 @@ function grava(k,v){const st=ED,p=k.split('|');
   else if(p[0]==='u')st.GR[SEL].usa[p[1]]=v;
   else if(p[0]==='t')st.TQ[+p[1]].ench=v;
   else if(p[0]==='f')st.FR[p[1]].s[p[2]]=v;
+  else if(p[0]==='m'){const x=st.PR.find(y=>y.c===p[1]);const T=p[2],m=p[3],Sx={t:'s',rt:'rs'}[T];x.uso=x.uso||{};x.uso[T+'|'+m]=!!v;
+    if(!v){delete x[T][m];if(Sx&&x[Sx])delete x[Sx][m];}}
   else if(p[0]==='p'){const x=st.PR.find(y=>y.c===p[1]);if(p.length===3)x[p[2]]=v;else{const o=x[p[2]];if(v==null)delete o[p[3]];else o[p[3]]=v;const T={s:'t',rs:'rt'}[p[2]];if(T&&v!=null&&x[T][p[3]]==null)x[T][p[3]]=null;}}}
 function desenha(){nav();$('pn').innerHTML=({tanques:pgTanques,sopro:pgSopro,rotulo:pgRotulo}[SEC]||pgTanques)();liga();}
 function liga(){const pn=$('pn');
