@@ -1869,12 +1869,22 @@ function telaPedRep(nome){
 Object.assign(EV,{per:null,cmp:null,cp:null,cpErro:'',cpCarregando:false,fil:'geral',cli:null,rep:'',fx:null,fxK:'',fxErro:'',fxCarregando:false,reps:null,ult:null});
 const RC={q:'',res:null,buscando:false,_t:null};
 const rcKey=c=>c.doc?'doc:'+c.doc:'nome:'+c.nome;
-const rcDeKey=k=>k.startsWith('grp:')?{doc:'',nome:k.slice(4),grp:true}:k.startsWith('doc:')?{doc:k.slice(4),nome:''}:{doc:'',nome:k.slice(5)};
-const evGrp=()=>EV.fil==='cli'&&!!EV.cli&&EV.cli.startsWith('grp:');
+const rcDeKey=k=>k.startsWith('eg:')?{doc:'',nome:'',eg:k.slice(3),grp:true}:k.startsWith('grp:')?{doc:'',nome:k.slice(4),grp:true}:k.startsWith('doc:')?{doc:k.slice(4),nome:''}:{doc:'',nome:k.slice(5)};
+const evGrp=()=>EV.fil==='cli'&&!!EV.cli&&(EV.cli.startsWith('grp:')||EV.cli.startsWith('eg:'));
+/* grupos econômicos do Cadastro (Clientes e fornecedores › Grupos econômicos) */
+const dig=s=>String(s||'').replace(/\D/g,'');
+async function evGrupos(){
+  if(EV.grupos)return EV.grupos;
+  try{const c=await N.ler('cadastros');const cont=(c&&c.contatos)||[];
+    EV.grupos=((c&&c.grupos)||[]).map(g=>{const lj=cont.filter(x=>x.grupo===g.id).map(x=>({nome:x.nome||x.fantasia||'',fantasia:x.fantasia||'',doc:x.doc||'',dig:dig(x.doc),cidade:x.cidade||'',uf:x.uf||'',vendedor:x.vendedor||''}));
+      return {id:g.id,nome:g.nome,lojas:lj};}).filter(g=>g.lojas.length);}
+  catch(e){EV.grupos=[];}
+  return EV.grupos;
+}
 async function rcBusca(){
   const q=RC.q.trim();if(q.length<2){RC.res=null;rcPintaRes();return;}
   RC.buscando=true;rcPintaRes();
-  try{const r=await fn({acao:'vendas_clientes_busca',q});if(RC.q.trim()===q)RC.res=(r&&r.clientes)||[];}
+  try{const [r]=await Promise.all([fn({acao:'vendas_clientes_busca',q}),evGrupos()]);if(RC.q.trim()===q)RC.res=(r&&r.clientes)||[];}
   catch(e){RC.res=[];}
   RC.buscando=false;rcPintaRes();
 }
@@ -1884,9 +1894,13 @@ function rcPintaRes(){
   box.hidden=false;
   if(RC.buscando&&!RC.res){box.innerHTML='<div class="rcvz">Procurando…</div>';return;}
   const l=RC.res||[];
-  const qq=RC.q.trim();const grpBtn=l.length>1?`<button data-grp="1" class="rcgrp"><b>▣ Juntar como grupo econômico: «${esc(qq)}»</b><small>soma todos os ${l.length>=20?'clientes':l.length+' clientes'} com “${esc(qq)}” no nome (ex.: todas as lojas de uma rede)</small></button>`:'';
-  box.innerHTML=grpBtn+(l.length?l.map((c,i)=>`<button data-i="${i}"><b>${esc(c.nome)}</b><small>${esc([c.doc,[c.cidade,c.uf].filter(Boolean).join('/'),c.vendedor].filter(Boolean).join(' · '))}</small></button>`).join('')
+  const qq=RC.q.trim();const ws=semAc(qq).split(/\s+/).filter(Boolean);
+  const gs=(EV.grupos||[]).filter(g=>ws.every(w=>semAc(g.nome+' '+g.lojas.map(x=>x.nome+' '+x.fantasia+' '+x.doc).join(' ')).includes(w)));
+  const egBtn=gs.map(g=>`<button data-eg="${esc(g.id)}" class="rceg"><b>▣ ${esc(g.nome)}</b><small>grupo econômico · ${g.lojas.length} ${g.lojas.length===1?'loja':'lojas'} · ${esc([...new Set(g.lojas.map(x=>x.cidade).filter(Boolean))].join(', '))}</small></button>`).join('');
+  const grpBtn=l.length>1?`<button data-grp="1" class="rcgrp"><b>⊕ Juntar os resultados da busca: «${esc(qq)}»</b><small>soma todos os ${l.length>=20?'clientes':l.length+' clientes'} com “${esc(qq)}” no nome (ex.: todas as lojas de uma rede)</small></button>`:'';
+  box.innerHTML=egBtn+grpBtn+(l.length?l.map((c,i)=>`<button data-i="${i}"><b>${esc(c.nome)}</b><small>${esc([c.doc,[c.cidade,c.uf].filter(Boolean).join('/'),c.vendedor].filter(Boolean).join(' · '))}</small></button>`).join('')
     :'<div class="rcvz">Nenhum cliente com esse nome, documento ou cidade.</div>');
+  box.querySelectorAll('[data-eg]').forEach(b=>b.onclick=()=>{RC.q='';RC.res=null;EV.fil='cli';EV.cli='eg:'+b.dataset.eg;EV.fx=null;evDesenha();});
   const gb=box.querySelector('[data-grp]');if(gb)gb.onclick=()=>{RC.q='';RC.res=null;EV.fil='cli';EV.cli='grp:'+qq.toUpperCase();EV.fx=null;evDesenha();};
   box.querySelectorAll('[data-i]').forEach(b=>b.onclick=()=>{const c=l[+b.dataset.i];RC.q='';RC.res=null;EV.fil='cli';EV.cli=rcKey(c);EV.fx=null;evDesenha();});
 }
@@ -1948,6 +1962,7 @@ const evCpChave=P=>[EV.fil,EV.fil==='cli'?EV.cli:EV.fil==='rep'?EV.rep:'',P.de1,
 async function evCpCarrega(P){
   const k=evCpChave(P);EV.cpCarregando=true;EV.cpErro='';
   try{const c=EV.fil==='cli'?rcDeKey(EV.cli):{doc:'',nome:''};
+    if(c.grp)return await evGrpCarrega(P,c,k);
     const base={acao:'vendas_comp',filtro:c.grp?'grp':EV.fil,doc:c.doc,nome:c.nome,vendedor:EV.rep||'',base:EV.base,sits:pfSitsOn()};
     const [r,ra]=await Promise.all([fn({...base,de1:P.de1,ate1:P.ate1,de2:P.de2,ate2:P.ate2}),fn({...base,...P.an})]);
     if(evCpChave(evPer())!==k)return;
@@ -1958,6 +1973,22 @@ async function evCpCarrega(P){
     EV.cpc=EV.cpc||{};EV.cpc[k]={k,m:tab(r),ano:tab(ra),lojas};EV.cp=EV.cpc[k];}
   catch(e){EV.cpErro=e.message;}
   finally{EV.cpCarregando=false;}
+}
+/* grupo: as lojas (do cadastro, ou as achadas pela busca) mês a mês, uma a uma; o consolidado é a soma */
+async function evGrpCarrega(P,c,k){
+  const sits=pfSitsOn();let lojas;
+  if(c.eg){const g=(await evGrupos()).find(x=>x.id===c.eg);if(!g)throw new Error('Grupo econômico não encontrado no cadastro.');lojas=g.lojas.map(x=>({...x}));EV.grpNome=g.nome;}
+  else{const rl=await fn({acao:'vendas_comp_clientes',q:c.nome,de1:P.an.de1,ate1:P.an.ate1,de2:P.an.de2,ate2:P.an.ate2,base:EV.base,sits});
+    lojas=(rl.linhas||[]).filter(x=>x.doc).map(x=>({nome:x.nome||'',doc:x.doc,dig:dig(x.doc),cidade:x.cidade||''}));EV.grpNome='«'+c.nome+'»';}
+  const docs=lojas.map(x=>x.doc).filter(Boolean);
+  const base={acao:'vendas_comp_docs',docs,base:EV.base,sits};
+  const [r,ra]=docs.length?await Promise.all([fn({...base,de1:P.de1,ate1:P.ate1,de2:P.de2,ate2:P.ate2}),fn({...base,...P.an})]):[{linhas:[]},{linhas:[]}];
+  if(evCpChave(evPer())!==k)return;
+  const soma=(rr,porLoja)=>{const m={1:{},2:{}};(rr.linhas||[]).forEach(x=>{const s=+x.serie;const add=(o)=>{const z=o[x.mes]||(o[x.mes]={t:0,n:0});z.t+=+x.total||0;z.n+=+x.pedidos||0;};add(m[s]);
+      if(porLoja){const L=lojas.find(l=>l.dig===x.doc);if(L){L.m=L.m||{1:{},2:{}};add(L.m[s]);}}});return m;};
+  const m=soma(r,true),ano=soma(ra,false);
+  lojas.forEach(L=>{L.m=L.m||{1:{},2:{}};const sm=o=>Object.values(o).reduce((s,v)=>s+v.t,0),sn=o=>Object.values(o).reduce((s,v)=>s+v.n,0);L.t1=sm(L.m[1]);L.t2=sm(L.m[2]);L.n1=sn(L.m[1]);L.n2=sn(L.m[2]);});
+  EV.cpc=EV.cpc||{};EV.cpc[k]={k,m,ano,lojas,grp:true};EV.cp=EV.cpc[k];
 }
 function evTopoHtml(P,mt){
   const anos=[...new Set([...evAnos(),+P.de2.slice(0,4)-1])].filter(y=>y<+P.de2.slice(0,4)).sort();
@@ -2005,12 +2036,25 @@ function evRepLista(c,barra,liga){
   c.querySelectorAll('th[data-o]').forEach(h=>h.onclick=()=>{const o=h.dataset.o;if(EV.rko===o||(!EV.rko&&o==='t2'))EV.rkd=-(EV.rkd||-1);else{EV.rko=o;EV.rkd=o==='nome'?1:-1;}evDesenha();});
   c.querySelectorAll('tr.evrkln').forEach(tr=>tr.onclick=()=>{EV.rep=tr.dataset.rep;EV.fx=null;evDesenha();window.scrollTo({top:0,behavior:'smooth'});});
 }
+/* por loja: cada loja numa linha, os meses do período nas colunas (valor do período e % contra o mesmo mês do ano de comparação) */
+function evMatrizHtml(L,P,fut,rot,rotL){
+  const l=L.slice().sort((a,b)=>b.t2-a.t2||b.t1-a.t1);const mv=EV.mv||'pc';
+  const v=(o,ym)=>((o||{})[ym]||{}).t||0;
+  const cel=(a,b,f)=>{if(f)return '<td class="n mxf">—</td>';const p=a?b/a-1:null;
+    const pc=!a&&!b?'<i class="nd">—</i>':!a?'<i class="nv">novo</i>':!b?'<i class="dn">sem compra</i>':`<i class="${p>=0?'up':'dn'}">${evPc(p)}</i>`;
+    return mv==='ab'?`<td class="n"><span class="mx1">${a?evRs(a):'—'}</span><b class="mx2">${b?evRs(b):'—'}</b>${pc}</td>`:`<td class="n"><b class="mx2">${b?evRs(b):'—'}</b>${pc}</td>`;};
+  const tot=(o,s,ym)=>l.reduce((z,x)=>z+v(x.m[s],ym),0);
+  const lin=x=>`<tr class="evljln" data-k="${esc(x.doc?'doc:'+x.doc:'nome:'+x.nome)}"><td class="mxn"><b>${esc(x.fantasia||x.nome)}</b><small>${esc([x.doc,x.cidade].filter(Boolean).join(' · '))}</small></td>${P.meses.map((m,i)=>cel(v(x.m[1],m.ym1),v(x.m[2],m.ym2),fut[i])).join('')}<td class="n a1 m">${x.t1?evRs(x.t1):'—'}</td><td class="n a2 m"><b>${x.t2?evRs(x.t2):'—'}</b></td><td class="n">${x.t1&&x.t2?`<span class="rcpc ${x.t2>=x.t1?'up':'dn'}">${evPc(x.t2/x.t1-1)}</span>`:x.t2?'<span class="rcpc nv">novo</span>':x.t1?'<span class="rcpc dn">sem compra</span>':'—'}</td></tr>`;
+  const T1=l.reduce((s,x)=>s+x.t1,0),T2=l.reduce((s,x)=>s+x.t2,0);
+  return `<div class="caixa" style="margin-top:12px">${evSec('arMx','Mês a mês por loja',`${P.txt2} contra ${P.txt1} · clique na loja para ver só ela`,`<span class="seg evmvseg">${[['pc',P.r2+' + %'],['ab',P.r1+' × '+P.r2]].map(([k,tx])=>`<button data-mv="${k}" class="${mv===k?'on':''}">${tx}</button>`).join('')}</span>`)}${EV.fech.arMx?'':`<div class="rol"><table class="tv evmx2"><thead><tr><th>Loja</th>${P.meses.map((m,i)=>`<th class="n">${rot[i]}</th>`).join('')}<th class="n a1"><span class="evchip">${P.r1}</span></th><th class="n a2"><span class="evchip">${P.r2}</span></th><th class="n">Cresc.</th></tr></thead>
+  <tbody>${l.map(lin).join('')}</tbody><tfoot><tr><td class="mxn"><b>Grupo</b><small>${l.length} lojas somadas</small></td>${P.meses.map((m,i)=>cel(tot(0,1,m.ym1),tot(0,2,m.ym2),fut[i])).join('')}<td class="n a1 m">${evRs(T1)}</td><td class="n a2 m"><b>${evRs(T2)}</b></td><td class="n">${T1?`<span class="rcpc ${T2>=T1?'up':'dn'}">${evPc(T2/T1-1)}</span>`:''}</td></tr></tfoot></table></div>`}</div>`;
+}
 function evLojasHtml(L,P){
   const l=L.slice().sort((a,b)=>b.t2-a.t2||b.t1-a.t1);const T1=l.reduce((s,x)=>s+x.t1,0),T2=l.reduce((s,x)=>s+x.t2,0);const max=Math.max(1,...l.map(x=>Math.max(x.t1,x.t2)));
   const pc=x=>x.t1&&x.t2?`<span class="rcpc ${x.t2>=x.t1?'up':'dn'}">${evPc(x.t2/x.t1-1)}</span>`:x.t2?'<span class="rcpc nv">novo</span>':'<span class="rcpc dn">sem compra</span>';
-  return `<div class="caixa" style="margin-top:12px">${evSec('arLj','Clientes do grupo',`${l.length} ${l.length===1?'cliente':'clientes'} · ${P.txt2} contra ${P.txt1} · clique para ver um só`)}${EV.fech.arLj?'':`<div class="rol"><table class="tv evtab rctab evrktab"><thead><tr><th>Cliente</th><th class="n a1"><span class="evchip">${P.r1}</span></th><th class="n a2"><span class="evchip">${P.r2}</span></th><th class="evrkbh">${P.r1} × ${P.r2}</th><th class="n">Crescimento</th><th class="n">Pedidos</th><th class="n">Participação</th></tr></thead>
-  <tbody>${l.map(x=>`<tr class="evljln evrkln" data-k="${esc(x.doc?'doc:'+x.doc:'nome:'+x.nome)}"><td><b>${esc(x.nome)}</b><small>${esc([x.doc,x.cidade].filter(Boolean).join(' · '))}</small></td><td class="m n a1">${x.t1?evRsc(x.t1):'—'}</td><td class="m n a2"><b>${x.t2?evRsc(x.t2):'—'}</b></td><td class="evrkbc"><div class="evclbr"><i class="b1" style="width:${x.t1/max*100}%"></i><i class="b2" style="width:${x.t2/max*100}%"></i></div></td><td class="n">${pc(x)}</td><td class="m n">${nf(x.n2)}</td><td class="m n">${T2?(x.t2/T2*100).toFixed(1).replace('.',','):'0'}%</td></tr>`).join('')}</tbody>
-  <tfoot><tr><td>${l.length} clientes</td><td class="m n a1">${evRsc(T1)}</td><td class="m n a2">${evRsc(T2)}</td><td></td><td class="n">${T1?`<span class="rcpc ${T2>=T1?'up':'dn'}">${evPc(T2/T1-1)}</span>`:''}</td><td class="m n">${nf(l.reduce((s,x)=>s+x.n2,0))}</td><td class="m n">100%</td></tr></tfoot></table></div>`}</div>`;
+  return `<div class="caixa" style="margin-top:12px">${evSec('arLj','Ranking das lojas',`${l.length} ${l.length===1?'loja':'lojas'} · ${P.txt2} contra ${P.txt1} · clique na loja para ver só ela`)}${EV.fech.arLj?'':`<div class="rol"><table class="tv evtab rctab evrktab"><thead><tr><th>Loja</th><th class="n a1"><span class="evchip">${P.r1}</span></th><th class="n a2"><span class="evchip">${P.r2}</span></th><th class="evrkbh">${P.r1} × ${P.r2}</th><th class="n">Crescimento</th><th class="n">Pedidos</th><th class="n">Participação</th></tr></thead>
+  <tbody>${l.map(x=>`<tr class="evljln evrkln" data-k="${esc(x.doc?'doc:'+x.doc:'nome:'+x.nome)}"><td><b>${esc(x.fantasia||x.nome)}</b><small>${esc([x.doc,x.cidade].filter(Boolean).join(' · '))}</small></td><td class="m n a1">${x.t1?evRsc(x.t1):'—'}</td><td class="m n a2"><b>${x.t2?evRsc(x.t2):'—'}</b></td><td class="evrkbc"><div class="evclbr"><i class="b1" style="width:${x.t1/max*100}%"></i><i class="b2" style="width:${x.t2/max*100}%"></i></div></td><td class="n">${pc(x)}</td><td class="m n">${nf(x.n2)}</td><td class="m n">${T2?(x.t2/T2*100).toFixed(1).replace('.',','):'0'}%</td></tr>`).join('')}</tbody>
+  <tfoot><tr><td>Grupo · ${l.length} lojas</td><td class="m n a1">${evRsc(T1)}</td><td class="m n a2">${evRsc(T2)}</td><td></td><td class="n">${T1?`<span class="rcpc ${T2>=T1?'up':'dn'}">${evPc(T2/T1-1)}</span>`:''}</td><td class="m n">${nf(l.reduce((s,x)=>s+x.n2,0))}</td><td class="m n">100%</td></tr></tfoot></table></div>`}</div>`;
 }
 /* ---------- a aba ---------- */
 function evAnalise(c){
@@ -2039,7 +2083,7 @@ function evAnalise(c){
     if(EV.cpErro){c.innerHTML=barra+`<div class="aviso">⚠ <div>${esc(EV.cpErro)}<br><small>Precisa do SQL <b>supabase-vendas-cliente.sql</b> no banco e da função tiny publicada.</small></div></div>`;liga();EV.cpErro='';return;}
     c.innerHTML=barra+'<div class="vazio">Somando o período…</div>';liga();
     if(!EV.cpCarregando)evCpCarrega(P).then(()=>{if(EV.aba==='ar')evDesenha();});return;}
-  const LJ=EV.cp.lojas||[];const inf=EV.fil==='geral'?null:evGrp()?{nome:'Grupo «'+rcDeKey(EV.cli).nome+'»',grp:true}:EV.fx.info||{};
+  const LJ=EV.cp.lojas||[];const inf=EV.fil==='geral'?null:evGrp()?{nome:EV.grpNome||'Grupo',grp:true,vend:[...new Set(LJ.map(x=>x.vendedor).filter(Boolean))].join(', '),cid:[...new Set(LJ.map(x=>x.cidade).filter(Boolean))].join(', ')}:EV.fx.info||{};
   const M=EV.cp.m,MA=EV.cp.ano;const hm=perHoje().slice(0,7);const fut=P.meses.map(x=>x.ym2>hm);
   const r1=P.meses.map((x,i)=>fut[i]?0:(M[1][x.ym1]||{}).t||0),r2=P.meses.map((x,i)=>fut[i]?0:(M[2][x.ym2]||{}).t||0);
   const r1f=P.meses.map((x,i)=>fut[i]?((MA[1][x.ym1]||{}).t||0):null);
@@ -2057,7 +2101,7 @@ function evAnalise(c){
   EV.ult={t1,t2,acum,P,info:inf,titulo,n1,n2:n2p};
   const dt=s=>s?s.split('-').reverse().join('/'):'—';const dias=inf&&inf.ultima?Math.round((Date.parse(perHoje())-Date.parse(inf.ultima))/864e5):null;
   const cab=EV.fil==='geral'?'':`${EV.fil==='rep'?'<button class="btn sm evrkvolta" id="evRkVolta">‹ Todos os representantes</button>':''}<div class="evclid"><div class="evclav ${EV.fil==='rep'?'rep':''}">${esc((titulo||'?').trim().charAt(0).toUpperCase())}</div><div style="min-width:0"><h2>${esc(titulo)}</h2>
-    <div class="evclchips">${inf.grp?`<span>grupo econômico</span><span><b>${LJ.length}</b> ${LJ.length===1?'cliente':'clientes'} com “${esc(rcDeKey(EV.cli).nome)}” no nome</span><span><b>${LJ.filter(x=>x.t2>0).length}</b> compraram no período</span>`:EV.fil==='cli'?`${inf.doc?`<span>${esc(inf.doc)}</span>`:''}${inf.cidade?`<span>${esc(inf.cidade)}${inf.uf?'/'+esc(inf.uf):''}</span>`:''}${inf.vendedor?`<span>representante <b>${esc(inf.vendedor)}</b></span>`:''}${inf.primeira?`<span>cliente desde ${dt(inf.primeira)}</span>`:''}`
+    <div class="evclchips">${inf.grp?`<span>grupo econômico</span><span><b>${LJ.length}</b> ${LJ.length===1?'loja':'lojas'}</span><span><b>${LJ.filter(x=>x.t2>0).length}</b> compraram no período</span>${inf.vend?`<span>representante <b>${esc(inf.vend)}</b></span>`:''}${inf.cid?`<span>${esc(inf.cid)}</span>`:''}`:EV.fil==='cli'?`${inf.doc?`<span>${esc(inf.doc)}</span>`:''}${inf.cidade?`<span>${esc(inf.cidade)}${inf.uf?'/'+esc(inf.uf):''}</span>`:''}${inf.vendedor?`<span>representante <b>${esc(inf.vendedor)}</b></span>`:''}${inf.primeira?`<span>cliente desde ${dt(inf.primeira)}</span>`:''}`
       :`<span>representante</span>${inf.clientes!=null?`<span><b>${nf(inf.clientes)}</b> clientes nos últimos 12 meses</span>`:''}${inf.primeira?`<span>vendendo desde ${dt(inf.primeira)}</span>`:''}`}
       ${inf.ultima?`<span class="${dias>60?'evclalerta':''}">${EV.fil==='cli'?'última compra':'última venda'} ${dt(inf.ultima)}${dias!=null?` · há ${dias} ${dias===1?'dia':'dias'}`:''}</span>`:''}</div></div></div>`;
   const semTx=EV.fil==='cli'?'sem compra':'sem venda';
@@ -2071,13 +2115,14 @@ function evAnalise(c){
   const pv=pcs.filter(v=>v!=null);const mi=pv.length?pcs.indexOf(Math.max(...pv)):-1;const sobe=pv.filter(v=>v>=0).length;const nm=pv.length;
   c.innerHTML=barra+`<div id="evArCorpo">${cab}
   ${evTopoHtml(P,!!cab)}
+  ${evGrp()?`<div class="evvisao"><span class="k">Visão</span><span class="seg evvseg">${[['cons','Consolidado','o grupo somado'],['loja','Por loja','cada loja mês a mês']].map(([v,tx,d])=>`<button data-gv="${v}" class="${(EV.gv||'cons')===v?'on':''}"><b>${tx}</b><small>${d}</small></button>`).join('')}</span></div>`:''}
   <div class="evKpis evKpis4">${evKpi(`Total ${P.r1}`,evRsc(t1),P.txt1,'roxo')}${evKpi(`Total ${P.r2}`,evRsc(t2),P.txt2,'azul')}${evKpi('Pedidos e ticket médio',`${nf(n2p)} <small class="evkv">pedidos</small>`,`ticket ${evRs(tk2)} · em ${P.r1}: ${nf(n1)} pedidos, ticket ${evRs(tk1)}`,'')}${rcCresc(acum,t2,t1,P.curto)}</div>
   ${sem.length?`<div class="evclaviso">${sem.length===1?'1 mês':sem.length+' meses'} do período sem nenhuma ${EV.fil==='cli'?'compra':'venda'}: ${sem.join(', ')}.</div>`:''}
-  <div class="caixa" style="margin-top:12px">${evSec('arTab','Mês a mês',`${baseN} · ${P.txt2} contra ${P.txt1}`)}${EV.fech.arTab?'':`<div class="rol">${tab}</div>`}</div>
+  ${evGrp()&&EV.gv==='loja'?evMatrizHtml(LJ,P,fut,rot,rotL):`<div class="caixa" style="margin-top:12px">${evSec('arTab','Mês a mês',`${baseN} · ${P.txt2} contra ${P.txt1}`)}${EV.fech.arTab?'':`<div class="rol">${tab}</div>`}</div>
   <div class="caixa" style="margin-top:12px">${evSec('arGraf','Evolução mês a mês',`${baseN} · ${P.curto}`,`<span class="evleg"><i style="background:#7E2A6C"></i>${P.r1}<i style="background:#1B4F9C;margin-left:12px"></i>${P.r2}<i style="background:#15803D;height:3px;width:16px;margin-left:12px;vertical-align:3px"></i>% crescimento</span>`)}${EV.fech.arGraf?'':`<div class="evgraf">${evSvgAR(r1.map((v,i)=>fut[i]?r1f[i]:v),r2.map((v,i)=>fut[i]?null:v),pcs,false,'#7E2A6C',rot)}<div class="evtip"></div></div>`}</div>
-  ${evGrp()?evLojasHtml(LJ,P):''}
+  `}${evGrp()&&EV.gv!=='loja'?evLojasHtml(LJ,P):''}
   ${nm?`<div class="evDest">${evDq('↗',sobe===nm?'Crescimento em todos os meses':`Cresceu em ${sobe} de ${nm} meses`,`${P.r2} × ${P.r1}, mês a mês`,sobe===nm?'':`${nm-sobe} ${nm-sobe>1?'meses abaixo':'mês abaixo'}`)}${evDq('◎','Crescimento no período',acum==null?'—':evPc(acum),P.curto)}${mi>=0?evDq('✓',`${rotL[mi]} foi o melhor mês`,evPc(pcs[mi]),`contra ${rotL[mi].toLowerCase()} de ${P.r1}`):''}</div>`:''}</div>`;
-  liga();evLigaTog(c);c.querySelectorAll('tr.evljln').forEach(tr=>tr.onclick=()=>{EV.cli=tr.dataset.k;EV.fx=null;evDesenha();window.scrollTo({top:0,behavior:'smooth'});});if($('evRkVolta'))$('evRkVolta').onclick=()=>{EV.rep='';evDesenha();};
+  liga();evLigaTog(c);c.querySelectorAll('[data-gv]').forEach(b=>b.onclick=()=>{EV.gv=b.dataset.gv;evDesenha();});c.querySelectorAll('[data-mv]').forEach(b=>b.onclick=()=>{EV.mv=b.dataset.mv;evDesenha();});c.querySelectorAll('tr.evljln').forEach(tr=>tr.onclick=()=>{EV.cli=tr.dataset.k;EV.fx=null;evDesenha();window.scrollTo({top:0,behavior:'smooth'});});if($('evRkVolta'))$('evRkVolta').onclick=()=>{EV.rep='';evDesenha();};
   const g=c.querySelector('#evArCorpo svg');if(g)evTip(g,i=>`<b>${rotL[i]}</b> · ${P.r1}: ${evRsc(r1[i])} · ${P.r2}: <b>${evRsc(r2[i])}</b>${pcs[i]!=null?' · '+evPc(pcs[i]):''}`);
 }
 /* ---------- PDF da Análise relativa: folha do relatório (logo, título, período; cartões, tabela e gráfico) ---------- */
@@ -2094,8 +2139,8 @@ evPdf=function(){
   const caixas=[...c.querySelectorAll(':scope > .caixa')].map(x=>{const k=x.cloneNode(true);k.querySelectorAll('.evtip,.car').forEach(e=>e.remove());k.querySelectorAll('.evtog .k:last-child').forEach(e=>e.remove());return k.outerHTML;}).join('');
   const el=document.createElement('div');
   el.innerHTML=`<div class="evKpis">${evKpi(`Total ${P.r1}`,evRsc(u.t1),P.txt1,'roxo')}${evKpi(`Total ${P.r2}`,evRsc(u.t2),P.txt2,'azul')}${rcCresc(u.acum,u.t2,u.t1,P.curto)}</div>${caixas}`;
-  const abaixo=u.info&&u.info.grp?`Grupo econômico · ${(EV.cp.lojas||[]).length} clientes com “${esc(rcDeKey(EV.cli).nome)}” no nome`:EV.fil==='cli'&&u.info&&u.info.vendedor?`Representante <b style="color:#0E1B33">${esc(u.info.vendedor)}</b>`:EV.fil==='rep'?'Representante':'';
-  pfPdfTela(u.titulo,`${P.r2} × ${P.r1}<div style="font:600 12px/1.3 Inter,sans-serif;opacity:.85;margin-top:2px">${P.txt2} · ${EV.base==='V'?'pedidos de venda':'faturamento'}</div>`,el,'portrait',{arq:`${u.titulo} - ${P.txt2.replace(/\//g,'-')}`,emiCima:true,abaixo});
+  const abaixo=u.info&&u.info.grp?`Grupo econômico · ${(EV.cp.lojas||[]).length} lojas${u.info.vend?' · representante <b style="color:#0E1B33">'+esc(u.info.vend)+'</b>':''} · ${EV.gv==='loja'?'por loja':'consolidado'}`:EV.fil==='cli'&&u.info&&u.info.vendedor?`Representante <b style="color:#0E1B33">${esc(u.info.vendedor)}</b>`:EV.fil==='rep'?'Representante':'';
+  pfPdfTela(u.titulo,`${P.r2} × ${P.r1}<div style="font:600 12px/1.3 Inter,sans-serif;opacity:.85;margin-top:2px">${P.txt2} · ${EV.base==='V'?'pedidos de venda':'faturamento'}</div>`,el,evGrp()&&EV.gv==='loja'?'landscape':'portrait',{arq:`${u.titulo} - ${P.txt2.replace(/\//g,'-')}`,emiCima:true,abaixo});
   if(fech!==EV.fech){EV.fech=fech;evDesenha();}
 };
 /* endereço antigo do relatório (v427): abre aqui com o cliente */
@@ -2180,6 +2225,16 @@ function telaRelIndex(){
 .evrkln{cursor:pointer}.evrkln:hover td{background:#EAF1FB!important}
 .evrkbh,.evrkbc{width:170px}.evclbr{display:flex;flex-direction:column;gap:3px}.evclbr i{display:block;height:6px;border-radius:3px;min-width:2px}.evclbr .b1{background:#7E2A6C}.evclbr .b2{background:#1B4F9C}
 .evrkvolta{margin-bottom:10px}
+.evvisao{display:flex;align-items:center;gap:10px;margin:2px 0 12px}.evvisao>.k{font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3);font-weight:600}
+.evvseg button{display:flex;flex-direction:column;align-items:flex-start;padding:8px 16px;line-height:1.2}.evvseg button b{font-size:13.5px}.evvseg button small{font-size:11px;opacity:.75;font-weight:500}
+.evmvseg button{padding:5px 10px;font-size:11.5px}
+.evmx2{border:0;border-radius:0;min-width:100%}.evmx2 th,.evmx2 td{white-space:nowrap}.evmx2 td{padding:8px 8px;vertical-align:middle;border-bottom:1px solid var(--line2)}
+.evmx2 td.mxn{min-width:220px;white-space:normal}.evmx2 td.mxn small{display:block;font-size:11px;color:var(--ink3)}
+.evmx2 .mx2{display:block;font-size:12.5px;color:#1B4F9C}.evmx2 .mx1{display:block;font-size:11.5px;color:#7E2A6C}.evmx2 td i{display:block;font-style:normal;font-size:11px;font-weight:700}
+.evmx2 i.up{color:#15803D}.evmx2 i.dn{color:#B91C1C}.evmx2 i.nv{color:#1B4F9C}.evmx2 i.nd{color:var(--ink3);font-weight:500}.evmx2 td.mxf{color:var(--ink3);opacity:.5}
+.evmx2 th.a1,.evmx2 td.a1{background:#F8F1F6;color:#6B2A5C}.evmx2 th.a2,.evmx2 td.a2{background:#EAF2FF;color:#1B4F9C}.evmx2 th.a1 .evchip{background:#7E2A6C}.evmx2 th.a2 .evchip{background:#1B4F9C}
+.evmx2 tbody tr{cursor:pointer}.evmx2 tbody tr:hover td{background:#EAF1FB}.evmx2 tfoot td{font-weight:700;background:var(--line3)}
+.rcres .rceg{background:#F5EEFB;border:1px solid #D8B4FE;margin-bottom:6px}.rcres .rceg b{color:#6B21A8}
 .rcres .rcgrp{background:#EEF4FC;border:1px dashed #1B4F9C;margin-bottom:6px}.rcres .rcgrp b{color:#1B4F9C}.rctab small.rcproj{display:block;font-size:10.5px;font-weight:500;color:var(--ink3)}.rctab tr.rcano td{border-top:1px solid var(--line)}
 `;document.head.appendChild(s);}catch(e){}})();
 
