@@ -5474,7 +5474,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v422';
+const VERSAO_APP='v423';
 let DRAG=null;
 function render(){
   recomporTudo();
@@ -30175,7 +30175,7 @@ try{csNucleo.versao='v392';}catch(e){}
 try{csNucleo.versao='v393';}catch(e){}
 </script>
 <script>
-try{csNucleo.versao='v422';}catch(e){}
+try{csNucleo.versao='v423';}catch(e){}
 </script>
 <script>/* =====================================================================
    v398 — PÁGINA TANQUES NO LAYOUT NOVO
@@ -31230,7 +31230,8 @@ try{csTqAbre();}catch(e){}
    A página do envase continua igual. Em cima dela entra a faixa TANQUES, recolhida: ao expandir, mostra os
    tanques do dia exatamente como na página Tanques (mesmo desenho, mesmos cliques). O seletor Envase|Tanques sai.
    Selo na faixa: análise enviada pelo tanque esperando liberação, e lote que precisa de ajuste. */
-let CS_TQBAR_AB=false;try{CS_TQBAR_AB=sessionStorage.getItem('erp.tqbar')==='1';}catch(e){}
+let CS_TQBAR_AB=false;   /* v423: sempre começa recolhida (ao entrar na página ou atualizar) */
+let CS_TQBAR_PG='';
 try{CS_DIA_TIT.envase='Envase e Tanques';}catch(e){}
 /* as regras do #tqgrid valem também para a grade dos tanques dentro da faixa */
 function csTqBarCss(){
@@ -31242,7 +31243,10 @@ function csTqBarCss(){
       if(r.selectorText&&r.selectorText.includes('#tqgrid'))out.push(r.cssText.replace(/#tqgrid/g,'#csTqMini'));}};
     walk(rs);}
   const s=document.createElement('style');s.id='csTqBarCss';s.textContent=out.join('\n')+`
-#csTqBar{margin:0 0 14px;border:1px solid #E1E4E9;border-radius:12px;background:#EEF0F3;overflow:hidden}
+/* v423: a faixa Tanques fica parada no topo; os títulos das máquinas (cs5faixa) param logo abaixo; só os cartões rolam */
+#csTqBarW{position:sticky;top:-16px;z-index:61;margin-top:-16px;padding:16px 0 14px;background:var(--surface,#F5F4F0)}
+#csTqBar{border:1px solid #E1E4E9;border-radius:12px;background:#EEF0F3;overflow:hidden}
+#csTqBar.ab .tbm{max-height:52vh;overflow:auto}
 #csTqBar .tbh{display:flex;align-items:center;gap:10px;padding:7px 8px 7px 14px;cursor:pointer;user-select:none}
 #csTqBar .tbh b{font-size:14px;font-weight:700;color:var(--ink)}
 #csTqBar .tbh .sp{flex:1}
@@ -31273,13 +31277,16 @@ function csTqBarAvisos(){
 function csTqBar(){
   try{
     const wrap=M('tqwrap'),grid=M('tqgrid');
-    let bar=document.getElementById('csTqBar');
+    let bar=document.getElementById('csTqBar');let bw=document.getElementById('csTqBarW');
     document.body.classList.toggle('cs-envtq',S.page==='envase');
-    if(S.page!=='envase'||!wrap||!grid||grid.classList.contains('horiz')){if(bar)bar.remove();return;}
+    if(S.page!==CS_TQBAR_PG){CS_TQBAR_PG=S.page;CS_TQBAR_AB=false;}   /* saiu e voltou: recolhida */
+    if(S.page!=='envase'||!wrap||!grid||grid.classList.contains('horiz')){if(bw)bw.remove();else if(bar)bar.remove();const fx0=document.getElementById('cs5faixa');if(fx0)fx0.style.top='';return;}
     try{const ns=M('novoSaldo');if(ns)ns.style.display='';const sw=M('csSlSw');if(sw)sw.style.display='none';}catch(e){}
     csTqBarCss();
     if(!bar){bar=document.createElement('div');bar.id='csTqBar';}
-    if(bar.parentNode!==wrap||wrap.firstChild!==bar)wrap.insertBefore(bar,wrap.firstChild);   /* bem no topo, antes dos nomes das máquinas */
+    if(!bw){bw=document.createElement('div');bw.id='csTqBarW';}
+    if(bar.parentNode!==bw)bw.appendChild(bar);
+    if(bw.parentNode!==wrap||wrap.firstChild!==bw)wrap.insertBefore(bw,wrap.firstChild);   /* bem no topo, antes dos nomes das máquinas */
     const av=csTqBarAvisos();
     const nome=l=>[...new Set(l.map(b=>b.tanque))].join(', ');
     bar.classList.toggle('ab',CS_TQBAR_AB);
@@ -31288,15 +31295,16 @@ function csTqBar(){
       ${av.aj.length?`<span class="tbs aj" title="${escAttr(av.aj.map(b=>b.tanque+' · '+b.produto).join('\n'))}"><i>${av.aj.length}</i>${av.aj.length===1?escAttr(av.aj[0].tanque)+' precisa de ajuste':'precisam de ajuste · '+escAttr(nome(av.aj))}</span>`:''}
       <span class="sp"></span><button type="button" class="btn sm tbb">${CS_TQBAR_AB?'Recolher':'Expandir'}<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button></div>
       <div class="tbm"></div>`;
-    const tg=()=>{CS_TQBAR_AB=!CS_TQBAR_AB;try{sessionStorage.setItem('erp.tqbar',CS_TQBAR_AB?'1':'0');}catch(e){}csTqBar();};
+    const tg=()=>{CS_TQBAR_AB=!CS_TQBAR_AB;csTqBar();};
     const h=bar.querySelector('.tbh');h.onclick=tg;
     /* tocar no selo abre o tanque: análise → ficha do lote para liberar; ajuste → a ficha na aba do certificado */
     bar.querySelectorAll('.tbs').forEach(s=>s.onclick=ev=>{ev.stopPropagation();const aj=s.classList.contains('aj');const l=aj?av.aj:av.ana;
-      if(!CS_TQBAR_AB){CS_TQBAR_AB=true;try{sessionStorage.setItem('erp.tqbar','1');}catch(e){}csTqBar();}
+      if(!CS_TQBAR_AB){CS_TQBAR_AB=true;csTqBar();}
       const b=l[0];if(!b)return;S.refTq=new Date(S.ref||new Date());
       if(aj){try{ABA_LOTE='cert';}catch(e){}}
       setTimeout(()=>{try{abrirLote(bateladas(ymd(S.ref||new Date())).find(x=>x.chave===b.chave)||b);}catch(e){}},50);});h.onkeydown=ev=>{if(ev.key==='Enter'||ev.key===' '){ev.preventDefault();tg();}};
-    if(!CS_TQBAR_AB)return;
+    const ajusta=()=>{try{const fx=document.getElementById('cs5faixa');if(fx)fx.style.top=(bw.offsetHeight-32)+'px';}catch(e){}};
+    if(!CS_TQBAR_AB){ajusta();return;}
     /* desenha a grade dos tanques com a mesma função da página Tanques, num lugar à parte */
     const box=bar.querySelector('.tbm');const g=document.createElement('div');g.className='tqgrid';box.appendChild(g);
     const pg=S.page,rt=S.refTq;
@@ -31310,6 +31318,7 @@ function csTqBar(){
       bt.className='cs-pts';bt.type='button';bt.innerHTML=csSvg('pts',2,15);bt.onclick=ev=>{S.refTq=new Date(S.ref||new Date());csCtxLote(ev,el.dataset.bat);};el.appendChild(bt);
       el.addEventListener('click',ev=>{if(ev.target.closest('button'))return;ev.stopPropagation();ev.preventDefault();},true);});
     try{csSaldoLiga(mini);}catch(e){}
+    ajusta();
   }catch(e){console.warn('csTqBar',e);}
 }
 try{const _rd413=render;render=function(){const r=_rd413.apply(this,arguments);csTqBar();return r;};}catch(e){}
@@ -31437,7 +31446,6 @@ function csSaldoLiga(raiz){(raiz||document).querySelectorAll('[data-sldm]').forE
   (raiz||document).querySelectorAll('.cs-sldpx[data-puxa]').forEach(e=>{if(e.dataset.lig)return;e.dataset.lig='1';e.addEventListener('click',ev=>{ev.stopPropagation();
     const sd=SALDOS.find(x=>x.id===e.dataset.puxa);if(sd)abrirOrdem(null,{saldoId:sd.id,tanque:sd.tanque,data:ymd(S.page==='tanques'?S.refTq:(S.ref||new Date())),litros:dispDe(sd),prodTanque:sd.produto});});});}
 try{const _rd413s=render;render=function(){const r=_rd413s.apply(this,arguments);try{csSaldoLiga();}catch(e){}return r;};}catch(e){}
-
 </script>
 <script>
 /* ===================== v421 · descanso com botão e contagem regressiva =====================
