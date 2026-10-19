@@ -508,7 +508,7 @@ function toast(t){const e=$('toast');e.textContent=t;e.style.display='block';cle
 /* cores universais = as do tablet do envase:
    agu azul (aguardando a próxima etapa) · set cinza (preparando o tanque: limpeza, enchimento) · rod verde (produzindo / envasando)
    pau amarelo (pausado) · atr vermelho (atrasado ou com problema) · apo roxo (o operador precisa apontar: análise) · liv (livre) */
-const ST={limpar:['agu','Liberado para limpeza'],limpando:['set','Limpando'],encher:['agu','Limpo · encher'],enchendo:['set','Enchendo'],cheio:['agu','Cheio · aguardando preparo'],atras:['atr','Atrasado · cheio'],prep:['rod','Preparando'],descansar:['agu','Análise enviada'],descanso:['rod','Em descanso'],analise:['apo','Fazer análise'],naolib:['agu','Aguardando liberação'],liberado:['agu','Tanque liberado'],envasando:['rod','Envasando'],livre:['liv','Livre'],saldo:['apo','Saldo de lote'],ajuste:['atr','Ajuste pedido pelo químico'],pausa:['pau','Pausado']};
+const ST={limpar:['agu','Liberado para limpeza'],limpando:['set','Limpando'],encher:['agu','Limpo · encher'],enchendo:['set','Enchendo'],cheio:['agu','Cheio · aguardando preparo'],atras:['atr','Atrasado · cheio'],prep:['rod','Preparando'],descansar:['agu','Análise enviada'],descanso:['rod','Em descanso'],analise:['apo','Fazer análise'],naolib:['agu','Aguardando liberação'],liberado:['agu','Aguardando envase'],envasando:['rod','Envasando'],livre:['liv','Livre'],saldo:['apo','Saldo de lote'],ajuste:['atr','Ajuste pedido pelo químico'],pausa:['pau','Pausado']};
 const NAO_COMECOU=['limpar','encher','livre'],PRODUZIDO=['descansar','descanso','analise','naolib','liberado','ajuste'];
 let DIA=null;            /* null = hoje; senão a data escolhida (próximo dia de produção etc.) */
 let D=null,T=[],AGORA=0;

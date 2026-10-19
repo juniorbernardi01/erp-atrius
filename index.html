@@ -5474,7 +5474,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v425';
+const VERSAO_APP='v426';
 let DRAG=null;
 function render(){
   recomporTudo();
@@ -30175,7 +30175,7 @@ try{csNucleo.versao='v392';}catch(e){}
 try{csNucleo.versao='v393';}catch(e){}
 </script>
 <script>
-try{csNucleo.versao='v425';}catch(e){}
+try{csNucleo.versao='v426';}catch(e){}
 </script>
 <script>/* =====================================================================
    v398 — PÁGINA TANQUES NO LAYOUT NOVO
@@ -30207,8 +30207,8 @@ try{csNucleo.versao='v425';}catch(e){}
       if(s.st==='descanso')return {c:'ok',t:'Em descanso'+(s.lib?' · liberado':''),x:'faltam '+durMin(s.descFalta)};}catch(e){}
     if(b.status==='liberado'){
       const env=(b.ordens||[]).find(o=>['preparacao','producao'].includes(sit(o)));
-      if(env)return {c:'az',t:'Envasando · '+env.maq,x:''};
-      return {c:'az',t:'Tanque liberado',x:b.liberadoEm||''};
+      if(env)return {c:'env',t:'Envasando · '+env.maq,x:''};
+      return {c:'agu',t:'Aguardando envase',x:''};
     }
     if(ff)return {c:'amb',t:'Tanque não liberado',x:ff.hora||''};
     if(fi){const i=minDe(fi.hora);return {c:'ok',t:'Preparando',x:(ehHoje(b.data)&&i!=null)?durMin(agoraMin()-i):(fi.hora||'')};}
@@ -30304,7 +30304,7 @@ try{csNucleo.versao='v425';}catch(e){}
 #tqgrid .cs8-st{display:flex;justify-content:space-between;align-items:center;gap:6px;padding:7px 10px;border-radius:9px;font:800 12px system-ui,sans-serif;color:#fff;margin-right:34px}
 #tqgrid .cs8-st em{font:700 12px 'Inter',ui-monospace,monospace;font-style:normal;white-space:nowrap}
 #tqgrid .cs8-st span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#tqgrid .cs8-ok{background:#16A34A}#tqgrid .cs8-amb{background:#F59E0B;color:#1F1300}#tqgrid .cs8-az{background:#2563EB}#tqgrid .cs8-cz{background:#64748B}#tqgrid .cs8-cz2{background:#E2E8F0;color:#334155}#tqgrid .cs8-mau{background:#DC2626}
+#tqgrid .cs8-ok{background:#16A34A}#tqgrid .cs8-amb{background:#F59E0B;color:#1F1300}#tqgrid .cs8-az{background:#2563EB}#tqgrid .cs8-agu{background:#1B4F9C}#tqgrid .cs8-env{background:#15803D}#tqgrid .cs8-cz{background:#64748B}#tqgrid .cs8-cz2{background:#E2E8F0;color:#334155}#tqgrid .cs8-mau{background:#DC2626}
 #tqgrid .cs8-pr{font:800 17px/1.15 system-ui,sans-serif;margin-top:9px;color:var(--ink,#0F172A);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #tqgrid .cs8-sub{font-size:11.5px;color:var(--ink3,#64748B);margin-top:2px}
 #tqgrid .cs8-ti{display:grid;grid-template-columns:1fr 1.15fr .95fr;gap:6px;margin-top:9px}
