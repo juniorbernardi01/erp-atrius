@@ -5474,7 +5474,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v424';
+const VERSAO_APP='v425';
 let DRAG=null;
 function render(){
   recomporTudo();
@@ -30175,7 +30175,7 @@ try{csNucleo.versao='v392';}catch(e){}
 try{csNucleo.versao='v393';}catch(e){}
 </script>
 <script>
-try{csNucleo.versao='v424';}catch(e){}
+try{csNucleo.versao='v425';}catch(e){}
 </script>
 <script>/* =====================================================================
    v398 — PÁGINA TANQUES NO LAYOUT NOVO
@@ -31244,7 +31244,7 @@ function csTqBarCss(){
     walk(rs);}
   const s=document.createElement('style');s.id='csTqBarCss';s.textContent=out.join('\n')+`
 /* v423: a faixa Tanques fica parada no topo; os títulos das máquinas (cs5faixa) param logo abaixo; só os cartões rolam */
-#csTqBarW{position:sticky;top:-16px;z-index:55;margin-top:-16px;padding:16px 0 14px;background:var(--surface,#F5F4F0)}
+#csTqBarW{position:sticky;top:-16px;z-index:30;margin-top:-16px;padding:16px 0 14px;background:var(--surface,#F5F4F0)}
 #csTqBar{border:1px solid #E1E4E9;border-radius:12px;background:#EEF0F3;overflow:hidden}
 #csTqBar.ab .tbm{max-height:52vh;overflow:auto}
 #csTqBar .tbh{display:flex;align-items:center;gap:10px;padding:7px 8px 7px 14px;cursor:pointer;user-select:none}
