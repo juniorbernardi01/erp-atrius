@@ -468,6 +468,9 @@ body.kbon .modal.gen,body.kbon .modal{overflow-y:auto;padding-bottom:270px!impor
 
 /* v420: botão só com título (pulmão) fica centrado na altura */
 .dt b:last-child{grid-row:span 2;align-self:center}
+/* v421: contagem regressiva do descanso no botão */
+.acao.cdesc{display:flex!important;align-items:center;justify-content:center;gap:12px;color:var(--fg)!important}.acao.cdesc b{font:800 24px var(--font);color:#15803D}.acao.cdesc span{display:block;line-height:1.15}.acao.cdesc small{display:block;margin-top:3px}
+:root[data-theme="dark"] .acao.cdesc b{color:#4ADE80}
 .pill.agu{background:#E8EFF9;color:#1B4F9C}:root[data-theme="dark"] .pill.agu{background:#1A2A4A;color:#93B4E8}
 
 </style>
@@ -505,8 +508,8 @@ function toast(t){const e=$('toast');e.textContent=t;e.style.display='block';cle
 /* cores universais = as do tablet do envase:
    agu azul (aguardando a próxima etapa) · set cinza (preparando o tanque: limpeza, enchimento) · rod verde (produzindo / envasando)
    pau amarelo (pausado) · atr vermelho (atrasado ou com problema) · apo roxo (o operador precisa apontar: análise) · liv (livre) */
-const ST={limpar:['agu','Liberado para limpeza'],limpando:['set','Limpando'],encher:['agu','Limpo · encher'],enchendo:['set','Enchendo'],cheio:['agu','Cheio · aguardando preparo'],atras:['atr','Atrasado · cheio'],prep:['rod','Preparando'],descanso:['rod','Em descanso'],analise:['apo','Descansou · fazer análise'],naolib:['agu','Aguardando liberação'],liberado:['agu','Tanque liberado'],envasando:['rod','Envasando'],livre:['liv','Livre'],saldo:['apo','Saldo de lote'],ajuste:['atr','Ajuste pedido pelo químico'],pausa:['pau','Pausado']};
-const NAO_COMECOU=['limpar','encher','livre'],PRODUZIDO=['descanso','analise','naolib','liberado','ajuste'];
+const ST={limpar:['agu','Liberado para limpeza'],limpando:['set','Limpando'],encher:['agu','Limpo · encher'],enchendo:['set','Enchendo'],cheio:['agu','Cheio · aguardando preparo'],atras:['atr','Atrasado · cheio'],prep:['rod','Preparando'],descansar:['agu','Análise enviada'],descanso:['rod','Em descanso'],analise:['apo','Fazer análise'],naolib:['agu','Aguardando liberação'],liberado:['agu','Tanque liberado'],envasando:['rod','Envasando'],livre:['liv','Livre'],saldo:['apo','Saldo de lote'],ajuste:['atr','Ajuste pedido pelo químico'],pausa:['pau','Pausado']};
+const NAO_COMECOU=['limpar','encher','livre'],PRODUZIDO=['descansar','descanso','analise','naolib','liberado','ajuste'];
 let DIA=null;            /* null = hoje; senão a data escolhida (próximo dia de produção etc.) */
 let D=null,T=[],AGORA=0;
 let OPER='';             /* quem abriu o tablet (PIN na abertura); recarregar pede de novo */
@@ -535,7 +538,8 @@ function cartao(t){const l=lote(t);const s=statusDe(t);const [cor,rot]=ST[s]||['
     if(s==='limpando')tempo=dur(l.desde)+(l.plan.limp?' / '+dur(l.plan.limp.min):'');
     else if(s==='enchendo')tempo=dur(l.desde)+(l.plan.ench?' / '+dur(l.plan.ench.min):'');
     else if(s==='prep')tempo=dur(l.desde)+(l.prev?' / '+dur(l.prev):'');
-    else if(s==='descanso')tempo=dur(l.desde)+(l.desc?' / '+dur(l.desc):'');
+    else if(s==='descanso')tempo='faltam '+dur(l.descFalta!=null?l.descFalta:Math.max(0,(l.desc||0)-(l.desde||0)));
+    else if(s==='descansar')tempo=l.ini?'desde '+l.ini:'';
     else if(s==='atras')tempo='+'+dur(l.desde);
     else if(s==='pausa')tempo=dur(pausaMin(l.pausa));
     else if(l.ini)tempo=(s==='envasando'||s==='cheio'?'desde ':'')+l.ini;
@@ -546,12 +550,13 @@ function cartao(t){const l=lote(t);const s=statusDe(t);const [cor,rot]=ST[s]||['
   if(s==='analise'&&l&&l.reana)rotulo='Ajustado · refazer análise';
   /* passou da hora: só laranja, sem piscar */
   const atr=l&&!ehAmanha()&&!['liberado','envasando','livre'].includes(s)&&l.prontoMin!=null&&(l.data<D.hoje||AGORA>l.prontoMin);
-  const descAte=l&&s==='descanso'&&l.ini?hm(min(l.ini)+(l.desc||0)):'';
+  const descAte=l&&s==='descanso'&&l.ini?hm(min(l.ini)+(l.desc||0)):'';   /* l.ini = início do descanso */
   const B={limpar:`<div class="acao go" data-a="limpIni">Iniciar limpeza</div>`,limpando:`<div class="acao go" data-a="limpFim">Concluir limpeza</div>`,
     encher:`<div class="acao go" data-a="enchIni">Iniciar enchimento</div>`,enchendo:`<div class="acao go" data-a="enchFim">Concluir enchimento</div>`,
     cheio:`<div class="acao go" data-a="prepIni">Iniciar preparo</div>`,atras:`<div class="acao go" data-a="prepIni">Iniciar preparo</div>`,
     prep:`<div class="acao fim" data-a="prepFim">Concluir preparo</div>`,
-    descanso:`<div class="acao off">Descansando · análise às ${descAte}</div>`,
+    descansar:`<div class="acao go" data-a="descIni">Iniciar descanso<small style="color:#DCE7F7">${l?dur(l.desc||0):''} de descanso · ${l&&l.libQ?'químico já liberou ✓':'o químico libera junto'}</small></div>`,
+    descanso:`<div class="acao off cdesc"><b>${dur(l&&l.descFalta!=null?l.descFalta:0)}</b><span>Descansando · pronto às ${descAte}<small>${l&&l.libQ?'químico já liberou ✓':'esperando a liberação do químico'}</small></span></div>`,
     analise:`<div class="acao apo" data-a="ana">${l&&l.reana?'Refazer análise':'Preencher análise'}</div>`,
     ajuste:`<div class="acao go" data-a="form">Lançar ajuste</div>`,
     naolib:`<div class="acao off">Esperando a liberação<small>o químico libera ou pede ajuste</small></div>`,
@@ -605,7 +610,7 @@ function atualiza(){carrega();desenha();}
 window.tqAtualiza=()=>{try{aplicaTema();atualiza();}catch(e){}};
 
 /* ---------- ações ---------- */
-const REG={limpIni:'Iniciar limpeza',limpFim:'Concluir limpeza',limpNao:'Não precisa limpar',enchIni:'Iniciar enchimento',enchFim:'Concluir enchimento',prepIni:'Iniciar preparo',prepFim:'Concluir preparo'};
+const REG={descIni:'Iniciar descanso',limpIni:'Iniciar limpeza',limpFim:'Concluir limpeza',limpNao:'Não precisa limpar',enchIni:'Iniciar enchimento',enchFim:'Concluir enchimento',prepIni:'Iniciar preparo',prepFim:'Concluir preparo'};
 function acao(id,a){const t=T.find(x=>x.id===id);if(!t)return;const s=statusDe(t);const l=lote(t);
   if(a==='menu')return abrirDrawer(t);
   if(a==='retomar')return pedirPin(t.id+' · Retomar',pin=>exec(t,'retomar',pin));
@@ -613,7 +618,7 @@ function acao(id,a){const t=T.find(x=>x.id===id);if(!t)return;const s=statusDe(t
   if(!l)return toast('Sem lote neste tanque.');
   if(l.saldo)return toast('Saldo de lote: o produto já está pronto no tanque. O envase puxa pelo PCP.');
   if(a==='form')return abrirForm(t,'sep');
-  if(a==='ana'){if(!['analise','naolib','liberado','envasando'].includes(s))return toast(s==='descanso'?'A análise libera ao fim do descanso.':'Precisa finalizar o preparo antes da análise.');return abrirAna(t);}
+  if(a==='ana'){if(!['analise','naolib','liberado','envasando','descansar','descanso'].includes(s))return toast(s==='descanso'?'A análise libera ao fim do descanso.':'Precisa finalizar o preparo antes da análise.');return abrirAna(t);}
   if(a==='pausar')return pausar(t);
   if(a==='prepIni'&&(l.mp||[]).length&&sepOk(l)<l.mp.length)return toast('Separe as '+(l.mp.length-sepOk(l))+' matérias-primas que faltam antes de iniciar o preparo.');
   if(a==='prepFim'){const n=(l.proc||[]).length;if(n&&l.passo<n)return toast('Marque todos os passos do Modo de Fazer antes de concluir.');
@@ -779,7 +784,7 @@ function abrirDrawer(t,aba){const l=lote(t);const d=$('drawer');const s=statusDe
   let px=[];try{if(D&&D.prox&&N.tqDados){const o=N.tqDados(D.prox).T.find(z=>z.id===t.id);px=o?o.fila.filter(x=>!x.saldo):[];}}catch(e){}
   const prox=t.fila.slice(1),feit=t.feitos.slice().reverse();
   const todos=[...t.fila,...px,...t.feitos];
-  const anaOk=l&&['analise','naolib','liberado','envasando','ajuste'].includes(s);
+  const anaOk=l&&['analise','naolib','liberado','envasando','ajuste','descansar','descanso'].includes(s);
   const tile=(id,ic,cor,tit,sub,off)=>`<div class="dt ${off?'off':''}" id="${id}"><i class="dic ${cor}">${ic}</i><b>${tit}</b><small>${sub}</small></div>`;
   d.innerHTML=`<div class="dh"><b>${esc(t.id)}</b><small>${nl(t.cap)} L de capacidade${t.pul?' · pulmão':''} · ${esc(curtoDia(cur))}</small><span class="x" id="dX">×</span></div>
   <div class="dscroll">
@@ -901,7 +906,7 @@ function abrirForm(t,aba){const l=lote(t);if(!l)return toast('Sem lote neste tan
       if(okSep){f.classList.remove('on');}});};}
 
 /* ---------- análise ---------- */
-function abrirAna(t){const l=lote(t);if(!l)return;const f=$('fAna');const enviada=['naolib','liberado','envasando'].includes(statusDe(t));
+function abrirAna(t){const l=lote(t);if(!l)return;const f=$('fAna');const enviada=['naolib','liberado','envasando','descansar','descanso'].includes(statusDe(t));
   const R={};(l.ens||[]).forEach(e=>{R[e.k]=l.reana?'':(l.res[e.k]??'');});let obs='';
   const situ=e=>{const v=R[e.k];if(v===''||v==null)return null;if(e.quali)return v==='ok'?'ok':(v==='fora'?'fora':null);const n=+String(v).replace(',','.');if(isNaN(n))return null;if(e.min!=null&&n<e.min)return 'fora';if(e.max!=null&&n>e.max)return 'fora';return 'ok';};
   const pinta=()=>{

@@ -5474,7 +5474,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v420';
+const VERSAO_APP='v422';
 let DRAG=null;
 function render(){
   recomporTudo();
@@ -30175,7 +30175,7 @@ try{csNucleo.versao='v392';}catch(e){}
 try{csNucleo.versao='v393';}catch(e){}
 </script>
 <script>
-try{csNucleo.versao='v420';}catch(e){}
+try{csNucleo.versao='v422';}catch(e){}
 </script>
 <script>/* =====================================================================
    v398 — PÁGINA TANQUES NO LAYOUT NOVO
@@ -30201,6 +30201,10 @@ try{csNucleo.versao='v420';}catch(e){}
   function cs8Sit(b){
     const fi=fabIniDe(b),ff=fabFimDe(b);
     if(b.status==='concluido')return {c:'cz',t:'Envase concluído',x:''};
+    /* v422: descanso depois da análise, junto com a liberação */
+    try{const s=csTqSt(b);
+      if(s.st==='descansar')return {c:'az',t:'Análise enviada · iniciar descanso',x:''};
+      if(s.st==='descanso')return {c:'ok',t:'Em descanso'+(s.lib?' · liberado':''),x:'faltam '+durMin(s.descFalta)};}catch(e){}
     if(b.status==='liberado'){
       const env=(b.ordens||[]).find(o=>['preparacao','producao'].includes(sit(o)));
       if(env)return {c:'az',t:'Envasando · '+env.maq,x:''};
@@ -31433,6 +31437,49 @@ function csSaldoLiga(raiz){(raiz||document).querySelectorAll('[data-sldm]').forE
   (raiz||document).querySelectorAll('.cs-sldpx[data-puxa]').forEach(e=>{if(e.dataset.lig)return;e.dataset.lig='1';e.addEventListener('click',ev=>{ev.stopPropagation();
     const sd=SALDOS.find(x=>x.id===e.dataset.puxa);if(sd)abrirOrdem(null,{saldoId:sd.id,tanque:sd.tanque,data:ymd(S.page==='tanques'?S.refTq:(S.ref||new Date())),litros:dispDe(sd),prodTanque:sd.produto});});});}
 try{const _rd413s=render;render=function(){const r=_rd413s.apply(this,arguments);try{csSaldoLiga();}catch(e){}return r;};}catch(e){}
+
+</script>
+<script>
+/* ===================== v421 · descanso com botão e contagem regressiva =====================
+   Só para os produtos com descanso nos Tempos de processo. Ao concluir o preparo, o tanque fica em
+   "Preparo concluído · iniciar descanso" (azul). O operador toca em "Iniciar descanso" (PIN) e começa a contagem
+   regressiva; ao zerar, a Análise libera. Produto sem descanso vai direto para a Análise, como antes. */
+/* v422: a ordem é preparo → ANÁLISE → descanso. O descanso começa quando o operador toca em "Iniciar descanso"
+   (depois de enviar a análise) e corre junto com a liberação do químico. O tanque fica pronto para o envase quando
+   o descanso zera E o químico libera. Só para produto com a chave "Descanso" ligada nos Tempos de processo. */
+try{const _st421=csTqSt;csTqSt=function(b){
+  const r=_st421.apply(this,arguments);
+  try{const at=APONTA[b.chave]||{},tq=at.tq||{};
+    if(!at.fabFim||b.status==='concluido'||tq.reana||(tq.ajPed||[]).some(a=>!a.lanc))return r;
+    if(r.st==='envasando')return r;
+    /* antes de enviar a análise: análise logo depois do preparo, sem esperar descanso */
+    if(!tq.anaEnv){if(r.st==='descanso'&&b.status!=='liberado'){r.st='analise';}return r;}   /* sem análise enviada pelo tablet (lote antigo ou analisado no PCP): segue como antes */
+    const desc=csTqDescanso(b);if(!(desc>0))return r;
+    r.lib=b.status==='liberado';
+    if(!tq.descIni){r.st='descansar';r.ini=(tq.anaEnv&&tq.anaEnv.h)||r.ini;r.desde=tq.anaEnv?csTqDesde(tq.anaEnv):r.desde;return r;}
+    const d=csTqDesde(tq.descIni);
+    if(d!=null&&d<desc){r.st='descanso';r.ini=tq.descIni.h||'';r.desde=d;r.descFalta=desc-d;}
+  }catch(e){}
+  return r;};}catch(e){}
+/* o tablet recebe quanto falta */
+try{const _tl421=csTqLote;csTqLote=function(b){const l=_tl421.apply(this,arguments);
+  try{const s=csTqSt(b);if(s.descFalta!=null)l.descFalta=s.descFalta;l.libQ=!!s.lib;
+    const tq=(APONTA[b.chave]||{}).tq||{};if(tq.descIni)l.descIni=tq.descIni.h||'';}catch(e){}
+  return l;};}catch(e){}
+/* a ação "Iniciar descanso" */
+try{const _ac421=csTqAcao;csTqAcao=function(k,a,x,pin){
+  if(a!=='descIni')return _ac421.apply(this,arguments);
+  const b=csTqAchar(k);if(!b)return {erro:'Esse lote não está mais na programação. A tela vai atualizar.'};
+  const q=csTqQuem(pin);if(!q.ok)return {erro:q.erro,pin:true};
+  const s=csTqSt(b);if(s.st!=='descansar')return {erro:'Este lote não está esperando o descanso.'};
+  const at=APONTA[b.chave]||{},tq={...(at.tq||{})};
+  tq.descIni=csTqCarimbo(q.q);
+  const desc=csTqDescanso(b);
+  const log=[...(at.log||[]),{t:relogio(),d:ymd(new Date()),e:'Iniciou o descanso',op:q.nome,m:`${csTqDur(desc)} de descanso · análise libera às ${hhmm((csTqMin(relogio())||0)+desc)}`,w:b.tanque}];
+  APONTA[b.chave]={...at,tq,log};
+  try{b.ordens.forEach(o=>registrar(o,'Iniciou o descanso',q.q,`${b.tanque} · ${b.produto}`));}catch(e){}
+  agendarSalvar();try{render();}catch(e){}
+  return {ok:true,msg:'Descanso iniciado · '+q.nome};};}catch(e){}
 
 </script>
 </body>
