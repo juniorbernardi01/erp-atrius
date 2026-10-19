@@ -5474,7 +5474,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v431';
+const VERSAO_APP='v432';
 let DRAG=null;
 function render(){
   recomporTudo();
@@ -30175,7 +30175,7 @@ try{csNucleo.versao='v392';}catch(e){}
 try{csNucleo.versao='v393';}catch(e){}
 </script>
 <script>
-try{csNucleo.versao='v431';}catch(e){}
+try{csNucleo.versao='v432';}catch(e){}
 </script>
 <script>/* =====================================================================
    v398 — PÁGINA TANQUES NO LAYOUT NOVO
@@ -31488,6 +31488,34 @@ try{const _ac421=csTqAcao;csTqAcao=function(k,a,x,pin){
   try{b.ordens.forEach(o=>registrar(o,'Iniciou o descanso',q.q,`${b.tanque} · ${b.produto}`));}catch(e){}
   agendarSalvar();try{render();}catch(e){}
   return {ok:true,msg:'Descanso iniciado · '+q.nome};};}catch(e){}
+
+</script>
+<script>
+/* ===================== v432 =====================
+   Tablet dos tanques: quando um tanque não tem mais nada hoje, o primeiro lote do
+   próximo dia de produção aparece já na fila de hoje, com o selo "Amanhã" (ou o dia),
+   para o operador poder adiantar. As ações valem para o lote daquele dia. */
+try{const _td432=csNucleo.tqDados;csNucleo.tqDados=function(dia){
+  const r=_td432.apply(this,arguments);
+  try{const hoje=ymd(new Date());if((dia||hoje)!==hoje||!r||!r.T)return r;
+    const prox=typeof csTqOutroDia==='function'?csTqOutroDia(hoje,1):null;if(!prox||prox<=hoje)return r;
+    const vazios=r.T.filter(t=>!t.pul&&!t.fila.length);if(!vazios.length)return r;
+    const T2=csTqDia(prox);
+    const am=new Date();am.setDate(am.getDate()+1);const amanha=ymd(am);
+    const DS=['domingo','segunda','terça','quarta','quinta','sexta','sábado'];
+    const rot=prox===amanha?'Amanhã':DS[new Date(prox+'T12:00:00').getDay()]+' '+prox.slice(8,10)+'/'+prox.slice(5,7);
+    vazios.forEach(t=>{const o=T2.find(z=>z.id===t.id);const l=o&&o.fila.find(x=>!x.saldo);
+      if(l)t.fila.push({...l,adiant:true,adiantDia:prox,adiantRot:rot});});
+  }catch(e){console.warn('adiantar',e);}
+  return r;};}catch(e){}
+/* faixa dos Tanques e coluna do envase: o lote da fila em duas linhas (hora | produto inteiro; lote e situação embaixo) */
+(function(){try{const s=document.createElement('style');s.textContent=`
+#tqgrid .bat.cs8.cs8-fila,#csTqMini .bat.cs8.cs8-fila{display:grid!important;grid-template-columns:auto minmax(0,1fr);column-gap:10px;row-gap:6px;align-items:center;padding:10px 38px 10px 12px!important}
+#tqgrid .cs8-fila>em,#csTqMini .cs8-fila>em{grid-row:1/span 2;font-size:14px!important;align-self:center}
+#tqgrid .cs8-fila .cs8-tx b,#csTqMini .cs8-fila .cs8-tx b{white-space:normal!important;font-size:13px!important;line-height:1.25;display:-webkit-box!important;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+#tqgrid .cs8-fila .cs8-tx small,#csTqMini .cs8-fila .cs8-tx small{white-space:normal!important;font-size:11.5px!important;line-height:1.3;margin-top:2px}
+#tqgrid .cs8-fila .cs8-mini,#csTqMini .cs8-fila .cs8-mini{grid-column:2;justify-self:start;font-size:11px!important;padding:3px 9px!important}
+`;document.head.appendChild(s);}catch(e){}})();
 
 </script>
 </body>

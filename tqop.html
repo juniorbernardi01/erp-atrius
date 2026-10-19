@@ -549,7 +549,7 @@ function cartao(t){const l=lote(t);const s=statusDe(t);const [cor,rot]=ST[s]||['
   if(t.pul&&s==='livre')rotulo='Vazio · pronto para receber';
   if(s==='analise'&&l&&l.reana)rotulo='Ajustado · refazer análise';
   /* passou da hora: só laranja, sem piscar */
-  const atr=l&&!ehAmanha()&&!['liberado','envasando','livre'].includes(s)&&l.prontoMin!=null&&(l.data<D.hoje||AGORA>l.prontoMin);
+  const atr=l&&!l.adiant&&!ehAmanha()&&!['liberado','envasando','livre'].includes(s)&&l.prontoMin!=null&&(l.data<D.hoje||AGORA>l.prontoMin);
   const descAte=l&&s==='descanso'&&l.ini?hm(min(l.ini)+(l.desc||0)):'';   /* l.ini = início do descanso */
   const B={limpar:`<div class="acao go" data-a="limpIni">Iniciar limpeza</div>`,limpando:`<div class="acao go" data-a="limpFim">Concluir limpeza</div>`,
     encher:`<div class="acao go" data-a="enchIni">Iniciar enchimento</div>`,enchendo:`<div class="acao go" data-a="enchFim">Concluir enchimento</div>`,
@@ -578,6 +578,7 @@ function cartao(t){const l=lote(t);const s=statusDe(t);const [cor,rot]=ST[s]||['
   const prox=t.fila[1];
   return `<div class="tq c6${t.pul?' pul':''}${ehAmanha()?' amh':''}" data-t="${esc(t.id)}"><div class="cab"><b>${esc(t.id)}</b>${t.pul?'<span class="tag">descanso</span>':''}<span class="pts" data-a="menu">⋮</span></div>
     <div class="st ${cor}"><span>${esc(rotulo)}</span><span class="t">${tempo}</span></div>
+    ${l&&l.adiant?`<div class="adt"><b>${esc(l.adiantRot||'Amanhã')}</b><span>tanque livre hoje · pode adiantar</span></div>`:''}
     ${l?`<div class="prod">${esc(l.p)}<small>${l.saldo?`saldo de lote${l.lote?' · lote '+esc(l.lote):''}${l.mot?' · '+esc(l.mot):''}`:`${l.lote?'lote '+esc(l.lote)+' · ':''}OP ${esc(l.op)}`}${l.de?' · veio do '+esc(l.de):''}${l.data!==(DIA||D.hoje)?' · de '+l.data.slice(8,10)+'/'+l.data.slice(5,7):''}</small></div>
     <div class="tiles">${l.saldo?`<div><span>Livre (L)</span><b>${nl(l.vol)}</b></div><div><span>Parado há</span><b>${l.dias==null?'—':l.dias+(l.dias===1?' dia':' dias')}</b></div><div><span>${s==='envasando'?'Máquina':'Vai para'}</span><b>${esc(s==='envasando'?(l.maqEnv||l.maq):l.maq)}</b></div></div>`:`<div><span>Volume (L)</span><b>${nl(l.vol)}</b></div><div class="dest${atr?' atr':''}"><span>${s==='envasando'?'Envase até':'Pronto até'}</span><b>${esc(l.pronto)}</b></div><div><span>${s==='envasando'?'Máquina':'Vai para'}</span><b>${esc(s==='envasando'?(l.maqEnv||l.maq):l.maq)}</b></div></div>`}`
     :`<div class="prod" style="color:var(--ink3)">—</div><div class="tiles"></div>`}
@@ -635,7 +636,7 @@ const TOL=()=>{try{return N.tolAtraso?+N.tolAtraso():10;}catch(e){return 10;}};
 const pausasDa=(l,st)=>((l.tq&&l.tq.pausas)||[]).filter(p=>p.etapa===st).reduce((s,p)=>s+(+p.min||0),0);
 function atrasoInicio(l,pk){const p=l.plan&&l.plan[pk];const pm=p&&min(p.de);if(pm==null||!D||l.data>D.hoje)return 0;
   const dias=Math.round((new Date(D.hoje+'T12:00:00')-new Date(l.data+'T12:00:00'))/864e5);return AGORA+dias*1440-pm;}
-function atrasoDe(l,a,s){const tol=TOL();if(ehAmanha())return null;
+function atrasoDe(l,a,s){const tol=TOL();if(ehAmanha()||l.adiant)return null;
   const ini={limpIni:['limp','Limpeza'],enchIni:['ench','Enchimento'],prepIni:['fab','Preparo']}[a];
   if(ini){/* começou logo depois da etapa anterior: o atraso veio de lá (já foi perguntado); só pergunta se ficou parado esperando */
     if((s==='encher'||s==='cheio')&&l.desde!=null&&l.desde<=tol)return null;
@@ -781,7 +782,7 @@ function abrirDrawer(t,aba){const l=lote(t);const d=$('drawer');const s=statusDe
   const P=pulmao();const transf=l&&!t.pul&&(PRODUZIDO.includes(s)||s==='prep');const pode=transf&&P&&pulmaoLivre()&&l.vol<=P.cap&&!ehAmanha();
   const cur=DIA||(D&&D.hoje);
   /* próximos: o resto da fila do dia e o próximo dia de produção */
-  let px=[];try{if(D&&D.prox&&N.tqDados){const o=N.tqDados(D.prox).T.find(z=>z.id===t.id);px=o?o.fila.filter(x=>!x.saldo):[];}}catch(e){}
+  let px=[];try{if(D&&D.prox&&N.tqDados){const o=N.tqDados(D.prox).T.find(z=>z.id===t.id);px=o?o.fila.filter(x=>!x.saldo&&!t.fila.some(f=>f.k===x.k)):[];}}catch(e){}
   const prox=t.fila.slice(1),feit=t.feitos.slice().reverse();
   const todos=[...t.fila,...px,...t.feitos];
   const anaOk=l&&['analise','naolib','liberado','envasando','ajuste','descansar','descanso'].includes(s);
@@ -992,6 +993,13 @@ kbMarca();
 setInterval(()=>{if(DIA&&DIA<=ymd(new Date()))DIA=null;if(!document.querySelector('.modal.on,.full.on'))atualiza();else{carrega();topo();}},20000);
 atualiza();
 if(N)trava();
+
+/* v432: lote do próximo dia adiantado (só quando o tanque não tem mais nada hoje) */
+try{document.head.insertAdjacentHTML('beforeend',`<style>
+.tq .adt{display:flex;align-items:center;gap:8px;margin:2px 14px 0;padding:6px 10px;border:1.5px dashed #1B4F9C;border-radius:10px;background:rgba(27,79,156,.08)}
+.tq .adt b{background:#1B4F9C;color:#fff;font:800 11px var(--font);letter-spacing:.06em;text-transform:uppercase;padding:3px 9px;border-radius:999px;white-space:nowrap}
+.tq .adt span{font:600 12.5px var(--font);color:var(--ink2)}
+</style>`);}catch(e){}
 
 </script>
 </body></html>
