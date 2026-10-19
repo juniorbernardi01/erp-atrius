@@ -1118,12 +1118,12 @@ function evAnalise(c){
   evLigaTog(c);const g=c.querySelector('svg');if(g)evTip(g,i=>`<b>${EV_ML[i]}</b> · ${EV.a1}: ${r1[i]!=null?evRsc(r1[i]):'—'} · ${EV.a2}: <b>${r2[i]!=null?evRsc(r2[i]):'—'}</b>${pcs[i]!=null?' · '+evPc(pcs[i]):''}`);
 }
 const evDq=(ic,t,v,s)=>`<div class="evdq"><div class="ic">${ic}</div><div><b>${t}</b><strong>${v}</strong><small>${s||''}</small></div></div>`;
-function evSvgAR(r1,r2,pcs,semEixo){
+function evSvgAR(r1,r2,pcs,semEixo,cor1){cor1=cor1||'#C7CBD3';
   const W=900,H=330,pl=semEixo?16:60,pr=56,pt=28,pb=34;const max=Math.max(1,...r1.map(v=>v||0),...r2.map(v=>v||0))*1.15;const y=v=>pt+(H-pt-pb)-(v/max)*(H-pt-pb);const bw=(W-pl-pr)/12;const x=i=>pl+i*bw;
   const pv=pcs.filter(v=>v!=null);const pmax=Math.max(.2,...pv.map(Math.abs))*1.25;const yp=v=>pt+(H-pt-pb)/2-(v/pmax)*(H-pt-pb)/2;const C=evCor();
   let g='';[.25,.5,.75,1].forEach(f=>{const v=max/1.15*f;g+=`<line x1="${pl}" x2="${W-pr}" y1="${y(v)}" y2="${y(v)}" stroke="${C.line}" stroke-dasharray="3 3"/>${semEixo?'':`<text x="${pl-6}" y="${y(v)+4}" text-anchor="end" font-size="10" fill="${C.ink3}">${evRsk(v)}</text>`}`;});
   [0,pmax/1.25].forEach(v=>{g+=`<text x="${W-pr+6}" y="${yp(v)+4}" font-size="10" fill="${C.ink3}">${evPc(v).replace(',0%','%')}</text>`;});
-  r1.forEach((v,i)=>{if(v==null)return;g+=`<rect x="${x(i)+bw*0.14}" y="${y(v)}" width="${bw*0.32}" height="${Math.max(0,y(0)-y(v))}" fill="#C7CBD3" rx="3"/>`;});
+  r1.forEach((v,i)=>{if(v==null)return;g+=`<rect x="${x(i)+bw*0.14}" y="${y(v)}" width="${bw*0.32}" height="${Math.max(0,y(0)-y(v))}" fill="${cor1}" rx="3"/>`;});
   r2.forEach((v,i)=>{if(v==null)return;g+=`<rect x="${x(i)+bw*0.52}" y="${y(v)}" width="${bw*0.32}" height="${Math.max(0,y(0)-y(v))}" fill="#1B4F9C" rx="3"/>`;});
   const pts=pcs.map((v,i)=>v==null?null:[x(i)+bw/2,yp(v)]).filter(Boolean);
   if(pts.length>1)g+=`<path d="${evCurva(pts)}" fill="none" stroke="${C.ok}" stroke-width="3" stroke-linecap="round"/>`;
@@ -1590,10 +1590,12 @@ function telaRepresentante(nome){
   const tip=$('pfTip'),g=$('pfG');g.querySelectorAll('rect[data-i]').forEach(r=>{r.onmouseenter=()=>{const h=hist[+r.dataset.i];tip.innerHTML=`<b>${h.rot}</b> · meta ${h.meta?pfRs(h.meta):'—'} · realizado <b>${pfRs(h.real)}</b>${h.meta?' · '+pfPc(h.real/h.meta):''}`;tip.style.display='block';};r.onmousemove=ev=>{const b=g.parentElement.getBoundingClientRect();tip.style.left=(ev.clientX-b.left+12)+'px';tip.style.top=(ev.clientY-b.top-34)+'px';};r.onmouseleave=()=>tip.style.display='none';});
 }
 /* ---------- Relatórios › Clientes sem compra ---------- */
-const pfRelAbas=rel=>`<div class="sts" style="margin-bottom:10px">${[['semcompra','Clientes sem compra'],['tiny','Conferência com o Tiny']].map(([k,n])=>`<button data-rel="${k}" class="${rel===k?'on':''}">${n}</button>`).join('')}</div>`;
+const pfRelAbas=rel=>`<div style="margin:-6px 0 12px"><a class="btn sm" href="#relatorios">‹ Todos os relatórios</a></div>`;
 function telaRelatorios(arg){
-  const [rel,argRep]=(arg||'semcompra').split('/');const vend=argRep?decodeURIComponent(argRep):'';
+  if(!arg)return telaRelIndex();
+  const [rel,argRep]=arg.split('/');const vend=argRep?decodeURIComponent(argRep):'';
   if(rel==='tiny')return telaConferenciaTiny();
+  if(rel==='cliente'){let k='';try{k=decodeURIComponent(argRep||'');}catch(e){k=argRep||'';}return telaRelCliente(k);}
   if(!PF.dados){$('app').innerHTML='<div class="vazio">Carregando…</div>';pfCarregar().then(()=>telaRelatorios(arg));return;}
   const D=pfCalc();const cfg=pfCfg();const mesesNovo=pfNovoCfg()||6;const q=semAc(PF.relQ||'');
   const linhas=[];D.lista.filter(x=>!x.fora&&(!vend||semAc(x.nome)===semAc(vend))).forEach(x=>{[...x.cliHist].filter(c=>!x.cliSet.has(c)).forEach(c=>{const p=(PF.hist&&PF.hist.pedidos||[]).filter(q=>(q.cliente_doc||q.cliente)===c&&pfValido(q)&&semAc(q.vendedor||'')===semAc(x.nome));const u=p.map(q=>q.data_pedido).sort().pop();const nome=(p[0]||{}).cliente||c;const cid=(p[0]||{}).cidade||'';
@@ -1715,8 +1717,9 @@ function pfPdfTela(tit,sub,origem,ori,opt){ori=ori||'landscape';opt=opt||{};cons
   const cl=origem.cloneNode(true);cl.querySelectorAll('button,.btn,select,#pfTip,.migalha').forEach(e=>e.remove());
   cl.querySelectorAll('[id]').forEach(e=>e.removeAttribute('id'));
   let logo='';try{logo=(parent.document.querySelector('img[data-logo]')||{}).src||'';}catch(e){}
-  const cab=`<div style="background:#1B4F9C;color:#fff;padding:14px 22px;border-radius:10px;display:flex;justify-content:space-between;align-items:center;gap:20px"><div style="display:flex;align-items:center;gap:18px">${logo?`<span style="background:#fff;border-radius:8px;padding:6px 10px;display:inline-flex"><img src="${logo}" style="height:38px" alt="Atrius"></span>`:''}<div>${opt.rot?`<div style="font:700 10.5px Inter,sans-serif;letter-spacing:.1em;text-transform:uppercase;opacity:.8">${esc(opt.rot)}</div>`:''}<div style="font:800 25px/1.15 Inter,sans-serif">${esc(tit)}</div></div></div><div style="text-align:right;font:700 17px/1.3 Inter,sans-serif">${sub}</div></div>
-    <div style="text-align:right;font-size:10.5px;color:#64748B;margin:5px 2px 10px">emitido em ${br(perHoje())} às ${new Date().toTimeString().slice(0,5)}</div>`;
+  const EMI=`emitido em ${br(perHoje())} às ${new Date().toTimeString().slice(0,5)}`;
+  const cab=`${opt.emiCima?`<div style="text-align:right;font-size:10.5px;color:#64748B;margin:0 4px 5px">${EMI}</div>`:''}<div style="background:#1B4F9C;color:#fff;padding:14px 22px;border-radius:10px;display:flex;justify-content:space-between;align-items:center;gap:20px"><div style="display:flex;align-items:center;gap:18px">${logo?`<img src="${logo}" style="height:46px;display:block" alt="Atrius">`:''}<div>${opt.rot?`<div style="font:700 10.5px Inter,sans-serif;letter-spacing:.1em;text-transform:uppercase;opacity:.8">${esc(opt.rot)}</div>`:''}<div style="font:800 25px/1.15 Inter,sans-serif">${esc(tit)}</div></div></div><div style="text-align:right;font:700 17px/1.3 Inter,sans-serif">${sub}</div></div>
+    ${opt.emiCima?(opt.abaixo?`<div style="text-align:right;font-size:13px;color:#475569;margin:7px 4px 12px">${opt.abaixo}</div>`:'<div style="height:12px"></div>'):`<div style="text-align:right;font-size:10.5px;color:#64748B;margin:5px 2px 10px">${EMI}</div>`}`;
   const folha=`<div id="pfFolhaT" style="background:#fff;color:#111;width:${LARG[ori]}px;padding:22px;box-sizing:border-box;font-family:Inter,system-ui,sans-serif">${cab}${cl.innerHTML}</div>`;
   const arq=(opt.arq||tit).replace(/[\\/:*?"<>|]+/g,'-');
   document.body.insertAdjacentHTML('beforeend',`<div class="pfmask on" id="pfMT"><div class="pfmod"><div class="fh"><b>${esc(tit)}</b><small>sai exatamente como está aqui</small><span style="flex:1"></span><button class="btn sm" data-x>Fechar ✕</button></div>
@@ -1853,6 +1856,218 @@ function telaPedRep(nome){
 
 
 
+
+/* =====================================================================
+   VENDAS › EVOLUÇÃO DE VENDAS › ANÁLISE RELATIVA com filtro (v428)
+   Geral · Por cliente · Por representante: o mesmo comparativo (ano 1 roxo ×
+   ano 2 azul, mês a mês, crescimento em %, gráfico) para a empresa toda, para
+   um cliente ou para um representante. Substitui o relatório "Cliente ano a
+   ano" da v427 (o endereço antigo cai aqui com o cliente já escolhido).
+   Dados: Geral = vendas_mensal (como antes); cliente = vendas_cliente_mensal;
+   representante = vendas_vendedor_mensal; busca = vendas_clientes_busca.
+   ===================================================================== */
+Object.assign(EV,{fil:'geral',cli:null,rep:'',fx:null,fxK:'',fxErro:'',fxCarregando:false,reps:null,ult:null});
+const RC={q:'',res:null,buscando:false,_t:null};
+const rcKey=c=>c.doc?'doc:'+c.doc:'nome:'+c.nome;
+const rcDeKey=k=>k.startsWith('doc:')?{doc:k.slice(4),nome:''}:{doc:'',nome:k.slice(5)};
+async function rcBusca(){
+  const q=RC.q.trim();if(q.length<2){RC.res=null;rcPintaRes();return;}
+  RC.buscando=true;rcPintaRes();
+  try{const r=await fn({acao:'vendas_clientes_busca',q});if(RC.q.trim()===q)RC.res=(r&&r.clientes)||[];}
+  catch(e){RC.res=[];}
+  RC.buscando=false;rcPintaRes();
+}
+function rcPintaRes(){
+  const box=$('rcRes');if(!box)return;
+  if(RC.q.trim().length<2){box.hidden=true;return;}
+  box.hidden=false;
+  if(RC.buscando&&!RC.res){box.innerHTML='<div class="rcvz">Procurando…</div>';return;}
+  const l=RC.res||[];
+  box.innerHTML=l.length?l.map((c,i)=>`<button data-i="${i}"><b>${esc(c.nome)}</b><small>${esc([c.doc,[c.cidade,c.uf].filter(Boolean).join('/'),c.vendedor].filter(Boolean).join(' · '))}</small></button>`).join('')
+    :'<div class="rcvz">Nenhum cliente com esse nome, documento ou cidade.</div>';
+  box.querySelectorAll('[data-i]').forEach(b=>b.onclick=()=>{const c=l[+b.dataset.i];RC.q='';RC.res=null;EV.fil='cli';EV.cli=rcKey(c);EV.fx=null;evDesenha();});
+}
+function rcLigaBusca(){
+  const qi=$('rcQ');if(!qi)return;
+  qi.oninput=()=>{RC.q=qi.value;clearTimeout(RC._t);RC.res=null;rcPintaRes();RC._t=setTimeout(rcBusca,250);};
+  qi.onkeydown=e=>{if(e.key==='Enter'){const b=document.querySelector('#rcRes [data-i]');if(b)b.click();}if(e.key==='Escape'){RC.q='';qi.value='';rcPintaRes();}};
+  document.addEventListener('click',function f(ev){if(!$('rcQ')){document.removeEventListener('click',f);return;}if(!ev.target.closest('.rcbusca')){const r=$('rcRes');if(r)r.hidden=true;}});
+}
+/* representantes: os do cadastro (ou quem aparece nos pedidos); quem tem representante fixo vê só os seus */
+async function evReps(){
+  if(EV.reps)return EV.reps;
+  let l=[];try{l=(await pfVendedores()).map(v=>v.nome).filter(Boolean);}catch(e){}
+  const fixo=pfRepFixo();if(fixo.length)l=l.filter(n=>fixo.some(f=>semAc(f)===semAc(n)));
+  EV.reps=[...new Set(l)].sort((a,b)=>a.localeCompare(b));
+  if(EV.reps.length===1&&!EV.rep)EV.rep=EV.reps[0];
+  return EV.reps;
+}
+const evFxChave=()=>(EV.fil==='cli'?'cli:'+EV.cli:'rep:'+EV.rep)+'·'+pfSitsOn().join('|');
+async function evFxCarrega(){
+  const k=evFxChave();if(EV.fx&&EV.fxK===k)return;
+  EV.fxCarregando=true;EV.fxErro='';
+  try{const sits=pfSitsOn();let r;
+    if(EV.fil==='cli'){const c=rcDeKey(EV.cli);r=await fn({acao:'vendas_cliente_mensal',doc:c.doc,nome:c.nome,sits});}
+    else r=await fn({acao:'vendas_vendedor_mensal',vendedor:EV.rep,sits});
+    const {ano,mes}=evHoje();const V={},F={},PV={};
+    (r.linhas||[]).forEach(x=>{const a=+String(x.ym).slice(0,4),m=+String(x.ym).slice(5,7)-1;if(!(a>=2018))return;(V[a]||(V[a]=Array(12).fill(0)))[m]=+x.vendas||0;(F[a]||(F[a]=Array(12).fill(0)))[m]=+x.faturamento||0;(PV[a]||(PV[a]=Array(12).fill(0)))[m]=+x.pedidos||0;});
+    const anos=[...new Set([...Object.keys(V).map(Number),...evAnos(),ano,ano-1])].sort();
+    anos.forEach(a=>{if(!V[a])V[a]=Array(12).fill(0);if(!F[a])F[a]=Array(12).fill(0);if(!PV[a])PV[a]=Array(12).fill(0);for(let m=0;m<12;m++)if(a>ano||(a===ano&&m>mes)){V[a][m]=null;F[a][m]=null;}});
+    if(evFxChave()!==k)return;
+    EV.fx={V,F,PV,anos,info:r.info||{}};EV.fxK=k;}
+  catch(e){EV.fxErro=e.message;}
+  finally{EV.fxCarregando=false;}
+}
+function rcCresc(acum,t2,t1p,per){
+  if(acum==null)return `<div class="pfkpi rccresc nv"><span>Crescimento no período</span><b>${t2?'novo':'—'}</b><small>${per} · sem venda em ${EV.a1}</small></div>`;
+  const up=acum>=0;
+  return `<div class="pfkpi rccresc ${up?'up':'dn'}"><span>Crescimento no período</span><b><i>${up?'▲':'▼'}</i>${evPc(acum)}</b><small>${per} · ${evRsc(Math.abs(t2-t1p))} a ${up?'mais':'menos'} que ${EV.a1}</small></div>`;
+}
+/* ---------- a aba ---------- */
+function evAnalise(c){
+  const FIL=[['geral','Geral'],['cli','Por cliente'],['rep','Por representante']];
+  const inf=EV.fil==='cli'&&EV.fx&&EV.fxK===evFxChave()?EV.fx.info:null;
+  const barra=`<div class="evfil"><span class="seg evfilseg">${FIL.map(([k,t])=>`<button data-fil="${k}" class="${EV.fil===k?'on':''}">${t}</button>`).join('')}</span>
+    ${EV.fil==='cli'?`<div class="rcbusca evfilbusca"><span>⌕</span><input id="rcQ" placeholder="${EV.cli?'Trocar de cliente: nome, CNPJ/CPF ou cidade':'Digite o nome do cliente, o CNPJ/CPF ou a cidade'}" autocomplete="off" value="${esc(RC.q)}"><div class="rcres" id="rcRes" hidden></div></div>`:''}
+    ${EV.fil==='rep'?`<select id="evRep" class="evfilrep"><option value="">${EV.reps?'Escolha o representante':'Carregando…'}</option>${(EV.reps||[]).map(n=>`<option ${n===EV.rep?'selected':''}>${esc(n)}</option>`).join('')}</select>`:''}</div>`;
+  const liga=()=>{
+    c.querySelectorAll('[data-fil]').forEach(b=>b.onclick=()=>{if(EV.fil===b.dataset.fil)return;EV.fil=b.dataset.fil;evDesenha();});
+    rcLigaBusca();
+    if($('evRep'))$('evRep').onchange=e=>{EV.rep=e.target.value;EV.fx=null;evDesenha();};
+    if($('evA1'))$('evA1').onchange=e=>{EV.a1=+e.target.value;evDesenha();};
+    if($('evA2'))$('evA2').onchange=e=>{EV.a2=+e.target.value;evDesenha();};
+    if($('evBase'))$('evBase').onchange=e=>{EV.base=e.target.value;evDesenha();};
+  };
+  if(EV.fil==='rep'&&!EV.reps){c.innerHTML=barra;liga();evReps().then(()=>evDesenha());return;}
+  if(EV.fil==='cli'&&!EV.cli){c.innerHTML=barra+`<div class="rcvazio"><div class="ic">⌕</div><b>Escolha um cliente</b><span>Digite acima o nome, o CNPJ/CPF ou a cidade. Aparece o que ele comprou em cada mês, um ano contra o outro.</span></div>`;liga();$('rcQ').focus();return;}
+  if(EV.fil==='rep'&&!EV.rep){c.innerHTML=barra+`<div class="rcvazio"><div class="ic">◎</div><b>Escolha um representante</b><span>Aparece o que ele vendeu em cada mês, um ano contra o outro.</span></div>`;liga();return;}
+  let S;
+  if(EV.fil==='geral'){S={V:EV.dados.V,F:EV.dados.F,PV:null,anos:evAnos(),info:null};}
+  else{
+    if(!EV.fx||EV.fxK!==evFxChave()){
+      if(EV.fxErro){c.innerHTML=barra+`<div class="aviso">⚠ <div>${esc(EV.fxErro)}<br><small>Precisa do SQL <b>supabase-vendas-cliente.sql</b> no banco e da função tiny publicada.</small></div></div>`;liga();return;}
+      c.innerHTML=barra+`<div class="vazio">${EV.fil==='cli'?'Somando os pedidos do cliente…':'Somando as vendas do representante…'}</div>`;liga();
+      if(!EV.fxCarregando)evFxCarrega().then(()=>{if(EV.aba==='ar')evDesenha();});return;}
+    S=EV.fx;
+  }
+  const d=EV.base==='V'?S.V:S.F;const {ano,mes}=evHoje();
+  if(!S.anos.includes(EV.a1))EV.a1=S.anos[Math.max(0,S.anos.indexOf(EV.a2)-1)]||S.anos[0];
+  const r1=(d[EV.a1]||Array(12).fill(0)).map(v=>v==null?null:v);const r2=(d[EV.a2]||Array(12).fill(0)).map((v,i)=>EV.a2===ano&&i>=mes?null:v);
+  const n2=r2.filter(v=>v!=null).length;const t1=r1.reduce((s,v)=>s+(v||0),0),t2=r2.reduce((s,v)=>s+(v||0),0),t1p=r1.slice(0,n2).reduce((s,v)=>s+(v||0),0);
+  const pcs=r2.map((v,i)=>v!=null&&r1[i]?v/r1[i]-1:null);const acum=t1p?t2/t1p-1:null;const per=evPeriodo(n2);
+  const temPed=!!S.PV;const p1=temPed?(S.PV[EV.a1]||[]).slice(0,n2).reduce((s,v)=>s+(v||0),0):0,p2=temPed?(S.PV[EV.a2]||[]).slice(0,n2).reduce((s,v)=>s+(v||0),0):0;
+  const tk1=p1?t1p/p1:0,tk2=p2?t2/p2:0;
+  const sem=EV.fil==='geral'?[]:r2.map((v,i)=>v===0?EV_ML[i].toLowerCase():null).filter(Boolean);
+  const titulo=EV.fil==='geral'?'Todas as vendas':EV.fil==='cli'?(S.info.nome||rcDeKey(EV.cli).nome||'Cliente'):EV.rep;
+  EV.ult={t1,t2,t1p,acum,per,n2,info:S.info,titulo};
+  const dt=s=>s?s.split('-').reverse().join('/'):'—';const dias=S.info&&S.info.ultima?Math.round((Date.parse(perHoje())-Date.parse(S.info.ultima))/864e5):null;
+  const cab=EV.fil==='geral'?'':`<div class="evclid"><div class="evclav ${EV.fil==='rep'?'rep':''}">${esc((titulo||'?').trim().charAt(0).toUpperCase())}</div><div style="min-width:0"><h2>${esc(titulo)}</h2>
+    <div class="evclchips">${EV.fil==='cli'?`${S.info.doc?`<span>${esc(S.info.doc)}</span>`:''}${S.info.cidade?`<span>${esc(S.info.cidade)}${S.info.uf?'/'+esc(S.info.uf):''}</span>`:''}${S.info.vendedor?`<span>representante <b>${esc(S.info.vendedor)}</b></span>`:''}${S.info.primeira?`<span>cliente desde ${dt(S.info.primeira)}</span>`:''}`
+      :`<span>representante</span>${S.info.clientes!=null?`<span><b>${nf(S.info.clientes)}</b> clientes nos últimos 12 meses</span>`:''}${S.info.primeira?`<span>vendendo desde ${dt(S.info.primeira)}</span>`:''}`}
+      ${S.info.ultima?`<span class="${dias>60?'evclalerta':''}">${EV.fil==='cli'?'última compra':'última venda'} ${dt(S.info.ultima)}${dias!=null?` · há ${dias} ${dias===1?'dia':'dias'}`:''}</span>`:''}</div></div></div>`;
+  const pcTx=(p,a,b)=>b==null?'<span class="rcpc nd">—</span>':!a&&!b?`<span class="rcpc nd">${EV.fil==='cli'?'sem compra':'sem venda'}</span>`:!a?'<span class="rcpc nv">novo</span>':b===0?`<span class="rcpc dn">${EV.fil==='cli'?'sem compra':'sem venda'}</span>`:`<span class="rcpc ${p>=0?'up':'dn'}">${evPc(p)}</span>`;
+  const tab=`<table class="tv evtab rctab"><thead><tr><th>Mês</th><th class="a1 n"><span class="evchip">${EV.a1}</span></th><th class="a2 n"><span class="evchip">${EV.a2}</span></th><th class="n">Crescimento</th></tr></thead><tbody>${EV_M.map((m,i)=>{const a=r1[i],b=r2[i];const emCurso=EV.a2===ano&&i===mes;const bruto=(d[EV.a2]||[])[i];
+    return `<tr style="${emCurso?'opacity:.6':''}"><td>${EV_ML[i]}${emCurso?' <span class="k" style="font-size:10.5px;color:var(--ink3)">em curso · parcial</span>':''}</td><td class="m n a1">${a?evRsc(a):'—'}</td><td class="m n a2"><b>${b?evRsc(b):emCurso&&bruto?evRsc(bruto):'—'}</b></td><td class="n">${pcTx(pcs[i],a,b)}</td></tr>`;}).join('')}</tbody>
+    <tfoot><tr><td>Mesmo período (${per})</td><td class="m n a1">${evRsc(t1p)}</td><td class="m n a2">${evRsc(t2)}</td><td class="n">${acum==null?(t2?'<span class="rcpc nv">novo</span>':''):`<span class="rcpc ${acum>=0?'up':'dn'}">${evPc(acum)}</span>`}</td></tr>
+    <tr><td>Ano inteiro</td><td class="m n a1">${evRsc(t1)}</td><td class="m n a2">${n2<12&&n2>0?'<span style="color:var(--ink3)">proj. '+evRsc(t2/n2*12)+'</span>':evRsc(t2)}</td><td></td></tr></tfoot></table>`;
+  const baseN=EV.base==='V'?'Pedidos de venda':'Faturamento';
+  const pv=pcs.filter(v=>v!=null);const mi=pv.length?pcs.indexOf(Math.max(...pv)):-1;const sobe=pv.filter(v=>v>=0).length;
+  c.innerHTML=barra+`<div id="evArCorpo">${cab}
+  <div class="evTopo" style="margin-top:${cab?14:0}px">${evSel('evA1','Ano 1',S.anos.map(y=>[y,y]),EV.a1,'roxo')}${evSel('evA2','Ano 2',S.anos.map(y=>[y,y]),EV.a2,'azul')}${evSel('evBase','Análise sobre',[['V','Pedidos de venda'],['F','Faturamento']],EV.base,'navy')}</div>
+  <div class="evKpis ${temPed?'evKpis4':''}">${evKpi(`Total ${EV.a1}`,evRsc(t1),`12 meses · ${per}: ${evRsc(t1p)}`,'roxo')}${evKpi(`Total ${EV.a2}`,evRsc(t2),`${n2} ${n2===1?'mês fechado':'meses fechados'}${n2<12&&n2>0?' · projeção '+evRsc(t2/n2*12):''}`,'azul')}${temPed?evKpi('Pedidos e ticket médio',`${nf(p2)} <small class="evkv">pedidos</small>`,`ticket ${evRs(tk2)} · em ${EV.a1}: ${nf(p1)} pedidos, ticket ${evRs(tk1)}`,''):''}${rcCresc(acum,t2,t1p,per)}</div>
+  ${sem.length?`<div class="evclaviso">${sem.length===1?'1 mês':sem.length+' meses'} de ${EV.a2} sem nenhuma ${EV.fil==='cli'?'compra':'venda'}: ${sem.join(', ')}.</div>`:''}
+  <div class="caixa" style="margin-top:12px">${evSec('arTab','Mês a mês',`${baseN} · ${EV.a2} contra ${EV.a1}`)}${EV.fech.arTab?'':`<div class="rol">${tab}</div>`}</div>
+  <div class="caixa" style="margin-top:12px">${evSec('arGraf','Evolução mês a mês',`${baseN} · ${per}`,`<span class="evleg"><i style="background:#7E2A6C"></i>${EV.a1}<i style="background:#1B4F9C;margin-left:12px"></i>${EV.a2}<i style="background:#15803D;height:3px;width:16px;margin-left:12px;vertical-align:3px"></i>% crescimento</span>`)}${EV.fech.arGraf?'':`<div class="evgraf">${evSvgAR(r1,r2,pcs,false,'#7E2A6C')}<div class="evtip"></div></div>`}</div>
+  ${n2?`<div class="evDest">${evDq('↗',sobe===n2?'Crescimento em todos os meses':`Cresceu em ${sobe} de ${n2} meses`,`${EV.a2} × ${EV.a1}, mês a mês`,sobe===n2?'':`${n2-sobe} ${n2-sobe>1?'meses abaixo':'mês abaixo'}`)}${evDq('◎','Crescimento acumulado do período',acum==null?'—':evPc(acum),per)}${mi>=0?evDq('✓',`${EV_ML[mi]} foi o melhor mês`,evPc(pcs[mi]),`acima de ${EV_ML[mi].toLowerCase()}/${EV.a1}`):''}</div>`:''}</div>`;
+  liga();evLigaTog(c);
+  const g=c.querySelector('#evArCorpo svg');if(g)evTip(g,i=>`<b>${EV_ML[i]}</b> · ${EV.a1}: ${r1[i]!=null?evRsc(r1[i]):'—'} · ${EV.a2}: <b>${r2[i]!=null?evRsc(r2[i]):'—'}</b>${pcs[i]!=null?' · '+evPc(pcs[i]):''}`);
+}
+/* ---------- PDF da Análise relativa: folha do relatório (logo, título, período; cartões, tabela e gráfico) ---------- */
+const _evPdf427=evPdf;
+evPdf=function(){
+  if(EV.aba!=='ar')return _evPdf427();
+  if(!EV.ult||!$('evArCorpo'))return toast('Ainda carregando.',true);
+  const fech=EV.fech;if(fech.arTab||fech.arGraf){EV.fech={...fech,arTab:false,arGraf:false};evDesenha();}
+  const c=$('evArCorpo');const u=EV.ult;
+  const caixas=[...c.querySelectorAll(':scope > .caixa')].map(x=>{const k=x.cloneNode(true);k.querySelectorAll('.evtip,.car').forEach(e=>e.remove());k.querySelectorAll('.evtog .k:last-child').forEach(e=>e.remove());return k.outerHTML;}).join('');
+  const el=document.createElement('div');
+  el.innerHTML=`<div class="evKpis">${evKpi(`Total ${EV.a1}`,evRsc(u.t1p),`${u.per} · ano inteiro ${evRsc(u.t1)}`,'roxo')}${evKpi(`Total ${EV.a2}`,evRsc(u.t2),`${u.per}`,'azul')}${rcCresc(u.acum,u.t2,u.t1p,u.per)}</div>${caixas}`;
+  const perTxt=u.per.charAt(0).toUpperCase()+u.per.slice(1);
+  const abaixo=EV.fil==='cli'&&u.info&&u.info.vendedor?`Representante <b style="color:#0E1B33">${esc(u.info.vendedor)}</b>`:EV.fil==='rep'?'Representante':'';
+  pfPdfTela(u.titulo,`${EV.a2} × ${EV.a1}<div style="font:600 12px/1.3 Inter,sans-serif;opacity:.85;margin-top:2px">${esc(perTxt)} · ${EV.base==='V'?'pedidos de venda':'faturamento'}</div>`,el,'portrait',{arq:`${u.titulo} - ${EV.a2} x ${EV.a1}`,emiCima:true,abaixo});
+  if(fech!==EV.fech){EV.fech=fech;evDesenha();}
+};
+/* endereço antigo do relatório (v427): abre aqui com o cliente */
+function telaRelCliente(k){EV.aba='ar';if(k){EV.fil='cli';EV.cli=k;EV.fx=null;}else EV.fil='cli';ir('evolucao');}
+(function(){try{const s=document.createElement('style');s.textContent=`
+.rcbusca{position:relative;display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:12px;padding:0 14px;height:48px;background:#fff;max-width:640px;margin-bottom:16px}
+.rcbusca:focus-within{border-color:#9DB8E8;box-shadow:0 0 0 3px #EAF1FC}
+.rcbusca>span{color:var(--ink3);font-size:18px}.rcbusca input{border:0;height:46px;padding:0;flex:1;font-size:15px;box-shadow:none!important;background:transparent}
+.rcres{position:absolute;left:0;right:0;top:52px;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 12px 32px rgba(15,23,42,.14);z-index:20;max-height:380px;overflow:auto;padding:6px}
+.rcres button{display:block;width:100%;text-align:left;padding:9px 12px;border-radius:8px}.rcres button:hover{background:#EAF1FB}
+.rcres b{display:block;font-size:13.5px;color:var(--ink)}.rcres small{display:block;font-size:11.5px;color:var(--ink3);margin-top:2px}
+.rcvz{padding:12px;color:var(--ink3);font-size:12.5px}
+.rcvazio{border:1px dashed var(--line);border-radius:14px;padding:46px 20px;text-align:center;max-width:640px;display:flex;flex-direction:column;gap:6px;align-items:center;color:var(--ink3)}
+.rcvazio .ic{width:52px;height:52px;border-radius:50%;background:#EAF2FF;color:#1B4F9C;display:grid;place-items:center;font-size:24px;margin-bottom:6px}.rcvazio b{color:var(--ink);font-size:15px}.rcvazio span{font-size:12.5px;max-width:420px}
+.evclid{display:flex;gap:14px;align-items:center;background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.evclav{width:48px;height:48px;border-radius:50%;background:#1B4F9C;color:#fff;display:grid;place-items:center;font:800 20px Inter,sans-serif;flex:none}
+.evclid h2{font-size:19px;font-weight:700;letter-spacing:-.01em}
+.evclchips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}.evclchips span{font-size:12px;color:var(--ink2);background:var(--line3);border:1px solid var(--line2);border-radius:999px;padding:3px 10px}.evclchips span.evclalerta{background:#FEF3C7;border-color:#FDE68A;color:#B45309}
+.evKpis.evKpis4{grid-template-columns:1fr 1fr 1fr 1.3fr}@media(max-width:1000px){.evKpis.evKpis4{grid-template-columns:1fr 1fr}}
+.evkv{display:inline!important;font-size:12px!important;font-weight:500;color:var(--ink3)}
+.pfpill.evnovo{background:#DBEAFE;color:#1B4F9C}.pfpill.evsem{background:var(--line2);color:var(--ink3)}
+.evclaviso{margin-top:10px;background:#FEF3C7;border:1px solid #FDE68A;color:#92400E;border-radius:10px;padding:9px 14px;font-size:12.5px}
+`;document.head.appendChild(s);}catch(e){}})();
+/* =====================================================================
+   VENDAS › RELATÓRIOS: índice (v427), como no Tiny
+   Em vez de abas: categorias à esquerda, a lista dos relatórios com uma
+   frase do que cada um mostra à direita, e uma busca no topo.
+   ===================================================================== */
+const REL_LISTA=[
+  {cat:'Clientes',k:'semcompra',t:'Clientes sem compra',d:'Clientes que compraram nos últimos meses e não fizeram pedido no período escolhido, por representante, com a última compra e a média mensal.'},
+  {cat:'Conferência',k:'tiny',t:'Conferência com o Tiny',d:'Compara o relatório de vendas exportado do Tiny com os pedidos do ERP e mostra onde os dois divergem: pedido a pedido e por representante.'},
+];
+const RI={q:'',cat:''};
+function telaRelIndex(){
+  const cats=[...new Set(REL_LISTA.map(r=>r.cat))];const q=semAc(RI.q);
+  const l=REL_LISTA.filter(r=>(!RI.cat||r.cat===RI.cat)&&(!q||semAc(r.t+' '+r.d+' '+r.cat).includes(q)));
+  $('app').innerHTML=`<div class="migalha"><a href="#performance" class="mlk">Vendas</a> › Relatórios</div>
+  <div class="topo"><h1 style="margin-right:0">Relatórios de vendas</h1><span class="k" style="color:var(--ink3);font-size:12px">escolha o relatório para abrir</span></div>
+  <div class="rilay"><nav class="ricats"><button data-c="" class="${RI.cat?'':'on'}">Todos <i>${REL_LISTA.length}</i></button>${cats.map(c=>`<button data-c="${esc(c)}" class="${RI.cat===c?'on':''}">${esc(c)} <i>${REL_LISTA.filter(r=>r.cat===c).length}</i></button>`).join('')}</nav>
+  <div class="rilista"><div class="rcbusca ribusca"><span>⌕</span><input id="riQ" placeholder="Buscar relatório" value="${esc(RI.q)}" autocomplete="off"></div>
+  ${l.length?cats.filter(c=>l.some(r=>r.cat===c)).map(c=>`<div class="ricat">${esc(c)}</div>${l.filter(r=>r.cat===c).map(r=>`<a class="riitem" href="#relatorios/${r.k}"><div><b>${esc(r.t)}</b><span>${esc(r.d)}</span></div><i>›</i></a>`).join('')}`).join(''):'<div class="rcvz" style="padding:24px 4px">Nenhum relatório com esse nome.</div>'}
+  </div></div>`;
+  document.querySelectorAll('.ricats [data-c]').forEach(b=>b.onclick=()=>{RI.cat=b.dataset.c;telaRelIndex();});
+  const qi=$('riQ');qi.oninput=()=>{RI.q=qi.value;const p=qi.selectionStart;telaRelIndex();const n=$('riQ');n.focus();n.setSelectionRange(p,p);};
+  qi.onkeydown=e=>{if(e.key==='Enter'){const a=document.querySelector('.riitem');if(a)a.click();}};
+}
+(function(){try{const s=document.createElement('style');s.textContent=`
+.rilay{display:grid;grid-template-columns:220px 1fr;gap:22px;max-width:1100px;align-items:start}@media(max-width:800px){.rilay{grid-template-columns:1fr}}
+.ricats{display:flex;flex-direction:column;gap:2px;position:sticky;top:12px}
+.ricats button{display:flex;justify-content:space-between;align-items:center;text-align:left;padding:9px 12px;border-radius:9px;font-size:13.5px;color:var(--ink2)}
+.ricats button:hover{background:var(--line3)}.ricats button.on{background:#EAF2FF;color:#1B4F9C;font-weight:600}
+.ricats i{font-style:normal;font-size:11px;font-weight:700;color:var(--ink3);background:var(--line2);border-radius:999px;padding:1px 8px}.ricats button.on i{background:#1B4F9C;color:#fff}
+.ribusca{max-width:none;margin-bottom:8px}
+.ricat{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);padding:16px 4px 6px}
+.riitem{display:flex;align-items:center;gap:14px;padding:13px 14px;border:1px solid var(--line);border-radius:12px;background:#fff;margin-bottom:8px;text-decoration:none;color:inherit;transition:border-color .12s,box-shadow .12s}
+.riitem:hover{border-color:#9DB8E8;box-shadow:0 4px 14px rgba(27,79,156,.08)}
+.riitem div{flex:1;min-width:0}.riitem b{display:block;font-size:14.5px;color:#1B4F9C}.riitem span{display:block;font-size:12.5px;color:var(--ink3);margin-top:3px;line-height:1.45}
+.riitem i{font-style:normal;font-size:22px;color:var(--ink3)}
+.rctab th.n,.rctab td.n{text-align:center!important}
+.rctab th.a1 .evchip{background:#7E2A6C}.rctab th.a2 .evchip{background:#1B4F9C}.rctab th.a1,.rctab td.a1{background:#F8F1F6;color:#6B2A5C}
+.rcpc{font-weight:700;font-size:12.5px;white-space:nowrap}.rcpc.up{color:#15803D}.rcpc.dn{color:#B91C1C}.rcpc.nv{color:#1B4F9C}.rcpc.nd{color:var(--ink3);font-weight:500}
+.pfkpi.rccresc{border-width:2px;background:#fff}.pfkpi.rccresc b{font-size:30px!important;display:flex!important;align-items:center;gap:8px}.pfkpi.rccresc b i{font-style:normal;font-size:18px}
+.pfkpi.rccresc.up{border-color:#15803D;background:#F0FAF3}.pfkpi.rccresc.up b{color:#15803D}.pfkpi.rccresc.dn{border-color:#B91C1C;background:#FDF2F2}.pfkpi.rccresc.dn b{color:#B91C1C}.pfkpi.rccresc.nv{border-color:#1B4F9C}.pfkpi.rccresc.nv b{color:#1B4F9C}
+.rcprep{font-size:13px;color:#475569;margin:2px 2px 12px}.rcprep b{color:#0E1B33}
+.rcsel{display:inline-block;color:#fff;border-radius:10px;padding:8px 14px;font:800 17px Inter,sans-serif;background:#0E1B33}.rcsel.roxo{background:#7E2A6C}.rcsel.azul{background:#1B4F9C}.rcsel.navy{font-size:14px}
+`;document.head.appendChild(s);}catch(e){}})();
+(function(){try{const s=document.createElement('style');s.textContent=`
+.evfil{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+.evfilseg button{padding:10px 16px;font-size:13px;font-weight:600}
+.evfilbusca{margin:0;flex:1 1 320px;height:42px}.evfilbusca input{height:40px;font-size:14px}.evfilbusca .rcres{top:46px}
+.evfilrep{height:42px;border-radius:10px;min-width:280px;font-size:14px;font-weight:600}
+.evclav.rep{background:#0E1B33}
+`;document.head.appendChild(s);}catch(e){}})();
 
 function render(){
   const {pag,arg}=lerHash();PAG=pag;
