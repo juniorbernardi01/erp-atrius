@@ -1936,7 +1936,7 @@ async function evFxCarrega(){
   finally{EV.fxCarregando=false;}
 }
 function rcCresc(acum,t2,t1p,per){
-  if(acum==null)return `<div class="pfkpi rccresc nv"><span>Crescimento no período</span><b>${t2?'novo':'—'}</b><small>${per} · sem venda em ${EV.a1}</small></div>`;
+  if(acum==null)return `<div class="pfkpi rccresc nv"><span>Crescimento no período</span><b>—</b><small>${per} · sem comparativo em ${EV.a1}</small></div>`;
   const up=acum>=0;
   return `<div class="pfkpi rccresc ${up?'up':'dn'}"><span>Crescimento no período</span><b><i>${up?'▲':'▼'}</i>${evPc(acum)}</b><small>${per} · ${evRsc(Math.abs(t2-t1p))} a ${up?'mais':'menos'} que ${EV.a1}</small></div>`;
 }
@@ -2022,7 +2022,7 @@ function evRepLista(c,barra,liga){
   const T1=L.reduce((s,x)=>s+x.t1,0),T2=L.reduce((s,x)=>s+x.t2,0);const max=Math.max(1,...L.map(x=>Math.max(x.t1,x.t2)));
   const th=(o,tx,cls)=>`<th class="so2 ${cls||''} ${ord===o?(dir>0?'asc':'desc'):''}" data-o="${o}">${tx}</th>`;
   const FIL=[['todos','Todos'],['sobe','Cresceram'],['cai','Caíram'],['novo','Novos'],['parou','Sem venda']];
-  const pc=x=>{const t=tipo(x);return t==='novo'?'<span class="rcpc nv">novo</span>':t==='parou'?'<span class="rcpc dn">sem venda</span>':`<span class="rcpc ${x.t2>=x.t1?'up':'dn'}">${evPc(x.t2/x.t1-1)}</span>`;};
+  const pc=x=>{const t=tipo(x);return t==='novo'||t==='parou'?'<span class="rcpc nd">—</span>':`<span class="rcpc ${x.t2>=x.t1?'up':'dn'}">${evPc(x.t2/x.t1-1)}</span>`;};
   EV.ultRk={P,L,T1,T2,cont};
   c.innerHTML=barra+`<div id="evArCorpo">${evTopoHtml(P)}
   <div class="evKpis evKpis4">${evKpi(`Total ${P.r1}`,evRsc(T1),P.txt1,'roxo')}${evKpi(`Total ${P.r2}`,evRsc(T2),P.txt2,'azul')}${evKpi('Representantes',`${L.filter(x=>x.t2>0).length} <small class="evkv">venderam</small>`,`${cont.sobe} cresceram · ${cont.cai} caíram · ${cont.novo} novos · ${cont.parou} sem venda`,'')}${rcCresc(T1?T2/T1-1:null,T2,T1,P.curto)}</div>
@@ -2041,9 +2041,9 @@ function evRepLista(c,barra,liga){
 function evLojasBlocos(L,P,fut,rotL,o){
   const l=L.slice().sort((a,b)=>b.t2-a.t2||b.t1-a.t1);
   const v=(m,ym)=>((m||{})[ym]||{}).t||0;const sm=x=>Object.values(x||{}).reduce((s,z)=>s+z.t,0);
-  const pcTx=(a,b)=>!a&&!b?'<span class="rcpc nd">sem compra</span>':!a?'<span class="rcpc nv">novo</span>':!b?'<span class="rcpc dn">sem compra</span>':`<span class="rcpc ${b>=a?'up':'dn'}">${evPc(b/a-1)}</span>`;
+  const pcTx=(a,b)=>!a||!b?'<span class="rcpc nd">—</span>':`<span class="rcpc ${b>=a?'up':'dn'}">${evPc(b/a-1)}</span>`;
   return l.map((x,j)=>{const id='lj'+j;const A1=sm(x.a&&x.a[1]),A2=sm(x.a&&x.a[2]);const proj=o.anoCorr&&o.dAno>0?A2/o.dAno*o.nAno:null;
-    const pc=x.t1&&x.t2?`<span class="rcpc ${x.t2>=x.t1?'up':'dn'}" style="font-size:13px">${evPc(x.t2/x.t1-1)}</span>`:x.t2?'<span class="rcpc nv">novo</span>':x.t1?'<span class="rcpc dn">sem compra</span>':'';
+    const pc=x.t1&&x.t2?`<span class="rcpc ${x.t2>=x.t1?'up':'dn'}" style="font-size:13px">${evPc(x.t2/x.t1-1)}</span>`:'';
     const tab=`<table class="tv evtab rctab"><thead><tr><th>Mês</th><th class="a1 n"><span class="evchip">${P.r1}</span></th><th class="a2 n"><span class="evchip">${P.r2}</span></th><th class="n">Crescimento</th></tr></thead><tbody>${P.meses.map((m,i)=>{const a=v(x.m[1],m.ym1),b=v(x.m[2],m.ym2);
       if(fut[i])return `<tr class="rcfut"><td>${rotL[i]} <span class="k" style="font-size:10.5px;color:var(--ink3)">ainda não chegou</span></td><td class="m n a1">${v(x.a[1],m.ym1)?evRsc(v(x.a[1],m.ym1)):'—'}</td><td class="m n a2">—</td><td class="n"><span class="rcpc nd">—</span></td></tr>`;
       return `<tr><td>${rotL[i]}</td><td class="m n a1">${a?evRsc(a):'—'}</td><td class="m n a2"><b>${b?evRsc(b):'—'}</b></td><td class="n">${pcTx(a,b)}</td></tr>`;}).join('')}</tbody>
@@ -2055,17 +2055,17 @@ function evMatrizHtml(L,P,fut,rot,rotL){
   const l=L.slice().sort((a,b)=>b.t2-a.t2||b.t1-a.t1);const mv=EV.mv||'pc';
   const v=(o,ym)=>((o||{})[ym]||{}).t||0;
   const cel=(a,b,f)=>{if(f)return '<td class="n mxf">—</td>';const p=a?b/a-1:null;
-    const pc=!a&&!b?'<i class="nd">—</i>':!a?'<i class="nv">novo</i>':!b?'<i class="dn">sem compra</i>':`<i class="${p>=0?'up':'dn'}">${evPc(p)}</i>`;
+    const pc=!a||!b?'<i class="nd">—</i>':`<i class="${p>=0?'up':'dn'}">${evPc(p)}</i>`;
     return mv==='ab'?`<td class="n"><span class="mx1">${a?evRs(a):'—'}</span><b class="mx2">${b?evRs(b):'—'}</b>${pc}</td>`:`<td class="n"><b class="mx2">${b?evRs(b):'—'}</b>${pc}</td>`;};
   const tot=(o,s,ym)=>l.reduce((z,x)=>z+v(x.m[s],ym),0);
-  const lin=x=>`<tr class="evljln" data-k="${esc(x.doc?'doc:'+x.doc:'nome:'+x.nome)}"><td class="mxn"><b>${esc(x.fantasia||x.nome)}</b><small>${esc([x.doc,x.cidade].filter(Boolean).join(' · '))}</small></td>${P.meses.map((m,i)=>cel(v(x.m[1],m.ym1),v(x.m[2],m.ym2),fut[i])).join('')}<td class="n a1 m">${x.t1?evRs(x.t1):'—'}</td><td class="n a2 m"><b>${x.t2?evRs(x.t2):'—'}</b></td><td class="n">${x.t1&&x.t2?`<span class="rcpc ${x.t2>=x.t1?'up':'dn'}">${evPc(x.t2/x.t1-1)}</span>`:x.t2?'<span class="rcpc nv">novo</span>':x.t1?'<span class="rcpc dn">sem compra</span>':'—'}</td></tr>`;
+  const lin=x=>`<tr class="evljln" data-k="${esc(x.doc?'doc:'+x.doc:'nome:'+x.nome)}"><td class="mxn"><b>${esc(x.fantasia||x.nome)}</b><small>${esc([x.doc,x.cidade].filter(Boolean).join(' · '))}</small></td>${P.meses.map((m,i)=>cel(v(x.m[1],m.ym1),v(x.m[2],m.ym2),fut[i])).join('')}<td class="n a1 m">${x.t1?evRs(x.t1):'—'}</td><td class="n a2 m"><b>${x.t2?evRs(x.t2):'—'}</b></td><td class="n">${x.t1&&x.t2?`<span class="rcpc ${x.t2>=x.t1?'up':'dn'}">${evPc(x.t2/x.t1-1)}</span>`:x.t2?'<span class="rcpc nd">—</span>':x.t1?'<span class="rcpc nd">—</span>':'—'}</td></tr>`;
   const T1=l.reduce((s,x)=>s+x.t1,0),T2=l.reduce((s,x)=>s+x.t2,0);
   return `<div class="caixa" style="margin-top:12px">${evSec('arMx','Mês a mês por loja',`${P.txt2} contra ${P.txt1} · clique na loja para ver só ela`,`<span class="seg evmvseg">${[['pc',P.r2+' + %'],['ab',P.r1+' × '+P.r2]].map(([k,tx])=>`<button data-mv="${k}" class="${mv===k?'on':''}">${tx}</button>`).join('')}</span>`)}${EV.fech.arMx?'':`<div class="rol"><table class="tv evmx2"><thead><tr><th>Loja</th>${P.meses.map((m,i)=>`<th class="n">${rot[i]}</th>`).join('')}<th class="n a1"><span class="evchip">${P.r1}</span></th><th class="n a2"><span class="evchip">${P.r2}</span></th><th class="n">Cresc.</th></tr></thead>
   <tbody>${l.map(lin).join('')}</tbody><tfoot><tr><td class="mxn"><b>Grupo</b><small>${l.length} lojas somadas</small></td>${P.meses.map((m,i)=>cel(tot(0,1,m.ym1),tot(0,2,m.ym2),fut[i])).join('')}<td class="n a1 m">${evRs(T1)}</td><td class="n a2 m"><b>${evRs(T2)}</b></td><td class="n">${T1?`<span class="rcpc ${T2>=T1?'up':'dn'}">${evPc(T2/T1-1)}</span>`:''}</td></tr></tfoot></table></div>`}</div>`;
 }
 function evLojasHtml(L,P){
   const l=L.slice().sort((a,b)=>b.t2-a.t2||b.t1-a.t1);const T1=l.reduce((s,x)=>s+x.t1,0),T2=l.reduce((s,x)=>s+x.t2,0);const max=Math.max(1,...l.map(x=>Math.max(x.t1,x.t2)));
-  const pc=x=>x.t1&&x.t2?`<span class="rcpc ${x.t2>=x.t1?'up':'dn'}">${evPc(x.t2/x.t1-1)}</span>`:x.t2?'<span class="rcpc nv">novo</span>':'<span class="rcpc dn">sem compra</span>';
+  const pc=x=>x.t1&&x.t2?`<span class="rcpc ${x.t2>=x.t1?'up':'dn'}">${evPc(x.t2/x.t1-1)}</span>`:'<span class="rcpc nd">—</span>';
   return `<div class="caixa" style="margin-top:12px">${evSec('arLj','Ranking das lojas',`${l.length} ${l.length===1?'loja':'lojas'} · ${P.txt2} contra ${P.txt1} · clique na loja para ver só ela`)}${EV.fech.arLj?'':`<div class="rol"><table class="tv evtab rctab evrktab"><thead><tr><th>Loja</th><th class="n a1"><span class="evchip">${P.r1}</span></th><th class="n a2"><span class="evchip">${P.r2}</span></th><th class="evrkbh">${P.r1} × ${P.r2}</th><th class="n">Crescimento</th><th class="n">Pedidos</th><th class="n">Participação</th></tr></thead>
   <tbody>${l.map(x=>`<tr class="evljln evrkln" data-k="${esc(x.doc?'doc:'+x.doc:'nome:'+x.nome)}"><td><b>${esc(x.fantasia||x.nome)}</b><small>${esc([x.doc,x.cidade].filter(Boolean).join(' · '))}</small></td><td class="m n a1">${x.t1?evRsc(x.t1):'—'}</td><td class="m n a2"><b>${x.t2?evRsc(x.t2):'—'}</b></td><td class="evrkbc"><div class="evclbr"><i class="b1" style="width:${x.t1/max*100}%"></i><i class="b2" style="width:${x.t2/max*100}%"></i></div></td><td class="n">${pc(x)}</td><td class="m n">${nf(x.n2)}</td><td class="m n">${T2?(x.t2/T2*100).toFixed(1).replace('.',','):'0'}%</td></tr>`).join('')}</tbody>
   <tfoot><tr><td>Grupo · ${l.length} lojas</td><td class="m n a1">${evRsc(T1)}</td><td class="m n a2">${evRsc(T2)}</td><td></td><td class="n">${T1?`<span class="rcpc ${T2>=T1?'up':'dn'}">${evPc(T2/T1-1)}</span>`:''}</td><td class="m n">${nf(l.reduce((s,x)=>s+x.n2,0))}</td><td class="m n">100%</td></tr></tfoot></table></div>`}</div>`;
@@ -2119,11 +2119,11 @@ function evAnalise(c){
       :`<span>representante</span>${inf.clientes!=null?`<span><b>${nf(inf.clientes)}</b> clientes nos últimos 12 meses</span>`:''}${inf.primeira?`<span>vendendo desde ${dt(inf.primeira)}</span>`:''}`}
       ${inf.ultima?`<span class="${dias>60?'evclalerta':''}">${EV.fil==='cli'?'última compra':'última venda'} ${dt(inf.ultima)}${dias!=null?` · há ${dias} ${dias===1?'dia':'dias'}`:''}</span>`:''}</div></div></div>`;
   const semTx=EV.fil==='cli'?'sem compra':'sem venda';
-  const pcTx=(p,a,b)=>!a&&!b?`<span class="rcpc nd">${semTx}</span>`:!a?'<span class="rcpc nv">novo</span>':b===0?`<span class="rcpc dn">${semTx}</span>`:`<span class="rcpc ${p>=0?'up':'dn'}">${evPc(p)}</span>`;
+  const pcTx=(p,a,b)=>!a||!b?'<span class="rcpc nd">—</span>':`<span class="rcpc ${p>=0?'up':'dn'}">${evPc(p)}</span>`;
   const tab=`<table class="tv evtab rctab"><thead><tr><th>Mês</th><th class="a1 n"><span class="evchip">${P.r1}</span></th><th class="a2 n"><span class="evchip">${P.r2}</span></th><th class="n">Crescimento</th></tr></thead><tbody>${P.meses.map((x,i)=>{const a=r1[i],b=r2[i];
     if(fut[i])return `<tr class="rcfut"><td>${rotL[i]} <span class="k" style="font-size:10.5px;color:var(--ink3)">ainda não chegou</span></td><td class="m n a1">${r1f[i]?evRsc(r1f[i]):'—'}</td><td class="m n a2">—</td><td class="n"><span class="rcpc nd">—</span></td></tr>`;
     return `<tr><td>${rotL[i]}${parc(i)?` <span class="k" style="font-size:10.5px;color:var(--ink3)">${parcTx(i)}</span>`:''}</td><td class="m n a1">${a?evRsc(a):'—'}</td><td class="m n a2"><b>${b?evRsc(b):'—'}</b></td><td class="n">${pcTx(pcs[i],a,b)}</td></tr>`;}).join('')}</tbody>
-    <tfoot><tr><td>Total do período <span class="k" style="font-weight:500;color:var(--ink3)">${P.curto}</span></td><td class="m n a1">${evRsc(t1)}</td><td class="m n a2">${evRsc(t2)}</td><td class="n">${acum==null?(t2?'<span class="rcpc nv">novo</span>':''):`<span class="rcpc ${acum>=0?'up':'dn'}">${evPc(acum)}</span>`}</td></tr>
+    <tfoot><tr><td>Total do período <span class="k" style="font-weight:500;color:var(--ink3)">${P.curto}</span></td><td class="m n a1">${evRsc(t1)}</td><td class="m n a2">${evRsc(t2)}</td><td class="n">${acum==null?(t2?'<span class="rcpc nd">—</span>':''):`<span class="rcpc ${acum>=0?'up':'dn'}">${evPc(acum)}</span>`}</td></tr>
     <tr class="rcano"><td>Ano inteiro <span class="k" style="font-weight:500;color:var(--ink3)">${P.Y1} × ${P.Y2}${anoCorr?' até hoje':''}</span></td><td class="m n a1">${evRsc(A1)}</td><td class="m n a2">${evRsc(A2)}${proj?`<small class="rcproj">projeção ${evRsc(proj)}</small>`:''}</td><td class="n">${anoCorr?'<span class="rcpc nd">em andamento</span>':A1?`<span class="rcpc ${A2/A1-1>=0?'up':'dn'}">${evPc(A2/A1-1)}</span>`:''}</td></tr></tfoot></table>`;
   const baseN=EV.base==='V'?'Pedidos de venda':'Faturamento';
   const pv=pcs.filter(v=>v!=null);const mi=pv.length?pcs.indexOf(Math.max(...pv)):-1;const sobe=pv.filter(v=>v>=0).length;const nm=pv.length;
