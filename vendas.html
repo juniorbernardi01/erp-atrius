@@ -1118,8 +1118,8 @@ function evAnalise(c){
   evLigaTog(c);const g=c.querySelector('svg');if(g)evTip(g,i=>`<b>${EV_ML[i]}</b> · ${EV.a1}: ${r1[i]!=null?evRsc(r1[i]):'—'} · ${EV.a2}: <b>${r2[i]!=null?evRsc(r2[i]):'—'}</b>${pcs[i]!=null?' · '+evPc(pcs[i]):''}`);
 }
 const evDq=(ic,t,v,s)=>`<div class="evdq"><div class="ic">${ic}</div><div><b>${t}</b><strong>${v}</strong><small>${s||''}</small></div></div>`;
-function evSvgAR(r1,r2,pcs,semEixo,cor1){cor1=cor1||'#C7CBD3';
-  const W=900,H=330,pl=semEixo?16:60,pr=56,pt=28,pb=34;const max=Math.max(1,...r1.map(v=>v||0),...r2.map(v=>v||0))*1.15;const y=v=>pt+(H-pt-pb)-(v/max)*(H-pt-pb);const bw=(W-pl-pr)/12;const x=i=>pl+i*bw;
+function evSvgAR(r1,r2,pcs,semEixo,cor1,rot){cor1=cor1||'#C7CBD3';rot=rot||EV_M;
+  const W=900,H=330,pl=semEixo?16:60,pr=56,pt=28,pb=34;const max=Math.max(1,...r1.map(v=>v||0),...r2.map(v=>v||0))*1.15;const y=v=>pt+(H-pt-pb)-(v/max)*(H-pt-pb);const bw=(W-pl-pr)/Math.max(6,rot.length);const x=i=>pl+(Math.max(6,rot.length)-rot.length)/2*bw+i*bw;
   const pv=pcs.filter(v=>v!=null);const pmax=Math.max(.2,...pv.map(Math.abs))*1.25;const yp=v=>pt+(H-pt-pb)/2-(v/pmax)*(H-pt-pb)/2;const C=evCor();
   let g='';[.25,.5,.75,1].forEach(f=>{const v=max/1.15*f;g+=`<line x1="${pl}" x2="${W-pr}" y1="${y(v)}" y2="${y(v)}" stroke="${C.line}" stroke-dasharray="3 3"/>${semEixo?'':`<text x="${pl-6}" y="${y(v)+4}" text-anchor="end" font-size="10" fill="${C.ink3}">${evRsk(v)}</text>`}`;});
   [0,pmax/1.25].forEach(v=>{g+=`<text x="${W-pr+6}" y="${yp(v)+4}" font-size="10" fill="${C.ink3}">${evPc(v).replace(',0%','%')}</text>`;});
@@ -1128,7 +1128,7 @@ function evSvgAR(r1,r2,pcs,semEixo,cor1){cor1=cor1||'#C7CBD3';
   const pts=pcs.map((v,i)=>v==null?null:[x(i)+bw/2,yp(v)]).filter(Boolean);
   if(pts.length>1)g+=`<path d="${evCurva(pts)}" fill="none" stroke="${C.ok}" stroke-width="3" stroke-linecap="round"/>`;
   pcs.forEach((v,i)=>{if(v==null)return;const px=x(i)+bw/2,py=yp(v);const t=evPc(v);const w=t.length*7+12;g+=`<circle cx="${px}" cy="${py}" r="4.5" fill="${v>=0?C.ok:C.mau}" stroke="#fff" stroke-width="2"/><rect x="${px-w/2}" y="${py-30}" width="${w}" height="18" rx="6" fill="${v>=0?C.ok:C.mau}"/><text x="${px}" y="${py-17}" text-anchor="middle" font-size="11" font-weight="700" fill="#fff">${t}</text>`;});
-  EV_M.forEach((m,i)=>{g+=`<text x="${x(i)+bw/2}" y="${H-12}" text-anchor="middle" font-size="11" font-weight="600" fill="${C.ink3}">${m.toUpperCase()}</text><rect data-i="${i}" x="${x(i)}" y="0" width="${bw}" height="${H}" fill="transparent" style="cursor:pointer"/>`;});
+  rot.forEach((m,i)=>{g+=`<text x="${x(i)+bw/2}" y="${H-12}" text-anchor="middle" font-size="11" font-weight="600" fill="${C.ink3}">${m.toUpperCase()}</text><rect data-i="${i}" x="${x(i)}" y="0" width="${bw}" height="${H}" fill="transparent" style="cursor:pointer"/>`;});
   return `<svg viewBox="0 0 ${W} ${H}" class="evsvg">${g}</svg>`;
 }
 
@@ -1866,7 +1866,7 @@ function telaPedRep(nome){
    Dados: Geral = vendas_mensal (como antes); cliente = vendas_cliente_mensal;
    representante = vendas_vendedor_mensal; busca = vendas_clientes_busca.
    ===================================================================== */
-Object.assign(EV,{fil:'geral',cli:null,rep:'',fx:null,fxK:'',fxErro:'',fxCarregando:false,reps:null,ult:null});
+Object.assign(EV,{per:null,cmp:null,cp:null,cpErro:'',cpCarregando:false,fil:'geral',cli:null,rep:'',fx:null,fxK:'',fxErro:'',fxCarregando:false,reps:null,ult:null});
 const RC={q:'',res:null,buscando:false,_t:null};
 const rcKey=c=>c.doc?'doc:'+c.doc:'nome:'+c.nome;
 const rcDeKey=k=>k.startsWith('doc:')?{doc:k.slice(4),nome:''}:{doc:'',nome:k.slice(5)};
@@ -1923,10 +1923,34 @@ function rcCresc(acum,t2,t1p,per){
   const up=acum>=0;
   return `<div class="pfkpi rccresc ${up?'up':'dn'}"><span>Crescimento no período</span><b><i>${up?'▲':'▼'}</i>${evPc(acum)}</b><small>${per} · ${evRsc(Math.abs(t2-t1p))} a ${up?'mais':'menos'} que ${EV.a1}</small></div>`;
 }
+/* ---------- período: o escolhido (padrão: 1º de janeiro até hoje) e o mesmo período no ano de comparação ---------- */
+const evMudaAno=(s,dy)=>{const [y,m,d]=s.split('-').map(Number);const fim=new Date(y+dy,m,0).getDate();return `${y+dy}-${String(m).padStart(2,'0')}-${String(Math.min(d,fim)).padStart(2,'0')}`;};
+function evPer(){
+  const h=perHoje();let f=EV.per&&EV.per.m!=='sem'?perFaixa(EV.per):{de:h.slice(0,4)+'-01-01',ate:h};
+  if(!f.de||!f.ate)f={de:h.slice(0,4)+'-01-01',ate:h};
+  const y2=+f.de.slice(0,4);if(!EV.cmp||EV.cmp>=y2)EV.cmp=y2-1;
+  const dy=EV.cmp-y2;const de1=evMudaAno(f.de,dy),ate1=evMudaAno(f.ate,dy);
+  const meses=[];let g=new Date(+f.de.slice(0,4),+f.de.slice(5,7)-1,1);const fimM=f.ate.slice(0,7);
+  while(perYmd(g).slice(0,7)<=fimM&&meses.length<48){const ym=perYmd(g).slice(0,7);meses.push({ym2:ym,ym1:evMudaAno(ym+'-01',dy).slice(0,7),i:+ym.slice(5,7)-1,y:+ym.slice(0,4)});g.setMonth(g.getMonth()+1);}
+  const umAno=f.de.slice(0,4)===f.ate.slice(0,4);
+  const rot=y=>umAno?String(y):`${String(y).slice(2)}/${String(y+1).slice(2)}`;
+  return {de2:f.de,ate2:f.ate,de1,ate1,meses,umAno,r2:rot(y2),r1:rot(EV.cmp),
+    txt2:`${br(f.de)} a ${br(f.ate)}`,txt1:`${br(de1)} a ${br(ate1)}`,curto:`${br(f.de).slice(0,5)} a ${br(f.ate).slice(0,5)}`};
+}
+const evCpChave=P=>[EV.fil,EV.fil==='cli'?EV.cli:EV.fil==='rep'?EV.rep:'',P.de1,P.ate1,P.de2,P.ate2,EV.base,pfSitsOn().join('|')].join('·');
+async function evCpCarrega(P){
+  const k=evCpChave(P);EV.cpCarregando=true;EV.cpErro='';
+  try{const c=EV.fil==='cli'?rcDeKey(EV.cli):{doc:'',nome:''};
+    const r=await fn({acao:'vendas_comp',filtro:EV.fil,doc:c.doc,nome:c.nome,vendedor:EV.rep||'',de1:P.de1,ate1:P.ate1,de2:P.de2,ate2:P.ate2,base:EV.base,sits:pfSitsOn()});
+    if(evCpChave(evPer())!==k)return;
+    const m={1:{},2:{}};(r.linhas||[]).forEach(x=>{m[x.serie]=m[x.serie]||{};m[x.serie][x.mes]={t:+x.total||0,n:+x.pedidos||0};});
+    EV.cpc=EV.cpc||{};EV.cpc[k]={k,m};EV.cp=EV.cpc[k];}
+  catch(e){EV.cpErro=e.message;}
+  finally{EV.cpCarregando=false;}
+}
 /* ---------- a aba ---------- */
 function evAnalise(c){
   const FIL=[['geral','Geral'],['cli','Por cliente'],['rep','Por representante']];
-  const inf=EV.fil==='cli'&&EV.fx&&EV.fxK===evFxChave()?EV.fx.info:null;
   const barra=`<div class="evfil"><span class="seg evfilseg">${FIL.map(([k,t])=>`<button data-fil="${k}" class="${EV.fil===k?'on':''}">${t}</button>`).join('')}</span>
     ${EV.fil==='cli'?`<div class="rcbusca evfilbusca"><span>⌕</span><input id="rcQ" placeholder="${EV.cli?'Trocar de cliente: nome, CNPJ/CPF ou cidade':'Digite o nome do cliente, o CNPJ/CPF ou a cidade'}" autocomplete="off" value="${esc(RC.q)}"><div class="rcres" id="rcRes" hidden></div></div>`:''}
     ${EV.fil==='rep'?`<select id="evRep" class="evfilrep"><option value="">${EV.reps?'Escolha o representante':'Carregando…'}</option>${(EV.reps||[]).map(n=>`<option ${n===EV.rep?'selected':''}>${esc(n)}</option>`).join('')}</select>`:''}</div>`;
@@ -1934,53 +1958,58 @@ function evAnalise(c){
     c.querySelectorAll('[data-fil]').forEach(b=>b.onclick=()=>{if(EV.fil===b.dataset.fil)return;EV.fil=b.dataset.fil;evDesenha();});
     rcLigaBusca();
     if($('evRep'))$('evRep').onchange=e=>{EV.rep=e.target.value;EV.fx=null;evDesenha();};
-    if($('evA1'))$('evA1').onchange=e=>{EV.a1=+e.target.value;evDesenha();};
-    if($('evA2'))$('evA2').onchange=e=>{EV.a2=+e.target.value;evDesenha();};
+    if($('evPerB'))$('evPerB').onclick=ev=>{ev.stopPropagation();abrirPeriodo(ev.currentTarget,EV.per&&EV.per.m!=='sem'?EV.per:Object.assign(perNovo('int'),{de:perHoje().slice(0,4)+'-01-01',ate:perHoje()}),{},st=>{EV.per=st.m==='sem'?null:st;evDesenha();});};
+    if($('evCmp'))$('evCmp').onchange=e=>{EV.cmp=+e.target.value;evDesenha();};
     if($('evBase'))$('evBase').onchange=e=>{EV.base=e.target.value;evDesenha();};
   };
   if(EV.fil==='rep'&&!EV.reps){c.innerHTML=barra;liga();evReps().then(()=>evDesenha());return;}
-  if(EV.fil==='cli'&&!EV.cli){c.innerHTML=barra+`<div class="rcvazio"><div class="ic">⌕</div><b>Escolha um cliente</b><span>Digite acima o nome, o CNPJ/CPF ou a cidade. Aparece o que ele comprou em cada mês, um ano contra o outro.</span></div>`;liga();$('rcQ').focus();return;}
-  if(EV.fil==='rep'&&!EV.rep){c.innerHTML=barra+`<div class="rcvazio"><div class="ic">◎</div><b>Escolha um representante</b><span>Aparece o que ele vendeu em cada mês, um ano contra o outro.</span></div>`;liga();return;}
-  let S;
-  if(EV.fil==='geral'){S={V:EV.dados.V,F:EV.dados.F,PV:null,anos:evAnos(),info:null};}
-  else{
-    if(!EV.fx||EV.fxK!==evFxChave()){
-      if(EV.fxErro){c.innerHTML=barra+`<div class="aviso">⚠ <div>${esc(EV.fxErro)}<br><small>Precisa do SQL <b>supabase-vendas-cliente.sql</b> no banco e da função tiny publicada.</small></div></div>`;liga();return;}
-      c.innerHTML=barra+`<div class="vazio">${EV.fil==='cli'?'Somando os pedidos do cliente…':'Somando as vendas do representante…'}</div>`;liga();
-      if(!EV.fxCarregando)evFxCarrega().then(()=>{if(EV.aba==='ar')evDesenha();});return;}
-    S=EV.fx;
-  }
-  const d=EV.base==='V'?S.V:S.F;const {ano,mes}=evHoje();
-  if(!S.anos.includes(EV.a1))EV.a1=S.anos[Math.max(0,S.anos.indexOf(EV.a2)-1)]||S.anos[0];
-  const r1=(d[EV.a1]||Array(12).fill(0)).map(v=>v==null?null:v);const r2=(d[EV.a2]||Array(12).fill(0)).map((v,i)=>EV.a2===ano&&i>=mes?null:v);
-  const n2=r2.filter(v=>v!=null).length;const t1=r1.reduce((s,v)=>s+(v||0),0),t2=r2.reduce((s,v)=>s+(v||0),0),t1p=r1.slice(0,n2).reduce((s,v)=>s+(v||0),0);
-  const pcs=r2.map((v,i)=>v!=null&&r1[i]?v/r1[i]-1:null);const acum=t1p?t2/t1p-1:null;const per=evPeriodo(n2);
-  const temPed=!!S.PV;const p1=temPed?(S.PV[EV.a1]||[]).slice(0,n2).reduce((s,v)=>s+(v||0),0):0,p2=temPed?(S.PV[EV.a2]||[]).slice(0,n2).reduce((s,v)=>s+(v||0),0):0;
-  const tk1=p1?t1p/p1:0,tk2=p2?t2/p2:0;
-  const sem=EV.fil==='geral'?[]:r2.map((v,i)=>v===0?EV_ML[i].toLowerCase():null).filter(Boolean);
-  const titulo=EV.fil==='geral'?'Todas as vendas':EV.fil==='cli'?(S.info.nome||rcDeKey(EV.cli).nome||'Cliente'):EV.rep;
-  EV.ult={t1,t2,t1p,acum,per,n2,info:S.info,titulo};
-  const dt=s=>s?s.split('-').reverse().join('/'):'—';const dias=S.info&&S.info.ultima?Math.round((Date.parse(perHoje())-Date.parse(S.info.ultima))/864e5):null;
+  if(EV.fil==='cli'&&!EV.cli){c.innerHTML=barra+`<div class="rcvazio"><div class="ic">⌕</div><b>Escolha um cliente</b><span>Digite acima o nome, o CNPJ/CPF ou a cidade. Aparece o que ele comprou em cada mês do período, contra o mesmo período do ano de comparação.</span></div>`;liga();$('rcQ').focus();return;}
+  if(EV.fil==='rep'&&!EV.rep){c.innerHTML=barra+`<div class="rcvazio"><div class="ic">◎</div><b>Escolha um representante</b><span>Aparece o que ele vendeu em cada mês do período, contra o mesmo período do ano de comparação.</span></div>`;liga();return;}
+  /* cabeçalho do cliente/representante (dados da ficha) */
+  if(EV.fil!=='geral'&&(!EV.fx||EV.fxK!==evFxChave())){
+    if(EV.fxErro){c.innerHTML=barra+`<div class="aviso">⚠ <div>${esc(EV.fxErro)}<br><small>Precisa do SQL <b>supabase-vendas-cliente.sql</b> no banco e da função tiny publicada.</small></div></div>`;liga();return;}
+    c.innerHTML=barra+`<div class="vazio">${EV.fil==='cli'?'Lendo o cliente…':'Lendo o representante…'}</div>`;liga();
+    if(!EV.fxCarregando)evFxCarrega().then(()=>{if(EV.aba==='ar')evDesenha();});return;}
+  const P=evPer();
+  if(EV.cpc&&EV.cpc[evCpChave(P)])EV.cp=EV.cpc[evCpChave(P)];
+  if(!EV.cp||EV.cp.k!==evCpChave(P)){
+    if(EV.cpErro){c.innerHTML=barra+`<div class="aviso">⚠ <div>${esc(EV.cpErro)}<br><small>Precisa do SQL <b>supabase-vendas-cliente.sql</b> no banco e da função tiny publicada.</small></div></div>`;liga();EV.cpErro='';return;}
+    c.innerHTML=barra+'<div class="vazio">Somando o período…</div>';liga();
+    if(!EV.cpCarregando)evCpCarrega(P).then(()=>{if(EV.aba==='ar')evDesenha();});return;}
+  const inf=EV.fil==='geral'?null:EV.fx.info||{};
+  const M=EV.cp.m;const r1=P.meses.map(x=>(M[1][x.ym1]||{}).t||0),r2=P.meses.map(x=>(M[2][x.ym2]||{}).t||0);
+  const n1=P.meses.reduce((s,x)=>s+((M[1][x.ym1]||{}).n||0),0),n2p=P.meses.reduce((s,x)=>s+((M[2][x.ym2]||{}).n||0),0);
+  const t1=r1.reduce((s,v)=>s+v,0),t2=r2.reduce((s,v)=>s+v,0);const pcs=r2.map((v,i)=>r1[i]?v/r1[i]-1:null);const acum=t1?t2/t1-1:null;
+  const tk1=n1?t1/n1:0,tk2=n2p?t2/n2p:0;
+  const rot=P.meses.map(x=>P.umAno?EV_M[x.i]:EV_M[x.i]+'/'+String(x.y).slice(2));const rotL=P.meses.map(x=>P.umAno?EV_ML[x.i]:EV_ML[x.i]+' de '+x.y);
+  const ult=P.meses.length-1;const parc=i=>(i===0&&P.de2.slice(8)!=='01')||(i===ult&&P.ate2!==perYmd(new Date(+P.ate2.slice(0,4),+P.ate2.slice(5,7),0)));
+  const parcTx=i=>{const a=i===0?P.de2.slice(8):'01',b=i===ult?P.ate2.slice(8):String(new Date(+P.meses[i].ym2.slice(0,4),+P.meses[i].ym2.slice(5,7),0).getDate());return `dias ${+a} a ${+b}`;};
+  const sem=EV.fil==='geral'?[]:P.meses.map((x,i)=>r2[i]===0?rotL[i].toLowerCase():null).filter(Boolean);
+  const titulo=EV.fil==='geral'?'Todas as vendas':EV.fil==='cli'?(inf.nome||rcDeKey(EV.cli).nome||'Cliente'):EV.rep;
+  EV.ult={t1,t2,acum,P,info:inf,titulo,n1,n2:n2p};
+  const dt=s=>s?s.split('-').reverse().join('/'):'—';const dias=inf&&inf.ultima?Math.round((Date.parse(perHoje())-Date.parse(inf.ultima))/864e5):null;
   const cab=EV.fil==='geral'?'':`<div class="evclid"><div class="evclav ${EV.fil==='rep'?'rep':''}">${esc((titulo||'?').trim().charAt(0).toUpperCase())}</div><div style="min-width:0"><h2>${esc(titulo)}</h2>
-    <div class="evclchips">${EV.fil==='cli'?`${S.info.doc?`<span>${esc(S.info.doc)}</span>`:''}${S.info.cidade?`<span>${esc(S.info.cidade)}${S.info.uf?'/'+esc(S.info.uf):''}</span>`:''}${S.info.vendedor?`<span>representante <b>${esc(S.info.vendedor)}</b></span>`:''}${S.info.primeira?`<span>cliente desde ${dt(S.info.primeira)}</span>`:''}`
-      :`<span>representante</span>${S.info.clientes!=null?`<span><b>${nf(S.info.clientes)}</b> clientes nos últimos 12 meses</span>`:''}${S.info.primeira?`<span>vendendo desde ${dt(S.info.primeira)}</span>`:''}`}
-      ${S.info.ultima?`<span class="${dias>60?'evclalerta':''}">${EV.fil==='cli'?'última compra':'última venda'} ${dt(S.info.ultima)}${dias!=null?` · há ${dias} ${dias===1?'dia':'dias'}`:''}</span>`:''}</div></div></div>`;
-  const pcTx=(p,a,b)=>b==null?'<span class="rcpc nd">—</span>':!a&&!b?`<span class="rcpc nd">${EV.fil==='cli'?'sem compra':'sem venda'}</span>`:!a?'<span class="rcpc nv">novo</span>':b===0?`<span class="rcpc dn">${EV.fil==='cli'?'sem compra':'sem venda'}</span>`:`<span class="rcpc ${p>=0?'up':'dn'}">${evPc(p)}</span>`;
-  const tab=`<table class="tv evtab rctab"><thead><tr><th>Mês</th><th class="a1 n"><span class="evchip">${EV.a1}</span></th><th class="a2 n"><span class="evchip">${EV.a2}</span></th><th class="n">Crescimento</th></tr></thead><tbody>${EV_M.map((m,i)=>{const a=r1[i],b=r2[i];const emCurso=EV.a2===ano&&i===mes;const bruto=(d[EV.a2]||[])[i];
-    return `<tr style="${emCurso?'opacity:.6':''}"><td>${EV_ML[i]}${emCurso?' <span class="k" style="font-size:10.5px;color:var(--ink3)">em curso · parcial</span>':''}</td><td class="m n a1">${a?evRsc(a):'—'}</td><td class="m n a2"><b>${b?evRsc(b):emCurso&&bruto?evRsc(bruto):'—'}</b></td><td class="n">${pcTx(pcs[i],a,b)}</td></tr>`;}).join('')}</tbody>
-    <tfoot><tr><td>Mesmo período (${per})</td><td class="m n a1">${evRsc(t1p)}</td><td class="m n a2">${evRsc(t2)}</td><td class="n">${acum==null?(t2?'<span class="rcpc nv">novo</span>':''):`<span class="rcpc ${acum>=0?'up':'dn'}">${evPc(acum)}</span>`}</td></tr>
-    <tr><td>Ano inteiro</td><td class="m n a1">${evRsc(t1)}</td><td class="m n a2">${n2<12&&n2>0?'<span style="color:var(--ink3)">proj. '+evRsc(t2/n2*12)+'</span>':evRsc(t2)}</td><td></td></tr></tfoot></table>`;
+    <div class="evclchips">${EV.fil==='cli'?`${inf.doc?`<span>${esc(inf.doc)}</span>`:''}${inf.cidade?`<span>${esc(inf.cidade)}${inf.uf?'/'+esc(inf.uf):''}</span>`:''}${inf.vendedor?`<span>representante <b>${esc(inf.vendedor)}</b></span>`:''}${inf.primeira?`<span>cliente desde ${dt(inf.primeira)}</span>`:''}`
+      :`<span>representante</span>${inf.clientes!=null?`<span><b>${nf(inf.clientes)}</b> clientes nos últimos 12 meses</span>`:''}${inf.primeira?`<span>vendendo desde ${dt(inf.primeira)}</span>`:''}`}
+      ${inf.ultima?`<span class="${dias>60?'evclalerta':''}">${EV.fil==='cli'?'última compra':'última venda'} ${dt(inf.ultima)}${dias!=null?` · há ${dias} ${dias===1?'dia':'dias'}`:''}</span>`:''}</div></div></div>`;
+  const semTx=EV.fil==='cli'?'sem compra':'sem venda';
+  const pcTx=(p,a,b)=>!a&&!b?`<span class="rcpc nd">${semTx}</span>`:!a?'<span class="rcpc nv">novo</span>':b===0?`<span class="rcpc dn">${semTx}</span>`:`<span class="rcpc ${p>=0?'up':'dn'}">${evPc(p)}</span>`;
+  const tab=`<table class="tv evtab rctab"><thead><tr><th>Mês</th><th class="a1 n"><span class="evchip">${P.r1}</span></th><th class="a2 n"><span class="evchip">${P.r2}</span></th><th class="n">Crescimento</th></tr></thead><tbody>${P.meses.map((x,i)=>{const a=r1[i],b=r2[i];
+    return `<tr><td>${rotL[i]}${parc(i)?` <span class="k" style="font-size:10.5px;color:var(--ink3)">${parcTx(i)}</span>`:''}</td><td class="m n a1">${a?evRsc(a):'—'}</td><td class="m n a2"><b>${b?evRsc(b):'—'}</b></td><td class="n">${pcTx(pcs[i],a,b)}</td></tr>`;}).join('')}</tbody>
+    <tfoot><tr><td>Total do período <span class="k" style="font-weight:500;color:var(--ink3)">${P.curto}</span></td><td class="m n a1">${evRsc(t1)}</td><td class="m n a2">${evRsc(t2)}</td><td class="n">${acum==null?(t2?'<span class="rcpc nv">novo</span>':''):`<span class="rcpc ${acum>=0?'up':'dn'}">${evPc(acum)}</span>`}</td></tr></tfoot></table>`;
   const baseN=EV.base==='V'?'Pedidos de venda':'Faturamento';
-  const pv=pcs.filter(v=>v!=null);const mi=pv.length?pcs.indexOf(Math.max(...pv)):-1;const sobe=pv.filter(v=>v>=0).length;
+  const pv=pcs.filter(v=>v!=null);const mi=pv.length?pcs.indexOf(Math.max(...pv)):-1;const sobe=pv.filter(v=>v>=0).length;const nm=pv.length;
+  const anos=[...new Set([...evAnos(),+P.de2.slice(0,4)-1])].filter(y=>y<+P.de2.slice(0,4)).sort();
   c.innerHTML=barra+`<div id="evArCorpo">${cab}
-  <div class="evTopo" style="margin-top:${cab?14:0}px">${evSel('evA1','Ano 1',S.anos.map(y=>[y,y]),EV.a1,'roxo')}${evSel('evA2','Ano 2',S.anos.map(y=>[y,y]),EV.a2,'azul')}${evSel('evBase','Análise sobre',[['V','Pedidos de venda'],['F','Faturamento']],EV.base,'navy')}</div>
-  <div class="evKpis ${temPed?'evKpis4':''}">${evKpi(`Total ${EV.a1}`,evRsc(t1),`12 meses · ${per}: ${evRsc(t1p)}`,'roxo')}${evKpi(`Total ${EV.a2}`,evRsc(t2),`${n2} ${n2===1?'mês fechado':'meses fechados'}${n2<12&&n2>0?' · projeção '+evRsc(t2/n2*12):''}`,'azul')}${temPed?evKpi('Pedidos e ticket médio',`${nf(p2)} <small class="evkv">pedidos</small>`,`ticket ${evRs(tk2)} · em ${EV.a1}: ${nf(p1)} pedidos, ticket ${evRs(tk1)}`,''):''}${rcCresc(acum,t2,t1p,per)}</div>
-  ${sem.length?`<div class="evclaviso">${sem.length===1?'1 mês':sem.length+' meses'} de ${EV.a2} sem nenhuma ${EV.fil==='cli'?'compra':'venda'}: ${sem.join(', ')}.</div>`:''}
-  <div class="caixa" style="margin-top:12px">${evSec('arTab','Mês a mês',`${baseN} · ${EV.a2} contra ${EV.a1}`)}${EV.fech.arTab?'':`<div class="rol">${tab}</div>`}</div>
-  <div class="caixa" style="margin-top:12px">${evSec('arGraf','Evolução mês a mês',`${baseN} · ${per}`,`<span class="evleg"><i style="background:#7E2A6C"></i>${EV.a1}<i style="background:#1B4F9C;margin-left:12px"></i>${EV.a2}<i style="background:#15803D;height:3px;width:16px;margin-left:12px;vertical-align:3px"></i>% crescimento</span>`)}${EV.fech.arGraf?'':`<div class="evgraf">${evSvgAR(r1,r2,pcs,false,'#7E2A6C')}<div class="evtip"></div></div>`}</div>
-  ${n2?`<div class="evDest">${evDq('↗',sobe===n2?'Crescimento em todos os meses':`Cresceu em ${sobe} de ${n2} meses`,`${EV.a2} × ${EV.a1}, mês a mês`,sobe===n2?'':`${n2-sobe} ${n2-sobe>1?'meses abaixo':'mês abaixo'}`)}${evDq('◎','Crescimento acumulado do período',acum==null?'—':evPc(acum),per)}${mi>=0?evDq('✓',`${EV_ML[mi]} foi o melhor mês`,evPc(pcs[mi]),`acima de ${EV_ML[mi].toLowerCase()}/${EV.a1}`):''}</div>`:''}</div>`;
+  <div class="evTopo" style="margin-top:${cab?14:0}px"><div class="evSel"><label>Período</label>${perBotao('evPerB',Object.assign(perNovo('int'),{m:'int',de:P.de2,ate:P.ate2}))}</div>${evSel('evCmp','Comparar com',anos.map(y=>[y,y]),EV.cmp,'roxo')}${evSel('evBase','Análise sobre',[['V','Pedidos de venda'],['F','Faturamento']],EV.base,'navy')}
+    <span class="k evpertx">${P.txt2} <b style="color:#1B4F9C">×</b> ${P.txt1}</span></div>
+  <div class="evKpis evKpis4">${evKpi(`Total ${P.r1}`,evRsc(t1),P.txt1,'roxo')}${evKpi(`Total ${P.r2}`,evRsc(t2),P.txt2,'azul')}${evKpi('Pedidos e ticket médio',`${nf(n2p)} <small class="evkv">pedidos</small>`,`ticket ${evRs(tk2)} · em ${P.r1}: ${nf(n1)} pedidos, ticket ${evRs(tk1)}`,'')}${rcCresc(acum,t2,t1,P.curto)}</div>
+  ${sem.length?`<div class="evclaviso">${sem.length===1?'1 mês':sem.length+' meses'} do período sem nenhuma ${EV.fil==='cli'?'compra':'venda'}: ${sem.join(', ')}.</div>`:''}
+  <div class="caixa" style="margin-top:12px">${evSec('arTab','Mês a mês',`${baseN} · ${P.txt2} contra ${P.txt1}`)}${EV.fech.arTab?'':`<div class="rol">${tab}</div>`}</div>
+  <div class="caixa" style="margin-top:12px">${evSec('arGraf','Evolução mês a mês',`${baseN} · ${P.curto}`,`<span class="evleg"><i style="background:#7E2A6C"></i>${P.r1}<i style="background:#1B4F9C;margin-left:12px"></i>${P.r2}<i style="background:#15803D;height:3px;width:16px;margin-left:12px;vertical-align:3px"></i>% crescimento</span>`)}${EV.fech.arGraf?'':`<div class="evgraf">${evSvgAR(r1,r2,pcs,false,'#7E2A6C',rot)}<div class="evtip"></div></div>`}</div>
+  ${nm?`<div class="evDest">${evDq('↗',sobe===nm?'Crescimento em todos os meses':`Cresceu em ${sobe} de ${nm} meses`,`${P.r2} × ${P.r1}, mês a mês`,sobe===nm?'':`${nm-sobe} ${nm-sobe>1?'meses abaixo':'mês abaixo'}`)}${evDq('◎','Crescimento no período',acum==null?'—':evPc(acum),P.curto)}${mi>=0?evDq('✓',`${rotL[mi]} foi o melhor mês`,evPc(pcs[mi]),`contra ${rotL[mi].toLowerCase()} de ${P.r1}`):''}</div>`:''}</div>`;
   liga();evLigaTog(c);
-  const g=c.querySelector('#evArCorpo svg');if(g)evTip(g,i=>`<b>${EV_ML[i]}</b> · ${EV.a1}: ${r1[i]!=null?evRsc(r1[i]):'—'} · ${EV.a2}: <b>${r2[i]!=null?evRsc(r2[i]):'—'}</b>${pcs[i]!=null?' · '+evPc(pcs[i]):''}`);
+  const g=c.querySelector('#evArCorpo svg');if(g)evTip(g,i=>`<b>${rotL[i]}</b> · ${P.r1}: ${evRsc(r1[i])} · ${P.r2}: <b>${evRsc(r2[i])}</b>${pcs[i]!=null?' · '+evPc(pcs[i]):''}`);
 }
 /* ---------- PDF da Análise relativa: folha do relatório (logo, título, período; cartões, tabela e gráfico) ---------- */
 const _evPdf427=evPdf;
@@ -1988,13 +2017,12 @@ evPdf=function(){
   if(EV.aba!=='ar')return _evPdf427();
   if(!EV.ult||!$('evArCorpo'))return toast('Ainda carregando.',true);
   const fech=EV.fech;if(fech.arTab||fech.arGraf){EV.fech={...fech,arTab:false,arGraf:false};evDesenha();}
-  const c=$('evArCorpo');const u=EV.ult;
+  const c=$('evArCorpo');const u=EV.ult,P=u.P;
   const caixas=[...c.querySelectorAll(':scope > .caixa')].map(x=>{const k=x.cloneNode(true);k.querySelectorAll('.evtip,.car').forEach(e=>e.remove());k.querySelectorAll('.evtog .k:last-child').forEach(e=>e.remove());return k.outerHTML;}).join('');
   const el=document.createElement('div');
-  el.innerHTML=`<div class="evKpis">${evKpi(`Total ${EV.a1}`,evRsc(u.t1p),`${u.per} · ano inteiro ${evRsc(u.t1)}`,'roxo')}${evKpi(`Total ${EV.a2}`,evRsc(u.t2),`${u.per}`,'azul')}${rcCresc(u.acum,u.t2,u.t1p,u.per)}</div>${caixas}`;
-  const perTxt=u.per.charAt(0).toUpperCase()+u.per.slice(1);
+  el.innerHTML=`<div class="evKpis">${evKpi(`Total ${P.r1}`,evRsc(u.t1),P.txt1,'roxo')}${evKpi(`Total ${P.r2}`,evRsc(u.t2),P.txt2,'azul')}${rcCresc(u.acum,u.t2,u.t1,P.curto)}</div>${caixas}`;
   const abaixo=EV.fil==='cli'&&u.info&&u.info.vendedor?`Representante <b style="color:#0E1B33">${esc(u.info.vendedor)}</b>`:EV.fil==='rep'?'Representante':'';
-  pfPdfTela(u.titulo,`${EV.a2} × ${EV.a1}<div style="font:600 12px/1.3 Inter,sans-serif;opacity:.85;margin-top:2px">${esc(perTxt)} · ${EV.base==='V'?'pedidos de venda':'faturamento'}</div>`,el,'portrait',{arq:`${u.titulo} - ${EV.a2} x ${EV.a1}`,emiCima:true,abaixo});
+  pfPdfTela(u.titulo,`${P.r2} × ${P.r1}<div style="font:600 12px/1.3 Inter,sans-serif;opacity:.85;margin-top:2px">${P.txt2} · ${EV.base==='V'?'pedidos de venda':'faturamento'}</div>`,el,'portrait',{arq:`${u.titulo} - ${P.txt2.replace(/\//g,'-')}`,emiCima:true,abaixo});
   if(fech!==EV.fech){EV.fech=fech;evDesenha();}
 };
 /* endereço antigo do relatório (v427): abre aqui com o cliente */
@@ -2067,6 +2095,10 @@ function telaRelIndex(){
 .evfilbusca{margin:0;flex:1 1 320px;height:42px}.evfilbusca input{height:40px;font-size:14px}.evfilbusca .rcres{top:46px}
 .evfilrep{height:42px;border-radius:10px;min-width:280px;font-size:14px;font-weight:600}
 .evclav.rep{background:#0E1B33}
+`;document.head.appendChild(s);}catch(e){}})();
+(function(){try{const s=document.createElement('style');s.textContent=`
+.evTopo .perb2{height:42px;border-radius:10px;font-size:14px;font-weight:700;padding:0 14px}
+.evpertx{align-self:center;font-size:12px;color:var(--ink3);margin-left:4px}
 `;document.head.appendChild(s);}catch(e){}})();
 
 function render(){
