@@ -1934,17 +1934,22 @@ function evPer(){
   while(perYmd(g).slice(0,7)<=fimM&&meses.length<48){const ym=perYmd(g).slice(0,7);meses.push({ym2:ym,ym1:evMudaAno(ym+'-01',dy).slice(0,7),i:+ym.slice(5,7)-1,y:+ym.slice(0,4)});g.setMonth(g.getMonth()+1);}
   const umAno=f.de.slice(0,4)===f.ate.slice(0,4);
   const rot=y=>umAno?String(y):`${String(y).slice(2)}/${String(y+1).slice(2)}`;
-  return {de2:f.de,ate2:f.ate,de1,ate1,meses,umAno,r2:rot(y2),r1:rot(EV.cmp),
-    txt2:`${br(f.de)} a ${br(f.ate)}`,txt1:`${br(de1)} a ${br(ate1)}`,curto:`${br(f.de).slice(0,5)} a ${br(f.ate).slice(0,5)}`};
+  /* o que ainda não aconteceu fica fora da soma (mostra o ano de comparação, apagado) */
+  const ateE2=f.ate>h?(h<f.de?f.de:h):f.ate,ateE1=evMudaAno(ateE2,dy);
+  const Y2=+f.ate.slice(0,4),Y1=Y2+dy;
+  return {de2:f.de,ate2:ateE2,ateSel:f.ate,de1,ate1:ateE1,meses,umAno,r2:rot(y2),r1:rot(EV.cmp),Y1,Y2,
+    an:{de1:Y1+'-01-01',ate1:Y1+'-12-31',de2:Y2+'-01-01',ate2:Y2+'-12-31'>h?h:Y2+'-12-31'},
+    txt2:`${br(f.de)} a ${br(ateE2)}`,txt1:`${br(de1)} a ${br(ateE1)}`,curto:`${br(f.de).slice(0,5)} a ${br(ateE2).slice(0,5)}`};
 }
-const evCpChave=P=>[EV.fil,EV.fil==='cli'?EV.cli:EV.fil==='rep'?EV.rep:'',P.de1,P.ate1,P.de2,P.ate2,EV.base,pfSitsOn().join('|')].join('·');
+const evCpChave=P=>[EV.fil,EV.fil==='cli'?EV.cli:EV.fil==='rep'?EV.rep:'',P.de1,P.ate1,P.de2,P.ate2,P.an.ate2,EV.base,pfSitsOn().join('|')].join('·');
 async function evCpCarrega(P){
   const k=evCpChave(P);EV.cpCarregando=true;EV.cpErro='';
   try{const c=EV.fil==='cli'?rcDeKey(EV.cli):{doc:'',nome:''};
-    const r=await fn({acao:'vendas_comp',filtro:EV.fil,doc:c.doc,nome:c.nome,vendedor:EV.rep||'',de1:P.de1,ate1:P.ate1,de2:P.de2,ate2:P.ate2,base:EV.base,sits:pfSitsOn()});
+    const base={acao:'vendas_comp',filtro:EV.fil,doc:c.doc,nome:c.nome,vendedor:EV.rep||'',base:EV.base,sits:pfSitsOn()};
+    const [r,ra]=await Promise.all([fn({...base,de1:P.de1,ate1:P.ate1,de2:P.de2,ate2:P.ate2}),fn({...base,...P.an})]);
     if(evCpChave(evPer())!==k)return;
-    const m={1:{},2:{}};(r.linhas||[]).forEach(x=>{m[x.serie]=m[x.serie]||{};m[x.serie][x.mes]={t:+x.total||0,n:+x.pedidos||0};});
-    EV.cpc=EV.cpc||{};EV.cpc[k]={k,m};EV.cp=EV.cpc[k];}
+    const tab=rr=>{const m={1:{},2:{}};(rr.linhas||[]).forEach(x=>{m[x.serie]=m[x.serie]||{};m[x.serie][x.mes]={t:+x.total||0,n:+x.pedidos||0};});return m;};
+    EV.cpc=EV.cpc||{};EV.cpc[k]={k,m:tab(r),ano:tab(ra)};EV.cp=EV.cpc[k];}
   catch(e){EV.cpErro=e.message;}
   finally{EV.cpCarregando=false;}
 }
@@ -1977,14 +1982,19 @@ function evAnalise(c){
     c.innerHTML=barra+'<div class="vazio">Somando o período…</div>';liga();
     if(!EV.cpCarregando)evCpCarrega(P).then(()=>{if(EV.aba==='ar')evDesenha();});return;}
   const inf=EV.fil==='geral'?null:EV.fx.info||{};
-  const M=EV.cp.m;const r1=P.meses.map(x=>(M[1][x.ym1]||{}).t||0),r2=P.meses.map(x=>(M[2][x.ym2]||{}).t||0);
+  const M=EV.cp.m,MA=EV.cp.ano;const hm=perHoje().slice(0,7);const fut=P.meses.map(x=>x.ym2>hm);
+  const r1=P.meses.map((x,i)=>fut[i]?0:(M[1][x.ym1]||{}).t||0),r2=P.meses.map((x,i)=>fut[i]?0:(M[2][x.ym2]||{}).t||0);
+  const r1f=P.meses.map((x,i)=>fut[i]?((MA[1][x.ym1]||{}).t||0):null);
+  const soma=o=>Object.values(o||{}).reduce((s,v)=>s+(v.t||0),0);const A1=soma(MA[1]),A2=soma(MA[2]);
+  const hj=perHoje();const anoCorr=P.Y2===+hj.slice(0,4);const dAno=(Date.parse(hj)-Date.parse(P.Y2+'-01-01'))/864e5+1,nAno=(Date.parse((P.Y2+1)+'-01-01')-Date.parse(P.Y2+'-01-01'))/864e5;
+  const proj=anoCorr&&dAno>0?A2/dAno*nAno:null;
   const n1=P.meses.reduce((s,x)=>s+((M[1][x.ym1]||{}).n||0),0),n2p=P.meses.reduce((s,x)=>s+((M[2][x.ym2]||{}).n||0),0);
-  const t1=r1.reduce((s,v)=>s+v,0),t2=r2.reduce((s,v)=>s+v,0);const pcs=r2.map((v,i)=>r1[i]?v/r1[i]-1:null);const acum=t1?t2/t1-1:null;
+  const t1=r1.reduce((s,v)=>s+v,0),t2=r2.reduce((s,v)=>s+v,0);const pcs=r2.map((v,i)=>!fut[i]&&r1[i]?v/r1[i]-1:null);const acum=t1?t2/t1-1:null;
   const tk1=n1?t1/n1:0,tk2=n2p?t2/n2p:0;
   const rot=P.meses.map(x=>P.umAno?EV_M[x.i]:EV_M[x.i]+'/'+String(x.y).slice(2));const rotL=P.meses.map(x=>P.umAno?EV_ML[x.i]:EV_ML[x.i]+' de '+x.y);
-  const ult=P.meses.length-1;const parc=i=>(i===0&&P.de2.slice(8)!=='01')||(i===ult&&P.ate2!==perYmd(new Date(+P.ate2.slice(0,4),+P.ate2.slice(5,7),0)));
+  const ult=P.meses.reduce((u,x,i)=>fut[i]?u:i,0);const parc=i=>!fut[i]&&((i===0&&P.de2.slice(8)!=='01')||(i===ult&&P.ate2!==perYmd(new Date(+P.ate2.slice(0,4),+P.ate2.slice(5,7),0))));
   const parcTx=i=>{const a=i===0?P.de2.slice(8):'01',b=i===ult?P.ate2.slice(8):String(new Date(+P.meses[i].ym2.slice(0,4),+P.meses[i].ym2.slice(5,7),0).getDate());return `dias ${+a} a ${+b}`;};
-  const sem=EV.fil==='geral'?[]:P.meses.map((x,i)=>r2[i]===0?rotL[i].toLowerCase():null).filter(Boolean);
+  const sem=EV.fil==='geral'?[]:P.meses.map((x,i)=>!fut[i]&&r2[i]===0?rotL[i].toLowerCase():null).filter(Boolean);
   const titulo=EV.fil==='geral'?'Todas as vendas':EV.fil==='cli'?(inf.nome||rcDeKey(EV.cli).nome||'Cliente'):EV.rep;
   EV.ult={t1,t2,acum,P,info:inf,titulo,n1,n2:n2p};
   const dt=s=>s?s.split('-').reverse().join('/'):'—';const dias=inf&&inf.ultima?Math.round((Date.parse(perHoje())-Date.parse(inf.ultima))/864e5):null;
@@ -1995,8 +2005,10 @@ function evAnalise(c){
   const semTx=EV.fil==='cli'?'sem compra':'sem venda';
   const pcTx=(p,a,b)=>!a&&!b?`<span class="rcpc nd">${semTx}</span>`:!a?'<span class="rcpc nv">novo</span>':b===0?`<span class="rcpc dn">${semTx}</span>`:`<span class="rcpc ${p>=0?'up':'dn'}">${evPc(p)}</span>`;
   const tab=`<table class="tv evtab rctab"><thead><tr><th>Mês</th><th class="a1 n"><span class="evchip">${P.r1}</span></th><th class="a2 n"><span class="evchip">${P.r2}</span></th><th class="n">Crescimento</th></tr></thead><tbody>${P.meses.map((x,i)=>{const a=r1[i],b=r2[i];
+    if(fut[i])return `<tr class="rcfut"><td>${rotL[i]} <span class="k" style="font-size:10.5px;color:var(--ink3)">ainda não chegou</span></td><td class="m n a1">${r1f[i]?evRsc(r1f[i]):'—'}</td><td class="m n a2">—</td><td class="n"><span class="rcpc nd">—</span></td></tr>`;
     return `<tr><td>${rotL[i]}${parc(i)?` <span class="k" style="font-size:10.5px;color:var(--ink3)">${parcTx(i)}</span>`:''}</td><td class="m n a1">${a?evRsc(a):'—'}</td><td class="m n a2"><b>${b?evRsc(b):'—'}</b></td><td class="n">${pcTx(pcs[i],a,b)}</td></tr>`;}).join('')}</tbody>
-    <tfoot><tr><td>Total do período <span class="k" style="font-weight:500;color:var(--ink3)">${P.curto}</span></td><td class="m n a1">${evRsc(t1)}</td><td class="m n a2">${evRsc(t2)}</td><td class="n">${acum==null?(t2?'<span class="rcpc nv">novo</span>':''):`<span class="rcpc ${acum>=0?'up':'dn'}">${evPc(acum)}</span>`}</td></tr></tfoot></table>`;
+    <tfoot><tr><td>Total do período <span class="k" style="font-weight:500;color:var(--ink3)">${P.curto}</span></td><td class="m n a1">${evRsc(t1)}</td><td class="m n a2">${evRsc(t2)}</td><td class="n">${acum==null?(t2?'<span class="rcpc nv">novo</span>':''):`<span class="rcpc ${acum>=0?'up':'dn'}">${evPc(acum)}</span>`}</td></tr>
+    <tr class="rcano"><td>Ano inteiro <span class="k" style="font-weight:500;color:var(--ink3)">${P.Y1} × ${P.Y2}${anoCorr?' até hoje':''}</span></td><td class="m n a1">${evRsc(A1)}</td><td class="m n a2">${evRsc(A2)}${proj?`<small class="rcproj">projeção ${evRsc(proj)}</small>`:''}</td><td class="n">${anoCorr?'<span class="rcpc nd">em andamento</span>':A1?`<span class="rcpc ${A2/A1-1>=0?'up':'dn'}">${evPc(A2/A1-1)}</span>`:''}</td></tr></tfoot></table>`;
   const baseN=EV.base==='V'?'Pedidos de venda':'Faturamento';
   const pv=pcs.filter(v=>v!=null);const mi=pv.length?pcs.indexOf(Math.max(...pv)):-1;const sobe=pv.filter(v=>v>=0).length;const nm=pv.length;
   const anos=[...new Set([...evAnos(),+P.de2.slice(0,4)-1])].filter(y=>y<+P.de2.slice(0,4)).sort();
@@ -2006,7 +2018,7 @@ function evAnalise(c){
   <div class="evKpis evKpis4">${evKpi(`Total ${P.r1}`,evRsc(t1),P.txt1,'roxo')}${evKpi(`Total ${P.r2}`,evRsc(t2),P.txt2,'azul')}${evKpi('Pedidos e ticket médio',`${nf(n2p)} <small class="evkv">pedidos</small>`,`ticket ${evRs(tk2)} · em ${P.r1}: ${nf(n1)} pedidos, ticket ${evRs(tk1)}`,'')}${rcCresc(acum,t2,t1,P.curto)}</div>
   ${sem.length?`<div class="evclaviso">${sem.length===1?'1 mês':sem.length+' meses'} do período sem nenhuma ${EV.fil==='cli'?'compra':'venda'}: ${sem.join(', ')}.</div>`:''}
   <div class="caixa" style="margin-top:12px">${evSec('arTab','Mês a mês',`${baseN} · ${P.txt2} contra ${P.txt1}`)}${EV.fech.arTab?'':`<div class="rol">${tab}</div>`}</div>
-  <div class="caixa" style="margin-top:12px">${evSec('arGraf','Evolução mês a mês',`${baseN} · ${P.curto}`,`<span class="evleg"><i style="background:#7E2A6C"></i>${P.r1}<i style="background:#1B4F9C;margin-left:12px"></i>${P.r2}<i style="background:#15803D;height:3px;width:16px;margin-left:12px;vertical-align:3px"></i>% crescimento</span>`)}${EV.fech.arGraf?'':`<div class="evgraf">${evSvgAR(r1,r2,pcs,false,'#7E2A6C',rot)}<div class="evtip"></div></div>`}</div>
+  <div class="caixa" style="margin-top:12px">${evSec('arGraf','Evolução mês a mês',`${baseN} · ${P.curto}`,`<span class="evleg"><i style="background:#7E2A6C"></i>${P.r1}<i style="background:#1B4F9C;margin-left:12px"></i>${P.r2}<i style="background:#15803D;height:3px;width:16px;margin-left:12px;vertical-align:3px"></i>% crescimento</span>`)}${EV.fech.arGraf?'':`<div class="evgraf">${evSvgAR(r1.map((v,i)=>fut[i]?r1f[i]:v),r2.map((v,i)=>fut[i]?null:v),pcs,false,'#7E2A6C',rot)}<div class="evtip"></div></div>`}</div>
   ${nm?`<div class="evDest">${evDq('↗',sobe===nm?'Crescimento em todos os meses':`Cresceu em ${sobe} de ${nm} meses`,`${P.r2} × ${P.r1}, mês a mês`,sobe===nm?'':`${nm-sobe} ${nm-sobe>1?'meses abaixo':'mês abaixo'}`)}${evDq('◎','Crescimento no período',acum==null?'—':evPc(acum),P.curto)}${mi>=0?evDq('✓',`${rotL[mi]} foi o melhor mês`,evPc(pcs[mi]),`contra ${rotL[mi].toLowerCase()} de ${P.r1}`):''}</div>`:''}</div>`;
   liga();evLigaTog(c);
   const g=c.querySelector('#evArCorpo svg');if(g)evTip(g,i=>`<b>${rotL[i]}</b> · ${P.r1}: ${evRsc(r1[i])} · ${P.r2}: <b>${evRsc(r2[i])}</b>${pcs[i]!=null?' · '+evPc(pcs[i]):''}`);
@@ -2099,6 +2111,7 @@ function telaRelIndex(){
 (function(){try{const s=document.createElement('style');s.textContent=`
 .evTopo .perb2{height:42px;border-radius:10px;font-size:14px;font-weight:700;padding:0 14px}
 .evpertx{align-self:center;font-size:12px;color:var(--ink3);margin-left:4px}
+.rctab tr.rcfut td{opacity:.55}.rctab small.rcproj{display:block;font-size:10.5px;font-weight:500;color:var(--ink3)}.rctab tr.rcano td{border-top:1px solid var(--line)}
 `;document.head.appendChild(s);}catch(e){}})();
 
 function render(){
