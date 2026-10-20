@@ -934,19 +934,26 @@ aplicaTema();
 try{if(N&&N.tqLogo)$('logo').src=N.tqLogo();}catch(e){}
 
 /* ---------- abrir o tablet: PIN de quem está no tanque (ao abrir e ao recarregar) ---------- */
-function trava(){OPER='';const m=$('trava');let v='',msg='',erro=false;
+function trava(sair){OPER='';const m=$('trava');let v='',msg='',erro=false;
   const pronto=()=>{try{return !!(N&&N.tqDados&&N.tqDados().pronto);}catch(e){return false;}};
   const pinta=()=>{const ok=pronto();let lg='';try{lg=(N&&N.tqLogo&&N.tqLogo())||'';}catch(e){}
-    m.innerHTML=`<div class="trc">${lg?`<img src="${esc(lg)}" alt="Atrius" class="tlg">`:''}<h1>Tanques</h1><p>${ok?'Digite o seu PIN para abrir':'Carregando a programação…'}</p>
+    m.innerHTML=`<div class="trc">${lg?`<img src="${esc(lg)}" alt="Atrius" class="tlg">`:''}<h1>${sair?'Sair da tela dos tanques':'Tanques'}</h1><p>${sair?'PIN do master para soltar este aparelho':ok?'Digite o seu PIN para abrir':'Carregando a programação…'}</p>
       ${ok?`<div class="dots">${[0,1,2,3].map(i=>`<i class="${i<v.length?'on':''}"></i>`).join('')}</div><div class="msg ${erro?'erro':''}">${esc(msg)||'&nbsp;'}</div>
       <div class="kp">${['1','2','3','4','5','6','7','8','9','C','0','⌫'].map(k=>`<div data-k="${k}">${k}</div>`).join('')}</div>`:'<div class="tload"><i></i></div>'}</div>`;
+    if(sair){m.insertAdjacentHTML('beforeend','<div class="tsairv">‹ voltar</div>');m.querySelector('.tsairv').onclick=()=>trava();}
     m.querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>tecla(b.dataset.k));
     if(!ok)setTimeout(()=>{if(m.classList.contains('on')&&!m.querySelector('.kp'))pinta();},700);};
   const tecla=k=>{if(k==='C')v='';else if(k==='⌫')v=v.slice(0,-1);else if(v.length<4)v+=k;
+    if(v.length===4&&sair){const r=N.tqSair?N.tqSair(v):{erro:'Atualize o sistema.'};if(r&&r.ok)return;msg=(r&&r.erro)||'Só o master solta o aparelho';erro=true;v='';pinta();return;}
     if(v.length===4){const r=N.tqPin(v);if(r&&r.ok){OPER=r.nome||'';m.classList.remove('on');document.body.classList.remove('travado');atualiza();toast('Olá, '+(OPER.split(' ')[0]||'')+'!');return;}
       msg=(r&&r.erro)||'PIN não encontrado, tente de novo';erro=true;v='';}
     else erro=false;pinta();};
-  document.body.classList.add('travado');m.classList.add('on');pinta();}
+  document.body.classList.add('travado');m.classList.add('on');pinta();
+}
+/* v436: segurar o logo 3 segundos (na tela do PIN ou no topo) → PIN do master solta o aparelho e abre o sistema */
+(function(){let tm=null;const ini=ev=>{const l=ev.target.closest&&ev.target.closest('.tlg,#logo');if(!l)return;clearTimeout(tm);tm=setTimeout(()=>trava(true),3000);};
+  document.addEventListener('pointerdown',ini,true);['pointerup','pointercancel','pointerleave'].forEach(e=>document.addEventListener(e,()=>clearTimeout(tm),true));
+  try{document.head.insertAdjacentHTML('beforeend','<style>.tsairv{position:absolute;top:18px;left:22px;color:#9FB3D9;font:700 15px var(--font);cursor:pointer;padding:8px 12px}.tlg,#logo{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}</style>');}catch(e){}})();
 $('menuTop').onclick=()=>abrirGeral();
 
 /* ---------- teclado próprio (o do tablet deitado cobre metade da tela) ----------

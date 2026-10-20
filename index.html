@@ -2,6 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
+<script>try{if(location.hash==='#soltar'){localStorage.removeItem('erp.quiosque');localStorage.removeItem('erp.maqTablet');sessionStorage.setItem('erp.qSaiu','1');history.replaceState(null,'',location.pathname+'#home');}}catch(e){}</script>
 <script>try{if(!sessionStorage.getItem('erp.qSaiu')&&(localStorage.getItem('erp.quiosque')==='tq'||location.hash==='#optq'))document.documentElement.classList.add('cs-tqboot');}catch(e){}</script>
 <style>html.cs-tqboot,html.cs-tqboot body{background:#0B1324!important}
 html.cs-tqboot body>*{visibility:hidden!important}
@@ -5474,7 +5475,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v435';
+const VERSAO_APP='v436';
 let DRAG=null;
 function render(){
   recomporTudo();
@@ -30175,7 +30176,7 @@ try{csNucleo.versao='v392';}catch(e){}
 try{csNucleo.versao='v393';}catch(e){}
 </script>
 <script>
-try{csNucleo.versao='v435';}catch(e){}
+try{csNucleo.versao='v436';}catch(e){}
 </script>
 <script>/* =====================================================================
    v398 — PÁGINA TANQUES NO LAYOUT NOVO
@@ -31516,6 +31517,11 @@ try{const _td432=csNucleo.tqDados;csNucleo.tqDados=function(dia){
 #tqgrid .cs8-fila .cs8-tx small,#csTqMini .cs8-fila .cs8-tx small{white-space:normal!important;font-size:11.5px!important;line-height:1.3;margin-top:2px}
 #tqgrid .cs8-fila .cs8-mini,#csTqMini .cs8-fila .cs8-mini{grid-column:2;justify-self:start;font-size:11px!important;padding:3px 9px!important}
 `;document.head.appendChild(s);}catch(e){}})();
+/* v436: soltar o aparelho dos Tanques (segurar o logo 3 s + PIN do master) e o atalho erp.atrius.ind.br/#soltar */
+try{csNucleo.tqSair=pin=>{const r=csTqQuem(pin);if(!r.ok)return {erro:r.erro};
+  const q=r.q||{};if(!(q.master||q.nivel==='master'))return {erro:'Só o master solta o aparelho.'};
+  try{localStorage.removeItem('erp.quiosque');localStorage.removeItem('erp.maqTablet');sessionStorage.setItem('erp.qSaiu','1');}catch(e){}
+  setTimeout(()=>{location.replace(location.pathname+'#home');location.reload();},50);return {ok:true};};}catch(e){}
 
 </script>
 </body>
