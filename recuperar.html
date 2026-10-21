@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Recuperar dados deste aparelho · ERP Atrius</title>
+<style>
+body{font-family:Inter,system-ui,-apple-system,'Segoe UI',sans-serif;background:#F4F6FA;color:#0E1B33;margin:0;padding:24px 16px}
+.c{max-width:760px;margin:0 auto;background:#fff;border:1px solid #DDE3EC;border-radius:16px;padding:22px}
+h1{font-size:22px;margin:0 0 6px}p{color:#46526A;line-height:1.5;margin:6px 0}
+table{width:100%;border-collapse:collapse;margin:14px 0;font-size:14px}th,td{text-align:left;padding:8px;border-bottom:1px solid #EEF2F7}th{font-size:11px;text-transform:uppercase;color:#7C879B;letter-spacing:.05em}
+.b{display:inline-block;background:#15803D;color:#fff;border:0;border-radius:10px;padding:12px 18px;font:700 16px inherit;cursor:pointer;text-decoration:none}
+.av{background:#FDF1DD;border:1px solid #F5D9A8;border-radius:10px;padding:10px 12px;color:#7A4A00;margin:12px 0}
+.ok{color:#15803D;font-weight:700}.k{color:#7C879B;font-size:12px}
+</style></head><body><div class="c">
+<h1>Recuperar dados deste aparelho</h1>
+<p>Esta página <b>não abre o sistema</b> e não grava nada no banco. Ela só lê a cópia que este navegador guardou do sistema e baixa um arquivo com ela.</p>
+<div class="av"><b>Importante:</b> faça isto <b>antes</b> de abrir o sistema neste aparelho. Abrir o sistema pode trocar esta cópia pela do banco.</div>
+<div id="r">Lendo…</div>
+</div>
+<script>
+const CH='pcp-atrius-v6';
+function info(txt){try{const d=JSON.parse(txt);const e=d.estoque&&d.estoque.saldos;const nE=e?Object.keys(e).length:0;
+  const log=Array.isArray(d.estoqueLog)?d.estoqueLog:[];
+  return {gravado:d.gravado||'',ordens:Array.isArray(d.ordens)?d.ordens.length:'',estoque:nE,mov:log.length,
+    oper:(d.cadastro&&Array.isArray(d.cadastro.operadores)&&d.cadastro.operadores[0]&&d.cadastro.operadores[0].nome)||''};}catch(e){return null;}}
+const quando=s=>{try{return s?new Date(s).toLocaleString('pt-BR'):'—';}catch(e){return s||'—';}};
+let chaves={};
+try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&(k.indexOf(CH)===0||k.indexOf('erp.')===0))chaves[k]=localStorage.getItem(k);}}catch(e){}
+const lin=Object.keys(chaves).filter(k=>k.indexOf(CH)===0).sort().map(k=>{const v=chaves[k]||'';const i=info(v);
+  return `<tr><td><b>${k.replace(CH,'sistema')}</b></td><td>${(v.length/1024).toFixed(0)} kB</td><td>${i?quando(i.gravado):'—'}</td><td>${i?`${i.ordens} OP · ${i.estoque} saldos · ${i.mov} mov. · ${i.oper}`:''}</td></tr>`;}).join('');
+const r=document.getElementById('r');
+if(!lin){r.innerHTML='<p class="k">Este aparelho não tem nenhuma cópia guardada do sistema. Pode fechar.</p>';}
+else{
+  const ap=(navigator.userAgent.match(/Android|iPad|iPhone|Windows|Mac/)||['aparelho'])[0];
+  r.innerHTML=`<table><thead><tr><th>Cópia</th><th>Tamanho</th><th>Gravada em</th><th>O que tem</th></tr></thead><tbody>${lin}</tbody></table>
+  <p>Nome deste aparelho (ex.: PC almoxarifado, tablet MAQ 2): <input id="nm" style="padding:8px;border:1px solid #DDE3EC;border-radius:8px;width:240px"></p>
+  <button class="b" id="bx">Baixar a cópia deste aparelho</button> <span id="st" class="ok"></span>
+  <p class="k">Depois mande o arquivo baixado para o Junior.</p>`;
+  document.getElementById('bx').onclick=()=>{
+    const nm=(document.getElementById('nm').value||ap).trim();
+    const pac={aparelho:nm,baixado:new Date().toISOString(),navegador:navigator.userAgent,chaves};
+    const blob=new Blob([JSON.stringify(pac)],{type:'application/json'});
+    const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+    a.download='recuperar-'+nm.replace(/[^\w\-]+/g,'_')+'-'+new Date().toISOString().slice(0,16).replace(/[:T]/g,'')+'.json';
+    document.body.appendChild(a);a.click();a.remove();
+    document.getElementById('st').textContent='Baixado.';};
+}
+</script></body></html>
