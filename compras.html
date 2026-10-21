@@ -312,11 +312,16 @@ select.st-h,select.st-a,select.st-b{border-radius:999px;font-weight:600}
 .f2 .empd{text-align:right;font-size:7.8pt;color:#6B7280;line-height:1.6}.f2 .empd b{display:block;font-size:8.8pt;color:#1A1D23;font-weight:600}
 .f2 .c2{display:flex;justify-content:space-between;align-items:flex-end;padding:16px 0 14px}
 .f2 .nro{display:block;font-size:24pt;font-weight:700;letter-spacing:-.02em;line-height:1;color:#0E1B33}.f2 .nro i{font-style:normal;font-size:14pt;font-weight:600;color:#545C69;margin-right:2px}
-.f2 .datas{display:grid;gap:6px;width:250px}
-.f2 .datas>div{border-radius:6px;padding:6px 11px 7px;display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.f2 .datas{display:grid;grid-template-columns:1fr 1fr;gap:6px;width:236px}
+.f2 .datas>div{border-radius:6px;padding:6px 9px 7px;display:flex;flex-direction:column;justify-content:space-between;gap:3px;min-height:44px;box-sizing:border-box}
 .f2 .datas span{font-size:6.8pt;letter-spacing:.14em;text-transform:uppercase;color:#8B93A1;font-weight:600;white-space:nowrap}
-.f2 .datas .emi{border:1px solid #1A1D23}.f2 .datas .emi b{font-size:9.5pt}
-.f2 .datas .ent{background:#1B4F9C;border:1px solid #1B4F9C}.f2 .datas .ent span{color:#CFDDF6}.f2 .datas .ent b{color:#fff;font-size:11.5pt}
+.f2 .datas .emi{border:1px solid #1A1D23}.f2 .datas .emi b{font-size:10pt;font-weight:600;color:#1A1D23}
+.f2 .datas .ent{background:#1B4F9C;border:1px solid #1B4F9C}.f2 .datas .ent span{color:#CFDDF6}.f2 .datas .ent b{color:#fff;font-size:12pt;font-weight:700;letter-spacing:-.01em}
+.f2 .datas span{font-size:6pt!important;letter-spacing:.12em!important}
+.t2 tr.sb td{background:#FAFAF8;padding-top:5px;padding-bottom:6px;font-size:8.2pt;border-bottom:1px solid #EFEEE9}
+.t2 tr.sb td b{font-weight:500}.t2 tr.pr td{border-bottom-color:#F5F4F0}
+.t2 .tg2{display:inline-block;font-size:6.6pt;letter-spacing:.08em;text-transform:uppercase;font-weight:700;padding:1px 6px;border-radius:4px;margin-top:3px}
+.t2 .tg2.mo{background:#EDE9FE;color:#5B21B6}.t2 .tg2.ma{background:#FFF1E6;color:#9A3412}.t2 .tg2.cp{background:#E6F4F1;color:#0F766E}
 .f2 .c3{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .f2 .c3>div,.f2 .obs,.f2 .bxo,.f2 .c5,.tbox{border-radius:6px;border:1px solid #1A1D23}
 .f2 .c3>div{padding:10px 12px}.f2 .c3 b{font-size:9.5pt;font-weight:600}.f2 .c3 p{font-size:8.2pt;color:#545C69;line-height:1.6;margin-top:3px}
@@ -461,6 +466,108 @@ select.st-h,select.st-a,select.st-b{border-radius:999px;font-weight:600}
 .colsp .btn.lk{background:none;border:0;text-decoration:underline}
 
 .drg{opacity:.5}.drgo{box-shadow:inset 3px 0 0 #1D4ED8}
+
+.pz2{display:flex;align-items:center;gap:4px;justify-content:flex-end}.pz2 small{font-size:10.5px;color:var(--ink3);min-width:46px;text-align:right}.pz2+.pz2{margin-top:3px}
+.sn{display:flex;align-items:center;gap:4px}.sd{margin:5px 0 0 24px;font-size:12.5px;color:var(--ink2);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.dsel{height:28px;border:1px solid var(--line);border-radius:8px;padding:0 8px;font:600 12.5px inherit;background:#fff;color:var(--ink)}
+.sd .neg,.neg{color:#B91C1C}.sd .pos{color:#15803D}
+.mot{font-size:10.5px;color:#6D28D9;font-weight:700;margin-top:3px;text-align:right;letter-spacing:.02em}
+.ckl.mo1{display:flex;gap:8px;align-items:center;margin:0 0 10px;padding:8px 10px;border-radius:8px;background:#F5F3FF;color:#4C1D95;font-size:13px;cursor:pointer}
+.ti2 tr.sub td{background:#FAFBFF;border-top:0!important;padding-top:7px;padding-bottom:7px;font-size:13px;vertical-align:middle}
+.ti2 tr.sub.add td{padding-bottom:12px}
+.sl{display:inline-block;width:20px;color:#94A3B8;font-weight:700}
+.tg{display:inline-block;font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;margin-right:8px;letter-spacing:.01em}
+.tg.mo{background:#EDE9FE;color:#6D28D9}.tg.sai{background:#FFEDD5;color:#C2410C}
+.s3{font-size:11.5px;color:var(--ink3);margin-left:6px}
+td.dep{font-size:12.5px;color:var(--ink2)}td.dep .neg{color:#B91C1C}td.dep .pos{color:#15803D}
+.lix2{border:0;background:none;color:#94A3B8;cursor:pointer;font-size:15px;padding:4px 8px;border-radius:6px}.lix2:hover{color:#B91C1C;background:#FEF2F2}
+.btn.addc{border-style:dashed;color:#1D4ED8;background:#fff}
+.ti2 tr.sub input.qn,.ti2 tr.sub input.in3{height:30px}
+.fedit{cursor:pointer}.fedit:hover{border-color:#93C5FD;background:#F8FBFF}.fed{margin-left:auto;font-size:12px;color:var(--ink3);font-weight:500}.fedit:hover .fed{color:#1D4ED8}
+.mact .env3{padding:10px 14px 6px;font-size:13px}.mact .env3 input{width:100%;height:36px;border:1px solid var(--line);border-radius:8px;padding:0 10px;margin:6px 0 8px;box-sizing:border-box;font-size:15px}
+.mact .env3 .btn{width:100%;justify-content:center}
+.bnf{background:#EFF6FF;border:1px solid #BFDBFE;border-radius:10px;padding:10px 12px;margin:8px 0;display:flex;flex-direction:column;gap:8px;font-size:13px}
+.bnf-h{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.bnf-h>b{color:#1D4ED8}.bnf-s{font-size:11.5px;color:var(--ink3)}
+.bnf-t{display:inline-flex;border:1px solid #BFDBFE;border-radius:8px;overflow:hidden;background:#fff}
+.bnf-t button{border:0;background:#fff;padding:5px 12px;font:600 12.5px inherit;color:#1E3A8A;cursor:pointer}.bnf-t button+button{border-left:1px solid #BFDBFE}
+.bnf-t button.on{background:#1D4ED8;color:#fff}
+.bnf-p{display:flex;flex-direction:column;gap:4px;color:#1E3A8A}.bnf-p .in3{height:24px;min-width:50px}
+.bnf-m{display:flex;flex-direction:column;gap:6px;border-top:1px dashed #BFDBFE;padding-top:8px}
+.bnf-r{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.bnf-r .in3{height:26px}
+.bnf-r .env2{display:inline-flex;gap:4px;align-items:center;margin-left:auto}
+
+/* v4.4.3 · ordem com cara nova */
+.ocv2 .ed-top{margin-bottom:18px}.ocv2 .ed-top h1{font-size:23px;font-weight:700;letter-spacing:-.01em}
+.ocv2 .ocg{display:block}
+.tt3{display:flex;gap:10px;flex-wrap:wrap;align-items:stretch;padding:14px 18px 18px;border-top:1px solid #EEF0F3}
+.tt3>div{flex:1 1 130px;background:#F8F9FB;border-radius:12px;padding:10px 14px;display:flex;flex-direction:column;gap:4px;min-width:120px}
+.tt3 span{font-size:11px;color:#98A2B3;font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+.tt3 b{font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;color:#101828}
+.tt3 input{height:30px;border:1px solid transparent;background:#fff;border-radius:8px;text-align:right;padding:0 8px;font:700 15px inherit;width:100%;box-sizing:border-box}
+.tt3 input:hover{border-color:#D5DAE1}.tt3 input:focus{border-color:#3B82F6;outline:0;box-shadow:0 0 0 3px rgba(59,130,246,.15)}
+.tt3 .tot{background:#EEF4FF;flex:1.4 1 170px}.tt3 .tot b{font-size:21px;color:#1D3A8A}
+.tt3x{padding:0 18px 14px;font-size:12.5px;color:#166534;display:flex;gap:18px;flex-wrap:wrap}.tt3x b{font-variant-numeric:tabular-nums}
+.mkbox{display:flex;flex-wrap:wrap;gap:6px;align-items:center;min-height:40px;border:1px solid var(--line);border-radius:10px;padding:5px 8px;background:#fff;cursor:text}
+.mkbox:focus-within{border-color:#3B82F6;box-shadow:0 0 0 3px rgba(59,130,246,.15)}
+.mkbox .mk2{display:inline-flex;align-items:center;gap:4px}.mkbox .mk2 b{cursor:pointer;opacity:.6;font-weight:700}
+.mkbox input{border:0;outline:0;flex:1;min-width:160px;font:inherit;font-size:13px;height:28px;background:transparent}
+.mkcfg{display:flex;flex-direction:column;gap:6px;max-width:560px}
+.mkcfg .r{display:flex;align-items:center;gap:10px;padding:6px 8px;border:1px solid var(--line2);border-radius:10px}
+.mkcfg .r input[type=text]{flex:1;height:32px;border:1px solid transparent;border-radius:8px;padding:0 8px;font:inherit;font-size:13px;background:#F6F7F9}
+.mkcfg .r input[type=text]:focus{border-color:#3B82F6;background:#fff;outline:0}
+.mkcfg .r small{color:var(--ink3);font-size:11.5px;min-width:70px;text-align:right}
+.mkcfg .r .x{border:0;background:none;color:#98A2B3;cursor:pointer;font-size:15px;padding:4px 8px;border-radius:6px}.mkcfg .r .x:hover{color:#B91C1C;background:#FEF2F2}
+.tsel{height:30px;border:1px solid #E4E7EC;border-radius:8px;padding:0 6px;font:700 12px inherit;background:#fff;cursor:pointer}
+.tsel.v{color:#0F766E;background:#F0FDFA;border-color:#99F6E4}.tsel.b{color:#6D28D9;background:#F5F3FF;border-color:#DDD6FE}
+@media(max-width:1180px){.ocv2 .ocg{grid-template-columns:1fr}.ocv2 .ocs{position:static!important}}
+.ocv2 .bloco{border-radius:16px;border-color:#E6E8EC;box-shadow:0 1px 2px rgba(16,24,40,.04);margin-bottom:16px}
+.ocv2 .bloco .t{border-bottom:0;padding:16px 18px 4px;font-size:15px;font-weight:700}
+.ocv2 .bloco .t .n{background:#EEF2FF;color:#3730A3;width:24px;height:24px;font-size:11.5px}
+.ocv2 .bloco .c{padding:10px 18px 18px}
+.ocv2 details.bloco>summary{list-style:none;cursor:pointer}.ocv2 details.bloco>summary::-webkit-details-marker{display:none}
+.ocv2 details.bloco>summary .dir{margin-left:auto;font-size:12px;color:var(--ink3);font-weight:500}
+.ocv2 .fl label{font-weight:600;color:#667085}
+.ocv2 .fl .v.fcard{min-height:60px;border-radius:12px;padding:8px 12px;gap:12px;border-color:#E6E8EC}
+.fav{width:40px;height:40px;border-radius:11px;background:#EEF2FF;color:#3730A3;display:grid;place-items:center;font-weight:700;font-size:14px;flex:none}
+.fnm{display:flex;flex-direction:column;line-height:1.3;min-width:0}.fnm b{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.fnm small{font-size:11.5px;color:var(--ink3);margin:0!important}
+.ocv2 .chk2{margin-top:10px;margin-right:18px;font-size:13px;color:var(--ink)}
+.ocv2 .chk2 .ck{width:34px;height:20px;border-radius:999px;background:#D5DAE1;border:0;position:relative;background-image:none!important;transition:background .15s}
+.ocv2 .chk2 .ck::after{content:'';position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.2);transition:left .15s}
+.ocv2 .chk2 .ck.on{background:#2563EB}.ocv2 .chk2 .ck.on::after{left:16px}
+.ocv2 .ti2 th{background:transparent;border-bottom:1px solid #EEF0F3;text-transform:uppercase;font-size:10.5px;letter-spacing:.05em;padding:10px;color:#98A2B3;font-weight:600}
+.ocv2 .ti2 td{border-bottom:1px solid #F2F4F7;vertical-align:middle}
+.ocv2 .ti2 tbody tr:not(.x):not(.nova):not(.sub):hover>td{background:#FAFBFD}
+.ocv2 .ti2 .in3,.ocv2 .ti2 .qn{border-color:transparent;background:#F4F5F8;border-radius:8px;transition:all .12s}
+.ocv2 .ti2 .in3:hover,.ocv2 .ti2 .qn:hover{border-color:#D5DAE1;background:#fff}
+.ocv2 .ti2 .in3:focus,.ocv2 .ti2 .qn:focus{border-color:#3B82F6;background:#fff;box-shadow:0 0 0 3px rgba(59,130,246,.15);outline:0}
+.ocv2 .ti2 .qx{border:0;background:none}
+.ocv2 .nfo2 .s2{display:none}
+.ocv2 .in4{border:0;background:transparent;color:#98A2B3;padding:0 2px;height:22px;width:auto;min-width:220px}
+.ocv2 .in4.ok{color:var(--ink2);background:transparent}
+.ocv2 .in4:hover,.ocv2 .in4:focus{background:#F4F5F8;padding:0 6px;outline:0;border-radius:6px}
+.ocv2 .ti2 tr.nova td{background:#FAFBFD;border-top:1px dashed #E4E7EC}
+.ocv2 .ti2 tr.sub td{background:#FBFAFF}
+.ocv2 .ocs{position:sticky;top:76px;background:#fff;border:1px solid #E6E8EC;border-radius:16px;padding:16px 18px;box-shadow:0 1px 2px rgba(16,24,40,.04)}
+.ocs h3{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:#98A2B3;margin:0 0 8px;font-weight:700}
+.ocs .ln{display:flex;justify-content:space-between;align-items:center;font-size:13px;padding:5px 0;color:#475467;gap:8px}
+.ocs .ln b{font-variant-numeric:tabular-nums;color:var(--ink);font-weight:600}
+.ocs .ln input{width:96px;height:30px;border:1px solid transparent;background:#F4F5F8;border-radius:8px;text-align:right;padding:0 8px;font:600 13px inherit}
+.ocs .ln input:hover{border-color:#D5DAE1;background:#fff}.ocs .ln input:focus{border-color:#3B82F6;background:#fff;outline:0}
+.ocs .tot{border-top:1px solid #EEF0F3;margin-top:8px;padding-top:12px;display:flex;justify-content:space-between;align-items:baseline}
+.ocs .tot span{font-size:13px;font-weight:600}.ocs .tot b{font-size:24px;font-weight:800;color:#101828;font-variant-numeric:tabular-nums}
+.ocs .cr{margin-top:12px;background:#F0FDF4;border-radius:10px;padding:10px 12px;font-size:12.5px;color:#166534;display:flex;flex-direction:column;gap:4px}
+.ocs .cr div{display:flex;justify-content:space-between}.ocs .cr b{font-variant-numeric:tabular-nums}
+.ocs .qt{font-size:12px;color:#98A2B3;margin-top:10px}
+.seg{display:inline-flex;border:1px solid #E4E7EC;border-radius:999px;overflow:hidden;margin-top:5px;background:#fff}
+.seg b{font-size:10.5px;padding:2px 9px;cursor:pointer;color:#98A2B3;font-weight:700;letter-spacing:.01em}
+.seg b.on.v{background:#0F766E;color:#fff}.seg b.on.bf{background:#6D28D9;color:#fff}
+.seg.dis b{cursor:default}
+.ti2 td .seg{display:flex;width:max-content;margin-left:auto}
+.ocv2 .chk2{display:inline-flex!important}
+.ref2{margin-top:10px;padding:8px 10px;border:1px dashed #D0D5DD;border-radius:10px;font-size:12px;color:#475467;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.ref2 b{color:#344054}.ref2 .in3{height:26px;min-width:50px;width:56px}
+.mob{margin:0 0 10px;padding:8px 10px;border-radius:8px;background:#F5F3FF;color:#5B21B6;font-size:12.5px;font-weight:600}
+.cfr{display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:12px;align-items:end}
 </style><style id="cs-num401">html body{font-variant-numeric:tabular-nums}</style>
 </head><body>
 <div class="app" id="app"><div class="vazio">Carregando…</div></div>
@@ -738,7 +845,7 @@ function migraOC(o){
   }
   o.entrega=o.entrega||{outro:false};
   o.benef=!!o.benef;
-  (o.itens||[]).forEach(it=>{it.qtd=+it.qtd||0;if(it.modo==='cx'&&!(+it.cx>0))it.modo='un';if(!it.tiny&&it.sku)it.tiny='ERP-'+it.sku;if(it.env&&!it.env.tiny&&it.env.sku)it.env.tiny='ERP-'+it.env.sku;});
+  (o.itens||[]).forEach(it=>{it.qtd=+it.qtd||0;if(it.modo==='cx'&&!(+it.cx>0))it.modo='un';if(!it.tiny&&it.sku)it.tiny='ERP-'+it.sku;if(it.env&&!it.envs)it.envs=[it.env];delete it.env;if(it.serv){const sp=+it.serv.preco||0;if(sp){if(it.envs&&it.envs.length){it.envs[0].preco=(+it.envs[0].preco||0)+sp;}else{it.preco=(+it.preco||0)+sp;it.mo=true;}}delete it.serv;}(it.envs||[]).forEach(e=>{if(!e.tiny&&e.sku)e.tiny='ERP-'+e.sku;});});
   (o.receb||[]).forEach(r=>(r.itens||[]).forEach(x=>{if(!x.tiny&&x.sku)x.tiny='ERP-'+x.sku;}));
   return o;
 }
@@ -761,17 +868,98 @@ function freteUnOC(oc){
   const q=(oc.itens||[]).reduce((s,i)=>s+(+i.qtd||0),0);return q?f/q:0;
 }
 function contaItem(it,fu){
-  fu=+fu||0;const q=+it.qtd||0,p=+it.preco||0,base=q*p;
-  const v=k=>base*(+it[k]||0)/100;
-  const cr=Object.assign({},CRED_PADRAO,it.cr||{});
-  const val={icms:v('icms'),ipi:v('ipi'),pis:v('pis'),cof:v('cof')};
-  const credito=CREDITAVEIS.reduce((s,[k])=>s+(cr[k]?val[k]:0),0);
-  return {base,val,cr,credito,fu,nota:base+val.ipi,real:q?(base-credito)/q+fu:0,credUn:q?credito/q:0};
+  fu=+fu||0;const q=+it.qtd||0,p=+it.preco||0;
+  const cr=Object.assign({},CRED_PADRAO,{cbs:true,ibs:true},it.cr||{}),sd=svPadrao(it),bf=!!it.mo;
+  /* linha principal: VENDA (impostos e créditos normais) ou BENEFICIAMENTO (mão de obra: crédito somente PIS/COFINS) */
+  const baseF=q*p,v=k=>baseF*(+it[k]||0)/100;
+  const valF={icms:v('icms'),ipi:v('ipi'),pis:v('pis'),cof:v('cof'),cbs:v('cbs'),ibs:v('ibs')};
+  const credF={icms:!bf&&cr.icms?valF.icms:0,pis:cr.pis?valF.pis:0,cof:cr.cof?valF.cof:0,cbs:cr.cbs?valF.cbs:0,ibs:cr.ibs?valF.ibs:0};
+  /* sub-itens com preço: beneficiamento (padrão) ou venda */
+  let baseS=0,sPis=0,sCof=0,sIcms=0,sRef=0;const subs=[];
+  envsDe(it).forEach(e=>{const b=r3((+e.fator||1)*q)*(+e.preco||0),vend=e.tipo==='venda';
+    const pi=vend?(+it.pis||0):(e.pis!=null?+e.pis:sd.pis),co=vend?(+it.cof||0):(e.cof!=null?+e.cof:sd.cof);
+    const x={b,vend,pis:b*pi/100,cof:b*co/100,icms:vend&&cr.icms?b*(+it.icms||0)/100:0,ref:b*((+it.cbs||0)+(+it.ibs||0))/100};
+    subs.push(x);baseS+=b;sPis+=x.pis;sCof+=x.cof;sIcms+=x.icms;sRef+=x.ref;});
+  if(it.serv&&+it.serv.preco>0){const b=q*+it.serv.preco;baseS+=b;sPis+=b*sd.pis/100;sCof+=b*sd.cof/100;}
+  const base=baseF+baseS;
+  const val={icms:valF.icms+sIcms,ipi:valF.ipi,pis:valF.pis+sPis,cof:valF.cof+sCof,cbs:valF.cbs,ibs:valF.ibs};
+  const cred={icms:credF.icms+sIcms,pis:credF.pis+sPis,cof:credF.cof+sCof,ref:credF.cbs+credF.ibs+sRef};
+  const credito=cred.icms+cred.pis+cred.cof+cred.ref;
+  return {base,baseF,baseS,sPis,sCof,subs,valF,credF,cred,val,cr,credito,fu,nota:base+val.ipi,real:q?(base-credito)/q+fu:0,credUn:q?credito/q:0};
 }
+/* ---------- BENEFICIAMENTO (v4.4.1) ----------
+   O fornecedor sopra e/ou rotula com material nosso (preforma, rótulo) e devolve o item pronto
+   (frasco soprado, frasco rotulado). O item tem dois preços: o do material que ele vende (ex.: o frasco
+   branco, 2,00) e o do serviço (ex.: rotulagem, 0,10). Serviço é industrialização: gera crédito só de
+   PIS e COFINS. O que mandamos fica num depósito "Na <fornecedor>" e sai de lá na chegada do item pronto. */
+const TIPO_B={sopro:'Sopro',rot:'Rotulagem',soprorot:'Sopro e rotulagem'};
+const envsDe=it=>Array.isArray(it.envs)?it.envs:(it.env?[it.env]:[]);
+const envsReceb=x=>Array.isArray(x.envs)?x.envs:(x.env?[x.env]:[]);
+const svPadrao=it=>({pis:+it.pis>0?+it.pis:1.65,cof:+it.cof>0?+it.cof:7.6});
+function depBenef(oc,criar){try{return oc&&oc.forn&&N&&N.depFornecedor?N.depFornecedor(oc.forn,!!criar):null;}catch(e){return null;}}
+function saldoEm(tiny,dep){try{if(!N||!N.saldoDeps)return null;const s=N.saldoDeps(tiny);if(!s||s.tot==null)return dep&&s?+(s.por[dep]||0):null;
+  return +(s.por[dep||(N.depPrincipal?N.depPrincipal():'fab')]||0);}catch(e){return null;}}
+const depsLista=()=>{try{return N&&N.depositos?N.depositos():[{id:'fab',nome:'Fábrica',princ:true}];}catch(e){return [{id:'fab',nome:'Fábrica',princ:true}];}};
+const depPrinc=()=>{try{return N&&N.depPrincipal?N.depPrincipal():'fab';}catch(e){return 'fab';}};
+const depNomeDe=id=>{const d=depsLista().find(x=>x.id===id);return d?d.nome:'Fábrica';};
+const depDoSub=(oc,e)=>(e&&e.dep&&depsLista().some(d=>d.id===e.dep))?e.dep:((depBenef(oc,false)||{}).id||depPrinc());
+const selTipo=(attr,val,L)=>`<select class="tsel ${val}" ${attr} ${L?'disabled':''} title="Venda: o fornecedor vende (impostos normais). Beneficiamento: mão de obra, crédito somente PIS/COFINS."><option value="v" ${val==='v'?'selected':''}>Venda</option><option value="b" ${val==='b'?'selected':''}>Beneficiamento</option></select>`;
+const ehRotulo=e=>/r[oó]tulo|etiqueta/i.test((e.nome||'')+' '+(e.tipo||''));
+function tipoAuto(envs){const r=envs.some(ehRotulo),s=envs.some(e=>!ehRotulo(e));return r&&s?'soprorot':r?'rot':'sopro';}
+function benefBox(oc,it,i,L){
+  const dis=L?'disabled':'',sv=it.serv||{},envs=envsDe(it),q=+it.qtd||0,c=contaItem(it),sd=svPadrao(it);
+  const dF=depBenef(oc,false);
+  return `<div class="bnf"><div class="bnf-h"><b>Beneficiamento</b>
+      <span class="bnf-t">${Object.entries(TIPO_B).map(([k,r])=>`<button class="${sv.tipo===k?'on':''}" data-svt="${i}|${k}" ${dis}>${r}</button>`).join('')}</span>
+      <span class="s2">o fornecedor devolve <b>${esc(it.nome)}</b> pronto</span></div>
+    <div class="bnf-p"><span>Material <b>${nf(+it.preco||0,4)}</b> por ${esc(it.un||'un')} <span class="bnf-s">· o que o fornecedor vende (ex.: frasco branco). 0 se o material é todo nosso. Impostos e créditos normais, acima.</span></span>
+      <span>Serviço <b>${nf(+sv.preco||0,4)}</b> por ${esc(it.un||'un')} <span class="bnf-s">· é industrialização: crédito só de</span> PIS <input class="in3 p" data-sv="${i}" data-svk="pis" value="${nq(sv.pis!=null?sv.pis:sd.pis)}" ${dis}>% e COFINS <input class="in3 p" data-sv="${i}" data-svk="cof" value="${nq(sv.cof!=null?sv.cof:sd.cof)}" ${dis}>% <b>− ${nf(c.sPis+c.sCof,2)}</b></span></div>
+    <div class="bnf-m"><div class="s2">O que a Atrius manda (rótulo, preforma) · sai ${dF?`do depósito <b>${esc(dF.nome)}</b>`:'da <b>Fábrica</b> (este fornecedor ainda não tem depósito; ele é criado no primeiro envio)'}</div>
+    ${envs.map((e,j)=>{const tem=saldoEm(e.tiny,dF&&dF.id);const sai=r3((+e.fator||1)*q);
+      return `<div class="bnf-r"><b>${esc(e.nome)}</b><span class="s2">${esc(e.sku)}</span>
+        <label>sai <input class="in3" data-benf="${i}|${j}" value="${nq(e.fator||1)}" ${dis}> ${esc(e.un||'un')} por ${esc(it.un||'un')}</label>
+        <span class="s2">= ${nq(sai)} nesta ordem${tem!=null?` · ${dF?esc(dF.nome):'Fábrica'} tem <b style="color:${tem<sai?'#B91C1C':'#15803D'}">${nq(tem)}</b>`:''}</span>
+        ${L?'':`<button class="btn lk sm" data-benx="${i}|${j}">tirar</button>`}
+        ${L||!oc.forn?'':`<span class="env2"><input class="in3" data-benqt="${i}|${j}" placeholder="qtd" style="width:80px"><button class="btn sm" data-bensend="${i}|${j}" title="Transfere da Fábrica para o depósito do fornecedor">Mandar ao fornecedor</button></span>`}</div>`;}).join('')}
+    ${L?'':`<div class="bnf-r"><span class="rel"><input class="in3" style="min-width:300px;text-align:left" data-benq="${i}" placeholder="＋ material que a Atrius manda: rótulo, preforma… (nome ou SKU)"></span></div>`}
+    </div></div>`;
+}
+function subLinhas(oc,it,i,L){
+  const dis=L?'disabled':'',q=+it.qtd||0,envs=envsDe(it),deps=depsLista(),c=contaItem(it);ED.abSub=ED.abSub||new Set();
+  let h='';
+  envs.forEach((e,j)=>{const k=i+'|'+j,tot=r3((+e.fator||1)*q),dep=depDoSub(oc,e),tem=saldoEm(e.tiny,dep),ps=+e.preco||0,ab=ED.abSub.has(k),sx=c.subs[j]||{pis:0,cof:0};
+    h+=`<tr class="sub"><td colspan="2"><div class="sn"><span class="sl">↳</span><b>${esc(e.nome)}</b><span class="s3">${esc(e.sku)}</span></div>
+      <div class="sd">Depósito <select class="dsel" data-sdep="${k}" ${dis}>${deps.map(d=>`<option value="${esc(d.id)}" ${d.id===dep?'selected':''}>${esc(d.nome)}</option>`).join('')}</select>${tem!=null?`<span class="${tem<tot?'neg':'pos'}">tem ${nq(tem)}</span>${tem<tot?`<b class="neg">faltam ${nq(r3(tot-tem))}</b>`:''}`:''}</div></td>
+      <td class="n"><span class="qx"><input class="qn" data-cq="${k}" value="${nq(tot)}" ${dis}></span></td><td>${esc(e.un||'un')}</td><td>${selTipo(`data-stps="${k}"`,e.tipo==='venda'?'v':'b',L)}</td>
+      <td class="n"><input class="in3" data-sp="${k}" value="${ps?nf(ps,4):''}" placeholder="0,00" ${dis}></td><td class="n"><span class="s3">${e.tipo==='venda'?nq(it.icms)+'%':'PIS/COFINS'}</span></td><td></td>
+      <td class="n">${ps?`<b>${nf(tot*ps,2)}</b>`:'<span class="s3">—</span>'}</td>
+      <td><button class="btn ic sm ${ab?'on':''}" data-smenu="${k}" title="Impostos, mandar mais, remover">⋯</button></td></tr>
+      ${ab?`<tr class="x sub"><td colspan="10">${e.tipo==='venda'?`<div class="lnx">Venda: usa os impostos do item principal (ICMS ${nq(it.icms)}% · PIS ${nq(it.pis)}% · COFINS ${nq(it.cof)}%).</div>`:`<div class="lnx" style="color:#6D28D9;flex-wrap:wrap"><b>Beneficiamento (mão de obra) · crédito somente PIS/COFINS</b>
+        PIS <input class="in3 p" data-spi="${k}" data-k="pis" value="${nq(e.pis!=null?e.pis:svPadrao(it).pis)}" ${dis} style="height:24px;min-width:50px">% e COFINS <input class="in3 p" data-spi="${k}" data-k="cof" value="${nq(e.cof!=null?e.cof:svPadrao(it).cof)}" ${dis} style="height:24px;min-width:50px">% <b>− ${nf(sx.pis+sx.cof,2)}</b></div>`}</td></tr>`:''}`;});
+  if(!L)h+=ED.busca===i?`<tr class="sub add"><td colspan="10"><span class="sl">↳</span><span class="rel"><input class="in3" style="min-width:380px;text-align:left" data-benq="${i}" placeholder="Qual item sai do nosso estoque? Ex.: rótulo desengordurante, pré-forma 500ml"></span> <button class="btn lk sm" data-buscax="1">cancelar</button></td></tr>`
+    :`<tr class="sub add"><td colspan="10"><span class="sl"></span><button class="btn sm addc" data-addc="${i}">＋ sub-item</button><span class="s3">${envs.length?'outro material nosso que vai junto':'o que sai do nosso estoque para o fornecedor usar: rótulo, pré-forma'}</span></td></tr>`;
+  return h;
+}
+/* menu flutuante (mesmo visual do ⋯ da lista) */
+function menuItem(botao,L,html){
+  const old=$('mact');if(old){const era=old.dataset.de===botao.outerHTML;old.remove();if(era)return null;}
+  const m=document.createElement('div');m.className='mact';m.id='mact';m.dataset.de=botao.outerHTML;m.style.paddingTop='6px';
+  m.innerHTML=html||L.map((x,k)=>x==='sep'?'<div class="sep"></div>':`<button data-i="${k}" class="${x[3]?'':'off'} ${x[5]?'del':''}"><b>${x[1]}</b><span>${x[0]}${x[4]?`<small>${x[4]}</small>`:''}</span></button>`).join('');
+  document.body.appendChild(m);
+  const r=botao.getBoundingClientRect();m.style.left=Math.max(8,Math.min(r.left+window.scrollX,window.innerWidth-290))+'px';m.style.top=(r.bottom+window.scrollY+4)+'px';
+  if(r.bottom+m.offsetHeight>window.innerHeight)m.style.top=Math.max(8,r.top+window.scrollY-m.offsetHeight-4)+'px';
+  m.onclick=ev=>ev.stopPropagation();
+  if(L)m.querySelectorAll('[data-i]').forEach(b=>b.onclick=()=>{const x=L[+b.dataset.i];if(!x[3])return;m.remove();x[2]();});
+  return m;
+}
+function pdfBenef(it){const envs=envsDe(it);if(!envs.length&&!it.mo)return '';
+  const q=+it.qtd||0;
+  return `<small>${it.mo?'<b>Mão de obra</b>':'<b>Beneficiamento</b>'}${envs.map(e=>{const n=nq(r3((+e.fator||1)*q));
+    return ' · '+(ehRotulo(e)?'com o rótulo '+esc(String(e.nome).replace(/^(r[oó]tulos?|etiquetas?)\s*[-–:]?\s*/i,'')):'usando '+esc(e.nome))+` (${n} ${esc(e.un||'un')} da Atrius)`+(+e.preco?` · mão de obra ${nf(e.preco,4)}/un`:'');}).join('')}</small>`;}
 function contaOC(oc){
   const t={produtos:0,ipi:0,cIcms:0,cPis:0,cCof:0,credito:0};
   (oc.itens||[]).forEach(it=>{const c=contaItem(it);t.produtos+=c.base;t.ipi+=c.val.ipi;
-    if(c.cr.icms)t.cIcms+=c.val.icms;if(c.cr.pis)t.cPis+=c.val.pis;if(c.cr.cof)t.cCof+=c.val.cof;t.credito+=c.credito;});
+    t.cIcms+=c.cred.icms;t.cPis+=c.cred.pis;t.cCof+=c.cred.cof;t.credito+=c.credito;});
   t.frete=valorFrete(oc);
   t.desconto=+oc.desconto||0;
   t.total=r2(t.produtos+t.ipi-t.desconto);
@@ -887,7 +1075,7 @@ async function tiny(corpo){
 }
 async function lancarEntrada(oc,r){
   const movs=r.itens.filter(x=>x.tiny&&x.qtd>0).map(x=>({id:x.tiny,tipo:'E',qtd:x.qtd,preco:x.preco||0}));
-  r.itens.filter(x=>x.env&&x.env.tiny&&x.env.qtd>0).forEach(x=>movs.push({id:x.env.tiny,tipo:'S',qtd:x.env.qtd}));
+  r.itens.forEach(x=>envsReceb(x).forEach(e=>{if(e.tiny&&e.qtd>0)movs.push(e.dep?{id:e.tiny,tipo:'S',qtd:e.qtd,dep:e.dep}:{id:e.tiny,tipo:'S',qtd:e.qtd});}));
   if(!movs.length){r.tiny={erro:'nenhum item para lançar'};return false;}
   try{const x=await tiny({acao:'movimentar',movimentos:movs,obs:`OC ${oc.num}${oc.benef?' · beneficiamento':''}${r.nf?' · NF '+r.nf:''} · ${oc.forn?oc.forn.nome:''}`});
     const fal=(x&&x.falhas)||[];
@@ -934,7 +1122,7 @@ async function reenviar(oc){
    Tiny. A tela de editar fica só com o que se preenche.
    ===================================================================== */
 const LST={sit:'todas',q:'',per:{m:'sem',dia:hojeY(),mes:hojeY().slice(0,7),de:addDias(hojeY(),-30),ate:hojeY()},pop:false,
-  fil:{mk:[],comp:''},fpop:false,sort:{k:'num',dir:-1},sel:new Set(),menu:null};
+  fil:{mk:[],comp:''},fpop:false,sort:{k:'auto',dir:1},sel:new Set(),menu:null};
 function filtraPer(o){const p=LST.per;
   if(p.m==='dia')return o.data===p.dia;if(p.m==='mes')return (o.data||'').slice(0,7)===p.mes;
   if(p.m==='int')return o.data>=p.de&&o.data<=p.ate;if(p.m==='prev')return (o.prev||'')>=p.de&&(o.prev||'')<=p.ate;return true;}
@@ -961,9 +1149,12 @@ const IC_PTS='<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor
 
 function telaOrdens(){
   const base=ocsFiltradas();
-  const cont=k=>k==='todas'?base.length:base.filter(o=>o.sit===k).length;
+  const cont=k=>k==='todas'?base.filter(o=>o.sit!=='can').length:base.filter(o=>o.sit===k).length;
   const s=LST.sort,fn=SORT[s.k]||SORT.num;
-  const lista=base.filter(o=>LST.sit==='todas'||o.sit===LST.sit).sort((a,b)=>{const x=fn(a),y=fn(b);return (x>y?1:x<y?-1:0)*s.dir;});
+  /* padrão: primeiro o que chega de hoje em diante (21, 22, 23…), depois o que já passou, do mais recente para trás */
+  const hj=hojeY(),ordAuto=(a,b)=>{const pa=a.prev||'',pb=b.prev||'',fa=pa>=hj?0:pa?1:2,fb=pb>=hj?0:pb?1:2;
+    if(fa!==fb)return fa-fb;if(pa!==pb)return fa===0?(pa<pb?-1:1):(pa>pb?-1:1);return (+b.num||0)-(+a.num||0);};
+  const lista=base.filter(o=>LST.sit==='todas'?o.sit!=='can':o.sit===LST.sit).sort(s.k==='auto'?ordAuto:(a,b)=>{const x=fn(a),y=fn(b);return (x>y?1:x<y?-1:0)*s.dir;});
   const falhas=ocsComFalha();
   const comps=[...new Set(DB.ocs.map(o=>o.comprador).filter(Boolean))].sort();
   const p=LST.per,nsel=[...LST.sel].filter(id=>DB.ocs.some(o=>o.id===id)).length;
@@ -1056,8 +1247,7 @@ function abreMenu(id,botao){
     ['Histórico','☰',()=>historicoOC(o),true],
     g.falhas.length?['Reenviar ao Tiny','⟳',()=>janelaReenviar([o]),true]:null,
     'sep',
-    ['Imprimir','⎙',()=>imprimirOCs([o]),true],
-    ['Salvar em PDF','⤓',()=>verPDF(o),true],
+    ['PDF da ordem','⤓',()=>verPDF(o),true,'ver, imprimir ou salvar'],
     s==='con'?['Reabrir ordem','↺',()=>reabrirOC(o),pode('compras.oc.reabrir','ver')]:null,
     ['Cancelar ordem','✕',()=>cancelarOC(o),(s==='ras'||s==='env')&&pode('compras.oc','excluir'),'',true]].filter(Boolean);
   const m=document.createElement('div');m.className='mact';m.id='mact';m.dataset.oc=id;
@@ -1126,16 +1316,17 @@ function telaOC(id){
   const t=contaOC(oc),f=oc.forn,fu=freteUnOC(oc);
   const totUn=(oc.itens||[]).reduce((s,i)=>s+(+i.qtd||0),0),totCx=(oc.itens||[]).reduce((s,i)=>s+(i.modo==='cx'?+i.qtdCx||0:0),0);
   const unRes=[...new Set(oc.itens.map(i=>i.un))].length===1&&oc.itens.length?oc.itens[0].un:'un';
-  $('app').innerHTML=`<div class="migalha"><button class="btn lk sm" id="volta">‹ Ordens de compra</button></div>
+  $('app').innerHTML=`<div class="ocv2"><div class="migalha"><button class="btn lk sm" id="volta">‹ Ordens de compra</button></div>
   <div class="ed-top"><h1>${ED.nova?(oc.benef?'Nova ordem de beneficiamento':'Nova ordem de compra'):(L?'Ordem ':'Editar ordem ')+esc(oc.num)+(oc.benef?' · beneficiamento':'')}</h1>${ED.nova?'':`<span class="pill p-${oc.sit}">${SIT[oc.sit]}</span>`}</div>
   ${L&&!ED.nova?`<div class="aviso">🔒 <div>${oc.sit==='rec'?'A mercadoria já chegou: preços e boletos se acertam em <b>Conferir nota</b>.':oc.sit==='con'?'Ordem concluída. Para corrigir, use <b>Reabrir ordem</b> nos três pontinhos.':oc.sit==='can'?'Ordem cancelada.':'Você não tem permissão para editar ordens.'}</div></div>`:''}
+  <div class="ocg"><div class="ocm">
   <div class="bloco"><div class="t"><span class="n">1</span>Fornecedor e entrega</div><div class="c"><div class="g3" style="grid-template-columns:2fr 1fr">
-    <div class="fl"><label>Fornecedor<span class="req">*</span></label>${f?`<div class="v" id="fV">${esc(f.nome)}${L?'':'<button class="btn sm" id="fTroca" style="margin-left:auto">⇄ Trocar fornecedor</button>'}</div>`
+    <div class="fl"><label>Fornecedor<span class="req">*</span></label>${f?`<div class="v fcard ${L?'':'fedit'}" id="fV" ${L?'':'title="Clique para trocar o fornecedor"'}><span class="fnm"><b>${esc(f.nome)}</b><small>${esc([f.cnpj,[f.cidade,f.uf].filter(Boolean).join('/')].filter(Boolean).join(' · ')||'fornecedor')}</small></span></div>`
       :`<div class="rel"><input class="inp" id="fBusca" placeholder="buscar fornecedor cadastrado · nome ou CNPJ" ${dis}></div>`}
       ${f?`<div class="lk2"><button id="lD">dados do fornecedor</button><button id="lU">ver últimas compras</button></div>`:`<div class="lk2">${DB.cfg.soCadastro&&!N.teste?'':'<button id="fNovo">＋ novo fornecedor'+(N.teste&&DB.cfg.soCadastro?' (só no TESTE)':'')+'</button>'}<button id="fTiny">buscar no Tiny</button></div>`}
-      <label class="chk2" id="endC"><span class="ck ${oc.entrega.outro?'on':''}"></span>Endereço de entrega diferente</label>
-      <label class="chk2" id="benC" title="O fornecedor transforma material nosso (ex.: sopra a preforma e devolve o frasco). Na chegada entra o item pronto e sai do estoque o material enviado."><span class="ck ${oc.benef?'on':''}"></span>Beneficiamento · o fornecedor transforma material nosso</label>
-      ${oc.benef?'<div class="s2" style="margin-top:4px;color:#1D4ED8">Em cada item, abra ⋯ e informe o material que a Atrius envia e quanto sai por unidade pronta. O preço é o do serviço.</div>':''}</div>
+      <label class="chk2" id="endC"><span class="ck ${oc.entrega.outro?'on':''}"></span>Entregar em outro endereço</label>
+      <label class="chk2" id="benC" title="O fornecedor recebe material nosso (pré-forma, rótulo) e devolve o item pronto."><span class="ck ${oc.benef?'on':''}"></span>Beneficiamento</label>
+      ${oc.benef?'<div class="s2" style="margin-top:6px;color:#5B21B6">O item é o que volta pronto. Embaixo, <b>＋ sub-item</b> é o que sai do nosso estoque (rótulo, pré-forma).</div>':''}</div>
     <div class="fl"><label>Previsão de entrega<span class="req">*</span></label><input class="inp dt-in dest" data-cal="1" id="prev" value="${oc.prev?br(oc.prev):''}" placeholder="dd/mm/aaaa" ${dis}></div></div>
     <div class="exp" id="xD" hidden>${f?`<div class="g2"><div><span>CNPJ</span>${esc(f.cnpj||'—')}</div><div><span>Inscrição estadual</span>${esc(f.ie||'—')}</div><div><span>Cidade</span>${esc([f.cidade,f.uf].filter(Boolean).join(' · ')||'—')}</div>
       <div><span>Endereço</span>${esc(f.end||'—')}</div><div><span>Contato</span>${esc([f.contato,f.fone,f.email].filter(Boolean).join(' · ')||'—')}</div><div><span>No Tiny</span>${f.tinyId?'ligado · '+esc(f.tinyId):'<span style="color:var(--amb)">sem código do Tiny</span>'}</div></div>`:''}</div>
@@ -1153,27 +1344,48 @@ function telaOC(id){
   </div></div>
 
   <div class="bloco"><div class="t"><span class="n">2</span>Itens</div>
-    <div class="rolx ocit"><table class="ti2" style="min-width:900px"><thead><tr><th>Item <span style="font-weight:400;text-transform:none;letter-spacing:0">· como o fornecedor chama embaixo</span></th><th>Cód (SKU)</th><th class="n">Qtde<span class="req">*</span></th><th>UN</th><th class="n">Preço un<span class="req">*</span></th><th class="n">IPI %</th><th class="n">Preço total</th><th></th></tr></thead><tbody>
-    ${oc.itens.map((it,i)=>linhaItem(oc,it,i,fu,L)).join('')||(L?'<tr><td colspan="8" class="vazio">Nenhum item ainda.</td></tr>':'')}
+    <div class="rolx ocit"><table class="ti2" style="min-width:900px"><thead><tr><th>Item <span style="font-weight:400;text-transform:none;letter-spacing:0">· como o fornecedor chama embaixo</span></th><th>Cód (SKU)</th><th class="n">Qtde<span class="req">*</span></th><th>UN</th>${oc.benef?'<th>Tipo</th>':''}<th class="n">Preço un<span class="req">*</span></th><th class="n">ICMS %</th><th class="n">IPI %</th><th class="n">Preço total</th><th></th></tr></thead><tbody>
+    ${oc.itens.map((it,i)=>linhaItem(oc,it,i,fu,L)).join('')||(L?`<tr><td colspan="${oc.benef?10:9}" class="vazio">Nenhum item ainda.</td></tr>`:'')}
     ${L?'':linhaNova(oc,f)}</tbody></table></div>
     ${L?'':`<div class="addlk"><button class="btn lk sm" id="addMais" ${f?'':'disabled'}>⊕ adicionar item</button><button class="btn lk sm" id="addAv" ${f?'':'disabled'}>⌕ busca avançada de itens</button>${f?'':'<span class="s2">escolha o fornecedor primeiro</span>'}</div>`}
-    ${oc.itens.length?blocoTotais(totaisDe(oc,t),'','Totais da compra',true):''}</div>
+    ${oc.itens.length?totaisOC(oc,t,L):''}</div>
 
   <div class="bloco"><div class="t"><span class="n">3</span>Frete</div><div class="c">${blocoFrete(oc,L)}</div></div>
   <div class="bloco"><div class="t"><span class="n">4</span>Pagamento</div><div class="c">${blocoPagamento(oc,t,L)}</div></div>
 
-  <div class="bloco"><div class="t"><span class="n">5</span>Observações e marcadores</div><div class="c"><div class="g4" style="grid-template-columns:1fr 1fr">
+  <details class="bloco" ${oc.obs||oc.obsInt||(oc.marcadores||[]).length?'open':''}><summary class="t"><span class="n">5</span>Observações e marcadores<span class="dir">${[oc.obs?'para o fornecedor':'',oc.obsInt?'interna':'',(oc.marcadores||[]).length?(oc.marcadores.length+' marcador'+(oc.marcadores.length>1?'es':'')):''].filter(Boolean).join(' · ')||'abrir'}</span></summary><div class="c"><div class="g4" style="grid-template-columns:1fr 1fr">
     <div class="fl"><label>Para o fornecedor · sai no PDF</label><textarea data-oc="obs" ${dis}>${esc(oc.obs||'')}</textarea></div>
     <div class="fl"><label>Interna · só a Atrius vê</label><textarea data-oc="obsInt">${esc(oc.obsInt||'')}</textarea></div></div>
-    <div class="fl" style="margin-top:12px"><label>Marcadores</label><div class="mkrow">${(oc.marcadores||[]).map((m,i)=>`<span class="mk2" style="--c:${corMk(m)}">${esc(m)} <b data-tmk="${i}" style="cursor:pointer;opacity:.6">×</b></span>`).join('')}
-      <select id="addMk" class="inp" style="width:170px;height:30px;font-size:12px"><option value="">＋ marcador</option>${DB.marcadores.filter(m=>!(oc.marcadores||[]).includes(m.nome)).map(m=>`<option>${esc(m.nome)}</option>`).join('')}</select></div></div></div></div>
+    <div class="fl" style="margin-top:12px"><label>Marcadores · digite e aperte Enter</label><div class="mkbox" id="mkBox">${(oc.marcadores||[]).map((m,i)=>`<span class="mk2" style="--c:${corMk(m)}">${esc(m)} <b data-tmk="${i}">×</b></span>`).join('')}
+<input id="addMk" list="mkLista" placeholder="${(oc.marcadores||[]).length?'':'ex.: cif, urgente, amostra'}"><datalist id="mkLista">${DB.marcadores.filter(m=>!(oc.marcadores||[]).includes(m.nome)).map(m=>`<option value="${esc(m.nome)}">`).join('')}</datalist></div></div></div></details>
+  </div></div>
 
   <div class="rodape"><span class="esq">Total <b>${rs(t.total)}</b> · ${totCx?nf(totCx)+' caixas · ':''}${nq(totUn)} ${unRes}${valorFrete(oc)?' · frete à parte '+rs(valorFrete(oc)):''}</span>
-    <span id="obr" class="obr"></span><button class="btn" id="bCanc">${L?'Voltar':'Cancelar'}</button>${L&&!['rec','con','can'].includes(oc.sit)||!L?'<button class="btn pri" id="bSalva">Salvar</button>':''}</div>`;
+    <span id="obr" class="obr"></span><button class="btn" id="bCanc">${L?'Voltar':'Cancelar'}</button>${L&&!['rec','con','can'].includes(oc.sit)||!L?'<button class="btn pri" id="bSalva">Salvar</button>':''}</div></div>`;
   ligaOC();
 }
 /* linha de digitação do item, no jeito do Tiny: escolhe o item (nome da MP no
    cadastro, SKU ou como o fornecedor chama), digita quantidade, preço e IPI e salva */
+/* o resumo ao lado: os números da ordem num lugar só */
+function totaisOC(oc,t,L,idDesc){
+  const n=(oc.itens||[]).length,q=(oc.itens||[]).reduce((s,i)=>s+(+i.qtd||0),0),fr=valorFrete(oc);
+  return `<div class="tt3"><div><span>Itens</span><b>${n} · ${nq(q)} un</b></div><div><span>Produtos${oc.benef?' e serviços':''}</span><b>${rs(t.produtos)}</b></div>
+    <div><span>IPI</span><b>${rs(t.ipi)}</b></div>
+    <div><span>Desconto</span>${L?`<b>${rs(t.desconto)}</b>`:`<input id="${idDesc||'rDesc'}" value="${t.desconto?nf(t.desconto,2):''}" placeholder="0,00">`}</div>
+    <div class="tot"><span>Total${idDesc?' da nota':' da ordem'}</span><b>${rs(t.total)}</b></div></div>
+    ${t.credito||fr?`<div class="tt3x">${t.credito?`<span>Créditos de impostos <b>− ${rs(t.credito)}</b></span><span>Custo real <b>${rs(t.real)}</b></span>`:''}${fr?`<span style="color:#475467">Frete à parte (transportadora) <b>${rs(fr)}</b></span>`:''}</div>`:''}`;
+}
+function resumoOC(oc,t,L){
+  const n=(oc.itens||[]).length,q=(oc.itens||[]).reduce((s,i)=>s+(+i.qtd||0),0),fr=valorFrete(oc);
+  return `<aside class="ocs"><h3>Resumo</h3>
+    <div class="ln"><span>Produtos${oc.benef?' e serviços':''}</span><b>${rs(t.produtos)}</b></div>
+    <div class="ln"><span>IPI</span><b>${rs(t.ipi)}</b></div>
+    <div class="ln"><span>Desconto</span>${L?`<b>${rs(t.desconto)}</b>`:`<input id="rDesc" value="${t.desconto?nf(t.desconto,2):''}" placeholder="0,00">`}</div>
+    <div class="tot"><span>Total da nota</span><b>${rs(t.total)}</b></div>
+    ${fr?`<div class="ln"><span>Frete à parte (transportadora)</span><b>${rs(fr)}</b></div>`:''}
+    ${t.credito?`<div class="cr"><div><span>Créditos de impostos</span><b>− ${rs(t.credito)}</b></div><div><span>Custo real</span><b>${rs(t.real)}</b></div></div>`:''}
+    <div class="qt">${n} ${n===1?'item':'itens'} · ${nq(q)} unidades</div></aside>`;
+}
 function linhaNova(oc,f){
   const n=ED.novo||{},x=n.x,dis=f?'':'disabled';
   const tot=(+n.qtd||0)*(+n.preco||0);
@@ -1181,8 +1393,9 @@ function linhaNova(oc,f){
       ${x&&n.v&&n.v.nome?`<span class="s2">no fornecedor: <b>${esc(n.v.nome)}</b>${n.v.cod?' · cód '+esc(n.v.cod):''}</span>`:''}</td>
     <td><input class="inp" id="addSku" placeholder="SKU" value="${x?esc(x.sku):''}" style="width:96px" ${dis}></td>
     <td class="n"><input class="in3" id="addQ" value="${n.qtd?nq(n.qtd):''}" placeholder="0" ${x?'':'disabled'}></td>
-    <td>${x?esc(unDoItem(x)):''}</td>
+    <td>${x?esc(unDoItem(x)):''}</td>${oc.benef?`<td>${selTipo('id="addTp"',n.tipo==='b'?'b':'v',!x)}</td>`:''}
     <td class="n"><input class="in3" id="addP" value="${n.preco?nf(n.preco,4):''}" placeholder="0,0000" ${x?'':'disabled'}></td>
+    <td class="n"><input class="in3 p" id="addIc" value="${n.icms?nq(n.icms):''}" placeholder="0" ${x?'':'disabled'}></td>
     <td class="n"><input class="in3 p" id="addI" value="${n.ipi?nq(n.ipi):''}" placeholder="0" ${x?'':'disabled'}></td>
     <td class="n"><b id="addT">${tot?nf(tot,2):''}</b></td>
     <td style="white-space:nowrap"><button class="btn lk sm" id="addOk" ${x?'':'disabled'}>salvar</button><button class="btn ic sm" id="addX" title="limpar">⊘</button></td></tr>`;
@@ -1191,7 +1404,7 @@ function linhaNova(oc,f){
 function escolheNovo(oc,x){
   const fid=oc.forn&&oc.forn.id,v=vinculo(fid,x.sku),imp=DB.imp[x.sku]||{};
   const mp=melhorPreco(x.sku,fid),uc=ultimaCompra(x.sku,fid)||ultimaCompra(x.sku);
-  ED.novo={x,v,qtd:0,preco:mp?mp.preco:(uc?uc.preco:0),ipi:imp.ipi||0};
+  ED.novo={x,v,qtd:0,preco:mp?mp.preco:(uc?uc.preco:0),ipi:imp.ipi||0,icms:imp.icms||0};
 }
 function salvaNovo(oc){
   const n=ED.novo;if(!n||!n.x)return false;
@@ -1199,6 +1412,8 @@ function salvaNovo(oc){
   if(!adicionarItem(oc,n.x))return false;
   const it=oc.itens[oc.itens.length-1];
   if(it.modo==='cx'&&+it.cx>0){it.qtdCx=Math.ceil((+n.qtd||0)/it.cx);it.qtd=r3(it.qtdCx*it.cx);}else it.qtd=+n.qtd||0;
+  if(oc.benef)it.mo=n.tipo==='b';
+  if(n.icms!=null)it.icms=+n.icms||0;
   if(n.preco!=null)it.preco=+n.preco||0;if(n.ipi!=null){it.ipi=+n.ipi||0;DB.imp[it.sku]={...(DB.imp[it.sku]||{}),icms:it.icms,ipi:it.ipi,pis:it.pis,cof:it.cof,cr:it.cr};}
   ED.novo=null;return true;
 }
@@ -1219,27 +1434,27 @@ function buscaAvancada(oc,re){
 }
 function linhaItem(oc,it,i,fu,L){
   const c=contaItem(it,fu),ab=ED.aberto.has(i),dis=L?'disabled':'';
-  const cx=it.modo==='cx'&&+it.cx>0;
-  const env=oc.benef?(it.env?`<div class="s2" style="color:#1D4ED8">↳ sai ${nq(it.env.fator||1)} ${esc(it.env.un||'un')} de <b>${esc(it.env.nome)}</b> por ${esc(it.un||'un')} · ${nq(r3((it.env.fator||1)*(+it.qtd||0)))} ${esc(it.env.un||'un')} no total</div>`:`<div class="s2" style="color:var(--danger)">↳ beneficiamento: informe em ⋯ o material enviado</div>`):'';
-  return `<tr><td><b>${esc(it.nome)}</b>${env}
+  const cx=it.modo==='cx'&&+it.cx>0,mo=oc.benef&&it.mo;
+  return `<tr><td><b>${esc(it.nome)}</b>
       <div class="nfo2"><span class="s2">no fornecedor:</span><input class="in4 ${it.nomeForn?'ok':''}" data-it="${i}" data-k="nomeForn" value="${esc(it.nomeForn||'')}" placeholder="como o fornecedor chama este item" ${dis}>${it.codForn?`<span class="s2">cód ${esc(it.codForn)}</span>`:''}</div></td>
     <td class="mono">${esc(it.sku)}</td>
     <td class="n"><span class="qx"><input class="qn" data-it="${i}" data-k="${cx?'qtdCx':'qtd'}" value="${nq(cx?it.qtdCx:it.qtd)}" ${dis}></span>${cx?`<span class="s2">caixa de ${nf(it.cx)} = ${nf(it.qtd)} ${esc(it.un||'un')}</span>`:''}</td>
-    <td>${cx?'cx':esc(it.un||'un')}</td>
-    <td class="n"><input class="in3" data-it="${i}" data-k="preco" value="${it.preco?nf(it.preco,4):''}" ${dis}></td>
+    <td>${cx?'cx':esc(it.un||'un')}</td>${oc.benef?`<td>${selTipo(`data-tps="${i}"`,it.mo?'b':'v',L)}</td>`:''}
+    <td class="n"><input class="in3" data-it="${i}" data-k="preco" value="${it.preco?nf(it.preco,4):''}" ${oc.benef?'placeholder="0,00"':''} ${dis}></td>
+    <td class="n">${mo?'<span class="s3" title="Beneficiamento: crédito somente PIS/COFINS">PIS/COFINS</span>':`<input class="in3 p" data-it="${i}" data-k="icms" value="${nq(it.icms)}" ${dis}>`}</td>
     <td class="n"><input class="in3 p" data-it="${i}" data-k="ipi" value="${nq(it.ipi)}" ${dis}></td>
-    <td class="n"><b>${nf(c.base,2)}</b></td><td><button class="btn ic sm ${ab?'on':''}" data-abre="${i}" title="ICMS, créditos e código no fornecedor">⋯</button></td></tr>
-    ${ab?`<tr class="x"><td colspan="8"><div class="cx4">
-      ${CREDITAVEIS.map(([k,r])=>`<div>${r} ${false?nq(it.icms)+'%':`<input class="in3 p" data-it="${i}" data-k="${k}" value="${nq(it[k])}" ${dis} style="height:24px;min-width:50px">%`}<b>− ${nf(c.val[k],2)}</b>
-        <label class="ckl"><span class="ck ${c.cr[k]?'on':''}" data-cr="${i}|${k}"></span>gera crédito</label></div>`).join('')}
-      <div class="re">Custo real por ${esc(it.un||'un')}<b>${nf(c.real,4)}</b><small>preço − créditos${fu?' + frete rateado '+nf(fu,4):''}</small></div></div>
-      ${oc.benef?`<div class="lnx" style="background:#EFF6FF;border-radius:8px;padding:8px"><b style="color:#1D4ED8">Beneficiamento</b>
-        <label>Material enviado pela Atrius ${it.env?`<b>${esc(it.env.nome)}</b> <span class="s2">${esc(it.env.sku)}</span>${L?'':`<button class="btn lk sm" data-benx="${i}">trocar</button>`}`:`<span class="rel"><input class="in3" style="min-width:260px;text-align:left" data-benq="${i}" placeholder="nome ou SKU do material (ex.: preforma)" ${dis}></span>`}</label>
-        ${it.env?`<label>Sai por ${esc(it.un||'un')} pronto <input class="in3" data-benf="${i}" value="${nq(it.env.fator||1)}" ${dis}> ${esc(it.env.un||'un')}</label><span class="s2">na chegada de ${nq(it.qtd)} ${esc(it.un||'un')} saem ${nq(r3((it.env.fator||1)*(+it.qtd||0)))} ${esc(it.env.un||'un')} do estoque; o preço acima é o do serviço por ${esc(it.un||'un')}</span>`:''}</div>`:''}
+    <td class="n"><b>${nf(oc.benef?c.baseF:c.base,2)}</b></td><td><button class="btn ic sm ${ab?'on':''}" data-imenu="${i}" title="Impostos, mão de obra, código no fornecedor, remover">⋯</button></td></tr>
+    ${ab?`<tr class="x"><td colspan="${oc.benef?10:9}">
+      ${mo?'<div class="mob">Beneficiamento (mão de obra) · crédito somente PIS/COFINS</div>':''}
+      <div class="cx4">
+      ${CREDITAVEIS.map(([k,r])=>`<div>${r} <input class="in3 p" data-it="${i}" data-k="${k}" value="${nq(it[k])}" ${dis} style="height:24px;min-width:50px">%<b>− ${nf(c.valF[k],2)}</b>
+        ${k==='icms'&&mo?'<span class="s2">sem crédito (beneficiamento)</span>':`<label class="ckl"><span class="ck ${c.cr[k]?'on':''}" data-cr="${i}|${k}"></span>gera crédito</label>`}</div>`).join('')}
+      <div class="re">Custo real por ${esc(it.un||'un')}<b>${nf(c.real,4)}</b><small>preço − créditos${c.baseS?' (com a mão de obra dos sub-itens)':''}${fu?' + frete rateado '+nf(fu,4):''}</small></div></div>
       <div class="lnx"><label>Código no fornecedor <input class="in3" style="min-width:120px;justify-content:flex-start;text-align:left" data-it="${i}" data-k="codForn" value="${esc(it.codForn||'')}" ${dis}></label>
         <span>IPI ${nq(it.ipi)}% · ${nf(c.val.ipi,2)} vem na nota e volta inteiro</span>
-        ${controlaLote(it)?'<span class="mk2" style="--c:#15803D">controla lote</span>':''}
-        ${L?'':`<button class="btn del sm" data-tira="${i}" style="margin-left:auto">Tirar item</button>`}</div></td></tr>`:''}`;
+        ${controlaLote(it)?'<span class="mk2" style="--c:#15803D">controla lote</span>':''}</div>
+      <div class="ref2"><b>Reforma tributária</b> CBS <input class="in3 p" data-it="${i}" data-k="cbs" value="${nq(it.cbs||0)}" ${dis}>% · IBS <input class="in3 p" data-it="${i}" data-k="ibs" value="${nq(it.ibs||0)}" ${dis}>% <span>crédito − ${nf(c.credF.cbs+c.credF.ibs,2)}</span><span class="s3">deixe 0 até a nota vir com CBS/IBS</span></div></td></tr>`:''}
+    ${oc.benef?subLinhas(oc,it,i,L):''}`;
 }
 function blocoFrete(oc,L){
   const fr=oc.frete,dis=L?'disabled':'';
@@ -1294,16 +1509,58 @@ function ligaOC(){
   if($('lD'))$('lD').onclick=()=>{$('xD').hidden=!$('xD').hidden;};
   if($('lU'))$('lU').onclick=()=>ultimasComprasGaveta(oc.itens[0]&&oc.itens[0].sku,oc.forn&&oc.forn.id);
   $('endC').onclick=()=>{if(L)return;oc.entrega.outro=!oc.entrega.outro;re();};
-  if($('benC'))$('benC').onclick=()=>{if(L)return;oc.benef=!oc.benef;if(oc.benef)oc.itens.forEach((x,i)=>{if(!x.env)ED.aberto.add(i);});re();};
-  document.querySelectorAll('[data-benq]').forEach(inp=>buscaLista(inp,q=>(N?N.insumos():[]).filter(x=>x.sku!==oc.itens[+inp.dataset.benq].sku&&(x.sku+' '+x.nome+' '+x.tipo).toLowerCase().includes(q)).slice(0,14).map(x=>({t:x.nome,s:`${x.sku} · ${x.tipo}`,v:x})),
-    x=>{const it=oc.itens[+inp.dataset.benq];it.env={sku:x.sku,nome:x.nome,tiny:x.tiny||('ERP-'+x.sku),un:unDoItem(x),fator:(it.env&&+it.env.fator)||1};re();},'Material que a Atrius manda para o fornecedor.'));
-  document.querySelectorAll('[data-benf]').forEach(el=>el.onchange=()=>{const it=oc.itens[+el.dataset.benf];if(it.env)it.env.fator=Math.max(0,num(el.value))||1;re();});
-  document.querySelectorAll('[data-benx]').forEach(b=>b.onclick=()=>{const it=oc.itens[+b.dataset.benx];delete it.env;re();});
+  if($('benC'))$('benC').onclick=()=>{if(L)return;oc.benef=!oc.benef;re();};
+  ED.abSub=ED.abSub||new Set();
+  const subDe=k=>{const [i,j]=String(k).split('|');const it=oc.itens[+i];return {i:+i,j:+j,it,e:it?envsDe(it)[+j]:null};};
+  const abreBusca=i=>{ED.busca=i;re();setTimeout(()=>{const x=document.querySelector(`[data-benq="${i}"]`);if(x)x.focus();},30);};
+  const enviaPop=(b,i,j)=>{const e=envsDe(oc.itens[i])[j];if(!e||!oc.forn)return;
+    const dF=depBenef(oc,false),nome=(dF?dF.nome:String(oc.forn.nome).split(/\s+/)[0]).replace(/^na\s+/i,'');const tem=saldoEm(e.tiny,depPrinc());
+    const m=menuItem(b,null,`<div class="env3"><b>Mandar ${esc(e.nome)} para a ${esc(nome)}</b><div class="s2">sai da Fábrica${tem!=null&&tem>=0?' (tem '+nq(tem)+')':''} e fica guardado lá</div>
+      <input id="envQ" inputmode="decimal" placeholder="quantidade"><button class="btn pri" id="envK">Enviar</button></div>`);
+    if(!m)return;const qi=m.querySelector('#envQ');qi.focus();
+    const vai=async()=>{const q=num(qi.value);if(!(q>0))return toast('Digite a quantidade.',true);
+      if(!N||!N.transferir||!N.depFornecedor)return toast('Abra pelo ERP para transferir.',true);
+      m.querySelector('#envK').disabled=true;
+      try{const d=N.depFornecedor(oc.forn,true);
+        await N.transferir({id:e.tiny,qtd:q,de:depPrinc(),para:d.id,obs:`Enviado para ${oc.forn.nome}${oc.num?' · OC '+oc.num:''}`});
+        e.dep=d.id;hist(ED.orig||oc,'Mandou material ao fornecedor',`${nq(q)} ${e.un||'un'} de ${e.nome} → ${d.nome}`);
+        m.remove();toast(`${nq(q)} ${e.un||'un'} de ${e.nome} agora estão em ${d.nome}.`);re();}
+      catch(x){m.querySelector('#envK').disabled=false;toast(x.message||String(x),true);}};
+    m.querySelector('#envK').onclick=vai;qi.onkeydown=ev2=>{if(ev2.key==='Enter')vai();};};
+  document.querySelectorAll('[data-addc]').forEach(b=>b.onclick=()=>abreBusca(+b.dataset.addc));
+  if(document.querySelector('[data-buscax]'))document.querySelector('[data-buscax]').onclick=()=>{ED.busca=null;re();};
+  document.querySelectorAll('[data-imenu]').forEach(b=>b.onclick=ev=>{ev.stopPropagation();const i=+b.dataset.imenu,it=oc.itens[i];
+    const l=[['Ajustar impostos','%',()=>{ED.aberto.has(i)?ED.aberto.delete(i):ED.aberto.add(i);re();},true,oc.benef?'ICMS, IPI, PIS, COFINS e se é mão de obra':'ICMS, IPI, PIS, COFINS e créditos']];
+    if(oc.benef&&!L){l.push([it.mo?'Mudar para venda':'Mudar para beneficiamento','⇄',()=>{it.mo=!it.mo;recalc();re();},true,it.mo?'o fornecedor vende o item':'mão de obra · crédito somente PIS/COFINS']);
+      l.push(['Adicionar sub-item','＋',()=>abreBusca(i),true,'o que sai do nosso estoque (rótulo, pré-forma)']);}
+    l.push(['Código no fornecedor','✎',()=>{ED.aberto.add(i);re();},true]);
+    if(!L)l.push('sep',['Remover item','✕',()=>{oc.itens.splice(i,1);ED.aberto.clear();ED.abSub.clear();ED.busca=null;recalc();re();},true,'',true]);
+    menuItem(b,l);});
+  document.querySelectorAll('[data-smenu]').forEach(b=>b.onclick=ev=>{ev.stopPropagation();const k=b.dataset.smenu,s=subDe(k);if(!s.e)return;
+    const l=[['Ajustar impostos','%',()=>{ED.abSub.has(k)?ED.abSub.delete(k):ED.abSub.add(k);re();},true,'venda ou beneficiamento']];
+    if(!L&&oc.forn)l.push(['Mandar mais para o fornecedor','↗',()=>enviaPop(b,s.i,s.j),true,'transfere da Fábrica para o depósito dele']);
+    if(!L)l.push('sep',['Remover sub-item','✕',()=>{const x=envsDe(s.it).slice();x.splice(s.j,1);s.it.envs=x;ED.abSub.clear();recalc();re();},true,'',true]);
+    menuItem(b,l);});
+  document.querySelectorAll('[data-tp]').forEach(b=>b.onclick=()=>{if(L)return;const [i,v]=b.dataset.tp.split('|');oc.itens[+i].mo=v==='b';recalc();re();});
+  document.querySelectorAll('[data-stp]').forEach(b=>b.onclick=()=>{if(L)return;const [i,j,v]=b.dataset.stp.split('|');const e=envsDe(oc.itens[+i])[+j];if(e)e.tipo=v;recalc();re();});
+  if($('addTp'))$('addTp').onchange=e=>{if(ED.novo)ED.novo.tipo=e.target.value;e.target.className='tsel '+e.target.value;};
+  document.querySelectorAll('[data-tps]').forEach(s=>s.onchange=()=>{oc.itens[+s.dataset.tps].mo=s.value==='b';recalc();re();});
+  document.querySelectorAll('[data-stps]').forEach(s=>s.onchange=()=>{const [i,j]=s.dataset.stps.split('|');const e=envsDe(oc.itens[+i])[+j];if(e)e.tipo=s.value==='v'?'venda':'benef';recalc();re();});
+  if($('rDesc'))$('rDesc').onchange=e=>{oc.desconto=Math.max(0,num(e.target.value));recalc();re();};
+  document.querySelectorAll('[data-mo1]').forEach(b=>b.onclick=()=>{if(L)return;const it=oc.itens[+b.dataset.mo1];it.mo=!it.mo;recalc();re();});
+  document.querySelectorAll('[data-benq]').forEach(inp=>buscaLista(inp,q=>{const it=oc.itens[+inp.dataset.benq],ja=new Set(envsDe(it).map(e=>e.sku));
+      return (N?N.insumos():[]).filter(x=>x.sku!==it.sku&&!ja.has(x.sku)&&(x.sku+' '+x.nome+' '+x.tipo).toLowerCase().includes(q)).slice(0,14).map(x=>({t:x.nome,s:`${x.sku} · ${x.tipo}`,v:x}));},
+    x=>{const it=oc.itens[+inp.dataset.benq];const l=envsDe(it).slice();l.push({sku:x.sku,nome:x.nome,tiny:x.tiny||('ERP-'+x.sku),un:unDoItem(x),tipo:x.tipo||'',fator:1,dep:depDoSub(oc,null)});
+      it.envs=l;delete it.env;ED.busca=null;re();},'Item que sai do nosso estoque.'));
+  document.querySelectorAll('[data-cq]').forEach(el=>el.onchange=()=>{const s=subDe(el.dataset.cq);const q=+s.it.qtd||0;if(s.e){const v=Math.max(0,num(el.value));s.e.fator=q>0?v/q:1;}recalc();re();});
+  document.querySelectorAll('[data-sp]').forEach(el=>el.onchange=()=>{const s=subDe(el.dataset.sp);if(s.e)s.e.preco=Math.max(0,num(el.value));recalc();re();});
+  document.querySelectorAll('[data-spi]').forEach(el=>el.onchange=()=>{const s=subDe(el.dataset.spi);if(s.e)s.e[el.dataset.k]=num(el.value);recalc();re();});
+  document.querySelectorAll('[data-sdep]').forEach(el=>el.onchange=()=>{const s=subDe(el.dataset.sdep);if(s.e)s.e.dep=el.value;re();});
   document.querySelectorAll('[data-en]').forEach(i=>i.onchange=()=>{oc.entrega[i.dataset.en]=i.value.trim();});
   if($('bCep'))$('bCep').onclick=()=>buscaCep(oc,re);
   $('prev').onchange=e=>{const y=deBR(e.target.value);if(y){oc.prev=y;}else if(e.target.value.trim())toast('Data inválida. Use dd/mm/aaaa.',true);re();};
   /* fornecedor */
-  if($('fTroca'))$('fTroca').onclick=()=>{oc.forn=null;re();};
+  if($('fV')&&!L)$('fV').onclick=()=>{oc.forn=null;re();setTimeout(()=>{if($('fBusca'))$('fBusca').focus();},30);};
   if($('fBusca'))buscaLista($('fBusca'),q=>buscaFornecedores(q),
     f=>{f=fornDoContato(f);oc.forn={...f};oc.itens.forEach(it=>aplicaVinculo(oc,it));if(!oc.pag.categoria)oc.pag.categoria=categoriaSugerida(oc);re();});
   if($('fNovo'))$('fNovo').onclick=()=>formForn(null,f=>{oc.forn={...f};re();});
@@ -1323,8 +1580,8 @@ function ligaOC(){
   /* a linha de digitação */
   if($('addIt'))buscaLista($('addIt'),q=>itensParaAdicionar(oc,q),x=>{escolheNovo(oc,x);re();setTimeout(()=>{if($('addQ')){$('addQ').focus();$('addQ').select();}},30);});
   if($('addSku'))$('addSku').onkeydown=e=>{if(e.key!=='Enter')return;const x=insumo($('addSku').value.trim());if(!x)return toast('SKU não encontrado no cadastro.',true);escolheNovo(oc,x);re();setTimeout(()=>{if($('addQ'))$('addQ').focus();},30);};
-  const nv=()=>{const n=ED.novo;if(!n)return;n.qtd=num($('addQ').value);n.preco=num($('addP').value);n.ipi=num($('addI').value);const t=(+n.qtd||0)*(+n.preco||0);if($('addT'))$('addT').textContent=t?nf(t,2):'';};
-  ['addQ','addP','addI'].forEach(id=>{if($(id)){$(id).oninput=nv;$(id).onkeydown=e=>{if(e.key==='Enter'){nv();if(salvaNovo(oc)){recalc();re();setTimeout(()=>{if($('addIt'))$('addIt').focus();},30);}}};}});
+  const nv=()=>{const n=ED.novo;if(!n)return;n.qtd=num($('addQ').value);n.preco=num($('addP').value);n.ipi=num($('addI').value);if($('addIc'))n.icms=num($('addIc').value);const t=(+n.qtd||0)*(+n.preco||0);if($('addT'))$('addT').textContent=t?nf(t,2):'';};
+  ['addQ','addP','addIc','addI'].forEach(id=>{if($(id)){$(id).oninput=nv;$(id).onkeydown=e=>{if(e.key==='Enter'){nv();if(salvaNovo(oc)){recalc();re();setTimeout(()=>{if($('addIt'))$('addIt').focus();},30);}}};}});
   if($('addOk'))$('addOk').onclick=()=>{nv();if(!(+((ED.novo||{}).qtd)>0))return toast('Digite a quantidade.',true);if(salvaNovo(oc)){recalc();re();setTimeout(()=>{if($('addIt'))$('addIt').focus();},30);}};
   if($('addX'))$('addX').onclick=()=>{ED.novo=null;re();};
   if($('addMais'))$('addMais').onclick=()=>{if($('addIt'))$('addIt').focus();};
@@ -1359,7 +1616,15 @@ function ligaOC(){
   /* observações e marcadores */
   document.querySelectorAll('[data-oc]').forEach(el=>el.onchange=()=>{oc[el.dataset.oc]=el.value;if(el.dataset.oc==='obsInt'&&L&&!ED.nova){const o=ED.orig;o.obsInt=el.value;hist(o,'Editou a observação interna');salvar();}});
   document.querySelectorAll('[data-tmk]').forEach(b=>b.onclick=()=>{oc.marcadores.splice(+b.dataset.tmk,1);if(L&&!ED.nova){ED.orig.marcadores=[...oc.marcadores];salvar();}re();});
-  $('addMk').onchange=e=>{const v=e.target.value;if(!v)return;oc.marcadores.push(v);if(L&&!ED.nova){ED.orig.marcadores=[...oc.marcadores];salvar();}re();};
+  const mkPoe=v=>{v=String(v||'').trim().replace(/\s+/g,' ');if(!v)return;
+    let m=DB.marcadores.find(x=>x.nome.toLowerCase()===v.toLowerCase());
+    if(!m){m={nome:v.toLowerCase(),cor:CORES_MK[DB.marcadores.length%CORES_MK.length]};DB.marcadores.push(m);salvar();}
+    if(!oc.marcadores.includes(m.nome))oc.marcadores.push(m.nome);if(L&&!ED.nova){ED.orig.marcadores=[...oc.marcadores];salvar();}re();
+    setTimeout(()=>{if($('addMk'))$('addMk').focus();},30);};
+  if($('mkBox'))$('mkBox').onclick=e=>{if(e.target.id==='mkBox')$('addMk').focus();};
+  $('addMk').onkeydown=e=>{if(e.key==='Enter'||e.key===','){e.preventDefault();mkPoe(e.target.value);}
+    else if(e.key==='Backspace'&&!e.target.value&&oc.marcadores.length){oc.marcadores.pop();if(L&&!ED.nova){ED.orig.marcadores=[...oc.marcadores];salvar();}re();setTimeout(()=>{if($('addMk'))$('addMk').focus();},30);}};
+  $('addMk').onchange=e=>{const v=e.target.value;if(DB.marcadores.some(x=>x.nome===v))mkPoe(v);};
   if($('bSalva'))$('bSalva').onclick=()=>salvarOC();
 }
 const r3=v=>Math.round((+v||0)*1000)/1000;
@@ -1417,7 +1682,7 @@ function validarOC(oc){
   return f;
 }
 function salvarOC(){
-  if(ED&&ED.oc&&ED.oc.benef&&ED.oc.itens.some(x=>!x.env||!x.env.sku))return toast('Beneficiamento: informe em ⋯ o material enviado de cada item.',true);
+  if(ED&&ED.oc&&ED.oc.benef&&ED.oc.itens.some(x=>!envsDe(x).length))return toast('Beneficiamento: em cada item, use ＋ sub-item para dizer o que sai do nosso estoque.',true);
   const oc=ED.oc;const f=validarOC(oc);
   if(f.length){$('obr').textContent='Falta preencher: '+f.join(', ');toast('Falta preencher: '+f.join(', '),true);return;}
   if(ED.nova){DB.seq=Math.max(DB.seq,...DB.ocs.map(o=>+o.num||0))+1;oc.num=String(DB.seq);hist(oc,'Criou a ordem',oc.origem&&oc.origem!=='Manual'?oc.origem:'');DB.ocs.push(oc);}
@@ -1595,8 +1860,14 @@ function empresa(){const e=DB.cfg.empresa||{};return {razao:e.razao||'Atrius Pro
 function folhaOC(o){
   const e=empresa(),f=o.forn||{},t=contaOC(o);let logo='';try{logo=N.logo?N.logo():'';}catch(x){}
   const ent=o.entrega&&o.entrega.outro?o.entrega:null;
-  const itens=o.itens.map((it,k)=>`<tr><td class="c k">${k+1}</td><td><b>${esc(it.nome)}</b>${o.benef&&it.env?`<small>Material enviado pela Atrius: ${nq(r3((it.env.fator||1)*(+it.qtd||0)))} ${esc(it.env.un||'un')} de ${esc(it.env.nome)} (${nq(it.env.fator||1)} por ${esc(it.un||'un')}) · preço = serviço</small>`:''}${it.nomeForn||it.modo==='cx'?`<small>${esc(it.nomeForn||'')}${it.nomeForn&&it.modo==='cx'?' · ':''}${it.modo==='cx'?nf(it.qtdCx)+' '+(+it.qtdCx===1?'caixa':'caixas')+' de '+nf(it.cx)+' un':''}</small>`:''}</td>
-    <td class="c">${esc((it.un||'un').toUpperCase())}</td><td class="n">${nq(it.qtd)}</td><td class="n">${nf(it.preco,4)}</td><td class="n">${nq(it.icms)}%</td><td class="n">${nq(it.ipi)}%</td><td class="n">${nf(contaItem(it).base,2)}</td></tr>`).join('');
+  const itens=o.itens.map((it,k)=>{const c=contaItem(it),envs=o.benef?envsDe(it):[],mo=o.benef&&it.mo;
+    const forn=[it.nomeForn?'Nome no fornecedor: <b>'+esc(it.nomeForn)+'</b>':'',it.codForn?'cód '+esc(it.codForn):'',it.modo==='cx'?nf(it.qtdCx)+' '+(+it.qtdCx===1?'caixa':'caixas')+' de '+nf(it.cx)+' un':''].filter(Boolean).join(' · ');
+    const dpN=e=>{try{return depNomeDe(depDoSub(o,e));}catch(x){return '';}};
+    return `<tr class="${envs.length?'pr':''}"><td class="c k">${k+1}</td><td><b>${esc(it.nome)}</b>${forn?`<small>${forn}</small>`:''}${o.benef?`<span class="tg2 ${mo?'mo':'cp'}">${mo?'Mão de obra · beneficiamento':'Compra'}</span>`:''}</td>
+    <td class="c">${esc((it.un||'un').toUpperCase())}</td><td class="n">${nq(it.qtd)}</td><td class="n">${nf(it.preco,4)}</td><td class="n">${mo?'—':nq(it.icms)+'%'}</td><td class="n">${nq(it.ipi)}%</td><td class="n">${nf(o.benef?c.baseF:c.base,2)}</td></tr>`
+    +envs.map(e=>{const q=r3((+e.fator||1)*(+it.qtd||0)),ps=+e.preco||0,vend=e.tipo==='venda',na=/^na\s/i.test(dpN(e));
+      return `<tr class="sb"><td></td><td>↳ <b>${esc(e.nome)}</b>${ps?`<span class="tg2 ${vend?'cp':'mo'}">${vend?'Compra':'Mão de obra de aplicação'}</span>`:''}<small>${ps&&vend?'':'Material da Atrius'+(na?' · já enviado a vocês':' · vai junto')}</small></td>
+        <td class="c">${esc((e.un||'un').toUpperCase())}</td><td class="n">${nq(q)}</td><td class="n">${ps?nf(ps,4):'—'}</td><td class="n">${ps&&vend?nq(it.icms)+'%':'—'}</td><td class="n">—</td><td class="n">${ps?nf(q*ps,2):'—'}</td></tr>`;}).join('');}).join('');
   const prazo=(o.pag.parcelas||[]).length===1&&o.pag.parcelas[0].d===0?'à vista':(o.pag.parcelas||[]).map(p=>p.d).join('/')+' dias';
   const formas=[...new Set((o.pag.parcelas||[]).map(p=>p.forma))].join(' + ')||o.pag.forma;
   return `<div class="folha f2">
@@ -1612,7 +1883,21 @@ function folhaOC(o){
   <div class="c5"><span class="rot">Pagamento</span><b>${esc(formas)}</b><span class="sepv"></span><span class="rot">Prazo</span><b>${esc(prazo)}</b><span class="sepv"></span><span class="rot">Frete</span><b>${o.frete.tipo}${o.frete.tipo==='FOB'?(o.frete.quem==='proprio'?' · retirada pela Atrius':o.frete.transp?' · '+esc(o.frete.transp.nome):''):''}</b></div>
   ${DB.cfg.assinatura?`<div class="ass2"><div>${esc(o.comprador||'')} · comprador</div><div>De acordo do fornecedor</div></div>`:''}</div>`;
 }
+function folhaDoc(o){
+  let css='';try{const st=[...document.querySelectorAll('style')].map(s=>s.textContent).find(x=>x.includes('/* ---------- a folha da ordem ---------- */'))||'';
+    const a=st.indexOf('/* ---------- a folha da ordem ---------- */'),b=st.indexOf('/* necessidade v4',a);css=st.slice(a,b>0?b:undefined);}catch(e){}
+  return `<!doctype html><html><head><meta charset="utf-8"><title>${esc(nomeArquivo(o))}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>${css}
+    body{margin:0;padding:0!important;font-family:Inter,system-ui,sans-serif;background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .folha{box-shadow:none!important;margin:0!important}@page{size:A4;margin:0}</style></head><body>${folhaOC(o)}</body></html>`;
+}
 function verPDF(o){
+  const P=(()=>{try{return window.parent!==window&&typeof window.parent.csFolhaModal==='function'?window.parent:null;}catch(e){return null;}})();
+  if(P){try{P.csFolhaModal({titulo:'Ordem de compra '+o.num,sub:(o.forn&&o.forn.nome)||'',arquivo:nomeArquivo(o),html:folhaDoc(o)});return;}catch(e){}}
+  verPDFlocal(o);
+}
+function verPDFlocal(o){
   modal(`<div class="mbar"><div><b>Ordem de compra ${esc(o.num)}</b><small>${esc((o.forn&&o.forn.nome)||'')}</small></div><span style="flex:1"></span>
     <button class="btn" id="pI">⎙ Imprimir</button><button class="btn pri" id="pS">⤓ Salvar PDF</button><button class="btn" id="pX">Fechar ✕</button></div>
     <div class="mnome">O arquivo sai com o nome <b>${esc(nomeArquivo(o))}.pdf</b></div><div class="mcorpo">${folhaOC(o)}</div>`,'pdf');
@@ -1631,7 +1916,6 @@ function imprimirOCs(l){
    impressão, onde o navegador salva como PDF */
 function carregaScript(src){return new Promise((ok,er)=>{if(document.querySelector(`script[src="${src}"]`))return ok();const s=document.createElement('script');s.src=src;s.onload=ok;s.onerror=er;document.head.appendChild(s);});}
 async function salvarPDFs(l){
-  if(l.length===1)return imprimirOCs(l);
   try{await carregaScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
     await carregaScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
     const {jsPDF}=window.jspdf;const box=document.createElement('div');box.className='pdf-fora';document.body.appendChild(box);
@@ -1651,12 +1935,13 @@ async function salvarPDFs(l){
 function receberOC(o){
   const faltaDe=it=>Math.max(0,r3((+it.qtd||0)-recebidoDe(o,it.sku)));
   const st={nf:'',data:hojeY(),obs:'',saldo:'gerar',prevSaldo:addDias(o.prev||hojeY(),1),linhas:o.itens.map(it=>{const f=faltaDe(it);const cx=it.modo==='cx'&&+it.cx>0;
-    return {it,falta:f,cx,chegouCx:cx?Math.round(f/it.cx):0,chegou:f,lotes:controlaLote(it)?[{lote:'',val:'',qtd:f}]:null,atualizaCx:true,sai:o.benef&&it.env?r3(f*(+it.env.fator||1)):0,saiMan:false};})};
-  const recalcSai=l=>{if(o.benef&&l.it.env&&!l.saiMan)l.sai=r3(l.chegou*(+l.it.env.fator||1));};
+    return {it,falta:f,cx,chegouCx:cx?Math.round(f/it.cx):0,chegou:f,lotes:controlaLote(it)?[{lote:'',val:'',qtd:f}]:null,atualizaCx:true,sais:o.benef?envsDe(it).map(e=>r3(f*(+e.fator||1))):[],saiMan:[]};})};
+  const dB=o.benef?depBenef(o,false):null;
+  const recalcSai=l=>{if(!o.benef)return;l.sais=l.sais||[];l.saiMan=l.saiMan||[];envsDe(l.it).forEach((e,j)=>{if(!l.saiMan[j])l.sais[j]=r3(l.chegou*(+e.fator||1));});};
   const des=()=>{
     const falt=st.linhas.filter(l=>l.chegou<l.falta-1e-6);
     const tr=totaisReceb(o,st);
-    $('app').innerHTML=`<div class="migalha"><button class="btn lk sm" id="rVolta">‹ Ordens de compra</button></div>
+    $('app').innerHTML=`<div class="ocv2"><div class="migalha"><button class="btn lk sm" id="rVolta">‹ Ordens de compra</button></div>
     <div class="ed-top"><h1>Receber mercadoria · OC ${esc(o.num)}</h1><span class="pill p-${o.sit}">${SIT[o.sit]||''}</span><span class="s2" style="margin-left:8px">${esc((o.forn&&o.forn.nome)||'')}</span></div>
     <div class="bloco"><div class="t"><span class="n">1</span>Nota e itens que chegaram</div><div class="c">
     <p style="margin:0 0 6px;color:var(--ink3)">Já vem preenchido com o pedido; mude só o que veio diferente.</p>
@@ -1664,7 +1949,7 @@ function receberOC(o){
       <div class="fl"><label>Chegou em<span class="req">*</span></label><input class="inp dt-in" data-cal="1" id="rDt" value="${br(st.data)}"></div></div>
     <div class="rolx"><table class="rtab"><thead><tr><th>Item</th><th>Pedido</th><th>Chegou</th><th>Unidades na nota</th></tr></thead><tbody>
     ${st.linhas.map((l,i)=>{const it=l.it;const real=l.cx&&l.chegouCx>0?r3(l.chegou/l.chegouCx):0;const dif=l.cx&&l.chegouCx>0&&Math.abs(real-it.cx)>0.5;
-      return `<tr class="${l.chegou<l.falta-1e-6?'falta':''}"><td><b>${esc(it.nome)}</b><small>${esc(it.sku)}${l.extra?' · <b style="color:#1D4ED8">incluído no recebimento</b>':''}${l.lotes?' · controla lote':''}</small>${o.benef&&it.env?`<small style="color:#1D4ED8">↳ sai do estoque <input class="in5" data-rs="${i}" value="${nq(l.sai)}" style="width:70px"> ${esc(it.env.un||'un')} de ${esc(it.env.nome)}${l.saiMan?' <i>(ajustado)</i>':' ('+nq(it.env.fator||1)+' por '+esc(it.un)+')'}</small>`:''}${l.chegou<l.falta-1e-6?`<small style="color:#B45309">faltou ${nq(r3(l.falta-l.chegou))} ${esc(it.un)}</small>`:''}</td>
+      return `<tr class="${l.chegou<l.falta-1e-6?'falta':''}"><td><b>${esc(it.nome)}</b><small>${esc(it.sku)}${l.extra?' · <b style="color:#1D4ED8">incluído no recebimento</b>':''}${l.lotes?' · controla lote':''}</small>${o.benef?envsDe(it).map((e,j)=>{const s=+(l.sais||[])[j]||0,dpj=depDoSub(o,e),tem=saldoEm(e.tiny,dpj);return `<small style="color:#1D4ED8">↳ sai <input class="in5" data-rs="${i}|${j}" value="${nq(s)}" style="width:70px"> ${esc(e.un||'un')} de ${esc(e.nome)} · depósito ${esc(depNomeDe(dpj))}${(l.saiMan||[])[j]?' <i>(ajustado)</i>':' ('+nq(e.fator||1)+' por '+esc(it.un)+')'}${tem!=null&&tem<s?` <b style="color:#B91C1C">· só tem ${nq(tem)}</b>`:''}</small>`;}).join(''):''}${l.chegou<l.falta-1e-6?`<small style="color:#B45309">faltou ${nq(r3(l.falta-l.chegou))} ${esc(it.un)}</small>`:''}</td>
       <td>${l.cx?nf(Math.round(l.falta/it.cx))+' cx<small>≈ '+nq(l.falta)+' '+esc(it.un)+'</small>':nq(l.falta)+' '+esc(it.un)}</td>
       <td>${l.cx?`<input class="in5" data-rcx="${i}" value="${l.chegouCx}"> cx`:''}</td>
       <td><input class="in5" data-rq="${i}" value="${nq(l.chegou)}"> ${esc(it.un)}${dif?`<label class="ckl" data-rac="${i}" style="color:#B45309"><span class="ck ${l.atualizaCx?'on':''}"></span>caixa real ${nf(real)} un · atualizar no fornecedor</label>`:''}</td></tr>
@@ -1680,14 +1965,14 @@ function receberOC(o){
     <div class="fl" style="margin-top:10px"><label>Observações · aparecem para quem conferir a nota</label><textarea id="rObs">${esc(st.obs)}</textarea></div>
     </div></div>
     ${blocoTotais(tr,'2','Totais da nota (pelo que chegou)')}
-    <div class="rodape"><span class="esq">Total geral <b>${rs(tr.total)}</b></span><button class="btn" id="rN">Cancelar</button><button class="btn pri" id="rOk">Confirmar recebimento</button></div>`;
+    <div class="rodape"><span class="esq">Total geral <b>${rs(tr.total)}</b></span><button class="btn" id="rN">Cancelar</button><button class="btn pri" id="rOk">Confirmar recebimento</button></div></div>`;
     window.scrollTo(0,RC_SCROLL||0);
     ligaCalendarios($('app'));
     $('rNf').onchange=e=>st.nf=e.target.value.trim();$('rDt').onchange=e=>st.data=deBR(e.target.value)||st.data;$('rObs').onchange=e=>st.obs=e.target.value;
     if($('rPs'))$('rPs').onchange=e=>st.prevSaldo=deBR(e.target.value)||st.prevSaldo;
     document.querySelectorAll('[data-rcx]').forEach(i=>i.onchange=()=>{const l=st.linhas[+i.dataset.rcx];l.chegouCx=Math.max(0,Math.round(num(i.value)));l.chegou=r3(l.chegouCx*l.it.cx);if(l.lotes&&l.lotes.length===1)l.lotes[0].qtd=l.chegou;recalcSai(l);des();});
     document.querySelectorAll('[data-rq]').forEach(i=>i.onchange=()=>{const l=st.linhas[+i.dataset.rq];l.chegou=Math.max(0,num(i.value));if(l.lotes&&l.lotes.length===1)l.lotes[0].qtd=l.chegou;recalcSai(l);des();});
-    document.querySelectorAll('[data-rs]').forEach(i=>i.onchange=()=>{const l=st.linhas[+i.dataset.rs];l.sai=Math.max(0,num(i.value));l.saiMan=true;des();});
+    document.querySelectorAll('[data-rs]').forEach(i=>i.onchange=()=>{const [a,j]=i.dataset.rs.split('|');const l=st.linhas[+a];l.sais=l.sais||[];l.saiMan=l.saiMan||[];l.sais[+j]=Math.max(0,num(i.value));l.saiMan[+j]=true;des();});
     document.querySelectorAll('[data-rac]').forEach(b=>b.onclick=()=>{const l=st.linhas[+b.dataset.rac];l.atualizaCx=!l.atualizaCx;des();});
     document.querySelectorAll('[data-lt]').forEach(i=>i.onchange=()=>{const [a,b,k]=i.dataset.lt.split('|');st.linhas[+a].lotes[+b][k]=k==='qtd'?num(i.value):i.value.trim();});
     document.querySelectorAll('[data-lta]').forEach(b=>b.onclick=()=>{st.linhas[+b.dataset.lta].lotes.push({lote:'',val:'',qtd:0});des();});
@@ -1715,8 +2000,9 @@ function receberOC(o){
   des();
 }
 async function confirmaRecebimento(o,st){
+  const dB=o.benef?depBenef(o,false):null;
   const r={id:uid(),em:agora(),por:usuario(),data:st.data,nf:st.nf,obs:st.obs,
-    itens:st.linhas.filter(l=>l.chegou>0).map(l=>({sku:l.it.sku,nome:l.it.nome,tiny:l.it.tiny,qtd:l.chegou,cx:l.cx?l.chegouCx:0,preco:+l.it.preco||0,lotes:l.lotes?l.lotes.map(x=>({...x})):null,env:o.benef&&l.it.env&&l.sai>0?{sku:l.it.env.sku,nome:l.it.env.nome,tiny:l.it.env.tiny||('ERP-'+l.it.env.sku),un:l.it.env.un,qtd:l.sai}:null}))};
+    itens:st.linhas.filter(l=>l.chegou>0).map(l=>({sku:l.it.sku,nome:l.it.nome,tiny:l.it.tiny,qtd:l.chegou,cx:l.cx?l.chegouCx:0,preco:(+l.it.preco||0)+envsDe(l.it).reduce((s,e)=>s+(+e.preco||0)*(+e.fator||1),0),lotes:l.lotes?l.lotes.map(x=>({...x})):null,envs:o.benef?envsDe(l.it).map((e,j)=>({sku:e.sku,nome:e.nome,tiny:e.tiny||('ERP-'+e.sku),un:e.un,qtd:+((l.sais||[])[j])||0,dep:depDoSub(o,e)===depPrinc()?'':depDoSub(o,e),depNome:depNomeDe(depDoSub(o,e))})).filter(e=>e.qtd>0):null}))};
   o.receb.push(r);o.nf=st.nf;o.obsReceb=st.obs;
   st.linhas.forEach(l=>{if(l.cx&&l.chegouCx>0&&l.atualizaCx){const real=Math.round(l.chegou/l.chegouCx);if(Math.abs(real-l.it.cx)>0.5&&o.forn)garanteVinculo(o.forn.id,l.it.sku,{cx:real});}});
   r.itens.forEach(x=>(x.lotes||[]).forEach(lt=>DB.lotes.push({sku:x.sku,nome:x.nome,lote:lt.lote,val:lt.val,qtd:+lt.qtd,nf:st.nf,oc:o.num,forn:o.forn&&o.forn.nome,data:st.data,receb:r.id})));
@@ -1738,7 +2024,7 @@ async function confirmaRecebimento(o,st){
   if(!(o.pag.parcelas||[]).some(p=>p.tiny&&p.tiny.id))gerarParcelas(o,o.pag.cond,o.pag.forma);
   o.sit='rec';
   const ok=await lancarEntrada(o,r);
-  hist(o,'Recebeu a mercadoria',`NF ${st.nf} · ${r.itens.map(x=>x.nome+' '+nq(x.qtd)+(x.env?' (saiu '+nq(x.env.qtd)+' '+x.env.nome+')':'')).join(' · ')}${ok?' · estoque lançado':' · estoque NÃO foi lançado: '+((r.tiny&&r.tiny.erro)||'')}`);
+  hist(o,'Recebeu a mercadoria',`NF ${st.nf} · ${r.itens.map(x=>x.nome+' '+nq(x.qtd)+(envsReceb(x).length?' (saiu '+envsReceb(x).map(e=>nq(e.qtd)+' '+e.nome+(e.depNome?' de '+e.depNome:'')).join(' + ')+')':'')).join(' · ')}${ok?' · estoque lançado':' · estoque NÃO foi lançado: '+((r.tiny&&r.tiny.erro)||'')}`);
   salvar();toast(ok?'Recebido. Estoque lançado; a ordem espera a conferência da nota.':'Recebido, mas o estoque não foi lançado. Veja a coluna Integração.',!ok);
 }
 
@@ -1755,16 +2041,28 @@ function telaConferir(id){
   const c=CF.oc,t=contaOC(c),ult=(o.receb||[]).filter(r=>!r.estornado).slice(-1)[0]||{};
   const podeC=pode('compras.oc.conferir','ver')&&o.sit==='rec';const dis=podeC?'':'disabled';
   const soma=somaParcelas(c),dif=r2(soma-t.total);const ter=freteTerceiro(c);
-  $('app').innerHTML=`<div class="migalha"><button class="btn lk sm" id="volta">‹ Ordens de compra</button></div>
+  $('app').innerHTML=`<div class="ocv2"><div class="migalha"><button class="btn lk sm" id="volta">‹ Ordens de compra</button></div>
   <div class="ed-top"><h1>Conferir nota · OC ${esc(o.num)}</h1><span class="pill p-${o.sit}">${SIT[o.sit]}</span></div>
-  <div class="aviso ok2">✓ <div>Recebida por <b>${esc(ult.por||'—')}</b> em ${esc(ult.em||'—')} · NF <b>${esc(o.nf||'—')}</b> · ${integ(o).est?'estoque já lançado':'<span style="color:var(--danger)">estoque não lançado</span>'}.<br>Confira as informações de preços, impostos e formas de pagamento.</div></div>
+  <div class="aviso ok2">✓ <div>Recebida por <b>${esc(ult.por||'—')}</b> em ${esc(ult.em||'—')} · NF <b>${esc(o.nf||'—')}</b> · ${integ(o).est?'estoque já lançado':'<span style="color:var(--danger)">estoque não lançado</span>'}.<br>Confira preços, impostos, frete e pagamento.</div></div>
   ${podeC?'':'<div class="aviso">Você não tem permissão para conferir notas, ou esta ordem não está esperando conferência.</div>'}
   <div class="bloco"><div class="t"><span class="n">1</span>Itens da nota</div><div class="rolx"><table class="ti2"><thead><tr><th>Item</th><th class="n">Recebido</th><th class="n">Preço na OC</th><th class="n">Preço na nota<span class="req">*</span></th><th class="n">ICMS %</th><th class="n">IPI %</th><th class="n">Total da nota</th></tr></thead><tbody>
     ${c.itens.map((it,i)=>`<tr><td><b>${esc(it.nome)}</b><span class="s2">${esc(it.sku)}</span></td><td class="n">${nq(it.qtd)} ${esc(it.un)}</td>
       <td class="n" style="color:var(--ink3)">${nf(it.precoOC??(o.itens[i]||{}).preco,4)}</td>
       <td class="n"><input class="in3" data-ci="${i}" data-k="preco" value="${nf(it.preco,4)}" ${dis}></td><td class="n"><input class="in3 p" data-ci="${i}" data-k="icms" value="${nq(it.icms)}" ${dis}></td>
-      <td class="n"><input class="in3 p" data-ci="${i}" data-k="ipi" value="${nq(it.ipi)}" ${dis}></td><td class="n"><b>${nf(contaItem(it).nota,2)}</b></td></tr>`).join('')}</tbody></table></div></div>
-  <div class="bloco"><div class="t"><span class="n">2</span>Boletos como vieram na nota</div><div class="c"><div class="g4" style="grid-template-columns:1fr 1fr">
+      <td class="n"><input class="in3 p" data-ci="${i}" data-k="ipi" value="${nq(it.ipi)}" ${dis}></td><td class="n"><b>${nf(contaItem(it).baseF+contaItem(it).val.ipi,2)}</b></td></tr>
+      ${c.benef?envsDe(it).map((e,j)=>+e.preco?`<tr class="sub"><td><span class="sl">↳</span>${esc(e.nome)} <span class="s3">${e.tipo==='venda'?'venda':'beneficiamento'}</span></td><td class="n">${nq(r3((+e.fator||1)*(+it.qtd||0)))} ${esc(e.un||'un')}</td><td></td>
+        <td class="n"><input class="in3" data-cs="${i}|${j}" value="${nf(e.preco,4)}" ${dis}></td><td></td><td></td><td class="n"><b>${nf(r3((+e.fator||1)*(+it.qtd||0))*(+e.preco||0),2)}</b></td></tr>`:'').join(''):''}`).join('')}</tbody></table></div>${totaisOC(c,t,!podeC,'cDesc')}</div>
+  <div class="bloco"><div class="t"><span class="n">2</span>Frete</div><div class="c">
+    <div class="cfr" style="grid-template-columns:minmax(0,420px)"><div class="fl"><label>Frete</label><select class="inp" id="cFrT" ${dis}><option value="CIF" ${c.frete.tipo!=='FOB'?'selected':''}>CIF · por conta do fornecedor</option><option value="FOBp" ${c.frete.tipo==='FOB'&&c.frete.quem==='proprio'?'selected':''}>FOB · nossa frota busca</option><option value="FOBt" ${c.frete.tipo==='FOB'&&c.frete.quem==='terceiro'?'selected':''}>FOB · transportadora (conta separada)</option></select></div></div>
+    ${ter?`<div style="margin-top:14px">
+    <div class="g4" style="grid-template-columns:1.6fr 1fr 1fr"><div class="fl"><label>Transportador<span class="req">*</span></label>${c.frete.transp?`<div class="v">${esc(c.frete.transp.nome)}${podeC?'<button class="btn lk sm" id="cTrT" style="margin-left:auto">trocar</button>':''}</div>`:`<input class="inp" id="cTrB" placeholder="buscar no cadastro de transportadores" ${dis}>`}</div>
+      <div class="fl"><label>CT-e do transportador<span class="req">*</span></label><input class="inp" id="cCte" value="${esc(c.frete.cte||'')}" ${dis}></div>
+      <div class="fl"><label>Categoria<span class="req">*</span></label>${seletorCategoria('fcat2',c.frete.cat||'Frete Compra',!podeC)}</div></div>
+    <table class="rtab pt2"><thead><tr><th>Nº</th><th>Vencimento<span class="req">*</span></th><th style="text-align:right">Valor<span class="req">*</span></th><th>Forma<span class="req">*</span></th></tr></thead><tbody>
+    ${(c.frete.parcelas||[]).map((p,i)=>`<tr><td>${i+1}</td><td><input class="inp d dt-in" data-cal="1" data-fp="${i}" data-k="venc" value="${p.venc?br(p.venc):''}" ${dis}></td>
+      <td style="text-align:right"><input class="inp vl" data-fp="${i}" data-k="valor" value="${p.valor?nf(p.valor,2):''}" ${dis}></td><td><select class="inp fm" data-fp="${i}" data-k="forma" ${dis}>${FORMAS.map(x=>`<option ${p.forma===x?'selected':''}>${x}</option>`).join('')}</select></td></tr>`).join('')}</tbody></table>
+    <div class="dica">Vai como conta separada, para o transportador, junto com as contas da nota ao concluir. Só conclui com tudo preenchido.</div></div>`:''}</div></div>
+  <div class="bloco"><div class="t"><span class="n">3</span>Pagamento</div><div class="c"><div class="g4" style="grid-template-columns:1fr 1fr">
     <div class="fl"><label>Categoria<span class="req">*</span></label>${seletorCategoria('ccat',c.pag.categoria,!podeC)}</div>
     <div class="fl"><label>Data da nota</label><input class="inp dt-in" data-cal="1" id="cDn" value="${br(c.conf&&c.conf.dataNF||ult.data||o.data)}" ${dis}></div></div>
     <table class="rtab pt2"><thead><tr><th>Nº</th><th>Documento<span class="req">*</span></th><th>Vencimento<span class="req">*</span></th><th style="text-align:right">Valor<span class="req">*</span></th><th>Forma<span class="req">*</span></th><th>Observação</th><th></th></tr></thead><tbody>
@@ -1774,17 +2072,9 @@ function telaConferir(id){
       <td><input class="inp ob" data-cp="${i}" data-k="obs" value="${esc(p.obs||'')}" ${dis}></td><td>${podeC?`<button class="lix" data-cdel="${i}">🗑</button>`:''}</td></tr>`).join('')}</tbody></table>
     <div style="display:flex;align-items:center;gap:12px">${podeC?'<button class="btn lk sm" id="cAdd">＋ adicionar outra parcela</button>':''}
       <span style="margin-left:auto;font-size:12.5px">Soma dos boletos <b>${rs(soma)}</b> · total da nota <b>${rs(t.total)}</b> ${Math.abs(dif)<0.01?'<span style="color:var(--ok)">✓ batem</span>':`<span style="color:var(--danger);font-weight:600">diferença ${rs(dif)}</span>`}</span></div></div></div>
-  ${ter?`<div class="bloco"><div class="t"><span class="n">3</span>Conta do frete · FOB por terceiro</div><div class="c">
-    <div class="g4" style="grid-template-columns:1.6fr 1fr 1fr"><div class="fl"><label>Transportador<span class="req">*</span></label>${c.frete.transp?`<div class="v">${esc(c.frete.transp.nome)}${podeC?'<button class="btn lk sm" id="cTrT" style="margin-left:auto">trocar</button>':''}</div>`:`<input class="inp" id="cTrB" placeholder="buscar no cadastro de transportadores" ${dis}>`}</div>
-      <div class="fl"><label>CT-e do transportador<span class="req">*</span></label><input class="inp" id="cCte" value="${esc(c.frete.cte||'')}" ${dis}></div>
-      <div class="fl"><label>Categoria<span class="req">*</span></label>${seletorCategoria('fcat2',c.frete.cat||'Frete Compra',!podeC)}</div></div>
-    <table class="rtab pt2"><thead><tr><th>Nº</th><th>Vencimento<span class="req">*</span></th><th style="text-align:right">Valor<span class="req">*</span></th><th>Forma<span class="req">*</span></th></tr></thead><tbody>
-    ${(c.frete.parcelas||[]).map((p,i)=>`<tr><td>${i+1}</td><td><input class="inp d dt-in" data-cal="1" data-fp="${i}" data-k="venc" value="${p.venc?br(p.venc):''}" ${dis}></td>
-      <td style="text-align:right"><input class="inp vl" data-fp="${i}" data-k="valor" value="${p.valor?nf(p.valor,2):''}" ${dis}></td><td><select class="inp fm" data-fp="${i}" data-k="forma" ${dis}>${FORMAS.map(x=>`<option ${p.forma===x?'selected':''}>${x}</option>`).join('')}</select></td></tr>`).join('')}</tbody></table>
-    <div class="dica">Vai como conta separada, para o transportador, junto com as contas da nota ao concluir. Só conclui com tudo preenchido.</div></div></div>`:''}
-  <div class="bloco"><div class="t"><span class="n">${ter?4:3}</span>Observações</div><div class="c"><div class="g4" style="grid-template-columns:1fr 1fr">
+  <div class="bloco"><div class="t"><span class="n">4</span>Observações</div><div class="c"><div class="g4" style="grid-template-columns:1fr 1fr">
     <div class="fl"><label>Do recebimento</label><textarea id="cObR" ${dis}>${esc(c.obsReceb||'')}</textarea></div><div class="fl"><label>Interna · só a Atrius vê</label><textarea id="cObI">${esc(c.obsInt||'')}</textarea></div></div></div></div>
-  <div class="rodape"><span class="esq">Nota <b>${rs(t.total)}</b></span><button class="btn" id="cV">Voltar</button>${podeC?'<button class="btn" id="cSal">Salvar conferência</button><button class="btn pri" id="cOk">Lançar contas'+(ter?' e frete':'')+' e concluir</button>':''}</div>`;
+  <div class="rodape"><span class="esq">Nota <b>${rs(t.total)}</b></span><button class="btn" id="cV">Voltar</button>${podeC?'<button class="btn" id="cSal">Salvar conferência</button><button class="btn pri" id="cOk">Lançar contas'+(ter?' e frete':'')+' e concluir</button>':''}</div></div>`;
   ligaConferir(o,c);
 }
 function ligaConferir(o,c){
@@ -1795,6 +2085,11 @@ function ligaConferir(o,c){
   document.querySelectorAll('[data-cp]').forEach(i=>i.onchange=()=>{const p=c.pag.parcelas[+i.dataset.cp],k=i.dataset.k;
     if(k==='venc'){const y=deBR(i.value);if(y)p.d=Math.round((new Date(y+'T12:00')-new Date(baseParcelas(c)+'T12:00'))/864e5);}else if(k==='valor')p.valor=num(i.value);else p[k]=i.value;re();});
   document.querySelectorAll('[data-cdel]').forEach(b=>b.onclick=()=>{c.pag.parcelas.splice(+b.dataset.cdel,1);re();});
+  document.querySelectorAll('[data-cs]').forEach(i=>i.onchange=()=>{const [a,j]=i.dataset.cs.split('|');const e=envsDe(c.itens[+a])[+j];if(e){if(e.precoOC==null)e.precoOC=e.preco;e.preco=num(i.value);}re();});
+  if($('cFrT'))$('cFrT').onchange=e=>{const v=e.target.value;c.frete.tipo=v==='CIF'?'CIF':'FOB';c.frete.quem=v==='FOBp'?'proprio':v==='FOBt'?'terceiro':'';
+    if(freteTerceiro(c)&&!(c.frete.parcelas||[]).length)c.frete.parcelas=[{d:0,venc:'',valor:+c.frete.valor||0,forma:c.frete.forma||'Boleto',tiny:null}];re();};
+  if($('cFrV'))$('cFrV').onchange=e=>{c.frete.valor=Math.max(0,num(e.target.value));if((c.frete.parcelas||[]).length===1)c.frete.parcelas[0].valor=c.frete.valor;re();};
+  if($('cDesc'))$('cDesc').onchange=e=>{c.desconto=Math.max(0,num(e.target.value));re();};
   if($('cAdd'))$('cAdd').onclick=()=>{const ps=c.pag.parcelas;ps.push({d:ps.length?ps[ps.length-1].d+7:0,valor:0,forma:c.pag.forma,obs:'',doc:(o.nf||o.num)+'/'+(ps.length+1),tiny:null});re();};
   document.querySelectorAll('[data-fp]').forEach(i=>i.onchange=()=>{const p=c.frete.parcelas[+i.dataset.fp],k=i.dataset.k;if(k==='venc')p.venc=deBR(i.value);else if(k==='valor')p.valor=num(i.value);else p[k]=i.value;
     c.frete.valor=r2(c.frete.parcelas.reduce((s,x)=>s+(+x.valor||0),0));re();});
@@ -1805,7 +2100,7 @@ function ligaConferir(o,c){
     x=>{c.frete.transp={id:x.id,nome:x.nome,cnpj:x.cnpj||'',tinyId:x.tinyId||''};re();},'Não achou? Cadastre em Cadastros › Transportadores.');
   document.querySelectorAll('[data-cat]').forEach(el=>el.onclick=ev=>{if(el.classList.contains('dis'))return;ev.stopPropagation();escolherCategoria(el,n=>{if(el.dataset.cat==='ccat')c.pag.categoria=n;else c.frete.cat=n;re();});});
   $('cObR').onchange=e=>c.obsReceb=e.target.value;$('cObI').onchange=e=>c.obsInt=e.target.value;
-  const guarda=()=>{o.itens=c.itens;o.pag=c.pag;o.frete=c.frete;o.obsReceb=c.obsReceb;o.obsInt=c.obsInt;o.conf=Object.assign(o.conf||{},c.conf||{},{por:usuario(),em:agora()});};
+  const guarda=()=>{o.itens=c.itens;o.pag=c.pag;o.frete=c.frete;o.desconto=c.desconto;o.obsReceb=c.obsReceb;o.obsInt=c.obsInt;o.conf=Object.assign(o.conf||{},c.conf||{},{por:usuario(),em:agora()});};
   if($('cSal'))$('cSal').onclick=()=>{guarda();hist(o,'Salvou a conferência');salvar();toast('Conferência salva.');};
   if($('cOk'))$('cOk').onclick=async()=>{
     const f=[];const t=contaOC(c);
@@ -1813,7 +2108,7 @@ function ligaConferir(o,c){
     if(!c.pag.parcelas.length)f.push('boletos');
     if(c.pag.parcelas.some(p=>!p.doc||!(+p.valor>0)))f.push('documento e valor de todos os boletos');
     if(Math.abs(somaParcelas(c)-t.total)>=0.01)f.push('boletos somando o total da nota');
-    if(c.itens.some(i=>!(+i.preco>0)))f.push('preço de todos os itens');
+    if(c.itens.some(i=>!(contaItem(i).base>0)))f.push('preço de todos os itens');
     if(freteTerceiro(c)){if(!c.frete.transp)f.push('transportador');if(!c.frete.cte)f.push('CT-e');if(!categoriaValida(c.frete.cat))f.push('categoria do frete');
       if(!(c.frete.parcelas||[]).length||c.frete.parcelas.some(p=>!p.venc||!(+p.valor>0)))f.push('vencimento e valor do frete');}
     if(f.length)return toast('Falta: '+f.join(', '),true);
@@ -1844,7 +2139,7 @@ function estornarEstoque(o,depois){
   confirmaDupla(`Estornar o estoque da OC ${esc(o.num)}`,`<p>Isto <b>tira do estoque</b> a entrada que o recebimento lançou. O ERP lança uma saída igual, com a OC na observação.</p>
     <div class="lst"><div><span>${rs_.length} recebimento(s) · ${nq(q)} un</span><b>saem do estoque no Olist</b></div><div><span>NF ${esc(o.nf||'—')}</span><b>fica ligada à ordem</b></div><div><span>Situação</span><b>volta para Enviada ao fornecedor</b></div></div>`,
     'Entendi que o estoque vai ser alterado no Olist','Estornar estoque no Olist',async()=>{
-      let err=0;for(const r of rs_){const movs=r.itens.filter(x=>x.tiny).map(x=>({id:x.tiny,tipo:'S',qtd:x.qtd}));r.itens.filter(x=>x.env&&x.env.tiny&&x.env.qtd>0).forEach(x=>movs.push({id:x.env.tiny,tipo:'E',qtd:x.env.qtd}));
+      let err=0;for(const r of rs_){const movs=r.itens.filter(x=>x.tiny).map(x=>({id:x.tiny,tipo:'S',qtd:x.qtd}));r.itens.forEach(x=>envsReceb(x).forEach(e=>{if(e.tiny&&e.qtd>0)movs.push(e.dep?{id:e.tiny,tipo:'E',qtd:e.qtd,dep:e.dep}:{id:e.tiny,tipo:'E',qtd:e.qtd});}));
         try{const x=await tiny({acao:'movimentar',movimentos:movs,obs:`Estorno da OC ${o.num}${r.nf?' · NF '+r.nf:''}`});if(x&&(x.falhas||[]).length)err++;else{r.estornado=true;r.estornoEm=agora();}}catch(e){err++;}}
       DB.lotes=DB.lotes.filter(l=>!rs_.some(r=>r.estornado&&r.id===l.receb));
       /* a ordem continua com as quantidades recebidas: é o que se espera receber de novo */
@@ -2212,7 +2507,7 @@ function gavetaGerar(){
     if($('gF'))$('gF').onchange=e=>{forn=e.target.value;};if($('gF')&&!forn)forn=$('gF').value;
     if($('gNova'))$('gNova').onclick=()=>{const f=fornPorId(forn||($('gF')&&$('gF').value));if(!f)return toast('Escolha o fornecedor.',true);
       const itens=ks.map(k=>itemNovo(k,f,+NEC.sel[k],null)).filter(Boolean);NEC.sel={};gaveta(null);
-      novaOC({forn:{...f},prev:addDias(hojeY(),7),itens,origem:'Necessidade de compra · '+br(hojeY()),marcadores:DB.marcadores.some(m=>m.nome==='reposição')?['reposição']:[],
+      novaOC({forn:{...f},prev:addDias(hojeY(),7),itens,origem:'Necessidade de compra · '+br(hojeY()),marcadores:[],
         pag:{cond:f.prazo||'28',forma:DB.cfg.formaPadrao||'Boleto',categoria:'',parcelas:[]}});};
     if($('gBusca'))buscaLista($('gBusca'),q=>buscaFornecedores(q),f=>{f=fornDoContato(f);if(!f)return;forn=f.id;if(!lista.some(x=>x.f.id===f.id))lista.unshift({f,n:0,tot:ks.reduce((s,k)=>{const mp=melhorPreco(k,f.id)||ultimaCompra(k,f.id);return s+(mp?mp.preco*(+NEC.sel[k]):0);},0)});des();});
     if($('gEx'))$('gEx').onclick=()=>{modo='exist';des();};if($('gVolta'))$('gVolta').onclick=()=>{modo='';des();};
@@ -2684,10 +2979,11 @@ function telaConfig(){
     <div class="mapa-cat">${tipos.map(tp=>`<label><span>${esc(tp)}</span><span class="v sel-cat ${ed?'':'dis'}" data-ct="${esc(tp)}">${esc(c.catPorTipo[tp]||'—')}<small>▾</small></span></label>`).join('')}</div>
     <div class="rolx" style="max-height:300px;overflow:auto;border:1px solid var(--line2);border-radius:10px;margin-top:12px"><table class="cat-t"><thead><tr><th>Categoria</th><th>ID no Tiny</th><th>No DRE</th></tr></thead><tbody>
       ${Object.entries(grupos).map(([g,l])=>`<tr class="g"><td colspan="3">${esc(g)}</td></tr>`+l.map(x=>`<tr><td>${esc(x.nome)}</td><td class="n" style="text-align:left;color:var(--ink3)">${esc(x.id)}</td><td>${esc(x.dre||'')}</td></tr>`).join('')).join('')}</tbody></table></div></div></div>
-  <div class="bloco"><div class="t">Marcadores da ordem de compra</div><div class="c"><div class="cores">
-    ${DB.marcadores.map((m,i)=>`<span><input type="color" value="${m.cor}" data-mc="${i}" ${dis} style="width:18px;height:18px;border:0;padding:0;background:none">${esc(m.nome)}${ed?`<em data-mx="${i}">✕</em>`:''}</span>`).join('')}
-    ${ed?'<input class="inp" id="mNovo" placeholder="novo marcador" style="width:170px;height:32px"><button class="btn sm" id="mAdd">＋ incluir</button>':''}</div>
-    <div class="dica" style="margin-top:8px">Nome e cor. Os pedidos de venda vão ter a lista deles, no mesmo formato.</div></div></div>
+  <div class="bloco"><div class="t">Marcadores da ordem de compra</div><div class="c"><div class="mkcfg">
+    ${DB.marcadores.map((m,i)=>`<div class="r"><input type="color" value="${m.cor}" data-mc="${i}" ${dis} style="width:22px;height:22px;border:0;padding:0;background:none">
+      <input type="text" value="${esc(m.nome)}" data-mn="${i}" ${dis}><small>${DB.ocs.filter(o=>(o.marcadores||[]).includes(m.nome)).length} ordens</small>${ed?`<button class="x" data-mx="${i}" title="Excluir">✕</button>`:''}</div>`).join('')||'<div class="dica">Nenhum marcador ainda.</div>'}
+    ${ed?'<div class="r" style="border-style:dashed"><input type="text" id="mNovo" placeholder="novo marcador"><button class="btn sm" id="mAdd">＋ criar</button></div>':''}</div>
+    <div class="dica" style="margin-top:8px">Os marcadores digitados nas ordens aparecem aqui. Renomear muda em todas as ordens; excluir tira de todas.</div></div></div>
   <div class="bloco"><div class="t">Cotações e custo</div><div class="c">
     ${op('Validade padrão da cotação','Quando o fornecedor não diz até quando o preço vale.',`<input class="inp" style="width:100px" id="cVal" value="${c.valid}" ${dis}> dias`)}
     ${op('Custo do dinheiro','Usado para comparar prazos de pagamento. Não aparece nas telas de compra.',`<input class="inp" style="width:100px" id="cCd" value="${nq(c.custoDinheiro)}" ${dis}> % ao mês`)}</div></div>`;
@@ -2699,6 +2995,13 @@ function telaConfig(){
   document.querySelectorAll('[data-tp]').forEach(s=>s.onclick=()=>{const tp=s.dataset.tp;c.loteTipos=c.loteTipos||[];const i=c.loteTipos.indexOf(tp);i>=0?c.loteTipos.splice(i,1):c.loteTipos.push(tp);salvar();telaConfig();});
   document.querySelectorAll('[data-ct]').forEach(el=>el.onclick=ev=>{ev.stopPropagation();escolherCategoria(el,n=>{c.catPorTipo[el.dataset.ct]=n;salvar();telaConfig();});});
   document.querySelectorAll('[data-mc]').forEach(i=>i.onchange=()=>{DB.marcadores[+i.dataset.mc].cor=i.value;salvar();});
+  document.querySelectorAll('[data-mn]').forEach(i=>i.onchange=()=>{const m=DB.marcadores[+i.dataset.mn],v=i.value.trim().replace(/\s+/g,' ');
+    if(!v||v===m.nome){i.value=m.nome;return;}
+    const ja=DB.marcadores.find(x=>x!==m&&x.nome.toLowerCase()===v.toLowerCase());
+    if(ja){if(!confirm(`Já existe "${ja.nome}". Juntar "${m.nome}" com ele?`)){i.value=m.nome;return;}
+      DB.ocs.forEach(o=>{o.marcadores=[...new Set((o.marcadores||[]).map(x=>x===m.nome?ja.nome:x))];});DB.marcadores.splice(+i.dataset.mn,1);}
+    else{DB.ocs.forEach(o=>{o.marcadores=(o.marcadores||[]).map(x=>x===m.nome?v:x);});m.nome=v;}
+    salvar();telaConfig();});
   document.querySelectorAll('[data-mx]').forEach(b=>b.onclick=()=>{const m=DB.marcadores[+b.dataset.mx];if(!confirm(`Tirar o marcador "${m.nome}"? Ele sai das ordens também.`))return;
     DB.marcadores.splice(+b.dataset.mx,1);DB.ocs.forEach(o=>o.marcadores=(o.marcadores||[]).filter(x=>x!==m.nome));salvar();telaConfig();});
   $('mAdd').onclick=()=>{const n=$('mNovo').value.trim();if(!n)return;if(DB.marcadores.some(m=>m.nome.toLowerCase()===n.toLowerCase()))return toast('Esse marcador já existe.',true);

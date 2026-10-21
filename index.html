@@ -5479,7 +5479,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v442';const VERSAO_DATA='21/10/2026';
+const VERSAO_APP='v443';const VERSAO_DATA='21/10/2026';
 /* número que aparece na tela: v438 → v4.3.8 (por dentro continua v438, que é o que as versões comparam) */
 const csRotVer=v=>{const d=String(v||'').replace(/\D/g,'');return d.length>=3?'v'+d.slice(0,-2)+'.'+d.slice(-2,-1)+'.'+d.slice(-1):String(v||'');};
 const VERSAO_ROTULO=csRotVer(VERSAO_APP)+' · '+VERSAO_DATA;
@@ -31943,7 +31943,7 @@ function csDepFornecedor(f,criar){
   if(!d&&criar){
     const pal=String(f.fantasia||f.nome||'fornecedor').trim().split(/\s+/);const curto=pal[0].length<4&&pal[1]?pal.slice(0,2).join(' '):pal[0];
     let nome='Na '+curto,k=2;while(CS_EDEP.deps.some(x=>x.nome.toLowerCase()===nome.toLowerCase()))nome='Na '+curto+' '+(k++);
-    const novo={id:'d'+Date.now().toString(36),nome,forn:String(f.nome||'').trim(),fornId:fid,princ:false};
+    const novo={id:'d'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),nome,forn:String(f.nome||'').trim(),fornId:fid,princ:false};
     csEDepsSalvar([...CS_EDEP.deps.map(x=>({...x})),novo]);d=CS_EDEP.deps.find(x=>x.id===novo.id);
   }
   return d?{...d}:null;
@@ -32010,10 +32010,11 @@ const csHEDow=d=>['domingo','segunda','terça','quarta','quinta','sexta','sábad
 function csHEFora(maq,data,ini,fim){
   const [ji,jf]=csJornHE(maq,data),l=[];
   if(!csMaqTrabalha(maq,data)){const fer=feriadoDe(data),dw=new Date(data+'T00:00:00').getDay();
-    l.push({k:'dia',t:fer?`É feriado (${fer}).`:dw===6?'É sábado: a fábrica não trabalha.':dw===0?'É domingo: a fábrica não trabalha.':'Este dia está marcado sem expediente.'});}
+    const qual=fer?`no feriado (${fer})`:dw===6?'no <b>sábado</b>':dw===0?'no <b>domingo</b>':'neste dia sem expediente';
+    l.push({k:'dia',t:`Você autoriza a <b>${escAttr(maq)}</b> trabalhar ${qual}, das <b>${hhmm(ini)}</b> às <b>${hhmm(Math.min(fim,24*60-1))}</b>?`});}
   else{
-    if(ini<ji)l.push({k:'cedo',t:`Vai começar às <b>${hhmm(ini)}</b>. O normal da ${escAttr(maq)} é começar às ${hhmm(ji)}.`});
-    if(fim>jf)l.push({k:'tarde',t:`Vai terminar às <b>${hhmm(Math.min(fim,24*60-1))}</b>. O normal da ${escAttr(maq)} é parar às ${hhmm(jf)}.`});
+    if(ini<ji)l.push({k:'cedo',t:`Você autoriza a <b>${escAttr(maq)}</b> começar às <b>${hhmm(ini)}</b> neste dia? <span style="color:#92400E">(o normal é ${hhmm(ji)})</span>`});
+    if(fim>jf)l.push({k:'tarde',t:`Você autoriza a <b>${escAttr(maq)}</b> trabalhar até as <b>${hhmm(Math.min(fim,24*60-1))}</b> neste dia? <span style="color:#92400E">(o normal é parar às ${hhmm(jf)})</span>`});
   }
   return l;
 }
@@ -32023,7 +32024,7 @@ function csHEPergunta(maq,data,fora,ok,nao){
   let d=document.getElementById('csHE');if(d)d.remove();
   d=document.createElement('div');d.id='csHE';document.body.appendChild(d);
   const so=fora.length===1&&fora[0].k==='tarde';
-  const pergunta=fora.some(x=>x.k==='dia')?'Tem certeza que vai produzir neste dia?':fora.some(x=>x.k==='cedo')?'A fábrica vai começar mais cedo neste dia?':'Vai ficar depois do horário?';
+  const dw0=new Date(data+'T00:00:00').getDay();const pergunta=fora.some(x=>x.k==='dia')?(feriadoDe(data)?'A fábrica vai trabalhar no feriado?':dw0===6?'A fábrica vai trabalhar no sábado?':dw0===0?'A fábrica vai trabalhar no domingo?':'A fábrica vai trabalhar neste dia?'):fora.some(x=>x.k==='cedo')?'A fábrica vai começar mais cedo neste dia?':'A fábrica vai ficar depois do horário neste dia?';
   d.innerHTML=`<div class="bx" role="dialog" aria-modal="true">
     <div class="hd"><div class="ic">⏰</div><div><h3>Hora extra</h3><div class="sb">${escAttr(maq)} · ${csHEDow(data)}, ${dCurto(data)}</div></div></div>
     <div class="ct">${pergunta}<div class="lst">${fora.map(x=>`<div>${x.t}</div>`).join('')}</div></div>
