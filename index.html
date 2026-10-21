@@ -14562,7 +14562,9 @@ function abrirLote(b){
       const jaLib=(b.ordens||[]).map(o=>(o.log||[]).filter(l=>/^Lote liberado/.test(String(l.e||''))).slice(-1)[0]).filter(Boolean)[0];
       if(jaLib&&!(APONTA[b.chave]||{}).liberadoEm){toast(`Este lote já foi liberado em ${jaLib.d?dCurto(jaLib.d):''} ${jaLib.t||''} (${jaLib.m||''}). Para liberar de novo, reabra o lote.`,true);return;}
     }catch(e){}
-    if(!fabFimDe(b)){toast('Conclua o preparo do tanque antes de liberar o lote.',true);return;}
+    /* v4.3.9: no tablet do tanque o preparo concluído continua obrigatório; no computador quem libera atesta que o tanque está pronto */
+    if(!fabFimDe(b)&&typeof CS_TQ_KIOSK==='function'&&CS_TQ_KIOSK()){toast('Conclua o preparo do tanque antes de liberar o lote.',true);return;}
+    const semRegTq=(typeof csTqFaltou==='function')?csTqFaltou(b):[];
     if(!ensaiosDe(b.produto).length){toast('Este produto não tem ensaios cadastrados: a liberação exige análise. Cadastre os ensaios na ficha do produto.',true);return;}
     const a=analiseOk(b);
     /* Falta medir não é decisão de ninguém: é ensaio em branco. */
@@ -14608,6 +14610,8 @@ function abrirLote(b){
             op:quem.nome,m:fora?`${a.fora.join(', ')}${obs?' · '+obs:''}`:obs}]};
         b.ordens.forEach(o=>registrar(o,fora?'Lote liberado fora do padrão':'Lote liberado',
           quem,`${b.tanque} · ${b.produto}`));
+        if(semRegTq.length){APONTA[b.chave].semRegistroTq=semRegTq;APONTA[b.chave].log.push({t:relogio(),d:ymd(new Date()),e:'Liberado pelo gestor sem o registro do tanque',op:quem.nome,m:'Não lançado no tanque: '+semRegTq.join(', ')});
+          b.ordens.forEach(o=>registrar(o,'Liberado sem registro do tanque',quem,'não lançado no tanque: '+semRegTq.join(', ')));}
         agendarSalvar();fecharModal();render();
         toast(`Lote liberado por ${quem.nome}.`);
         /* liberou: a matéria-prima do tanque (fórmula + ajustes) baixa no Tiny */
@@ -31852,6 +31856,61 @@ try{const _cx439=csCtx;csCtx=function(ev,id,nivel){
   }catch(e){}
   return r;};}catch(e){}
 try{csNucleo.versao='v439';}catch(e){}
+/* ===================== v4.3.9 · LIBERAR PELO GESTOR, LOTE SEM TANQUE, SELO =====================
+   4) Liberar no computador (gestor/qualidade) não exige mais início e fim de preparo: quem libera
+      atesta que o tanque está pronto. Fica marcado no lote e no histórico das OPs o que NÃO foi lançado
+      no tanque (limpeza, enchimento, início/fim do preparo), para os relatórios não mentirem.
+      No tablet do tanque continua exigindo o preparo concluído.
+   5) Lote sem tanque (ex.: lote 972, que voltou para "a programar" por engano) aparece numa faixa no alto
+      da página de Tanques, e o modal do lote tem "Escolher o tanque" — escolheu, o Liberar aparece.
+   6) Selo "Não liberado" do tanque: amarelo (antes azul). */
+document.head.insertAdjacentHTML('beforeend',`<style>
+.cs-tqsel.nao{background:#FEF3C7!important;color:#B45309!important;border:1px solid #FCD34D!important}
+#csTqBar .tbs.semtq{background:#FEE2E2!important;color:#B91C1C!important;border-color:#FCA5A5!important}#csTqBar .tbs.semtq i{background:#DC2626!important;color:#fff!important}
+#csEscTq{margin:0 0 14px;padding:12px 14px;border-radius:12px;background:#FFF7ED;border:1px solid #FDBA74;display:flex;flex-wrap:wrap;gap:10px;align-items:center;color:#9A3412;font-size:13.5px}
+#csEscTq select{height:36px;border-radius:8px;border:1px solid #FDBA74;padding:0 10px;font-weight:600}
+</style>`);
+function csTqFaltou(b){
+  const a=APONTA[b.chave]||{},t=a.tq||{},f=[];
+  if(!t.limpIni&&!t.limpFim&&!t.limpNao)f.push('limpeza');
+  if(!t.enchIni&&!t.enchFim)f.push('enchimento');
+  if(!a.fabIni)f.push('início do preparo');
+  if(!a.fabFim)f.push('fim do preparo');
+  return f;
+}
+window.csTqFaltou=csTqFaltou;
+/* (5) lote sem tanque vira um SELO na faixa cinza "Tanques" do Envase (ao lado de "análises para liberar") */
+function csSeloSemTq(){try{
+  const bar=document.getElementById('csTqBar');if(!bar)return;const h=bar.querySelector('.tbh');if(!h)return;
+  const old=h.querySelector('.tbs.semtq');if(old)old.remove();
+  let l=[];try{l=lotesSemTanque().filter(b=>b.origem!=='saldo');}catch(e){}
+  if(!l.length)return;
+  const sp=h.querySelector('.sp');const s=document.createElement('span');s.className='tbs semtq';
+  s.title=l.map(b=>b.produto+(b.lote?' · lote '+b.lote:'')).join('\n');
+  s.innerHTML=`<i>${l.length}</i>${l.length===1?'lote sem tanque · '+escAttr(l[0].produto)+(l[0].lote?' · lote '+escAttr(l[0].lote):''):'lotes sem tanque · escolher'}`;
+  s.onclick=ev=>{ev.stopPropagation();try{ABA_LOTE='cert';}catch(e){}abrirLote(l[0]);};
+  h.insertBefore(s,sp||null);
+}catch(e){}}
+try{const _tb439=csTqBar;csTqBar=function(){const r=_tb439.apply(this,arguments);csSeloSemTq();return r;};}catch(e){}
+/* (5) no modal: escolher o tanque */
+try{const _al439b=abrirLote;abrirLote=function(b){
+  const r=_al439b.apply(this,arguments);
+  try{
+    if(b&&!b.tanque&&b.origem!=='saldo'&&podeEditar('tanques')&&M('mB')&&!M('csEscTq')){
+      const tqs=(typeof TANQUES!=='undefined'?TANQUES:[]).filter(t=>t&&t.id&&!t.pul&&t.ativo!==false);
+      M('mB').insertAdjacentHTML('afterbegin',`<div id="csEscTq"><b>Este lote está sem tanque.</b> Escolha onde ele está para poder liberar:
+        <select id="csEscTqS"><option value="">— tanque —</option>${tqs.map(t=>`<option>${escAttr(t.id)}</option>`).join('')}</select>
+        <button class="btn sm" id="csEscTqB">Colocar no tanque</button></div>`);
+      M('csEscTqB').onclick=()=>{
+        const v=M('csEscTqS').value;if(!v){toast('Escolha o tanque.',true);return;}
+        (b.ordens||[]).forEach(o=>{const x=ORDENS.find(y=>y.id===o.id);if(x){x.tanque=v;try{registrar(x,'Tanque escolhido',null,`a programar → ${v}`);}catch(e){}}});
+        agendarSalvar();fecharModal();render();
+        setTimeout(()=>{try{const nb=bateladas(b.data).find(y=>y.tanque===v&&y.produto===b.produto&&(y.ordens||[]).some(o=>(b.ordens||[]).some(p=>p.id===o.id)));
+          if(nb){ABA_LOTE='cert';abrirLote(nb);}toast(`Lote no ${v}. Agora dá para liberar.`);}catch(e){}},200);
+      };
+    }
+  }catch(e){}
+  return r;};}catch(e){}
 
 </script>
 </body>
