@@ -1152,8 +1152,9 @@ function telaOrdens(){
   const cont=k=>k==='todas'?base.filter(o=>o.sit!=='can').length:base.filter(o=>o.sit===k).length;
   const s=LST.sort,fn=SORT[s.k]||SORT.num;
   /* padrão: primeiro o que chega de hoje em diante (21, 22, 23…), depois o que já passou, do mais recente para trás */
-  const hj=hojeY(),ordAuto=(a,b)=>{const pa=a.prev||'',pb=b.prev||'',fa=pa>=hj?0:pa?1:2,fb=pb>=hj?0:pb?1:2;
-    if(fa!==fb)return fa-fb;if(pa!==pb)return fa===0?(pa<pb?-1:1):(pa>pb?-1:1);return (+b.num||0)-(+a.num||0);};
+  const ordAuto=(a,b)=>{const ab=o=>['ras','env'].includes(o.sit)?0:1,fa=ab(a),fb=ab(b);
+    if(fa!==fb)return fa-fb;const pa=a.prev||'9999',pb=b.prev||'9999';
+    if(pa!==pb)return fa===0?(pa<pb?-1:1):(pa>pb?-1:1);return (+b.num||0)-(+a.num||0);};
   const lista=base.filter(o=>LST.sit==='todas'?o.sit!=='can':o.sit===LST.sit).sort(s.k==='auto'?ordAuto:(a,b)=>{const x=fn(a),y=fn(b);return (x>y?1:x<y?-1:0)*s.dir;});
   const falhas=ocsComFalha();
   const comps=[...new Set(DB.ocs.map(o=>o.comprador).filter(Boolean))].sort();

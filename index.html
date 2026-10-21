@@ -4055,6 +4055,10 @@ const PRODUTOS=[
   {codigo:'406',descricao:'LIMPEZA PESADA 5L - FD C/4 UN',litragem:5,un_cx:4,tanque:'LIMPEZA PESADA',grupo:'Limpeza pesada',dun:'17898556040027'},
 ];
 const GRUPOS=[...new Set(PRODUTOS.map(p=>p.grupo))];
+/* cor padrão de cada produto mãe, tirada do catálogo (dá para trocar no cadastro do tanque) */
+const CORES_PROD={'ÁGUA SANITÁRIA': '#166534', 'ALVEJANTE SEM CLORO': '#C026D3', 'AMACIANTE AZUL': '#2563EB', 'AMACIANTE ROSA': '#DB2777', 'AMACIANTE ROXO': '#7C3AED', 'AMACIANTE VERDE': '#0F9F6E', 'AMACIANTE TRADICIONAL': '#0EA5E9', 'CLORO GEL': '#1E40AF', 'DESENGORDURANTE': '#EA580C', 'DESINFETANTE EUCALIPTO': '#16A34A', 'DESINFETANTE FLORAL': '#EC4899', 'DESINFETANTE LAVANDA': '#6D28D9', 'DESINFETANTE MARINE': '#1D4ED8', 'DESINFETANTE PINHO': '#92400E', 'LAVA LOUÇAS CLEAR': '#64748B', 'LAVA LOUÇAS LIMÃO': '#15803D', 'LAVA LOUÇAS MAÇÃ': '#DC2626', 'LAVA LOUÇAS NEUTRO': '#CA8A04', 'LAVA ROUPAS GLICERINA': '#D97706', 'LAVA ROUPAS PREMIUM': '#1E3A8A', 'LIMPA CANIL': '#4D7C0F', 'LIMPA VIDROS': '#0284C7', 'LIMPADOR PERFUMADO EUFORIA': '#0F766E', 'LIMPADOR PERFUMADO FELICIDADE': '#E11D48', 'LIMPEZA PESADA': '#475569'};
+function corProd(x){if(!x)return '#475467';const F=typeof FORMULAS!=='undefined'?FORMULAS:{};const tq=[x.produto,x.tanque].find(k=>k&&(F[k]||CORES_PROD[k]));const f=tq?F[tq]:null;return (f&&f.cor)||(tq&&CORES_PROD[tq])||CORES[x.grupo]||'#475467';}
+const csCorTxt=c=>`color-mix(in srgb,${c} 82%,#000)`;
 const CORES={
   'Água sanitária':'#0E7490','Alvejante':'#0891B2','Amaciante':'#7C3AED','Cloro gel':'#4338CA',
   'Desengordurante':'#C2410C','Desinfetante':'#059669','Lava louças':'#DB2777','Lava roupas':'#2563EB',
@@ -4912,10 +4916,11 @@ const ABREV={
   'LIMPADOR PERFUMADO FELICIDADE':'L.P Felicidade',
   'LIMPEZA PESADA':'Limp. Pesada',
 };
-const abrevTq=t=>ABREV[t]||t;
+const abrevTq=t=>String(t||'');   /* v444: nada de abreviação — o nome vai por extenso */
 /* L.R Premium 2L — abreviação do produto + litragem, para caber no bloco */
-const nomeCurto=c=>{const p=typeof c==='object'?c:prodOf(c);
-  return `${abrevTq(p.tanque)} ${fmtLit(p.litragem)}`;};
+const nomeCurto=c=>{const p=(typeof c==='object'?c:prodOf(c))||{};
+  const d=String(p.descricao||'').replace(/\s*[-–]\s*(CX|FD|PC|CT|PT|SC|BD|GL|BB)\b.*$/i,'').trim();
+  return d||`${p.tanque||''} ${fmtLit(p.litragem)}`.trim();};
 const tqOf=i=>TANQUES.find(t=>t.id===i);
 const opOf=i=>OPERADORES.find(o=>o.id===+i)||null;
 const porPin=p=>{const v=String(p||'').trim();
@@ -5479,7 +5484,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v443';const VERSAO_DATA='21/10/2026';
+const VERSAO_APP='v444';const VERSAO_DATA='21/10/2026';
 /* número que aparece na tela: v438 → v4.3.8 (por dentro continua v438, que é o que as versões comparam) */
 const csRotVer=v=>{const d=String(v||'').replace(/\D/g,'');return d.length>=3?'v'+d.slice(0,-2)+'.'+d.slice(-2,-1)+'.'+d.slice(-1):String(v||'');};
 const VERSAO_ROTULO=csRotVer(VERSAO_APP)+' · '+VERSAO_DATA;
@@ -5814,8 +5819,8 @@ function vao(maq,data,de,ate,estreita){
 function cardTurno(x,estreita){
   const o=x.o,p=prodOf(o.codigo);
   const dir=x.t.data<o.data;
-  return `<div class="bat sombra" data-fo="${o.id}" style="--bc:${CORES[p.grupo]}">
-    <div class="bh"><div class="bn"><i class="fam" style="background:${CORES[p.grupo]}"></i>${nomeCurto(p)}</div>
+  return `<div class="bat sombra" data-fo="${o.id}" style="--bc:${corProd(p)}">
+    <div class="bh"><div class="bn"><i class="fam" style="background:${corProd(p)}"></i>${nomeCurto(p)}</div>
       <span class="stq sombraq">${dir
         ?`continua em ${dCurto(o.data)}`
         :`veio de ${dCurto(x.t.data||o.data)}`}</span></div>
@@ -5865,11 +5870,11 @@ function frasesDoCard(o){
 
 function cardFila(o,conf,estreita){
   const p=prodOf(o.codigo),fim=sit(o)==='concluida',atr=atrasada(o);
-  const cor=fim?'#8B93A1':CORES[p.grupo];
+  const cor=fim?'#8B93A1':corProd(p);
   const t=tempoReal(o),dv=desvio(o);
   return `<div class="bat ${fim?'st-concluido':''} ${atr?'atrasada':''} ${conf.has(o.id)?'fora':''}"
     data-fo="${o.id}" style="--bc:${cor}">
-    <div class="bh"><div class="bn"><i class="fam" style="background:${CORES[p.grupo]}"></i>${nomeCurto(p)}</div>
+    <div class="bh"><div class="bn"><i class="fam" style="background:${corProd(p)}"></i>${nomeCurto(p)}</div>
       <span class="stq ${atr?'atrasadaq':sit(o)}">${atr?'Atrasada':ST[sit(o)]}</span></div>
     ${estreita?`<div class="bm">
       <span class="k">${hhmm(o.inicio)}–${hhmm(fimPrev(o))}</span>${
@@ -6014,7 +6019,7 @@ function gradeTanques(){
 const LBL_BAT={aguardando:'Aguarda liberação',liberado:'Liberado',concluido:'Concluído',saldo:'Saldo no tanque'};
 const COR_BAT={aguardando:'#B45309',liberado:'#15803D',concluido:'#8B93A1',saldo:'#6D28D9'};
 function cardBat(b){
-  const cor=COR_BAT[b.status],fam=CORES[b.grupo];
+  const cor=COR_BAT[b.status],fam=corProd(b);
   /* Dois estados no dia a dia: programado e liberado. Saldo continua à parte
      porque é outra natureza — produto que sobrou, não lote do dia. */
   const est=b.origem==='saldo'?'saldo':(b.status==='liberado'||b.status==='concluido'
@@ -6034,7 +6039,7 @@ function cardBat(b){
 
   return `<div class="bat st-${b.status} ${b.excedeCap?'fora':''}"
     draggable="true" data-bat="${b.chave}" style="--bc:${cor}">
-    <div class="bh"><div class="bn"><i class="fam" style="background:${fam}"></i>${abrevTq(b.produto)}</div>
+    <div class="bh"><div class="bn"><i class="fam" style="background:${fam}"></i><span style="color:${csCorTxt(fam)}">${abrevTq(b.produto)}</span></div>
       <span class="stq ${b.status}">${LBL[est]}</span></div>
 
     <div class="tqid">
@@ -15433,7 +15438,7 @@ function gradeCadProd(){
   if(CP.aba==='fab'&&CP.sub==='tq'){
     corpo=`<table class="od2t"><thead><tr><th style="width:34px"></th><th>Código</th><th>Nome</th><th>Un</th><th>Produtos</th><th>Formulação</th></tr></thead><tbody>
     ${tqs.map(t=>{const f=FORMULAS[t]||{};const v=cpVer(t);const fs=cpFilhas(t);
-      return `<tr class="cptq" data-cpt="${escAttr(t)}"><td>${dots('t',t)}</td><td class="m">—</td><td><b>${escAttr(t)}</b></td><td>L</td><td>${fs.length} produto${fs.length===1?'':'s'}</td>
+      return `<tr class="cptq" data-cpt="${escAttr(t)}"><td>${dots('t',t)}</td><td class="m">—</td><td><b style="color:${csCorTxt(corProd({tanque:t,grupo:(cpFilhas(t)[0]||{}).grupo}))}"><i style="display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:7px;background:${corProd({tanque:t,grupo:(cpFilhas(t)[0]||{}).grupo})}"></i>${escAttr(t)}</b></td><td>L</td><td>${fs.length} produto${fs.length===1?'':'s'}</td>
         <td>${(f.mp||[]).length} insumos${v?` · versão ${v.v}`:' · versão 1'}</td></tr>`+
       fs.map(p=>`<tr class="cpfil ${ativoProd(p)?'':'cpina'}" data-cpp="${escAttr(p.codigo)}"><td>${dots('p',p.codigo)}</td><td class="m">${escAttr(p.codigo)}</td><td>└ ${escAttr(p.descricao)}</td><td>${cpEmb(p)}</td><td></td><td><span class="k">nasce no tanque ${escAttr(t)}</span></td></tr>`).join('');}).join('')}</tbody></table>`;
   }else if(CP.aba==='fab'||CP.aba==='todos'){
@@ -19422,7 +19427,7 @@ function colunaTV(maq,data){
   if(fechadas.length)cont.push(`${fechadas.length} concluída${fechadas.length>1?'s':''}`);
   const linha=o=>{
     const p=prodOf(o.codigo),fim=sit(o)==='concluida';
-    return `<div class="tvoc ${fim?'fim':''}" style="--fam:${fim?'#98A1AE':CORES[p.grupo]}">
+    return `<div class="tvoc ${fim?'fim':''}" style="--fam:${fim?'#98A1AE':corProd(p)}">
       <div class="n">${escTV(p.descricao)}${fim?'<span class="selo">Concluída</span>':''}</div>
       <div class="m">Lote ${escTV(o.lote||'—')} · <b>${escTV(o.tanque||'—')}</b> ·
         <b>${nf(o.litros)} L</b> · ${nf(caixasPrev(o))} ${und(o)} ·
@@ -20510,7 +20515,7 @@ function csFaixaDia(){
     const bOps=ops.map(x=>{
       const o=x.o, st=sit(o);
       const p=(()=>{try{return prodOf(o.codigo)||{};}catch(e){return {};}})();
-      const cor=(typeof CORES!=='undefined'&&CORES[p.grupo])||'#475467';
+      const cor=corProd(p)||'#475467';
       const cls=st==='concluida'?'st-fim':st==='producao'?'st-run'
         :st==='preparacao'?'st-set':st==='finalizado'?'st-cont':'st-prog';
       const nome=p.descricao||'';
@@ -20529,7 +20534,7 @@ function csFaixaDia(){
         style="left:${pos(x.de)}%;width:${w}%;--c:${cor}"
         title="OP ${o.id} · ${nome} · ${hhmm(x.de)}–${hhmm(x.ate)}${
           o.fimReal?` · terminou ${o.fimReal}`:''}">${
-        w>9?(o.lote?'L'+o.lote+' ':'')+nome.split(' ').slice(0,2).join(' '):''}</div>`+atraso;
+        w>9?(o.lote?'L'+o.lote+' ':'')+nomeCurto(p):''}</div>`+atraso;
     }).join('');
     /* fora da jornada da linha fica apagado */
     const fora=(a>ji?`<div class="csb fol" style="left:0;width:${pos(a)}%"></div>`:'')
@@ -26118,7 +26123,7 @@ colunaTV=function(maq,data){
   const linha=o=>{const p=prodOf(o.codigo),fim=sit(o)==='concluida';let tag='';
     if(fim){let a=0;try{a=hm(o.fimReal)-fimPrev(o);}catch(e){}tag=a>0?`<span class="selo atr">${a} min de atraso</span>`:'<span class="selo">&#9733; no prazo</span>';}
     else{try{tag=loteLiberado(o)?'<span class="selo lib">tanque liberado</span>':'<span class="selo nlib">tanque não liberado</span>';}catch(e){}}
-    return `<div class="tvoc ${fim?'fim':''}" style="--fam:${fim?'#98A1AE':CORES[p.grupo]}">
+    return `<div class="tvoc ${fim?'fim':''}" style="--fam:${fim?'#98A1AE':corProd(p)}">
       <div class="n">${escTV(p.descricao)}${tag}</div>
       <div class="m">Lote ${escTV(o.lote||'—')} · <b>${escTV(o.tanque||'—')}</b> · <b>${nf(o.litros)} L</b> · ${nf(caixasPrev(o))} ${und(o)} ·
         ${fim?`feito <span class="hr">${escTV(o.iniReal||'')}–${escTV(o.fimReal||'')}</span>`:`previsto <span class="hr">${hhmm(o.inicio)}–${hhmm(fimPrev(o))}</span>`}</div></div>`;};
@@ -26473,7 +26478,7 @@ abrirTanque=function(t,aba){
       c.innerHTML=`<div class="cpgrid" style="grid-template-columns:repeat(4,minmax(0,1fr))">
         <div class="fld" style="grid-column:span 4"><label>Nome do tanque</label><input value="${escAttr(t)}" readonly></div>
         ${cT('enchimento','Tempo de enchimento (min)','do tanque físico')}${cT('limpeza','Tempo de limpeza (min)','-')}${cT('fabricacao','Tempo de preparo (min)','-')}${cT('descanso','Tempo de descanso (min)','-')}</div>
-        <p class="cpleg">É este nome que liga os produtos acabados ao tanque. Os tempos somam na linha do tempo do lote; enchimento em branco usa o do tanque físico (TQ 1, TQ 6…).</p>`;
+        <p class="cpleg">É este nome que liga os produtos acabados ao tanque. Os tempos somam na linha do tempo do lote; enchimento em branco usa o do tanque físico (TQ 1, TQ 6…).</p>${csCorCampo(t)}`;
       c.querySelectorAll('[data-tqt]').forEach(i=>i.onchange=()=>{const v=String(i.value).trim();const n=v===''?null:cpLeNum(v);if(n==null&&i.dataset.tqt==='enchimento')delete tg.enchimento;else tg[i.dataset.tqt]=n==null?0:n;});}
     else if(a==='form'){const soma=mp.reduce((s,m)=>s+(+m.pct||0),0);const vs=FORM_VERS[t];const cap=capDe(tq);
       const agua=Math.max(0,100-soma);
@@ -27281,7 +27286,7 @@ function cs5CardVez(o,conf){
   return `<div class="bat cs5 cs5v${conf&&conf.has&&conf.has(o.id)?' fora':''}" data-fo="${cs5esc(o.id)}" data-csok="1" style="--c5:${E.c}">
     <div class="t5">${ini?`<span class="ini">${cs5esc(ini)}</span>`:''}<span class="sp"></span>${cs5sel(E.t,E.c,true)}${cs5pts(o)}</div>
     <div class="c5" style="margin-top:-4px">${cs5foto(o,104,132)}<div class="d5" style="justify-content:space-between">
-      <div class="n5">${cs5esc(cs5nome(o))}</div>${cs5Chips(o,4)}${cs5Botoes(o)}</div></div>
+      <div class="n5" style="color:${csCorTxt(corProd(prodOf(o.codigo)||{}))}">${cs5esc(cs5nome(o))}</div>${cs5Chips(o,4)}${cs5Botoes(o)}</div></div>
     ${cs5Bloco(o,'vez')}${cs5Trilha(o)}${cs5Avisos(o)}</div>`;
 }
 /* card da fila */
@@ -27291,7 +27296,7 @@ function cs5CardFila(o,conf){
   return `<div class="bat cs5 cs5f${conf&&conf.has&&conf.has(o.id)?' fora':''}" data-fo="${cs5esc(o.id)}" data-csok="1">
     <div class="t5"><span class="sp"></span>${cs5sel('PROGRAMADA','#475569')}${lib?cs5sel('LOTE LIBERADO','#15803D'):cs5sel('LOTE NÃO LIBERADO','#DC2626')}${cs5pts(o)}</div>
     <div class="c5" style="margin-top:-2px">${cs5foto(o,76,104)}<div class="d5">
-      <div class="n5">${cs5esc(cs5nome(o))}</div>${cs5Chips(o,4)}
+      <div class="n5" style="color:${csCorTxt(corProd(prodOf(o.codigo)||{}))}">${cs5esc(cs5nome(o))}</div>${cs5Chips(o,4)}
       <div class="pv5"><span>PREVISTO</span><b>${cs5hm(csPrevIni(o))} → ${cs5hm(T.fp)}</b></div></div></div>${cs5Avisos(o)}</div>`;
 }
 /* card concluído */
@@ -30236,7 +30241,7 @@ try{csNucleo.versao='v436';}catch(e){}
     const atual=seq.find(x=>x.status!=='concluido');
     const s=cs8Sit(b);const maqs=maqsDe(b).join(', ')||'—';
     const pronto=b.prontoAte<1e9?hhmm(b.prontoAte):'—';
-    const fam=(typeof CORES!=='undefined'&&CORES[b.grupo])||'#94A3B8';
+    const fam=corProd(b)||'#94A3B8';
     const base=`draggable="true" data-bat="${b.chave}" style="--bc:${(typeof COR_BAT!=='undefined'&&COR_BAT[b.status])||'#64748B'}"`;
     if(b.status==='concluido'){
       return `<div class="bat cs8 cs8-conc st-concluido" ${base}><em>${b.liberadoEm||pronto}</em>
@@ -30244,7 +30249,7 @@ try{csNucleo.versao='v436';}catch(e){}
     }
     if(atual&&atual.chave!==b.chave){
       return `<div class="bat cs8 cs8-fila st-${b.status}" ${base}><em>${pronto}</em>
-        <div class="cs8-tx"><b><i class="fam" style="background:${fam}"></i>${abrevTq(b.produto)}</b><small>${b.lote?'lote '+b.lote+' · ':''}${nf(b.volume)} L · ${maqs}</small></div>
+        <div class="cs8-tx"><b><i class="fam" style="background:${fam}"></i><span style="color:${csCorTxt(fam)}">${abrevTq(b.produto)}</span></b><small>${b.lote?'lote '+b.lote+' · ':''}${nf(b.volume)} L · ${maqs}</small></div>
         ${s.c==='cz2'?'':`<span class="cs8-mini cs8-${s.c}">${s.t}</span>`}</div>`;
     }
     /* o lote da vez */
@@ -30259,7 +30264,7 @@ try{csNucleo.versao='v436';}catch(e){}
     let ate=pronto;if(envO){try{ate=hhmm(fimPrev(envO));}catch(e){}}
     return `<div class="bat cs8 cs8-cur st-${b.status}" ${base}>
       <div class="cs8-st cs8-${s.c}"><span>${s.t}</span><em>${s.x}</em></div>
-      <div class="cs8-pr"><i class="fam" style="background:${fam}"></i>${abrevTq(b.produto)}</div>
+      <div class="cs8-pr"><i class="fam" style="background:${fam}"></i><span style="color:${csCorTxt(fam)}">${abrevTq(b.produto)}</span></div>
       <div class="cs8-sub">${b.lote?'lote '+b.lote:'lote a gerar'}</div>
       <div class="cs8-ti"><div><span>Volume (L)</span><b>${nf(b.volume)}</b></div>
         <div class="cs8-dest${pisca?' cs8-pisca':''}"><span>${env?'Envase até':'Pronto até'}</span><b>${env?ate:pronto}</b></div>
@@ -31415,11 +31420,11 @@ try{M('novoSaldo').onclick=()=>lancarSaldo();M('novoSaldo').textContent='+ Saldo
 try{const _cb413=cardBat;cardBat=function(b){
   if(!b||b.origem!=='saldo'||!b.tanque)return _cb413.apply(this,arguments);
   const sd=SALDOS.find(x=>x.id===b.saldoId)||{};
-  const dias=csSaldoDias(sd);const fam=(typeof CORES!=='undefined'&&CORES[b.grupo])||'#94A3B8';
+  const dias=csSaldoDias(sd);const fam=corProd(b)||'#94A3B8';
   const mot=sd.motivo?[sd.motivo.grupo,sd.motivo.mot].filter(Boolean).join(' | '):'';
   return `<div class="bat cs8 cs8-cur cs-sld" data-csaldo="${escAttr(b.saldoId)}">
     <div class="cs8-st" style="background:#6D28D9"><span>Saldo de lote</span><em>${sd.data?dCurto(sd.data):''}</em></div>
-    <div class="cs8-pr"><i class="fam" style="background:${fam}"></i>${abrevTq(b.produto)}</div>
+    <div class="cs8-pr"><i class="fam" style="background:${fam}"></i><span style="color:${csCorTxt(fam)}">${abrevTq(b.produto)}</span></div>
     <div class="cs8-sub">${sd.lote?'lote '+escAttr(sd.lote):'lote —'}${mot?' · '+escAttr(mot):''}</div>
     <div class="cs8-ti"><div><span>Livre (L)</span><b>${nf(b.disponivel)}</b></div>
       <div><span>Parado há</span><b>${dias==null?'—':dias+(dias===1?' dia':' dias')}</b></div>
@@ -32105,6 +32110,289 @@ try{const _mv442=moverOC;moverOC=function(o,maq,data,inicio){
   },()=>{CS_HE_PASSA=true;try{_mv442.apply(self,a);}finally{CS_HE_PASSA=false;}});
 };}catch(e){}
 try{csNucleo.versao='v442';}catch(e){}
+
+</script>
+<script>
+/* ===================== v4.4.4 · PROGRAMAÇÃO DO DIA EM PAINEL VERTICAL =====================
+   O botão "Programação" (Envase e Tanques) não abre mais uma página: abre um painel que nasce do próprio
+   botão, por cima da tela, sem empurrar nada. Fecha no ✕, no Esc ou clicando fora. ⤢ maximiza.
+   - Três máquinas lado a lado (uma coluna de horas à esquerda), cartão de cada máquina em cima da sua coluna.
+   - SÓ LEITURA: passar o mouse (ou tocar / focar) mostra os dados da OP; clicar não faz nada.
+   - O intervalo (cadastro de pausas da máquina) fica POR CIMA, em amarelo hachurado; a OP que atravessa o
+     almoço continua um bloco só por baixo da faixa, e o fim já soma a pausa (mesma conta da programação).
+   - Concluída: cinza. Em produção: cor da família forte. Futura: cor da família suave.
+   - Linha vermelha do agora centralizada ao abrir e acompanhando; rolou à mão, aparece "Centralizar agora".
+   - Cartão: aproveitamento = programado ÷ disponível (jornada do dia − intervalos), pode passar de 100%.
+     Litros livres só como estimativa pela média L/min das OPs do dia; sem base, mostra "—". */
+document.head.insertAdjacentHTML('beforeend',`<style>
+#csPv{position:fixed;z-index:720;background:#fff;border:1px solid #E4E7EC;border-radius:16px;box-shadow:0 24px 64px rgba(16,24,40,.22);
+  display:flex;flex-direction:column;overflow:hidden;font-family:Inter,system-ui,sans-serif;transform-origin:top right;
+  transition:transform .18s ease,opacity .18s ease;opacity:0;transform:scale(.6);pointer-events:none}
+#csPv.on{opacity:1;transform:scale(1);pointer-events:auto}
+#csPv.max{inset:12px!important;width:auto!important;height:auto!important}
+#csPvVeu{position:fixed;inset:0;z-index:719;background:rgba(16,24,40,.12);display:none}#csPvVeu.on{display:block}
+#csPv .pv-cab{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid #EEF0F3;flex:none}
+#csPv .pv-cab h2{margin:0;font-size:16px;font-weight:700;color:#101828}
+#csPv .pv-dt{display:inline-flex;align-items:center;gap:4px;border:1px solid #E4E7EC;border-radius:10px;padding:3px 4px;margin-left:6px}
+#csPv .pv-dt b{font-size:13px;min-width:170px;text-align:center;font-weight:600;color:#344054}
+#csPv button{font-family:inherit;cursor:pointer}
+#csPv .pv-nv{width:28px;height:28px;border:0;background:#F2F4F7;border-radius:7px;font-size:15px}
+#csPv .pv-bt{height:30px;border:1px solid #D0D5DD;background:#fff;border-radius:8px;padding:0 10px;font-size:12.5px;font-weight:600;color:#344054}
+#csPv .pv-bt.cen{border-color:#FCA5A5;color:#B91C1C;background:#FEF2F2}
+#csPv .pv-ic{width:32px;height:32px;border:1px solid #E4E7EC;background:#fff;border-radius:8px;font-size:15px;color:#475467}
+#csPv .pv-ic:hover,#csPv .pv-bt:hover{border-color:#98A2B3}
+#csPv .pv-sp{flex:1}
+#csPv .pv-grid{display:grid;grid-template-columns:56px repeat(var(--n),minmax(210px,1fr));min-width:calc(56px + var(--n)*210px)}
+#csPv .pv-top{flex:none;overflow:hidden;border-bottom:1px solid #EEF0F3;background:#FCFCFD}
+#csPv .pv-top .pv-grid{padding:10px 12px 10px 0}
+#csPv .pv-card{margin-left:10px;border:1px solid #E4E7EC;border-radius:12px;padding:10px 12px;background:#fff}
+#csPv .pv-card .t1{display:flex;align-items:baseline;gap:8px}
+#csPv .pv-card .mq{font-size:14px;font-weight:800;color:#101828}
+#csPv .pv-card .ap{margin-left:auto;font-size:22px;font-weight:800;font-variant-numeric:tabular-nums;color:#101828;line-height:1}
+#csPv .pv-card .ap small{font-size:11px;font-weight:600;color:#667085;margin-left:4px}
+#csPv .pv-card .bar{height:6px;border-radius:99px;background:#EEF0F3;margin:8px 0;overflow:hidden}
+#csPv .pv-card .bar i{display:block;height:100%;border-radius:99px;background:#16A34A}
+#csPv .pv-card.exc .bar i{background:#DC2626}#csPv .pv-card.alto .bar i{background:#D97706}
+#csPv .pv-card .ls{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;font-size:11px;color:#667085}
+#csPv .pv-card .ls b{display:block;font-size:13px;color:#101828;font-variant-numeric:tabular-nums}
+#csPv .pv-card .ls .ex b{color:#B91C1C}
+#csPv .pv-card .ls i{font-style:normal;font-size:9.5px;color:#98A2B3;text-transform:uppercase;letter-spacing:.05em}
+#csPv .pv-card .rd{margin-top:8px;padding-top:7px;border-top:1px solid #F2F4F7;font-size:11.5px;color:#475467;font-variant-numeric:tabular-nums}
+#csPv .pv-card .rd b{color:#101828}#csPv .pv-card .rd .ex{color:#B91C1C;font-weight:700}
+#csPv .pv-card.fol{display:flex;align-items:center;justify-content:center;color:#98A2B3;font-size:12.5px;min-height:110px}
+#csPv .pv-corpo{flex:1;overflow:auto;position:relative;scrollbar-width:thin}
+#csPv .pv-corpo .pv-grid{padding:0 12px 16px 0;position:relative}
+#csPv .pv-hrs{position:relative}
+#csPv .pv-hrs span{position:absolute;right:8px;transform:translateY(-50%);font:600 11.5px ui-monospace,Menlo,monospace;color:#667085}
+#csPv .pv-col{position:relative;margin-left:10px;border-left:1px solid #EEF0F3;border-right:1px solid #EEF0F3;background:#fff}
+#csPv .pv-col .gl{position:absolute;left:0;right:0;border-top:1px solid #F2F4F7}
+#csPv .pv-col .gl.h{border-top-color:#E4E7EC}
+#csPv .pv-col .fora{position:absolute;left:0;right:0;background:repeating-linear-gradient(45deg,#F9FAFB 0 6px,#F2F4F7 6px 12px);z-index:1}
+#csPv .pv-col .int{position:absolute;left:-1px;right:-1px;z-index:6;pointer-events:none;display:flex;align-items:center;justify-content:center;
+  background:repeating-linear-gradient(-45deg,rgba(253,230,138,.92) 0 7px,rgba(254,243,199,.92) 7px 14px);border-top:1px solid #F59E0B;border-bottom:1px solid #F59E0B}
+#csPv .pv-col .int span{font-size:10.5px;font-weight:800;letter-spacing:.06em;color:#92400E;background:rgba(255,251,235,.9);padding:2px 8px;border-radius:99px}
+#csPv .op{position:absolute;left:6px;right:6px;z-index:3;border-radius:9px;padding:5px 9px;box-sizing:border-box;overflow:hidden;
+  background:color-mix(in srgb,var(--c) 16%,#fff);border:1px solid color-mix(in srgb,var(--c) 35%,#fff);border-left:5px solid var(--c);outline:0;cursor:default}
+#csPv .op.run{background:color-mix(in srgb,var(--c) 34%,#fff);border-color:var(--c);box-shadow:0 2px 8px color-mix(in srgb,var(--c) 30%,transparent)}
+#csPv .op.fim{background:#F2F4F7;border-color:#D0D5DD;border-left-color:#98A2B3}
+#csPv .op.fim .nm,#csPv .op.fim .hr{color:#475467}
+#csPv .op:focus-visible,#csPv .op:hover{box-shadow:0 0 0 2px color-mix(in srgb,var(--c) 55%,#fff)}
+#csPv .op.fim:hover,#csPv .op.fim:focus-visible{box-shadow:0 0 0 2px #D0D5DD}
+#csPv .op .nm{font-size:12px;font-weight:700;color:#101828;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.25}
+#csPv .op .hr{font:600 11px ui-monospace,Menlo,monospace;color:#475467;white-space:nowrap}
+#csPv .op .st{position:absolute;top:5px;right:7px;font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;padding:1px 6px;border-radius:99px;background:#fff;color:#475467}
+#csPv .op.run .st{background:#DC2626;color:#fff}
+#csPv .op.atr{border-bottom:3px solid #DC2626}
+#csPv .atr2{position:absolute;left:6px;right:6px;z-index:2;border-radius:0 0 9px 9px;background:repeating-linear-gradient(45deg,#FEE2E2 0 6px,#FECACA 6px 12px);border:1px dashed #F87171;border-top:0;display:flex;align-items:flex-end;justify-content:center;padding-bottom:4px;box-sizing:border-box}
+#csPv .atr2 span{font-size:10.5px;font-weight:700;color:#B91C1C;background:#fff;border-radius:99px;padding:1px 7px}
+#csPv .agora{position:absolute;left:56px;right:12px;z-index:8;border-top:2px solid #DC2626;pointer-events:none}
+#csPv .agora b{position:absolute;left:-52px;top:-10px;background:#DC2626;color:#fff;font:700 10.5px ui-monospace,Menlo,monospace;padding:2px 5px;border-radius:5px}
+#csPv .pv-vz{padding:40px;text-align:center;color:#667085;font-size:13.5px}
+#csPv .pv-leg{flex:none;display:flex;gap:14px;flex-wrap:wrap;align-items:center;padding:8px 16px;border-top:1px solid #EEF0F3;font-size:11.5px;color:#667085}
+#csPv .pv-leg span{display:inline-flex;gap:6px;align-items:center}#csPv .pv-leg i{width:16px;height:11px;border-radius:3px;display:inline-block}
+#csPvTip{position:fixed;z-index:730;background:#101828;color:#fff;border-radius:10px;padding:10px 12px;font:12px/1.5 Inter,system-ui,sans-serif;pointer-events:none;
+  max-width:300px;box-shadow:0 10px 30px rgba(0,0,0,.25);display:none}
+#csPvTip b{font-size:13px}#csPvTip .k{color:#98A2B3}#csPvTip .p{color:#FCD34D}
+@media (max-width:820px){#csPv .pv-dt b{min-width:120px}}
+</style>`);
+let CS_PV_ON=false,CS_PV_SEGUE=true,CS_PV_MAX=false,CS_PV_AUTO=false;
+const CS_PV_PX=1.6;   /* pixels por minuto */
+const csPvDm=m=>{m=Math.max(0,Math.round(m));return Math.floor(m/60)+'h'+String(m%60).padStart(2,'0');};
+const csPvL=v=>nf(Math.round(v))+' L';
+/* une intervalos sobrepostos e tira as pausas: minutos que de fato contam */
+function csPvUniao(iv){const s=iv.filter(x=>x[1]>x[0]).sort((a,b)=>a[0]-b[0]);const r=[];s.forEach(x=>{const l=r[r.length-1];if(l&&x[0]<=l[1])l[1]=Math.max(l[1],x[1]);else r.push([x[0],x[1]]);});return r;}
+function csPvMenos(iv,ps){let r=iv.map(x=>x.slice());ps.forEach(([a,b])=>{r=r.flatMap(([x,y])=>{if(b<=x||a>=y)return [[x,y]];const o=[];if(a>x)o.push([x,a]);if(b<y)o.push([b,y]);return o;});});return r;}
+const csPvSoma=iv=>iv.reduce((s,x)=>s+(x[1]-x[0]),0);
+/* os números de uma máquina num dia — separados da tela */
+function csPvMaq(m,data){
+  let j=null;try{j=jornDia(m,data);}catch(e){j=null;}
+  const ps=((typeof PAUSAS!=='undefined'&&PAUSAS[m])||[]).map(p=>[hm(p.de),hm(p.ate)]).filter(x=>x[1]>x[0]);
+  const ops=ORDENS.filter(o=>o.maq===m&&o.data===data&&naGrade(o)).map(o=>{
+    let de=null,ate=null;
+    try{de=(o.iniReal||o.envIni)?hm(o.iniReal||o.envIni):csPrevIni(o);}catch(e){de=+o.inicio;}
+    if(de==null||isNaN(de))de=+o.inicio;
+    try{ate=o.fimReal?hm(o.fimReal):csFimComPausa(m,de,total(o));}catch(e){ate=null;}
+    if(ate==null||isNaN(ate)||ate<=de)ate=de+(+o.setup||0)+60;
+    return {o,de,ate,st:sit(o)};}).filter(x=>!isNaN(x.de)).sort((a,b)=>a.de-b.de);
+  const disp=j?csPvSoma(csPvMenos([[j[0],j[1]]],ps)):0;
+  const prog=csPvSoma(csPvMenos(csPvUniao(ops.map(x=>[x.de,x.ate])),ps));
+  const litros=ops.reduce((s,x)=>s+(+x.o.litros||0),0);
+  /* velocidade pelo cadastro (Tempos de envase: minutos por lote padrão, por produto e máquina).
+     O que sobra do dia é medido no ritmo do último produto programado na máquina. */
+  const ritmo=o=>{try{const tm=tempoDe(o.codigo,m),lp=lotePadrao(o.codigo)||3800;return tm>0?lp/tm:null;}catch(e){return null;}};
+  const ult=ops.slice().reverse().find(x=>ritmo(x.o));
+  const taxa=ult?ritmo(ult.o):null;
+  const base=ult?{nome:((()=>{try{return prodOf(ult.o.codigo)||{};}catch(e){return {};}})().descricao||ult.o.codigo),tm:tempoDe(ult.o.codigo,m),lp:lotePadrao(ult.o.codigo)||3800}:null;
+  return {m,j,ps,ops,disp,prog,litros,taxa,base};
+}
+function csPvCard(r){
+  if(!r.j)return `<div class="pv-card fol"><div><div class="mq" style="text-align:center;color:#475467">${escAttr(r.m)}</div>não trabalha neste dia</div></div>`;
+  const ap=r.disp>0?r.prog/r.disp*100:0,livre=Math.max(0,r.disp-r.prog),exc=Math.max(0,r.prog-r.disp);
+  const sobraL=r.taxa?r.taxa*(exc?exc:livre):null,capL=r.taxa?(exc?r.litros-sobraL:r.litros+sobraL):null;
+  const ttE=r.base?`No ritmo de ${escAttr(r.base.nome)}: ${nf(r.base.lp)} L em ${csPvDm(r.base.tm)} (Cadastros › Tempos de envase), sem contar novo setup`:'';
+  return `<div class="pv-card ${exc?'exc':ap>=90?'alto':''}"><div class="t1"><span class="mq">${escAttr(r.m)}</span>
+    <span class="ap">${nf1?nf1(ap):Math.round(ap)}%<small>de aproveitamento</small></span></div>
+    <div class="bar"><i style="width:${Math.min(100,ap)}%"></i></div>
+    <div class="ls"><div><i>Programados</i><b>${csPvL(r.litros)}</b></div>
+      <div title="${r.taxa?ttE:'Cadastre velocidades por máquina e produto'}"><i>Capacidade do dia</i><b>${capL!=null?'≈ '+csPvL(capL):'—'}</b></div>
+      <div class="${exc?'ex':''}" title="${r.taxa?ttE:'Cadastre velocidades por máquina e produto'}"><i>${exc?'Excedente':'Ainda cabe'}</i><b>${sobraL!=null?'≈ '+csPvL(sobraL):'—'}</b></div></div>
+    <div class="rd">Disponível <b>${csPvDm(r.disp)}</b> · Programado <b>${csPvDm(r.prog)}</b> · ${exc?`<span class="ex">Excedente ${csPvDm(exc)}</span>`:`Livre <b>${csPvDm(livre)}</b>`}</div></div>`;
+}
+const CS_PV_ST={concluida:'Concluída',producao:'Em produção',preparacao:'Em setup',finalizado:'Envase finalizado · a apontar',programada:'Programada'};
+function csPvPinta(){
+  const p=document.getElementById('csPv');if(!p||!CS_PV_ON)return;
+  const data=ymd(S.ref instanceof Date?S.ref:new Date()),hoje=data===ymd(new Date());
+  const agora=hoje?(typeof csAgoraMin==='function'?csAgoraMin():new Date().getHours()*60+new Date().getMinutes()):null;
+  p.querySelector('.pv-dt b').textContent=new Date(data+'T00:00:00').toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long'});
+  const R=MAQUINAS.map(m=>csPvMaq(m,data));
+  let ini=24*60,fim=0;
+  R.forEach(r=>{if(r.j){ini=Math.min(ini,r.j[0]);fim=Math.max(fim,r.j[1]);}r.ops.forEach(x=>{ini=Math.min(ini,x.de);fim=Math.max(fim,x.ate);});});
+  const top=p.querySelector('.pv-top'),corpo=p.querySelector('.pv-corpo');
+  p.style.setProperty('--n',MAQUINAS.length);
+  top.innerHTML=`<div class="pv-grid"><div></div>${R.map(csPvCard).join('')}</div>`;
+  if(!(fim>ini)){corpo.innerHTML='<div class="pv-vz">Nenhuma máquina trabalha neste dia.</div>';return;}
+  ini=Math.floor(ini/60)*60;fim=Math.ceil(fim/60)*60;
+  const y=t=>(t-ini)*CS_PV_PX,H=(fim-ini)*CS_PV_PX;
+  let hrs='',gl='';
+  for(let t=ini;t<=fim;t+=30){if(t%60===0)hrs+=`<span style="top:${y(t)}px">${hhmm(t)}</span>`;gl+=`<div class="gl ${t%60===0?'h':''}" style="top:${y(t)}px"></div>`;}
+  const cols=R.map(r=>{
+    if(!r.j)return `<div class="pv-col"><div class="fora" style="top:0;height:${H}px"></div>${gl}</div>`;
+    const fora=(r.j[0]>ini?`<div class="fora" style="top:0;height:${y(r.j[0])}px"></div>`:'')+(r.j[1]<fim?`<div class="fora" style="top:${y(r.j[1])}px;height:${H-y(r.j[1])}px"></div>`:'');
+    const ints=r.ps.map(([a,b])=>`<div class="int" style="top:${y(a)}px;height:${(b-a)*CS_PV_PX}px"><span>INTERVALO · ${hhmm(a)}–${hhmm(b)}</span></div>`).join('');
+    const ops=r.ops.map(x=>{const o=x.o,pr=(()=>{try{return prodOf(o.codigo)||{};}catch(e){return {};}})();
+      const cor=corProd(pr),h=Math.max(22,(x.ate-x.de)*CS_PV_PX-2);
+      const cls=x.st==='concluida'?'fim':['producao','preparacao'].includes(x.st)?'run':'';
+      const atr=hoje&&!o.fimReal&&agora>x.ate+5;
+      const nome=pr.descricao||o.codigo||'';
+      const cauda=atr&&['producao','preparacao','finalizado'].includes(x.st)?`<div class="atr2" style="top:${y(x.ate)}px;height:${Math.max(4,(Math.min(agora,fim)-x.ate)*CS_PV_PX)}px" title="Passou ${csPvDm(agora-x.ate)} do previsto"><span>+${csPvDm(agora-x.ate)} além do previsto</span></div>`:'';
+      return cauda+`<div class="op ${cls} ${atr?'atr':''}" tabindex="0" data-pv="${escAttr(o.id)}" data-de="${x.de}" data-ate="${x.ate}" style="top:${y(x.de)+1}px;height:${h}px;--c:${cor}">
+        ${h>=38&&cls==='run'?`<span class="st">${x.st==='preparacao'?'setup':'agora'}</span>`:''}
+        <div class="nm">${escAttr(nome)}</div>${h>=34?`<div class="hr">${hhmm(x.de)}–${hhmm(x.ate)}${h>=50&&o.lote?' · L'+escAttr(o.lote):''}</div>`:''}</div>`;}).join('');
+    return `<div class="pv-col" style="height:${H}px">${gl}${fora}${ops}${ints}</div>`;}).join('');
+  const ag=agora!=null&&agora>=ini&&agora<=fim?`<div class="agora" style="top:${y(agora)}px"><b>${hhmm(agora)}</b></div>`:'';
+  CS_PV_AUTO=true;const st0=corpo.scrollTop,sl0=corpo.scrollLeft;
+  corpo.innerHTML=`<div class="pv-grid" style="height:${H+16}px"><div class="pv-hrs">${hrs}</div>${cols}${ag}</div>`;
+  corpo.dataset.y0=ini;
+  /* a rolagem horizontal do corpo leva os cartões junto */
+  corpo.onscroll=()=>{csPvTip(null);top.scrollLeft=corpo.scrollLeft;if(!CS_PV_AUTO&&CS_PV_SEGUE){CS_PV_SEGUE=false;csPvBotoes();}};
+  corpo.scrollLeft=sl0;top.scrollLeft=sl0;
+  if(hoje&&CS_PV_SEGUE&&agora!=null)csPvCentra();else corpo.scrollTop=st0;
+  setTimeout(()=>{CS_PV_AUTO=false;},120);
+  csPvBotoes();
+  /* informações: passar o mouse, focar ou tocar — clicar não faz nada */
+  corpo.querySelectorAll('.op').forEach(el=>{
+    el.onmouseenter=el.onfocus=()=>csPvTip(el);el.onmouseleave=el.onblur=()=>csPvTip(null);
+    el.onclick=ev=>{ev.preventDefault();ev.stopPropagation();csPvTip(el);};});
+}
+function csPvCentra(){
+  const p=document.getElementById('csPv');if(!p)return;const corpo=p.querySelector('.pv-corpo'),ag=corpo.querySelector('.agora');
+  if(!ag)return;CS_PV_AUTO=true;corpo.scrollTop=Math.max(0,ag.offsetTop-corpo.clientHeight/2);setTimeout(()=>{CS_PV_AUTO=false;},120);
+}
+function csPvBotoes(){
+  const p=document.getElementById('csPv');if(!p)return;const b=p.querySelector('.cen');
+  const hoje=ymd(S.ref instanceof Date?S.ref:new Date())===ymd(new Date());
+  b.hidden=!hoje||CS_PV_SEGUE;
+}
+function csPvTip(el){
+  let t=document.getElementById('csPvTip');if(!t){t=document.createElement('div');t.id='csPvTip';document.body.appendChild(t);}
+  if(!el){t.style.display='none';return;}
+  const o=ORDENS.find(x=>String(x.id)===el.dataset.pv);if(!o){t.style.display='none';return;}
+  const pr=(()=>{try{return prodOf(o.codigo)||{};}catch(e){return {};}})(),de=+el.dataset.de,ate=+el.dataset.ate,st=sit(o);
+  const ps=((typeof PAUSAS!=='undefined'&&PAUSAS[o.maq])||[]).map(p=>[hm(p.de),hm(p.ate)]).filter(x=>x[1]>x[0]&&x[0]<ate&&x[1]>de);
+  t.innerHTML=`<b>${escAttr(pr.descricao||o.codigo||'')}</b><br><span class="k">OP</span> ${escAttr(typeof rotuloOP==='function'?rotuloOP(o):o.id)} · <span class="k">Lote</span> ${escAttr(o.lote||'—')}<br>
+    <span class="k">Início</span> ${hhmm(de)}${o.iniReal?' (real)':''} · <span class="k">Fim</span> ${hhmm(ate)}${o.fimReal?' (real)':' (previsto)'}<br>
+    <span class="k">Situação</span> ${CS_PV_ST[st]||st}${o.litros?` · ${nf(+o.litros)} L`:''}${o.tanque?` · ${escAttr(o.tanque)}`:''}
+    ${ps.length?`<br><span class="p">Pausa ${ps.map(([a,b])=>hhmm(a)+'–'+hhmm(b)).join(', ')} · produção parada, o fim já soma o intervalo</span>`:''}`;
+  t.style.display='block';const r=el.getBoundingClientRect();
+  let x=r.right+10,yy=r.top;if(x+300>innerWidth)x=Math.max(8,r.left-310);if(yy+t.offsetHeight>innerHeight-8)yy=innerHeight-8-t.offsetHeight;
+  t.style.left=x+'px';t.style.top=Math.max(8,yy)+'px';
+}
+function csPvPosiciona(){
+  const p=document.getElementById('csPv');if(!p||CS_PV_MAX)return;
+  const b=document.getElementById('csProgBtn'),r=b?b.getBoundingClientRect():{right:innerWidth-16,bottom:70};
+  const w=Math.min(1180,innerWidth-24),top=Math.min(r.bottom+8,innerHeight-200);
+  const right=Math.max(12,innerWidth-r.right);
+  p.style.width=w+'px';p.style.height=Math.max(320,innerHeight-top-14)+'px';p.style.top=top+'px';
+  p.style.right=Math.min(right,innerWidth-w-12)+'px';p.style.left='auto';
+}
+function csPvAbre(){
+  let p=document.getElementById('csPv');
+  if(!p){p=document.createElement('div');p.id='csPv';p.setAttribute('role','dialog');p.setAttribute('aria-modal','true');p.setAttribute('aria-label','Programação do dia');
+    p.innerHTML=`<div class="pv-cab"><h2>Programação do dia</h2>
+      <span class="pv-dt"><button type="button" class="pv-nv" data-d="-1" aria-label="Dia anterior">‹</button><b></b><button type="button" class="pv-nv" data-d="1" aria-label="Próximo dia">›</button></span>
+      <button type="button" class="pv-bt hj">Hoje</button><button type="button" class="pv-bt cen" hidden>● Centralizar agora</button>
+      <span class="pv-sp"></span><span style="font-size:11.5px;color:#98A2B3">só consulta · passe o mouse na OP</span>
+      <button type="button" class="pv-ic mx" title="Maximizar" aria-label="Maximizar">⤢</button><button type="button" class="pv-ic x" title="Fechar (Esc)" aria-label="Fechar">✕</button></div>
+      <div class="pv-top"></div><div class="pv-corpo" tabindex="-1"></div>
+      <div class="pv-leg"><span><i style="background:color-mix(in srgb,#2563EB 34%,#fff);border-left:4px solid #2563EB"></i>em produção</span>
+        <span><i style="background:color-mix(in srgb,#2563EB 16%,#fff);border-left:4px solid #2563EB"></i>programada</span>
+        <span><i style="background:#F2F4F7;border-left:4px solid #98A2B3"></i>concluída</span>
+        <span><i style="background:repeating-linear-gradient(-45deg,#FDE68A 0 3px,#FEF3C7 3px 6px)"></i>intervalo</span>
+        <span><i style="background:repeating-linear-gradient(45deg,#F9FAFB 0 3px,#E4E7EC 3px 6px)"></i>fora da jornada</span>
+        <span><i style="background:#fff;border-bottom:3px solid #DC2626"></i>passou do previsto</span>
+        <span style="margin-left:auto">a cor é a do produto (cadastro do tanque)</span></div>`;
+    document.body.appendChild(p);
+    const v=document.createElement('div');v.id='csPvVeu';v.onclick=csPvFecha;document.body.appendChild(v);
+    p.querySelectorAll('.pv-nv').forEach(b=>b.onclick=()=>{const d=S.ref instanceof Date?new Date(S.ref):new Date();d.setDate(d.getDate()+(+b.dataset.d));S.ref=d;CS_PV_SEGUE=true;render();});
+    p.querySelector('.hj').onclick=()=>{S.ref=new Date();CS_PV_SEGUE=true;render();};
+    p.querySelector('.cen').onclick=()=>{CS_PV_SEGUE=true;csPvCentra();csPvBotoes();};
+    p.querySelector('.x').onclick=csPvFecha;
+    p.querySelector('.mx').onclick=()=>{csPvTip(null);CS_PV_MAX=!CS_PV_MAX;p.classList.toggle('max',CS_PV_MAX);p.querySelector('.mx').textContent=CS_PV_MAX?'⤡':'⤢';
+      p.querySelector('.mx').title=CS_PV_MAX?'Restaurar':'Maximizar';if(!CS_PV_MAX)csPvPosiciona();setTimeout(()=>{if(CS_PV_SEGUE)csPvCentra();},50);};
+    window.addEventListener('resize',()=>{if(CS_PV_ON)csPvPosiciona();});
+  }
+  CS_PV_ON=true;CS_PV_SEGUE=true;csPvPosiciona();
+  document.getElementById('csPvVeu').classList.add('on');
+  requestAnimationFrame(()=>p.classList.add('on'));
+  csPvPinta();setTimeout(()=>{try{p.querySelector('.x').focus();if(CS_PV_SEGUE)csPvCentra();}catch(e){}},200);
+}
+function csPvFecha(){
+  CS_PV_ON=false;csPvTip(null);
+  const p=document.getElementById('csPv');if(p)p.classList.remove('on');
+  const v=document.getElementById('csPvVeu');if(v)v.classList.remove('on');
+  try{const b=document.getElementById('csProgBtn');if(b)b.focus();}catch(e){}
+}
+document.addEventListener('keydown',ev=>{if(ev.key==='Escape'&&CS_PV_ON&&!document.querySelector('.mask.on')){ev.stopPropagation();csPvFecha();}},true);
+try{const _rd444=render;render=function(){const r=_rd444.apply(this,arguments);try{if(CS_PV_ON)csPvPinta();}catch(e){}return r;};}catch(e){}
+/* a linha do agora anda sozinha */
+setInterval(()=>{try{if(CS_PV_ON)csPvPinta();}catch(e){}},60000);
+/* o botão "Programação" abre o painel (a página antiga fica no código, sem uso) */
+try{csProgAbre=csPvAbre;}catch(e){}
+try{const _bd444=csBarraDia;csBarraDia=function(){const r=_bd444.apply(this,arguments);
+  try{const b=document.getElementById('csProgBtn');if(b){b.onclick=ev=>{ev.stopPropagation();CS_PV_ON?csPvFecha():csPvAbre();};b.title='Programação do dia (painel)';}}catch(e){}
+  return r;};}catch(e){}
+/* ---------- cor do produto (no cadastro do tanque / produto mãe) ---------- */
+const CS_COR_PALETA=['#0E7490','#0891B2','#0284C7','#2563EB','#4338CA','#7C3AED','#9333EA','#C026D3','#DB2777','#E11D48','#DC2626','#EA580C','#C2410C','#B45309','#CA8A04','#65A30D','#16A34A','#059669','#0D9488','#475569'];
+document.head.insertAdjacentHTML('beforeend',`<style>
+.cscor{margin-top:14px;padding:12px 14px;border:1px solid var(--line,#E4E7EC);border-radius:12px}
+.cscor .tt{display:flex;align-items:center;gap:10px;font-size:13px;font-weight:700;margin-bottom:10px}
+.cscor .tt .pv{margin-left:auto;font-size:15px;font-weight:800}
+.cscor .sw{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.cscor .sw button{width:28px;height:28px;border-radius:8px;border:2px solid #fff;box-shadow:0 0 0 1px #D0D5DD;cursor:pointer;padding:0}
+.cscor .sw button.on{box-shadow:0 0 0 2px #101828}
+.cscor .sw label{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:#475467;margin-left:6px;cursor:pointer}
+.cscor .sw input[type=color]{width:28px;height:28px;border:0;padding:0;background:none;cursor:pointer}
+.cscor .lg{font-size:11.5px;color:#667085;margin-top:8px}
+.cs5.cs5c .n5{color:#3F3F46!important}
+/* nomes por extenso: quebram linha em vez de cortar com reticências */
+#tqgrid .cs8-pr,#csTqMini .cs8-pr{white-space:normal!important;overflow:visible!important;text-overflow:clip!important;font-size:15.5px!important;line-height:1.2!important}
+#tqgrid .cs8-tx b,#csTqMini .cs8-tx b{white-space:normal!important;overflow:visible!important;text-overflow:clip!important;-webkit-line-clamp:unset!important;display:block!important}
+</style>`);
+function csCorCampo(t){
+  const f=FORMULAS[t]||{},g=(PRODUTOS.find(p=>p.tanque===t)||{}).grupo,cor=corProd({tanque:t,grupo:g});
+  return `<div class="cscor" data-cortq="${escAttr(t)}"><div class="tt">Cor do produto <span class="pv" style="color:${csCorTxt(cor)}">${escAttr(t)}</span></div>
+    <div class="sw">${CS_COR_PALETA.map(c=>`<button type="button" data-corsw="${c}" class="${f.cor===c?'on':''}" style="background:${c}" title="${c}"></button>`).join('')}
+      <label><input type="color" data-corin value="${cor}"> outra</label>${f.cor?'<label data-corsw="">↺ voltar à cor do catálogo</label>':''}</div>
+    <div class="lg">Pinta o nome e os cards deste produto no Envase, nos Tanques, na Programação do dia e na TV. Salva na hora.</div></div>`;
+}
+function csCorPoe(el,c){
+  const box=el.closest('[data-cortq]');if(!box)return;const t=box.dataset.cortq;
+  const f=FORMULAS[t]=FORMULAS[t]||{mp:[],emb:{}};if(c)f.cor=c;else delete f.cor;
+  agendarSalvar();box.outerHTML=csCorCampo(t);try{render();}catch(e){}
+}
+document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.closest('[data-corsw]');if(b&&b.closest('[data-cortq]')){ev.preventDefault();csCorPoe(b,b.dataset.corsw);}});
+document.addEventListener('change',ev=>{const i=ev.target;if(i&&i.matches&&i.matches('[data-corin]'))csCorPoe(i,i.value);});
+try{csNucleo.versao='v444';}catch(e){}
 
 </script>
 </body>
