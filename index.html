@@ -32183,6 +32183,10 @@ document.head.insertAdjacentHTML('beforeend',`<style>
 #csPv .op .st{position:absolute;top:5px;right:7px;font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;padding:1px 6px;border-radius:99px;background:#fff;color:#475467}
 #csPv .op.run .st{background:#DC2626;color:#fff}
 #csPv .op.atr{border-bottom:3px solid #DC2626}
+#csPv .op[data-arr="1"]{cursor:grab;touch-action:none}
+#csPv .op.origem{opacity:.3}
+#csPv .op.ghost{z-index:9;opacity:.95;cursor:grabbing;box-shadow:0 12px 28px rgba(16,24,40,.28);outline:2px dashed #2563EB;outline-offset:1px}
+#csPv .op.ghost .hr{color:#1D4ED8;font-weight:800}
 #csPv .atr2{position:absolute;left:6px;right:6px;z-index:2;border-radius:0 0 9px 9px;background:repeating-linear-gradient(45deg,#FEE2E2 0 6px,#FECACA 6px 12px);border:1px dashed #F87171;border-top:0;display:flex;align-items:flex-end;justify-content:center;padding-bottom:4px;box-sizing:border-box}
 #csPv .atr2 span{font-size:10.5px;font-weight:700;color:#B91C1C;background:#fff;border-radius:99px;padding:1px 7px}
 #csPv .agora{position:absolute;left:56px;right:12px;z-index:8;border-top:2px solid #DC2626;pointer-events:none}
@@ -32265,7 +32269,8 @@ function csPvPinta(){
       const atr=hoje&&!o.fimReal&&agora>x.ate+5;
       const nome=pr.descricao||o.codigo||'';
       const cauda=atr&&['producao','preparacao','finalizado'].includes(x.st)?`<div class="atr2" style="top:${y(x.ate)}px;height:${Math.max(4,(Math.min(agora,fim)-x.ate)*CS_PV_PX)}px" title="Passou ${csPvDm(agora-x.ate)} do previsto"><span>+${csPvDm(agora-x.ate)} além do previsto</span></div>`:'';
-      return cauda+`<div class="op ${cls} ${atr?'atr':''}" tabindex="0" data-pv="${escAttr(o.id)}" data-de="${x.de}" data-ate="${x.ate}" style="top:${y(x.de)+1}px;height:${h}px;--c:${cor}">
+      const arr=x.st==='programada'&&!o.iniReal&&!o.envIni&&!o.fimReal&&data>=ymd(new Date())&&(typeof podeEditar!=='function'||podeEditar('envase'));
+      return cauda+`<div class="op ${cls} ${atr?'atr':''}" tabindex="0" data-pv="${escAttr(o.id)}" ${arr?'data-arr="1"':''}" data-de="${x.de}" data-ate="${x.ate}" style="top:${y(x.de)+1}px;height:${h}px;--c:${cor}">
         ${h>=38&&cls==='run'?`<span class="st">${x.st==='preparacao'?'setup':'agora'}</span>`:''}
         <div class="nm">${escAttr(nome)}</div>${h>=34?`<div class="hr">${hhmm(x.de)}–${hhmm(x.ate)}${h>=50&&o.lote?' · L'+escAttr(o.lote):''}</div>`:''}</div>`;}).join('');
     return `<div class="pv-col" style="height:${H}px">${gl}${fora}${ops}${ints}</div>`;}).join('');
@@ -32282,7 +32287,45 @@ function csPvPinta(){
   /* informações: passar o mouse, focar ou tocar — clicar não faz nada */
   corpo.querySelectorAll('.op').forEach(el=>{
     el.onmouseenter=el.onfocus=()=>csPvTip(el);el.onmouseleave=el.onblur=()=>csPvTip(null);
-    el.onclick=ev=>{ev.preventDefault();ev.stopPropagation();csPvTip(el);};});
+    el.onclick=ev=>{ev.preventDefault();ev.stopPropagation();if(el.dataset.mov){delete el.dataset.mov;return;}csPvTip(el);};
+    if(el.dataset.arr)el.onpointerdown=ev=>csPvArrasta(ev,el,ini,data);});
+}
+/* arrastar uma OP que ainda não começou: muda o horário PROGRAMADO (e a máquina, se soltar em outra coluna).
+   Perto do fim de outra OP (10 min) ela encosta e segue a fila; solta num horário solto, fica fixa ali.
+   O realizado continua mandando nas seguintes, como no resto do PCP. Fora da jornada pede a hora extra. */
+function csPvArrasta(ev,el,y0,data){
+  if(ev.pointerType==='mouse'&&ev.button!==0)return;
+  const grid=el.closest('.pv-grid'),cols=[...grid.querySelectorAll('.pv-col')];
+  const o=ORDENS.find(x=>String(x.id)===el.dataset.pv);if(!o)return;
+  const sy=ev.clientY,sx=ev.clientX,top0=el.offsetTop-1,dur=(+el.dataset.ate)-(+el.dataset.de);
+  let mov=false,gh=null,alvo=null;
+  const move=e=>{const dy=e.clientY-sy,dx=e.clientX-sx;if(!mov&&Math.hypot(dx,dy)<6)return;
+    if(!mov){mov=true;csPvTip(null);gh=el.cloneNode(true);gh.classList.add('ghost');gh.removeAttribute('data-arr');grid.appendChild(gh);el.classList.add('origem');CS_PV_SEGUE=false;csPvBotoes();}
+    let ci=cols.findIndex(c=>{const r=c.getBoundingClientRect();return e.clientX>=r.left&&e.clientX<=r.right;});if(ci<0)ci=cols.indexOf(el.parentNode);
+    const col=cols[ci];let tm=y0+Math.round((top0+dy)/CS_PV_PX/5)*5,cola=false;
+    col.querySelectorAll('.op:not(.ghost)').forEach(b=>{if(b===el)return;const a0=+b.dataset.de,f=+b.dataset.ate;
+      if((tm>=a0&&tm<f)||Math.abs(tm-f)<=10){tm=f;cola=true;}});   /* em cima de outra OP ou perto do fim dela: encosta */
+    alvo={maq:MAQUINAS[ci],t:tm,cola};
+    gh.style.left=(col.offsetLeft+6)+'px';gh.style.width=(col.offsetWidth-12)+'px';gh.style.right='auto';gh.style.top=((tm-y0)*CS_PV_PX+1)+'px';
+    const h=gh.querySelector('.hr');if(h)h.textContent=`${hhmm(tm)}–${hhmm(tm+dur)}${alvo.maq!==o.maq?' · '+alvo.maq:''}${cola?' · encosta na anterior':''}`;
+    const c=el.closest('.pv-corpo'),r=c.getBoundingClientRect();if(e.clientY<r.top+30)c.scrollTop-=12;else if(e.clientY>r.bottom-30)c.scrollTop+=12;};
+  const up=()=>{document.removeEventListener('pointermove',move);document.removeEventListener('pointerup',up);document.removeEventListener('pointercancel',up);
+    if(!mov)return;el.dataset.mov='1';if(gh)gh.remove();el.classList.remove('origem');
+    if(alvo&&(alvo.maq!==o.maq||alvo.t!==+el.dataset.de))csPvAplica(o,alvo,data);};
+  document.addEventListener('pointermove',move);document.addEventListener('pointerup',up);document.addEventListener('pointercancel',up);
+}
+function csPvAplica(o,alvo,data){
+  const antes=[o.maq,o.data,o.inicio].join('|'),de=`${o.maq} ${hhmm(o.inicio)}`,man0=o.inicioManual;
+  /* fixa antes de mover: senão a fila recompõe e puxa de volta antes de dar para conferir */
+  o.inicioManual=true;
+  try{moverOC(o,alvo.maq,data,alvo.t);}catch(e){o.inicioManual=man0;toast('Não consegui mover: '+e.message,true);return;}
+  const fecha=()=>{
+    if([o.maq,o.data,o.inicio].join('|')===antes&&!alvo.cola){o.inicioManual=man0;csPvPinta();return;}
+    o.inicioManual=!alvo.cola;if(alvo.cola)o.inicioOriginal=null;
+    try{registrar(o,'Horário ajustado na Programação do dia',null,`${de} → ${o.maq} ${hhmm(o.inicio)}${alvo.cola?' · encostada na anterior':' · fixada'}`);}catch(e){}
+    try{recomporTudo();}catch(e){}agendarSalvar();try{render();}catch(e){}csPvPinta();
+    toast(`${nomeCurto(o.codigo)} → ${o.maq} às ${hhmm(o.inicio)}${alvo.cola?' (encostada)':''}.`);};
+  if(document.getElementById('csHE')){const iv=setInterval(()=>{if(!document.getElementById('csHE')){clearInterval(iv);fecha();}},200);}else fecha();
 }
 function csPvCentra(){
   const p=document.getElementById('csPv');if(!p)return;const corpo=p.querySelector('.pv-corpo'),ag=corpo.querySelector('.agora');
@@ -32321,7 +32364,7 @@ function csPvAbre(){
     p.innerHTML=`<div class="pv-cab"><h2>Programação do dia</h2>
       <span class="pv-dt"><button type="button" class="pv-nv" data-d="-1" aria-label="Dia anterior">‹</button><b></b><button type="button" class="pv-nv" data-d="1" aria-label="Próximo dia">›</button></span>
       <button type="button" class="pv-bt hj">Hoje</button><button type="button" class="pv-bt cen" hidden>● Centralizar agora</button>
-      <span class="pv-sp"></span><span style="font-size:11.5px;color:#98A2B3">só consulta · passe o mouse na OP</span>
+      <span class="pv-sp"></span><span style="font-size:11.5px;color:#98A2B3">arraste a OP programada para mudar o horário · passe o mouse para ver</span>
       <button type="button" class="pv-ic mx" title="Maximizar" aria-label="Maximizar">⤢</button><button type="button" class="pv-ic x" title="Fechar (Esc)" aria-label="Fechar">✕</button></div>
       <div class="pv-top"></div><div class="pv-corpo" tabindex="-1"></div>
       <div class="pv-leg"><span><i style="background:color-mix(in srgb,#2563EB 34%,#fff);border-left:4px solid #2563EB"></i>em produção</span>
@@ -32392,6 +32435,13 @@ function csCorPoe(el,c){
 }
 document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.closest('[data-corsw]');if(b&&b.closest('[data-cortq]')){ev.preventDefault();csCorPoe(b,b.dataset.corsw);}});
 document.addEventListener('change',ev=>{const i=ev.target;if(i&&i.matches&&i.matches('[data-corin]'))csCorPoe(i,i.value);});
+/* tablet dos tanques: fim previsto do envase do lote (a faixa verde mostra início → fim) */
+try{const _tl444=csTqLote;csTqLote=function(b){const r=_tl444.apply(this,arguments);
+  try{let f=null;(b.ordens||[]).forEach(o=>{let a=null;
+      if(o.fimReal)a=hm(o.fimReal);else{const ini=(o.iniReal||o.envIni)?hm(o.iniReal||o.envIni):csPrevIni(o);a=csFimComPausa(o.maq,ini,total(o));}
+      if(a!=null&&!isNaN(a))f=f==null?a:Math.max(f,a);});
+    if(f!=null)r.envFim=hhmm(Math.min(f,24*60-1));}catch(e){}
+  return r;};}catch(e){}
 try{csNucleo.versao='v444';}catch(e){}
 
 </script>
