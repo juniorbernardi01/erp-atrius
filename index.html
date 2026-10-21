@@ -4832,6 +4832,10 @@ function jornDia(maq,data){
 }
 /* houve ajuste manual nesta máquina neste dia? */
 const jornAjustada=(maq,data)=>!!((CALENDARIO[data]||{}).maq||{})[maq];
+/* v442: o horário da máquina NAQUELE dia (hora extra autorizada vale), para salvar, mover e encadear a fila */
+function csJornHE(maq,data){try{const ex=((CALENDARIO[data]||{}).maq||{})[maq];
+  if(ex&&ex.trab!==false)return [hm(ex.ini||'05:00'),hm(ex.fim||'20:00')];}catch(e){}return jorn(maq);}
+function csMaqTrabalha(maq,data){const ex=((CALENDARIO[data]||{}).maq||{})[maq];if(ex)return ex.trab!==false&&diaDe(data).trab;return diaDe(data).trab;}
 function ajustarJornada(maq,data,v){
   const e=CALENDARIO[data]||(CALENDARIO[data]={trab:true,ini:'05:00',fim:'20:00'});
   e.maq=e.maq||{};
@@ -5475,7 +5479,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v439';const VERSAO_DATA='21/10/2026';
+const VERSAO_APP='v442';const VERSAO_DATA='21/10/2026';
 /* número que aparece na tela: v438 → v4.3.8 (por dentro continua v438, que é o que as versões comparam) */
 const csRotVer=v=>{const d=String(v||'').replace(/\D/g,'');return d.length>=3?'v'+d.slice(0,-2)+'.'+d.slice(-2,-1)+'.'+d.slice(-1):String(v||'');};
 const VERSAO_ROTULO=csRotVer(VERSAO_APP)+' · '+VERSAO_DATA;
@@ -5920,7 +5924,7 @@ function cardFila(o,conf,estreita){
 
 /* move a OP para outra máquina/horário */
 function moverOC(o,maq,data,inicio){
-  const [ji,jf]=jorn(maq);
+  const [ji,jf]=csJornHE(maq,data);
   const novo=Math.max(ji,Math.min(jf-total(o),inicio));
   if(o.maq===maq&&o.data===data&&o.inicio===novo)return;
   const de=`${o.maq} ${hhmm(o.inicio)}`;
@@ -12317,8 +12321,9 @@ function calc(){
       :`Sobram <b>${nf(livre-f.litros)} L</b> no ${sdv.tanque} depois desta OP.<br>`;}
   else if(!f.tanque)h+=`<span style="color:var(--pausa)">Sem tanque — vai para <b>a programar</b> na tela de Tanques.</span><br>`;
   if(f.maq&&f.inicio!=null){
-    const [ji,jf]=jorn(f.maq);
-    if(f.inicio<ji)h+=`<span class="w">A ${f.maq} começa às ${hhmm(ji)}.</span><br>`;
+    const [ji,jf]=csJornHE(f.maq,f.data);
+    if(f.data&&!csMaqTrabalha(f.maq,f.data))h+=`<span class="w">${dCurto(f.data)} é dia sem expediente: ao salvar, pede autorização de hora extra.</span><br>`;
+    if(f.inicio<ji)h+=`<span class="w">A ${f.maq} começa às ${hhmm(ji)}: ao salvar, pede autorização de hora extra.</span><br>`;
     else if(f.inicio+dur>jf)h+=`<span class="w">Passa da jornada da ${f.maq}, que encerra
       às ${hhmm(jf)} — sobram ${f.inicio+dur-jf} min.</span><br>`;
   }
@@ -12385,11 +12390,8 @@ function salvar(){
       return;
     }
   }
-  if(f.maq&&f.inicio!=null){
-    const [ji,jf]=jorn(f.maq);
-    if(f.inicio<ji){toast(`A ${f.maq} começa às ${hhmm(ji)}.`,true);return;}
-    if(f.inicio>=jf){toast(`A ${f.maq} encerra às ${hhmm(jf)}.`,true);return;}
-  }
+  /* v442: fora do horário normal não é mais recusado: pergunta e o gestor autoriza a hora extra */
+  if(f.maq&&f.inicio!=null&&!csHEConfere(f,salvar))return;
 
 
 
@@ -12487,7 +12489,7 @@ function csEncaixeNoCaminho(x,maq,data,s){
 function recomporDia(maq,data){
   const hoje=ymd(new Date());
   if(data<hoje)return;
-  const [ji,jf]=jorn(maq);
+  const [ji,jf]=csJornHE(maq,data);
   /* o cursor anda pelo que realmente aconteceu, não pelo relógio:
      quem atrasou empurra quem vem depois, sem colapsar a agenda no agora */
   let cursor=ji;
@@ -20958,8 +20960,7 @@ function csIrDia(){
     <div class="calsem">${['seg','ter','qua','qui','sex','sáb','dom']
       .map(x=>`<span>${x}</span>`).join('')}</div>
     <div class="csirg">${cels.join('')}</div>`;
-  M('mF').innerHTML='<button class="btn" id="irCal" title="Liberar sábado ou feriado, dia de folga, horário de cada máquina">Ajustes de jornada</button><div style="flex:1"></div><button class="btn" id="irC">Fechar</button>';
-  M('irCal').onclick=()=>{const d=ymd(S.page==='envase'?S.ref:S.refTq);CS_IR_MES=null;CAL_MES=new Date(d+'T00:00:00');csCalendarioModal();};
+  M('mF').innerHTML='<div style="flex:1"></div><button class="btn" id="irC">Fechar</button>';
   M('irC').onclick=()=>{CS_IR_MES=null;fecharModal();};
   M('irAnt').onclick=()=>{CS_IR_MES=new Date(ano,mes-1,1);csIrDia();};
   M('irProx').onclick=()=>{CS_IR_MES=new Date(ano,mes+1,1);csIrDia();};
@@ -31911,6 +31912,198 @@ try{const _al439b=abrirLote;abrirLote=function(b){
     }
   }catch(e){}
   return r;};}catch(e){}
+
+</script>
+<script>
+/* ===================== v4.4.1 · BENEFICIAMENTO COM DEPÓSITO NO FORNECEDOR =====================
+   Rótulo vai em volume grande para a HPACK (ex.: 15 mil) e volta aos poucos já no frasco.
+   1) Lançamento vindo de Compras pode dizer de qual depósito sai (m.dep): o total muda como antes
+      e o saldo daquele depósito também (ex.: "Na HPACK" perde os rótulos usados).
+   2) csNucleo.depFornecedor(f, criar): o depósito ligado ao fornecedor; cria "Na <fornecedor>" se pedir.
+   3) OP: na aba Embalagem aparece quando o item do cadastro não tem estoque na Fábrica
+      (a troca por outro item continua no botão ⇄ de cada linha). */
+try{const _nt441=csNucleo.tiny;csNucleo.tiny=async function(c){
+  if(!(c&&c.acao==='movimentar'&&(c.movimentos||[]).some(m=>m&&m.dep)))return _nt441.apply(this,arguments);
+  const ult=CS_ELOG[CS_ELOG.length-1];
+  const r=await _nt441.apply(this,arguments);
+  try{const princ=csEPrinc();const i0=ult?CS_ELOG.lastIndexOf(ult)+1:0;const novos=CS_ELOG.slice(i0);const usados=new Set();
+    (c.movimentos||[]).forEach(m=>{
+      if(!m.dep||m.dep===princ||!CS_EDEP.deps.some(d=>d.id===m.dep))return;
+      const x=novos.find(y=>!usados.has(y)&&y.id===String(m.id)&&y.tipo===m.tipo&&Math.abs((+y.qtd||0)-(+m.qtd||0))<1e-9);if(!x)return;usados.add(x);
+      const d=(m.tipo==='E'?1:-1)*(+m.qtd||0);
+      const s=CS_EDEP.sal[m.dep]||(CS_EDEP.sal[m.dep]={});s[x.id]=(+s[x.id]||0)+d;if(Math.abs(s[x.id])<1e-9)delete s[x.id];
+      x.dep=m.dep;x.dif=d;});
+    if(usados.size)agendarSalvar();
+  }catch(e){console.warn('[v441] depósito',e);}
+  return r;};}catch(e){}
+const csNormF=s=>String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/\b(ltda|eireli|me|epp|s\/?a|industria|comercio|de|e)\b/g,'').replace(/[^a-z0-9]/g,'');
+function csDepFornecedor(f,criar){
+  if(!f)return null;const fid=String(f.id||''),nn=csNormF(f.nome);
+  let d=CS_EDEP.deps.find(d=>!d.princ&&fid&&String(d.fornId||'')===fid)||CS_EDEP.deps.find(d=>!d.princ&&nn&&(csNormF(d.forn)===nn));
+  if(!d&&criar){
+    const pal=String(f.fantasia||f.nome||'fornecedor').trim().split(/\s+/);const curto=pal[0].length<4&&pal[1]?pal.slice(0,2).join(' '):pal[0];
+    let nome='Na '+curto,k=2;while(CS_EDEP.deps.some(x=>x.nome.toLowerCase()===nome.toLowerCase()))nome='Na '+curto+' '+(k++);
+    const novo={id:'d'+Date.now().toString(36),nome,forn:String(f.nome||'').trim(),fornId:fid,princ:false};
+    csEDepsSalvar([...CS_EDEP.deps.map(x=>({...x})),novo]);d=CS_EDEP.deps.find(x=>x.id===novo.id);
+  }
+  return d?{...d}:null;
+}
+try{Object.assign(csNucleo,{depFornecedor:(f,criar)=>csDepFornecedor(f,criar),depPrincipal:()=>csEPrinc(),versao:'v441'});}catch(e){}
+
+/* (3) OP: item da embalagem sem estoque na Fábrica */
+function csEmbFaltas(o){
+  try{const p=prodOf(o.codigo);if(!p||!o.litros)return [];
+    try{if(o.id&&['cancelada','concluida','finalizado'].includes(sit(o)))return [];}catch(e){}
+    return embalagemDe(o).map(x=>{const ins=insPorSku(x.sku)||insPorNome(x.nome);const t=ins?tinyDe(ins):'';
+      if(!t)return null;const sd=csSaldoDeps(t);if(sd.tot==null)return null;
+      const tem=+(sd.por[csEPrinc()]||0);return tem<(+x.precisa||0)?{nome:x.nome,comp:x.comp,tem,precisa:+x.precisa||0}:null;}).filter(Boolean);
+  }catch(e){return [];}
+}
+document.head.insertAdjacentHTML('beforeend',`<style>
+.cs-embf{margin:0 0 12px;padding:10px 12px;border-radius:10px;background:#FEF2F2;border:1px solid #FCA5A5;color:#991B1B;font-size:13px;line-height:1.45}
+.cs-embf b{color:#7F1D1D}.adaba .cs-embdot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#DC2626;margin-left:6px;vertical-align:middle}
+</style>`);
+try{const _eh441=embalagemHTML;embalagemHTML=function(o){
+  const h=_eh441.apply(this,arguments);
+  try{if(o&&o.fimReal)return h;const f=csEmbFaltas(o);if(!f.length)return h;
+    return `<div class="cs-embf">⚠ <b>Sem estoque na Fábrica</b> para o que o cadastro pede:<br>${f.map(x=>`${escAttr(x.comp||'')} <b>${escAttr(x.nome)}</b>: precisa ${nf(x.precisa)}, tem ${nf(Math.max(0,x.tem))}`).join('<br>')}<br>
+      <span style="color:#7F1D1D">Se esta OP vai usar outro item (ex.: frasco já rotulado), troque no ⇄ da linha.</span></div>`+h;
+  }catch(e){return h;}};}catch(e){}
+try{const _ao441=abrirOrdem;abrirOrdem=function(o,pre){
+  const r=_ao441.apply(this,arguments);
+  try{const b=document.querySelector('#mB [data-oab="emb"]');if(b&&!b.querySelector('.cs-embdot')){
+    const x=o||(pre&&pre.codigo?{codigo:pre.codigo,litros:+pre.litros||0,data:pre.data}:null);
+    if(x&&!x.fimReal&&csEmbFaltas(x).length){b.insertAdjacentHTML('beforeend','<i class="cs-embdot" title="Falta estoque de embalagem"></i>');}}}catch(e){}
+  return r;};}catch(e){}
+
+</script>
+<script>
+/* ===================== v4.4.2 · HORA EXTRA NA PROGRAMAÇÃO =====================
+   Antes: OP às 05:00 era recusada ("A MAQ 1 começa às 07:00") e o "Ajustes de jornada" do
+   calendário do dia não resolvia (a fila e o salvar olhavam só o horário fixo da máquina).
+   Agora, ao salvar ou mover uma OP:
+   - começa antes do horário normal  → pergunta "a fábrica vai começar mais cedo?"
+   - termina depois do horário normal → pergunta "autoriza hora extra?" (ou deixa continuar no dia seguinte)
+   - sábado, domingo ou feriado       → pergunta "tem certeza? autoriza hora extra?"
+   Quem libera é o gestor, com PIN. Fica gravado no calendário daquele dia (só para aquela máquina)
+   e no histórico da OP. O botão "Ajustes de jornada" saiu do calendário do dia. */
+document.head.insertAdjacentHTML('beforeend',`<style>
+#csHE{position:fixed;inset:0;z-index:99990;background:rgba(14,27,51,.55);display:flex;align-items:center;justify-content:center;padding:16px}
+#csHE .bx{background:#fff;border-radius:16px;max-width:460px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.25);overflow:hidden;font-family:inherit}
+#csHE .hd{padding:18px 20px 6px;display:flex;gap:12px;align-items:flex-start}
+#csHE .ic{width:42px;height:42px;border-radius:12px;background:#FEF3C7;color:#B45309;display:flex;align-items:center;justify-content:center;font-size:22px;flex:none}
+#csHE h3{margin:0;font-size:19px;color:#0E1B33}#csHE .sb{color:#64748B;font-size:13px;margin-top:2px}
+#csHE .ct{padding:8px 20px 4px;color:#1E293B;font-size:15px;line-height:1.5}
+#csHE .ct .lst{margin:8px 0 0;padding:10px 12px;background:#FFFBEB;border:1px solid #FDE68A;border-radius:10px;font-size:14px}
+#csHE .ct .lst div+div{margin-top:4px}
+#csHE .pn{padding:10px 20px 0}#csHE .pn label{display:block;font-size:12.5px;color:#475569;margin-bottom:5px;font-weight:600}
+#csHE .pn input{width:100%;height:44px;border:1px solid #CBD5E1;border-radius:10px;padding:0 12px;font-size:18px;letter-spacing:.2em;box-sizing:border-box}
+#csHE .er{color:#B91C1C;font-size:13px;min-height:18px;margin-top:5px}
+#csHE .ft{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;padding:12px 20px 18px}
+#csHE .ft button{height:40px;border-radius:10px;padding:0 16px;font:600 14px inherit;cursor:pointer;border:1px solid #CBD5E1;background:#fff;color:#1E293B}
+#csHE .ft .ok{background:#B45309;border-color:#B45309;color:#fff}
+#csHE .ft .nao{margin-right:auto}
+</style>`);
+let CS_HE_PASSA=false;
+const csHEDow=d=>['domingo','segunda','terça','quarta','quinta','sexta','sábado'][new Date(d+'T00:00:00').getDay()];
+/* o que está fora do horário normal; vazio = está dentro */
+function csHEFora(maq,data,ini,fim){
+  const [ji,jf]=csJornHE(maq,data),l=[];
+  if(!csMaqTrabalha(maq,data)){const fer=feriadoDe(data),dw=new Date(data+'T00:00:00').getDay();
+    l.push({k:'dia',t:fer?`É feriado (${fer}).`:dw===6?'É sábado: a fábrica não trabalha.':dw===0?'É domingo: a fábrica não trabalha.':'Este dia está marcado sem expediente.'});}
+  else{
+    if(ini<ji)l.push({k:'cedo',t:`Vai começar às <b>${hhmm(ini)}</b>. O normal da ${escAttr(maq)} é começar às ${hhmm(ji)}.`});
+    if(fim>jf)l.push({k:'tarde',t:`Vai terminar às <b>${hhmm(Math.min(fim,24*60-1))}</b>. O normal da ${escAttr(maq)} é parar às ${hhmm(jf)}.`});
+  }
+  return l;
+}
+function csHEGestor(q){if(!q)return false;if(q.master)return true;const n=q.nivel||'';return ['master','gestor','supervisor'].includes(n);}
+/* janela: pergunta e pede o PIN do gestor. ok(q) autoriza; nao() segue sem hora extra (só no "tarde") */
+function csHEPergunta(maq,data,fora,ok,nao){
+  let d=document.getElementById('csHE');if(d)d.remove();
+  d=document.createElement('div');d.id='csHE';document.body.appendChild(d);
+  const so=fora.length===1&&fora[0].k==='tarde';
+  const pergunta=fora.some(x=>x.k==='dia')?'Tem certeza que vai produzir neste dia?':fora.some(x=>x.k==='cedo')?'A fábrica vai começar mais cedo neste dia?':'Vai ficar depois do horário?';
+  d.innerHTML=`<div class="bx" role="dialog" aria-modal="true">
+    <div class="hd"><div class="ic">⏰</div><div><h3>Hora extra</h3><div class="sb">${escAttr(maq)} · ${csHEDow(data)}, ${dCurto(data)}</div></div></div>
+    <div class="ct">${pergunta}<div class="lst">${fora.map(x=>`<div>${x.t}</div>`).join('')}</div></div>
+    <div class="pn"><label>PIN do gestor para autorizar</label><input id="csHEPin" type="password" inputmode="numeric" autocomplete="off" placeholder="••••"><div class="er" id="csHEEr"></div></div>
+    <div class="ft">${so&&nao?'<button class="nao" id="csHENao">Não, continua no dia seguinte</button>':''}<button id="csHEC">Cancelar</button><button class="ok" id="csHEK">Autorizar hora extra</button></div></div>`;
+  const fecha=()=>d.remove();
+  d.querySelector('#csHEC').onclick=fecha;
+  if(d.querySelector('#csHENao'))d.querySelector('#csHENao').onclick=()=>{fecha();nao();};
+  const vai=()=>{const v=d.querySelector('#csHEPin').value.trim(),er=d.querySelector('#csHEEr');
+    if(!v){er.textContent='Digite o PIN do gestor.';return;}
+    const q=quemPorCredencial(v);
+    if(!q){er.textContent='PIN não reconhecido.';return;}
+    if(!csHEGestor(q)){er.textContent=`${q.nome} não pode autorizar hora extra. Precisa do PIN de um gestor.`;return;}
+    fecha();ok(q);};
+  d.querySelector('#csHEK').onclick=vai;
+  d.querySelector('#csHEPin').onkeydown=e=>{if(e.key==='Enter')vai();};
+  setTimeout(()=>{try{d.querySelector('#csHEPin').focus();}catch(e){}},30);
+}
+/* grava a autorização: abre a máquina naquele dia das X às Y (só ela) */
+function csHEGrava(maq,data,ini,fim,q,fora){
+  const c0=CALENDARIO[data];
+  if(!diaDe(data).trab){
+    /* dia de folga da fábrica: abre o dia, mas as outras máquinas continuam paradas */
+    const c=CALENDARIO[data]||(CALENDARIO[data]={});c.trab=true;c.ini=c.ini||'05:00';c.fim=c.fim||'20:00';c.he=true;
+    c.maq=c.maq||{};MAQUINAS.forEach(m=>{if(m!==maq&&!c.maq[m])c.maq[m]={trab:false};});
+  }
+  const ex=((CALENDARIO[data]||{}).maq||{})[maq];
+  const [r0,r1]=ex&&ex.trab!==false?[hm(ex.ini),hm(ex.fim)]:jorn(maq);
+  const ni=Math.max(0,Math.min(r0,ini)),nf_=Math.min(24*60-1,Math.max(r1,fim));
+  const he=((ex&&ex.he)||[]).concat([{por:q.nome,em:`${ymd(new Date())} ${relogio()}`,o:fora.map(x=>x.k).join('+'),de:hhmm(ni),ate:hhmm(nf_)}]);
+  ajustarJornada(maq,data,{ini:hhmm(ni),fim:hhmm(nf_),he});
+  const c=CALENDARIO[data];if(c){if(hm(c.ini||'05:00')>ni)c.ini=hhmm(ni);if(hm(c.fim||'20:00')<nf_)c.fim=hhmm(nf_);}
+  try{registrarJornada&&registrarJornada(data,[maq]);}catch(e){}
+  agendarSalvar();
+  return `${maq} ${dCurto(data)} das ${hhmm(ni)} às ${hhmm(nf_)}`;
+}
+/* usado pelo salvar da OP: devolve true se pode seguir; senão abre a pergunta e chama de novo depois */
+let CS_HE_NAO='';
+function csHEConfere(f,denovo){
+  if(CS_HE_PASSA)return true;
+  const E=typeof EDIT!=='undefined'?EDIT:null;
+  if(E&&(E.iniReal||E.envIni||E.fimReal))return true;          /* já começou: o que vale é o real */
+  if(E&&E.maq===f.maq&&E.data===f.data&&E.inicio===f.inicio&&E.litros===f.litros&&E.codigo===f.codigo)return true; /* nada mudou de lugar */
+  let fim=f.inicio+60;try{fim=fimPrev({...(E||{}),...f});}catch(e){}
+  const chave=[f.maq,f.data,f.inicio].join('|');
+  let fora=csHEFora(f.maq,f.data,f.inicio,fim);
+  if(CS_HE_NAO===chave)fora=fora.filter(x=>x.k!=='tarde');
+  if(!fora.length)return true;
+  csHEPergunta(f.maq,f.data,fora,q=>{
+    const txt=csHEGrava(f.maq,f.data,f.inicio,fim,q,fora);
+    window.CS_HE_REG={q:q.nome,txt,maq:f.maq,data:f.data,inicio:f.inicio,em:Date.now()};
+    toast(`Hora extra autorizada por ${q.nome}: ${txt}.`);
+    CS_HE_PASSA=true;try{denovo();}finally{CS_HE_PASSA=false;}
+    csHERegistraOP();
+  },()=>{CS_HE_NAO=chave;try{denovo();}finally{CS_HE_NAO='';}});
+  return false;
+}
+/* põe a autorização no histórico da OP que acabou de ser salva/movida */
+function csHERegistraOP(o){
+  const r=window.CS_HE_REG;if(!r||Date.now()-r.em>15000)return;
+  try{o=o||ORDENS.filter(x=>x.maq===r.maq&&x.data===r.data&&naGrade(x)).sort((a,b)=>Math.abs(a.inicio-r.inicio)-Math.abs(b.inicio-r.inicio))[0];
+    if(o)registrar(o,'Hora extra autorizada',null,`${r.txt} · liberado por ${r.q}`);agendarSalvar();}catch(e){}
+  window.CS_HE_REG=null;
+}
+/* mover (arrastar ou "Mover a OP") também pergunta */
+try{const _mv442=moverOC;moverOC=function(o,maq,data,inicio){
+  if(CS_HE_PASSA||!o||o.iniReal||o.envIni||o.fimReal)return _mv442.apply(this,arguments);
+  let fim=inicio+60;try{fim=csFimComPausa(maq,inicio,total(o));}catch(e){}
+  const fora=csHEFora(maq,data,inicio,fim);
+  if(!fora.length)return _mv442.apply(this,arguments);
+  const a=arguments,self=this;
+  csHEPergunta(maq,data,fora,q=>{
+    const txt=csHEGrava(maq,data,inicio,fim,q,fora);
+    window.CS_HE_REG={q:q.nome,txt,maq,data,inicio,em:Date.now()};
+    CS_HE_PASSA=true;try{_mv442.apply(self,a);}finally{CS_HE_PASSA=false;}
+    csHERegistraOP(o);try{recomporTudo();}catch(e){}render();
+    toast(`Hora extra autorizada por ${q.nome}: ${txt}.`);
+  },()=>{CS_HE_PASSA=true;try{_mv442.apply(self,a);}finally{CS_HE_PASSA=false;}});
+};}catch(e){}
+try{csNucleo.versao='v442';}catch(e){}
 
 </script>
 </body>

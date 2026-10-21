@@ -1130,7 +1130,7 @@ function telaOC(id){
   <div class="ed-top"><h1>${ED.nova?(oc.benef?'Nova ordem de beneficiamento':'Nova ordem de compra'):(L?'Ordem ':'Editar ordem ')+esc(oc.num)+(oc.benef?' · beneficiamento':'')}</h1>${ED.nova?'':`<span class="pill p-${oc.sit}">${SIT[oc.sit]}</span>`}</div>
   ${L&&!ED.nova?`<div class="aviso">🔒 <div>${oc.sit==='rec'?'A mercadoria já chegou: preços e boletos se acertam em <b>Conferir nota</b>.':oc.sit==='con'?'Ordem concluída. Para corrigir, use <b>Reabrir ordem</b> nos três pontinhos.':oc.sit==='can'?'Ordem cancelada.':'Você não tem permissão para editar ordens.'}</div></div>`:''}
   <div class="bloco"><div class="t"><span class="n">1</span>Fornecedor e entrega</div><div class="c"><div class="g3" style="grid-template-columns:2fr 1fr">
-    <div class="fl"><label>Fornecedor<span class="req">*</span></label>${f?`<div class="v" id="fV">${esc(f.nome)}${L?'':'<button class="btn lk sm" id="fTroca" style="margin-left:auto">trocar</button>'}</div>`
+    <div class="fl"><label>Fornecedor<span class="req">*</span></label>${f?`<div class="v" id="fV">${esc(f.nome)}${L?'':'<button class="btn sm" id="fTroca" style="margin-left:auto">⇄ Trocar fornecedor</button>'}</div>`
       :`<div class="rel"><input class="inp" id="fBusca" placeholder="buscar fornecedor cadastrado · nome ou CNPJ" ${dis}></div>`}
       ${f?`<div class="lk2"><button id="lD">dados do fornecedor</button><button id="lU">ver últimas compras</button></div>`:`<div class="lk2">${DB.cfg.soCadastro&&!N.teste?'':'<button id="fNovo">＋ novo fornecedor'+(N.teste&&DB.cfg.soCadastro?' (só no TESTE)':'')+'</button>'}<button id="fTiny">buscar no Tiny</button></div>`}
       <label class="chk2" id="endC"><span class="ck ${oc.entrega.outro?'on':''}"></span>Endereço de entrega diferente</label>
@@ -2185,6 +2185,7 @@ function previsaoItem(l){
 function gavetaGerar(){
   const ks=Object.keys(NEC.sel).filter(k=>+NEC.sel[k]>0);
   if(!ks.length)return toast('Digite a quantidade a comprar dos itens marcados.',true);
+  if(!CAD_CONT.length)carregaContatosCad();
   const homs={};ks.forEach(k=>vinculosDoItem(k).filter(v=>v.sit!=='b'&&v.sit!=='r').forEach(v=>{(homs[v.fid]||(homs[v.fid]={n:0,tot:0}));homs[v.fid].n++;}));
   DB.fornecedores.forEach(f=>{if(!homs[f.id]&&ks.some(k=>melhorPreco(k,f.id)))homs[f.id]={n:ks.filter(k=>melhorPreco(k,f.id)).length,tot:0};});
   const lista=Object.entries(homs).map(([fid,h])=>({f:fornPorId(fid),n:h.n,tot:ks.reduce((s,k)=>{const mp=melhorPreco(k,fid)||ultimaCompra(k,fid);return s+(mp?mp.preco*(+NEC.sel[k]):0);},0)})).filter(x=>x.f).sort((a,b)=>b.n-a.n||a.tot-b.tot);
@@ -2199,8 +2200,10 @@ function gavetaGerar(){
       <div class="lsoc">${ocs.map(o=>`<button class="lin2" data-inc="${o.id}"><b>${esc(o.num)}</b> · ${esc(o.forn?o.forn.nome:'sem fornecedor')} <span class="k">${SIT[o.sit]} · ${(o.itens||[]).length} itens · ${rs(contaOC(o).total)}${o.prev?' · previsão '+br(o.prev):''}</span></button>`).join('')||'<div class="vazio">Nenhuma ordem aberta com esse filtro.</div>'}</div>
       <div class="leg">Aparecem as ordens em rascunho ou enviadas, de todos os fornecedores se tirar o filtro. Se o item já estiver na ordem, a quantidade soma.</div>`;}
     else corpo=`<div class="k" style="margin-bottom:8px">De quem comprar · homologados dos itens marcados, com o último preço</div>
-      <div class="fr2">${lista.map(x=>`<label class="${x.f.id===forn?'on':''}"><input type="radio" name="gf" value="${x.f.id}" ${x.f.id===forn?'checked':''} hidden><span class="rd"></span><span><b>${esc(x.f.nome)}</b><small>homologado em ${x.n} de ${ks.length} ${ks.length>1?'itens':'item'}</small></span><b>${x.tot?rs(x.tot):'—'}</b></label>`).join('')||'<div class="aviso">Nenhum fornecedor homologado para estes itens. Escolha qualquer um:</div>'}
+      <div class="fr2">${lista.map(x=>`<label class="${x.f.id===forn?'on':''}"><input type="radio" name="gf" value="${x.f.id}" ${x.f.id===forn?'checked':''} hidden><span class="rd"></span><span><b>${esc(x.f.nome)}</b><small>${x.n?`homologado em ${x.n} de ${ks.length} ${ks.length>1?'itens':'item'}`:'escolhido na busca · ainda não homologado'}</small></span><b>${x.tot?rs(x.tot):'—'}</b></label>`).join('')||'<div class="aviso">Nenhum fornecedor homologado para estes itens. Escolha qualquer um:</div>'}
       ${!lista.length?(DB.fornecedores.length?`<select id="gF" style="width:100%">${DB.fornecedores.map(f=>`<option value="${f.id}">${esc(f.nome)}</option>`).join('')}</select>`:'<div class="k">Nenhum fornecedor cadastrado em Compras ainda.</div>'):''}</div>
+      <div class="k" style="margin:12px 0 6px">Outro fornecedor · busca em todos os fornecedores do Compras e dos Cadastros</div>
+      <div class="rel"><input class="inp" id="gBusca" placeholder="buscar fornecedor · nome, fantasia ou CNPJ" style="width:100%"></div>
       <div style="display:grid;gap:10px;margin-top:14px"><button class="btn pri" id="gNova" style="height:44px;justify-content:center">＋ Gerar nova ordem</button><button class="btn" id="gEx" style="height:44px;justify-content:center">Incluir em ordem existente</button></div>`;
     gaveta(`<div class="gt"><h2>Gerar OC</h2><button class="btn sm" id="gX" style="margin-left:auto">Fechar ✕</button></div><div class="gc"><p class="k" style="margin-bottom:10px">${ks.length} ${ks.length>1?'itens':'item'}: ${itensTxt}</p>${corpo}</div>
       ${modo==='exist'?'<div class="gr"><button class="btn" id="gVolta">‹ Voltar</button></div>':''}`);
@@ -2211,6 +2214,7 @@ function gavetaGerar(){
       const itens=ks.map(k=>itemNovo(k,f,+NEC.sel[k],null)).filter(Boolean);NEC.sel={};gaveta(null);
       novaOC({forn:{...f},prev:addDias(hojeY(),7),itens,origem:'Necessidade de compra · '+br(hojeY()),marcadores:DB.marcadores.some(m=>m.nome==='reposição')?['reposição']:[],
         pag:{cond:f.prazo||'28',forma:DB.cfg.formaPadrao||'Boleto',categoria:'',parcelas:[]}});};
+    if($('gBusca'))buscaLista($('gBusca'),q=>buscaFornecedores(q),f=>{f=fornDoContato(f);if(!f)return;forn=f.id;if(!lista.some(x=>x.f.id===f.id))lista.unshift({f,n:0,tot:ks.reduce((s,k)=>{const mp=melhorPreco(k,f.id)||ultimaCompra(k,f.id);return s+(mp?mp.preco*(+NEC.sel[k]):0);},0)});des();});
     if($('gEx'))$('gEx').onclick=()=>{modo='exist';des();};if($('gVolta'))$('gVolta').onclick=()=>{modo='';des();};
     if($('gq'))$('gq').oninput=e=>{NEC.qoc=e.target.value;clearTimeout(window._tg);window._tg=setTimeout(()=>{des();const i=$('gq');i.focus();i.setSelectionRange(i.value.length,i.value.length);},250);};
     if($('gSoF'))$('gSoF').onchange=e=>{NEC.soF=e.target.checked;des();};
