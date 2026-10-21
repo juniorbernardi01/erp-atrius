@@ -5475,7 +5475,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v438';const VERSAO_DATA='21/10/2026';
+const VERSAO_APP='v439';const VERSAO_DATA='21/10/2026';
 /* número que aparece na tela: v438 → v4.3.8 (por dentro continua v438, que é o que as versões comparam) */
 const csRotVer=v=>{const d=String(v||'').replace(/\D/g,'');return d.length>=3?'v'+d.slice(0,-2)+'.'+d.slice(-2,-1)+'.'+d.slice(-1):String(v||'');};
 const VERSAO_ROTULO=csRotVer(VERSAO_APP)+' · '+VERSAO_DATA;
@@ -31632,14 +31632,23 @@ setInterval(()=>{try{
    Toda tela confere a cada 60 s (antes, só ao trocar de página). Também confere a versão:
    versão nova no ar derruba as velhas mesmo paradas. Botão em Configurações › Sistema. */
 const CS_ABRIU=Date.now();
+/* recarregar sem atrapalhar: espera 30 s sem ninguém tocar na tela (no máximo 10 min), salva o que tiver e recarrega */
+let CS_RECARREGANDO=false;
+async function csRecarregaQuieto(){
+  if(CS_RECARREGANDO)return;CS_RECARREGANDO=true;
+  const ini=Date.now();
+  while(Date.now()-CS_ULT_USO<30000&&Date.now()-ini<600000)await new Promise(r=>setTimeout(r,5000));
+  try{if(typeof corpoDados==='function'&&corpoDados()!==ULTIMO&&CS_BANCO_OK)await persistir();}catch(e){}   /* só o que alguém fez (a regra de sempre) */
+  location.reload();
+}
 async function csConfereComando(){
   try{if(!temNuvem()||typeof SESSAO==='undefined'||!SESSAO)return;
     const s=await csSinalLer(['comando','versao','sistema']);const c=s.comando||{};CS_CFG_SIS=s.sistema||{};
     const t=x=>x?Date.parse(x):0;
     if(t(c.sair)>CS_ABRIU){
-      if(csContaCompartilhada()){location.reload();return;}
+      if(csContaCompartilhada()){csRecarregaQuieto();return;}
       return csSaiCom(c.msg||'O sistema foi reiniciado pelo administrador. Entre de novo.');}
-    if(t(c.recarregar)>CS_ABRIU){location.reload();return;}
+    if(t(c.recarregar)>CS_ABRIU){csRecarregaQuieto();return;}
     const v=(s.versao||{}).v;
     if(csVnum(v)>csVnum(VERSAO_APP))return csTrocaVersao(v);
   }catch(e){}
@@ -31793,6 +31802,56 @@ try{const _ae438=aplicarEstado;aplicarEstado=function(txt){
     if(d.ordens.length!==n0){console.warn('[v438] OP sem produto deixada de fora:',n0-d.ordens.length);txt=JSON.stringify(d);}}}catch(e){}
   return _ae438.call(this,txt);};}catch(e){}
 try{csNucleo.versao='v438';}catch(e){}
+
+</script>
+<script>
+/* ===================== v4.3.9 · TANQUES =====================
+   1) "Pronto até" atrasado: laranja claro e parado (antes laranja forte piscando).
+   2) Sai o "Voltar para a programar" do lote: OP criada se edita (troca lote, tanque, volume) ou se exclui.
+      Foi assim que o lote 972 voltou para "a programar" por engano.
+   3) "Liberar lote" nos três pontinhos do tanque e nos três pontinhos da OP no envase:
+      abre direto a Análise do lote; com a análise conforme, o botão Liberar já fica verde. */
+document.head.insertAdjacentHTML('beforeend',`<style>
+.cs8-pisca,#tqgrid .cs8-ti .cs8-pisca{animation:none!important;background:#FFEDD5!important;color:#C2410C!important;box-shadow:inset 0 0 0 1px #FDBA74}
+.cs8-pisca span,.cs8-pisca b{color:#C2410C!important}
+.cs-ctx button.cs-libtq{color:#15803D;font-weight:700}
+.cs-ctx button.cs-libtq:hover{background:#F0FDF4;color:#15803D}
+.cs-ctx .cs-libok{display:block;padding:7px 12px;font-size:12.5px;color:#15803D;font-weight:600}
+</style>`);
+/* (2) o botão some do lote */
+try{const _al439=abrirLote;abrirLote=function(){const r=_al439.apply(this,arguments);try{const v=M('lV');if(v)v.remove();}catch(e){}return r;};}catch(e){}
+try{devolverParaProgramar=function(){toast('Para mudar um lote de tanque, edite a OP. Para tirar, exclua a OP.',true);};}catch(e){}
+/* (3) Liberar lote */
+function csLoteLiberado(b){try{return !!(b&&(b.liberadoEm||(APONTA[b.chave]||{}).liberadoEm));}catch(e){return false;}}
+function csAbrirLiberar(b){
+  if(!b)return;
+  try{ABA_LOTE='cert';CS_CTX_OP=null;}catch(e){}
+  abrirLote(b);
+  /* leva a pessoa até o botão: análise conforme = Liberar verde, fora = vermelho (pede desvio) */
+  setTimeout(()=>{try{const k=M('lK');if(k){k.scrollIntoView({block:'nearest'});k.style.boxShadow='0 0 0 3px rgba(21,128,61,.25)';}}catch(e){}},250);
+}
+function csItemLiberar(b){
+  if(!b)return '';
+  if(csLoteLiberado(b))return `<span class="cs-libok">✓ Lote liberado</span><div class="div"></div>`;
+  return `<button class="cs-libtq" data-cslib="1">✓ Liberar lote</button><div class="div"></div>`;
+}
+try{const _cl439=csCtxLote;csCtxLote=function(ev,chave){
+  const r=_cl439.apply(this,arguments);
+  try{let b=null;try{b=bateladas(ymd(S.refTq||S.ref)).find(x=>x.chave===chave)||bateladas(ymd(S.ref)).find(x=>x.chave===chave);}catch(e){}
+    const c=document.getElementById('csCtx');
+    if(b&&c&&!c.querySelector('[data-cslib],.cs-libok')){c.insertAdjacentHTML('afterbegin',csItemLiberar(b));
+      const bt=c.querySelector('[data-cslib]');if(bt)bt.onclick=e2=>{e2.stopPropagation();c.className='cs-ctx';csAbrirLiberar(b);};}
+  }catch(e){}
+  return r;};}catch(e){}
+try{const _cx439=csCtx;csCtx=function(ev,id,nivel){
+  const r=_cx439.apply(this,arguments);
+  try{if(nivel)return r;
+    const o=ORDENS.find(x=>x.id===id);const b=o&&csBatelada(o);const c=document.getElementById('csCtx');
+    if(b&&c&&!c.querySelector('[data-cslib],.cs-libok')){c.insertAdjacentHTML('afterbegin',csItemLiberar(b));
+      const bt=c.querySelector('[data-cslib]');if(bt)bt.onclick=e2=>{e2.stopPropagation();c.className='cs-ctx';csAbrirLiberar(b);};}
+  }catch(e){}
+  return r;};}catch(e){}
+try{csNucleo.versao='v439';}catch(e){}
 
 </script>
 </body>
