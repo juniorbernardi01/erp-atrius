@@ -312,11 +312,11 @@ select.st-h,select.st-a,select.st-b{border-radius:999px;font-weight:600}
 .f2 .empd{text-align:right;font-size:7.8pt;color:#6B7280;line-height:1.6}.f2 .empd b{display:block;font-size:8.8pt;color:#1A1D23;font-weight:600}
 .f2 .c2{display:flex;justify-content:space-between;align-items:flex-end;padding:16px 0 14px}
 .f2 .nro{display:block;font-size:24pt;font-weight:700;letter-spacing:-.02em;line-height:1;color:#0E1B33}.f2 .nro i{font-style:normal;font-size:14pt;font-weight:600;color:#545C69;margin-right:2px}
-.f2 .datas{display:grid;grid-template-columns:1fr 1fr;gap:6px;width:236px}
-.f2 .datas>div{border-radius:6px;padding:6px 9px 7px;display:flex;flex-direction:column;justify-content:space-between;gap:3px;min-height:44px;box-sizing:border-box}
+.f2 .datas{display:grid;grid-template-columns:1fr 1fr;gap:8px;width:330px}
+.f2 .datas>div{border-radius:7px;padding:4px 12px 5px;display:flex;flex-direction:column;justify-content:center;gap:1px;line-height:1.15;box-sizing:border-box}
 .f2 .datas span{font-size:6.8pt;letter-spacing:.14em;text-transform:uppercase;color:#8B93A1;font-weight:600;white-space:nowrap}
-.f2 .datas .emi{border:1px solid #1A1D23}.f2 .datas .emi b{font-size:10pt;font-weight:600;color:#1A1D23}
-.f2 .datas .ent{background:#1B4F9C;border:1px solid #1B4F9C}.f2 .datas .ent span{color:#CFDDF6}.f2 .datas .ent b{color:#fff;font-size:12pt;font-weight:700;letter-spacing:-.01em}
+.f2 .datas .emi{border:1px solid #1A1D23}.f2 .datas .emi b{font-size:11.5pt;font-weight:600;color:#1A1D23}
+.f2 .datas .ent{background:#1B4F9C;border:1px solid #1B4F9C}.f2 .datas .ent span{color:#CFDDF6}.f2 .datas .ent b{color:#fff;font-size:13.5pt;font-weight:700;letter-spacing:-.01em}
 .f2 .datas span{font-size:6pt!important;letter-spacing:.12em!important}
 .t2 tr.sb td{background:#FAFAF8;padding-top:5px;padding-bottom:6px;font-size:8.2pt;border-bottom:1px solid #EFEEE9}
 .t2 tr.sb td b{font-weight:500}.t2 tr.pr td{border-bottom-color:#F5F4F0}
@@ -1861,12 +1861,12 @@ function folhaOC(o){
   const e=empresa(),f=o.forn||{},t=contaOC(o);let logo='';try{logo=N.logo?N.logo():'';}catch(x){}
   const ent=o.entrega&&o.entrega.outro?o.entrega:null;
   const itens=o.itens.map((it,k)=>{const c=contaItem(it),envs=o.benef?envsDe(it):[],mo=o.benef&&it.mo;
-    const forn=[it.nomeForn?'Nome no fornecedor: <b>'+esc(it.nomeForn)+'</b>':'',it.codForn?'cód '+esc(it.codForn):'',it.modo==='cx'?nf(it.qtdCx)+' '+(+it.qtdCx===1?'caixa':'caixas')+' de '+nf(it.cx)+' un':''].filter(Boolean).join(' · ');
+    const forn=[it.nomeForn?'Ref. forn.: '+esc(it.nomeForn):'',it.codForn?'<span style="white-space:nowrap">Cód. '+esc(it.codForn)+'</span>':'',it.modo==='cx'?nf(it.qtdCx)+' '+(+it.qtdCx===1?'caixa':'caixas')+' de '+nf(it.cx)+' un':''].filter(Boolean).join(' · ');
     const dpN=e=>{try{return depNomeDe(depDoSub(o,e));}catch(x){return '';}};
-    return `<tr class="${envs.length?'pr':''}"><td class="c k">${k+1}</td><td><b>${esc(it.nome)}</b>${forn?`<small>${forn}</small>`:''}${o.benef?`<span class="tg2 ${mo?'mo':'cp'}">${mo?'Mão de obra · beneficiamento':'Compra'}</span>`:''}</td>
+    return `<tr class="${envs.length?'pr':''}"><td class="c k">${k+1}</td><td><b>${esc(it.nome)}</b>${forn?`<small>${forn}</small>`:''}</td>
     <td class="c">${esc((it.un||'un').toUpperCase())}</td><td class="n">${nq(it.qtd)}</td><td class="n">${nf(it.preco,4)}</td><td class="n">${mo?'—':nq(it.icms)+'%'}</td><td class="n">${nq(it.ipi)}%</td><td class="n">${nf(o.benef?c.baseF:c.base,2)}</td></tr>`
     +envs.map(e=>{const q=r3((+e.fator||1)*(+it.qtd||0)),ps=+e.preco||0,vend=e.tipo==='venda',na=/^na\s/i.test(dpN(e));
-      return `<tr class="sb"><td></td><td>↳ <b>${esc(e.nome)}</b>${ps?`<span class="tg2 ${vend?'cp':'mo'}">${vend?'Compra':'Mão de obra de aplicação'}</span>`:''}<small>${ps&&vend?'':'Material da Atrius'+(na?' · já enviado a vocês':' · vai junto')}</small></td>
+      return `<tr class="sb"><td></td><td>↳ ${esc(e.nome)}</td>
         <td class="c">${esc((e.un||'un').toUpperCase())}</td><td class="n">${nq(q)}</td><td class="n">${ps?nf(ps,4):'—'}</td><td class="n">${ps&&vend?nq(it.icms)+'%':'—'}</td><td class="n">—</td><td class="n">${ps?nf(q*ps,2):'—'}</td></tr>`;}).join('');}).join('');
   const prazo=(o.pag.parcelas||[]).length===1&&o.pag.parcelas[0].d===0?'à vista':(o.pag.parcelas||[]).map(p=>p.d).join('/')+' dias';
   const formas=[...new Set((o.pag.parcelas||[]).map(p=>p.forma))].join(' + ')||o.pag.forma;
