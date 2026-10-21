@@ -5475,7 +5475,10 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v437';
+const VERSAO_APP='v438';const VERSAO_DATA='21/10/2026';
+/* número que aparece na tela: v438 → v4.3.8 (por dentro continua v438, que é o que as versões comparam) */
+const csRotVer=v=>{const d=String(v||'').replace(/\D/g,'');return d.length>=3?'v'+d.slice(0,-2)+'.'+d.slice(-2,-1)+'.'+d.slice(-1):String(v||'');};
+const VERSAO_ROTULO=csRotVer(VERSAO_APP)+' · '+VERSAO_DATA;
 let DRAG=null;
 function render(){
   recomporTudo();
@@ -5602,7 +5605,7 @@ function topo(conf){
     const nome=nomeDaSessao()==='—'?'':nomeDaSessao();
     const mail=(typeof emailDaSessao==='function'&&emailDaSessao())||'';
     mq.innerHTML=(nome?`<b>${nome}</b>${mail?`<span>${mail}</span>`:''}`:'')
-      +`<span style="opacity:.65;margin-top:3px">PCP ${VERSAO_APP}</span>`;
+      +`<span style="opacity:.65;margin-top:3px">PCP ${VERSAO_ROTULO}</span>`;
   }
   const et=M('etsw');
   et.style.display=['envase','tanques'].includes(S.page)?'':'none';
@@ -6428,7 +6431,7 @@ function corpoAba(a){
     <div class="st">Versão</div>
     <div class="verbox">
       <div class="verh">
-        <div class="n">${VERSAO_APP}</div>
+        <div class="n" style="font-size:28px">${csRotVer(VERSAO_APP)}<div style="font-size:12px;font-weight:500;opacity:.6">${VERSAO_DATA}</div></div>
         <div class="t"><b>PCP Atrius</b>
           <span>arquivo aberto neste navegador${
             typeof VERSAO_NUVEM!=='undefined'&&VERSAO_NUVEM
@@ -17635,7 +17638,7 @@ ${d.lotes.map(b=>{const ap=APONTA[b.chave]||{};
     <td class="mono">${e(b.tanque||'—')}</td><td class="n mono">${nf(b.volume)} L</td>
     <td class="mono">${e(ap.liberadoEm||'—')}</td><td>${e(ap.liberadoPor||'—')}</td></tr>`;}).join('')}
 </tbody></table>`:''}
-<footer><span>PCP Atrius ${VERSAO_APP}</span><span>${e(dLongo(data))}</span></footer>
+<footer><span>PCP Atrius ${VERSAO_ROTULO}</span><span>${e(dLongo(data))}</span></footer>
 </body></html>`;
   try{
     const w=window.open('','_blank');
@@ -29936,7 +29939,7 @@ try{csNucleo.versao='v378';}catch(e){}
 
 </script>
 <script>
-try{const v=document.getElementById('lgVer');if(v)v.textContent=VERSAO_APP;}catch(e){}
+try{const v=document.getElementById('lgVer');if(v)v.textContent=VERSAO_ROTULO;}catch(e){}
 try{csNucleo.versao='v379';}catch(e){}
 </script>
 <script>
@@ -31724,11 +31727,72 @@ try{ligarPolling=function(){clearInterval(tPoll);tPoll=setInterval(()=>{try{
   CS_CONF_ULT=Date.now();conferirNuvem();}catch(e){}},2000);};
   if(typeof tPoll!=='undefined'&&tPoll)ligarPolling();}catch(e){}
 /* depois de trocar de versão sozinho, um aviso discreto */
-setTimeout(()=>{try{const v=sessionStorage.getItem('erp.atualizou');if(v!=null){sessionStorage.removeItem('erp.atualizou');toast('Sistema atualizado para a '+VERSAO_APP+'.');}}catch(e){}},2500);
+setTimeout(()=>{try{const v=sessionStorage.getItem('erp.atualizou');if(v!=null){sessionStorage.removeItem('erp.atualizou');toast('Sistema atualizado para a '+VERSAO_ROTULO+'.');}}catch(e){}},2500);
 /* o motivo da saída aparece na tela de entrar (o login abre antes deste bloco carregar) */
 [300,1500].forEach(ms=>setTimeout(()=>{try{const m=sessionStorage.getItem('erp.saiu');const l=M('login'),e=M('lgErro');
   if(m&&l&&!l.hidden&&e){e.textContent=m;e.hidden=false;sessionStorage.removeItem('erp.saiu');}}catch(e){}},ms));
 try{csNucleo.versao='v437';}catch(e){}
+
+</script>
+<script>
+/* ===================== v438 · VERSÃO NOVA É OBRIGATÓRIA =====================
+   21/10: a tela da Neuci ficou na v436 (com o erro já corrigido) porque ninguém deu Ctrl+F5.
+   Agora:
+   1) Toda tela confere o site a cada 60 s (só o cabeçalho, leve). Achou versão nova:
+      - computador: o PRÓXIMO clique ou tecla não faz a ação na versão velha; a tela avisa
+        "Versão nova" e vai para o login já carregando a versão nova. Se ninguém mexer em 2 min,
+        vai sozinha.
+      - tablet, TV e tela da máquina: recarrega sozinho quando ninguém estiver marcando (sem login).
+   2) A primeira tela que abre a versão nova grava "appVer" no banco na hora (as versões
+      antigas, até a v436, recarregam ao ver isso).
+   3) OP sem produto (meia OP criada por aparelho de versão velha) não trava mais a tela:
+      é deixada de fora ao carregar e sai do banco na próxima gravação. */
+let CS_V438_NOVA=null;
+function csV438Detectou(v){
+  if(CS_V438_NOVA)return;CS_V438_NOVA=v||'nova';
+  if(csChaoFabrica()){csTrocaVersao(v);return;}
+  setTimeout(()=>{try{if(Date.now()-CS_ULT_USO>110000)csV438Sai();}catch(e){}},120000);
+}
+function csV438Sai(){
+  try{let a=document.getElementById('csVerNova');if(!a){a=document.createElement('div');a.id='csVerNova';
+    a.style.cssText='position:fixed;inset:0;z-index:100000;background:rgba(14,27,51,.9);color:#fff;display:flex;align-items:center;justify-content:center;font:600 20px Inter,system-ui,sans-serif;text-align:center;padding:24px';
+    a.innerHTML='<div><div style="font-size:26px;font-weight:800;margin-bottom:8px">Versão nova do sistema</div><div style="opacity:.85;font-weight:500">Salvando e atualizando… entre de novo em seguida.</div></div>';document.body.appendChild(a);}}catch(e){}
+  (async()=>{
+    try{if(typeof corpoDados==='function'&&corpoDados()!==ULTIMO&&CS_BANCO_OK)await persistir(true);}catch(e){}
+    try{localStorage.removeItem(CS_ULT_KEY);}catch(e){}
+    try{sessionStorage.setItem('erp.saiu',`O sistema foi atualizado (${csRotVer(CS_V438_NOVA)}). Entre de novo para continuar.`);}catch(e){}
+    try{localStorage.removeItem('erp.sid');}catch(e){}
+    try{SESSAO=null;localStorage.removeItem(SUPA_SESSAO);}catch(e){}
+    /* ?v= fura o cache do GitHub e já carrega o arquivo novo */
+    try{location.replace(location.pathname+'?v='+encodeURIComponent(CS_V438_NOVA)+'#home');}catch(e){location.reload();}
+  })();
+}
+/* o clique ou tecla seguinte, com versão nova no ar, não roda na versão velha */
+['pointerdown','keydown','touchstart'].forEach(ev=>window.addEventListener(ev,e=>{
+  if(!CS_V438_NOVA||csChaoFabrica())return;
+  try{if(e.target&&e.target.closest&&e.target.closest('#login'))return;}catch(x){}
+  e.preventDefault();e.stopImmediatePropagation();csV438Sai();},{capture:true}));
+/* as verificações da v437 passam a usar esta regra */
+try{csTrocaVersao=(function(_t){return async function(v){if(csChaoFabrica())return _t.apply(this,arguments);csV438Detectou(v);};})(csTrocaVersao);}catch(e){}
+setInterval(csOlhaSite,60000);
+/* o aviso antigo (appVer no banco) também segue a regra nova */
+try{const _aj438=csAtualizarJa;csAtualizarJa=function(){if(!csChaoFabrica()&&CS_VER_NOVA){csV438Detectou(CS_VER_NOVA);return;}return _aj438.apply(this,arguments);};}catch(e){}
+/* (2) anuncia a versão no banco assim que leu o banco */
+let CS_V438_PUB=false;
+setInterval(async()=>{try{
+  if(CS_V438_PUB||!CS_BANCO_OK||typeof csRpc!=='function')return;
+  if(csVerNum(CS_APPVER_BANCO)>=csVerNum(VERSAO_APP)){CS_V438_PUB=true;return;}
+  CS_V438_PUB=true;const n=await csRpc([{p:['appVer'],t:'set',v:VERSAO_APP}]);
+  if(n>0){CS_APPVER_BANCO=VERSAO_APP;if(n===VERSAO_NUVEM+1)VERSAO_NUVEM=n;else window.CS_LER_JA=true;}
+  try{await csSinalGravar('versao',{v:VERSAO_APP,em:new Date().toISOString(),por:emailDaSessao()});}catch(e){}
+}catch(e){CS_V438_PUB=false;}},5000);
+/* (3) OP sem produto fica de fora */
+try{const _ae438=aplicarEstado;aplicarEstado=function(txt){
+  try{const d=JSON.parse(txt);if(d&&Array.isArray(d.ordens)){const n0=d.ordens.length;
+    d.ordens=d.ordens.filter(o=>o&&o.codigo&&o.data);
+    if(d.ordens.length!==n0){console.warn('[v438] OP sem produto deixada de fora:',n0-d.ordens.length);txt=JSON.stringify(d);}}}catch(e){}
+  return _ae438.call(this,txt);};}catch(e){}
+try{csNucleo.versao='v438';}catch(e){}
 
 </script>
 </body>
