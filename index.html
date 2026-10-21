@@ -5475,7 +5475,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v436';
+const VERSAO_APP='v437';
 let DRAG=null;
 function render(){
   recomporTudo();
@@ -31522,6 +31522,213 @@ try{csNucleo.tqSair=pin=>{const r=csTqQuem(pin);if(!r.ok)return {erro:r.erro};
   const q=r.q||{};if(!(q.master||q.nivel==='master'))return {erro:'Só o master solta o aparelho.'};
   try{localStorage.removeItem('erp.quiosque');localStorage.removeItem('erp.maqTablet');sessionStorage.setItem('erp.qSaiu','1');}catch(e){}
   setTimeout(()=>{location.replace(location.pathname+'#home');location.reload();},50);return {ok:true};};}catch(e){}
+
+</script>
+<script>
+/* ===================== v437 · INATIVIDADE =====================
+   1) Quem fica X minutos sem mexer (mouse, teclado, toque) sai do sistema e precisa entrar de novo.
+      Vale para todas as abas do mesmo navegador juntas: mexer numa aba conta para as outras.
+      Ficam de fora as telas de chão de fábrica: TV, tablet dos tanques/máquina (quiosque) e #op.
+   2) Só grava o que alguém fez: a gravação só sai se houve clique, toque ou tecla no último minuto
+      (ou logo depois de o sistema mandar algo ao Tiny). Diferença que aparece sozinha na tela
+      (conta refeita, data que virou) fica segurada e só vai junto com a próxima ação de verdade.
+   O tempo de saída fica em Configurações › Dados e versão (sinal 'sistema' no banco; padrão 60, 0 = desligado). */
+const CS_ULT_KEY='erp.ultUso';
+let CS_ULT_USO=0;                 /* última ação de alguém NESTA tela (abrir a página não conta) */
+const CS_CARGA=Date.now();        /* para a inatividade, abrir conta como uso */
+const CS_GRAVA_PARADO=5;          /* minutos sem mexer: a tela passa a conferir o banco devagar */
+const CS_GRAVA_JANELA=60000;      /* a gravação precisa de uma ação de alguém neste intervalo */
+let CS_GRAVA_LIBERA_ATE=0;        /* o envio ao Tiny libera a gravação do resultado por uns segundos */
+let CS_CFG_SIS={};   /* vem do banco (erp_sinal 'sistema'): {inativoMin} */
+function csInativoMin(){const v=CS_CFG_SIS.inativoMin;return v==null||v===''?60:+v;}
+function csChaoFabrica(){
+  try{if(typeof MODO_TV!=='undefined'&&MODO_TV)return true;}catch(e){}
+  try{if(typeof csQuiosque==='function'&&csQuiosque())return true;}catch(e){}
+  try{if(/^#op/.test(location.hash))return true;}catch(e){}
+  try{if(document.body.classList.contains('cs-operon'))return true;}catch(e){}
+  return false;
+}
+function csUltUso(){let g=0;try{g=+localStorage.getItem(CS_ULT_KEY)||0;}catch(e){}return Math.max(CS_ULT_USO,g,CS_CARGA);}
+let CS_ULT_GRAVOU=0;
+function csMexeu(){
+  const n=Date.now();CS_ULT_USO=n;
+  if(n-CS_ULT_GRAVOU>20000){CS_ULT_GRAVOU=n;try{localStorage.setItem(CS_ULT_KEY,String(n));}catch(e){}}
+  /* voltou a mexer: o que ficou segurado vai agora */
+  if(window.CS_GRAVA_SEGURADA){window.CS_GRAVA_SEGURADA=false;try{agendarSalvar();}catch(e){}}
+}
+['pointerdown','keydown','touchstart','wheel'].forEach(ev=>window.addEventListener(ev,csMexeu,{capture:true,passive:true}));
+/* os módulos (Compras, Vendas, Financeiro…) abrem num quadro: mexer lá dentro também conta */
+setInterval(()=>{try{document.querySelectorAll('iframe').forEach(f=>{const d=f.contentWindow&&f.contentWindow.document;
+  if(d&&!d.__csUso){d.__csUso=1;['pointerdown','keydown','touchstart','wheel'].forEach(ev=>d.addEventListener(ev,csMexeu,{capture:true,passive:true}));}});}catch(e){}},2000);
+
+/* (2) gravação com a tela parada: segura */
+try{const _pe437=persistir;persistir=async function(forcar){
+  try{
+    if(!forcar&&Date.now()>CS_GRAVA_LIBERA_ATE&&Date.now()-CS_ULT_USO>CS_GRAVA_JANELA){
+      if(typeof corpoDados==='function'&&typeof ULTIMO!=='undefined'&&corpoDados()!==ULTIMO){
+        if(!window.CS_GRAVA_SEGURADA)console.warn('[v437] ninguém mexeu: gravação segurada até a próxima ação');
+        window.CS_GRAVA_SEGURADA=true;
+      }
+      return;
+    }
+  }catch(e){}
+  return _pe437.apply(this,arguments);};}catch(e){}
+
+/* o resultado de um envio ao Tiny (feito pelo próprio sistema) pode gravar */
+try{const _ef437=enviarDaFila;enviarDaFila=async function(){try{return await _ef437.apply(this,arguments);}finally{CS_GRAVA_LIBERA_ATE=Date.now()+15000;}};}catch(e){}
+
+/* ===================== v437 · NUNCA GRAVAR O QUE NÃO VEIO DO BANCO =====================
+   21/10: o banco travou de madrugada; telas que abriram sem conseguir ler ficaram com os
+   cadastros de EXEMPLO do programa (operadores Marcos Silva, Elaine Rocha…) e, quando o banco
+   voltou, um aparelho gravou isso por cima. Agora:
+   a) só grava quem leu o banco nesta sessão (CS_BANCO_OK);
+   b) quem abriu sem banco não trabalha com dado de exemplo: aparece a tela "Sem conexão com o banco"
+      e, quando o banco volta, a página recarrega limpa — nada do que estava na tela sobe;
+   c) a leitura que volta vazia (sem a linha) é tratada como falha, nunca como "primeira carga". */
+let CS_BANCO_OK=false;
+/* a abertura que já leu o banco antes deste bloco carregar: terminou online = leu do banco */
+(function(){let n=0;const t=setInterval(()=>{try{
+  if(CS_BANCO_OK||++n>400){clearInterval(t);return;}
+  if(typeof PRONTO!=='undefined'&&PRONTO){clearInterval(t);if(typeof ONLINE!=='undefined'&&ONLINE&&VERSAO_NUVEM>0)CS_BANCO_OK=true;}
+}catch(e){}},250);})();
+function csDadosValidos(l){return !!(l&&l.dados&&Array.isArray(l.dados.ordens)&&l.dados.cadastro);}
+try{const _nl437=nuvemLer;nuvemLer=async function(){
+  const l=await _nl437.apply(this,arguments);
+  if(csDadosValidos(l))CS_BANCO_OK=true;
+  else throw new Error('o banco não devolveu os dados');
+  return l;};}catch(e){}
+try{const _lp437=csLerPartes;csLerPartes=async function(){const l=await _lp437.apply(this,arguments);if(csDadosValidos(l))CS_BANCO_OK=true;return l;};}catch(e){}
+try{const _ng437=nuvemGravar;nuvemGravar=async function(){
+  if(!CS_BANCO_OK){console.warn('[v437] esta tela ainda não leu o banco: não grava');throw new Error('sem banco');}
+  return _ng437.apply(this,arguments);};}catch(e){}
+/* quem abriu sem banco: quando voltar, recarrega do zero em vez de juntar o que estava na tela */
+try{const _rc437=csReconecta;csReconecta=async function(){
+  if(!CS_BANCO_OK&&typeof ONLINE!=='undefined'&&!ONLINE&&temNuvem()&&SESSAO){
+    try{const v=await nuvemVersao();if(v!=null){location.reload();return;}}catch(e){}
+    return;}
+  return _rc437.apply(this,arguments);};}catch(e){}
+/* o mesmo vale para os módulos (Compras, Estoque, Financeiro…): leitura vazia não vira "criar linha" */
+try{const _gv437=csNucleo.gravar;csNucleo.gravar=async function(id,dados){
+  if(!CS_BANCO_OK&&temNuvem()&&SESSAO)throw new Error('sem conexão com o banco: nada foi gravado');
+  return _gv437.apply(this,arguments);};}catch(e){}
+/* a tela de espera */
+setInterval(()=>{try{
+  let a=document.getElementById('csSemBanco');
+  const mostra=temNuvem()&&typeof SESSAO!=='undefined'&&SESSAO&&!CS_BANCO_OK&&typeof PRONTO!=='undefined'&&PRONTO&&!(typeof MODO_TV!=='undefined'&&MODO_TV&&false);
+  if(!mostra){if(a)a.remove();return;}
+  if(!a){a=document.createElement('div');a.id='csSemBanco';
+    a.style.cssText='position:fixed;inset:0;z-index:99999;background:rgba(14,27,51,.92);color:#fff;display:flex;align-items:center;justify-content:center;padding:24px;font:500 17px Inter,system-ui,sans-serif;text-align:center';
+    a.innerHTML='<div style="max-width:460px"><div style="font:700 26px Inter,system-ui;margin-bottom:10px">Sem conexão com o banco</div><div style="opacity:.85;line-height:1.5">O sistema não conseguiu ler os dados. Para não trabalhar com informação errada, ele fica parado aqui e abre sozinho quando o banco responder.</div><button id="csSbTenta" style="margin-top:18px;background:#fff;color:#0E1B33;border:0;border-radius:10px;padding:10px 18px;font:700 15px Inter,system-ui;cursor:pointer">Tentar agora</button></div>';
+    document.body.appendChild(a);a.querySelector('#csSbTenta').onclick=()=>location.reload();}
+}catch(e){}},1500);
+
+/* ===================== v437 · DERRUBAR TODO MUNDO DE ONDE ESTIVER =====================
+   Sem depender de alguém ir fechar cada computador. No banco, o sinal 'comando' manda:
+     {"recarregar":"<data/hora>"} → toda tela aberta antes disso recarrega (lê tudo do banco de novo);
+     {"sair":"<data/hora>"}       → toda tela aberta antes disso sai para o login (tablets só recarregam).
+   Toda tela confere a cada 60 s (antes, só ao trocar de página). Também confere a versão:
+   versão nova no ar derruba as velhas mesmo paradas. Botão em Configurações › Sistema. */
+const CS_ABRIU=Date.now();
+async function csConfereComando(){
+  try{if(!temNuvem()||typeof SESSAO==='undefined'||!SESSAO)return;
+    const s=await csSinalLer(['comando','versao','sistema']);const c=s.comando||{};CS_CFG_SIS=s.sistema||{};
+    const t=x=>x?Date.parse(x):0;
+    if(t(c.sair)>CS_ABRIU){
+      if(csContaCompartilhada()){location.reload();return;}
+      return csSaiCom(c.msg||'O sistema foi reiniciado pelo administrador. Entre de novo.');}
+    if(t(c.recarregar)>CS_ABRIU){location.reload();return;}
+    const v=(s.versao||{}).v;
+    if(csVnum(v)>csVnum(VERSAO_APP))return csTrocaVersao(v);
+  }catch(e){}
+}
+setInterval(csConfereComando,60000);setTimeout(csConfereComando,8000);
+/* versão nova: troca sozinho, sem pedir login de novo. Antes salva o que tiver pendente
+   e espera a pessoa parar de digitar (no máximo 2 min). */
+let CS_TROCANDO=false;
+async function csTrocaVersao(v){
+  if(CS_TROCANDO)return;CS_TROCANDO=true;
+  for(let i=0;i<24;i++){
+    let ocupado=false;try{ocupado=(typeof csDigitando==='function'&&csDigitando())||!!(typeof salvando!=='undefined'&&salvando)
+      ||(M('mask')&&M('mask').classList.contains('on'));}catch(e){}
+    if(!ocupado)break;await new Promise(r=>setTimeout(r,5000));}
+  try{if(typeof corpoDados==='function'&&corpoDados()!==ULTIMO&&CS_BANCO_OK)await persistir(true);}catch(e){}
+  try{sessionStorage.setItem('erp.atualizou',v||'');}catch(e){}
+  location.reload();
+}
+/* o próprio site: a cada 5 min olha se o index.html publicado já é de versão mais nova.
+   Assim a troca acontece sozinha ao subir no GitHub, sem ninguém precisar abrir antes. */
+let CS_SITE_TAG=null;
+async function csOlhaSite(){
+  try{if(location.protocol!=='https:')return;
+    /* primeiro só o cabeçalho (leve); baixa a página só quando ela mudou */
+    const h=await fetch(location.pathname,{method:'HEAD',cache:'no-store'});
+    const tag=h.headers.get('etag')||h.headers.get('last-modified')||'';
+    if(tag&&CS_SITE_TAG===null){CS_SITE_TAG=tag;return;}
+    if(tag&&tag===CS_SITE_TAG)return;
+    CS_SITE_TAG=tag||CS_SITE_TAG;
+    const r=await fetch(location.pathname+'?olha='+Date.now(),{cache:'no-store'});if(!r.ok)return;
+    const t=await r.text();const m=t.match(/const VERSAO_APP='(v\d+)'/);
+    if(m&&csVnum(m[1])>csVnum(VERSAO_APP))csTrocaVersao(m[1]);}catch(e){}
+}
+setInterval(csOlhaSite,5*60000);setTimeout(csOlhaSite,20000);
+/* a conferência antiga (ao trocar de página) mandava para o login; agora só troca de versão */
+try{const _cs437=csConfereSinais;csConfereSinais=async function(){
+  try{const s=await csSinalLer(['versao']);const v=(s.versao||{}).v;if(csVnum(v)>csVnum(VERSAO_APP))return csTrocaVersao(v);}catch(e){}
+  return _cs437.apply(this,arguments);};}catch(e){}
+async function csComando(tipo,msg){
+  const o={em:new Date().toISOString(),por:emailDaSessao()};o[tipo]=new Date().toISOString();if(msg)o.msg=msg;
+  await csSinalGravar('comando',o);
+}
+window.csComando=csComando;
+/* Configurações: o bloco "Sistema em todos os aparelhos" (só master) */
+function csEhMaster(){try{return !!(MEU_ACESSO&&(MEU_ACESSO.master||MEU_ACESSO.nivel==='master'));}catch(e){return false;}}
+try{const _ga437=gradeAdmin;gradeAdmin=function(){
+  const r=_ga437.apply(this,arguments);
+  try{const d=document.querySelector('#adgrid .dados');
+    if(d&&csEhMaster()&&!document.getElementById('csSisTodos')){
+      d.insertAdjacentHTML('afterend',`<div class="st" id="csSisTodos">Sistema em todos os aparelhos</div>
+      <div class="dados"><p>Vale para todo computador, tablet e TV com o sistema aberto, de onde estiverem. Em até 1 minuto cada um obedece.</p>
+        <div class="dadosb"><button class="btn sm" id="csCmdRec">Recarregar todos</button>
+          <button class="btn sm" id="csCmdSair" style="color:var(--danger)">Derrubar todos para o login</button></div>
+        <p style="margin-top:12px">Sair sozinho depois de <input id="csInatMin" class="n" type="number" min="0" step="5" style="width:70px;height:30px" value="${csInativoMin()}"> minutos sem uso
+          <span class="k">(0 = nunca · tablets, TV e telas das máquinas não saem)</span> <button class="btn sm" id="csInatOk">Salvar</button></p></div>`);
+      const ok=m=>{try{toast(m);}catch(e){}};
+      M('csCmdRec').onclick=async()=>{await csComando('recarregar');ok('Pronto: todos os aparelhos recarregam em até 1 minuto.');};
+      M('csCmdSair').onclick=async()=>{const b=M('csCmdSair');if(b.dataset.c!=='1'){b.dataset.c='1';b.textContent='Confirmar: derrubar todos';return;}
+        await csComando('sair','O sistema foi reiniciado pelo administrador. Entre de novo.');ok('Pronto: todos saem para o login em até 1 minuto (os tablets só recarregam).');
+        b.dataset.c='';b.textContent='Derrubar todos para o login';};
+      M('csInatOk').onclick=async()=>{const v=Math.max(0,parseInt(M('csInatMin').value,10)||0);CS_CFG_SIS={...CS_CFG_SIS,inativoMin:v};
+        await csSinalGravar('sistema',{...CS_CFG_SIS,em:new Date().toISOString(),por:emailDaSessao()});ok(v?`Sai sozinho depois de ${v} minutos sem uso.`:'Não sai mais por inatividade.');};
+    }}catch(e){console.warn('[v437] bloco sistema',e&&e.message);}
+  return r;};}catch(e){}
+/* (1) saída por inatividade */
+async function csSairInativo(){
+  try{clearInterval(tPoll);}catch(e){}
+  try{localStorage.removeItem(CS_ULT_KEY);}catch(e){}
+  csSaiCom(`Você saiu porque o sistema ficou ${csInativoMin()} minutos sem uso. Entre de novo para continuar.`);
+}
+setInterval(()=>{try{
+  const min=csInativoMin();if(!(min>0))return;
+  if(csChaoFabrica())return;
+  if(typeof SESSAO==='undefined'||!SESSAO)return;
+  if(Date.now()-csUltUso()>=min*60000)csSairInativo();
+}catch(e){}},30000);
+/* o aparelho volta do descanso (PC acordou, aba voltou): confere na hora */
+document.addEventListener('visibilitychange',()=>{try{if(document.hidden)return;const min=csInativoMin();
+  if(min>0&&!csChaoFabrica()&&typeof SESSAO!=='undefined'&&SESSAO&&Date.now()-csUltUso()>=min*60000)csSairInativo();}catch(e){}});
+/* (3) conferir o banco: tela em uso confere a cada 2 s; parada ou escondida, a cada 30 s */
+let CS_CONF_ULT=0;
+try{ligarPolling=function(){clearInterval(tPoll);tPoll=setInterval(()=>{try{
+  const ativa=csChaoFabrica()||(!document.hidden&&Date.now()-csUltUso()<CS_GRAVA_PARADO*60000);
+  if(!ativa&&Date.now()-CS_CONF_ULT<30000)return;
+  CS_CONF_ULT=Date.now();conferirNuvem();}catch(e){}},2000);};
+  if(typeof tPoll!=='undefined'&&tPoll)ligarPolling();}catch(e){}
+/* depois de trocar de versão sozinho, um aviso discreto */
+setTimeout(()=>{try{const v=sessionStorage.getItem('erp.atualizou');if(v!=null){sessionStorage.removeItem('erp.atualizou');toast('Sistema atualizado para a '+VERSAO_APP+'.');}}catch(e){}},2500);
+/* o motivo da saída aparece na tela de entrar (o login abre antes deste bloco carregar) */
+[300,1500].forEach(ms=>setTimeout(()=>{try{const m=sessionStorage.getItem('erp.saiu');const l=M('login'),e=M('lgErro');
+  if(m&&l&&!l.hidden&&e){e.textContent=m;e.hidden=false;sessionStorage.removeItem('erp.saiu');}}catch(e){}},ms));
+try{csNucleo.versao='v437';}catch(e){}
 
 </script>
 </body>
