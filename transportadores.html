@@ -704,4 +704,80 @@ function render(){
 })();
 
 </script>
+<script>
+/* ===== v4.5.4 · busca do cadastro pelo CNPJ (Receita Federal + inscrição estadual do SINTEGRA) =====
+   1º tenta a CNPJ.ws (traz a inscrição estadual de cada estado e o Simples/MEI); se não responder (limite de
+   3 consultas por minuto, sem internet…), usa a BrasilAPI (Receita, sem IE). */
+async function consultaCNPJ(cnpj){
+  const d=String(cnpj||'').replace(/\D/g,'');
+  if(d.length!==14)throw new Error('CNPJ com 14 números.');
+  const fone=(dd,n)=>{n=String(n||'').replace(/\D/g,'');if(!n)return '';const t=n.length===9?n.slice(0,5)+'-'+n.slice(5):n.slice(0,4)+'-'+n.slice(4);return dd?`(${dd}) ${t}`:t;};
+  const ctl=()=>{const c=new AbortController();setTimeout(()=>c.abort(),12000);return c.signal;};
+  try{
+    const r=await fetch('https://publica.cnpj.ws/cnpj/'+d,{signal:ctl()});
+    if(r.status===404||r.status===400)throw Object.assign(new Error('CNPJ não encontrado na Receita.'),{fim:true});
+    if(!r.ok)throw new Error('cnpj.ws '+r.status);
+    const j=await r.json(),e=j.estabelecimento||{},s=j.simples||{};
+    const uf=(e.estado&&e.estado.sigla)||'';
+    const ies=(e.inscricoes_estaduais||[]).map(x=>({ie:x.inscricao_estadual,uf:(x.estado&&x.estado.sigla)||'',ativo:!!x.ativo}));
+    const ie=(ies.find(x=>x.ativo&&x.uf===uf)||ies.find(x=>x.uf===uf)||{}).ie||'';
+    return {fonte:'Receita + SINTEGRA',razao:j.razao_social||'',fantasia:e.nome_fantasia||'',tipoLog:e.tipo_logradouro||'',rua:e.logradouro||'',
+      numero:e.numero||'',complemento:e.complemento||'',bairro:e.bairro||'',cep:e.cep||'',cidade:(e.cidade&&e.cidade.nome)||'',uf,
+      ibge:(e.cidade&&e.cidade.ibge_id)?String(e.cidade.ibge_id):'',fone:fone(e.ddd1,e.telefone1),email:(e.email||'').toLowerCase(),
+      cnae:e.atividade_principal?String(e.atividade_principal.id||'').replace(/\D/g,''):'',cnaeDesc:(e.atividade_principal&&e.atividade_principal.descricao)||'',
+      abertura:e.data_inicio_atividade||'',situacao:e.situacao_cadastral||'',desde:e.data_situacao_cadastral||'',
+      simples:/sim/i.test(s.simples||''),mei:/sim/i.test(s.mei||''),ie,ies};
+  }catch(err){
+    if(err.fim)throw err;
+    const r=await fetch('https://brasilapi.com.br/api/cnpj/v1/'+d,{signal:ctl()});
+    if(r.status===404)throw new Error('CNPJ não encontrado na Receita.');
+    if(!r.ok)throw new Error('A consulta da Receita não respondeu agora. Tente de novo em 1 minuto ou preencha à mão.');
+    const j=await r.json(),t=String(j.ddd_telefone_1||'').replace(/\D/g,'');
+    return {fonte:'Receita',razao:j.razao_social||'',fantasia:j.nome_fantasia||'',tipoLog:j.descricao_tipo_de_logradouro||'',rua:j.logradouro||'',
+      numero:j.numero||'',complemento:j.complemento||'',bairro:j.bairro||'',cep:String(j.cep||''),cidade:j.municipio||'',uf:j.uf||'',
+      ibge:j.codigo_municipio_ibge?String(j.codigo_municipio_ibge):'',fone:t?fone(t.slice(0,2),t.slice(2)):'',email:(j.email||'').toLowerCase(),
+      cnae:j.cnae_fiscal?String(j.cnae_fiscal):'',cnaeDesc:j.cnae_fiscal_descricao||'',abertura:j.data_inicio_atividade||'',
+      situacao:j.descricao_situacao_cadastral||'',desde:j.data_situacao_cadastral||'',simples:!!j.opcao_pelo_simples,mei:!!j.opcao_pelo_mei,ie:'',ies:[]};
+  }
+}
+
+/* transportadores: botão "Buscar na Receita" ao lado do CNPJ — preenche razão social, IE, endereço, cidade, UF, telefone e e-mail */
+(function(){
+  const _ft=formTransp;
+  formTransp=function(t){
+    const r=_ft.apply(this,arguments);
+    try{const inp=document.querySelector('#gav [data-f="cnpj"]');if(!inp)return r;
+      /* CNPJ primeiro, com espaço para o botão: busca e depois confere o resto */
+      try{const cm=k=>{const i=document.querySelector(`#gav [data-f="${k}"]`);return i&&i.closest('.cmp');};
+        const g=cm('cnpj').parentNode;cm('cnpj').classList.add('l2');
+        ['cnpj','ie','nome','fone','end','contato','cidade','uf','tinyId','email','obs'].forEach(k=>{const c=cm(k);if(c)g.appendChild(c);});}catch(e){}
+      const box=document.createElement('div');box.style.cssText='display:flex;gap:6px';
+      inp.parentNode.insertBefore(box,inp);box.appendChild(inp);inp.style.minWidth='0';inp.inputMode='numeric';
+      const b=document.createElement('button');b.type='button';b.className='btn';b.textContent='Buscar na Receita';b.style.height='38px';
+      b.title='Traz razão social, inscrição estadual, endereço, telefone e e-mail do CNPJ';box.appendChild(b);
+      const nt=document.createElement('div');nt.style.cssText='font-size:12px;margin-top:5px;line-height:1.4;color:var(--ink3)';inp.closest('.cmp').appendChild(nt);
+      const f=k=>document.querySelector(`#gav [data-f="${k}"]`);
+      const vai=async()=>{const d=String(inp.value).replace(/\D/g,'');
+        if(d.length!==14){nt.style.color='#B91C1C';nt.textContent='Digite o CNPJ com 14 números.';return;}
+        b.disabled=true;b.textContent='Buscando…';nt.style.color='var(--ink3)';nt.textContent='';
+        try{const n=await consultaCNPJ(d);
+          const pon=(k,v)=>{if(v&&f(k))f(k).value=v;};
+          inp.value=d.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/,'$1.$2.$3/$4-$5');
+          pon('nome',String(n.razao).toUpperCase());pon('ie',n.ie);
+          const cep=String(n.cep).replace(/\D/g,'');
+          pon('end',[[n.tipoLog,n.rua].filter(Boolean).join(' '),n.numero,n.complemento,n.bairro,cep.length===8?'CEP '+cep.slice(0,5)+'-'+cep.slice(5):''].filter(Boolean).join(', ').toUpperCase());
+          pon('cidade',n.cidade);pon('uf',n.uf);pon('fone',n.fone);pon('email',n.email);
+          const outras=n.ies.filter(x=>x.ie!==n.ie&&x.ativo).map(x=>x.uf+' '+x.ie);
+          const sit=n.situacao&&!/ativa/i.test(n.situacao);
+          nt.style.color=sit?'#B91C1C':'#047857';
+          nt.textContent=sit?`Atenção: situação na Receita é ${n.situacao}.`:
+            `Dados trazidos (${n.fonte})${n.ie?'':n.fonte==='Receita'?' · a inscrição estadual não veio: preencha à mão':' · sem inscrição estadual'}${outras.length?' · outras IE: '+outras.join(', '):''}.`;
+        }catch(e){nt.style.color='#B91C1C';nt.textContent=e.message||'Não consegui buscar agora.';}
+        b.disabled=false;b.textContent='Buscar na Receita';};
+      b.onclick=vai;inp.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();vai();}});
+    }catch(e){console.warn('[v454] busca CNPJ',e);}
+    return r;};
+})();
+
+</script>
 </body></html>

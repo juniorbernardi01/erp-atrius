@@ -1,6 +1,6 @@
 {
- "v": "v453",
- "versao": "4.5.3",
+ "v": "v454",
+ "versao": "4.5.4",
  "data": "22/10/2026",
- "o_que_mudou": "compras: entrega parcial marcada, necessidade pelo mínimo, últimas compras e estoque do item"
+ "o_que_mudou": "buscar cadastro pelo CNPJ (Receita e inscrição estadual) em clientes, fornecedores e transportadores"
 }
