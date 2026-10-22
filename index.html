@@ -5484,7 +5484,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v444';const VERSAO_DATA='21/10/2026';
+const VERSAO_APP='v447';const VERSAO_DATA='22/10/2026';
 /* número que aparece na tela: v438 → v4.3.8 (por dentro continua v438, que é o que as versões comparam) */
 const csRotVer=v=>{const d=String(v||'').replace(/\D/g,'');return d.length>=3?'v'+d.slice(0,-2)+'.'+d.slice(-2,-1)+'.'+d.slice(-1):String(v||'');};
 const VERSAO_ROTULO=csRotVer(VERSAO_APP)+' · '+VERSAO_DATA;
@@ -15296,8 +15296,8 @@ function menuOP(x,botao){
   const old=document.getElementById('od2m');if(old){const mesmo=old.dataset.id===x.o.id;old.remove();if(mesmo)return;}
   const {o,b}=x;const m=document.createElement('div');m.className='od2m';m.id='od2m';m.dataset.id=o.id;
   const itens=[['Abrir OP','abrir'],'sep',['&#9113; OP do tanque (PDF)','tq'],['&#9113; OP de envase (PDF)','env'],['&#9781; Etiquetas','etq'],['Certificado (PDF)','cert'],'sep',['&#9776; Histórico','hist'],['Marcadores','mk'],
-    ...(sit(o)==='concluida'?['sep',[(o.tinyEnviado&&o.tinyEnviado.em&&!(o.tinyAjuste&&!o.tinyAjuste.em))?'&#8645; Ver envio ao Tiny':'&#8645; Enviar ao Tiny','tiny']]:[]),
-    ...((typeof csNoTinyOP==='function'&&(Object.keys(csNoTinyOP(o)).length||(csLoteDaOP(o)&&Object.keys(csLiquido(`lote|${csLoteDaOP(o).chave}|`)).length)))?[['&#8617; Estornar no Tiny','estornar']]:[])];
+    ...(sit(o)==='concluida'?['sep',[(o.tinyEnviado&&o.tinyEnviado.em&&!(o.tinyAjuste&&!o.tinyAjuste.em))?'&#8645; Ver movimento de estoque':'&#8645; Lançar estoque','tiny']]:[]),
+    ...((typeof csNoTinyOP==='function'&&(Object.keys(csNoTinyOP(o)).length||(csLoteDaOP(o)&&Object.keys(csLiquido(`lote|${csLoteDaOP(o).chave}|`)).length)))?[['&#8617; Estornar estoque','estornar']]:[])];
   m.innerHTML=`<div class="mh">OP ${escAttr(String(o.lote||b.lote||''))} · ${nomeCurto(o.codigo)}</div>`+itens.map(i=>i==='sep'?'<div class="sep"></div>':`<button data-oda="${i[1]}">${i[0]}</button>`).join('');
   document.body.appendChild(m);
   const r=botao.getBoundingClientRect();m.style.left=(r.left)+'px';m.style.top=(r.bottom+4)+'px';
@@ -16401,7 +16401,7 @@ function movimentoDaOP(o){
   M('mF').innerHTML=`<div style="flex:1"></div>
     <button class="btn" id="esC">Fechar</button>
     ${(env.em&&!ajuste)?'':`<button class="btn pri" id="esK">${
-      ajuste?'Enviar o ajuste':'Enviar ao Tiny'}</button>`}`;
+      ajuste?'Lançar o ajuste':'Lançar no estoque'}</button>`}`;
   M('esC').onclick=fecharModal;
   if(M('esK'))M('esK').onclick=async()=>{
     const k=M('esK');k.disabled=true;k.textContent='Enviando…';
@@ -16413,7 +16413,7 @@ function movimentoDaOP(o){
     cons.forEach(x=>{if(x.tiny&&x.qtd!==0)
       movs.push({id:x.tiny,tipo:x.qtd>0?'S':'E',qtd:Math.abs(x.qtd)});});
     if(!movs.length){toast('Nada a enviar: nenhum item tem código do Tiny.',true);
-      k.disabled=false;k.textContent='Enviar ao Tiny';return;}
+      k.disabled=false;k.textContent='Lançar no estoque';return;}
     /* O envio passa pela fila: se a rede cair no meio, o movimento não se
        perde — fica pendente, reenvia sozinho e aparece com contador vermelho
        até alguém resolver. A chave impede que o reenvio duplique a baixa. */
@@ -22899,7 +22899,7 @@ function csPendentesTiny(){
 }
 async function csEnviarPendentes(){
   const l=csPendentesTiny();if(!l.length)return;
-  if(!window.confirm(`Enviar ao Tiny as ${l.length} OPs concluídas que ainda não foram?\n\nCada uma manda a entrada do acabado (em caixas/fardos) e a baixa da embalagem.`))return;
+  if(!window.confirm(`Lançar no estoque as ${l.length} OPs concluídas que ainda não foram?\n\nCada uma manda a entrada do acabado (em caixas/fardos) e a baixa da embalagem.`))return;
   const b=M('esPend');if(b){b.disabled=true;b.textContent='Enviando…';}
   let ok=0;
   for(const o of l){await csTinyAgora(o);if(o.tinyEnviado&&o.tinyEnviado.em)ok++;}
@@ -23014,7 +23014,7 @@ function csTelaEstorno(o){
   const lin=m=>Object.entries(m).map(([id,q])=>{const n=csNomeTiny(id);
     return `<tr><td>${escAttr(n.nome)}</td><td class="mono k">${id}</td><td class="n mono"><b>${q>0?'−':'+'}${nf(Math.abs(q))}</b> ${n.un}</td></tr>`;}).join('');
   if(M('mAcao'))M('mAcao').innerHTML='';M('modal').classList.add('wide');
-  M('mTit').textContent='Estornar no Tiny';M('mSub').hidden=false;
+  M('mTit').textContent='Estornar estoque';M('mSub').hidden=false;
   M('mSub').textContent=`${nomeCurto(o.codigo)} · lote ${o.lote||'—'} · OP ${rotuloOP(o)}`;
   M('mB').innerHTML=`<div class="alert q">O Tiny não deixa apagar um lançamento pela integração. O estorno lança o
       <b>contrário</b> do que foi, na mesma quantidade: o saldo volta ao que era, no Tiny e no ERP. No histórico do Tiny
@@ -23033,7 +23033,7 @@ function csTelaEstorno(o){
   M('esOk').onclick=()=>{const mot=cv('esMot').trim(),lt=!!(M('esLt')&&M('esLt').checked);
     if(mot.length<3){toast('Escreva o motivo.',true);M('esMot').focus();return;}
     if(!Object.keys(liq).length&&!lt){toast('Marque a matéria-prima do tanque: é o que está no Tiny.',true);return;}
-    pedirPin('Estornar no Tiny',`<b>${escAttr(nomeCurto(o.codigo))}</b> · lote ${escAttr(o.lote||'—')}: o estoque volta no Tiny e no ERP. Assina gestor ou master.`,
+    pedirPin('Estornar estoque',`<b>${escAttr(nomeCurto(o.codigo))}</b> · lote ${escAttr(o.lote||'—')}: o estoque volta no ERP. Assina gestor ou master.`,
       quem=>{fecharModal();csEstornoExec(o,mot,quem,lt);try{render();}catch(e){}},
       q=>['master','gestor'].includes(q.nivel));};
   abrirMask();
@@ -23087,7 +23087,7 @@ try{const _pd=csPendentesTiny;csPendentesTiny=function(){try{csSincFila();}catch
 function csFilaParada(){return FILA_TINY.filter(x=>x.estado!=='enviado');}
 try{const _ep=csEnviarPendentes;csEnviarPendentes=async function(){
   const l=csPendentesTiny();const f=csFilaParada().filter(x=>!l.some(o=>x.chave===`op|${o.id}|emb`));
-  if(!l.length&&f.length){if(!window.confirm(`Enviar ao Tiny os ${f.length} movimentos parados na fila?`))return;}
+  if(!l.length&&f.length){if(!window.confirm(`Lançar no estoque os ${f.length} movimentos parados na fila?`))return;}
   if(l.length)await _ep();
   for(const x of f){x.tentativas=0;await enviarDaFila(x.chave);}
   agendarSalvar();try{gradeEstoque();}catch(e){}};}catch(e){}
@@ -23409,7 +23409,7 @@ function csMovHTML(){
       <span style="flex:1"></span>${colsBotao('mvCols')}</div>
     <p class="adp">${de===ate?dCurto(de):`${dCurto(de)} a ${dCurto(ate)}`} · <b>OP de tanque</b>: a matéria-prima baixa no Tiny na liberação do lote, com os ajustes.
       <b>OP de envase</b>: na conclusão, baixa a embalagem e entra o acabado em caixas ou fardos. Tudo vai sozinho: aqui é para acompanhar e corrigir.</p>
-    ${ls.length?`<div class="rolx"><table class="tb csmov" id="mvTab"><thead><tr><th>Tipo</th><th>Nº</th><th>Produto</th><th>Máquina ou tanque</th><th>Data</th><th>Andamento</th><th>Movimento no Tiny</th><th>Situação</th><th></th></tr></thead><tbody>
+    ${ls.length?`<div class="rolx"><table class="tb csmov" id="mvTab"><thead><tr><th>Tipo</th><th>Nº</th><th>Produto</th><th>Máquina ou tanque</th><th>Data</th><th>Andamento</th><th>Movimento de estoque</th><th>Situação</th><th></th></tr></thead><tbody>
     ${ls.map((r,i)=>`<tr>
       <td><span class="csmt ${r.tipo}">${r.tipo==='env'?'Envase':'Tanque'}</span></td>
       <td class="mono"><b>${escAttr(r.num)}</b></td>
@@ -23443,7 +23443,7 @@ function csMovLigar(el){
   el.querySelectorAll('[data-mvx]').forEach(b=>b.onclick=()=>{const r=R(b.dataset.mvx);r.tipo==='env'?csTelaEstorno(r.o):csTelaEstornoLote(r.b);});
   el.querySelectorAll('[data-mvv]').forEach(b=>b.onclick=()=>{const r=R(b.dataset.mvv);r.tipo==='env'?movimentoDaOP(r.o):csVerLote(r.b);});
   colsTabela(M('mvTab'),'movimentos',[]);
-  if(M('mvCols'))M('mvCols').onclick=()=>colsPainel('movimentos',['Tipo','Nº','Produto','Máquina ou tanque','Data','Andamento','Movimento no Tiny','Situação'],[],['Tipo','Nº'],gradeEstoque);
+  if(M('mvCols'))M('mvCols').onclick=()=>colsPainel('movimentos',['Tipo','Nº','Produto','Máquina ou tanque','Data','Andamento','Movimento de estoque','Situação'],[],['Tipo','Nº'],gradeEstoque);
 }
 try{const _ge3=gradeEstoque;gradeEstoque=function(){
   const r=_ge3.apply(this,arguments);
@@ -24672,7 +24672,7 @@ function csEBloqueio(x){
   const c=csECod(x);
   if(x.tr)return 'transfer';
   if(csEhAcabado(x.id)&&(c.cod==='OP'||c.cod==='EST'||/^op\|/.test(String(x.chave||''))))
-    return 'Veio da OP no Tiny: para desfazer, use Estornar no Tiny na OP (Ordens de produção › ⋯).';
+    return 'Veio da OP no Tiny: para desfazer, use Estornar estoque na OP (Ordens de produção › ⋯).';
   return '';
 }
 /* um nome fixo para cada lançamento, igual em todos os aparelhos */
@@ -32443,6 +32443,280 @@ try{const _tl444=csTqLote;csTqLote=function(b){const r=_tl444.apply(this,argumen
     if(f!=null)r.envFim=hhmm(Math.min(f,24*60-1));}catch(e){}
   return r;};}catch(e){}
 try{csNucleo.versao='v444';}catch(e){}
+
+</script>
+<script>
+/* ===================== v4.4.5 · VERSÃO NOVA PERCEBIDA EM ATÉ 1 MINUTO =====================
+   A conferência antiga pedia ao site só o cabeçalho (HEAD) e comparava a etiqueta. O GitHub Pages guarda a página
+   no cache dele por até 10 minutos: a etiqueta continuava a velha e as telas demoravam (ou nem chegavam) a ver a
+   versão nova. Agora cada tela lê, a cada 45 s, o arquivo pequeno "versao.json" (vai junto no zip) com um endereço
+   sempre diferente, que o cache não segura. Viu versão maior: segue a regra de sempre (próximo clique leva ao login;
+   parado 2 min, vai sozinho; tablets e TV recarregam). Sem o versao.json no site, cai na conferência antiga. */
+let CS_V445_FALHA=0;
+async function csOlhaVersao(){
+  try{if(location.protocol!=='https:'||CS_V438_NOVA)return;
+    const u=new URL('versao.json',location.href);u.searchParams.set('t',Date.now());
+    const r=await fetch(u.toString(),{cache:'no-store'});
+    if(!r.ok){CS_V445_FALHA++;return;}
+    const j=await r.json();const v=j&&j.v;
+    if(v&&csVnum(v)>csVnum(VERSAO_APP))csTrocaVersao(v);
+  }catch(e){CS_V445_FALHA++;}
+}
+setInterval(csOlhaVersao,45000);setTimeout(csOlhaVersao,8000);
+/* ao voltar para a aba (tablet que acordou, PC que voltou do almoço) confere na hora */
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)csOlhaVersao();});
+try{csNucleo.versao='v445';}catch(e){}
+
+/* ===================== v4.4.5 · HORA EXTRA QUE NÃO É MAIS PRECISA =====================
+   A hora extra autorizada abre a máquina mais cedo (ou mais tarde, ou no sábado) naquele dia. Se depois a OP volta
+   para o horário normal (editou para 07:00, moveu, excluiu), a janela ficava aberta e a fila continuava encostando
+   as OPs às 05:00. Agora, quando nenhuma OP precisa mais da hora extra, o sistema pergunta:
+   "Você tinha liberado a MAQ 1 para começar às 05:00… Voltar ao horário normal (07:00)?" — e volta, se confirmar.
+   Para usar a hora extra de novo, é só programar a OP e o gestor autoriza outra vez. */
+const CS_HE_VISTO=new Set();
+function csHEPrecisa(maq,data,ex){
+  const [r0,r1]=jorn(maq);const ops=ORDENS.filter(o=>o.maq===maq&&o.data===data&&naGrade(o));
+  const comecou=o=>!!(o.iniReal||o.envIni||o.fimReal);
+  /* só quem está fixo (começou ou tem horário à mão) segura a hora extra; quem segue a fila acompanha a jornada */
+  const fixos=ops.filter(o=>comecou(o)||o.inicioManual);
+  const ini=o=>comecou(o)?hm(o.iniReal||o.envIni):+o.inicio;
+  const cedo=fixos.some(o=>ini(o)<r0);
+  let fim=0;try{fim=Math.max(0,...ops.map(o=>{try{return o.fimReal?hm(o.fimReal):fimPrev(o);}catch(e){return 0;}}));}catch(e){}
+  const tarde=hm(ex.fim||'00:00')>r1&&fim>r1;
+  return {ops:ops.length,cedo,tarde,r0,r1};
+}
+function csHERevisa(){
+  try{
+    if(typeof csChaoFabrica==='function'&&csChaoFabrica())return;
+    if(typeof podeEditar==='function'&&!podeEditar('envase'))return;
+    if(document.getElementById('csHE')||document.getElementById('csHEv'))return;
+    const hoje=ymd(new Date());
+    for(const [data,c] of Object.entries(CALENDARIO)){
+      if(data<hoje||!c||!c.maq)continue;
+      for(const [maq,ex] of Object.entries(c.maq)){
+        if(!ex||ex.trab===false||!Array.isArray(ex.he)||!ex.he.length)continue;
+        const [r0,r1]=jorn(maq),i0=hm(ex.ini||'05:00'),f0=hm(ex.fim||'20:00');
+        const folga=!!c.he;   /* dia que só abriu por causa da hora extra */
+        const n=csHEPrecisa(maq,data,ex);
+        let sobra=[];
+        if(folga&&!n.ops)sobra.push('dia');
+        else{if(i0<r0&&!n.cedo)sobra.push('cedo');if(f0>r1&&!n.tarde)sobra.push('tarde');}
+        if(!sobra.length)continue;
+        const chave=[data,maq,ex.ini,ex.fim,sobra.join('+')].join('|');if(CS_HE_VISTO.has(chave))continue;
+        CS_HE_VISTO.add(chave);csHEVolta(maq,data,ex,sobra,folga);return;
+      }
+    }
+  }catch(e){console.warn('[v445] revisa hora extra',e);}
+}
+function csHEVolta(maq,data,ex,sobra,folga){
+  const naDia=d=>{const w=csHEDow(d);return (/s[áa]bado|domingo/i.test(w)?'no ':'na ')+w;};
+  const [r0,r1]=jorn(maq);
+  const txt=sobra.includes('dia')?`Você tinha liberado a <b>${escAttr(maq)}</b> para trabalhar ${naDia(data)}, ${dCurto(data)}. Não tem mais OP dela nesse dia.`
+    :sobra.includes('cedo')&&sobra.includes('tarde')?`Você tinha liberado a <b>${escAttr(maq)}</b> das <b>${ex.ini}</b> às <b>${ex.fim}</b> ${naDia(data)}, ${dCurto(data)}. Nenhuma OP precisa mais disso.`
+    :sobra.includes('cedo')?`Você tinha liberado a <b>${escAttr(maq)}</b> para começar às <b>${ex.ini}</b> ${naDia(data)}, ${dCurto(data)}. Nenhuma OP começa mais antes das ${hhmm(r0)}.`
+    :`Você tinha liberado a <b>${escAttr(maq)}</b> até as <b>${ex.fim}</b> ${naDia(data)}, ${dCurto(data)}. As OPs terminam dentro do horário normal.`;
+  const alvo=sobra.includes('dia')?'não trabalhar nesse dia':sobra.includes('cedo')&&!sobra.includes('tarde')?`começar às ${hhmm(r0)}`:sobra.includes('tarde')&&!sobra.includes('cedo')?`parar às ${hhmm(r1)}`:`${hhmm(r0)}–${hhmm(r1)}`;
+  const d=document.createElement('div');d.id='csHEv';d.className='';d.style.cssText='';
+  d.innerHTML=`<div id="csHE" style="position:fixed"><div class="bx" role="dialog" aria-modal="true">
+    <div class="hd"><div class="ic" style="background:#DBEAFE;color:#1D4ED8">↺</div><div><h3>Voltar ao horário normal?</h3><div class="sb">${escAttr(maq)} · ${csHEDow(data)}, ${dCurto(data)}</div></div></div>
+    <div class="ct">${txt}<div class="lst" style="background:#EFF6FF;border-color:#BFDBFE">Voltar a ${escAttr(maq)} para <b>${alvo}</b>?${sobra.includes('dia')?'':' As OPs que seguem a fila andam junto.'}</div></div>
+    <div class="ft" style="padding-top:16px"><button class="nao" id="csHEvN">Manter a hora extra</button><button class="ok" id="csHEvS" style="background:#1D4ED8;border-color:#1D4ED8">Voltar ao normal</button></div></div></div>`;
+  document.body.appendChild(d);
+  const fecha=()=>d.remove();
+  d.querySelector('#csHEvN').onclick=fecha;
+  d.querySelector('#csHEvS').onclick=()=>{fecha();
+    const c=CALENDARIO[data];const quem=(typeof nomeDaSessao==='function'?nomeDaSessao():'');
+    if(sobra.includes('dia')){
+      if(c&&c.maq){delete c.maq[maq];
+        /* ninguém mais trabalha nesse dia de folga: o dia volta a ser folga */
+        const algum=Object.values(c.maq).some(x=>x&&x.trab!==false);
+        if(!algum&&c.he&&!MAQUINAS.some(m=>ORDENS.some(o=>o.maq===m&&o.data===data&&naGrade(o))))delete CALENDARIO[data];
+        else if(!Object.keys(c.maq).length)delete c.maq;}
+    }else{
+      const ni=sobra.includes('cedo')?hhmm(r0):ex.ini,nf_=sobra.includes('tarde')?hhmm(r1):ex.fim;
+      if(hm(ni)<=r0&&hm(nf_)>=r1&&hm(ni)===r0&&hm(nf_)===r1)ajustarJornada(maq,data,null);
+      else ajustarJornada(maq,data,{...ex,ini:ni,fim:nf_,he:(ex.he||[]).concat([{volta:true,por:quem,em:`${ymd(new Date())} ${relogio()}`}])});
+    }
+    /* o dia ficou igual ao padrão: tira a anotação do calendário */
+    try{const e=CALENDARIO[data];if(e&&!e.maq&&!e.he&&e.trab!==false&&(e.ini||'05:00')==='05:00'&&(e.fim||'20:00')==='20:00'&&Object.keys(e).every(k=>['trab','ini','fim'].includes(k))){
+      const dow=new Date(data+'T00:00:00').getDay();if(SEMANA_PADRAO[dow]!==false&&!feriadoDe(data))delete CALENDARIO[data];}}catch(e){}
+    /* se a hora extra for autorizada de novo, a pergunta pode aparecer de novo */
+    [...CS_HE_VISTO].forEach(k=>{if(k.startsWith(data+'|'+maq+'|'))CS_HE_VISTO.delete(k);});
+    try{ORDENS.filter(o=>o.maq===maq&&o.data===data&&naGrade(o)).forEach(o=>registrar(o,'Hora extra desfeita',null,`${maq} ${dCurto(data)} · voltou para ${alvo}`));}catch(e){}
+    try{recomporTudo();}catch(e){}agendarSalvar();try{render();}catch(e){}
+    toast(`${maq} em ${dCurto(data)}: voltou para ${alvo}.`);};
+}
+/* confere depois de cada mudança na tela (editar, mover, arrastar, excluir) */
+try{const _rd445=render;render=function(){const r=_rd445.apply(this,arguments);setTimeout(csHERevisa,300);return r;};}catch(e){}
+
+/* ===================== v4.4.5 · BACKUP DIÁRIO NO GOOGLE DRIVE: quadro em Configurações › Dados =====================
+   O script do Google (supabase/google-backup-diario.gs) registra cada backup no banco (erp_backup_registro).
+   Aqui o master vê quando foi o último e se deu certo. Se passar de 36 h sem backup, avisa uma vez ao entrar. */
+let CS_BK=null;
+async function csBackupStatus(){
+  try{const r=await fetch(`${SUPA.url}/rest/v1/rpc/erp_backup_status`,{method:'POST',headers:cabecalhos(),body:'{}'});
+    if(!r.ok)return CS_BK={semFuncao:r.status===404};
+    return CS_BK=await r.json();}catch(e){return CS_BK={erro:true};}
+}
+function csBackupTxt(s){
+  if(!s||s.erro)return {cor:'#64748B',t:'Não consegui consultar agora.'};
+  if(s.semFuncao||!s.registrado)return {cor:'#B45309',t:'Ainda não ligado. Siga o passo a passo "Backup no Google Drive" do pacote (5 minutos).',falta:true};
+  const quando=new Date(s.fim||s.registrado),agora=new Date(s.agora||Date.now()),h=(agora-quando)/36e5;
+  const dt=quando.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})+' às '+quando.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  if(s.ok===false)return {cor:'#B91C1C',t:`O último backup (${dt}) <b>falhou</b>${s.erro?': '+escAttr(String(s.erro).slice(0,120)):''}. Veja o e-mail do backup.`,falta:true};
+  if(h>36)return {cor:'#B91C1C',t:`Último backup em ${dt} — <b>faz ${Math.floor(h/24)} dia(s)</b>. Confira o script no Google.`,falta:true};
+  return {cor:'#15803D',t:`✓ Último backup em <b>${dt}</b> · ${s.tabelas||'—'} tabelas · ${Number(s.linhas||0).toLocaleString('pt-BR')} linhas${s.ops?` · ${s.ops} OPs`:''}${s.alertas?` · <b style="color:#B45309">${s.alertas} alerta(s) — veja o e-mail</b>`:''}`};
+}
+try{const _ga445=gradeAdmin;gradeAdmin=function(){
+  const r=_ga445.apply(this,arguments);
+  try{const ref=document.getElementById('csSisTodos');
+    if(ref&&csEhMaster()&&!document.getElementById('csBkG')){
+      const box=ref.nextElementSibling||ref;
+      box.insertAdjacentHTML('afterend',`<div class="st" id="csBkG">Backup no Google Drive</div>
+        <div class="dados"><p>Toda noite às 23h uma cópia de <b>todo o banco</b> (OPs, estoques, compras, pedidos, financeiro, cadastros) vai para a pasta
+          "ERP Atrius — Backups" do Google Drive. Guarda 60 dias, mais o primeiro de cada mês por 1 ano. Chega um e-mail toda noite.</p>
+          <p id="csBkGs" style="margin-top:8px;font-weight:600;color:#64748B">Consultando…</p></div>`);
+      csBackupStatus().then(s=>{const x=csBackupTxt(s),el=document.getElementById('csBkGs');if(el){el.style.color=x.cor;el.innerHTML=x.t;}});
+    }}catch(e){console.warn('[v445] quadro backup',e&&e.message);}
+  return r;};}catch(e){}
+/* aviso ao master, uma vez por dia, se o backup estiver atrasado ou falhou */
+setTimeout(async()=>{try{
+  if(typeof csChaoFabrica==='function'&&csChaoFabrica())return;
+  if(!csEhMaster())return;
+  const k='erp.bkAviso',hoje=ymd(new Date());if(localStorage.getItem(k)===hoje)return;
+  const s=await csBackupStatus();if(!s||s.erro||s.semFuncao||!s.registrado)return;
+  const x=csBackupTxt(s);if(!x.falta)return;
+  localStorage.setItem(k,hoje);toast('Backup no Google Drive: '+x.t.replace(/<[^>]+>/g,''));
+}catch(e){}},20000);
+
+</script>
+<script>
+/* ===================== v4.4.6 · ESTOQUE 100% NO ERP: NADA DE ESTOQUE VAI AO TINY =====================
+   Decisão de 15/10 (confirmada em 22/10): do Tiny o ERP só LÊ pedidos de venda e notas fiscais
+   (e os contatos). Estoque nenhum vai ao Tiny e nenhum saldo vem de lá.
+   1) "movimentar" (OP concluída, lote do tanque, estorno, lançamento manual, inventário, recebimento
+      de compra) não chama mais o Tiny: o movimento fica só no ERP — razão e saldo, como já era o insumo.
+   2) "estoque" (ler saldo do Tiny) devolve o próprio saldo do ERP: nenhuma tela troca o saldo do ERP
+      pelo do Tiny. A leitura de saldos no servidor é desligada na primeira tela que abrir.
+   3) As notas fiscais de saída dão baixa no acabado pelo banco (supabase-acabado-nf.sql, de 5 em 5 min);
+      aqui só se mostra o lançamento "NF" no razão e ele não é editável.
+   4) Textos: o histórico da OP diz "Estoque lançado no ERP" no lugar de "enviado ao Tiny". */
+const CS_SEM_TINY_ESTOQUE=true;
+try{const _ct446=chamarTiny;chamarTiny=async function(c){
+  const a=c&&c.acao;
+  if(CS_SEM_TINY_ESTOQUE&&a==='movimentar')return {falhas:[],itens:[],soErp:true,semTiny:true};
+  if(CS_SEM_TINY_ESTOQUE&&a==='estoque'){
+    const ids=(c.ids||[]).map(String);
+    return {itens:ids.filter(id=>ESTOQUE[id]!==undefined).map(id=>({id,saldo:+ESTOQUE[id]||0})),falhas:[],soErp:true};}
+  if(CS_SEM_TINY_ESTOQUE&&a==='srv_dados'&&c.job==='estoque')return {};
+  if(CS_SEM_TINY_ESTOQUE&&a==='srv_ligar'&&c.job==='estoque')throw new Error('O saldo do estoque é do ERP: não se lê mais do Tiny.');
+  return _ct446.apply(this,arguments);};}catch(e){}
+/* a leitura de saldos que ficou ligada no servidor gasta as consultas do Tiny (e o Tiny bloqueia a API): desliga uma vez */
+setTimeout(async()=>{try{
+  if(typeof csChaoFabrica==='function'&&csChaoFabrica())return;
+  if(typeof SESSAO==='undefined'||!SESSAO||!temNuvem())return;
+  if(localStorage.getItem('erp.srvEstoqueParado')==='1')return;
+  const st=await chamarTiny({acao:'srv_status'});
+  const j=st&&st.jobs&&st.jobs.estoque;
+  if(j&&(j.ativo||j.repetirMin)){await chamarTiny({acao:'srv_parar',job:'estoque'});console.info('[v446] leitura de saldos do Tiny desligada no servidor');}
+  localStorage.setItem('erp.srvEstoqueParado','1');
+}catch(e){console.warn('[v446] srv estoque',e&&e.message);}},15000);
+
+/* histórico da OP e avisos: o estoque foi lançado no ERP */
+const CS_TXT446={
+  'Estoque enviado ao Tiny':'Estoque lançado no ERP','Envio ao Tiny na fila':'Estoque lançado no ERP',
+  'Matéria-prima enviada ao Tiny':'Matéria-prima baixada no ERP','Matéria-prima na fila do Tiny':'Matéria-prima baixada no ERP',
+  'Estoque estornado no Tiny':'Estoque estornado no ERP','Estorno enviado ao Tiny':'Estorno lançado no ERP',
+  'Estorno de matéria-prima no Tiny':'Estorno de matéria-prima no ERP','Matéria-prima estornada no Tiny':'Matéria-prima estornada no ERP'};
+try{const _rg446=registrar;registrar=function(o,ev,op,det){
+  if(CS_SEM_TINY_ESTOQUE&&CS_TXT446[ev]){ev=CS_TXT446[ev];if(det)det=String(det).replace(/\s*·?\s*(no|ao) Tiny/g,'');}
+  if(CS_SEM_TINY_ESTOQUE&&ev==='Envio ao Tiny não foi')return;   /* sem código do Tiny não impede nada: o estoque é do ERP */
+  return _rg446.call(this,o,ev,op,det);};}catch(e){}
+try{const _ts446=toast;toast=function(m,...r){
+  if(CS_SEM_TINY_ESTOQUE&&typeof m==='string'){
+    if(/OP concluída, mas o produto não tem código do Tiny/.test(m))m='OP concluída. O estoque foi lançado no ERP.';
+    m=m.replace(/ baixada no Tiny\./,' baixada no ERP.').replace(/o Tiny não recebeu agora[^.]*\./,'o estoque foi lançado no ERP.');}
+  return _ts446.call(this,m,...r);};}catch(e){}
+
+/* razão do item: a baixa pela nota fiscal (feita pelo banco) aparece como "NF" e não se edita */
+try{const _cc446=csECod;csECod=function(x){
+  if(x&&/^nf\|/.test(String(x.chave||'')))return {cod:'NF',ref:String(x.nf||'')};
+  return _cc446.apply(this,arguments);};}catch(e){}
+try{const _cb446=csEBloqueio;csEBloqueio=function(x){
+  if(x&&/^nf\|/.test(String(x.chave||'')))return 'Baixa da nota fiscal: é automática. Se a nota for cancelada no Tiny, o ERP devolve sozinho.';
+  const b=_cb446.apply(this,arguments);
+  return typeof b==='string'?b.replace('Veio da OP no Tiny: para desfazer, use Estornar estoque na OP (Ordens de produção › ⋯).','Veio da OP: para desfazer, use Estornar na OP (Ordens de produção › ⋯).'):b;};}catch(e){}
+try{csNucleo.semTinyEstoque=true;csNucleo.versao='v446';}catch(e){}
+/* o razão entrega a chave, para a tela do item não mostrar a mesma nota duas vezes */
+try{const _md446=csNucleo.movimentosDe;csNucleo.movimentosDe=function(id){
+  const r=_md446.apply(this,arguments);
+  try{const por=new Map(CS_ELOG.filter(x=>x.uid&&x.chave).map(x=>[x.uid,x.chave]));(r.itens||[]).forEach(x=>{if(!x.chave&&por.has(x.uid))x.chave=por.get(x.uid);});}catch(e){}
+  return r;};}catch(e){}
+
+</script>
+<script>
+/* ===================== v4.4.7 · TINY SÓ PARA PEDIDOS, NOTAS, CLIENTES E CONTAS A PAGAR =====================
+   22/10: o vínculo com o Tiny fica só em: ler os pedidos de venda (com os itens), ler as notas fiscais (baixam o
+   acabado), ler os clientes e mandar as contas a pagar das ordens de compra. Estoque nenhum vai e nenhum vem.
+   1) Some o que era do Tiny nas telas de estoque e produção: selo "Tiny ✓ enviado", "Atualizar do Tiny",
+      "Corrigir no Tiny", "Importar do Tiny" nos produtos. A coluna Integração da OP diz se o estoque foi lançado.
+   2) Cliente novo de pedido entra sozinho nos Cadastros: de 15 em 15 minutos uma tela do escritório olha os
+      pedidos dos últimos 3 dias; o CNPJ/CPF que ainda não está nos Cadastros é buscado no Tiny e cadastrado
+      (papel Cliente). Se o Tiny não achar, cadastra com o que veio no pedido. */
+document.head.insertAdjacentHTML('beforeend',`<style>#esLer,[data-esun],#cpImp{display:none!important}</style>`);
+try{csItg=function(o){
+  if(sit(o)!=='concluida')return '<span class="k">—</span>';
+  const pend=o.tinyAjuste&&!o.tinyAjuste.em;
+  if(pend)return `<button class="od2tg x" data-odtiny="${o.id}" title="as caixas mudaram depois do lançamento">ajuste pendente</button>`;
+  if(o.tinyEnviado&&o.tinyEnviado.em)return '<span class="od2ok">estoque ✓ lançado</span>';
+  return `<button class="od2tg q" data-odtiny="${o.id}">estoque · a lançar</button>`;};}catch(e){}
+try{csSeloTinyMae=function(){return '';};}catch(e){}
+
+/* ---------- cliente novo do pedido → Cadastros ---------- */
+const csSoNum=s=>String(s||'').replace(/\D/g,'');
+let CS_CLI_RODANDO=false;
+async function csClientesDosPedidos(manual){
+  if(CS_CLI_RODANDO)return {novos:0};
+  if(typeof csChaoFabrica==='function'&&csChaoFabrica())return {novos:0};
+  if(typeof SESSAO==='undefined'||!SESSAO||!temNuvem()||!CS_BANCO_OK)return {novos:0};
+  CS_CLI_RODANDO=true;
+  try{
+    const de=ymd(addD(new Date(),-3));
+    const r=await chamarTiny({acao:'vendas_lista',filtros:{de,campoData:'pedido',ordem:'data',dir:'desc',pagina:0}});
+    const peds=(r&&r.pedidos)||[];if(!peds.length)return {novos:0};
+    const cad=(await csNucleo.ler('cadastros'))||{};cad.contatos=Array.isArray(cad.contatos)?cad.contatos:[];
+    const tem=new Set(cad.contatos.map(c=>csSoNum(c.doc)).filter(Boolean));
+    const falta=new Map();
+    peds.forEach(p=>{const d=csSoNum(p.cliente_doc);if(d.length>=11&&!tem.has(d)&&!falta.has(d))falta.set(d,p);});
+    if(!falta.size)return {novos:0};
+    let novos=0;const nomes=[];
+    for(const [doc,p] of [...falta].slice(0,10)){
+      let x=null;
+      try{const k=await chamarTiny({acao:'contatos',pesquisa:doc});x=((k&&k.contatos)||[]).find(c=>csSoNum(c.cpf_cnpj)===doc)||null;}catch(e){}
+      const c=x?{tinyId:String(x.id||''),codigo:x.codigo||'',nome:x.nome||p.cliente||'',fantasia:x.fantasia||'',doc:x.cpf_cnpj||p.cliente_doc||'',ie:x.ie||'',
+          endereco:x.endereco||'',numero:x.numero||'',bairro:x.bairro||'',cep:x.cep||'',cidade:x.cidade||'',uf:x.uf||'',fone:x.fone||'',email:x.email||'',
+          vendedor:x.nome_vendedor||p.vendedor||'',situacaoTiny:x.situacao||''}
+        :{tinyId:'',nome:p.cliente||'',doc:p.cliente_doc||'',cidade:String(p.cidade||'').split('/')[0],uf:p.uf||'',vendedor:p.vendedor||''};
+      cad.contatos.push({id:uid(),...c,papeis:['Cliente'],ativo:true,origem:`pedido ${p.numero||''}`,criadoEm:new Date().toISOString(),criadoPor:'sistema (pedido do Tiny)'});
+      tem.add(doc);novos++;nomes.push(c.nome);
+    }
+    if(novos){
+      const g=await csNucleo.gravar('cadastros',cad);
+      if(g&&g.conflito)return {novos:0,conflito:true};
+      try{csTlog('Contatos',{novos,det:`clientes novos dos pedidos: ${nomes.slice(0,5).join(', ')}${nomes.length>5?'…':''}`});}catch(e){}
+      if(manual)toast(`${novos} cliente(s) novo(s) cadastrado(s) a partir dos pedidos.`);
+    }
+    return {novos};
+  }catch(e){console.warn('[v447] clientes dos pedidos',e&&e.message);return {novos:0,erro:e&&e.message};}
+  finally{CS_CLI_RODANDO=false;}
+}
+window.csClientesDosPedidos=csClientesDosPedidos;
+setTimeout(()=>{csClientesDosPedidos();setInterval(()=>{if(document.visibilityState==='visible')csClientesDosPedidos();},15*60000);},60000);
+try{csNucleo.clientesDosPedidos=m=>csClientesDosPedidos(m);csNucleo.versao='v447';}catch(e){}
+/* depois do "Atualizar do Tiny" dos Pedidos de venda, já confere os clientes novos */
+try{const _ct447=chamarTiny;chamarTiny=async function(c){const r=await _ct447.apply(this,arguments);
+  try{if(c&&(c.acao==='vendas_atualizar'||c.acao==='vendas_passo'))setTimeout(()=>csClientesDosPedidos(true),3000);}catch(e){}
+  return r;};}catch(e){}
 
 </script>
 </body>

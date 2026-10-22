@@ -581,7 +581,7 @@ function cartao(t){const l=lote(t);const s=statusDe(t);const [cor,rot]=ST[s]||['
     
     ${l?`<div class="prod">${esc(l.p)}<small>${l.saldo?`saldo de lote${l.lote?' · lote '+esc(l.lote):''}${l.mot?' · '+esc(l.mot):''}`:`${l.lote?'lote '+esc(l.lote):''}`}${l.de?' · veio do '+esc(l.de):''}${l.data!==(DIA||D.hoje)?' · de '+l.data.slice(8,10)+'/'+l.data.slice(5,7):''}</small></div>
     <div class="tiles ${s==='envasando'&&!l.saldo?'t1':'t3'}">${l.saldo?`<div><span>Livre (L)</span><b>${nl(l.vol)}</b></div><div><span>Parado há</span><b>${l.dias==null?'—':l.dias+(l.dias===1?' dia':' dias')}</b></div><div><span>${s==='envasando'?'Máquina':'Vai para'}</span><b>${esc(s==='envasando'?(l.maqEnv||l.maq):l.maq)}</b></div></div>`:(s==='envasando'?`<div class="lin"><span>Volume</span><b>${nl(l.vol)} L</b></div></div>`
-      :`<div class="dest big${atr?' atr':''}"><span>Tanque pronto até</span><b>${esc(l.pronto)}</b></div><div><span>Volume</span><b>${nl(l.vol)} L</b></div><div><span>Vai para</span><b>${esc(l.maq)}</b></div></div>`)}`
+      :`<div class="dest big${atr?' atr':''}"><span>Tanque pronto até</span><b>${esc(l.pronto)}</b></div><div class="vv"><p><span>Volume</span><b>${nl(l.vol)} L</b></p><p><span>Vai para</span><b>${esc(l.maq)}</b></p></div></div>`)}`
     :`<div class="prod" style="color:var(--ink3)">—</div><div class="tiles"></div>`}
     <div class="acoes">${ck}${btn}${sub}</div>
     <div class="prox"><i>DEPOIS</i>${prox?`<b>${esc(prox.p)}</b> · ${nl(prox.vol)} L<span class="h">${esc(prox.pronto)}</span>`:'nada mais '+(ehAmanha()?'neste dia':'hoje')}</div></div>`;}
@@ -1030,6 +1030,26 @@ try{document.head.insertAdjacentHTML('beforeend',`<style>
 .tq .prox{padding:6px 10px!important}
 .tq .prox b{overflow:hidden;text-overflow:ellipsis;min-width:0}
 @media (max-height:760px){.tq .cab{height:38px!important}.tq .prod{font-size:15px!important}.tq .tiles .dest.big b{font-size:19px!important}.tq .acao{height:38px!important;font-size:13.5px!important}.tq .sub2 div{height:28px!important}}
+</style>`);}catch(e){}
+/* v445: nada corta — nome, faixa e caixas quebram linha em vez de "..."; volume e máquina juntos numa caixa só;
+   "Não precisa limpar" ao lado do botão; se ainda faltar espaço, o cartão rola */
+try{document.head.insertAdjacentHTML('beforeend',`<style>
+.tq{overflow-y:auto!important;scrollbar-width:none}.tq::-webkit-scrollbar{display:none}
+.tq .st{flex-wrap:wrap;row-gap:2px;height:auto!important;min-height:0}
+.tq .st>span{white-space:normal!important;overflow:visible!important;text-overflow:clip!important;min-width:0}
+.tq .st>span:first-child{flex:1 1 auto}
+.tq .tiles.t3{grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important}
+.tq .tiles .vv{display:flex!important;flex-direction:column;justify-content:center;gap:4px}
+.tq .tiles .vv p{margin:0;display:flex;flex-wrap:wrap;align-items:baseline;column-gap:6px;row-gap:0}
+.tq .tiles .vv span{display:inline!important}
+.tq .tiles .vv b{font-size:15px!important}
+.tq .tiles b{white-space:normal!important;overflow:visible!important;text-overflow:clip!important;overflow-wrap:anywhere}
+.tq .ckl span{white-space:normal!important;overflow:visible!important;text-overflow:clip!important;line-height:1.15}
+.tq .acoes:has(.sub2){display:grid!important;grid-template-columns:minmax(0,1fr) 96px;align-items:stretch}
+.tq .acoes:has(.sub2)>.ckl{grid-column:1/-1}
+.tq .acoes:has(.sub2) .sub2{display:flex}.tq .acoes:has(.sub2) .sub2 div{height:auto!important;flex:1;white-space:normal;text-align:center;line-height:1.1;font-size:12px!important;padding:2px 6px;display:flex;align-items:center;justify-content:center}
+.tq .prox{flex-wrap:wrap}
+@media (max-width:1150px){#sauda{display:none!important}}
 </style>`);}catch(e){}
 /* v432: lote do próximo dia adiantado (só quando o tanque não tem mais nada hoje) */
 try{document.head.insertAdjacentHTML('beforeend',`<style>

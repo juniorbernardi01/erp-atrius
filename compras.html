@@ -1683,7 +1683,7 @@ function validarOC(oc){
   return f;
 }
 function salvarOC(){
-  if(ED&&ED.oc&&ED.oc.benef&&ED.oc.itens.some(x=>!envsDe(x).length))return toast('Beneficiamento: em cada item, use ＋ sub-item para dizer o que sai do nosso estoque.',true);
+  if(ED&&ED.oc&&ED.oc.benef&&ED.oc.itens.length&&!ED.oc.itens.some(x=>envsDe(x).length))return toast('Beneficiamento ligado, mas nenhum item tem sub-item. Use ＋ sub-item no item que leva material nosso (rótulo, pré-forma) ou desligue Beneficiamento.',true);
   const oc=ED.oc;const f=validarOC(oc);
   if(f.length){$('obr').textContent='Falta preencher: '+f.join(', ');toast('Falta preencher: '+f.join(', '),true);return;}
   if(ED.nova){DB.seq=Math.max(DB.seq,...DB.ocs.map(o=>+o.num||0))+1;oc.num=String(DB.seq);hist(oc,'Criou a ordem',oc.origem&&oc.origem!=='Manual'?oc.origem:'');DB.ocs.push(oc);}
@@ -2325,7 +2325,7 @@ async function telaNecessidade(){
   /* resumo dos filtros em vigor, para quando eles estão escondidos */
   const resumo=[{pedido:'data do pedido',faturamento:'data do faturamento',prevista:'data prevista'}[c.nCampo],`média de ${c.nMeses} ${c.nMeses>1?'meses':'mês'}`,`cobrir ${c.cobN} ${{d:'dia(s)',s:'semana(s)',m:'mês(es)'}[c.cobU]}`,c.nVersoes?'todas as versões':'formulações atuais',`${c.nSits.length} situações${c.nEnv?' + envase':''}${c.nTq?' + tanques':''}`,c.cresc?`+${nq(c.cresc)}%`:'',c.nVirt==='e'?'virtual = físico + entradas':'virtual = físico + entradas − saídas',NEC.tags.length?NEC.tags.join(', '):'todos os grupos'].filter(Boolean).join(' · ');
   $('app').innerHTML=`<div class="migalha">Compras › Necessidade de compra</div>
-  <div class="topo"><h1>Necessidade de compra</h1><span class="salvo"></span><span class="k" style="color:var(--ink3);font-size:12px">${NDADOS.em?'pedidos lidos às '+new Date(NDADOS.em).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}):''}</span><span style="flex:1"></span><button class="btn" id="bSal">↻ Sincronizar pedidos</button></div>
+  <div class="topo"><h1>Necessidade de compra</h1><span class="salvo"></span><span class="k" style="color:var(--ink3);font-size:12px">${NDADOS.em?'pedidos lidos às '+new Date(NDADOS.em).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}):''}</span><span style="flex:1"></span>${N.semTinyEstoque?'':'<button class="btn" id="bSal">↻ Sincronizar pedidos</button>'}</div>
   ${NDADOS.erro?`<div class="aviso">⚠ <div>Não consegui ler os pedidos (${esc(NDADOS.erro)}). O consumo sai das OPs concluídas até resolver.</div></div>`:''}
   ${NDADOS.fonte==='ops'&&!NDADOS.erro?'<div class="aviso">ℹ <div>Ainda não há histórico de pedidos no ERP: o consumo sai das OPs concluídas. Depois da carga do Tiny, ele passa a sair dos pedidos pela fórmula.</div></div>':''}
   <div class="nfil" id="nFil" ${NEC.oculta?'hidden':''}>
@@ -2413,7 +2413,7 @@ function ligaNec(L){
   document.querySelectorAll('[data-op]').forEach(a=>a.onclick=ev=>{ev.stopPropagation();balaoOPs(a,P[a.dataset.op]);});
   document.querySelectorAll('[data-nl]').forEach(r=>r.onclick=ev=>{if(ev.target.closest('input,select,.ck,.ckc,a'))return;previsaoItem(P[r.dataset.nl]);});
   if($('nLimpa'))$('nLimpa').onclick=()=>{NEC.sel={};re();};if($('nGera'))$('nGera').onclick=()=>gavetaGerar();
-  $('bSal').onclick=async()=>{if(N.teste)return toast('Versão de teste: a leitura do Tiny está desligada.',true);
+  if($('bSal'))$('bSal').onclick=async()=>{if(N.teste)return toast('Versão de teste: a leitura do Tiny está desligada.',true);
     $('bSal').disabled=true;$('bSal').textContent='Lendo pedidos…';try{await necCarregar(true);toast('Pedidos lidos do Tiny.');}catch(e){toast('Tiny: '+e.message,true);}re();};
 }
 /* balão com as OPs que ainda vão consumir o item (reserva) */
