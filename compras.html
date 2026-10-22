@@ -3251,4 +3251,231 @@ async function estoqueItemGaveta(it,oc){
 }
 
 </script>
+<script>
+/* ===================== v4.5.5 · RELATÓRIO DE COMPRAS DO MÊS (por fornecedor e por item) =====================
+   Compras › Relatórios. Período (este mês por padrão), filtro de fornecedor, subfiltro de item, situação
+   (tudo / já chegou / a caminho), data da ordem ou da chegada, agrupar por fornecedor ou por item, ordenar por
+   maior valor / maior quantidade / mais ordens / nome. Clicar na linha abre as ordens daquele item.
+   Quantidade comprada = o que ficou na ordem (depois de uma entrega parcial, a ordem fica com o que chegou e o resto
+   vai para a ordem de saldo, então nada conta duas vezes). Rascunho e cancelada não entram. */
+document.head.insertAdjacentHTML('beforeend',`<style>
+.r5f{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px 12px;margin-bottom:12px}
+.r5f label{display:block;font-size:11.5px;color:var(--ink3);margin-bottom:5px}
+.r5f select,.r5f input{width:100%;height:36px;border:1px solid var(--line);border-radius:9px;background:#fff;font:inherit;font-size:13px;color:var(--ink);padding:0 10px}
+.r5s{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;background:#fff;height:36px;max-width:100%}
+.r5s button{padding:0 12px;font-size:12.5px;color:var(--ink2);border-right:1px solid var(--line);background:#fff;white-space:nowrap}
+.r5s button:last-child{border-right:0}.r5s button.on{background:var(--navy,#0E1B33);color:#fff;font-weight:600}
+.r5per{display:flex;gap:6px;flex-wrap:wrap;align-items:flex-end;margin-bottom:12px}
+.r5per .dt{width:120px}.r5per label{display:block;font-size:11.5px;color:var(--ink3);margin-bottom:5px}
+.r5per input{height:36px;border:1px solid var(--line);border-radius:9px;padding:0 10px;font:inherit;font-size:13px;width:100%}
+.r5k{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin-bottom:12px}
+.r5k .card small{display:block;font-size:11.5px;color:var(--ink3)}.r5k .card b{display:block;font-family:Inter,system-ui;font-size:19px;margin-top:3px}
+.r5k .card span{font-size:11.5px;color:var(--ink3)}
+.r5t{width:100%;border-collapse:collapse;font-size:13px}
+.r5t th{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--ink3);text-align:left;padding:9px 10px;background:#F6F7F9;border-bottom:1px solid var(--line);white-space:nowrap}
+.r5t td{padding:9px 10px;border-bottom:1px solid var(--line2);vertical-align:top}
+.r5t .n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.r5t tr.g{cursor:pointer}.r5t tr.g:hover td{background:#F8FAFC}
+.r5t tr.g td:first-child b::before{content:'▸ ';color:var(--ink3);font-size:11px}
+.r5t tr.g.ab td:first-child b::before{content:'▾ '}
+.r5t tr.sub td{background:#FBFCFD;font-size:12.5px;color:var(--ink2)}
+.r5t tr.sub td:first-child{padding-left:28px}
+.r5t tr.tot td{font-weight:700;background:#F6F7F9;border-top:2px solid var(--line)}
+.r5t small{display:block;font-size:11.5px;color:var(--ink3);margin-top:1px}
+.r5t .bar{height:4px;border-radius:2px;background:#DBEAFE;margin-top:5px}.r5t .bar i{display:block;height:4px;border-radius:2px;background:#2563EB}
+.r5t a{color:var(--selt,#1D4ED8);cursor:pointer;font-weight:600}
+.r5cam{color:#1D4ED8}.r5atr{color:#B91C1C;font-weight:600}.r5ok{color:#047857}
+@media(max-width:1100px){.r5f{grid-template-columns:repeat(2,minmax(0,1fr))}.r5k{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){.r5f,.r5k{grid-template-columns:1fr}}
+@media print{.r5f,.r5per,.topo button,.migalha{display:none!important}.r5t tr.g td:first-child b::before{content:''}}
+</style>`);
+
+const RL5={de:null,ate:null,forn:'',sku:'',q:'',sit:'tudo',base:'ordem',grupo:'forn',ord:'valor',aberto:new Set()};
+function rl5Mes(d,mais){const x=new Date(d.getFullYear(),d.getMonth()+(mais||0),1);return x;}
+function rl5Y(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function rl5Periodo(k){const h=new Date();
+  if(k==='mes')return [rl5Y(rl5Mes(h)),rl5Y(new Date(h.getFullYear(),h.getMonth()+1,0))];
+  if(k==='ant')return [rl5Y(rl5Mes(h,-1)),rl5Y(new Date(h.getFullYear(),h.getMonth(),0))];
+  if(k==='3m')return [rl5Y(rl5Mes(h,-2)),rl5Y(new Date(h.getFullYear(),h.getMonth()+1,0))];
+  if(k==='ano')return [h.getFullYear()+'-01-01',h.getFullYear()+'-12-31'];
+}
+if(!RL5.de){const p=rl5Periodo('mes');RL5.de=p[0];RL5.ate=p[1];}
+
+/* uma linha por item de cada ordem, com valor, IPI, situação e data de chegada */
+function rl5Linhas(){
+  const out=[];
+  (DB.ocs||[]).forEach(o=>{
+    if(!o||o.sit==='can'||o.sit==='ras')return;
+    const rb=(o.receb||[]).filter(r=>!r.estornado&&r.data).map(r=>r.data).sort();
+    const chegou=o.sit==='rec'||o.sit==='con';
+    const dChe=chegou?(rb[rb.length-1]||o.dataReceb||o.data):'';
+    const nfs=[...new Set((o.receb||[]).filter(r=>!r.estornado&&r.nf).map(r=>String(r.nf).replace(/^0+/,'')))].join(', ')||(o.nf&&o.nf.numero)||'';
+    const d=RL5.base==='chegada'?dChe:o.data;
+    if(!d||d<RL5.de||d>RL5.ate)return;
+    if(RL5.sit==='chegou'&&!chegou)return;if(RL5.sit==='caminho'&&chegou)return;
+    (o.itens||[]).forEach(i=>{
+      const q=+i.qtd||0;if(!q&&!(+i.preco))return;
+      let c;try{c=contaItem(i);}catch(e){c={base:q*(+i.preco||0),val:{ipi:0},credito:0};}
+      out.push({o,i,id:o.id,num:o.num,data:d,dataOC:o.data,dChe,nfs,chegou,sit:o.sit,
+        forn:(o.forn&&o.forn.id)||((o.forn&&o.forn.nome)||'?'),fNome:(o.forn&&o.forn.nome)||'?',
+        sku:i.sku||'',nome:i.nome||i.sku||'?',un:i.un||'',q,preco:+i.preco||0,
+        v:c.base||0,ipi:(c.val&&c.val.ipi)||0,cred:c.credito||0,saldo:!!o.saldoDe,parcial:!!o.saldoOC});
+    });
+  });
+  return out;
+}
+function rl5Soma(l){const s={q:0,v:0,ipi:0,cred:0,ocs:new Set(),chegou:0,caminho:0,vCam:0,min:Infinity,max:0,itens:new Set(),forns:new Set()};
+  l.forEach(x=>{s.q+=x.q;s.v+=x.v;s.ipi+=x.ipi;s.cred+=x.cred;s.ocs.add(x.id);s.itens.add(x.sku);s.forns.add(x.forn);
+    if(x.chegou)s.chegou+=x.q;else{s.caminho+=x.q;s.vCam+=x.v+x.ipi;}
+    if(x.preco>0){s.min=Math.min(s.min,x.preco);s.max=Math.max(s.max,x.preco);}});
+  s.pm=s.q?s.v/s.q:0;if(s.min===Infinity)s.min=0;return s;}
+function rl5Agrupa(l,chave){const m=new Map();l.forEach(x=>{const k=x[chave];if(!m.has(k))m.set(k,[]);m.get(k).push(x);});
+  return [...m.entries()].map(([k,ls])=>({k,ls,s:rl5Soma(ls),nome:chave==='forn'?ls[0].fNome:ls[0].nome,sku:ls[0].sku,un:ls[0].un}));}
+function rl5Ordena(g){const o=RL5.ord;
+  return g.sort((a,b)=>o==='qtd'?b.s.q-a.s.q:o==='ocs'?b.s.ocs.size-a.s.ocs.size:o==='nome'?String(a.nome).localeCompare(String(b.nome),'pt'):(b.s.v+b.s.ipi)-(a.s.v+a.s.ipi));}
+const rl5P=v=>nf(v,v>0&&v<1?4:v<10?3:2);
+const rl5Q=v=>nf(v,Math.abs(v-Math.round(v))>1e-6?3:0);
+
+function telaRelatorios(){
+  const todas=rl5Linhas();
+  /* opções dos filtros: só quem aparece no período */
+  const fOps=rl5Agrupa(todas,'forn').sort((a,b)=>String(a.nome).localeCompare(String(b.nome),'pt'));
+  if(RL5.forn&&!fOps.some(f=>f.k===RL5.forn)&&!(DB.fornecedores||[]).some(f=>f.id===RL5.forn))RL5.forn='';
+  const doF=RL5.forn?todas.filter(x=>x.forn===RL5.forn):todas;
+  const iOps=rl5Agrupa(doF,'sku').sort((a,b)=>String(a.nome).localeCompare(String(b.nome),'pt'));
+  if(RL5.sku&&!iOps.some(i=>i.k===RL5.sku))RL5.sku='';
+  let l=RL5.sku?doF.filter(x=>x.sku===RL5.sku):doF;
+  const k=RL5.q.trim().toLowerCase();if(k)l=l.filter(x=>(x.nome+' '+x.sku+' '+x.fNome+' '+x.num).toLowerCase().includes(k));
+  const S=rl5Soma(l),totV=S.v+S.ipi;
+  const grupo=RL5.forn?'item':RL5.grupo;
+  const fNome=RL5.forn?((fOps.find(f=>f.k===RL5.forn)||{}).nome||((DB.fornecedores||[]).find(f=>f.id===RL5.forn)||{}).nome||''):'';
+  const perTxt=`${br(RL5.de)} a ${br(RL5.ate)}`;
+  const sel=(v,a)=>v===a?'on':'';
+  const subLinhas=ls=>ls.sort((a,b)=>String(b.data).localeCompare(String(a.data))||(+b.num-+a.num)).map(x=>`<tr class="sub">
+      <td>${br(x.data)} · <a data-r5oc="${esc(x.id)}">OC ${esc(x.num)}</a>${grupo==='item'&&!RL5.forn?' · '+esc(x.fNome):''}${grupo==='forn'||RL5.forn?'':''}${x.saldo?' <span class="pill p-par">saldo</span>':''}${x.parcial?' <span class="pill p-par">entrega parcial</span>':''}</td>
+      <td class="n">${rl5Q(x.q)} ${esc(x.un)}</td><td class="n">${rl5P(x.preco)}</td><td class="n">—</td>
+      <td class="n">${nf(x.v,2)}</td><td class="n">${nf(x.v+x.ipi,2)}</td>
+      <td>${x.chegou?`<span class="r5ok">chegou ${br(x.dChe)}</span>${x.nfs?' · NF '+esc(x.nfs):''}`:`<span class="${x.o.prev&&x.o.prev<hojeY()?'r5atr':'r5cam'}">${x.o.prev&&x.o.prev<hojeY()?'atrasada':'a caminho'}${x.o.prev?' · prev. '+br(x.o.prev):''}</span>`}</td></tr>`).join('');
+  let corpo='';
+  if(grupo==='item'||grupo==='itemTodos'){
+    const g=rl5Ordena(rl5Agrupa(l,'sku'));
+    corpo=`<table class="r5t"><thead><tr><th>Item</th><th class="n">Qtde comprada</th><th class="n">Preço médio</th><th class="n">Menor · maior</th><th class="n">Valor produtos</th><th class="n">Valor com IPI</th><th>Chegada</th></tr></thead><tbody>
+    ${g.map(x=>{const ab=RL5.aberto.has('i|'+x.k),p=totV?(x.s.v+x.s.ipi)/totV*100:0;return `<tr class="g ${ab?'ab':''}" data-r5g="i|${esc(x.k)}">
+      <td><b>${esc(x.nome)}</b><small>${esc(x.sku)} · ${x.s.ocs.size} ordem(ns)${!RL5.forn&&x.s.forns.size>1?' · '+x.s.forns.size+' fornecedores':''}</small><div class="bar"><i style="width:${Math.max(1,p).toFixed(1)}%"></i></div></td>
+      <td class="n"><b>${rl5Q(x.s.q)}</b> ${esc(x.un)}</td><td class="n">${rl5P(x.s.pm)}</td>
+      <td class="n">${x.s.min===x.s.max?rl5P(x.s.min):rl5P(x.s.min)+' · '+rl5P(x.s.max)}</td>
+      <td class="n">${nf(x.s.v,2)}</td><td class="n"><b>${nf(x.s.v+x.s.ipi,2)}</b><small>${nf(p,1)}% do total</small></td>
+      <td>${x.s.caminho?`<span class="r5ok">${rl5Q(x.s.chegou)} chegou</span><small class="r5cam">${rl5Q(x.s.caminho)} a caminho</small>`:'<span class="r5ok">tudo chegou</span>'}</td></tr>
+      ${ab?subLinhas(x.ls):''}`;}).join('')}
+    <tr class="tot"><td>Total · ${g.length} item(ns)</td><td class="n">—</td><td></td><td></td><td class="n">${nf(S.v,2)}</td><td class="n">${nf(totV,2)}</td><td></td></tr></tbody></table>`;
+  }else{
+    const g=rl5Ordena(rl5Agrupa(l,'forn'));
+    corpo=`<table class="r5t"><thead><tr><th>Fornecedor</th><th class="n">Ordens</th><th class="n">Itens</th><th class="n">Valor produtos</th><th class="n">IPI</th><th class="n">Valor com IPI</th><th class="n">Créditos</th></tr></thead><tbody>
+    ${g.map(x=>{const ab=RL5.aberto.has('f|'+x.k),p=totV?(x.s.v+x.s.ipi)/totV*100:0;
+      const its=ab?rl5Ordena(rl5Agrupa(x.ls,'sku')):[];
+      return `<tr class="g ${ab?'ab':''}" data-r5g="f|${esc(x.k)}">
+      <td><b>${esc(x.nome)}</b><small>${x.s.caminho?'tem item a caminho':'tudo chegou'}</small><div class="bar"><i style="width:${Math.max(1,p).toFixed(1)}%"></i></div></td>
+      <td class="n">${x.s.ocs.size}</td><td class="n">${x.s.itens.size}</td><td class="n">${nf(x.s.v,2)}</td><td class="n">${nf(x.s.ipi,2)}</td>
+      <td class="n"><b>${nf(x.s.v+x.s.ipi,2)}</b><small>${nf(p,1)}% do total</small></td><td class="n">${nf(x.s.cred,2)}</td></tr>
+      ${ab?its.map(y=>`<tr class="sub"><td><b style="color:var(--ink)">${esc(y.nome)}</b> <span style="color:var(--ink3)">${esc(y.sku)}</span> · <a data-r5ver="${esc(x.k)}|${esc(y.k)}">ver ordens</a></td>
+        <td class="n">${y.s.ocs.size}</td><td class="n">${rl5Q(y.s.q)} ${esc(y.un)}</td><td class="n">${nf(y.s.v,2)}</td><td class="n">${nf(y.s.ipi,2)}</td>
+        <td class="n">${nf(y.s.v+y.s.ipi,2)}</td><td class="n">pm ${rl5P(y.s.pm)}</td></tr>`).join(''):''}`;}).join('')}
+    <tr class="tot"><td>Total · ${g.length} fornecedor(es)</td><td class="n">${S.ocs.size}</td><td class="n">${S.itens.size}</td><td class="n">${nf(S.v,2)}</td><td class="n">${nf(S.ipi,2)}</td><td class="n">${nf(totV,2)}</td><td class="n">${nf(S.cred,2)}</td></tr></tbody></table>`;
+  }
+  $('app').innerHTML=`<div class="migalha">Compras › Relatórios</div>
+  <div class="topo"><h1>Compras do período</h1><span style="flex:1"></span>
+    <button class="btn" id="r5Xls">⤓ Baixar Excel</button><button class="btn" id="r5Pdf">⎙ Imprimir / PDF</button></div>
+  <div class="r5per">
+    <div><label>Período</label><div class="r5s">${[['mes','Este mês'],['ant','Mês passado'],['3m','Últimos 3 meses'],['ano','Este ano']].map(([v,r])=>{const p=rl5Periodo(v);return `<button data-r5p="${v}" class="${p[0]===RL5.de&&p[1]===RL5.ate?'on':''}">${r}</button>`;}).join('')}</div></div>
+    <div class="dt"><label>De</label><input class="dt-in" data-cal="1" id="rDe" value="${br(RL5.de)}"></div>
+    <div class="dt"><label>Até</label><input class="dt-in" data-cal="1" id="rAte" value="${br(RL5.ate)}"></div>
+    <div><label>Contar pela data</label><div class="r5s"><button data-r5b="ordem" class="${sel(RL5.base,'ordem')}">da ordem</button><button data-r5b="chegada" class="${sel(RL5.base,'chegada')}">da chegada</button></div></div>
+  </div>
+  <div class="r5f">
+    <div><label>Fornecedor</label><select id="r5F"><option value="">Todos os fornecedores (${fOps.length})</option>${fOps.map(f=>`<option value="${esc(f.k)}" ${f.k===RL5.forn?'selected':''}>${esc(f.nome)}</option>`).join('')}</select></div>
+    <div><label>Item ${RL5.forn?'deste fornecedor':''}</label><select id="r5I"><option value="">Todos os itens (${iOps.length})</option>${iOps.map(i=>`<option value="${esc(i.k)}" ${i.k===RL5.sku?'selected':''}>${esc(i.nome)} · ${esc(i.k)}</option>`).join('')}</select></div>
+    <div><label>Buscar</label><input id="r5Q" value="${esc(RL5.q)}" placeholder="nome, código ou nº da ordem"></div>
+    <div><label>Ordenar por</label><select id="r5O">${[['valor','Maior valor'],['qtd','Maior quantidade'],['ocs','Mais ordens'],['nome','Nome (A a Z)']].map(([v,r])=>`<option value="${v}" ${RL5.ord===v?'selected':''}>${r}</option>`).join('')}</select></div>
+    <div><label>Situação</label><div class="r5s">${[['tudo','Tudo'],['chegou','Já chegou'],['caminho','A caminho']].map(([v,r])=>`<button data-r5s="${v}" class="${sel(RL5.sit,v)}">${r}</button>`).join('')}</div></div>
+    ${RL5.forn?'':`<div><label>Mostrar</label><div class="r5s"><button data-r5m="forn" class="${sel(RL5.grupo,'forn')}">Por fornecedor</button><button data-r5m="itemTodos" class="${sel(RL5.grupo,'itemTodos')}">Por item</button></div></div>`}
+  </div>
+  <div class="r5k">
+    <div class="card"><small>Total comprado</small><b>R$ ${nf(totV,2)}</b><span>produtos ${nf(S.v,2)} · IPI ${nf(S.ipi,2)}</span></div>
+    <div class="card"><small>Ordens</small><b>${S.ocs.size}</b><span>${perTxt}</span></div>
+    <div class="card"><small>Itens diferentes</small><b>${S.itens.size}</b><span>${RL5.sku?'item escolhido':'no filtro'}</span></div>
+    <div class="card"><small>Fornecedores</small><b>${S.forns.size}</b><span>${fNome?esc(fNome):'no filtro'}</span></div>
+    <div class="card"><small>A caminho</small><b class="r5cam">R$ ${nf(S.vCam,2)}</b><span>ainda não chegou</span></div>
+  </div>
+  <div class="caixa" style="overflow:auto">${l.length?corpo:'<div class="vazio">Nenhuma compra nesse filtro e período.</div>'}</div>
+  <div class="leg" style="margin-top:10px">Clique na linha para ver as ordens. Quantidade comprada é o que ficou em cada ordem: numa entrega parcial, a ordem fica com o que chegou e o resto vai para a ordem de saldo — nada conta duas vezes. Rascunho e cancelada não entram.</div>`;
+  ligaCalendarios($('app'));
+  const re=()=>telaRelatorios();
+  $('rDe').onchange=e=>{RL5.de=deBR(e.target.value)||RL5.de;re();};
+  $('rAte').onchange=e=>{RL5.ate=deBR(e.target.value)||RL5.ate;re();};
+  document.querySelectorAll('[data-r5p]').forEach(b=>b.onclick=()=>{const p=rl5Periodo(b.dataset.r5p);RL5.de=p[0];RL5.ate=p[1];re();});
+  document.querySelectorAll('[data-r5b]').forEach(b=>b.onclick=()=>{RL5.base=b.dataset.r5b;re();});
+  document.querySelectorAll('[data-r5s]').forEach(b=>b.onclick=()=>{RL5.sit=b.dataset.r5s;re();});
+  document.querySelectorAll('[data-r5m]').forEach(b=>b.onclick=()=>{RL5.grupo=b.dataset.r5m;RL5.aberto.clear();re();});
+  $('r5F').onchange=e=>{RL5.forn=e.target.value;RL5.sku='';RL5.aberto.clear();re();};
+  $('r5I').onchange=e=>{RL5.sku=e.target.value;if(RL5.sku)RL5.aberto.add('i|'+RL5.sku);re();};
+  $('r5O').onchange=e=>{RL5.ord=e.target.value;re();};
+  $('r5Q').oninput=e=>{RL5.q=e.target.value;clearTimeout(window._r5t);window._r5t=setTimeout(()=>{re();const i=$('r5Q');i.focus();i.setSelectionRange(i.value.length,i.value.length);},300);};
+  document.querySelectorAll('[data-r5g]').forEach(r=>r.onclick=e=>{if(e.target.closest('a'))return;const k=r.dataset.r5g;RL5.aberto.has(k)?RL5.aberto.delete(k):RL5.aberto.add(k);re();});
+  document.querySelectorAll('[data-r5oc]').forEach(a=>a.onclick=e=>{e.stopPropagation();abrirOC(a.dataset.r5oc);});
+  document.querySelectorAll('[data-r5ver]').forEach(a=>a.onclick=e=>{e.stopPropagation();const [f,s]=a.dataset.r5ver.split('|');RL5.forn=f;RL5.sku=s;RL5.aberto.clear();RL5.aberto.add('i|'+s);re();});
+  $('r5Xls').onclick=()=>rl5Excel(l,fNome,perTxt);
+  $('r5Pdf').onclick=()=>rl5Imprimir(l,fNome,perTxt,grupo);
+}
+
+async function rl5Excel(l,fNome,perTxt){
+  if(!l.length)return toast('Nada para baixar nesse filtro.',true);
+  try{await carregaScript('https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js');}catch(e){return toast('Não consegui abrir o gerador de planilha.',true);}
+  const r2x=v=>Math.round((+v||0)*100)/100;
+  const det=l.slice().sort((a,b)=>a.fNome.localeCompare(b.fNome,'pt')||a.nome.localeCompare(b.nome,'pt')||String(a.data).localeCompare(String(b.data))).map(x=>({
+    'Data':br(x.data),'Ordem':+x.num||x.num,'Fornecedor':x.fNome,'Código':x.sku,'Item':x.nome,'Un':x.un,'Quantidade':x.q,'Preço unitário':x.preco,
+    'Valor produtos':r2x(x.v),'IPI':r2x(x.ipi),'Valor com IPI':r2x(x.v+x.ipi),'Créditos':r2x(x.cred),
+    'Situação':x.chegou?'Chegou':'A caminho','Chegou em':x.chegou?br(x.dChe):'','NF':x.nfs||'','Data da ordem':br(x.dataOC)}));
+  const res=rl5Ordena(rl5Agrupa(l,'sku')).map(y=>({'Código':y.sku,'Item':y.nome,'Un':y.un,'Quantidade':y.s.q,'Preço médio':Math.round(y.s.pm*10000)/10000,
+    'Menor preço':y.s.min,'Maior preço':y.s.max,'Ordens':y.s.ocs.size,'Fornecedores':[...new Set(y.ls.map(x=>x.fNome))].join(', '),
+    'Valor produtos':r2x(y.s.v),'IPI':r2x(y.s.ipi),'Valor com IPI':r2x(y.s.v+y.s.ipi),'A caminho':y.s.caminho}));
+  const fs=rl5Ordena(rl5Agrupa(l,'forn')).map(y=>({'Fornecedor':y.nome,'Ordens':y.s.ocs.size,'Itens':y.s.itens.size,'Valor produtos':r2x(y.s.v),'IPI':r2x(y.s.ipi),'Valor com IPI':r2x(y.s.v+y.s.ipi),'Créditos':r2x(y.s.cred)}));
+  const wb=XLSX.utils.book_new();
+  const ws=(rows,larg)=>{const w=XLSX.utils.json_to_sheet(rows);w['!cols']=larg.map(n=>({wch:n}));return w;};
+  XLSX.utils.book_append_sheet(wb,ws(res,[12,40,6,12,12,12,12,8,36,15,12,15,12]),'Por item');
+  XLSX.utils.book_append_sheet(wb,ws(fs,[40,8,8,15,12,15,12]),'Por fornecedor');
+  XLSX.utils.book_append_sheet(wb,ws(det,[11,8,36,12,40,6,12,12,15,12,15,12,11,11,14,12]),'Ordens item a item');
+  const nome=`Compras ${perTxt.replace(/\//g,'-')}${fNome?' - '+fNome:''}`.replace(/[\\/:*?"<>|]+/g,'-').slice(0,120);
+  XLSX.writeFile(wb,nome+'.xlsx');toast('Planilha baixada.');
+}
+function rl5Imprimir(l,fNome,perTxt,grupo){
+  if(!l.length)return toast('Nada para imprimir nesse filtro.',true);
+  const S=rl5Soma(l),totV=S.v+S.ipi;
+  const its=rl5Ordena(rl5Agrupa(l,'sku'));const fs=rl5Ordena(rl5Agrupa(l,'forn'));
+  const tab=(grupo==='forn'&&!fNome)?
+    `<table><thead><tr><th>Fornecedor</th><th class="n">Ordens</th><th class="n">Itens</th><th class="n">Produtos</th><th class="n">IPI</th><th class="n">Com IPI</th><th class="n">%</th></tr></thead><tbody>
+     ${fs.map(y=>`<tr><td><b>${esc(y.nome)}</b></td><td class="n">${y.s.ocs.size}</td><td class="n">${y.s.itens.size}</td><td class="n">${nf(y.s.v,2)}</td><td class="n">${nf(y.s.ipi,2)}</td><td class="n"><b>${nf(y.s.v+y.s.ipi,2)}</b></td><td class="n">${nf(totV?(y.s.v+y.s.ipi)/totV*100:0,1)}</td></tr>
+       ${rl5Ordena(rl5Agrupa(y.ls,'sku')).map(z=>`<tr class="s"><td>${esc(z.nome)} · ${esc(z.sku)}</td><td class="n">${z.s.ocs.size}</td><td class="n">${rl5Q(z.s.q)} ${esc(z.un)}</td><td class="n">${nf(z.s.v,2)}</td><td class="n">${nf(z.s.ipi,2)}</td><td class="n">${nf(z.s.v+z.s.ipi,2)}</td><td class="n">pm ${rl5P(z.s.pm)}</td></tr>`).join('')}`).join('')}`
+   :`<table><thead><tr><th>Item</th><th class="n">Qtde</th><th class="n">Preço médio</th><th class="n">Ordens</th><th class="n">Produtos</th><th class="n">Com IPI</th><th class="n">%</th></tr></thead><tbody>
+     ${its.map(y=>`<tr><td><b>${esc(y.nome)}</b> · ${esc(y.sku)}</td><td class="n">${rl5Q(y.s.q)} ${esc(y.un)}</td><td class="n">${rl5P(y.s.pm)}</td><td class="n">${y.s.ocs.size}</td><td class="n">${nf(y.s.v,2)}</td><td class="n"><b>${nf(y.s.v+y.s.ipi,2)}</b></td><td class="n">${nf(totV?(y.s.v+y.s.ipi)/totV*100:0,1)}</td></tr>
+       ${y.ls.slice().sort((a,b)=>String(a.data).localeCompare(String(b.data))).map(x=>`<tr class="s"><td>${br(x.data)} · OC ${esc(x.num)}${fNome?'':' · '+esc(x.fNome)}${x.chegou?' · chegou '+br(x.dChe)+(x.nfs?' NF '+esc(x.nfs):''):' · a caminho'}</td><td class="n">${rl5Q(x.q)}</td><td class="n">${rl5P(x.preco)}</td><td></td><td class="n">${nf(x.v,2)}</td><td class="n">${nf(x.v+x.ipi,2)}</td><td></td></tr>`).join('')}`).join('')}`;
+  const titulo='Compras '+perTxt+(fNome?' · '+fNome:'');
+  const html=`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>${esc(titulo)}</title><style>
+  @page{size:A4;margin:11mm}*{box-sizing:border-box}body{font-family:Inter,Arial,sans-serif;color:#111;font-size:10.5px;margin:0}
+  h1{font-size:17px;margin:0 0 2px}.sub{color:#555;margin-bottom:10px}
+  .k{display:flex;gap:16px;margin:8px 0 12px;font-size:11px}.k b{display:block;font-size:14px}
+  table{width:100%;border-collapse:collapse}th{text-align:left;font-size:9px;text-transform:uppercase;color:#666;border-bottom:1.5px solid #111;padding:5px 4px}
+  td{padding:4px;border-bottom:1px solid #E5E7EB;vertical-align:top}.n{text-align:right;white-space:nowrap}
+  tr.s td{color:#555;font-size:9.5px;border-bottom:1px dotted #E5E7EB}tr.s td:first-child{padding-left:14px}tr{page-break-inside:avoid}
+  .noprint{position:fixed;top:0;left:0;right:0;background:#111;color:#fff;padding:8px;font-size:12px}@media print{.noprint{display:none}}
+  </style></head><body><div class="noprint">${esc(titulo)}</div>
+  <h1>Relatório de compras</h1><div class="sub">${esc(perTxt)} · data ${RL5.base==='chegada'?'da chegada':'da ordem'}${fNome?' · fornecedor: <b>'+esc(fNome)+'</b>':''}${RL5.sku?' · item: '+esc(RL5.sku):''}${RL5.sit!=='tudo'?' · '+(RL5.sit==='chegou'?'só o que chegou':'só a caminho'):''}</div>
+  <div class="k"><div>Total com IPI<b>R$ ${nf(totV,2)}</b></div><div>Produtos<b>${nf(S.v,2)}</b></div><div>IPI<b>${nf(S.ipi,2)}</b></div><div>Ordens<b>${S.ocs.size}</b></div><div>Itens<b>${S.itens.size}</b></div><div>A caminho<b>${nf(S.vCam,2)}</b></div></div>
+  ${tab}<tr><td></td></tr></tbody></table>
+  <div class="sub" style="margin-top:10px">Gerado em ${new Date().toLocaleString('pt-BR')} · ERP Atrius</div></body></html>`;
+  const P=(()=>{try{return window.parent!==window&&typeof window.parent.csFolhaModal==='function'?window.parent:null;}catch(e){return null;}})();
+  if(P){try{P.csFolhaModal({titulo:'Relatório de compras',sub:perTxt+(fNome?' · '+fNome:''),arquivo:titulo.replace(/\//g,'-').replace(/ · /g,' - '),html});return;}catch(e){}}
+  const w=window.open('','_blank');if(!w)return toast('Libere as janelas do navegador para imprimir.',true);w.document.write(html);w.document.close();
+}
+
+</script>
 </body></html>

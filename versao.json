@@ -1,6 +1,6 @@
 {
- "v": "v454",
- "versao": "4.5.4",
+ "v": "v455",
+ "versao": "4.5.5",
  "data": "22/10/2026",
- "o_que_mudou": "buscar cadastro pelo CNPJ (Receita e inscrição estadual) em clientes, fornecedores e transportadores"
+ "o_que_mudou": "relatório de compras do período por fornecedor e item (Compras › Relatórios)"
 }
