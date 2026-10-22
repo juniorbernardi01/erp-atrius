@@ -5484,7 +5484,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v447';const VERSAO_DATA='22/10/2026';
+const VERSAO_APP='v448';const VERSAO_DATA='22/10/2026';
 /* número que aparece na tela: v438 → v4.3.8 (por dentro continua v438, que é o que as versões comparam) */
 const csRotVer=v=>{const d=String(v||'').replace(/\D/g,'');return d.length>=3?'v'+d.slice(0,-2)+'.'+d.slice(-2,-1)+'.'+d.slice(-1):String(v||'');};
 const VERSAO_ROTULO=csRotVer(VERSAO_APP)+' · '+VERSAO_DATA;
@@ -32717,6 +32717,62 @@ try{csNucleo.clientesDosPedidos=m=>csClientesDosPedidos(m);csNucleo.versao='v447
 try{const _ct447=chamarTiny;chamarTiny=async function(c){const r=await _ct447.apply(this,arguments);
   try{if(c&&(c.acao==='vendas_atualizar'||c.acao==='vendas_passo'))setTimeout(()=>csClientesDosPedidos(true),3000);}catch(e){}
   return r;};}catch(e){}
+
+</script>
+<script>
+/* ===================== v4.4.8 · "VOLTAR AO HORÁRIO NORMAL?" SÓ NA HORA EM QUE ALGUÉM MUDA A OP =====================
+   22/10: a pergunta aparecia ao abrir o sistema (até no Início), sobre hora extra de outro dia, sem dizer de qual OP
+   nem quem tinha liberado. Agora:
+   - ela só aparece logo depois de alguém SALVAR ou MOVER uma OP (no PCP), e só olha a máquina e o dia daquela OP
+     (o lugar de onde ela saiu e o lugar para onde foi);
+   - diz qual OP foi mudada, para que horário, e quem liberou a hora extra e quando;
+   - abrir o sistema, trocar de página ou outra pessoa mexendo não faz pergunta nenhuma. */
+let CS_HE_ALVO=null;
+function csHEMarca(alvos,o,novo){
+  CS_HE_ALVO={alvos:alvos.filter(a=>a&&a.maq&&a.data),op:o||null,novo:novo||null,em:Date.now()};
+}
+try{const _hc448=csHEConfere;csHEConfere=function(f,denovo){
+  try{const E=typeof EDIT!=='undefined'?EDIT:null;
+    csHEMarca([E&&{maq:E.maq,data:E.data},{maq:f.maq,data:f.data}],E||f,{maq:f.maq,data:f.data,inicio:f.inicio});}catch(e){}
+  return _hc448.apply(this,arguments);};}catch(e){}
+try{const _mv448=moverOC;moverOC=function(o,maq,data,inicio){
+  try{if(o)csHEMarca([{maq:o.maq,data:o.data},{maq,data}],o,{maq,data,inicio});}catch(e){}
+  return _mv448.apply(this,arguments);};}catch(e){}
+
+csHERevisa=function(){
+  try{
+    const a=CS_HE_ALVO;if(!a||Date.now()-a.em>20000)return;
+    if(typeof csChaoFabrica==='function'&&csChaoFabrica())return;
+    if(typeof podeEditar==='function'&&!podeEditar('envase'))return;
+    if(document.getElementById('csHE')||document.getElementById('csHEv'))return;   /* ainda respondendo outra pergunta */
+    CS_HE_ALVO=null;
+    const vistos=new Set();
+    for(const {maq,data} of a.alvos){
+      const k=maq+'|'+data;if(vistos.has(k))continue;vistos.add(k);
+      if(data<ymd(new Date()))continue;
+      const c=CALENDARIO[data];const ex=c&&c.maq&&c.maq[maq];
+      if(!ex||ex.trab===false||!Array.isArray(ex.he)||!ex.he.length)continue;
+      const [r0,r1]=jorn(maq),i0=hm(ex.ini||'05:00'),f0=hm(ex.fim||'20:00');
+      const folga=!!c.he;const n=csHEPrecisa(maq,data,ex);
+      const sobra=[];
+      if(folga&&!n.ops)sobra.push('dia');
+      else{if(i0<r0&&!n.cedo)sobra.push('cedo');if(f0>r1&&!n.tarde)sobra.push('tarde');}
+      if(!sobra.length)continue;
+      csHEVolta(maq,data,ex,sobra,folga);
+      /* o contexto: qual OP mudou e quem tinha liberado */
+      try{const box=document.querySelector('#csHEv .ct');if(box){
+        const o=a.op,nv=a.novo||{};
+        const lib=[...ex.he].reverse().find(h=>h&&h.por&&!h.volta);
+        const opTxt=o?`Você mudou a <b>OP ${escAttr(rotuloOP(o))}</b> (${escAttr(nomeCurto(o.codigo)||'')})${nv.inicio!=null?` para <b>${hhmm(nv.inicio)}</b>${nv.data&&nv.data!==data?` em ${dCurto(nv.data)}`:''}${nv.maq&&nv.maq!==maq?` na ${escAttr(nv.maq)}`:''}`:''}.`:'';
+        box.innerHTML=box.innerHTML.replace(/Você tinha liberado a (<b>[^<]*<\/b>) /,'A $1 estava liberada ');
+        box.insertAdjacentHTML('afterbegin',`<div style="margin-bottom:10px">${opTxt}</div>`);
+        if(lib)box.insertAdjacentHTML('beforeend',`<div class="k" style="margin-top:10px;font-size:12.5px;color:#64748B">A hora extra foi liberada por <b>${escAttr(lib.por)}</b>${lib.em?` em ${escAttr(String(lib.em).split(' ').map((x,i)=>i===0?x.split('-').reverse().slice(0,2).join('/'):x).join(' às '))}`:''}.</div>`);
+      }}catch(e){}
+      return;
+    }
+  }catch(e){console.warn('[v448] revisa hora extra',e);}
+};
+try{csNucleo.versao='v448';}catch(e){}
 
 </script>
 </body>
