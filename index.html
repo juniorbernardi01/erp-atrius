@@ -5484,7 +5484,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v448';const VERSAO_DATA='22/10/2026';
+const VERSAO_APP='v450';const VERSAO_DATA='22/10/2026';
 /* número que aparece na tela: v438 → v4.3.8 (por dentro continua v438, que é o que as versões comparam) */
 const csRotVer=v=>{const d=String(v||'').replace(/\D/g,'');return d.length>=3?'v'+d.slice(0,-2)+'.'+d.slice(-2,-1)+'.'+d.slice(-1):String(v||'');};
 const VERSAO_ROTULO=csRotVer(VERSAO_APP)+' · '+VERSAO_DATA;
@@ -8841,7 +8841,7 @@ function imprimirEtiquetaRetencao(b){
 
   const uma=`<div class="etq">
     <div class="faixa">Amostra de retenção</div>
-    <div class="prod">${escP(b.produto)}</div>
+    <div class="prod" style="font-size:${typeof csEtqFonte==='function'?csEtqFonte(b.produto,'ret'):4.2}mm">${escP(b.produto)}</div>
     <div class="lin forte">
       <div><i>Lote</i><b>${escP(b.lote||'—')}</b></div>
       <div><i>OP</i><b>${mae?String(mae.opNum).padStart(3,'0'):'—'}</b></div>
@@ -8876,10 +8876,10 @@ function imprimirEtiquetaRetencao(b){
   .etq>*{flex:none}
   .faixa{background:#000;color:#fff;font-size:1.8mm;font-weight:700;letter-spacing:.16em;
     text-transform:uppercase;padding:.5mm 0;margin:-1.0mm -1.6mm .8mm;text-align:center;line-height:1}
-  .prod{font-weight:900;font-size:4.2mm;line-height:1;letter-spacing:-.03em;
-    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:.7mm}
+  .prod{font-weight:900;line-height:1.08;letter-spacing:-.03em;margin-bottom:.5mm;padding-top:.6mm;
+    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
   .lin{display:grid;grid-template-columns:1fr 1fr;gap:0 2mm;
-    border-top:.22mm solid #BBB;padding:.5mm 0}
+    border-top:.22mm solid #BBB;padding:.35mm 0}
   .lin.forte{border-top:.55mm solid #000}
   .lin.solo{grid-template-columns:1fr}
   .lin.fim{border-top:.55mm solid #000;margin-top:auto;padding-bottom:0}
@@ -8971,6 +8971,9 @@ function imprimirEtiqueta(o){
     <button class="btn pri" id="etK">Abrir para imprimir</button>`;
   const prev=()=>{
     const b=barrasITF14(cod,52,15);
+    M('etPrev').innerHTML='<iframe id="etPrevF" title="Prévia" style="width:60mm;height:40mm;border:1px solid var(--line);border-radius:4px;background:#fff"></iframe>';
+    try{const fd=M('etPrevF').contentDocument;fd.open();fd.write(etiquetaHTML(p,cv('etLote'),dFab(cv('etData')),1).replace(/<div class="noprint">[\s\S]*?<\/div>/,''));fd.close();}catch(e){}
+    return;
     M('etPrev').innerHTML=`<div style="width:60mm;height:40mm;border:1px solid var(--line);
       border-radius:4px;background:#fff;color:#000;padding:1.5mm 2mm;display:flex;
       flex-direction:column;align-items:center;justify-content:space-between;
@@ -32773,6 +32776,132 @@ csHERevisa=function(){
   }catch(e){console.warn('[v448] revisa hora extra',e);}
 };
 try{csNucleo.versao='v448';}catch(e){}
+
+</script>
+<script>
+/* ===================== v4.4.9 · "SALVAR EM PDF" SAI IGUAL À FOLHA =====================
+   22/10: o PDF saía com um pedaço da tabela e o resto em branco. O gerador lia a folha que está dentro da prévia
+   (outro documento, encolhido pelo zoom) e copiava para fora dela, onde as regras de estilo da folha não existem.
+   Agora o arquivo é gerado DENTRO de uma folha própria, escondida, no tamanho real do A4, com o mesmo estilo da
+   prévia e a mesma margem da impressão (11 mm). Vale para todo "Salvar em PDF" do sistema (OP, lote, ordem de
+   compra, relatórios) e para o "Salvar PDF" de várias ordens de compra (um arquivo por ordem). */
+const CS_H2P_URL='https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+function csPDFDeHtml(html,arquivo){
+  arquivo=String(arquivo||'documento').replace(/[\\/:*?"<>|]+/g,'-').replace(/\s+/g,' ').trim().slice(0,150)||'documento';
+  return new Promise((ok,erro)=>{
+    const f=document.createElement('iframe');
+    /* fora da tela, mas com o tamanho do papel: a folha se arruma como na impressão */
+    f.style.cssText='position:fixed;left:-12000px;top:0;width:794px;height:1123px;border:0;visibility:hidden';
+    f.setAttribute('aria-hidden','true');document.body.appendChild(f);
+    const fim=(e,r)=>{setTimeout(()=>{try{f.remove();}catch(x){}},500);e?erro(e):ok(r);};
+    try{
+      const d=f.contentDocument;d.open();
+      d.write(String(html).replace(/<div class="noprint">[\s\S]*?<\/div>/,'')
+        .replace('</head>','<style>html,body{margin:0;padding:0;background:#fff}@page{margin:0}</style></head>'));
+      d.close();
+      const w=f.contentWindow;
+      const roda=()=>{try{
+        /* dois tipos de folha: a que já desenha o A4 inteiro (.folha, com a margem dentro dela) e a que conta
+           com a margem do papel (11 mm) — essa é montada na largura útil do A4 (188 mm ≈ 710 px) */
+        const folha=d.querySelector('.folha');
+        let alvo,mg,larg;
+        if(folha){alvo=folha;mg=0;larg=794;
+          Object.assign(folha.style,{margin:'0',minHeight:'0',height:'auto',boxShadow:'none'});}
+        else{alvo=d.body;mg=11;larg=710;f.style.width='710px';}
+        const op=w.JSON.parse(JSON.stringify({
+          margin:mg,filename:`${arquivo}.pdf`,
+          image:{type:'jpeg',quality:.97},
+          html2canvas:{scale:2,useCORS:true,backgroundColor:'#fff',windowWidth:larg,scrollX:0,scrollY:0},
+          jsPDF:{unit:'mm',format:'a4',orientation:'portrait'},
+          pagebreak:{mode:['css','legacy'],avoid:['tr','.bloco','.tot','.assin']}
+        }));
+        /* o arquivo é baixado pela tela do sistema (o quadro escondido perdia o nome com acento) */
+        w.html2pdf().set(op).from(alvo).outputPdf('blob').then(bl=>{
+          const url=URL.createObjectURL(bl);const a=document.createElement('a');a.href=url;a.download=`${arquivo}.pdf`;
+          document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(url);a.remove();},4000);fim(null,true);
+        }).catch(e=>fim(e));
+      }catch(e){fim(e);}};
+      const s=d.createElement('script');s.src=CS_H2P_URL;
+      s.onload=()=>setTimeout(roda,150);s.onerror=()=>fim(new Error('sem internet'));
+      /* espera as imagens (logo) e as fontes */
+      const vai=()=>d.head.appendChild(s);
+      if(d.readyState==='complete')setTimeout(vai,100);else w.addEventListener('load',()=>setTimeout(vai,100));
+      setTimeout(()=>fim(new Error('demorou demais')),45000);
+    }catch(e){fim(e);}
+  });
+}
+window.csPDFDeHtml=csPDFDeHtml;
+try{csNucleo.pdf=(html,arquivo)=>csPDFDeHtml(html,arquivo);}catch(e){}
+try{const _fm449=csFolhaModal;csFolhaModal=function(c){
+  const r=_fm449.apply(this,arguments);
+  try{const bt=M('fmSalvar');if(bt&&c&&c.html)bt.onclick=()=>{
+    bt.disabled=true;bt.textContent='Gerando…';
+    csPDFDeHtml(c.html,c.arquivo||'documento').then(()=>{toast(`${c.arquivo}.pdf baixado.`);fecharModal();})
+      .catch(()=>{bt.disabled=false;bt.textContent='Salvar em PDF';
+        toast('Não consegui gerar o arquivo aqui — abrindo a impressão para salvar como PDF.',true);M('fmImprimir').click();});};}catch(e){}
+  return r;};}catch(e){}
+try{csNucleo.versao='v449';}catch(e){}
+
+</script>
+<script>
+/* ===================== v4.5.0 · ETIQUETAS COM O NOME INTEIRO =====================
+   22/10: sem o nome resumido, a etiqueta do fardo cortava ("LIMPADOR PERFUMA…") e o acento de ÁGUA sumia.
+   Fardo (DUN-14, 60×40): nome em negrito, centralizado, até 2 linhas; código de barras do mesmo tamanho,
+   descido junto do número e da linha de lote/fabricação. Amostra de retenção: nome em até 2 linhas. */
+/* tamanho da letra pelo comprimento do nome: cabe em até 2 linhas de 56 mm */
+function csEtqFonte(n,base){const l=String(n||'').length;
+  return base==='ret'?(l<=18?4.2:l<=26?3.6:l<=36?3.1:2.7):(l<=19?5.2:4.6);}
+function csEmbDe(p){const d=String((p&&p.descricao)||''),n=nomeCurto(p.codigo);
+  let r=d.startsWith(n)?d.slice(n.length):'';r=r.replace(/^[\s\-–·]+/,'').trim();return r;}
+etiquetaHTML=function(p,lote,dataFab,qtd){
+  const cod=String(p.dun||'').replace(/\D/g,'');
+  const barras=barrasITF14(cod,52,15);
+  const nome=nomeCurto(p.codigo),emb=csEmbDe(p),fs=csEtqFonte(nome);
+  const uma=`<div class="etq">
+    <div class="topo"><div class="nm" style="font-size:${fs}mm">${escTxt(nome)}</div></div>
+    <div class="bc">${barras||'<span class="semdun">produto sem DUN-14 cadastrado</span>'}</div>
+    <div class="num">${escTxt(dunLegivel(cod))}</div>
+    <div class="pe"><span><b>LOTE:</b> ${escTxt(lote||'—')}</span>
+      <span><b>FAB.:</b> ${escTxt(dataFab)}</span></div>
+  </div>`;
+  return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8">
+<title>${escTxt(nome)} · lote ${escTxt(lote||'')}</title>
+<style>
+  @page{size:60mm 40mm;margin:0}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:Arial,Helvetica,sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .etq{width:60mm;height:40mm;padding:1.1mm 2mm 1.2mm;display:flex;flex-direction:column;
+    align-items:center;justify-content:flex-end;gap:.9mm;page-break-after:always;
+    background:#fff;color:#000;overflow:hidden}
+  .etq:last-child{page-break-after:auto}
+  .etq>*{flex:none}
+  /* o nome vai inteiro: até duas linhas, e a letra diminui quando o nome é comprido */
+  .topo{width:100%;display:flex;align-items:flex-end;justify-content:center}
+  .nm{font-weight:900;-webkit-text-stroke:.16mm #000;line-height:1.06;padding-top:.4mm;text-align:center;letter-spacing:-.02em;width:100%;
+    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;word-break:normal;overflow-wrap:anywhere}
+  .nm small{font-size:2.6mm;font-weight:700;letter-spacing:.03em;white-space:nowrap}
+  .bc{width:100%;height:15mm;display:flex;align-items:center;justify-content:center}
+  .bc svg{width:56mm;height:15mm}
+  .num{font-weight:800;font-size:4.2mm;letter-spacing:.06em;line-height:1;margin-top:-.3mm}
+  .pe{width:100%;display:flex;justify-content:space-between;align-items:baseline;
+    font-size:3.5mm;line-height:1;border-top:.4mm solid #000;padding-top:1mm}
+  .pe b{font-weight:900}
+  .semdun{font-size:3.2mm;color:#900;font-weight:700}
+  .noprint{position:fixed;top:0;left:0;right:0;background:#111;color:#fff;
+    padding:10px 14px;font-size:13px;display:flex;gap:10px;align-items:center;z-index:9}
+  .noprint button{font:inherit;padding:6px 14px;border-radius:7px;border:0;cursor:pointer;
+    background:#2563EB;color:#fff;font-weight:600}
+  @media print{.noprint{display:none}}
+</style></head><body>
+<div class="noprint"><b>${qtd} etiqueta${qtd>1?'s':''}</b>
+  <span style="opacity:.7">60 × 40 mm · escolha a impressora térmica e deixe a margem em zero</span>
+  <span style="flex:1"></span>
+  <button onclick="window.print()">Imprimir</button></div>
+${uma.repeat(qtd)}
+</body></html>`;
+}
+
+try{csNucleo.versao='v450';}catch(e){}
 
 </script>
 </body>
