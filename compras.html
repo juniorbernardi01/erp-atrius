@@ -1083,11 +1083,19 @@ async function lancarEntrada(oc,r){
   }catch(e){r.tiny={erro:e.message};}
   return !!(r.tiny&&r.tiny.ok);
 }
+/* o contato da conta a pagar: com código do Tiny vai só o código; cadastrado no ERP vai com tudo, e o Tiny cria */
+function cliTiny(f){f=f||{};const base={nome:(f.nome||'').slice(0,50),cpf_cnpj:f.cnpj||'',codigo:f.tinyId?String(f.tinyId):undefined,atualizar_cliente:'N'};
+  if(f.tinyId)return base;
+  let x=f;try{const cc=CAD_CONT.find(y=>(f.cadId&&y.id===f.cadId)||(f.cnpj&&String(y.doc||'').replace(/\D/g,'')===String(f.cnpj).replace(/\D/g,'')));
+    if(cc)x={...f,endereco:cc.endereco,numero:cc.numero,complemento:cc.complemento,bairro:cc.bairro,cep:cc.cep,cidade:cc.cidade,uf:cc.uf,fone:cc.fone,email:cc.email,ie:cc.ie,tipoPessoa:cc.tipoPessoa,fantasia:cc.fantasia};}catch(e){}
+  const tp=x.tipoPessoa||(String(x.cnpj||'').replace(/\D/g,'').length===11?'F':'J');
+  return {...base,tipo_pessoa:tp,nome_fantasia:(x.fantasia||'').slice(0,60)||undefined,ie:x.ie||undefined,endereco:x.endereco||undefined,numero:x.numero||undefined,complemento:x.complemento||undefined,
+    bairro:x.bairro||undefined,cep:x.cep||undefined,cidade:x.cidade||undefined,uf:x.uf||undefined,fone:x.fone||undefined,email:x.email||undefined};}
 async function lancarConta(oc,p,i,n){
   const f=oc.forn||{};
   const conta={data:br(oc.conf&&oc.conf.dataNF||oc.data),vencimento:br(vencParcela(oc,p)),valor:(+p.valor).toFixed(2),
     nro_documento:String(p.doc||(oc.num+'/'+(i+1))).slice(0,9),ocorrencia:'U',categoria:oc.pag.categoria,
-    cliente:{nome:(f.nome||'').slice(0,50),cpf_cnpj:f.cnpj||'',codigo:f.tinyId?String(f.tinyId):undefined,atualizar_cliente:'N'},
+    cliente:cliTiny(f),
     historico:`OC ${oc.num} · parcela ${i+1} de ${n} · ${p.forma||oc.pag.forma}${oc.nf?' · NF '+oc.nf:''}${p.obs?' · '+p.obs:''} · ${f.nome||''}`.slice(0,300)};
   try{const r=await tiny({acao:'conta_pagar',conta});p.tiny=r&&r.id?{id:r.id,em:agora()}:{erro:(r&&r.erro)||'o Tiny não devolveu o número'};}
   catch(e){p.tiny={erro:e.message};}
@@ -1097,7 +1105,7 @@ async function lancarContaFrete(oc,p,i,n){
   const t=oc.frete.transp||{};
   const conta={data:br(hojeY()),vencimento:br(p.venc||addDias(hojeY(),+p.d||0)),valor:(+p.valor).toFixed(2),
     nro_documento:String(oc.frete.cte||('F'+oc.num)).replace(/\D/g,'').slice(0,9)||('F'+oc.num).slice(0,9),ocorrencia:'U',categoria:oc.frete.cat||'Frete Compra',
-    cliente:{nome:(t.nome||'').slice(0,50),cpf_cnpj:t.cnpj||'',codigo:t.tinyId?String(t.tinyId):undefined,atualizar_cliente:'N'},
+    cliente:cliTiny(t),
     historico:`Frete da OC ${oc.num}${oc.frete.cte?' · CT-e '+oc.frete.cte:''}${n>1?' · parcela '+(i+1)+' de '+n:''} · ${p.forma||oc.frete.forma} · ${(oc.forn&&oc.forn.nome)||''}`.slice(0,300)};
   try{const r=await tiny({acao:'conta_pagar',conta});p.tiny=r&&r.id?{id:r.id,em:agora()}:{erro:(r&&r.erro)||'o Tiny não devolveu o número'};}
   catch(e){p.tiny={erro:e.message};}
@@ -1535,6 +1543,7 @@ function ligaOC(){
     if(oc.benef&&!L){l.push([it.mo?'Mudar para venda':'Mudar para beneficiamento','⇄',()=>{it.mo=!it.mo;recalc();re();},true,it.mo?'o fornecedor vende o item':'mão de obra · crédito somente PIS/COFINS']);
       l.push(['Adicionar sub-item','＋',()=>abreBusca(i),true,'o que sai do nosso estoque (rótulo, pré-forma)']);}
     l.push(['Código no fornecedor','✎',()=>{ED.aberto.add(i);re();},true]);
+    l.push(['Estoque, consumo e compras','▦',()=>estoqueItemGaveta(it,oc),true,'físico, cobertura, entradas previstas e últimas compras']);
     if(!L)l.push('sep',['Remover item','✕',()=>{oc.itens.splice(i,1);ED.aberto.clear();ED.abSub.clear();ED.busca=null;recalc();re();},true,'',true]);
     menuItem(b,l);});
   document.querySelectorAll('[data-smenu]').forEach(b=>b.onclick=ev=>{ev.stopPropagation();const k=b.dataset.smenu,s=subDe(k);if(!s.e)return;
@@ -1813,7 +1822,9 @@ function buscaFornecedores(q){
 function fornDoContato(f){
   if(!f||!f._cad)return f;const c=f._cad;
   let x=DB.fornecedores.find(y=>y.tinyId&&String(y.tinyId)===String(c.tinyId))||DB.fornecedores.find(y=>c.doc&&y.cnpj===c.doc);
-  const d={tinyId:c.tinyId||'',nome:c.nome,cnpj:c.doc||'',ie:c.ie||'',end:[c.endereco,c.numero,c.bairro].filter(Boolean).join(', '),cidade:c.cidade||'',uf:c.uf||'',email:c.email||'',fone:c.fone||''};
+  const d={tinyId:c.tinyId||'',nome:c.nome,cnpj:c.doc||'',ie:c.ie||'',end:[c.endereco,c.numero,c.bairro].filter(Boolean).join(', '),cidade:c.cidade||'',uf:c.uf||'',email:c.email||'',fone:c.fone||'',
+    cadId:c.id||'',tipoPessoa:c.tipoPessoa||(String(c.doc||'').replace(/\D/g,'').length===11?'F':'J'),endereco:c.endereco||'',numero:c.numero||'',complemento:c.complemento||'',bairro:c.bairro||'',cep:c.cep||'',
+    regime:c.regime||'',ibsRegular:!!c.ibsRegular,contribICMS:c.contribICMS||'',emailFin:c.emailFin||'',...(c.prazoPadrao?{prazo:c.prazoPadrao}:{}),...(c.formaPadrao?{pag:c.formaPadrao}:{})};
   if(x)Object.assign(x,d);else{x={id:uid(),...d};DB.fornecedores.push(x);}
   salvar();return x;
 }
@@ -2315,7 +2326,7 @@ async function telaNecessidade(){
   const L=necLinhas();const [ur,uf]=necUnid();
   const tags=[...new Set(L.map(l=>l.x.tipo))].filter(Boolean).sort();const q=NEC.q.toLowerCase();
   if(NEC.tagsF==null)NEC.tagsF=NEC.tags.slice();
-  let vis=L.filter(l=>(!NEC.tags.length||NEC.tags.includes(l.x.tipo||''))&&(!q||(l.k+' '+l.x.nome).toLowerCase().includes(q))&&(!NEC.so||l.sug>0||l.virt<0));
+  let vis=L.filter(l=>(!NEC.tags.length||NEC.tags.includes(l.x.tipo||''))&&(!q||(l.k+' '+l.x.nome).toLowerCase().includes(q))&&(!NEC.so||l.sug>0||l.virt<0||!!l.minSit));
   /* ordenar pelo título clicado (segundo clique inverte); sem clique, pela ordem do cadastro */
   if(NEC.ord){const K={item:l=>l.x.nome,pedidos:l=>l.ped,ops:l=>l.res,entradas:l=>l.entradas,consumo:l=>l.dia,fis:l=>l.fis==null?-1e18:l.fis,virt:l=>l.virt,min:l=>l.min,cob:l=>l.cobre==null?1e18:l.cobre,sug:l=>l.sug,comprar:l=>+NEC.sel[l.k]||0}[NEC.ord.k];
     if(K)vis=vis.slice().sort((a,b)=>{const x=K(a),y=K(b);return (typeof x==='string'?x.localeCompare(y):(x-y))*NEC.ord.d;});}
@@ -3087,4 +3098,157 @@ function blocoTotais(x,n,tit,dentro){
 .tt-c:not(:has(span:not(:empty))) b{visibility:hidden}
 @media (max-width:760px){.tt-g{grid-template-columns:repeat(2,minmax(0,1fr))}}
 </style>
+<script>
+/* ===================== v4.5.2 · COMPRAS: ENTREGA PARCIAL, NECESSIDADE PELO MÍNIMO, ESTOQUE E COMPRAS DO ITEM =====================
+   22/10 (Junior):
+   1) Recebeu só parte: a ordem recebida ganha o marcador "entrega parcial" e a ordem de saldo (o que não veio) ganha
+      "saldo pendente" — para cobrar o fornecedor. Quando o saldo chega, o "saldo pendente" sai sozinho.
+   2) Necessidade: Sugestão = consumo médio por dia × (1 + crescimento) × dias a cobrir − estoque FÍSICO.
+      O mínimo não entra na conta: ele é o sinal. Físico abaixo do mínimo = vermelho; até X% acima = laranja
+      ("perto do mínimo", dá para aproveitar a compra). Entrada prevista não deixa verde: só o que está em casa conta.
+   3) "Ver últimas compras" (embaixo do fornecedor): item por item — data, OC, quantidade, preço, total e quando chegou —,
+      com busca por item e chave "só deste fornecedor".
+   4) No ⋯ do item da ordem: "Estoque, consumo e compras": físico, consumo, cobertura (hoje e com esta ordem),
+      entradas previstas e as compras do item. */
+const MK_PARC='entrega parcial',MK_SALDO='saldo pendente';
+function mkGarante(nome,cor){let m=DB.marcadores.find(x=>x.nome===nome);if(!m){m={nome,cor};DB.marcadores.push(m);}return m;}
+function mkPoeOC(o,nome){o.marcadores=o.marcadores||[];if(!o.marcadores.includes(nome))o.marcadores.push(nome);}
+function mkTiraOC(o,nome){const i=(o.marcadores||[]).indexOf(nome);if(i>=0)o.marcadores.splice(i,1);}
+/* as que já estão assim hoje: marca na memória (vai junto na próxima gravação de alguém) */
+function mkMigra(r){try{if(!r||!r.ocs||!r.marcadores||!r.cfg||r.cfg.mkParcialV1)return;r.cfg.mkParcialV1=1;
+  const tem=n=>r.marcadores.some(m=>m.nome===n);
+  if(!tem(MK_PARC))r.marcadores.push({nome:MK_PARC,cor:'#C2410C'});if(!tem(MK_SALDO))r.marcadores.push({nome:MK_SALDO,cor:'#B91C1C'});
+  r.ocs.forEach(o=>{o.marcadores=o.marcadores||[];
+    if(o.saldoOC&&!o.marcadores.includes(MK_PARC))o.marcadores.push(MK_PARC);
+    if(o.saldoDe&&['env','ras'].includes(o.sit)&&!o.marcadores.includes(MK_SALDO))o.marcadores.push(MK_SALDO);});}catch(e){}}
+try{const _nz452=normaliza;normaliza=function(d){const r=_nz452.apply(this,arguments);mkMigra(r);return r;};}catch(e){}
+(function(){let n=0;const t=setInterval(()=>{try{if(typeof DB!=='undefined'&&DB&&DB.ocs){clearInterval(t);mkMigra(DB);if(PAG==='ordens')render();}else if(++n>120)clearInterval(t);}catch(e){}},500);})();
+try{const _cr452=confirmaRecebimento;confirmaRecebimento=async function(o,st){
+  const saldoAntes=o.saldoOC;
+  const r=await _cr452.apply(this,arguments);
+  try{mkGarante(MK_PARC,'#C2410C');mkGarante(MK_SALDO,'#B91C1C');
+    mkTiraOC(o,MK_SALDO);                                  /* o que estava pendente chegou */
+    if(o.saldoOC&&o.saldoOC!==saldoAntes){mkPoeOC(o,MK_PARC);
+      const s=DB.ocs.find(x=>x.num===o.saldoOC);if(s){mkTiraOC(s,MK_PARC);mkPoeOC(s,MK_SALDO);hist(s,'Marcador automático','saldo pendente · cobrar o fornecedor');}}
+    salvar();if(PAG==='ordens')render();}catch(e){console.warn('[452] marcador parcial',e);}
+  return r;};}catch(e){}
+
+/* ---------- necessidade: sugestão sem o mínimo; mínimo como sinal ---------- */
+const minMargem=()=>{const v=+DB.cfg.minMargem;return isNaN(v)||DB.cfg.minMargem==null||DB.cfg.minMargem===''?10:v;};
+try{const _nl452=necLinhas;necLinhas=function(){
+  const c=necCfg(),cob=(+c.cobN||0)*({d:1,s:7,m:30}[c.cobU]||1),cr=1+(+c.cresc||0)/100,mg=1+minMargem()/100;
+  return _nl452.apply(this,arguments).map(l=>{
+    const s=Math.max(0,l.dia*cr*cob-(l.fis||0));
+    l.sug=s>0?(l.un==='kg'?Math.ceil(s*10)/10:Math.ceil(s)):0;
+    l.minSit=l.min>0&&l.fis!=null?((l.fis<l.min)?'abaixo':(l.fis<=l.min*mg)?'perto':''):'';
+    return l;});};}catch(e){}
+corCob=function(l){
+  if(l.fis==null)return 'cz';
+  if(l.minSit==='abaixo')return 'vm';if(l.minSit==='perto')return 'lj';
+  if(l.min>0)return (l.fis||0)<=0?'vm':'vd';
+  if(l.cobre==null)return 'cz';if(l.cobre<=0||(l.fis||0)<=0)return 'vm';
+  return l.cobre<7?'vm':l.cobre<14?'lj':'vd';};
+try{NEC_TIP.sug='Consumo médio por dia × (1 + crescimento %) × dias a cobrir − estoque físico. O mínimo não entra na conta: ele é o sinal na cobertura.';
+  NEC_TIP.min='Estoque mínimo do item. É o sinal: físico abaixo dele fica vermelho; até a margem acima (padrão 10%) fica laranja.';
+  NEC_TIP.cob='Físico ÷ consumo médio por dia. A cor segue o mínimo (vermelho abaixo, laranja perto); entrada prevista não deixa verde até chegar.';}catch(e){}
+document.head.insertAdjacentHTML('beforeend',`<style>
+.ntb td .mnt{display:block;font-size:10.5px;font-weight:600;margin-top:3px;white-space:nowrap}
+.ntb td .mnt.vm{color:#B3261E}.ntb td .mnt.lj{color:#C2410C}.ntb td .mnt.ep{color:#64748B;font-weight:500}
+.ntb td .cob::before{content:'';display:inline-block;width:7px;height:7px;border-radius:50%;background:currentColor;margin-right:5px;vertical-align:1px}
+.mgx{display:inline-flex;align-items:center;gap:6px;margin-left:8px}.mgx input{width:52px;height:26px;text-align:right;border:1px solid var(--line);border-radius:6px;padding:0 6px;font:inherit}
+.est5 .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:6px 0 14px}
+.est5 .card{border:1px solid var(--line);border-radius:10px;padding:10px 12px}.est5 .card span{font-size:11.5px;color:var(--ink3);display:block}
+.est5 .card b{font-size:18px;display:block;margin-top:2px}.est5 .card small{font-size:11.5px;color:var(--ink3)}
+.est5 h4{font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink3);margin:16px 0 6px}
+.est5 table{width:100%;border-collapse:collapse;font-size:13px}.est5 th{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--ink3);text-align:left;padding:6px 6px;border-bottom:1px solid var(--line)}
+.est5 td{padding:7px 6px;border-bottom:1px solid var(--line3,#F1F3F6)}.est5 td.n,.est5 th.n{text-align:right;white-space:nowrap}
+.est5 .pnd5{color:#C2410C;font-weight:600;font-size:12px}.est5 .acm5{color:#64748B;font-size:12px}.est5 .cobv{font-size:18px;font-weight:700}.est5 .cobv.vm{color:#B3261E}.est5 .cobv.lj{color:#C2410C}.est5 .cobv.vd{color:#15803D}
+</style>`);
+try{const _tn452=telaNecessidade;telaNecessidade=async function(){
+  const r=await _tn452.apply(this,arguments);
+  try{const L=necLinhas();const byK=new Map(L.map(l=>[l.k,l]));
+    document.querySelectorAll('.ntb2 tr[data-nl]').forEach(tr=>{const l=byK.get(tr.dataset.nl);if(!l)return;const sp=tr.querySelector('.cob');if(!sp)return;
+      const td=sp.parentNode;let h='';
+      if(l.minSit==='abaixo')h+=`<span class="mnt vm">abaixo do mínimo</span>`;else if(l.minSit==='perto')h+=`<span class="mnt lj">perto do mínimo · aproveite</span>`;
+      if(l.entradas>0&&(l.minSit||corCob(l)!=='vd'))h+=`<span class="mnt ep">entrada prevista ${necFmt(l.entradas)}</span>`;
+      if(h)td.insertAdjacentHTML('beforeend',h);});
+    /* o card de cobertura curta vira o do mínimo */
+    const ab=L.filter(l=>l.minSit==='abaixo').length,pe=L.filter(l=>l.minSit==='perto').length;
+    const card=document.querySelector('.cards4 .card.a');if(card)card.innerHTML=`<span>Abaixo ou perto do mínimo</span><b>${ab+pe} ${ab+pe===1?'item':'itens'}</b><small>${ab} abaixo · ${pe} até ${minMargem()}% acima</small>`;
+    const leg=document.querySelector('#app .leg');if(leg&&!document.getElementById('mgIn'))leg.insertAdjacentHTML('beforeend',` <span class="mgx"><b>Perto do mínimo:</b> até <input id="mgIn" value="${minMargem()}">% acima</span>`);
+    if($('mgIn'))$('mgIn').onchange=e=>{const v=Math.max(0,Math.min(100,Math.round(num(e.target.value))));DB.cfg.minMargem=v;salvar();telaNecessidade();};
+  }catch(e){console.warn('[452] nec',e);}
+  return r;};}catch(e){}
+
+/* ---------- compras de cada item, com quando chegou ---------- */
+function chegadasDe(o,sku){return (o.receb||[]).filter(r=>!r.estornado).map(r=>{const q=(r.itens||[]).filter(x=>x.sku===sku).reduce((s,x)=>s+(+x.qtd||0),0);return q>0?{data:r.data,nf:r.nf,qtd:q}:null;}).filter(Boolean);}
+function linhasCompras(f){
+  const out=[];
+  DB.ocs.filter(o=>o.sit!=='can'&&o.sit!=='ras'&&(!f.forn||(o.forn&&o.forn.id===f.forn))).forEach(o=>(o.itens||[]).forEach(i=>{
+    if(f.sku&&i.sku!==f.sku)return;
+    const ped=+(i.qtdPedida||i.qtd)||0,ch=chegadasDe(o,i.sku),rec=ch.reduce((s,x)=>s+x.qtd,0);
+    out.push({o,i,data:o.data,num:o.num,forn:(o.forn&&o.forn.nome)||'',sku:i.sku,nome:i.nome,un:i.un||'',ped,preco:+i.preco||0,total:(+i.preco||0)*ped,ch,rec,
+      falta:o.sit==='env'?Math.max(0,ped-rec):0});}));
+  return out.sort((a,b)=>String(b.data).localeCompare(String(a.data))||(+b.num-+a.num));
+}
+function comprasGaveta(opt){
+  let q='',so=!!opt.forn,sku=opt.sku||'';
+  const fNome=opt.forn?((DB.fornecedores.find(f=>f.id===opt.forn)||{}).nome||''):'';
+  const des=()=>{
+    let l=linhasCompras({forn:so?opt.forn:null,sku});
+    const k=q.toLowerCase();if(k)l=l.filter(x=>(x.nome+' '+x.sku).toLowerCase().includes(k));
+    const um=sku||(l.length&&l.every(x=>x.sku===l[0].sku)?l[0].sku:'');
+    const ps=um?l.map(x=>x.preco).filter(Boolean):[];
+    gaveta(`<div class="gt"><h2>Últimas compras</h2><button class="btn sm" id="gX">Fechar ✕</button></div><div class="gc est5">
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <input class="inp" id="ucQ" placeholder="buscar item pelo nome ou código" value="${esc(q)}" style="flex:1;min-width:220px">
+        ${opt.forn?`<label class="chk2" id="ucSo" style="margin:0"><span class="ck ${so?'on':''}"></span>só ${esc(fNome||'deste fornecedor')}</label>`:''}
+        ${sku?`<button class="btn sm" id="ucTodos">ver todos os itens</button>`:''}</div>
+      ${ps.length?`<div class="cards"><div class="card"><span>Último preço</span><b>${nf(ps[0],4)}</b><small>${esc(l[0].forn)} · ${br(l[0].data)}</small></div>
+        <div class="card"><span>Média</span><b>${nf(ps.reduce((s,v)=>s+v,0)/ps.length,4)}</b><small>${ps.length} compra(s)</small></div>
+        <div class="card"><span>Menor preço</span><b>${nf(Math.min(...ps),4)}</b><small>nas compras listadas</small></div></div>`:'<div style="height:10px"></div>'}
+      ${l.length?`<table><thead><tr><th>Data</th><th>OC</th><th>Item</th>${so?'':'<th>Fornecedor</th>'}<th class="n">Qtde</th><th class="n">Preço un</th><th class="n">Total</th><th>Chegou</th></tr></thead><tbody>
+        ${l.slice(0,200).map(x=>`<tr><td>${br(x.data)}</td><td><a class="lk" data-uoc="${esc(x.o.id)}">${esc(x.num)}</a></td><td><b>${esc(x.nome)}</b><div class="k" style="font-size:11.5px">${esc(x.sku)}</div></td>${so?'':`<td>${esc(x.forn)}</td>`}
+          <td class="n">${nq(x.ped)} ${esc(x.un)}</td><td class="n">${nf(x.preco,4)}</td><td class="n">${nf(x.total,2)}</td>
+          <td>${x.ch.length?x.ch.map(c=>`${br(c.data)}${x.ch.length>1||c.qtd<x.ped?` · ${nq(c.qtd)}`:''}${c.nf?` <span class="k">NF ${esc(c.nf)}</span>`:''}`).join('<br>'):''}${x.falta>0&&x.o.sit!=='rec'?`${x.ch.length?'<br>':''}<span class="${x.o.prev&&x.o.prev<hojeY()?'pnd5':'acm5'}">${x.ch.length?'falta '+nq(x.falta):(x.o.prev&&x.o.prev<hojeY()?'atrasada':'a caminho')}</span>`:''}${!x.ch.length&&!(x.falta>0)?'—':''}</td></tr>`).join('')}</tbody></table>
+        ${l.length>200?`<div class="k" style="margin-top:6px">Mostrando 200 de ${l.length}. Use a busca.</div>`:''}`
+        :`<div class="vazio">${q?'Nenhuma compra com essa busca.':'Nenhuma compra ainda.'}</div>`}</div>`);
+    $('gX').onclick=()=>gaveta(null);if($('ucSo'))$('ucSo').onclick=()=>{so=!so;des();};if($('ucTodos'))$('ucTodos').onclick=()=>{sku='';des();};
+    $('ucQ').oninput=e=>{q=e.target.value;clearTimeout(window._tuc);window._tuc=setTimeout(()=>{des();const i=$('ucQ');i.focus();i.setSelectionRange(i.value.length,i.value.length);},200);};
+    document.querySelectorAll('[data-uoc]').forEach(a=>a.onclick=()=>{const o=DB.ocs.find(x=>x.id===a.dataset.uoc);if(!o)return;if(!ED){gaveta(null);abrirOC(o.id);}else toast('OC '+o.num+' · '+br(o.data)+' · '+((o.forn&&o.forn.nome)||''));});
+  };
+  des();
+}
+ultimasComprasGaveta=function(sku,forn){comprasGaveta({forn,sku:null});};
+
+/* ---------- estoque, consumo e compras do item (⋯ do item na ordem) ---------- */
+async function estoqueItemGaveta(it,oc){
+  gaveta(`<div class="gt"><h2>${esc(it.nome)}</h2><button class="btn sm" id="gX">Fechar ✕</button></div><div class="gc est5"><div class="vazio">Calculando consumo…</div></div>`);
+  $('gX').onclick=()=>gaveta(null);
+  try{if(!NDADOS.abertos)await necCarregar();}catch(e){}
+  let l=null;try{l=necLinhas().find(x=>x.k===it.sku);}catch(e){}
+  const c=necCfg(),un=it.un||(l&&l.un)||'';
+  const fis=l?l.fis:null,dia=l?l.dia:0,min=l?l.min:(+DB.minimos[it.sku]||0);
+  const nesta=+it.qtd||0;
+  const cobHoje=dia>0&&fis!=null?Math.floor(fis/dia):null,cobCom=dia>0?Math.floor(((fis||0)+nesta)/dia):null;
+  const prev=DB.ocs.filter(o=>o.sit==='env'&&(o.itens||[]).some(i=>i.sku===it.sku)&&(!oc||o.id!==oc.id)).map(o=>{const i=o.itens.find(x=>x.sku===it.sku);
+    return {o,qtd:Math.max(0,(+i.qtd||0)-recebidoDe(o,it.sku))};}).filter(x=>x.qtd>0);
+  const cor=l?corCob(l):'cz';const comp=linhasCompras({sku:it.sku}).slice(0,8);
+  if(!$('gX'))return;
+  document.querySelector('.gaveta .gc').innerHTML=`
+    <div class="k" style="margin-bottom:6px">${esc(it.sku)}${l&&l.x&&l.x.tipo?' · '+esc(l.x.tipo):''}</div>
+    <div class="cards">
+      <div class="card"><span>Estoque físico</span><b>${fis==null?'—':nq(fis)+' '+esc(un)}</b><small>${min?'mínimo '+nq(min):'sem mínimo'}${l&&l.minSit==='abaixo'?' · <span style="color:#B3261E;font-weight:700">abaixo do mínimo</span>':l&&l.minSit==='perto'?' · <span style="color:#C2410C;font-weight:700">perto do mínimo</span>':''}</small></div>
+      <div class="card"><span>Consumo médio</span><b>${dia?nq(Math.round(dia*30.4))+' '+esc(un):'—'}</b><small>${dia?'por mês · '+nq(Math.round(dia*10)/10)+' por dia':'sem consumo'} · últimos ${c.nMeses} mês(es)</small></div>
+      <div class="card"><span>Cobertura</span><b class="cobv ${cor}">${cobHoje==null?'—':cobHoje+' dias'}</b><small>${cobCom!=null&&nesta?`com esta ordem: <b>${cobCom} dias</b>`:'físico ÷ consumo'}</small></div></div>
+    ${l&&l.sug?`<div class="k" style="margin:-4px 0 6px">Sugestão da Necessidade (cobrir ${c.cobN} ${{d:'dia(s)',s:'semana(s)',m:'mês(es)'}[c.cobU]}): <b>${nq(l.sug)} ${esc(un)}</b></div>`:''}
+    <h4>Entradas previstas${prev.length?' · '+nq(prev.reduce((s,x)=>s+x.qtd,0))+' '+esc(un):''}</h4>
+    ${prev.length?`<table><thead><tr><th>OC</th><th>Fornecedor</th><th>Previsão</th><th class="n">Falta chegar</th></tr></thead><tbody>${prev.map(x=>`<tr><td>${esc(x.o.num)}</td><td>${esc((x.o.forn&&x.o.forn.nome)||'')}</td><td>${br(x.o.prev)}</td><td class="n">${nq(x.qtd)} ${esc(un)}</td></tr>`).join('')}</tbody></table>`:'<div class="k">Nenhuma outra ordem em aberto com este item.</div>'}
+    <h4>Últimas compras</h4>
+    ${comp.length?`<table><thead><tr><th>Data</th><th>OC</th><th>Fornecedor</th><th class="n">Qtde</th><th class="n">Preço un</th><th>Chegou</th></tr></thead><tbody>${comp.map(x=>`<tr><td>${br(x.data)}</td><td>${esc(x.num)}</td><td>${esc(x.forn)}</td><td class="n">${nq(x.ped)}</td><td class="n">${nf(x.preco,4)}</td><td>${x.ch.length?x.ch.map(c=>br(c.data)).join(', '):x.o.sit==='env'?`<span class="${x.o.prev&&x.o.prev<hojeY()?'pnd5':'acm5'}">${x.o.prev&&x.o.prev<hojeY()?'atrasada':'a caminho'}</span>`:'—'}</td></tr>`).join('')}</tbody></table>
+      <button class="btn sm" id="eiMais" style="margin-top:8px">ver todas as compras deste item</button>`:'<div class="k">Nenhuma compra deste item ainda.</div>'}`;
+  if($('eiMais'))$('eiMais').onclick=()=>comprasGaveta({sku:it.sku,forn:oc&&oc.forn&&oc.forn.id});
+}
+
+</script>
 </body></html>

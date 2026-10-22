@@ -1,1 +1,6 @@
-{"v":"v451"}
+{
+ "v": "v453",
+ "versao": "4.5.3",
+ "data": "22/10/2026",
+ "o_que_mudou": "compras: entrega parcial marcada, necessidade pelo mínimo, últimas compras e estoque do item"
+}
