@@ -5231,7 +5231,7 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden)renderDail
  top.innerHTML=`<div class="cob-h1">Gestão de Cobranças<span class="cob-nuvem" id="cobNuvem"><i></i><span>neste computador</span></span></div><div class="cob-tabs" id="cobTabs"></div><div class="cob-sub" id="cobSub" hidden></div><div class="cob-aviso" id="cobAviso" hidden></div>`;
  main.insertBefore(top,main.firstChild);
  const tabsEl=$('cobTabs');
- TABS.forEach(([k,n,v])=>{const b=document.createElement('button');b.dataset.tab=k;b.innerHTML=n+(k==='cob'?' <i id="cobFila" hidden></i>':'');b.onclick=()=>cobIr(k);tabsEl.appendChild(b);});
+ TABS.forEach(([k,n,v])=>{const b=document.createElement('button');b.dataset.tab=k;b.innerHTML=n+(k==='cob'?' <i id="cobFilaN" hidden></i>':'');b.onclick=()=>cobIr(k);tabsEl.appendChild(b);});
  let ATUAL='cli';
  window.cobIr=function(k,view){const t=TABS.find(x=>x[0]===k)||TABS[1];ATUAL=t[0];
   const sub=SUB[ATUAL];const s=$('cobSub');
@@ -5416,7 +5416,7 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden)renderDail
   fundirClientes(ro.n,rd.n);try{refreshAllAfterImport();renderCarteira();}catch(e){}$('cobUnirBox').hidden=true;cobRenderClientes(true);alert(`"${ro.n}" foi unificado em "${rd.n}".`);};
  $('cobQ').oninput=e=>{F.q=e.target.value;cobRenderClientes();};$('cobQ').onkeydown=e=>{if(e.key==='Enter'){const q=F.q.toLowerCase();const r=(ROWS||[]).find(x=>x.n.toLowerCase().includes(q));if(r)cobAbrirCliente(r.n);}};
  /* ---- fila (contador na aba) ---- */
- function fila(){try{const n=DATA.current.filter(g=>{const s=typeof status==='function'?status(g):'';return s!=='Enviado'&&s!=='Bloqueado';}).length;const i=$('cobFila');i.hidden=!n;i.textContent=n;}catch(e){}}
+ function fila(){try{const n=DATA.current.filter(g=>{const s=typeof status==='function'?status(g):'';return s!=='Enviado'&&s!=='Bloqueado'&&(g.title_count==null||g.title_count>0);}).length;const i=$('cobFilaN');i.hidden=!n;i.textContent=n;}catch(e){}}
  setTimeout(fila,1200);setInterval(fila,30000);
  /* ---- nuvem: estado e aviso ---- */
  window.cobNuvem=function(st){const e=$('cobNuvem');if(!e)return;e.className='cob-nuvem '+(st.erro?'erro':st.ok?'ok':'');e.querySelector('span').textContent=st.erro?'nuvem: '+st.erro:st.ok?('nuvem do ERP'+(st.em?' · '+new Date(st.em).toLocaleString('pt-BR').slice(0,17):'')+(st.por?' · '+st.por:'')):'neste computador';};
@@ -5426,6 +5426,387 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden)renderDail
  const abrir=()=>{const v=(location.hash||'').replace('#','');if(!v||v==='cobrancas'){cobIr(pode('executive')?'cli':'cli');return;}const k=VIEW2TAB[v];if(k)cobIr(k,v);};
  try{renderCollections();}catch(e){}
  abrir();
+})();
+
+</script>
+<script type="text/plain" id="finCob2">
+/* ===================== v4.5.6 · FILA DE COBRANÇA: POSIÇÃO CORRETA E PÁGINA NOVA =====================
+   23/10 — Teutonia: o relatório da Nova Capital de 23/10 tem 3 títulos vencidos (35082/001, 35082/002 e 35083/002) e a fila
+   mostrava 2 (35082/001 e 35083/001, este já pago em 19/10), com valor e mensagem errados.
+   Causas encontradas nos dados:
+   1) a fila guardava a posição de 19/10: uma tela aberta desde antes da importação de 20/10 gravou por cima a lista inteira de
+      cobranças (a carteira e as baixas de 20/10 ficaram, a fila voltou para 19/10);
+   2) os "dias de atraso" e quem está vencido eram congelados no dia da importação: o que venceu depois não entrava;
+   3) título pago continuava contando em "Títulos" e "Valor" do cliente;
+   4) a liquidação lida num arquivo da Nova Capital "vazava" para o arquivo seguinte (FMD), duplicando baixas.
+   O que esta camada faz:
+   - a fila é conferida contra a posição da carteira (o relatório do dia de cada empresa): se a fila estiver mais velha que a
+     carteira, ou se algum título venceu desde então, ela é refeita a partir da carteira, com os dias contados até hoje;
+   - título pago ou com comprovante não conta mais em "títulos" nem no valor a cobrar;
+   - aviso por empresa quando a posição não é de hoje; título que venceu depois do último relatório fica marcado para conferir
+     e não entra no "Aprovar todos";
+   - página nova da fila e do painel de revisão. */
+(function(){
+ const $=id=>document.getElementById(id);
+ const EMPRESAS=['NOVA CAPITAL','SEJA','FMD','GV FOMENTOS','RNX'];
+ const rs=v=>'R$ '+(+v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+ const hojeIso=()=>localDateKey();
+ const dBr=iso=>isoToBr(iso);
+ const curto=br=>String(br||'').slice(0,5);
+
+ /* ---------- 1. baixa lida num arquivo não passa para o próximo ---------- */
+ try{const _pit=parseImportedTitles;window.parseImportedTitles=function(){BAIXAS_PENDENTES=[];return _pit.apply(this,arguments);};}catch(e){}
+
+ /* ---------- 2. contas do cliente: só o que ainda se cobra, dias até hoje ---------- */
+ const resolvido=(g,t)=>{const s=titleSituation(g,t);return s==='Comprovante recebido'||String(s).startsWith('Pago');};
+ const _rc=recalcGroup;
+ window.recalcGroup=function(g){
+  const r=_rc.apply(this,arguments);
+  try{const hj=hojeIso();
+   (g.titles||[]).forEach(t=>{const d=dateDays(t.due,hj);if(d>0)t.days=d;});
+   const cob=(g.titles||[]).filter(t=>!resolvido(g,t));
+   g.title_count=cob.length;g.total=cob.reduce((a,t)=>a+Number(valorTitulo(t)),0);
+   g.max_days=Math.max(0,...cob.map(t=>Number(t.days||0)));
+   g.resolvidos=(g.titles||[]).length-cob.length;
+   const cart=cob.filter(t=>ehCartorio(titleSituation(g,t))).length;g.cartorio=cart;
+   g.priority=cart||g.max_days>=30?'Crítica':g.max_days>=15||g.total>=5000?'Alta':g.max_days>=7||g.total>=2000?'Média':'Baixa';
+  }catch(e){}
+  return g;};
+
+ /* ---------- 3. posição de cada empresa e títulos que venceram depois dela ---------- */
+ function posicaoEmpresa(emp){
+  const pos=(CART.posicoes||{})[emp];const dc=pos&&pos.data?brToIso(pos.data):'';
+  const sn=DATA.current.flatMap(g=>(g.titles||[]).filter(t=>canonicalCompany(t.source)===emp).map(t=>brToIso(t.snapshot))).filter(Boolean).sort().pop()||'';
+  return {carteira:dc,fila:sn,data:[dc,sn].sort().pop()||''};
+ }
+ /* venceu depois do relatório em que apareceu (o relatório ainda o trazia como "a vencer") */
+ window.cobVenceuDepois=function(t){const s=brToIso(t.snapshot);return !!(s&&dateDays(t.due,s)===0&&dateDays(t.due,hojeIso())>0);};
+ let RODANDO=false;
+ window.cobReconcilia=function(){
+  if(RODANDO)return [];RODANDO=true;const feitas=[];
+  try{const hj=hojeIso();
+   EMPRESAS.forEach(emp=>{
+    const pos=(CART.posicoes||{})[emp];if(!pos||!pos.data||!(pos.titulos||[]).length)return;
+    const dc=brToIso(pos.data);if(!dc||dc>hj)return;
+    const {fila}=posicaoEmpresa(emp);if(fila&&fila>dc)return;            /* a fila tem relatório mais novo que a carteira */
+    const lista=(pos.titulos||[]).filter(t=>!t.baixa);
+    /* entra o que o relatório já trazia vencido; os dias de atraso contam até hoje. O que venceu depois do relatório
+       não entra (pode ter sido pago no vencimento) — aparece no aviso da empresa até importar o relatório do dia. */
+    let vivos=carteiraParaTitulos(lista,emp,hj).filter(t=>Number(t.days||0)>0&&dateDays(t.due,dc)>0)
+      .filter(t=>!tituloBaixado({source:emp,title:t.title,due:t.due})&&!tituloExcluido({source:emp,title:t.title,due:t.due}));
+    vivos.forEach(t=>{t.snapshot=pos.data;});
+    const k=t=>titleKeyDigits(t.title,t.due);
+    const atuais=new Set(DATA.current.filter(g=>!g.manual).flatMap(g=>(g.titles||[]).filter(t=>canonicalCompany(t.source)===emp).map(k)));
+    const novos=new Set(vivos.map(k));
+    const igual=atuais.size===novos.size&&[...novos].every(x=>atuais.has(x));
+    if(igual&&fila===dc)return;
+    const antes=atuais.size;
+    if(rebuildImportedCompany(emp,vivos,dc))feitas.push({emp,data:pos.data,antes,depois:novos.size});
+   });
+   if(feitas.length){try{enforceIgCartorioRules();}catch(e){}try{rebuildSellerSummary();}catch(e){}
+    try{DATA.current.forEach(g=>{recalcGroup(g);ensureState(g);sincronizarMensagem(g);});save();persistirBase();}catch(e){}
+    console.info('[cobrança] fila refeita pela posição da carteira:',feitas);}
+  }catch(e){console.warn('[cobrança] conferência com a carteira',e);}
+  finally{RODANDO=false;}
+  return feitas;};
+ /* depois de qualquer gravação da carteira (importação do dia, posição), confere a fila */
+ try{const _sc=saveCarteira;let tm=null;window.saveCarteira=function(){const r=_sc.apply(this,arguments);clearTimeout(tm);tm=setTimeout(()=>{if(cobReconcilia().length){try{refreshAllAfterImport();}catch(e){}}},600);return r;};}catch(e){}
+ /* virou o dia com a tela aberta: confere de novo */
+ let DIA=hojeIso();setInterval(()=>{if(hojeIso()!==DIA){DIA=hojeIso();cobReconcilia();try{refreshAllAfterImport();}catch(e){}}},5*60000);
+
+ /* ---------- 4. tela aberta e desatualizada: recarrega sozinha quando ninguém está digitando ---------- */
+ window.cobGuardaTela=function(){try{const v=document.querySelector('.view.active');sessionStorage.setItem('cob-voltar',JSON.stringify({v:v&&v.id,c:selected&&selected.customer}));}catch(e){}};
+ window.cobRecarregarSeLivre=function(){
+  const a=document.activeElement;
+  if(a&&/^(TEXTAREA|INPUT|SELECT)$/.test(a.tagName))return false;
+  if([...document.querySelectorAll('.modal,.modalbg,[id$="Modal"]')].some(m=>m.offsetParent!==null&&getComputedStyle(m).display!=='none'))return false;
+  cobGuardaTela();location.reload();return true;};
+
+ /* ---------- 5. CSS da página nova ---------- */
+ const css=document.createElement('style');css.textContent=`
+ .cob-sub[hidden]{display:none!important}
+ #collections .head{align-items:flex-end}
+ #collections .head p{display:none}
+ #collections .head .toolbar .btn{border-radius:10px;padding:9px 14px;font-weight:700}
+ .f6-topo{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin:2px 0 12px}
+ .f6-k{background:#fff;border:1px solid #E3E6EB;border-radius:12px;padding:10px 13px}
+ .f6-k small{display:block;font-size:11px;color:#6B7280;font-weight:600}.f6-k b{display:block;font:700 19px Inter,system-ui,sans-serif;margin-top:2px;color:#111827}
+ .f6-k span{font-size:11px;color:#8A93A3}
+ .f6-pos{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 12px}
+ .f6-chip{display:inline-flex;align-items:center;gap:7px;border-radius:999px;padding:5px 11px;font:600 12px Inter,system-ui,sans-serif;border:1px solid #D1FAE5;background:#ECFDF5;color:#065F46}
+ .f6-chip.velho{border-color:#FED7AA;background:#FFF7ED;color:#9A3412}.f6-chip i{width:7px;height:7px;border-radius:50%;background:currentColor;display:inline-block}
+ .f6-chip button{all:unset;cursor:pointer;text-decoration:underline;font-weight:700}
+ #collections .grid2{grid-template-columns:minmax(0,1fr) minmax(430px,540px)!important;align-items:start;gap:14px}
+ #collections .grid2>.panel:first-child .panelh{padding:10px 12px;border-bottom:1px solid #EEF0F3}
+ #collections .grid2>.panel:first-child .panelh .toolbar{gap:8px;flex-wrap:wrap}
+ #collectionSearch{min-width:220px;flex:1}
+ .f6-st{display:flex;gap:6px;flex-wrap:wrap;padding:8px 12px 0}
+ .f6-st button{all:unset;cursor:pointer;padding:5px 11px;border-radius:999px;font:600 12px Inter,system-ui,sans-serif;color:#374151;border:1px solid #D9DEE6;background:#fff}
+ .f6-st button.on{background:#1E3A8A;color:#fff;border-color:#1E3A8A}.f6-st button i{font-style:normal;opacity:.7;margin-left:4px}
+ table.f6-t{width:100%;border-collapse:collapse}
+ .f6-t th{font-size:10.5px;font-weight:600;color:#8A93A3;text-align:right;padding:9px 10px;background:#F9FAFB;border-bottom:1px solid #E3E6EB;white-space:nowrap;text-transform:uppercase;letter-spacing:.03em}
+ .f6-t th.l,.f6-t td.l{text-align:left}
+ .f6-t td{padding:10px;border-bottom:1px solid #F1F3F5;text-align:right;font-size:12.5px;vertical-align:middle}
+ .f6-t td.m{font-family:ui-monospace,Menlo,monospace;white-space:nowrap}
+ .f6-t td .s{display:block;font:500 11px Inter,system-ui,sans-serif;color:#8A93A3;margin-top:2px}
+ .f6-t td .av{display:block;font:600 11px Inter,system-ui,sans-serif;color:#B91C1C;margin-top:3px}
+ .f6-t td .av.lj{color:#C2410C}
+ .f6-t tbody tr{cursor:pointer}.f6-t tbody tr:hover td{background:#F8FAFC}
+ .f6-t tbody tr.on td{background:#EFF4FF}.f6-t tbody tr.on td:first-child{box-shadow:inset 4px 0 0 #1E3A8A}
+ .f6-t tbody tr.nada td{opacity:.6}
+ .f6-t td.ck{width:30px;text-align:center}
+ .f6-d{display:inline-block;min-width:54px;text-align:center;border-radius:8px;padding:3px 8px;font:700 12px Inter,system-ui,sans-serif}
+ .f6-d.d1{background:#FEF9C3;color:#854D0E}.f6-d.d2{background:#FFEDD5;color:#C2410C}.f6-d.d3{background:#FEE2E2;color:#B91C1C}.f6-d.d0{background:#F1F3F5;color:#6B7280}
+ .f6-p{display:inline-flex;align-items:center;font:700 11px Inter,system-ui,sans-serif;border-radius:999px;padding:3px 9px;white-space:nowrap}
+ .f6-p.atr{background:#FEF3C7;color:#92400E}.f6-p.car{background:#FFE4D5;color:#C2410C}.f6-p.pro{background:#FEE2E2;color:#991B1B}.f6-p.div{background:#EDE9FE;color:#5B21B6}
+ .f6-p.ok{background:#DCFCE7;color:#15803D}.f6-p.cz{background:#F1F3F5;color:#4B5563}.f6-p.az{background:#DBEAFE;color:#1E40AF}.f6-p.bl{background:#1F2937;color:#fff}
+ #collectionDetail{position:sticky;top:118px;max-height:calc(100vh - 132px);overflow:auto;padding:0!important;display:flex;flex-direction:column}
+ #collectionDetail>.f6-det{flex:1 0 auto}
+ .f6-det{padding:16px 16px 0}
+ .f6-det h3{font:700 18px Inter,system-ui,sans-serif;margin:2px 0 4px;color:#111827}
+ .f6-det .sub{font-size:12px;color:#6B7280;display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+ .f6-det .sub select{border:1px solid #E3E6EB;border-radius:7px;padding:3px 6px;font:600 12px Inter,system-ui,sans-serif;background:#fff;color:#111827}
+ .f6-det .sub select.sem{border-color:#FCA5A5;background:#FEF2F2;color:#B91C1C}
+ .f6-kp{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:12px 0}
+ .f6-kp div{border-radius:10px;padding:9px 11px;background:#F6F7F9}
+ .f6-kp div.az{background:#EFF4FF}.f6-kp small{display:block;font-size:10.5px;color:#6B7280;font-weight:700;text-transform:uppercase;letter-spacing:.03em}
+ .f6-kp b{display:block;font:700 17px Inter,system-ui,sans-serif;margin-top:2px}.f6-kp span{font-size:11px;color:#6B7280}
+ .f6-aviso{border-radius:10px;padding:9px 11px;font-size:12.5px;line-height:1.45;margin:0 0 10px;background:#FFF7ED;border:1px solid #FED7AA;color:#9A3412}
+ .f6-aviso.verm{background:#FEF2F2;border-color:#FECACA;color:#991B1B}
+ .f6-sec{font:700 11px Inter,system-ui,sans-serif;color:#6B7280;text-transform:uppercase;letter-spacing:.05em;margin:14px 0 7px;display:flex;justify-content:space-between;align-items:center}
+ .f6-tit{border:1px solid #E3E6EB;border-radius:12px;padding:10px 12px;margin-bottom:8px;background:#fff}
+ .f6-tit.nov{border-color:#FDBA74;background:#FFFBF5}
+ .f6-tit .l1{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
+ .f6-tit .num{font:700 14px Inter,system-ui,sans-serif}.f6-tit .num small{display:block;font:500 11.5px Inter,system-ui,sans-serif;color:#6B7280;margin-top:1px}
+ .f6-tit .vals{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin:9px 0 8px;font-size:11px;color:#6B7280}
+ .f6-tit .vals b{display:block;font:600 13px ui-monospace,Menlo,monospace;color:#111827;margin-top:1px}
+ .f6-tit .vals b.hj{color:#1E3A8A}
+ .f6-tit .vals input{width:100%;box-sizing:border-box;border:1px solid #E3E6EB;border-radius:7px;padding:3px 6px;font:600 12.5px ui-monospace,Menlo,monospace;text-align:right;margin-top:1px}
+ .f6-tit .acoes{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+ .f6-b{all:unset;cursor:pointer;box-sizing:border-box;display:inline-flex;align-items:center;gap:5px;border:1px solid #D9DEE6;background:#fff;color:#1F2937;border-radius:8px;padding:5px 10px;font:600 12px Inter,system-ui,sans-serif;white-space:nowrap}
+ .f6-b:hover{background:#F3F4F6}.f6-b.v{border-color:#86EFAC;background:#F0FDF4;color:#15803D}.f6-b.a{border-color:#BFDBFE;background:#EFF6FF;color:#1D4ED8}
+ .f6-b.x{color:#B91C1C;border-color:#FECACA}.f6-b.x:hover{background:#FEF2F2}
+ .f6-tit .acoes.mais{margin-top:7px;padding-top:7px;border-top:1px dashed #E3E6EB}.f6-tit .acoes[hidden]{display:none}
+ .f6-tit .acoes select{border:1px solid #E3E6EB;border-radius:8px;padding:4px 6px;font:600 11.5px Inter,system-ui,sans-serif;background:#fff;color:#374151;max-width:150px}
+ .f6-tit .nota{font-size:11.5px;color:#9A3412;margin-top:7px}
+ .f6-res{display:flex;justify-content:space-between;gap:8px;align-items:center;font-size:12px;color:#6B7280;border:1px dashed #E3E6EB;border-radius:10px;padding:7px 10px;margin-bottom:6px}
+ .f6-res b{color:#374151;font-family:ui-monospace,Menlo,monospace}
+ .f6-tot{display:flex;justify-content:space-between;align-items:center;border-radius:10px;background:#EFF4FF;color:#1E3A8A;padding:9px 12px;font-size:12.5px;margin:2px 0 4px}
+ .f6-tot b{font:700 16px Inter,system-ui,sans-serif}
+ .f6-msg textarea{width:100%;box-sizing:border-box;min-height:210px;border:1px solid #E3E6EB;border-radius:12px;padding:11px 12px;font:13px/1.5 Inter,system-ui,sans-serif;color:#111827;background:#FBFCFD;resize:vertical}
+ .f6-pe{position:sticky;bottom:0;background:#fff;border-top:1px solid #E3E6EB;padding:12px 16px;margin-top:14px;display:grid;grid-template-columns:1fr 1fr 1.3fr;gap:8px}
+ .f6-pe button{all:unset;cursor:pointer;text-align:center;border-radius:10px;padding:11px 8px;font:700 13px Inter,system-ui,sans-serif;border:1px solid #D9DEE6;background:#fff;color:#374151}
+ .f6-pe button.ap{background:#15803D;border-color:#15803D;color:#fff}.f6-pe button.bl{color:#B91C1C;border-color:#FECACA}
+ .f6-pe button.on{box-shadow:inset 0 0 0 2px #111827}.f6-pe button.ap.on{box-shadow:inset 0 0 0 2px #052E16}
+ .f6-mais{font-size:12px;color:#6B7280;padding:6px 16px 14px;display:flex;gap:14px;flex-wrap:wrap}
+ .f6-mais a{cursor:pointer;color:#B91C1C;font-weight:600}.f6-mais a.n{color:#1E3A8A}
+ .f6-vazio{padding:40px 22px;text-align:center;color:#6B7280;font-size:13px}
+ @media(max-width:1300px){.f6-topo{grid-template-columns:repeat(3,minmax(0,1fr))}#collections .grid2{grid-template-columns:1fr!important}#collectionDetail{position:static;max-height:none}}
+ `;document.head.appendChild(css);
+
+ /* ---------- 6. topo da fila: posição de cada empresa + números ---------- */
+ let FST='',ABRE_ID=false;   /* filtro de status */
+ /* empresa marcada como "sem relatório no dia" na última importação diária (ex.: RNX) */
+ function semDiario(e){
+  /* posição muito mais velha que a das outras empresas = empresa que não manda relatório todo dia */
+  try{const ds=EMPRESAS.map(x=>posicaoEmpresa(x).data).filter(Boolean).sort();const mx=ds.pop()||'';const p=posicaoEmpresa(e).data;
+   if(p&&mx&&(new Date(mx)-new Date(p))/86400000>4)return true;}catch(x){}
+  try{const d=JSON.parse(localStorage.getItem('atrius-importacoes-diarias-v62')||'null');const c=d&&d.companies&&d.companies[e];if(c&&c.dispensed)return true;const l=loadDailyImports();const c2=l&&l.companies&&l.companies[e];return !!(c2&&c2.dispensed);}catch(x){return false;}}
+ function topoFila(){
+  const sec=$('collections');if(!sec)return;
+  let el=$('f6Topo');if(!el){el=document.createElement('div');el.id='f6Topo';const h=sec.querySelector('.head');h.parentNode.insertBefore(el,h.nextSibling);}
+  const hj=hojeIso(),util=(()=>{try{return ehDiaUtil(new Date());}catch(e){return true;}})();
+  const emps=EMPRESAS.filter(e=>(CART.posicoes||{})[e]||DATA.current.some(g=>(g.titles||[]).some(t=>canonicalCompany(t.source)===e)));
+  const chips=emps.map(e=>{const p=posicaoEmpresa(e);if(!p.data)return '';const velho=p.data<hj&&util;
+   const pc=(CART.posicoes||{})[e];const dc=pc&&pc.data?brToIso(pc.data):'';
+   const nov=dc?(pc.titulos||[]).filter(t=>!t.baixa&&dateDays(t.venc,dc)===0&&dateDays(t.venc,hj)>0&&!tituloBaixado({source:e,title:t.titulo,due:t.venc})).length:0;
+   const disp=semDiario(e);
+   if(disp&&p.data<hj)return `<span class="f6-chip" style="background:#F3F4F6;border-color:#E5E7EB;color:#4B5563" title="Empresa sem relatório diário"><i></i>${esc(e)} · sem relatório diário (último ${curto(dBr(p.data))})</span>`;
+   return `<span class="f6-chip ${velho?'velho':''}" title="${velho?'A fila desta empresa usa o relatório de '+dBr(p.data)+(nov?'. '+nov+' título(s) venceram depois dele e só entram na fila com o relatório de hoje (podem ter sido pagos no vencimento).':'.')+' Importe o relatório de hoje.':'Relatório de hoje importado.'}"><i></i>${esc(e)} · ${velho?'relatório de '+curto(dBr(p.data)):'hoje'}${velho&&nov?' · '+nov+' a confirmar':''}</span>`;}).join('');
+  const ativos=DATA.current.filter(g=>g.title_count>0);
+  const nT=ativos.reduce((n,g)=>n+g.title_count,0),face=ativos.reduce((n,g)=>n+g.total,0);
+  let hoje=0;ativos.forEach(g=>{try{hoje+=cobHojeDe(g);}catch(e){hoje+=g.total;}});
+  const ap=ativos.filter(g=>status(g)==='Aprovado').length,cart=ativos.filter(g=>g.cartorio>0).length;
+  const velhos=emps.filter(e=>{const p=posicaoEmpresa(e);return p.data&&p.data<hj&&util&&!semDiario(e);});
+  el.innerHTML=`<div class="f6-pos">${chips}${velhos.length?`<span class="f6-chip velho" style="background:#fff"><button id="f6Imp">Importar relatórios de hoje ›</button></span>`:''}</div>
+   <div class="f6-topo">
+    <div class="f6-k"><small>Clientes a cobrar</small><b>${ativos.length}</b><span>${DATA.current.length-ativos.length?(DATA.current.length-ativos.length)+' sem nada a cobrar':'na fila'}</span></div>
+    <div class="f6-k"><small>Títulos vencidos</small><b>${nT}</b><span>${cart?cart+' cliente(s) em cartório':'nenhum em cartório'}</span></div>
+    <div class="f6-k"><small>Valor de face</small><b>${rs(face)}</b><span>o que está nos boletos</span></div>
+    <div class="f6-k"><small>A cobrar hoje</small><b style="color:#1E3A8A">${rs(hoje)}</b><span>com multa 2% + juros 1% a.m.</span></div>
+    <div class="f6-k"><small>Aprovadas</small><b style="color:#15803D">${ap}</b><span>de ${ativos.length} prontas para enviar</span></div>
+   </div>`;
+  const bi=$('f6Imp');if(bi)bi.onclick=()=>{try{cobIr('imp');}catch(e){switchView('importacao');}};
+ }
+ const esc=s=>String(s??'').replace(/[<>&"]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));
+
+ /* ---------- 7. lista da fila ---------- */
+ function sitPill(s){
+  if(String(s).startsWith('Pago'))return `<span class="f6-p ok">${esc(s)}</span>`;
+  const m={'Atrasado':'atr','Em cartório':'car','Protestado':'pro','Situações diversas':'div','Comprovante recebido':'ok','Recomprado':'div'};
+  return `<span class="f6-p ${m[s]||'cz'}">${esc(s)}</span>`;}
+ function stPill(s){const m={'Pendente':'cz','Revisar':'az','Aprovado':'ok','Bloqueado':'bl','Enviado':'ok'};return `<span class="f6-p ${m[s]||'cz'}">${esc(s==='Revisar'?'Em revisão':s)}</span>`;}
+ function sitDoGrupo(g){const ss=[...new Set((g.titles||[]).filter(t=>!resolvido(g,t)).map(t=>titleSituation(g,t)))];if(!ss.length)return (g.titles||[]).length?titleSituation(g,g.titles[0]):'Atrasado';return ss.length===1?ss[0]:'Situações diversas';}
+ const faixa=d=>d<=0?'d0':d<=7?'d1':d<=30?'d2':'d3';
+ const _cr=collectionRows;
+ window.collectionRows=function(){
+  let r=_cr.apply(this,arguments);
+  if(FST==='nada')r=r.filter(g=>!g.title_count);
+  else if(FST)r=r.filter(g=>g.title_count&&status(g)===FST);
+  return r.sort((a,b)=>(!!b.title_count-!!a.title_count)||(b.max_days-a.max_days)||(b.total-a.total));};
+ window.renderCollections=function(){
+  DATA.current.forEach(g=>{try{recalcGroup(g);}catch(e){}});
+  const selEmp=$('collectionCompany');
+  if(selEmp){const atual=selEmp.value,lista=empresasNaCobranca();const html='<option value="">Todas as empresas</option>'+lista.map(e=>`<option${e===atual?' selected':''}>${safe(e)}</option>`).join('');if(selEmp.innerHTML!==html)selEmp.innerHTML=html;if(atual&&!lista.includes(atual))selEmp.value='';}
+  /* filtro de status */
+  const painel=$('collectionTable').parentElement;let st=$('f6St');
+  if(!st){st=document.createElement('div');st.id='f6St';st.className='f6-st';painel.insertBefore(st,$('collectionTable'));}
+  const cont=k=>DATA.current.filter(g=>k==='nada'?!g.title_count:k?(g.title_count&&status(g)===k):true).length;
+  st.innerHTML=[['','Todos'],['Pendente','Pendentes'],['Revisar','Em revisão'],['Aprovado','Aprovados'],['Bloqueado','Bloqueados'],['nada','Nada a cobrar']].map(([k,n])=>`<button data-fst="${k}" class="${FST===k?'on':''}">${n}<i>${cont(k)}</i></button>`).join('');
+  st.querySelectorAll('[data-fst]').forEach(b=>b.onclick=()=>{FST=b.dataset.fst;renderCollections();});
+  const r=collectionRows(),pend=new Set(pendenciasIdentidade().map(p=>p.grupo.customer));
+  const ba=$('approveAll');if(ba){const filtrado=r.length!==DATA.current.length;ba.textContent=filtrado?`Aprovar prontos da lista (${r.filter(g=>g.title_count).length})`:'Aprovar todos os prontos';}
+  SELECIONADOS=new Set([...SELECIONADOS].filter(c=>DATA.current.some(g=>g.customer===c)));
+  const todos=r.length&&r.every(g=>SELECIONADOS.has(g.customer));
+  $('collectionTable').innerHTML=r.length?`<table class="f6-t"><thead><tr><th class="ck"><input type="checkbox" id="selTodos" title="Selecionar os clientes da lista" ${todos?'checked':''}></th><th class="l">Cliente</th><th>Títulos</th><th>Atraso</th><th>A cobrar</th><th class="l">Situação</th><th class="l">Status</th></tr></thead><tbody>${r.map(g=>{
+    const nov=(g.titles||[]).some(t=>!resolvido(g,t)&&cobVenceuDepois(t));
+    const av=[mensagemCobraComprovante(g)?'<span class="av">mensagem cita título com comprovante</span>':'',pend.has(g.customer)?'<span class="av">identidade do cliente não confirmada</span>':'',semVendedor(g.seller)?'<span class="av lj">sem vendedor</span>':'',nov?'<span class="av lj">título venceu depois do último relatório</span>':''].join('');
+    let hoje=g.total;try{hoje=cobHojeDe(g);}catch(e){}
+    return `<tr data-cli="${safe(g.customer)}" class="${selected&&selected.customer===g.customer?'on':''} ${g.title_count?'':'nada'}"><td class="ck"><input type="checkbox" data-sel="${safe(g.customer)}" ${SELECIONADOS.has(g.customer)?'checked':''}></td>
+     <td class="l"><b>${safe(g.customer)}</b><span class="s">${safe(semVendedor(g.seller)?'—':g.seller)} · ${safe(collectionCompanies(g))}${g.resolvidos?` · ${g.resolvidos} pago(s)/comprovante`:''}</span>${av}</td>
+     <td class="m">${g.title_count}</td><td><span class="f6-d ${faixa(g.max_days)}">${g.title_count?g.max_days+(g.max_days===1?' dia':' dias'):'—'}</span></td>
+     <td class="m"><b>${g.title_count?money(g.total):'—'}</b>${g.title_count&&Math.abs(hoje-g.total)>0.005?`<span class="s" style="color:#1E3A8A;font-weight:700">hoje ${money(hoje)}</span>`:''}</td>
+     <td class="l">${g.title_count?sitPill(sitDoGrupo(g)):'<span class="f6-p ok">nada a cobrar</span>'}</td><td class="l">${stPill(status(g))}</td></tr>`;}).join('')}</tbody></table>`
+   :`<div class="f6-vazio">${DATA.current.length?'Nenhum cliente neste filtro.':'Nenhum título vencido. Importe os relatórios do dia em Importação.'}</div>`;
+  const dl=$('listaCadastro');if(dl&&!dl.children.length)try{dl.innerHTML=CADASTRO.map(c=>`<option value="${safe(c.n)}">${safe(c.v)}</option>`).join('');}catch(e){}
+  $('collectionTable').querySelectorAll('tr[data-cli]').forEach(tr=>tr.addEventListener('click',e=>{if(e.target.closest('input'))return;openDetail(tr.dataset.cli);}));
+  $('collectionTable').querySelectorAll('[data-sel]').forEach(cb=>cb.addEventListener('change',()=>{if(cb.checked)SELECIONADOS.add(cb.dataset.sel);else SELECIONADOS.delete(cb.dataset.sel);atualizaBotaoLote();const t=$('selTodos');if(t)t.checked=[...document.querySelectorAll('[data-sel]')].every(x=>x.checked);}));
+  const sT=$('selTodos');if(sT)sT.addEventListener('change',()=>{document.querySelectorAll('[data-sel]').forEach(cb=>{cb.checked=sT.checked;if(sT.checked)SELECIONADOS.add(cb.dataset.sel);else SELECIONADOS.delete(cb.dataset.sel);});atualizaBotaoLote();});
+  try{atualizaBotaoLote();}catch(e){}
+  try{renderConciliacao();}catch(e){}
+  try{const pc=$('conciliacaoPanel');const np=pendenciasIdentidade().length;let bar=$('f6Ident');
+   if(!bar){bar=document.createElement('div');bar.id='f6Ident';pc.parentNode.insertBefore(bar,pc);}
+   if(!np){bar.innerHTML='';pc.style.display='none';}
+   else{bar.innerHTML=`<div class="f6-aviso verm" style="display:flex;align-items:center;gap:10px;margin-bottom:12px"><span><b>${np} cliente(s) aguardando conferência de identidade.</b> O relatório trouxe nomes parecidos com clientes que já existem — confirme se são o mesmo antes de enviar.</span><button class="f6-b" id="f6IdentBt" style="margin-left:auto">${ABRE_ID?'Fechar':'Conferir'}</button></div>`;
+    pc.style.display=ABRE_ID?'block':'none';$('f6IdentBt').onclick=()=>{ABRE_ID=!ABRE_ID;renderCollections();};}}catch(e){}
+  topoFila();
+ };
+
+ /* ---------- 8. painel de revisão ---------- */
+ /* o painel ocupa do topo dele até o fim da tela: os botões Aprovar/Bloquear ficam sempre à vista */
+ function ajustaAltura(){const b=$('collectionDetail');if(!b||!b.offsetParent)return;if(innerWidth<=1300){b.style.maxHeight='';return;}
+  const top=Math.max(118,b.getBoundingClientRect().top);b.style.maxHeight=Math.max(420,innerHeight-top-12)+'px';}
+ addEventListener('scroll',ajustaAltura,{passive:true});addEventListener('resize',ajustaAltura);
+ const DIA_MS=86400000;
+ window.openDetail=function(name){
+  selected=DATA.current.find(g=>g.customer===name)||null;const g=selected;const box=$('collectionDetail');
+  document.querySelectorAll('#collectionTable tr[data-cli]').forEach(tr=>tr.classList.toggle('on',!!g&&tr.dataset.cli===g.customer));
+  if(!g){box.innerHTML='<div class="f6-vazio">Este cliente não está mais na fila. Escolha outro na lista.</div>';return;}
+  recalcGroup(g);ensureState(g);sincronizarMensagem(g);
+  const ordem=(a,b)=>brToIso(a.due).localeCompare(brToIso(b.due))||String(a.title).localeCompare(String(b.title));
+  const idx=t=>g.titles.indexOf(t);
+  const abertos=g.titles.filter(t=>!resolvido(g,t)).sort(ordem),feitos=g.titles.filter(t=>resolvido(g,t)).sort(ordem);
+  let tF=0,tMJ=0,tC=0,tP=0,tT=0;
+  const pos=abertos.map(t=>{const ch=chaveTitulo(t);let p;try{p=posicaoAtualizada(valorTitulo(t),t.due,ch);}catch(e){p={base:valorTitulo(t),multa:0,juros:0,custas:0,abatido:0,total:valorTitulo(t),dias:t.days};}
+   tF+=p.base;tMJ+=p.multa+p.juros;tC+=p.custas;tP+=p.abatido;tT+=p.total;return {t,ch,p};});
+  const st=status(g),editada=ensureState(g).message!==ensureState(g).auto;
+  const venc=abertos.filter(cobVenceuDepois);
+  const fp=resumoPagamento(g);
+  const relDe=t=>t.snapshot?curto(t.snapshot):'';
+  box.innerHTML=`<div class="f6-det">
+   <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start"><div style="min-width:0"><div class="small" style="color:#8A93A3">Revisão da cobrança</div><h3>${safe(g.customer)}</h3></div>${stPill(st)}</div>
+   <div class="sub">${g.doc?`<span>${safe(g.doc)}</span>·`:''}<span>${g.whatsapp&&!/x{2}/i.test(g.whatsapp)&&String(g.whatsapp).replace(/\D/g,'').length>=10?'WhatsApp '+safe(g.whatsapp):g.whatsapp?'<b style="color:#B91C1C">WhatsApp incompleto:</b> '+safe(g.whatsapp):'<b style="color:#B91C1C">sem WhatsApp</b>'}</span></div>
+   <div class="sub" style="margin-top:6px">Vendedor <select id="f6Vend" class="${semVendedor(g.seller)?'sem':''}"><option value="" ${semVendedor(g.seller)?'selected':''}>Não identificado</option>${listaDeVendedores().map(v=>`<option ${norm(v)===norm(g.seller)?'selected':''}>${safe(v)}</option>`).join('')}</select>
+    Pagamento <select id="f6Forma">${fp==='Misto'?'<option selected>Misto</option>':''}<option ${fp==='Boleto'?'selected':''}>Boleto</option><option ${fp==='Cheque'?'selected':''}>Cheque</option></select>
+    ${semVendedor(g.seller)?`<input class="input" list="listaCadastro" id="f6Vinc" placeholder="ou vincular ao cadastro…" style="padding:3px 7px;font-size:12px;width:170px">`:''}</div>
+   <div class="f6-kp">
+    <div><small>A cobrar</small><b>${abertos.length} título${abertos.length===1?'':'s'}</b><span>${rs(tF)} de face</span></div>
+    <div class="az"><small>Hoje</small><b style="color:#1E3A8A">${rs(tT)}</b><span>${tMJ?'+'+rs(tMJ)+' multa e juros':'sem acréscimo'}</span></div>
+    <div><small>Maior atraso</small><b>${g.max_days} dias</b><span>${safe(collectionCompanies(g))}</span></div>
+   </div>
+   ${venc.length?`<div class="f6-aviso"><b>${venc.length===1?'1 título venceu':venc.length+' títulos venceram'} depois do último relatório (${relDe(venc[0])}).</b> Ele${venc.length===1?'':'s'} ainda não aparece${venc.length===1?'':'m'} como vencido${venc.length===1?'':'s'} em relatório da empresa — se o cliente pagou no vencimento, some na próxima importação. Importe o relatório de hoje antes de enviar.</div>`:''}
+   ${mensagemCobraComprovante(g)?'<div class="f6-aviso verm"><b>A mensagem cita um título que já tem comprovante.</b> Refaça a mensagem antes de aprovar.</div>':''}
+   ${identidadePendente(g)?'<div class="f6-aviso verm"><b>Identidade do cliente não confirmada.</b> Confira em "Conferência de identidade" acima antes de enviar.</div>':''}
+   <div class="f6-sec"><span>Títulos em aberto</span><span style="text-transform:none;letter-spacing:0;font-weight:600">face + multa 2% + juros 1% a.m. + custas − pagos</span></div>
+   ${pos.length?pos.map(({t,ch,p})=>{const s=titleSituation(g,t),i=idx(t),nov=cobVenceuDepois(t),prot=tituloProtestado(t),man=cartorioManual(t);
+    return `<div class="f6-tit ${nov?'nov':''}"><div class="l1"><div class="num">${safe(t.title)}<small>${safe(canonicalCompany(t.source))} · venc. ${safe(t.due)} · ${p.dias??t.days} dias${prot&&prot.data?' · protesto '+safe(prot.data):''}</small></div><div style="text-align:right">${sitPill(s)}${recompraTag(t)}</div></div>
+     <div class="vals"><div>Face<b>${rs(p.base)}</b></div><div>Multa + juros<b>${rs(p.multa+p.juros)}</b></div><div>Custas<input data-f6-custas="${ch}" value="${p.custas?Number(p.custas).toFixed(2).replace('.',','):''}" placeholder="0,00"></div><div>Hoje${p.abatido?' (pago '+rs(p.abatido)+')':''}<b class="hj">${rs(p.total)}</b></div></div>
+     <div class="acoes"><button class="f6-b v" data-f6-prova="${i}" title="O cliente mandou o comprovante deste título">✓ Comprovante</button><button class="f6-b a" data-f6-pagar="${i}" title="Lançar pagamento integral ou parcial">$ Pagamento</button><span data-f6-acordo="${ch}">${cobAcordoBtn(ch,'f6-b')}</span><span style="flex:1"></span><button class="f6-b" data-f6-mais="${i}" title="Situação, forma de pagamento e excluir">⋯ Mais</button></div>
+     <div class="acoes mais" data-f6-maisbox="${i}" hidden>
+      <select data-f6-sit="${i}" title="Situação do título"><option value="auto" ${man===null&&!prot?'selected':''}>Situação: do relatório</option><option value="sim" ${man===true&&!prot?'selected':''}>Em cartório</option><option value="protestado" ${prot?'selected':''}>Protestado</option><option value="nao" ${man===false&&!prot?'selected':''}>Fora do cartório</option></select>
+      <select data-f6-pag="${i}" title="Forma de pagamento desta parcela"><option ${pagamentoTitulo(g,t)==='Boleto'?'selected':''}>Boleto</option><option ${pagamentoTitulo(g,t)==='Cheque'?'selected':''}>Cheque</option></select>
+      ${tituloRecomprado(t)&&canonicalCompany(t.source)!==EMPRESA_PROPRIA?`<button class="f6-b" data-f6-transf="${i}" title="Passar para a carteira própria">→ ESSENCIAL</button>`:''}
+      <span style="flex:1"></span><button class="f6-b x" data-f6-excl="${i}" title="Excluir este título da cobrança">Excluir título</button></div>
+     ${nov?`<div class="nota">Venceu depois do relatório de ${relDe(t)} — confirme no relatório de hoje.</div>`:''}</div>`;}).join('')
+     +`<div class="f6-tot"><span>${pos.length} título${pos.length===1?'':'s'} · face ${rs(tF)}${tC?' · custas '+rs(tC):''}${tP?' · pago '+rs(tP):''}</span><span>hoje <b>${rs(tT)}</b></span></div>`
+   :'<div class="f6-aviso" style="background:#F0FDF4;border-color:#BBF7D0;color:#166534">Nada a cobrar deste cliente: todos os títulos estão pagos ou com comprovante.</div>'}
+   ${feitos.length?`<div class="f6-sec"><span>Pagos ou com comprovante · não entram na mensagem</span></div>${feitos.map(t=>{const s=titleSituation(g,t),pi=titleProofInfo(g,t),i=idx(t);return `<div class="f6-res"><span><b>${safe(t.title)}</b> · venc. ${safe(t.due)} · ${rs(valorTitulo(t))}</span><span style="display:flex;gap:6px;align-items:center">${sitPill(s)}${pi?`<button class="f6-b" data-f6-tiraprova="${i}" title="Comprovante de ${safe(pi.date)} ${safe(pi.time)}">desfazer</button>`:''}</span></div>`;}).join('')}`:''}
+   <div class="f6-sec"><span>Mensagem para o cliente${editada?' · <span style="color:#C2410C">editada à mão</span>':''}</span><span style="display:flex;gap:6px"><button class="f6-b" id="f6Refaz" title="Refazer a mensagem com os títulos de agora">↻ Refazer</button><button class="f6-b" id="copiarMsg">⧉ Copiar</button></span></div>
+   <div class="f6-msg"><textarea id="msg">${safe(ensureState(g).message)}</textarea></div>
+  </div>
+  <div class="f6-pe"><button class="bl ${st==='Bloqueado'?'on':''}" id="block">${st==='Bloqueado'?'✓ Bloqueado':'Bloquear'}</button><button class="${st==='Revisar'?'on':''}" id="review">${st==='Revisar'?'✓ Em revisão':'Revisar depois'}</button><button class="ap ${st==='Aprovado'?'on':''}" id="approve">${st==='Aprovado'?'✓ Aprovado':'Aprovar mensagem'}</button></div>
+  <div class="f6-mais"><a id="f6TiraCli">Tirar este cliente da cobrança</a><a class="n" id="f6Ficha">Ver posição completa do cliente ›</a></div>`;
+  ajustaAltura();if(box.dataset.cli!==g.customer){box.scrollTop=0;box.dataset.cli=g.customer;}
+  const re=()=>{const y=box.scrollTop;renderCollections();openDetail(g.customer);box.scrollTop=y;};
+  const msg=$('msg');msg.addEventListener('input',e=>{ensureState(g).message=e.target.value;save();});
+  $('copiarMsg').onclick=()=>copiarTexto(msg.value,$('copiarMsg'));
+  $('f6Refaz').onclick=()=>{const s=ensureState(g);s.message=buildMessage(g);s.auto=s.message;save();re();};
+  $('block').onclick=()=>setStatus('Bloqueado');$('review').onclick=()=>setStatus('Revisar');
+  $('approve').onclick=()=>{
+   if(venc.length&&!confirm(`${venc.length===1?'1 título venceu':venc.length+' títulos venceram'} depois do último relatório e ainda não ${venc.length===1?'foi confirmado':'foram confirmados'} pela empresa.\n\nAprovar a mensagem mesmo assim?`))return;
+   setStatus('Aprovado');};
+  $('f6TiraCli').onclick=()=>abrirMotivoModal(g.customer);
+  $('f6Ficha').onclick=()=>{try{cobAbrirCliente(g.customer);}catch(e){}};
+  $('f6Vend').onchange=e=>{definirVendedor(g.customer,e.target.value);refreshAllAfterImport();openDetail(g.customer);};
+  $('f6Forma').onchange=e=>{if(e.target.value==='Misto')return;definirPagamentoCliente(g.customer,e.target.value);renderCollections();renderSeller();renderHistory();openDetail(g.customer);};
+  const vi=$('f6Vinc');if(vi)vi.onchange=()=>{const esc2=vi.value.trim();const c=CADASTRO.find(x=>norm(x.n)===norm(esc2));if(!c){if(esc2)alert('Escolha um cliente da lista do cadastro.');return;}
+   if(!confirm(`Vincular "${g.customer}" ao cliente "${c.n}" (vendedor ${c.v})?\n\nVale para as próximas importações.`)){vi.value='';return;}
+   fundirClientes(g.customer,c.n);const g2=DATA.current.find(x=>x.customer===c.n);if(g2){if(!g2.doc)g2.doc=c.d;g2.seller=c.v;g2.seller_match_method='Vínculo confirmado';ensureState(g2);sincronizarMensagem(g2);}
+   VENDEDOR_CLIENTE[norm(c.n)]=c.v;saveVendedorCliente();rebuildSellerSummary();persistirBase();refreshAllAfterImport();openDetail(c.n);};
+  const tit=i=>g.titles[Number(i)];
+  box.querySelectorAll('[data-f6-prova]').forEach(b=>b.onclick=()=>{const t=tit(b.dataset.f6Prova);if(!t)return;const p=loadProofs();
+   p[titleProofKey(g,t)]={date:new Date().toLocaleDateString('pt-BR'),time:new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})};
+   saveProofs(p);ensureState(g).status='Revisar';sincronizarMensagem(g);save();renderSeller();renderHistory();renderExec();re();});
+  box.querySelectorAll('[data-f6-tiraprova]').forEach(b=>b.onclick=()=>{const t=tit(b.dataset.f6Tiraprova);if(!t)return;const p=loadProofs();delete p[titleProofKey(g,t)];saveProofs(p);sincronizarMensagem(g);save();renderSeller();renderHistory();renderExec();re();});
+  box.querySelectorAll('[data-f6-pagar]').forEach(b=>b.onclick=()=>{const t=tit(b.dataset.f6Pagar);if(!t)return;abrirPagProtesto({chave:chaveTitulo(t),cliente:g.customer,doc:g.doc,vendedor:g.seller,whatsapp:g.whatsapp,titulo:t.title,empresa:t.source||g.source,venc:t.due,valor:Number(valorTitulo(t)),tit:t,g});});
+  box.querySelectorAll('[data-f6-custas]').forEach(inp=>inp.addEventListener('change',()=>{const k=inp.dataset.f6Custas;CUSTAS[k]={...custasDe(k),custas:brNumber(inp.value)};saveCustas();try{sincronizarMensagem(g);save();}catch(e){}re();}));
+  try{cobLigaAcordo(box,re);}catch(e){}
+  box.querySelectorAll('[data-f6-mais]').forEach(b=>b.onclick=()=>{const m=box.querySelector(`[data-f6-maisbox="${b.dataset.f6Mais}"]`);if(m)m.hidden=!m.hidden;});
+  box.querySelectorAll('[data-f6-sit]').forEach(sel=>sel.onchange=()=>{const t=tit(sel.dataset.f6Sit);if(!t)return;
+   if(sel.value==='protestado'){const hj=hojeIso().split('-').reverse().join('/');const at=tituloProtestado(t);const d=prompt(`Data do protesto do título ${t.title}:`,(at&&at.data)||hj);if(!d){re();return;}definirProtesto(t,d.trim());}
+   else{definirProtesto(t,null);if(sel.value==='auto')delete CARTORIO_MANUAL[chaveTitulo(t)];else definirCartorioManual(t,sel.value==='sim');}
+   saveCartorioManual();persistirBase();sincronizarMensagem(g);save();renderSeller();renderHistory();renderExec();re();});
+  box.querySelectorAll('[data-f6-pag]').forEach(sel=>sel.onchange=()=>{const t=tit(sel.dataset.f6Pag);if(!t)return;definirPagamentoTitulo(t,sel.value);persistirBase();renderSeller();renderHistory();re();});
+  box.querySelectorAll('[data-f6-transf]').forEach(b=>b.onclick=()=>{const t=tit(b.dataset.f6Transf);if(!t)return;
+   if(!confirm(`Transferir o título ${t.title} (${t.source}, venc. ${t.due}, ${money(valorTitulo(t))}) de ${g.customer} para a carteira ESSENCIAL?\n\nEle sai da posição da financeira e passa a ser cobrança própria da Atrius. A cobrança do sacado continua igual.`))return;
+   transferirParaEssencial(g.customer,t);refreshAllAfterImport();renderCarteira();openDetail(g.customer);});
+  box.querySelectorAll('[data-f6-excl]').forEach(b=>b.onclick=()=>{const t=tit(b.dataset.f6Excl);if(!t)return;
+   if(!confirm(`Excluir o título ${t.title} (${t.source}, venc. ${t.due}, ${money(valorTitulo(t))}) de ${g.customer}?\n\nEle sai da cobrança, do histórico e da carteira, e não volta nas próximas importações. Dá para restaurar na aba Relatórios.`))return;
+   const nome=g.customer;excluirTitulo(nome,t.title,t.due,t.source);refreshAllAfterImport();renderCarteira();
+   if(DATA.current.some(x=>x.customer===nome))openDetail(nome);else{selected=null;box.innerHTML='<div class="f6-vazio">Escolha um cliente na lista para revisar a cobrança.</div>';}});
+ };
+
+ /* ---------- 9. Aprovar todos: não aprova quem tem título que venceu depois do último relatório ---------- */
+ (function(){const ob=$('approveAll');if(!ob)return;const nb=ob.cloneNode(true);ob.parentNode.replaceChild(nb,ob);
+  nb.addEventListener('click',()=>{let ok=0,semCob=0,risco=0,ident=0,novo=0;
+   const vis=collectionRows();
+   vis.forEach(g=>{ensureState(g);if(status(g)!=='Pendente')return;
+    if(!titulosCobraveis(g).length){semCob++;return;}
+    if(identidadePendente(g)){ident++;return;}
+    if(mensagemCobraComprovante(g)){risco++;return;}
+    if((g.titles||[]).some(t=>!resolvido(g,t)&&cobVenceuDepois(t))){novo++;return;}
+    const s=ensureState(g);s.status='Aprovado';s.statusEm=new Date().toLocaleString('pt-BR');ok++;});
+   save();renderCollections();renderExec();if(selected&&DATA.current.includes(selected))openDetail(selected.customer);
+   const res=[semCob?`${semCob} sem título a cobrar`:'',risco?`${risco} com mensagem citando título já comprovado`:'',ident?`${ident} com identidade de cliente não confirmada`:'',novo?`${novo} com título que venceu depois do último relatório (importe o relatório de hoje)`:''].filter(Boolean);
+   alert((ok?`${ok} cobrança(s) aprovada(s).`:'Nenhuma cobrança foi aprovada.')+(res.length?`\n\nNão aprovadas automaticamente: ${res.join('; ')}. Revise uma a uma.`:''));});})();
+
+ /* ---------- 10. ao abrir: confere com a carteira, desenha e volta para onde estava ---------- */
+ try{if(cobReconcilia().length){try{refreshAllAfterImport();}catch(e){}}}catch(e){}
+ try{renderCollections();}catch(e){console.warn(e);}
+ try{const v=JSON.parse(sessionStorage.getItem('cob-voltar')||'null');sessionStorage.removeItem('cob-voltar');
+  if(v&&v.v){const T={executive:'dash',clientes:'cli',history:'cli',collections:'cob',protestos:'cob',carteira:'cart',fidcs:'cart',importacao:'imp',reports:'imp',mensal:'rel',sellers:'rel',vendedores:'rel',sellerDelivery:'env'};
+   if(T[v.v])cobIr(T[v.v],v.v);if(v.c&&v.v==='collections'&&DATA.current.some(g=>g.customer===v.c))openDetail(v.c);}}catch(e){}
+ try{csNucleo&&csNucleo.versao;}catch(e){}
 })();
 
 </script>
@@ -5475,12 +5856,22 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden)renderDail
         let r=await N.gravar('financeiro',{chaves:minha,em:new Date().toISOString(),por:N.usuario()});
         if(r&&r.conflito){
           /* alguém gravou antes: junta — chave que eu não mexi fica como está na nuvem; chave que eu mexi vai a minha */
-          const d=await N.ler('financeiro');const nuvem=(d&&d.chaves)||{};const junto={...nuvem};let perdi=0;
-          Object.keys(minha).forEach(k=>{if(minha[k]!==base[k]){if(nuvem[k]!==undefined&&nuvem[k]!==base[k])perdi++;junto[k]=minha[k];}});
+          const d=await N.ler('financeiro');const nuvem=(d&&d.chaves)||{};const junto={...nuvem};let perdi=0,recarregar=false;
+          /* v456: fila, carteira, baixas e importações do dia são de quem importou: uma tela aberta antes não grava por cima.
+             Carteira junta por empresa (fica a posição mais nova), baixas somam; a fila é refeita da carteira ao recarregar. */
+          const brI=s=>{const p=String(s||'').match(/(\d{2})\/(\d{2})\/(\d{4})/);return p?p[3]+p[2]+p[1]:'';};
+          const junta=(k,m,n)=>{try{
+            if(k==='atrius-carteira-v62'){const M=JSON.parse(m)||{},Nn=JSON.parse(n)||{};const o={...Nn,posicoes:{...(Nn.posicoes||{})}};Object.entries(M.posicoes||{}).forEach(([e,p])=>{const q=o.posicoes[e];if(!q||brI(p&&p.data)>brI(q.data))o.posicoes[e]=p;});return JSON.stringify(o);}
+            if(k==='atrius-baixas-v79')return JSON.stringify({...(JSON.parse(n)||{}),...(JSON.parse(m)||{})});
+            if(k==='atrius-importacoes-diarias-v62'){const M=JSON.parse(m)||{},Nn=JSON.parse(n)||{};if((M.date||'')>(Nn.date||''))return m;if((M.date||'')<(Nn.date||''))return n;return JSON.stringify({...Nn,companies:{...(Nn.companies||{}),...(M.companies||{})}});}
+            if(k==='atrius-titulos-importados-v62')return n;
+          }catch(e){}return null;};
+          Object.keys(minha).forEach(k=>{if(minha[k]!==base[k]){if(nuvem[k]!==undefined&&nuvem[k]!==base[k]){const j=junta(k,minha[k],nuvem[k]);if(j!==null){junto[k]=j;recarregar=true;return;}perdi++;}junto[k]=minha[k];}});
           Object.keys(base).forEach(k=>{if(minha[k]===undefined&&nuvem[k]!==undefined&&nuvem[k]===base[k])delete junto[k];});
           aplicar(junto);minha=junto;
           r=await N.gravar('financeiro',{chaves:minha,em:new Date().toISOString(),por:N.usuario()});
           if(perdi&&window.cobAvisar)cobAvisar('Outra pessoa gravou ao mesmo tempo em '+perdi+' parte(s); a sua versão foi mantida. Confira os últimos lançamentos.');
+          if(recarregar){if(window.cobAvisar)cobAvisar('Outra pessoa importou relatórios enquanto esta tela estava aberta. Juntei tudo e vou recarregar com os dados novos…');setTimeout(()=>{try{window.cobGuardaTela&&cobGuardaTela();}catch(e){}location.reload();},1800);}
         }
         if(r&&r.ok){base=minha;ST.ok=true;ST.erro=null;ST.em=new Date().toISOString();ST.por=N.usuario();}
         else{ST.erro='não gravou';}
@@ -5495,7 +5886,7 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden)renderDail
     P.setItem=function(k,v){const r=_set.call(this,k,v);if(this===localStorage&&String(k).startsWith('atrius-'))agendar();return r;};
     P.removeItem=function(k){const r=_rem.call(this,k);if(this===localStorage&&String(k).startsWith('atrius-'))agendar();return r;};
     /* outra pessoa gravou? a cada 60 s confere; se mudou e eu não tenho nada pendente, avisa para recarregar */
-    setInterval(async()=>{try{if(t||salvando||pend)return;if(document.hidden)return;const d=await N.ler('financeiro');if(d&&d.em&&ST.em&&d.em>ST.em&&d.por!==undefined){if(window.cobAvisar)cobAvisar('Dados atualizados por '+(d.por||'outra pessoa')+' às '+new Date(d.em).toLocaleTimeString('pt-BR').slice(0,5)+'.',{rotulo:'Recarregar',fn:()=>location.reload()});}}catch(e){}},60000);
+    setInterval(async()=>{try{if(t||salvando||pend)return;if(document.hidden)return;const d=await N.ler('financeiro');if(d&&d.em&&ST.em&&d.em>ST.em&&d.por!==undefined){if(window.cobRecarregarSeLivre&&cobRecarregarSeLivre())return;if(window.cobAvisar)cobAvisar('Dados atualizados por '+(d.por||'outra pessoa')+' às '+new Date(d.em).toLocaleTimeString('pt-BR').slice(0,5)+'.',{rotulo:'Recarregar',fn:()=>location.reload()});}}catch(e){}},60000);
   }
   /* cadastro do ERP: clientes (CNPJ, vendedor, WhatsApp), vendedores e motivos de cobrança — a base das cobranças usa os mesmos */
   window.FIN_CAD={clientes:[],vendedores:[],motivos:[]};
@@ -5508,6 +5899,7 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden)renderDail
   /* roda o módulo (ele lê o localStorage ao iniciar — por isso só agora) */
   const s=document.createElement('script');s.textContent=document.getElementById('finMain').textContent;document.body.appendChild(s);
   const s2=document.createElement('script');s2.textContent=document.getElementById('finCob').textContent;document.body.appendChild(s2);
+  const s3=document.createElement('script');s3.textContent=document.getElementById('finCob2').textContent;document.body.appendChild(s3);
 })();
 
 </script>
