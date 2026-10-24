@@ -1109,8 +1109,8 @@ function telaFuncionarios(){
 /* ============================ BANCOS E FIDCs ============================ */
 function telaBancos(){
   const ed=pode('cad.bancos','editar');const l=ordena(DB.bancos,(b,k)=>semAc(b[k]||''));
-  $('app').innerHTML=`<div class="migalha">Cadastros › Bancos e FIDCs</div>
-  <div class="topo"><h1>Bancos e FIDCs</h1><span class="salvo"></span>${ed?'<button class="btn pri" id="bNb">＋ Novo</button>':''}</div>
+  $('app').innerHTML=`<div class="migalha">Cadastros › Bancos, FIDCs e cobrança</div>
+  <div class="topo"><h1>Bancos, FIDCs e cobrança externa</h1><span class="salvo"></span>${ed?'<button class="btn pri" id="bNb">＋ Novo</button>':''}</div>
   <div class="rolx">${l.length?`<table class="tv"><thead><tr><th style="width:34px"></th>${th('nome','Nome')}${th('tipo','Tipo')}<th>Agência e conta</th>${th('para','Para que serve')}<th>Situação</th></tr></thead><tbody>
   ${l.map(b=>`<tr data-b="${b.id}"><td><button class="dots" data-bm="${b.id}">⋯</button></td><td><b>${esc(b.nome)}</b></td><td>${esc(b.tipo||'—')}</td><td class="m">${esc([b.agencia,b.conta].filter(Boolean).join(' · ')||'—')}</td><td>${esc(b.para||'—')}</td><td>${b.ativo===false?'<span class="k">inativo</span>':'ativo'}</td></tr>`).join('')}</tbody></table>`
     :'<div class="vazio">Nenhum banco ou FIDC cadastrado ainda.</div>'}</div>
@@ -1143,7 +1143,7 @@ function telaMotivos(){
 function fichaSimples(tipo,id){
   const cfg=tipo==='motivo'?{lista:'motivosCob',perm:'cad.bancos',tit:'Motivo de cobrança',campos:[['nome','Motivo *','l2'],['uso','Onde aparece (Exclusão do relatório, Pausa, Outro)'],['obs','Observação','l2']]}
     :tipo==='func'?{lista:'funcionarios',perm:'cad.func',tit:'Funcionário',campos:[['nome','Nome *','l2'],['funcao','Função'],['setor','Setor'],['turno','Turno'],['admissao','Admissão (dd/mm/aaaa)'],['fone','Telefone'],['cpf','CPF'],['obs','Observação','l2']]}
-    :{lista:'bancos',perm:'cad.bancos',tit:'Banco ou FIDC',campos:[['nome','Nome *','l2'],['tipo','Tipo (Banco, FIDC, Factoring)'],['codigo','Código do banco'],['agencia','Agência'],['conta','Conta'],['para','Para que serve','l2'],['contato','Contato'],['fone','Telefone']]};
+    :{lista:'bancos',perm:'cad.bancos',tit:'Banco, FIDC ou cobrança',campos:[['nome','Nome *','l2'],['tipo','Tipo (Banco, FIDC, Factoring, Cobrança externa)'],['comissao','Comissão % (cobrança externa)'],['codigo','Código do banco'],['agencia','Agência'],['conta','Conta'],['para','Para que serve','l2'],['contato','Contato'],['fone','Telefone'],['email','E-mail']]};
   const ed=pode(cfg.perm,'editar');const o=id?DB[cfg.lista].find(x=>x.id===id):{id:uid(),ativo:true};if(!o)return;
   const val=k=>k==='admissao'&&o[k]?br(o[k]):(o[k]||'');
   gaveta(`<div class="gt"><h2>${esc(o.nome||('Novo · '+cfg.tit.toLowerCase()))}</h2><button class="btn sm" id="gX" style="margin-left:auto">Fechar ✕</button></div>
@@ -1482,6 +1482,19 @@ buscaCNPJ=async function(cnpj){const n=await consultaCNPJ(cnpj);
     complemento:n.complemento,bairro:n.bairro,municipio:n.cidade,uf:n.uf,codigo_municipio_ibge:n.ibge,ddd_telefone_1:n.fone.replace(/\D/g,''),
     email:n.email,cnae_fiscal:n.cnae,cnae_fiscal_descricao:n.cnaeDesc,data_inicio_atividade:n.abertura,
     descricao_situacao_cadastral:n.situacao,data_situacao_cadastral:n.desde,opcao_pelo_simples:n.simples,opcao_pelo_mei:n.mei,ie:n.ie,ies:n.ies,fonte:n.fonte};};
+
+</script>
+<script>
+/* v4.7.0 · Bancos e FIDCs: tipo "Cobrança externa" (empresas como a Excelência) com comissão e e-mail.
+   A Contas a receber usa estas empresas no botão "→ Cobrança externa". */
+try{const _fs470=fichaSimples;fichaSimples=function(tipo,id){
+  const r=_fs470.apply(this,arguments);
+  try{if(tipo!=='banco')return r;
+    const ti=document.querySelector('#gav [data-k="tipo"]');if(ti&&!document.getElementById('c7Tipos')){
+      ti.setAttribute('list','c7Tipos');ti.placeholder='Banco, FIDC, Factoring ou Cobrança externa';
+      ti.insertAdjacentHTML('afterend','<datalist id="c7Tipos"><option>Banco</option><option>FIDC</option><option>Factoring</option><option>Cobrança externa</option></datalist>');}
+  }catch(e){}
+  return r;};}catch(e){}
 
 </script>
 </body></html>
