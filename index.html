@@ -5484,7 +5484,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v480';const VERSAO_DATA='24/10/2026';
+const VERSAO_APP='v481';const VERSAO_DATA='24/10/2026';
 /* número que aparece na tela: v438 → v4.3.8 (por dentro continua v438, que é o que as versões comparam) */
 const csRotVer=v=>{const d=String(v||'').replace(/\D/g,'');return d.length>=3?'v'+d.slice(0,-2)+'.'+d.slice(-2,-1)+'.'+d.slice(-1):String(v||'');};
 const VERSAO_ROTULO=csRotVer(VERSAO_APP)+' · '+VERSAO_DATA;
@@ -18442,8 +18442,7 @@ const PERM_MODS=[
     {k:'vendas.carga',n:'Carga do Tiny',acoes:true},
     {k:'vendas.necprod',n:'Necessidade de produção',acoes:true},
     {k:'vendas.perf',n:'Performance de vendas (metas, ranking, relatórios)',acoes:true},
-    {k:'vendas.cfg',n:'Configurações de vendas (estoque reservado)',acoes:true},
-    {k:'vendas.cob',n:'Inadimplência dos clientes (o vendedor vê só os clientes dele)'}]},
+    {k:'vendas.cfg',n:'Configurações de vendas (estoque reservado)',acoes:true}]},
   {id:'compras',nome:'Compras',itens:[
     {k:'compras.oc',n:'Ordens de compra',acoes:true,
       extra:[{k:'compras.oc.receber',n:'Receber mercadoria e estornar estoque'},{k:'compras.oc.receber.extra',n:'Incluir no recebimento item que veio na nota'},
@@ -18464,7 +18463,7 @@ const PERM_MODS=[
     {k:'cad.func',n:'Funcionários',acoes:true},
     {k:'cad.bancos',n:'Bancos e FIDCs',acoes:true}]},
   {id:'financeiro',nome:'Financeiro',grupos:[
-    {n:'Contas a receber',itens:FIN_COB_PAGINAS.map(p=>({k:'fin.cob.'+p.id,n:p.n}))}]}
+    {n:'Contas a receber',itens:FIN_COB_PAGINAS.map(p=>({k:'fin.cob.'+p.id,n:p.n})).concat([{k:'vendas.cob',n:'Inadimplência dos clientes (o vendedor vê só os clientes dele)'}])}]}
 ];
 /* todos os itens de um módulo, com ou sem grupo */
 const permItens=m=>m.itens?m.itens:(m.grupos||[]).flatMap(g=>g.itens);
@@ -19772,6 +19771,7 @@ const CS_MOD=[
    {n:'Importar relatórios',fin:'importacao',mod:'financeiro',perm:'fin.cob.reports',pai:'receber',ic:'dad'},
    {n:'Relatórios',fin:'relhub',mod:'financeiro',perm:'fin.cob.mensal',pai:'receber',ic:'rel'},
    {n:'Envio aos vendedores',fin:'sellerDelivery',mod:'financeiro',perm:'fin.cob.sellerDelivery',pai:'receber',ic:'loj'},
+   {n:'Inadimplência dos clientes',mod:'representante',fin:'carteira',perm:'vendas.cob',pai:'receber',ic:'cob'},
    {grupo:true,breve:true,n:'Contas a pagar',ic:'fin'},
    {grupo:true,breve:true,n:'Caixa',ic:'fin'}]},
  {sep:true},
@@ -19780,8 +19780,7 @@ const CS_MOD=[
    {n:'Performance de vendas',mod:'vendas',fin:'performance',perm:'vendas.perf',ic:'loj'},
    {n:'Evolução de vendas',mod:'vendas',fin:'evolucao',perm:'vendas.perf',ic:'loj'},
    {n:'Pedidos de venda',mod:'vendas',fin:'pedidos',perm:'vendas.ped',ic:'loj'},
-   {n:'Relatórios',mod:'vendas',fin:'relatorios',perm:'vendas.perf',ic:'loj'},
-   {n:'Inadimplência dos clientes',mod:'representante',fin:'carteira',perm:'vendas.cob',ic:'cob'}]},
+   {n:'Relatórios',mod:'vendas',fin:'relatorios',perm:'vendas.perf',ic:'loj'}]},
  {id:'logistica',nome:'Logística',ic:'log',fase:'fase 13'}
 ];
 let CS_ABERTO='pcp', CS_FIX=true;
@@ -32936,7 +32935,7 @@ try{const _aa460=csUsuAbaAcesso;csUsuAbaAcesso=function(){
     r.perm=r.perm||{};
     const caixa=document.createElement('div');caixa.className='cs-usulin';caixa.id='usVendLin';
     caixa.innerHTML=`<div class="cp"><div class="fld"><label>Vendedor no cadastro <b>*</b></label><select id="usVend"><option value="">carregando…</option></select></div></div>
-      <div class="ex">Liga este login ao vendedor do cadastro do ERP. Na página <b>Vendas › Inadimplência dos clientes</b> ele vê só os clientes dele (atrasos, cartório, protestos e a vencer). Dê também a permissão "Inadimplência dos clientes" em Permissões › Vendas.</div>`;
+      <div class="ex">Liga este login ao vendedor do cadastro do ERP. Na página <b>Financeiro › Contas a receber › Inadimplência dos clientes</b> ele vê só os clientes dele (atrasos, cartório, protestos e a vencer). Dê também a permissão "Inadimplência dos clientes" em Permissões › Vendas.</div>`;
     M('usCorpo').appendChild(caixa);
     csVendCad().then(l=>{const s=M('usVend');if(!s)return;const at=r.perm._vendedor||'';
       s.innerHTML='<option value="">escolha o vendedor…</option>'+[...new Set([...(at&&!l.includes(at)?[at]:[]),...l])].map(v=>`<option ${v===at?'selected':''}>${escP(v)}</option>`).join('');
@@ -34053,6 +34052,174 @@ table.csmt{display:table!important;border-radius:0!important;padding:0!important
   setTimeout(varre,300);
 })();
 
+</script>
+<script>
+/* v4.8.1 · filtro nas colunas: tabelas dos relatórios do PCP */
+window.CF_ONDE=()=>document.querySelectorAll('#repgrid table');window.CF_PAG=()=>{try{return String(ABA_REP||'');}catch(e){return '';}};
+/* ===== v4.8.1 · filtro em todas as colunas das tabelas dos relatórios =====
+   Pedido de 24/10: "todas as colunas têm que ser filtráveis". Cada título de coluna ganha um funil:
+   ordenar (menor/maior, A-Z/Z-A), escolher valores (texto) ou faixa de/até (número). Funciona em cima da
+   tabela que a tela já desenhou: esconde as linhas que não passam, reordena as que passam (a linha que abre
+   embaixo — .sub — anda junto com a dela) e refaz o total das colunas que são soma. O filtro fica guardado
+   enquanto a página estiver aberta: se a tela se redesenha (abrir uma linha, trocar a ordem), ele volta sozinho.
+   Onde vale: cada página diz com window.CF_ONDE() quais tabelas entram. */
+(function(){
+  if(window.CF_LIGADO)return;window.CF_LIGADO=1;
+  const ESTADO=new Map();
+  const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const semAc=s=>String(s??'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().trim();
+  const FUNIL='<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5h18l-7 8v6l-4 2v-8z"/></svg>';
+  try{const st=document.createElement('style');st.textContent=`
+.cfb{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:5px;margin-left:5px;color:#A1A1AA;cursor:pointer;vertical-align:middle;border:0;background:transparent;padding:0}
+.cfb:hover{background:#EEF3FF;color:#1D4ED8}.cfb.on{background:#1D4ED8;color:#fff}
+th .cfsort{font-size:10px;margin-left:3px;color:#1D4ED8}
+.cfpop{position:fixed;z-index:99999;width:270px;background:#fff;border:1px solid #E4E4E7;border-radius:12px;box-shadow:0 12px 32px rgba(15,23,42,.18);padding:10px;font:13px Inter,system-ui,sans-serif;color:#18181B;text-transform:none;letter-spacing:0;text-align:left}
+.cfpop .cfo{display:flex;gap:6px;margin-bottom:8px}.cfpop .cfo button{flex:1;height:32px;border:1px solid #E4E4E7;border-radius:8px;background:#fff;font:600 12.5px Inter;cursor:pointer;color:#3F3F46}
+.cfpop .cfo button.on{background:#0E1B33;color:#fff;border-color:#0E1B33}
+.cfpop input.cfq,.cfpop .cfn input{width:100%;height:34px;border:1px solid #E4E4E7;border-radius:8px;padding:0 10px;font:13px Inter;outline:0;box-sizing:border-box}
+.cfpop input:focus{border-color:#1D4ED8}
+.cfpop .cfl{max-height:220px;overflow:auto;margin:8px 0;border:1px solid #F1F1F3;border-radius:8px;padding:4px 0}
+.cfpop .cfl label{display:flex;gap:8px;align-items:center;padding:5px 10px;cursor:pointer;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cfpop .cfl label:hover{background:#F8FAFC}.cfpop label{margin:0!important;font-weight:400;text-transform:none;letter-spacing:0;color:#18181B}.cfpop .cfl input{margin:0;width:15px;height:15px;flex:none}.cfpop .cfl label.tds{font-weight:700;border-bottom:1px solid #F1F1F3}
+.cfpop .cfn{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:8px 0}.cfpop .cfn span{font-size:11px;color:#71717A;display:block;margin-bottom:3px}
+.cfpop .cfa{display:flex;gap:6px;justify-content:flex-end}.cfpop .cfa button{height:32px;padding:0 14px;border-radius:8px;font:600 12.5px Inter;cursor:pointer;border:1px solid #E4E4E7;background:#fff}
+.cfpop .cfa button.pri{background:#1D4ED8;border-color:#1D4ED8;color:#fff}
+.cfbar{display:flex;align-items:center;gap:10px;margin:0 0 8px;font:13px Inter,system-ui;color:#3F3F46}
+.cfbar b{color:#1D4ED8}.cfbar button{border:0;background:none;color:#1D4ED8;font:600 13px Inter;cursor:pointer;padding:0}
+@media print{.cfb,.cfbar{display:none!important}}`;document.head.appendChild(st);}catch(e){}
+
+  /* ---------- ler o valor de uma célula ---------- */
+  function textoCel(td){if(!td)return '';if(td.dataset&&td.dataset.cf!=null)return td.dataset.cf;
+    const b=td.querySelector(':scope > b, :scope > strong, :scope > a, :scope > span:first-child');
+    const t=(b&&b.textContent.trim()?b.textContent:td.textContent)||'';return t.replace(/\s+/g,' ').trim();}
+  function numero(t){t=String(t||'').trim();if(!t||/^[—–-]+$/.test(t))return null;
+    let m=/^(\d{2})\/(\d{2})\/(\d{4})/.exec(t);if(m)return {d:+(m[3]+m[2]+m[1])};
+    m=/^(\d{2})\/(\d{2})$/.exec(t);if(m)return {d:+(m[2]+m[1])};
+    m=/^([+-]?)(\d+)h(\d{1,2})?/.exec(t.replace(/\s/g,''));if(m)return {n:(m[1]==='-'?-1:1)*(+m[2]*60+(+m[3]||0)),h:1};
+    m=/[+-]?\d{1,3}(?:\.\d{3})+(?:,\d+)?|[+-]?\d+(?:,\d+)?/.exec(t.replace(/\s/g,''));if(!m)return null;
+    const s=m[0];return {n:parseFloat(s.replace(/\./g,'').replace(',','.')),dec:(s.split(',')[1]||'').length};}
+
+  /* ---------- montar a tabela ---------- */
+  function linhas(tb){
+    const grupos=[];let atual=null;
+    [...tb.rows].forEach(r=>{
+      const tot=r.classList.contains('tot')||r.classList.contains('total')||/^total\b/i.test((r.cells[0]&&r.cells[0].textContent||'').trim());
+      if(tot){grupos.push({tot:true,rs:[r]});atual=null;return;}
+      const filha=r.classList.contains('sub')||r.dataset.pai!=null||r.classList.contains('cfsub');
+      if(filha&&atual){atual.rs.push(r);return;}
+      if(r.cells.length===1&&r.cells[0].colSpan>1&&!atual){grupos.push({fixo:true,rs:[r]});return;}
+      atual={rs:[r]};grupos.push(atual);});
+    return grupos;}
+  function chaveDe(t,i){const hs=[...t.tHead.rows[t.tHead.rows.length-1].cells].map(c=>c.textContent.trim()).join('|');
+    return (location.hash||'').split('?')[0]+'|'+(window.CF_PAG?window.CF_PAG():'')+'|'+i+'|'+hs;}
+
+  function prepara(t,i){
+    if(!t.tHead||!t.tBodies[0])return;const tb=t.tBodies[0];
+    const gs=linhas(tb).filter(g=>!g.tot&&!g.fixo);if(!gs.length)return;
+    const hr=t.tHead.rows[t.tHead.rows.length-1];const nc=hr.cells.length;
+    if(gs.some(g=>g.rs[0].cells.length!==nc))return;
+    t.dataset.cfok='1';t._cf={chave:chaveDe(t,i),ordem:gs.slice()};
+    /* tipo de cada coluna */
+    t._cf.cols=[...hr.cells].map((th,c)=>{
+      const vs=gs.map(g=>textoCel(g.rs[0].cells[c]));const ns=vs.map(numero);const cheios=vs.filter(v=>v&&!/^[—–-]+$/.test(v)).length;
+      const nums=ns.filter(x=>x&&x.n!=null).length,dts=ns.filter(x=>x&&x.d!=null).length;
+      const tipo=cheios&&nums>=cheios*0.7?'n':cheios&&dts>=cheios*0.7?'d':'t';
+      return {tipo,th};});
+    /* colunas que são soma: o total bate com a soma das linhas */
+    const tots=[...(t.tFoot?t.tFoot.rows:[]),...linhas(tb).filter(g=>g.tot).map(g=>g.rs[0])];
+    t._cf.tot=tots[0]||null;
+    if(t._cf.tot&&t._cf.tot.cells.length===nc){
+      t._cf.cols.forEach((c,k)=>{if(c.tipo!=='n')return;const tc=t._cf.tot.cells[k];const tv=numero(textoCel(tc));if(!tv||tv.n==null)return;
+        const s=gs.reduce((a,g)=>{const v=numero(textoCel(g.rs[0].cells[k]));return a+(v&&v.n!=null?v.n:0);},0);
+        if(Math.abs(s-tv.n)<=Math.max(0.6,Math.abs(tv.n)*0.005)){c.soma=true;c.totHtml=tc.innerHTML;c.totTxt=textoCel(tc);c.dec=tv.dec||0;c.h=tv.h;}});}
+    hr.querySelectorAll('.cfb').forEach(x=>x.remove());
+    t._cf.cols.forEach((c,k)=>{const b=document.createElement('button');b.type='button';b.className='cfb';b.innerHTML=FUNIL;b.title='Filtrar e ordenar';
+      b.addEventListener('click',e=>{e.stopPropagation();e.preventDefault();abre(t,k,b);});b.addEventListener('mousedown',e=>e.stopPropagation());c.th.appendChild(b);});
+    aplica(t);
+  }
+  function est(t){let s=ESTADO.get(t._cf.chave);if(!s){s={f:{},sort:null};ESTADO.set(t._cf.chave,s);}return s;}
+
+  function passa(g,s,t){for(const [k,f] of Object.entries(s.f)){const td=g.rs[0].cells[k];const tx=textoCel(td);
+      if(f.vals){if(!f.vals.has(tx))return false;}
+      else{const v=numero(tx);const x=v?(v.n!=null?v.n:v.d):null;if(x==null)return false;if(f.de!=null&&x<f.de)return false;if(f.ate!=null&&x>f.ate)return false;}}
+    return true;}
+  function aplica(t){
+    const s=est(t),tb=t.tBodies[0];const ativos=Object.keys(s.f).length;
+    let gs=t._cf.ordem.slice();
+    if(s.sort){const {c,dir}=s.sort,tp=t._cf.cols[c].tipo;
+      const val=g=>{const tx=textoCel(g.rs[0].cells[c]);if(tp==='t')return semAc(tx);const v=numero(tx);return v?(v.n!=null?v.n:v.d):null;};
+      gs.sort((a,b)=>{const x=val(a),y=val(b);if(x==null&&y==null)return 0;if(x==null)return 1;if(y==null)return -1;return (tp==='t'?x.localeCompare(y,'pt'):x-y)*dir;});}
+    const fim=[...tb.rows].filter(r=>!t._cf.ordem.some(g=>g.rs.includes(r)));
+    let vis=0;gs.forEach(g=>{const ok=passa(g,s,t);if(ok)vis++;g.rs.forEach(r=>{r.style.display=ok?'':'none';tb.appendChild(r);});});
+    fim.forEach(r=>tb.appendChild(r));
+    /* totais */
+    if(t._cf.tot)t._cf.cols.forEach((c,k)=>{if(!c.soma)return;const tc=t._cf.tot.cells[k];
+      if(!ativos){if(tc.innerHTML!==c.totHtml)tc.innerHTML=c.totHtml;return;}
+      const sm=gs.filter(g=>passa(g,s,t)).reduce((a,g)=>{const v=numero(textoCel(g.rs[0].cells[k]));return a+(v&&v.n!=null?v.n:0);},0);
+      const fm=c.h?(sm<0?'-':'')+Math.floor(Math.abs(sm)/60)+'h'+String(Math.round(Math.abs(sm)%60)).padStart(2,'0'):sm.toLocaleString('pt-BR',{minimumFractionDigits:c.dec,maximumFractionDigits:c.dec});
+      const re=/[+-]?\d+h\d{1,2}|[+-]?\d{1,3}(?:\.\d{3})+(?:,\d+)?|[+-]?\d+(?:,\d+)?/;
+      tc.textContent=c.totTxt.replace(/\s+/g,' ').replace(re,fm);});
+    /* marcas nos títulos */
+    t._cf.cols.forEach((c,k)=>{const b=c.th.querySelector('.cfb');if(b)b.classList.toggle('on',!!s.f[k]);
+      let sp=c.th.querySelector('.cfsort');if(s.sort&&s.sort.c===k){if(!sp){sp=document.createElement('span');sp.className='cfsort';c.th.insertBefore(sp,b);}sp.textContent=s.sort.dir>0?'▲':'▼';}else if(sp)sp.remove();});
+    /* aviso em cima da tabela */
+    let bar=t.previousElementSibling&&t.previousElementSibling.classList&&t.previousElementSibling.classList.contains('cfbar')?t.previousElementSibling:null;
+    if(ativos){if(!bar){bar=document.createElement('div');bar.className='cfbar';t.parentNode.insertBefore(bar,t);}
+      bar.innerHTML=`<span>Mostrando <b>${vis}</b> de ${t._cf.ordem.length}</span><button type="button">Limpar filtros</button>`;
+      bar.querySelector('button').onclick=()=>{s.f={};aplica(t);};}
+    else if(bar)bar.remove();
+  }
+
+  /* ---------- a janelinha ---------- */
+  let POP=null;
+  function fecha(){if(POP){POP.remove();POP=null;}}
+  document.addEventListener('mousedown',e=>{if(POP&&!POP.contains(e.target))fecha();},true);
+  document.addEventListener('keydown',e=>{if(e.key==='Escape')fecha();});
+  window.addEventListener('scroll',e=>{if(POP&&!POP.contains(e.target))fecha();},true);
+  function abre(t,k,bt){
+    fecha();const s=est(t),c=t._cf.cols[k],f=s.f[k]||{};
+    const gs=t._cf.ordem;const vals=[...new Set(gs.map(g=>textoCel(g.rs[0].cells[k])))].sort((a,b)=>{const x=numero(a),y=numero(b);if(c.tipo!=='t'&&x&&y)return (x.n??x.d)-(y.n??y.d);return a.localeCompare(b,'pt');});
+    const p=document.createElement('div');p.className='cfpop';POP=p;
+    const num=c.tipo==='n';
+    p.innerHTML=`<div class="cfo"><button type="button" data-o="1" class="${s.sort&&s.sort.c===k&&s.sort.dir>0?'on':''}">${num?'Menor → maior':c.tipo==='d'?'Mais antigo':'A → Z'}</button><button type="button" data-o="-1" class="${s.sort&&s.sort.c===k&&s.sort.dir<0?'on':''}">${num?'Maior → menor':c.tipo==='d'?'Mais recente':'Z → A'}</button></div>
+      ${num?`<div class="cfn"><label><span>De</span><input id="cfDe" inputmode="decimal" value="${f.de!=null?String(f.de).replace('.',','):''}"></label><label><span>Até</span><input id="cfAte" inputmode="decimal" value="${f.ate!=null?String(f.ate).replace('.',','):''}"></label></div>`:''}
+      <input class="cfq" placeholder="Buscar" id="cfQ"><div class="cfl" id="cfL"></div>
+      <div class="cfa"><button type="button" id="cfLimpa">Limpar</button><button type="button" class="pri" id="cfOk">Aplicar</button></div>`;
+    document.body.appendChild(p);
+    const r=bt.getBoundingClientRect();const w=270;let x=Math.min(window.innerWidth-w-10,Math.max(10,r.right-w+20));let y=r.bottom+6;
+    p.style.left=x+'px';p.style.top=y+'px';
+    const h=p.offsetHeight;if(y+h>window.innerHeight-10)p.style.top=Math.max(10,r.top-h-6)+'px';
+    const marcados=new Set(f.vals?[...f.vals]:vals);
+    const lista=()=>{const q=semAc(p.querySelector('#cfQ').value);const vs=vals.filter(v=>!q||semAc(v).includes(q));
+      const todos=vs.length&&vs.every(v=>marcados.has(v));
+      p.querySelector('#cfL').innerHTML=`<label class="tds"><input type="checkbox" data-t="1" ${todos?'checked':''}> Selecionar todos</label>`+vs.slice(0,400).map((v,i)=>`<label title="${esc(v)}"><input type="checkbox" data-i="${vals.indexOf(v)}" ${marcados.has(v)?'checked':''}> ${esc(v||'(vazio)')}</label>`).join('');
+      p.querySelector('[data-t]').onchange=e=>{vs.forEach(v=>e.target.checked?marcados.add(v):marcados.delete(v));lista();};
+      p.querySelectorAll('[data-i]').forEach(cb=>cb.onchange=()=>{const v=vals[+cb.dataset.i];cb.checked?marcados.add(v):marcados.delete(v);lista();});};
+    lista();p.querySelector('#cfQ').oninput=lista;
+    p.querySelectorAll('[data-o]').forEach(b=>b.onclick=()=>{const d=+b.dataset.o;s.sort=s.sort&&s.sort.c===k&&s.sort.dir===d?null:{c:k,dir:d};aplica(t);fecha();});
+    p.querySelector('#cfLimpa').onclick=()=>{delete s.f[k];if(s.sort&&s.sort.c===k)s.sort=null;aplica(t);fecha();};
+    p.querySelector('#cfOk').onclick=()=>{const nv=v=>{v=String(v||'').trim();if(!v)return null;const n=parseFloat(v.replace(/\./g,'').replace(',','.'));return isNaN(n)?null:n;};
+      const de=num?nv(p.querySelector('#cfDe').value):null,ate=num?nv(p.querySelector('#cfAte').value):null;
+      const tudo=vals.every(v=>marcados.has(v));
+      if(de!=null||ate!=null)s.f[k]={de,ate};else if(!tudo)s.f[k]={vals:new Set(marcados)};else delete s.f[k];
+      aplica(t);fecha();};
+    p.addEventListener('keydown',e=>{if(e.key==='Enter')p.querySelector('#cfOk').click();});
+    setTimeout(()=>{const i=p.querySelector(num?'#cfDe':'#cfQ');if(i)i.focus();},30);
+  }
+
+  /* ---------- procurar as tabelas ---------- */
+  function varre(){
+    let ts=[];try{ts=window.CF_ONDE?[...window.CF_ONDE()]:[];}catch(e){ts=[];}
+    ts.forEach((t,i)=>{if(!t||t.dataset.cfok||t.dataset.nofiltro!=null||t.closest('#fmPg,.csprev,.cfpop'))return;try{prepara(t,i);}catch(e){console.warn('[filtro]',e);}});
+  }
+  let tm=null;const ob=new MutationObserver(ms=>{if(ms.every(m=>m.target.closest&&m.target.closest('.cfpop,.cfbar')))return;clearTimeout(tm);tm=setTimeout(varre,120);});
+  const liga=()=>{try{ob.observe(document.body,{childList:true,subtree:true});}catch(e){}varre();};
+  if(document.body)liga();else document.addEventListener('DOMContentLoaded',liga);
+  window.addEventListener('hashchange',()=>setTimeout(varre,200));
+  window.CF_VARRE=varre;
+})();
+
+try{csNucleo.versao='v481';}catch(e){}
 </script>
 </body>
 </html>

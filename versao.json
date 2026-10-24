@@ -1,6 +1,6 @@
 {
- "v": "v480",
- "versao": "4.8.0",
+ "v": "v481",
+ "versao": "4.8.1",
  "data": "24/10/2026",
- "o_que_mudou": "Nenhum lançamento se perde; Configurações numa página só; backup e restauração do sistema inteiro; relatórios em cartões no PCP, Vendas, Compras e Contas a receber; Curva ABC; cadastro de clientes completo; vendedores ligados ao cadastro"
+ "o_que_mudou": "Inadimplência dos clientes foi para o Financeiro; relatórios de Compras com busca, listas e botão Gerar; filtro em todas as colunas das tabelas dos relatórios"
 }
