@@ -5826,9 +5826,10 @@ const perLe=s=>{const m=String(s||'').match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);ret
 const perAdd=(s,n)=>{const d=perD(s);d.setDate(d.getDate()+n);return perYmd(d);};
 function perNovo(m){const h=perHoje();return {m:m||'sem',dia:h,mes:h.slice(0,7),de:perAdd(h,-29),ate:h,campo:''};}
 function perRotulo(p){if(!p||p.m==='sem')return 'Período';const h=perHoje();
-  if(p.m==='dia')return p.dia===h?'Hoje':perBr(p.dia).slice(0,5);
-  if(p.m==='mes'){const [a,m]=p.mes.split('-');return PER_MC[+m-1]+'/'+a;}
-  const r=p.de===p.ate?perBr(p.de).slice(0,5):perBr(p.de).slice(0,5)+' a '+perBr(p.ate).slice(0,5);
+  if(p.m==='dia')return p.dia===h?'Hoje':perBr(p.dia);
+  if(p.m==='mes'){const [a,m]=p.mes.split('-');return PER_MES[+m-1]+' de '+a;}
+  const ano=p.de.slice(0,4)!==p.ate.slice(0,4)||p.ate.slice(0,4)!==h.slice(0,4);
+  const r=p.de===p.ate?perBr(p.de):perBr(p.de).slice(0,ano?10:5)+' a '+perBr(p.ate).slice(0,ano?10:5);
   return p.m==='prev'?'Previstos '+r:r;}
 /* o intervalo efetivo, para quem filtra: {de, ate} (vazio = sem limite) */
 function perFaixa(p){if(!p||p.m==='sem')return {de:'',ate:''};
@@ -6620,54 +6621,292 @@ document.head.insertAdjacentHTML("beforeend",'<style>.perb2{display:inline-flex;
 })();
 
 </script>
+<script type="text/plain" id="finCob5">
+/* ===== v4.8.0 · Envio aos vendedores: nome e WhatsApp vêm do cadastro do vendedor =====
+   Antes a Cris digitava o WhatsApp de cada vendedor aqui (e ficava em branco). Agora o número é o do
+   cadastro (Cadastros › Vendedores: WhatsApp, ou o telefone quando não tiver WhatsApp) e não se digita
+   mais nesta tela: mudou o número, muda no cadastro. Aqui ficam só o liga/desliga e o horário. */
+(function(){
+  const nrm=s=>String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toUpperCase().replace(/[^A-Z0-9]+/g,' ').trim();
+  function doCadastro(nome){
+    const l=(window.FIN_CAD&&FIN_CAD.vendInfo)||[];const n=nrm(nome);if(!n)return null;
+    return l.find(v=>nrm(v.tinyNome)===n||nrm(v.nome)===n)
+      ||l.find(v=>{const a=nrm(v.tinyNome||v.nome);return a&&(a.startsWith(n+' ')||n.startsWith(a+' '));})||null;
+  }
+  window.cobVendCadastro=doCadastro;
+  const fmtFone=s=>{const d=String(s||'').replace(/\D/g,'').replace(/^55(?=\d{10,11}$)/,'');
+    return d.length===11?`(${d.slice(0,2)}) ${d.slice(2,7)}-${d.slice(7)}`:d.length===10?`(${d.slice(0,2)}) ${d.slice(2,6)}-${d.slice(6)}`:String(s||'');};
+  /* o número usado em todo envio é sempre o do cadastro */
+  try{const _dc=deliveryCfg;deliveryCfg=function(name){const c=_dc.apply(this,arguments);const v=doCadastro(name);
+      c.phone=v&&v.whats?fmtFone(v.whats):'';if(v&&v.email&&!c.email)c.email=v.email;return c;};window.deliveryCfg=deliveryCfg;}catch(e){}
+  try{renderDeliveryTable=function(){
+    const q=norm(document.getElementById('deliverySearch').value||'');
+    const names=sellerList().filter(s=>norm(s).includes(q));
+    document.getElementById('deliveryTable').innerHTML=names.length?`
+    <table><thead><tr><th>Ativo</th><th>Vendedor</th><th>WhatsApp</th><th>Horário</th><th>Clientes</th><th>Títulos</th><th>Valor em aberto</th><th>Cartório</th><th>Status</th></tr></thead>
+    <tbody>${names.map(s=>{const c=deliveryCfg(s),st=sellerOpenStats(s),v=doCadastro(s),ok=String(c.phone||'').replace(/\D/g,'').length>=10;
+      return `<tr><td><input type="checkbox" data-delivery-enabled="${safe(s)}" ${c.enabled?'checked':''}></td>
+        <td><strong>${safe(s)}</strong>${v?'':'<div class="small" style="color:#B45309">não está no cadastro de vendedores</div>'}</td>
+        <td>${ok?`<span style="font-weight:600">${safe(c.phone)}</span>`:`<span class="small" style="color:#B45309;font-weight:600">${v?'sem WhatsApp no cadastro':'—'}</span>`}</td>
+        <td><input class="input" type="time" data-delivery-time="${safe(s)}" value="${safe(c.time||sellerDelivery.defaultTime||'')}"></td>
+        <td>${st.clients}</td><td>${st.titles}</td><td class="money">${money(st.total)}</td>
+        <td>${st.cartorio?`<span class="pill p-critical">${st.cartorio}</span>`:'-'}</td>
+        <td>${c.enabled?(ok?'<span class="pill p-approved">Pronto</span>':'<span class="pill p-review">Falta WhatsApp</span>'):'<span class="pill p-pending">Inativo</span>'}</td></tr>`;}).join('')}</tbody></table>`
+      :'<div class="empty">Nenhum vendedor encontrado.</div>';
+    document.querySelectorAll('[data-delivery-enabled]').forEach(el=>el.addEventListener('change',()=>{deliveryCfg(el.dataset.deliveryEnabled).enabled=el.checked;saveSellerDeliveryConfig(sellerDelivery);renderDeliveryKpis();renderDeliveryTable();}));
+    document.querySelectorAll('[data-delivery-time]').forEach(el=>el.addEventListener('change',()=>{deliveryCfg(el.dataset.deliveryTime).time=el.value;saveSellerDeliveryConfig(sellerDelivery);}));
+  };window.renderDeliveryTable=renderDeliveryTable;}catch(e){console.warn('[v480] envio',e);}
+  /* os KPIs contam o WhatsApp do cadastro */
+  try{const _k=renderDeliveryKpis;renderDeliveryKpis=function(){sellerList().forEach(s=>deliveryCfg(s));return _k.apply(this,arguments);};window.renderDeliveryKpis=renderDeliveryKpis;}catch(e){}
+  try{if(document.querySelector('#sellerDelivery.active'))renderSellerDelivery();}catch(e){}
+  /* a frase sobre cadastrar o WhatsApp nesta tela não vale mais */
+  try{document.querySelectorAll('#sellerDelivery .small, #sellerDelivery p').forEach(e=>{if(/Cadastre o WhatsApp/i.test(e.textContent))e.textContent='WhatsApp de cada vendedor: o do cadastro do vendedor.';});}catch(e){}
+})();
+
+/* ===== v4.8.0 · Importar relatórios: os clientes em dúvida são conferidos na hora =====
+   Antes a Cris só via depois, na fila, "N clientes aguardando conferência de identidade". Agora, assim que os
+   relatórios entram, abre a janela "Confira N clientes": para cada nome em dúvida, a sugestão principal do sistema e
+   uma busca no cadastro do ERP (nome ou CNPJ). Cliente novo não entra por aqui (24/10): o relatório só traz nome e
+   CNPJ e o cadastro tem que ser completo — o botão leva para Cadastros › Clientes. Confirmou, a decisão vale também para as próximas
+   importações (mesmos VINCULOS de sempre). "Depois" fecha e a conferência continua disponível na fila. */
+(function(){
+  const nrm=s=>String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+  const dg=s=>String(s||'').replace(/\D/g,'');
+  const fmtDoc=s=>{const d=dg(s);return d.length===14?d.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/,'$1.$2.$3/$4-$5'):d.length===11?d.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/,'$1.$2.$3-$4'):String(s||'');};
+  const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  try{const st=document.createElement('style');st.textContent=`
+.k8v{position:fixed;inset:0;z-index:9000;background:rgba(14,27,51,.45);display:flex;align-items:flex-start;justify-content:center;padding:40px 16px;overflow:auto}
+.k8m{width:900px;max-width:100%;background:#fff;border-radius:16px;padding:24px 26px;color:#0E1B33;font:14px Inter,system-ui,sans-serif}
+.k8m h2{margin:0 0 4px;font:800 21px Inter,system-ui}.k8s{color:#8A8F98;margin-bottom:10px}
+.k8r{display:grid;grid-template-columns:1fr 26px 1.55fr;gap:12px;align-items:start;padding:16px 0;border-bottom:1px solid #F1F1F3}
+.k8r .nm b{display:block;font-weight:700}.k8r .nm small{color:#8A8F98}
+.k8r .sa{color:#8A8F98;font-size:20px;text-align:center;padding-top:6px}
+.k8o{display:flex;flex-direction:column;gap:6px}
+.k8c{display:flex;align-items:center;gap:10px;border:1px solid #E4E4E7;border-radius:10px;padding:8px 11px;cursor:pointer;background:#fff;text-align:left;width:100%;font:inherit;color:inherit}
+.k8c:hover{border-color:#93B4F8}.k8c.on{border-color:#1D4ED8;background:#F5F8FF}
+.k8c .rd{width:18px;height:18px;border-radius:50%;border:2px solid #C9CCD3;flex:none}.k8c.on .rd{border:5px solid #1D4ED8}
+.k8c b{font-weight:600}.k8c small{color:#8A8F98;margin-left:auto;font-size:12px;text-align:right}
+.k8q{display:flex;align-items:center;gap:8px;border:1px solid #C7D5FB;border-radius:10px;padding:0 11px;height:38px}
+.k8q input{border:0;outline:0;flex:1;font:inherit;background:transparent}
+.k8w{position:relative}
+.k8l{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:5;border:1px solid #E4E4E7;border-radius:10px;overflow:hidden;background:#fff;box-shadow:0 12px 28px rgba(14,27,51,.16)}.k8l:empty{display:none}
+.k8l button{display:flex;justify-content:space-between;gap:10px;width:100%;padding:8px 12px;border:0;border-bottom:1px solid #F1F1F3;background:#fff;font:inherit;text-align:left;cursor:pointer}
+.k8l button:hover{background:#F5F8FF}.k8l button small{color:#8A8F98}
+.k8b{display:flex;justify-content:flex-end;gap:10px;margin-top:18px}
+.k8b button{height:38px;padding:0 16px;border-radius:9px;border:1px solid #E4E4E7;background:#fff;font:600 14px Inter,system-ui;cursor:pointer}
+.k8b .pri{background:#1D4ED8;border-color:#1D4ED8;color:#fff}.k8b .pri[disabled]{opacity:.5;cursor:not-allowed}
+`;document.head.appendChild(st);}catch(e){}
+
+  let VISTOS=new Set();try{VISTOS=new Set(JSON.parse(sessionStorage.getItem('k8vistos')||'[]'));}catch(e){}
+  const guardaVistos=()=>{try{sessionStorage.setItem('k8vistos',JSON.stringify([...VISTOS]));}catch(e){}};
+  function cadastro(q){
+    const l=(window.FIN_CAD&&FIN_CAD.clientes)||[];const n=nrm(q),d=dg(q);if(!n&&!d)return [];
+    return l.filter(c=>(d.length>=4&&dg(c.d).includes(d))||(n.length>=2&&nrm(c.n).includes(n))).slice(0,6);
+  }
+  function abrir(pend){
+    if(document.getElementById('k8V'))return;
+    const esc_={};/* nome do relatório → escolha {tipo:'sug'|'cad'|'novo', alvo, doc} */
+    pend.forEach(p=>{const s=p.sugestoes[0];esc_[p.grupo.customer]=null;});
+    const v=document.createElement('div');v.id='k8V';v.className='k8v';document.body.appendChild(v);
+    const empresas=[...new Set(pend.flatMap(p=>p.grupo.sources||[]))].join(' · ');
+    const pinta=()=>{
+      const algum=pend.some(p=>esc_[p.grupo.customer]);
+      v.innerHTML=`<div class="k8m"><h2>Confira ${pend.length} cliente${pend.length>1?'s':''}</h2><div class="k8s">${esc(empresas)}</div>
+        ${pend.map((p,i)=>{const g=p.grupo,e=esc_[g.customer];
+          return `<div class="k8r"><div class="nm"><b>${esc(g.customer)}</b><small>${esc((g.sources||[]).join(', '))} · ${(g.titles||[]).length} título(s) · ${money(g.total||0)}${g.doc?' · '+esc(fmtDoc(g.doc)):''}</small></div><div class="sa">→</div>
+          <div class="k8o">${p.sugestoes.slice(0,1).map((s,j)=>`<button class="k8c ${e&&e.tipo==='sug'&&e.alvo===s.customer?'on':''}" data-i="${i}" data-sug="${j}"><span class="rd"></span><b>${esc(s.customer)}</b><small>${esc([s.doc?fmtDoc(s.doc):'',s.seller&&s.seller!=='Não identificado'?s.seller:''].filter(Boolean).join(' · ')||(s.historico?'do histórico':''))}</small></button>`).join('')}
+            ${e&&e.tipo==='cad'?`<button class="k8c on" data-i="${i}" data-cadx="1"><span class="rd"></span><b>${esc(e.alvo)}</b><small>${esc(fmtDoc(e.doc))} · do cadastro</small></button>`:''}
+            <div class="k8w"><label class="k8q"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#8A8F98" stroke-width="2"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4-4"/></svg><input data-q="${i}" placeholder="Buscar outro cliente no cadastro: nome ou CNPJ"></label>
+            <div class="k8l" data-l="${i}"></div></div>
+            </div></div>`;}).join('')}
+        <div class="k8b"><button id="k8Cad" style="margin-right:auto;color:#1D4ED8;border-color:#C7D5FB">Não está no cadastro? Cadastrar cliente</button><button id="k8Dep">Depois</button><button class="pri" id="k8Ok" ${algum?'':'disabled'}>Confirmar</button></div></div>`;
+      v.querySelectorAll('[data-sug]').forEach(b=>b.onclick=()=>{const p=pend[+b.dataset.i],s=p.sugestoes[+b.dataset.sug];esc_[p.grupo.customer]={tipo:'sug',alvo:s.customer};pinta();});
+      /* cliente novo não entra por aqui: o cadastro tem que ser completo (o relatório só traz nome e CNPJ) */
+      v.querySelector('#k8Cad').onclick=()=>{try{const P=window.parent;const pg=P.CS_MOD.find(m=>m.id==='cadastros').pgs.find(x=>x.fin==='clientes');P.csIr(pg);}catch(x){}};
+      v.querySelectorAll('[data-q]').forEach(inp=>{inp.oninput=()=>{const i=+inp.dataset.q,l=v.querySelector(`[data-l="${i}"]`);
+        l.innerHTML=cadastro(inp.value).map((c,k)=>`<button data-ck="${k}"><b>${esc(c.n)}</b><small>${esc(fmtDoc(c.d))}${c.v?' · '+esc(c.v):''}</small></button>`).join('');
+        const res=cadastro(inp.value);l.querySelectorAll('[data-ck]').forEach(b=>b.onclick=()=>{const c=res[+b.dataset.ck];esc_[pend[i].grupo.customer]={tipo:'cad',alvo:c.n,doc:c.d,seller:c.v,wa:c.wa};pinta();});};});
+      v.querySelector('#k8Dep').onclick=()=>{pend.forEach(p=>VISTOS.add(p.grupo.customer));guardaVistos();v.remove();};
+      v.querySelector('#k8Ok').onclick=()=>{
+        pend.forEach(p=>{const g=p.grupo,e=esc_[g.customer];if(!e){VISTOS.add(g.customer);return;}
+          if(e.tipo==='sug'){try{fundirClientes(g.customer,e.alvo);}catch(x){console.warn(x);}}
+          else if(e.tipo==='novo'){marcarClientesDistintos(g.customer);}
+          else if(e.tipo==='cad'){
+            /* cliente do cadastro do ERP: se já existe na base com esse CNPJ, junta; senão fica ligado pelo CNPJ */
+            const mesmo=(DATA.current||[]).find(o=>o!==g&&dg(o.doc)&&dg(o.doc)===dg(e.doc));
+            if(mesmo){try{fundirClientes(g.customer,mesmo.customer);}catch(x){}}
+            else{g.doc=g.doc||e.doc;if((!g.seller||g.seller==='Não identificado')&&e.seller)g.seller=e.seller;if(!g.whatsapp&&e.wa)g.whatsapp=e.wa;
+              VINCULOS[norm(g.customer)]={separado:true,doc:e.doc,cadastro:e.alvo,em:new Date().toLocaleString('pt-BR')};saveVinculos();try{persistirBase();}catch(x){}}
+          }
+          VISTOS.add(g.customer);});
+        guardaVistos();v.remove();try{refreshAllAfterImport();}catch(x){}try{toast&&toast('Clientes conferidos.');}catch(x){}
+      };
+    };
+    pinta();
+  }
+  window.k8Conferir=function(forca){
+    let pend=[];try{pend=pendenciasIdentidade();}catch(e){return;}
+    if(!forca)pend=pend.filter(p=>!VISTOS.has(p.grupo.customer));
+    /* A parecido com B e B parecido com A: é a mesma dúvida, aparece uma vez só */
+    const par=new Set();pend=pend.filter(p=>{const s=p.sugestoes[0];if(!s)return false;const k=[p.grupo.customer,s.customer].sort().join('|');if(par.has(k))return false;par.add(k);return true;});
+    if(pend.length)abrir(pend);
+  };
+  /* depois de cada importação, confere na hora */
+  try{const _r=refreshAllAfterImport;refreshAllAfterImport=function(){const r=_r.apply(this,arguments);
+    try{if(document.querySelector('#importacao.active,#reports.active'))setTimeout(()=>k8Conferir(false),400);}catch(e){}return r;};window.refreshAllAfterImport=refreshAllAfterImport;}catch(e){}
+  /* o botão "Conferir" da fila abre a mesma janela */
+  document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('#f6IdentBt');if(!b)return;e.stopImmediatePropagation();e.preventDefault();k8Conferir(true);},true);
+})();
+
+/* ===== v4.8.0 · Contas a receber › Relatórios: escolhe o relatório antes de abrir =====
+   Antes o item Relatórios abria direto o Fechamento mensal com abas. Agora abre a página com os cartões
+   (o mesmo jeito do PCP, Vendas e Compras); cada cartão leva ao relatório, que tem o Imprimir/PDF de sempre. */
+(function(){
+  const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const I={mes:'<path d="M4 6h16v14H4zM4 10h16M8 3v4M16 3v4"/>',ven:'<circle cx="9" cy="8" r="3"/><path d="M3 20c0-3 3-5 6-5s6 2 6 5M16 5a3 3 0 010 6M18 15c2 .5 3 2.5 3 5"/>',
+    cre:'<path d="M12 3l8 3v6c0 5-4 8-8 9-4-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/>',ext:'<path d="M15 3h6v6M10 14L21 3M21 14v7H3V3h7"/>',car:'<path d="M20 12V8H6a2 2 0 010-4h12v4"/><path d="M4 6v12a2 2 0 002 2h14v-4"/><path d="M18 12a2 2 0 000 4h4v-4z"/>',
+    eq:'<path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 11h-6"/>',busca:'<circle cx="11" cy="11" r="6"/><path d="M20 20l-4-4"/>'};
+  const sv=(k,w)=>`<svg viewBox="0 0 24 24" width="${w||20}" height="${w||20}" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${I[k]}</svg>`;
+  const REL=[['mensal','mes','Fechamento mensal','Clientes que pagaram em atraso no mês, por vendedor.'],
+    ['sellers','ven','Inadimplência por vendedor','A carteira em atraso de cada vendedor e o histórico de cada ocorrência.'],
+    ['vendedores','eq','Vendedores e carteira','Equipe, carteira de clientes e situação de cobrança de cada um.'],
+    ['clientes','cre','Clientes e crédito','Histórico de pagamento, nota de crédito e o relatório de crédito de cada cliente.'],
+    ['externa','ext','Cobrança externa','O que foi encaminhado às empresas de cobrança, o que voltou e o andamento.'],
+    ['carteira','car','Carteira · posição e exposição','Títulos antecipados por FIDC e banco: posição e exposição.']];
+  try{const st=document.createElement('style');st.textContent=`
+#relhub .r8top{display:flex;align-items:center;gap:14px;margin:2px 0 14px;flex-wrap:wrap}#relhub h2{font:800 26px Inter,system-ui;margin:0}
+#relhub .r8bus{display:flex;align-items:center;gap:8px;border:1px solid #E4E4E7;border-radius:10px;padding:0 12px;height:40px;color:#8A8F98;background:#fff;margin-left:auto;width:320px}#relhub .r8bus input{border:0;outline:0;flex:1;font-size:14px}
+#relhub .r8gr{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;max-width:1200px}
+#relhub .r8rc{border:1px solid #E4E4E7;border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:9px;background:#fff;cursor:pointer;min-height:118px;text-align:left;transition:border-color .15s,transform .15s}
+#relhub .r8rc:hover{border-color:#1D4ED8;transform:translateY(-1px)}#relhub .r8rc b{font-size:15px;color:#0E1B33}#relhub .r8rc small{color:#8A8F98;font-size:12.5px;line-height:1.4}
+#relhub .r8ico{width:38px;height:38px;border-radius:10px;background:#EEF3FF;color:#1D4ED8;display:flex;align-items:center;justify-content:center}
+@media(max-width:1000px){#relhub .r8gr{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:620px){#relhub .r8gr{grid-template-columns:1fr}#relhub .r8bus{width:100%}}`;document.head.appendChild(st);}catch(e){}
+  let Q='';
+  function pinta(){
+    const sec=document.getElementById('relhub');if(!sec)return;
+    const q=String(Q).toLowerCase();const l=REL.filter(r=>!q||(r[2]+' '+r[3]).toLowerCase().includes(q));
+    sec.innerHTML=`<div class="head"><div><div class="c7-mig">Contas a receber › <b>Relatórios</b></div></div></div>
+      <div class="r8top"><h2>Relatórios</h2><label class="r8bus">${sv('busca',16)}<input id="r8Q" placeholder="Buscar relatório" value="${esc(Q)}"></label></div>
+      <div class="r8gr">${l.map(([k,i,t,d])=>`<button class="r8rc" data-r8="${k}"><span class="r8ico">${sv(i)}</span><b>${t}</b><small>${d}</small></button>`).join('')}</div>`;
+    const i=document.getElementById('r8Q');i.oninput=()=>{Q=i.value;const p=i.selectionStart;pinta();const n=document.getElementById('r8Q');n.focus();n.setSelectionRange(p,p);};
+    sec.querySelectorAll('[data-r8]').forEach(b=>b.onclick=()=>{location.hash='#'+b.dataset.r8;});
+  }
+  try{const main=document.querySelector('main.main');if(main&&!document.getElementById('relhub')){const s=document.createElement('section');s.className='view';s.id='relhub';main.appendChild(s);}}catch(e){}
+  pinta();
+  /* o menu do ERP fica marcado em Relatórios enquanto se está num relatório */
+  const DOS={mensal:1,sellers:1,vendedores:1,relhub:1};
+  try{const _sv=window.switchView;window.switchView=function(id){const r=_sv.apply(this,arguments);
+    try{if(id==='relhub')pinta();if(DOS[id]&&window.parent!==window&&window.parent.csFinAtual)window.parent.csFinAtual('relhub');
+      const sub=document.getElementById('cobSub');if(sub&&DOS[id])sub.hidden=true;}catch(e){}
+    return r;};}catch(e){}
+  try{const _m=window.COB_MENU_DE;window.COB_MENU_DE=id=>DOS[id]?'relhub':(_m?_m(id):id);}catch(e){}
+  try{if((location.hash||'').replace('#','').split(/[/?&]/)[0]==='relhub')switchView('relhub');}catch(e){}
+})();
+
+
+</script>
 <script id="finNuvem">
-/* ===== dados do financeiro na nuvem do ERP =====
-   Tudo que o financeiro guardava só neste navegador (chaves "atrius-…") passa a morar na linha "fin" do ERP
-   (csNucleo.ler/gravar), igual ao Compras. Ao abrir: a nuvem manda — o que está nela substitui o que há no
-   navegador. Cada gravação local sobe 2 s depois. Se a nuvem estiver vazia, pergunta antes de usar os dados
-   deste computador como base. Se outra pessoa gravar enquanto esta tela está aberta, avisa para recarregar. */
+/* ===== dados do financeiro na nuvem do ERP (v4.7.1: nenhum lançamento se perde) =====
+   Tudo o que o financeiro guarda (chaves "atrius-…") mora na linha "financeiro" do banco.
+   Até a v4.7.0 dois casos apagavam lançamentos da Cris:
+   1) versão nova no ar: o ERP recarregava sem esperar o financeiro terminar de gravar;
+   2) conexão/sessão caída: o lançamento ficava só neste computador e, na abertura seguinte,
+      o que estava no banco era colocado POR CIMA dele.
+   Agora: cada lançamento marca "fin-sujo" na hora (gravação síncrona, sobrevive a fechar a aba)
+   e só desmarca quando o banco confirma. Abrindo com lançamento marcado, o que é deste computador
+   e não chegou ao banco é JUNTADO ao banco (nada é substituído) e sobe na hora.
+   Para saber o que é "meu", guardamos uma impressão digital (hash) de cada parte como estava no banco;
+   parte diferente da impressão = mexida aqui. Sem conexão na abertura, a página não abre com dado velho. */
 (async function(){
   const N=(()=>{try{if(window.parent!==window&&window.parent.csNucleo)return window.parent.csNucleo;}catch(e){}return window.csNucleo||null;})();
+  const P=Storage.prototype,_set=P.setItem,_rem=P.removeItem,_get=P.getItem;
+  const lsSet=(k,v)=>{try{_set.call(localStorage,k,v);}catch(e){}};
+  const lsGet=k=>{try{return _get.call(localStorage,k);}catch(e){return null;}};
+  const lsRem=k=>{try{_rem.call(localStorage,k);}catch(e){}};
   const chaves=()=>{const ks=[];for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith('atrius-'))ks.push(k);}return ks;};
   const foto=()=>{const d={};chaves().forEach(k=>d[k]=localStorage.getItem(k));return d;};
-  const aplicar=d=>{chaves().forEach(k=>localStorage.removeItem(k));Object.entries(d||{}).forEach(([k,v])=>{try{localStorage.setItem(k,v);}catch(e){}});};
+  const aplicar=d=>{chaves().forEach(k=>_rem.call(localStorage,k));Object.entries(d||{}).forEach(([k,v])=>{try{_set.call(localStorage,k,v);}catch(e){}});};
+  /* impressão digital curta de um texto (pode ter megas): tamanho + FNV-1a */
+  const hash=s=>{if(s==null)return '';s=String(s);let h=0x811c9dc5;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}return s.length+':'+(h>>>0).toString(36);};
+  const SUJO='fin-sujo',IMP='fin-base-hash';
+  const guardaImpressao=b=>{const o={};Object.entries(b||{}).forEach(([k,v])=>o[k]=hash(v));lsSet(IMP,JSON.stringify(o));};
   const ST=window.FIN_NUVEM={ok:false,em:null,por:null,erro:null,base:null};
   const temNuvem=!!(N&&N.ler&&N.gravar&&!N.teste);
   try{if(N)window.csNucleo=new Proxy(N,{get:(o,k)=>k==='pagina'?()=>{}:o[k]});}catch(e){}
+
+  /* ---------- faixa vermelha: lançamento que ainda não chegou ao banco ---------- */
+  let falhouEm=0;
+  function faixa(){
+    let f=document.getElementById('finNaoSalvo');
+    const mostra=temNuvem&&(!!ST.erro||(lsGet(SUJO)&&falhouEm&&Date.now()-falhouEm>0));
+    if(!mostra){if(f)f.remove();return;}
+    if(!f){f=document.createElement('div');f.id='finNaoSalvo';
+      f.style.cssText='position:fixed;left:0;right:0;top:0;z-index:99990;background:#B91C1C;color:#fff;font:600 14px Inter,system-ui,sans-serif;padding:10px 16px;display:flex;gap:12px;align-items:center;justify-content:center;flex-wrap:wrap';
+      document.body.appendChild(f);}
+    f.innerHTML='<span>Seus últimos lançamentos ainda NÃO estão salvos no banco. Eles estão guardados neste computador: não limpe o navegador. Tentando de novo sozinho…</span><button type="button" style="background:#fff;color:#B91C1C;border:0;border-radius:8px;padding:6px 12px;font:700 13px Inter,system-ui;cursor:pointer">Tentar agora</button>';
+    f.querySelector('button').onclick=()=>{try{window.FIN_SUBIR_AGORA&&FIN_SUBIR_AGORA();}catch(e){}};
+  }
+
+  /* ---------- tela de espera: sem banco não abre com dado velho ---------- */
+  function semBanco(msg){
+    const a=document.createElement('div');a.id='finSemBanco';
+    a.style.cssText='position:fixed;inset:0;z-index:99999;background:#fff;color:#0E1B33;display:flex;align-items:center;justify-content:center;padding:24px;font:500 16px Inter,system-ui,sans-serif;text-align:center';
+    const guardado=lsGet(SUJO)?'<div style="margin-top:10px;color:#B45309;font-weight:600">Há lançamentos deste computador que ainda não subiram. Eles continuam guardados aqui e sobem assim que o banco responder.</div>':'';
+    a.innerHTML=`<div style="max-width:480px"><div style="font:700 22px Inter,system-ui;margin-bottom:8px">Sem conexão com o banco</div><div style="opacity:.8;line-height:1.5">O financeiro não conseguiu ler os dados (${String(msg||'').replace(/[<>&]/g,'')}). Para não trabalhar com informação errada, ele espera aqui e tenta de novo sozinho.</div>${guardado}<button type="button" style="margin-top:16px;background:#1D4ED8;color:#fff;border:0;border-radius:10px;padding:10px 18px;font:700 14px Inter,system-ui;cursor:pointer">Tentar agora</button></div>`;
+    document.body.appendChild(a);a.querySelector('button').onclick=()=>location.reload();
+    setTimeout(()=>location.reload(),30000);
+  }
+
   let base={};
   if(temNuvem){
-    try{
-      const d=await N.ler('financeiro');
-      if(d&&d.chaves&&Object.keys(d.chaves).length){aplicar(d.chaves);base=d.chaves;ST.ok=true;ST.em=d.em||null;ST.por=d.por||null;}
-      else{
-        /* nuvem vazia: vale o que está online (nada). O que havia neste computador fica guardado de lado,
-           fora da sincronização, e a página começa vazia — os dados entram por Importação (restaurar backup / relatórios). */
-        const local=foto();
-        if(Object.keys(local).length&&localStorage.getItem('fin-guardado-antes-da-nuvem')){
-          /* este computador já passou pela sincronização antes: o que há aqui foi importado/restaurado depois dela
-             (a nuvem não aceitou na hora) — então sobe como base, sem perguntar */
-          const r=await N.gravar('financeiro',{chaves:local,em:new Date().toISOString(),por:N.usuario()});
-          if(r&&r.ok){base=local;ST.ok=true;ST.em=new Date().toISOString();ST.por=N.usuario();}else{ST.erro=(r&&r.erro)||'não gravou';}
-        }else{
-          if(Object.keys(local).length){try{localStorage.setItem('fin-guardado-antes-da-nuvem',JSON.stringify({em:new Date().toISOString(),dados:local}));}catch(e){}}
-          aplicar({});base={};ST.ok=true;ST.vazia=true;
-        }
-      }
-    }catch(e){ST.erro=String(e.message||e);}
-    /* o backup embutido no arquivo não vale mais: a nuvem manda */
-  try{const m=/BACKUP_EMBUTIDO=\{"gerado": "([^"]+)"/.exec(document.getElementById('finMain').textContent);if(m)localStorage.setItem('atrius-backup-embutido',m[1]);}catch(e){}
-  if(!temNuvem){ /* fora do ERP (arquivo aberto sozinho): roda como antes, só neste navegador */ }
-  /* gravação: qualquer mudança em chave atrius-* sobe logo depois */
-    let t=null,pend=false,salvando=false;
+    let d=null,erro=null;
+    for(let i=0;i<4;i++){try{d=await N.ler('financeiro');erro=null;break;}catch(e){erro=e;await new Promise(r=>setTimeout(r,1500*(i+1)));}}
+    if(erro){ST.erro=String(erro.message||erro);semBanco(ST.erro);return;}
+    const nuvem=(d&&d.chaves)||{};
+    const local=foto();
+    if(lsGet(SUJO)&&Object.keys(local).length){
+      /* lançamentos deste computador que não chegaram ao banco: junta, sem apagar o que outra pessoa fez */
+      let imp={};try{imp=JSON.parse(lsGet(IMP)||'{}')||{};}catch(e){}
+      const temImp=Object.keys(imp).length>0;
+      const junto={...nuvem};let n=0;
+      Object.keys(local).forEach(k=>{
+        if(local[k]===nuvem[k])return;
+        /* sem impressão (computador que vem da versão antiga): o deste computador só vale onde o banco não tem nada */
+        const mexiAqui=temImp?hash(local[k])!==imp[k]:nuvem[k]===undefined;
+        if(mexiAqui){junto[k]=local[k];n++;}
+      });
+      if(temImp)Object.keys(imp).forEach(k=>{if(local[k]===undefined&&nuvem[k]!==undefined&&hash(nuvem[k])===imp[k]){delete junto[k];n++;}});
+      aplicar(junto);base=nuvem;guardaImpressao(nuvem);
+      ST.ok=true;ST.em=(d&&d.em)||null;ST.por=(d&&d.por)||null;
+      if(n){ST.recuperados=n;setTimeout(()=>{try{window.cobAvisar&&cobAvisar('Recuperei '+n+' parte(s) de lançamentos deste computador que não tinham chegado ao banco. Já estou salvando.');}catch(e){}},2500);}
+      else lsRem(SUJO);
+    }else if(Object.keys(nuvem).length){
+      aplicar(nuvem);base=nuvem;guardaImpressao(nuvem);lsRem(SUJO);
+      ST.ok=true;ST.em=(d&&d.em)||null;ST.por=(d&&d.por)||null;
+    }else{
+      /* banco vazio: começa vazio; o que havia aqui fica guardado de lado (entra por Importação › Restaurar backup) */
+      const jaPassou=!!lsGet('fin-guardado-antes-da-nuvem');
+      if(jaPassou&&Object.keys(local).length){base={};ST.ok=true;lsSet(SUJO,new Date().toISOString());}
+      else if(Object.keys(local).length){try{_set.call(localStorage,'fin-guardado-antes-da-nuvem',JSON.stringify({em:new Date().toISOString(),dados:local}));}catch(e){}aplicar({});base={};ST.ok=true;ST.vazia=true;}
+      else{aplicar({});base={};ST.ok=true;ST.vazia=true;}
+    }
+  }
+  /* o backup embutido no arquivo não vale mais: a nuvem manda */
+  try{const m=/BACKUP_EMBUTIDO=\{"gerado": "([^"]+)"/.exec(document.getElementById('finMain').textContent);if(m)_set.call(localStorage,'atrius-backup-embutido',m[1]);}catch(e){}
+
+  if(temNuvem){
+    /* ---------- gravação ---------- */
+    let t=null,pend=false,salvando=false,tRetry=null;
     async function subir(){
       if(salvando){pend=true;return;}salvando=true;
+      const marca=lsGet(SUJO);
       try{
         let minha=foto();
         let r=await N.gravar('financeiro',{chaves:minha,em:new Date().toISOString(),por:N.usuario()});
         if(r&&r.conflito){
           /* alguém gravou antes: junta — chave que eu não mexi fica como está na nuvem; chave que eu mexi vai a minha */
           const d=await N.ler('financeiro');const nuvem=(d&&d.chaves)||{};const junto={...nuvem};let perdi=0,recarregar=false;
-          /* v456: fila, carteira, baixas e importações do dia são de quem importou: uma tela aberta antes não grava por cima.
+          /* fila, carteira, baixas e importações do dia são de quem importou: uma tela aberta antes não grava por cima.
              Carteira junta por empresa (fica a posição mais nova), baixas somam; a fila é refeita da carteira ao recarregar. */
           const brI=s=>{const p=String(s||'').match(/(\d{2})\/(\d{2})\/(\d{4})/);return p?p[3]+p[2]+p[1]:'';};
           const junta=(k,m,n)=>{try{
@@ -6681,40 +6920,48 @@ document.head.insertAdjacentHTML("beforeend",'<style>.perb2{display:inline-flex;
           aplicar(junto);minha=junto;
           r=await N.gravar('financeiro',{chaves:minha,em:new Date().toISOString(),por:N.usuario()});
           if(perdi&&window.cobAvisar)cobAvisar('Outra pessoa gravou ao mesmo tempo em '+perdi+' parte(s); a sua versão foi mantida. Confira os últimos lançamentos.');
-          if(recarregar){if(window.cobAvisar)cobAvisar('Outra pessoa importou relatórios enquanto esta tela estava aberta. Juntei tudo e vou recarregar com os dados novos…');setTimeout(()=>{try{window.cobGuardaTela&&cobGuardaTela();}catch(e){}location.reload();},1800);}
+          if(recarregar&&r&&r.ok){if(window.cobAvisar)cobAvisar('Outra pessoa importou relatórios enquanto esta tela estava aberta. Juntei tudo e vou recarregar com os dados novos…');setTimeout(()=>{try{window.cobGuardaTela&&cobGuardaTela();}catch(e){}location.reload();},1800);}
         }
-        if(r&&r.ok){base=minha;ST.ok=true;ST.erro=null;ST.em=new Date().toISOString();ST.por=N.usuario();}
-        else{ST.erro='não gravou';}
-      }catch(e){ST.erro=String(e.message||e);}
-      finally{salvando=false;try{window.cobNuvem&&cobNuvem(ST);}catch(e){}if(pend){pend=false;subir();}}
+        if(r&&r.ok&&!r.local){
+          base=minha;guardaImpressao(minha);ST.ok=true;ST.erro=null;ST.em=new Date().toISOString();ST.por=N.usuario();falhouEm=0;
+          /* só desmarca se ninguém lançou nada enquanto subia */
+          if(lsGet(SUJO)===marca&&!t&&!pend)lsRem(SUJO);
+        }else{ST.erro=(r&&r.local)?'sem sessão: guardado só neste computador':'não gravou';falhouEm=falhouEm||Date.now();}
+      }catch(e){ST.erro=String(e.message||e);falhouEm=falhouEm||Date.now();}
+      finally{
+        salvando=false;try{window.cobNuvem&&cobNuvem(ST);}catch(e){}faixa();
+        if(pend){pend=false;subir();}
+        else if(ST.erro&&!tRetry){tRetry=setTimeout(()=>{tRetry=null;if(lsGet(SUJO))subir();},20000);}
+      }
     }
-    const agendar=()=>{clearTimeout(t);t=setTimeout(()=>{t=null;subir();},800);};
-    window.FIN_SUBIR_AGORA=async()=>{clearTimeout(t);t=null;await subir();while(pend||salvando)await new Promise(r=>setTimeout(r,150));};
+    const agendar=()=>{lsSet(SUJO,new Date().toISOString());clearTimeout(t);t=setTimeout(()=>{t=null;subir();},800);};
+    window.FIN_PENDENTE=()=>!!(t||salvando||pend||lsGet(SUJO));
+    window.FIN_SUBIR_AGORA=async()=>{clearTimeout(t);t=null;await subir();while(pend||salvando)await new Promise(r=>setTimeout(r,150));return !lsGet(SUJO);};
     document.addEventListener('visibilitychange',()=>{if(document.hidden&&t){clearTimeout(t);t=null;subir();}});
     window.addEventListener('pagehide',()=>{if(t){clearTimeout(t);t=null;subir();}});
-    const P=Storage.prototype,_set=P.setItem,_rem=P.removeItem;
+    window.addEventListener('beforeunload',e=>{if(t||salvando||pend){e.preventDefault();e.returnValue='';}});
     P.setItem=function(k,v){const r=_set.call(this,k,v);if(this===localStorage&&String(k).startsWith('atrius-'))agendar();return r;};
     P.removeItem=function(k){const r=_rem.call(this,k);if(this===localStorage&&String(k).startsWith('atrius-'))agendar();return r;};
-    /* outra pessoa gravou? a cada 60 s confere; se mudou e eu não tenho nada pendente, avisa para recarregar */
-    setInterval(async()=>{try{if(t||salvando||pend)return;if(document.hidden)return;const d=await N.ler('financeiro');if(d&&d.em&&ST.em&&d.em>ST.em&&d.por!==undefined){if(window.cobRecarregarSeLivre&&cobRecarregarSeLivre())return;if(window.cobAvisar)cobAvisar('Dados atualizados por '+(d.por||'outra pessoa')+' às '+new Date(d.em).toLocaleTimeString('pt-BR').slice(0,5)+'.',{rotulo:'Recarregar',fn:()=>location.reload()});}}catch(e){}},60000);
+    /* recuperou lançamentos na abertura: sobe já */
+    if(lsGet(SUJO))setTimeout(subir,1200);
+    /* outra pessoa gravou? a cada 60 s confere; se mudou e eu não tenho nada pendente, recarrega/avisa */
+    setInterval(async()=>{try{if(t||salvando||pend||lsGet(SUJO))return;if(document.hidden)return;const d=await N.ler('financeiro');if(d&&d.em&&ST.em&&d.em>ST.em&&d.por!==undefined){if(window.cobRecarregarSeLivre&&cobRecarregarSeLivre())return;if(window.cobAvisar)cobAvisar('Dados atualizados por '+(d.por||'outra pessoa')+' às '+new Date(d.em).toLocaleTimeString('pt-BR').slice(0,5)+'.',{rotulo:'Recarregar',fn:()=>location.reload()});}}catch(e){}},60000);
+    setInterval(faixa,5000);
   }
   /* cadastro do ERP: clientes (CNPJ, vendedor, WhatsApp), vendedores e motivos de cobrança — a base das cobranças usa os mesmos */
-  window.FIN_CAD={clientes:[],vendedores:[],motivos:[],bancos:[]};
+  window.FIN_CAD={clientes:[],vendedores:[],motivos:[],bancos:[],vendInfo:[]};
   try{if(N&&N.ler){const c=await N.ler('cadastros');if(c){
     const comAcesso=(c.vendedores||[]).filter(v=>v&&v.ativo!==false&&v.acesso===true);const vend=(comAcesso.length?comAcesso:(c.vendedores||[]).filter(v=>v&&v.ativo!==false)).map(v=>v.tinyNome||v.nome).filter(Boolean);
     FIN_CAD.vendedores=vend;
+    /* v4.8.0: nome, WhatsApp e e-mail de cada vendedor vêm do cadastro (Envio aos vendedores usa daqui) */
+    FIN_CAD.vendInfo=(c.vendedores||[]).filter(v=>v&&v.ativo!==false).map(v=>({nome:v.nome||'',tinyNome:v.tinyNome||'',whats:v.whats||v.fone||'',email:v.email||'',acesso:v.acesso===true}));
     FIN_CAD.clientes=(c.contatos||[]).filter(x=>x&&x.nome&&(x.doc||x.nome)&&!(x.papeis||[]).includes('Funcionário')&&x.tipo!=='Funcionário').map(x=>({v:x.vendedor||'',n:x.nome,d:x.doc||'',wa:x.fone||''}));
     FIN_CAD.motivos=(c.motivosCob||[]).filter(m=>m&&m.ativo!==false&&/exclus/i.test(m.uso||'Exclusão')).map(m=>m.nome).filter(Boolean);
     FIN_CAD.bancos=(c.bancos||[]).filter(b=>b&&b.ativo!==false);
   }}}catch(e){}
   /* roda o módulo (ele lê o localStorage ao iniciar — por isso só agora) */
-  const s=document.createElement('script');s.textContent=document.getElementById('finMain').textContent;document.body.appendChild(s);
-  const s2=document.createElement('script');s2.textContent=document.getElementById('finCob').textContent;document.body.appendChild(s2);
-  const s3=document.createElement('script');s3.textContent=document.getElementById('finCob2').textContent;document.body.appendChild(s3);
-  const s4=document.createElement('script');s4.textContent=document.getElementById('finCob3').textContent;document.body.appendChild(s4);
-  const s5=document.createElement('script');s5.textContent=document.getElementById('finCob4').textContent;document.body.appendChild(s5);
+  ['finMain','finCob','finCob2','finCob3','finCob4','finCob5'].forEach(id=>{const el=document.getElementById(id);if(!el)return;const s=document.createElement('script');s.textContent=el.textContent;document.body.appendChild(s);});
 })();
-
 </script>
 <script id="erpPonte">
 /* ===== ponte com o ERP: o menu do ERP escolhe a página pelo #endereço ===== */
@@ -6771,5 +7018,48 @@ document.head.insertAdjacentHTML("beforeend",'<style>.perb2{display:inline-flex;
     window.switchView=switchView=function(id){var r=orig.apply(this,arguments);try{if(window.parent&&window.parent.csFinAtual)window.parent.csFinAtual((window.COB_MENU_DE&&COB_MENU_DE(id))||'cobrancas');}catch(e){}return r;};irPara();}
     else if(++tenta>600)clearInterval(liga);},100);
 })();
+</script>
+<script>
+/* ===== v4.8.0 · o caminho da página (Módulo › Página › Item) vira link em todo o sistema =====
+   Pedido de 24/10: o caminho no topo das páginas tem que levar de volta. Cada pedaço, menos o último, vira um link:
+   o nome do módulo leva à primeira página dele; o nome de uma página leva a ela (procurada no menu do ERP).
+   Links que a própria página já tinha (ex.: "Clientes e crédito" dentro da ficha do cliente) ficam como estão. */
+(function(){
+  if(window.__mg480)return;window.__mg480=true;
+  /* CS_MOD, MOD_ATUAL e FIN_PAG são let/const no ERP: não ficam em window, por isso a leitura passa por eval */
+  const P=(()=>{try{if(window.parent!==window&&typeof window.parent.csIr==='function')return window.parent;}catch(e){}return typeof window.csIr==='function'?window:null;})();
+  const V=n=>{try{return P.eval(n);}catch(e){return undefined;}};
+  const nrm=s=>String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/\s+/g,' ').trim();
+  try{const st=document.createElement('style');st.textContent='.mg-a{color:inherit;cursor:pointer;text-decoration:none;border-radius:4px}.mg-a:hover{color:#1D4ED8;text-decoration:underline}';document.head.appendChild(st);}catch(e){}
+  function destino(txt){
+    if(!P)return null;const t=nrm(txt);if(!t)return null;
+    const mods=V('CS_MOD')||[];let atualMod=null;const MA=V('MOD_ATUAL'),FP=V('FIN_PAG');
+    try{atualMod=mods.find(m=>(m.pgs||[]).some(p=>p.mod&&p.mod===MA&&p.fin===FP));}catch(e){}
+    const ordem=atualMod?[atualMod,...mods.filter(m=>m!==atualMod)]:mods;
+    const pode=p=>{try{return typeof P.csPode!=='function'||P.csPode(p);}catch(e){return true;}};
+    for(const m of ordem){const pgs=(m.pgs||[]);
+      const g=pgs.find(p=>p.grupo&&p.acord&&nrm(p.n)===t);if(g){const f=pgs.find(p=>p.pai===g.acord&&!p.grupo&&pode(p));if(f)return f;}
+      const p=pgs.find(p=>!p.grupo&&nrm(p.n)===t&&pode(p));if(p)return p;}
+    const m=mods.find(m=>nrm(m.nome)===t);
+    if(m){const f=(m.pgs||[]).find(p=>!p.grupo&&!p.breve&&pode(p)&&(p.page||p.fin||p.acao));if(f)return f;}
+    return null;
+  }
+  function liga(el){
+    if(el.dataset.mg===el.innerHTML.length+'')return;
+    const partes=el.innerHTML.split('›');
+    if(partes.length<2){el.dataset.mg=el.innerHTML.length+'';return;}
+    const nova=partes.map((h,i)=>{if(i===partes.length-1||/<a[\s>]/i.test(h)||/mg-a/.test(h))return h;
+      const tx=h.replace(/<[^>]+>/g,'').trim();if(!destino(tx))return h;
+      return h.replace(tx,`<a class="mg-a" data-mg="${tx.replace(/"/g,'&quot;')}">${tx}</a>`);}).join('›');
+    if(nova!==el.innerHTML)el.innerHTML=nova;
+    el.dataset.mg=el.innerHTML.length+'';
+  }
+  const varre=()=>{try{document.querySelectorAll('.migalha,.c7-mig,.c9mig,.migal,.cfgmig').forEach(liga);}catch(e){}};
+  document.addEventListener('click',e=>{const a=e.target.closest&&e.target.closest('[data-mg]');if(!a)return;e.preventDefault();e.stopPropagation();
+    const d=destino(a.dataset.mg);if(d&&P){try{P.eval("CS_ABERTO=''");}catch(x){}try{P.csIr(d);}catch(x){}}},true);
+  let t=null;new MutationObserver(()=>{clearTimeout(t);t=setTimeout(varre,60);}).observe(document.documentElement,{childList:true,subtree:true});
+  setTimeout(varre,300);
+})();
+
 </script>
 </body></html>

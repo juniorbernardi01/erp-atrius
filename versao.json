@@ -1,6 +1,6 @@
 {
- "v": "v470",
- "versao": "4.7.0",
- "data": "23/10/2026",
- "o_que_mudou": "Contas a receber: páginas no menu do ERP, clientes e crédito com histórico de pagamento, cobrança externa e relatórios no modal padrão"
+ "v": "v480",
+ "versao": "4.8.0",
+ "data": "24/10/2026",
+ "o_que_mudou": "Nenhum lançamento se perde; Configurações numa página só; backup e restauração do sistema inteiro; relatórios em cartões no PCP, Vendas, Compras e Contas a receber; Curva ABC; cadastro de clientes completo; vendedores ligados ao cadastro"
 }

@@ -674,9 +674,10 @@ const perLe=s=>{const m=String(s||'').match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);ret
 const perAdd=(s,n)=>{const d=perD(s);d.setDate(d.getDate()+n);return perYmd(d);};
 function perNovo(m){const h=perHoje();return {m:m||'sem',dia:h,mes:h.slice(0,7),de:perAdd(h,-29),ate:h,campo:''};}
 function perRotulo(p){if(!p||p.m==='sem')return 'Período';const h=perHoje();
-  if(p.m==='dia')return p.dia===h?'Hoje':perBr(p.dia).slice(0,5);
-  if(p.m==='mes'){const [a,m]=p.mes.split('-');return PER_MC[+m-1]+'/'+a;}
-  const r=p.de===p.ate?perBr(p.de).slice(0,5):perBr(p.de).slice(0,5)+' a '+perBr(p.ate).slice(0,5);
+  if(p.m==='dia')return p.dia===h?'Hoje':perBr(p.dia);
+  if(p.m==='mes'){const [a,m]=p.mes.split('-');return PER_MES[+m-1]+' de '+a;}
+  const ano=p.de.slice(0,4)!==p.ate.slice(0,4)||p.ate.slice(0,4)!==h.slice(0,4);
+  const r=p.de===p.ate?perBr(p.de):perBr(p.de).slice(0,ano?10:5)+' a '+perBr(p.ate).slice(0,ano?10:5);
   return p.m==='prev'?'Previstos '+r:r;}
 /* o intervalo efetivo, para quem filtra: {de, ate} (vazio = sem limite) */
 function perFaixa(p){if(!p||p.m==='sem')return {de:'',ate:''};
@@ -3476,6 +3477,172 @@ function rl5Imprimir(l,fNome,perTxt,grupo){
   if(P){try{P.csFolhaModal({titulo:'Relatório de compras',sub:perTxt+(fNome?' · '+fNome:''),arquivo:titulo.replace(/\//g,'-').replace(/ · /g,' - '),html});return;}catch(e){}}
   const w=window.open('','_blank');if(!w)return toast('Libere as janelas do navegador para imprimir.',true);w.document.write(html);w.document.close();
 }
+
+</script>
+<script data-v480="comp">
+/* ===================== v4.8.0 · COMPRAS › RELATÓRIOS: escolhe o relatório antes de abrir =====================
+   Cartões: Compras do período (o de antes, agora com o filtro Período padrão), Ordens a receber (o que está a caminho,
+   previsão e atraso por fornecedor) e Preço por item (último preço, anterior, variação, média, mínimo e máximo). */
+(function(){
+  const semAc=s=>String(s??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
+  const ICO={car:'<circle cx="9" cy="20" r="1.5"/><circle cx="17" cy="20" r="1.5"/><path d="M3 4h2l2.5 11h11L21 7H6.5"/>',cam:'<path d="M3 7h11v9H3zM14 10h4l3 3v3h-7"/><circle cx="7" cy="18" r="1.6"/><circle cx="17" cy="18" r="1.6"/>',
+    pre:'<path d="M3 12V4h8l10 10-8 8z"/><circle cx="7.5" cy="8" r="1"/>',busca:'<circle cx="11" cy="11" r="6"/><path d="M20 20l-4-4"/>',imp:'<path d="M7 9V3h10v6M7 17H4v-7h16v7h-3M7 14h10v7H7z"/>',forn:'<path d="M3 21h18M5 21V9l7-5 7 5v12"/>'};
+  const sv=(k,w)=>`<svg viewBox="0 0 24 24" width="${w||16}" height="${w||16}" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${ICO[k]||''}</svg>`;
+  try{const s=document.createElement('style');s.textContent=`
+.p8top{display:flex;align-items:center;gap:14px;margin-bottom:12px;flex-wrap:wrap}.p8top h1{margin:0}
+.p8bus{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:10px;padding:0 12px;height:40px;color:var(--ink3);background:#fff;margin-left:auto;width:320px}.p8bus input{border:0;outline:0;flex:1;font-size:14px;background:transparent}
+.p8gr{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;max-width:1200px;margin-top:6px}
+.p8rc{border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:9px;text-decoration:none;color:inherit;background:#fff;min-height:118px;transition:border-color .15s,transform .15s}
+.p8rc:hover{border-color:#1D4ED8;transform:translateY(-1px)}.p8rc b{font-size:15px}.p8rc small{color:var(--ink3);font-size:12.5px;line-height:1.4}
+.p8ico{width:38px;height:38px;border-radius:10px;background:#EEF3FF;color:#1D4ED8;display:flex;align-items:center;justify-content:center}
+@media(max-width:1000px){.p8gr{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:620px){.p8gr{grid-template-columns:1fr}.p8bus{width:100%}}
+.p8f{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+.p8f select,.p8f input{height:38px;border:1px solid var(--line);border-radius:10px;padding:0 10px;font:inherit;font-size:13.5px;background:#fff}
+.p8k{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:14px}
+.p8kp{border:1px solid var(--line);border-radius:14px;padding:14px 16px;background:#fff}.p8kp span{font:700 11px Inter;color:var(--ink3);letter-spacing:.6px;text-transform:uppercase}.p8kp b{display:block;font:800 22px Inter;margin:6px 0 2px}.p8kp small{color:var(--ink3)}
+.p8kp.vm b{color:#B91C1C}
+.p8t{border:1px solid var(--line);border-radius:14px;overflow:auto;background:#fff}
+.p8t table{width:100%;border-collapse:collapse;font-size:13.5px}
+.p8t th{font:700 11px Inter;color:var(--ink3);letter-spacing:.6px;text-transform:uppercase;text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);background:#FAFAFB;white-space:nowrap;cursor:pointer}
+.p8t td{padding:10px 14px;border-bottom:1px solid #F1F1F3}.p8t .n{text-align:right;font-variant-numeric:tabular-nums}
+.p8t tr.g{cursor:pointer}.p8t tr.g:hover td{background:#F8FAFC}.p8t tr.sub td{background:#FBFCFD;color:var(--ink2);font-size:12.5px}.p8t tr.sub td:first-child{padding-left:30px}
+.p8q{display:inline-block;border-radius:999px;padding:2px 9px;font:700 12px Inter}.p8q.ok{background:#ECFDF3;color:#15803D}.p8q.md{background:#FFF7ED;color:#B45309}.p8q.mu{background:#FEF2F2;color:#B91C1C}
+.p8up{color:#B91C1C;font-weight:700}.p8dn{color:#15803D;font-weight:700}
+.r5per.p8esc>div:not(.p8per){display:none}
+`;document.head.appendChild(s);}catch(e){}
+
+  const REL=[['compras','car','Compras do período','Por fornecedor e por item: quantidade, valor, IPI e crédito. Com Excel e PDF.'],
+    ['areceber','cam','Ordens a receber','O que está a caminho: fornecedor, previsão de entrega, atraso e valor.'],
+    ['precos','pre','Preço por item','Último preço pago, o anterior, a variação, a média, o mínimo e o máximo de cada item.']];
+  let QH='';
+  function hub(){
+    const q=semAc(QH);const l=REL.filter(r=>!q||semAc(r[2]+' '+r[3]).includes(q));
+    $('app').innerHTML=`<div class="migalha">Compras › Relatórios</div><div class="p8top"><h1>Relatórios</h1><label class="p8bus">${sv('busca')}<input id="p8Q" placeholder="Buscar relatório" value="${esc(QH)}"></label></div>
+      <div class="p8gr">${l.map(([k,i,t,d])=>`<a class="p8rc" href="#relatorios/${k}"><span class="p8ico">${sv(i,20)}</span><b>${t}</b><small>${d}</small></a>`).join('')}</div>`;
+    const i=$('p8Q');i.oninput=()=>{QH=i.value;const p=i.selectionStart;hub();const n=$('p8Q');n.focus();n.setSelectionRange(p,p);};
+  }
+  const cab=t=>`<div class="migalha">Compras › Relatórios › ${t}</div>`;
+  const hojeS=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
+  const brD=s=>s?String(s).slice(0,10).split('-').reverse().join('/'):'—';
+  const totOC=o=>(o.itens||[]).reduce((s,i)=>{let c;try{c=contaItem(i);}catch(e){c={base:(+i.qtd||0)*(+i.preco||0),val:{ipi:0}};}return s+(c.base||0)+((c.val&&c.val.ipi)||0);},0);
+  function folhaPdf(titulo,sub,corpo){try{const P=window.parent;P.csFolhaModal({titulo,sub,arquivo:titulo+' '+String(sub).replace(/\//g,'-'),html:P.folha(titulo,'',sub,
+    `<style>table{width:100%;border-collapse:collapse;font-size:10.5px}th{text-align:left;font-size:9px;text-transform:uppercase;color:#6B7280;border-bottom:1.5px solid #12151A;padding:4px 6px}td{padding:4px 6px;border-bottom:1px solid #E5E7EB}.n{text-align:right}</style>`+corpo)});}catch(e){toast('Não consegui montar a folha.',true);}}
+
+  /* ---------- Ordens a receber ---------- */
+  const AR={per:null,forn:'',ord:'prev'};
+  function telaAReceber(){
+    if(!AR.per)AR.per=perNovo('sem');
+    const f=perFaixa(AR.per),h=hojeS();
+    const abertas=(DB.ocs||[]).filter(o=>o&&o.sit==='env'&&(!AR.forn||((o.forn&&o.forn.id)||(o.forn&&o.forn.nome))===AR.forn)&&(!f.de||((o.prev||o.data)>=f.de&&(o.prev||o.data)<=f.ate)));
+    const fs=[...new Map((DB.ocs||[]).filter(o=>o&&o.sit==='env').map(o=>[(o.forn&&o.forn.id)||(o.forn&&o.forn.nome)||'?',(o.forn&&o.forn.nome)||'?'])).entries()].sort((a,b)=>a[1].localeCompare(b[1],'pt'));
+    const L=abertas.map(o=>({o,num:o.num,forn:(o.forn&&o.forn.nome)||'?',data:o.data,prev:o.prev||'',atraso:o.prev&&o.prev<h?Math.round((new Date(h+'T12:00')-new Date(o.prev+'T12:00'))/864e5):0,itens:(o.itens||[]).length,valor:totOC(o)}));
+    const ordem={prev:(a,b)=>(a.prev||'9').localeCompare(b.prev||'9'),atraso:(a,b)=>b.atraso-a.atraso,valor:(a,b)=>b.valor-a.valor,forn:(a,b)=>a.forn.localeCompare(b.forn,'pt')};
+    L.sort(ordem[AR.ord]||ordem.prev);
+    const atr=L.filter(x=>x.atraso>0);const sem=L.filter(x=>x.prev&&x.prev>=h&&x.prev<=(()=>{const d=new Date();d.setDate(d.getDate()+7);return d.toISOString().slice(0,10);})());
+    $('app').innerHTML=`${cab('Ordens a receber')}<div class="p8top"><h1>Ordens a receber</h1></div>
+      <div class="p8f">${perBotao('p8Per',AR.per)}<select id="p8F"><option value="">Todos os fornecedores</option>${fs.map(([k,n])=>`<option value="${esc(k)}" ${AR.forn===k?'selected':''}>${esc(n)}</option>`).join('')}</select><span style="flex:1"></span><button class="btn" id="p8Pdf">${sv('imp')} Imprimir / PDF</button></div>
+      <div class="p8k"><div class="p8kp"><span>Ordens a receber</span><b>${L.length}</b><small>${new Set(L.map(x=>x.forn)).size} fornecedores</small></div>
+        <div class="p8kp"><span>Valor a caminho</span><b>R$ ${nf(L.reduce((s,x)=>s+x.valor,0),2)}</b><small>com IPI</small></div>
+        <div class="p8kp ${atr.length?'vm':''}"><span>Atrasadas</span><b>${atr.length}</b><small>R$ ${nf(atr.reduce((s,x)=>s+x.valor,0),2)}</small></div>
+        <div class="p8kp"><span>Chegam em 7 dias</span><b>${sem.length}</b><small>R$ ${nf(sem.reduce((s,x)=>s+x.valor,0),2)}</small></div></div>
+      <div class="p8t"><table><thead><tr><th data-o="forn">OC · fornecedor</th><th>Data da OC</th><th data-o="prev">Previsão</th><th data-o="atraso" class="n">Atraso</th><th class="n">Itens</th><th data-o="valor" class="n">Valor</th></tr></thead><tbody>
+      ${L.map(x=>`<tr class="g" data-oc="${esc(x.o.id)}"><td><b>OC ${esc(x.num)}</b> · ${esc(x.forn)}</td><td>${brD(x.data)}</td><td>${brD(x.prev)}</td><td class="n">${x.atraso?`<span class="p8q ${x.atraso>7?'mu':'md'}">${x.atraso} dia${x.atraso>1?'s':''}</span>`:x.prev?'<span class="p8q ok">no prazo</span>':'—'}</td><td class="n">${x.itens}</td><td class="n">R$ ${nf(x.valor,2)}</td></tr>`).join('')||'<tr><td colspan="6" class="k" style="padding:24px">Nada a receber.</td></tr>'}</tbody></table></div>`;
+    $('p8Per').onclick=()=>abrirPeriodo($('p8Per'),AR.per,{},p=>{AR.per=p;telaAReceber();});
+    $('p8F').onchange=e=>{AR.forn=e.target.value;telaAReceber();};
+    document.querySelectorAll('[data-o]').forEach(t=>t.onclick=()=>{AR.ord=t.dataset.o;telaAReceber();});
+    document.querySelectorAll('[data-oc]').forEach(r=>r.onclick=()=>{location.hash='#ordens/'+r.dataset.oc;});
+    $('p8Pdf').onclick=()=>folhaPdf('Ordens a receber',perRotulo(AR.per)==='Período'?'até '+brD(h):perRotulo(AR.per),
+      `<table><thead><tr><th>OC</th><th>Fornecedor</th><th>Data</th><th>Previsão</th><th class="n">Atraso</th><th class="n">Valor</th></tr></thead><tbody>${L.map(x=>`<tr><td>${esc(x.num)}</td><td>${esc(x.forn)}</td><td>${brD(x.data)}</td><td>${brD(x.prev)}</td><td class="n">${x.atraso?x.atraso+' d':''}</td><td class="n">R$ ${nf(x.valor,2)}</td></tr>`).join('')}</tbody></table>`);
+  }
+
+  /* ---------- Preço por item ---------- */
+  const PR={per:null,q:'',aberto:new Set(),ord:'var'};
+  function telaPrecos(){
+    if(!PR.per){const h=hojeS();const d=new Date();d.setFullYear(d.getFullYear()-1);PR.per={...perNovo('int'),m:'int',de:d.toISOString().slice(0,10),ate:h};}
+    const f=perFaixa(PR.per);const q=semAc(PR.q);
+    const m=new Map();
+    (DB.ocs||[]).forEach(o=>{if(!o||o.sit==='can'||o.sit==='ras')return;if(f.de&&(o.data<f.de||o.data>f.ate))return;
+      (o.itens||[]).forEach(i=>{const p=+i.preco||0;if(!p)return;const k=i.sku||i.nome;if(q&&!semAc((i.sku||'')+' '+(i.nome||'')).includes(q))return;
+        const r=m.get(k)||{k,sku:i.sku||'',nome:i.nome||i.sku,un:i.un||'',l:[]};r.l.push({data:o.data,p,q:+i.qtd||0,forn:(o.forn&&o.forn.nome)||'?',num:o.num});m.set(k,r);});});
+    const L=[...m.values()].map(r=>{r.l.sort((a,b)=>b.data.localeCompare(a.data));const ult=r.l[0],ant=r.l.find(x=>x.data<ult.data)||r.l[1];
+      const qt=r.l.reduce((s,x)=>s+x.q,0);const med=qt?r.l.reduce((s,x)=>s+x.p*x.q,0)/qt:r.l.reduce((s,x)=>s+x.p,0)/r.l.length;
+      return {...r,ult,ant,var:ant?(ult.p-ant.p)/ant.p*100:null,med,min:Math.min(...r.l.map(x=>x.p)),max:Math.max(...r.l.map(x=>x.p))};});
+    const ord={var:(a,b)=>(b.var??-1e9)-(a.var??-1e9),nome:(a,b)=>String(a.nome).localeCompare(String(b.nome),'pt'),ult:(a,b)=>b.ult.data.localeCompare(a.ult.data)};
+    L.sort(ord[PR.ord]||ord.var);
+    const sub=L.filter(x=>x.var>0.5),des=L.filter(x=>x.var<-0.5);
+    $('app').innerHTML=`${cab('Preço por item')}<div class="p8top"><h1>Preço por item</h1></div>
+      <div class="p8f">${perBotao('p8Per',PR.per)}<input id="p8B" placeholder="Item ou SKU" value="${esc(PR.q)}" style="width:240px"><span style="flex:1"></span><button class="btn" id="p8Pdf">${sv('imp')} Imprimir / PDF</button></div>
+      <div class="p8k"><div class="p8kp"><span>Itens comprados</span><b>${L.length}</b><small>no período</small></div><div class="p8kp vm"><span>Subiram</span><b>${sub.length}</b><small>na última compra</small></div>
+        <div class="p8kp"><span>Baixaram</span><b style="color:#15803D">${des.length}</b><small>na última compra</small></div><div class="p8kp"><span>Compras</span><b>${L.reduce((s,x)=>s+x.l.length,0)}</b><small>linhas de ordem</small></div></div>
+      <div class="p8t"><table><thead><tr><th data-o="nome">Item</th><th data-o="ult">Última compra</th><th class="n">Último preço</th><th class="n">Anterior</th><th data-o="var" class="n">Variação</th><th class="n">Média</th><th class="n">Mínimo</th><th class="n">Máximo</th></tr></thead><tbody>
+      ${L.map(x=>{const ab=PR.aberto.has(x.k);return `<tr class="g" data-k="${esc(x.k)}"><td><b>${ab?'▾ ':'▸ '}${esc(x.nome)}</b> <span class="k">${esc(x.sku)}</span></td><td>${brD(x.ult.data)} · ${esc(x.ult.forn)}</td><td class="n"><b>${nf(x.ult.p,x.ult.p<10?4:2)}</b></td><td class="n">${x.ant?nf(x.ant.p,x.ant.p<10?4:2):'—'}</td>
+        <td class="n">${x.var==null?'—':`<span class="${x.var>0.5?'p8up':x.var<-0.5?'p8dn':''}">${x.var>0?'+':''}${nf(x.var,1)}%</span>`}</td><td class="n">${nf(x.med,x.med<10?4:2)}</td><td class="n">${nf(x.min,x.min<10?4:2)}</td><td class="n">${nf(x.max,x.max<10?4:2)}</td></tr>
+        ${ab?x.l.map(c=>`<tr class="sub"><td>${brD(c.data)} · OC ${esc(c.num)}</td><td>${esc(c.forn)}</td><td class="n">${nf(c.p,c.p<10?4:2)}</td><td class="n">${nf(c.q,0)} ${esc(x.un)}</td><td colspan="4"></td></tr>`).join(''):''}`;}).join('')||'<tr><td colspan="8" class="k" style="padding:24px">Nenhuma compra no período.</td></tr>'}</tbody></table></div>`;
+    $('p8Per').onclick=()=>abrirPeriodo($('p8Per'),PR.per,{},p=>{PR.per=p;telaPrecos();});
+    $('p8B').oninput=e=>{PR.q=e.target.value;clearTimeout(window._p8);window._p8=setTimeout(()=>{telaPrecos();const i=$('p8B');i.focus();i.setSelectionRange(i.value.length,i.value.length);},250);};
+    document.querySelectorAll('[data-o]').forEach(t=>t.onclick=()=>{PR.ord=t.dataset.o;telaPrecos();});
+    document.querySelectorAll('tr.g[data-k]').forEach(r=>r.onclick=()=>{const k=r.dataset.k;if(PR.aberto.has(k))PR.aberto.delete(k);else PR.aberto.add(k);telaPrecos();});
+    $('p8Pdf').onclick=()=>folhaPdf('Preço por item',perRotulo(PR.per),`<table><thead><tr><th>Item</th><th>Última compra</th><th class="n">Último</th><th class="n">Anterior</th><th class="n">Var.</th><th class="n">Média</th><th class="n">Mín.</th><th class="n">Máx.</th></tr></thead><tbody>${L.map(x=>`<tr><td>${esc(x.nome)}</td><td>${brD(x.ult.data)} · ${esc(x.ult.forn)}</td><td class="n">${nf(x.ult.p,x.ult.p<10?4:2)}</td><td class="n">${x.ant?nf(x.ant.p,x.ant.p<10?4:2):'—'}</td><td class="n">${x.var==null?'—':(x.var>0?'+':'')+nf(x.var,1)+'%'}</td><td class="n">${nf(x.med,x.med<10?4:2)}</td><td class="n">${nf(x.min,x.min<10?4:2)}</td><td class="n">${nf(x.max,x.max<10?4:2)}</td></tr>`).join('')}</tbody></table>`);
+  }
+
+  /* ---------- roteamento: #relatorios = cartões; #relatorios/compras = o relatório de antes ---------- */
+  try{const _tr=telaRelatorios;telaRelatorios=function(){
+    const a=(lerHash().arg||'').split('/')[0];
+    if(!a)return hub();if(a==='areceber')return telaAReceber();if(a==='precos')return telaPrecos();
+    const r=_tr.apply(this,arguments);
+    try{const mg=document.querySelector('#app .migalha');if(mg)mg.innerHTML='Compras › Relatórios › Compras do período';
+      /* o Período padrão do sistema no lugar dos botões "Este mês…" e das datas */
+      const box=document.querySelector('#app .r5per');if(box&&!box.querySelector('.p8per')){box.classList.add('p8esc');
+        const st={...perNovo('int'),m:'int',de:RL5.de,ate:RL5.ate};
+        box.insertAdjacentHTML('afterbegin',`<div class="p8per"><label>Período</label>${perBotao('p8PerC',st)}</div>`);
+        const keep=[...box.children].find(d=>d.querySelector&&d.querySelector('[data-r5b]'));if(keep){keep.style.display='block';}
+        $('p8PerC').onclick=()=>abrirPeriodo($('p8PerC'),st,{},p=>{const f=perFaixa(p);RL5.de=f.de||'2020-01-01';RL5.ate=f.ate||hojeS();telaRelatorios();});}}catch(e){console.warn(e);}
+    return r;};}catch(e){console.warn('[v480] compras relatórios',e);}
+  try{if(/^#relatorios/.test(location.hash||''))render();}catch(e){}
+})();
+
+</script>
+<script>
+/* ===== v4.8.0 · o caminho da página (Módulo › Página › Item) vira link em todo o sistema =====
+   Pedido de 24/10: o caminho no topo das páginas tem que levar de volta. Cada pedaço, menos o último, vira um link:
+   o nome do módulo leva à primeira página dele; o nome de uma página leva a ela (procurada no menu do ERP).
+   Links que a própria página já tinha (ex.: "Clientes e crédito" dentro da ficha do cliente) ficam como estão. */
+(function(){
+  if(window.__mg480)return;window.__mg480=true;
+  /* CS_MOD, MOD_ATUAL e FIN_PAG são let/const no ERP: não ficam em window, por isso a leitura passa por eval */
+  const P=(()=>{try{if(window.parent!==window&&typeof window.parent.csIr==='function')return window.parent;}catch(e){}return typeof window.csIr==='function'?window:null;})();
+  const V=n=>{try{return P.eval(n);}catch(e){return undefined;}};
+  const nrm=s=>String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/\s+/g,' ').trim();
+  try{const st=document.createElement('style');st.textContent='.mg-a{color:inherit;cursor:pointer;text-decoration:none;border-radius:4px}.mg-a:hover{color:#1D4ED8;text-decoration:underline}';document.head.appendChild(st);}catch(e){}
+  function destino(txt){
+    if(!P)return null;const t=nrm(txt);if(!t)return null;
+    const mods=V('CS_MOD')||[];let atualMod=null;const MA=V('MOD_ATUAL'),FP=V('FIN_PAG');
+    try{atualMod=mods.find(m=>(m.pgs||[]).some(p=>p.mod&&p.mod===MA&&p.fin===FP));}catch(e){}
+    const ordem=atualMod?[atualMod,...mods.filter(m=>m!==atualMod)]:mods;
+    const pode=p=>{try{return typeof P.csPode!=='function'||P.csPode(p);}catch(e){return true;}};
+    for(const m of ordem){const pgs=(m.pgs||[]);
+      const g=pgs.find(p=>p.grupo&&p.acord&&nrm(p.n)===t);if(g){const f=pgs.find(p=>p.pai===g.acord&&!p.grupo&&pode(p));if(f)return f;}
+      const p=pgs.find(p=>!p.grupo&&nrm(p.n)===t&&pode(p));if(p)return p;}
+    const m=mods.find(m=>nrm(m.nome)===t);
+    if(m){const f=(m.pgs||[]).find(p=>!p.grupo&&!p.breve&&pode(p)&&(p.page||p.fin||p.acao));if(f)return f;}
+    return null;
+  }
+  function liga(el){
+    if(el.dataset.mg===el.innerHTML.length+'')return;
+    const partes=el.innerHTML.split('›');
+    if(partes.length<2){el.dataset.mg=el.innerHTML.length+'';return;}
+    const nova=partes.map((h,i)=>{if(i===partes.length-1||/<a[\s>]/i.test(h)||/mg-a/.test(h))return h;
+      const tx=h.replace(/<[^>]+>/g,'').trim();if(!destino(tx))return h;
+      return h.replace(tx,`<a class="mg-a" data-mg="${tx.replace(/"/g,'&quot;')}">${tx}</a>`);}).join('›');
+    if(nova!==el.innerHTML)el.innerHTML=nova;
+    el.dataset.mg=el.innerHTML.length+'';
+  }
+  const varre=()=>{try{document.querySelectorAll('.migalha,.c7-mig,.c9mig,.migal,.cfgmig').forEach(liga);}catch(e){}};
+  document.addEventListener('click',e=>{const a=e.target.closest&&e.target.closest('[data-mg]');if(!a)return;e.preventDefault();e.stopPropagation();
+    const d=destino(a.dataset.mg);if(d&&P){try{P.eval("CS_ABERTO=''");}catch(x){}try{P.csIr(d);}catch(x){}}},true);
+  let t=null;new MutationObserver(()=>{clearTimeout(t);t=setTimeout(varre,60);}).observe(document.documentElement,{childList:true,subtree:true});
+  setTimeout(varre,300);
+})();
 
 </script>
 </body></html>

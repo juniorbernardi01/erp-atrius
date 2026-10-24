@@ -575,9 +575,10 @@ const perLe=s=>{const m=String(s||'').match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);ret
 const perAdd=(s,n)=>{const d=perD(s);d.setDate(d.getDate()+n);return perYmd(d);};
 function perNovo(m){const h=perHoje();return {m:m||'sem',dia:h,mes:h.slice(0,7),de:perAdd(h,-29),ate:h,campo:''};}
 function perRotulo(p){if(!p||p.m==='sem')return 'Período';const h=perHoje();
-  if(p.m==='dia')return p.dia===h?'Hoje':perBr(p.dia).slice(0,5);
-  if(p.m==='mes'){const [a,m]=p.mes.split('-');return PER_MC[+m-1]+'/'+a;}
-  const r=p.de===p.ate?perBr(p.de).slice(0,5):perBr(p.de).slice(0,5)+' a '+perBr(p.ate).slice(0,5);
+  if(p.m==='dia')return p.dia===h?'Hoje':perBr(p.dia);
+  if(p.m==='mes'){const [a,m]=p.mes.split('-');return PER_MES[+m-1]+' de '+a;}
+  const ano=p.de.slice(0,4)!==p.ate.slice(0,4)||p.ate.slice(0,4)!==h.slice(0,4);
+  const r=p.de===p.ate?perBr(p.de):perBr(p.de).slice(0,ano?10:5)+' a '+perBr(p.ate).slice(0,ano?10:5);
   return p.m==='prev'?'Previstos '+r:r;}
 /* o intervalo efetivo, para quem filtra: {de, ate} (vazio = sem limite) */
 function perFaixa(p){if(!p||p.m==='sem')return {de:'',ate:''};
@@ -2267,6 +2268,188 @@ function render(){
   telaPedidos();
 }
 (function(){DB={};render();})();
+
+</script>
+<script>
+/* ===== v4.8.0 · o caminho da página (Módulo › Página › Item) vira link em todo o sistema =====
+   Pedido de 24/10: o caminho no topo das páginas tem que levar de volta. Cada pedaço, menos o último, vira um link:
+   o nome do módulo leva à primeira página dele; o nome de uma página leva a ela (procurada no menu do ERP).
+   Links que a própria página já tinha (ex.: "Clientes e crédito" dentro da ficha do cliente) ficam como estão. */
+(function(){
+  if(window.__mg480)return;window.__mg480=true;
+  /* CS_MOD, MOD_ATUAL e FIN_PAG são let/const no ERP: não ficam em window, por isso a leitura passa por eval */
+  const P=(()=>{try{if(window.parent!==window&&typeof window.parent.csIr==='function')return window.parent;}catch(e){}return typeof window.csIr==='function'?window:null;})();
+  const V=n=>{try{return P.eval(n);}catch(e){return undefined;}};
+  const nrm=s=>String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/\s+/g,' ').trim();
+  try{const st=document.createElement('style');st.textContent='.mg-a{color:inherit;cursor:pointer;text-decoration:none;border-radius:4px}.mg-a:hover{color:#1D4ED8;text-decoration:underline}';document.head.appendChild(st);}catch(e){}
+  function destino(txt){
+    if(!P)return null;const t=nrm(txt);if(!t)return null;
+    const mods=V('CS_MOD')||[];let atualMod=null;const MA=V('MOD_ATUAL'),FP=V('FIN_PAG');
+    try{atualMod=mods.find(m=>(m.pgs||[]).some(p=>p.mod&&p.mod===MA&&p.fin===FP));}catch(e){}
+    const ordem=atualMod?[atualMod,...mods.filter(m=>m!==atualMod)]:mods;
+    const pode=p=>{try{return typeof P.csPode!=='function'||P.csPode(p);}catch(e){return true;}};
+    for(const m of ordem){const pgs=(m.pgs||[]);
+      const g=pgs.find(p=>p.grupo&&p.acord&&nrm(p.n)===t);if(g){const f=pgs.find(p=>p.pai===g.acord&&!p.grupo&&pode(p));if(f)return f;}
+      const p=pgs.find(p=>!p.grupo&&nrm(p.n)===t&&pode(p));if(p)return p;}
+    const m=mods.find(m=>nrm(m.nome)===t);
+    if(m){const f=(m.pgs||[]).find(p=>!p.grupo&&!p.breve&&pode(p)&&(p.page||p.fin||p.acao));if(f)return f;}
+    return null;
+  }
+  function liga(el){
+    if(el.dataset.mg===el.innerHTML.length+'')return;
+    const partes=el.innerHTML.split('›');
+    if(partes.length<2){el.dataset.mg=el.innerHTML.length+'';return;}
+    const nova=partes.map((h,i)=>{if(i===partes.length-1||/<a[\s>]/i.test(h)||/mg-a/.test(h))return h;
+      const tx=h.replace(/<[^>]+>/g,'').trim();if(!destino(tx))return h;
+      return h.replace(tx,`<a class="mg-a" data-mg="${tx.replace(/"/g,'&quot;')}">${tx}</a>`);}).join('›');
+    if(nova!==el.innerHTML)el.innerHTML=nova;
+    el.dataset.mg=el.innerHTML.length+'';
+  }
+  const varre=()=>{try{document.querySelectorAll('.migalha,.c7-mig,.c9mig,.migal,.cfgmig').forEach(liga);}catch(e){}};
+  document.addEventListener('click',e=>{const a=e.target.closest&&e.target.closest('[data-mg]');if(!a)return;e.preventDefault();e.stopPropagation();
+    const d=destino(a.dataset.mg);if(d&&P){try{P.eval("CS_ABERTO=''");}catch(x){}try{P.csIr(d);}catch(x){}}},true);
+  let t=null;new MutationObserver(()=>{clearTimeout(t);t=setTimeout(varre,60);}).observe(document.documentElement,{childList:true,subtree:true});
+  setTimeout(varre,300);
+})();
+
+</script>
+<script data-v480="abc">
+/* ===================== v4.8.0 · VENDAS › RELATÓRIOS: cartões e Curva ABC =====================
+   - A página de relatórios abre com os cartões (sem a lista de categorias do lado, que repetia o que está na tela).
+   - Curva ABC: por produto, cliente ou representante. Produto em valor, caixas ou litros; "Agrupar por família"
+     junta os itens do mesmo granel (ex.: Lava Roupas 3 L e 5 L) e abre os itens dentro de cada família.
+     Situações dos pedidos escolhidas como no Tiny (padrão: as mesmas da Performance de vendas). */
+(function(){
+  const ICO={abc:'<path d="M4 20V10M10 20V6M16 20v-6M22 20H2"/>',pes:'<circle cx="9" cy="8" r="3"/><path d="M3 20c0-3 3-5 6-5s6 2 6 5M16 5a3 3 0 010 6M18 15c2 .5 3 2.5 3 5"/>',ok:'<path d="M5 12l5 5 9-10"/>',
+    per:'<rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 9.5h17M8 3v4M16 3v4"/>',filt:'<path d="M4 5h16l-6 8v6l-4-2v-4z"/>',user:'<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/>',
+    imp:'<path d="M7 9V3h10v6M7 17H4v-7h16v7h-3M7 14h10v7H7z"/>',busca:'<circle cx="11" cy="11" r="6"/><path d="M20 20l-4-4"/>'};
+  const sv=(k,w)=>`<svg viewBox="0 0 24 24" width="${w||16}" height="${w||16}" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${ICO[k]||''}</svg>`;
+  try{const s=document.createElement('style');s.textContent=`
+.v8top{display:flex;align-items:center;gap:14px;margin-bottom:12px;flex-wrap:wrap}.v8top h1{margin:0}
+.v8bus{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:10px;padding:0 12px;height:40px;color:var(--ink3);background:#fff;margin-left:auto;width:320px}
+.v8bus input{border:0;outline:0;background:transparent;flex:1;font-size:14px}
+.v8sec{font:700 13px Inter,system-ui;color:var(--ink2);margin:18px 0 10px}
+.v8gr{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;max-width:1200px}
+.v8rc{border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:9px;text-decoration:none;color:inherit;background:#fff;min-height:118px;transition:border-color .15s,transform .15s}
+.v8rc:hover{border-color:#1D4ED8;transform:translateY(-1px)}.v8rc b{font-size:15px}.v8rc small{color:var(--ink3);line-height:1.4;font-size:12.5px}
+.v8ico{width:38px;height:38px;border-radius:10px;background:#EEF3FF;color:#1D4ED8;display:flex;align-items:center;justify-content:center}
+@media(max-width:1000px){.v8gr{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:620px){.v8gr{grid-template-columns:1fr}.v8bus{width:100%}}
+.v8f{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+.v8seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;height:38px;background:#fff}
+.v8seg button{padding:0 14px;font-weight:600;color:var(--ink2);font-size:13.5px}.v8seg button.on{background:#0E1B33;color:#fff}
+.v8fb{display:inline-flex;align-items:center;gap:8px;height:38px;border:1px solid var(--line);border-radius:10px;padding:0 12px;font-weight:600;background:#fff;font-size:13.5px}
+.v8fb small{color:var(--ink3);font-weight:500}.v8fb.az{border-color:rgba(29,78,216,.4);color:#1D4ED8}
+.v8tg{display:inline-flex;align-items:center;gap:8px;font-weight:600;cursor:pointer;font-size:13.5px}.v8tg i{width:34px;height:20px;border-radius:10px;background:#C9CCD3;position:relative;transition:.15s}.v8tg i:after{content:'';position:absolute;left:2px;top:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:.15s}.v8tg.on i{background:#15803D}.v8tg.on i:after{left:16px}
+.v8k{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:14px}
+.v8kp{border:1px solid var(--line);border-radius:14px;padding:14px 16px;background:#fff}.v8kp span{font:700 11px Inter;color:var(--ink3);letter-spacing:.6px;text-transform:uppercase}.v8kp b{display:block;font:800 24px Inter;margin:6px 0 2px}.v8kp small{color:var(--ink3)}
+.v8t{border:1px solid var(--line);border-radius:14px;overflow:auto;background:#fff}
+.v8t table{width:100%;border-collapse:collapse;font-size:13.5px}
+.v8t th{font:700 11px Inter;color:var(--ink3);letter-spacing:.6px;text-transform:uppercase;text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);background:#FAFAFB;white-space:nowrap}
+.v8t td{padding:10px 14px;border-bottom:1px solid #F1F1F3}.v8t .n{text-align:right;font-variant-numeric:tabular-nums}
+.v8t tr.fam td{background:#FAFAFB;cursor:pointer}.v8t tr.sub td{color:var(--ink2)}.v8t tr.sub td:nth-child(2){padding-left:34px}
+.v8bar{display:inline-block;width:120px;height:8px;border-radius:4px;background:#EEF0F4;vertical-align:middle;margin-right:8px;overflow:hidden}.v8bar i{display:block;height:100%;background:linear-gradient(90deg,#2563EB,#60A5FA);border-radius:4px;transform-origin:left;animation:v8x .7s both}
+@keyframes v8x{from{transform:scaleX(0)}}
+.v8p{display:inline-block;border-radius:999px;padding:2px 9px;font:700 12px Inter}.v8p.a{background:#ECFDF3;color:#15803D}.v8p.b{background:#EEF3FF;color:#1D4ED8}.v8p.c{background:#FFF7ED;color:#B45309}
+.v8pop{position:fixed;z-index:80;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 12px 32px rgba(14,27,51,.16);padding:10px;min-width:240px;max-height:420px;overflow:auto}
+.v8pop label{display:flex;align-items:center;gap:9px;padding:6px 8px;border-radius:8px;cursor:pointer;font-size:13.5px}.v8pop label:hover{background:var(--line3)}
+`;document.head.appendChild(s);}catch(e){}
+
+  /* ---------- página de relatórios: cartões ---------- */
+  try{REL_LISTA.unshift({cat:'Análise',k:'abc',t:'Curva ABC',d:'Os produtos, famílias, clientes e representantes que fazem 80% da venda. Em valor, caixas ou litros.',ic:'abc'});}catch(e){}
+  const ICAT={'Análise':'abc','Clientes':'pes','Conferência':'ok'};
+  let QR='';
+  try{telaRelIndex=function(){
+    const q=semAc(QR);const l=REL_LISTA.filter(r=>!q||semAc(r.t+' '+r.d+' '+r.cat).includes(q));const cats=[...new Set(REL_LISTA.map(r=>r.cat))];
+    $('app').innerHTML=`<div class="migalha"><a href="#performance" class="mlk">Vendas</a> › Relatórios</div>
+      <div class="v8top"><h1>Relatórios</h1><label class="v8bus">${sv('busca')}<input id="v8Q" placeholder="Buscar relatório" value="${esc(QR)}" autocomplete="off"></label></div>
+      ${cats.filter(c=>l.some(r=>r.cat===c)).map(c=>`<div class="v8sec">${esc(c)}</div><div class="v8gr">${l.filter(r=>r.cat===c).map(r=>`<a class="v8rc" href="#relatorios/${r.k}"><span class="v8ico">${sv(r.ic||ICAT[c]||'abc',20)}</span><b>${esc(r.t)}</b><small>${esc(r.d)}</small></a>`).join('')}</div>`).join('')||'<div class="vazio">Nada encontrado.</div>'}`;
+    const i=$('v8Q');i.oninput=()=>{QR=i.value;const p=i.selectionStart;telaRelIndex();const n=$('v8Q');n.focus();n.setSelectionRange(p,p);};
+  };}catch(e){}
+  try{const _tr=telaRelatorios;telaRelatorios=function(arg){if(String(arg||'').split('/')[0]==='abc')return telaABC();return _tr.apply(this,arguments);};}catch(e){}
+
+  /* ---------- Curva ABC ---------- */
+  const A={per:null,por:'produto',med:'valor',fam:true,sits:null,reps:new Set(),aberto:new Set(),dados:null,ck:''};
+  const prod=sku=>{try{return N.produto&&N.produto(sku);}catch(e){return null;}};
+  function pop(btn,html,liga){const v=document.getElementById('v8Pop');if(v){const m=v._d===btn;v.remove();if(m)return;}
+    const p=document.createElement('div');p.id='v8Pop';p.className='v8pop';p._d=btn;p.innerHTML=html;document.body.appendChild(p);
+    const r=btn.getBoundingClientRect();p.style.left=Math.min(r.left,innerWidth-p.offsetWidth-8)+'px';p.style.top=Math.min(r.bottom+6,innerHeight-p.offsetHeight-8)+'px';p.onclick=e=>e.stopPropagation();liga(p);}
+  document.addEventListener('click',e=>{const p=document.getElementById('v8Pop');if(p&&!p.contains(e.target)&&!(p._d&&p._d.contains(e.target)))p.remove();});
+  async function dados(){
+    const fx=perFaixa(A.per);const hoje=perHoje();const de=fx.de||hoje.slice(0,4)+'-01-01',ate=fx.ate&&fx.ate<hoje?fx.ate:hoje;
+    const ck=de+'|'+ate;if(A.dados&&A.ck===ck)return A.dados;
+    $('v8Corpo')&&($('v8Corpo').innerHTML='<div class="vazio">Carregando os pedidos…</div>');
+    const d=await fn({acao:'perf_pedidos',de,ate,itens:true});
+    try{pfAplicaRep(d.pedidos);}catch(e){}
+    A.dados={...d,de,ate};A.ck=ck;return A.dados;
+  }
+  function calc(D){
+    const sits=A.sits||new Set(pfSitsOn().map(semAc));
+    const ok=p=>p.data_pedido>=D.de&&p.data_pedido<=D.ate&&(!PF_SITS.map(semAc).includes(semAc(p.situacao))||sits.has(semAc(p.situacao)))&&(!A.reps.size||A.reps.has(p.vendedor||'Sem representante'));
+    const peds=(D.pedidos||[]).filter(ok);const pid=new Set(peds.map(p=>p.id));
+    const linhas=new Map();
+    const soma=(k,nome,v,cx,lt,fam)=>{const l=linhas.get(k)||{k,nome,valor:0,cx:0,lt:0,fam,filhos:new Map()};l.valor+=v;l.cx+=cx;l.lt+=lt;linhas.set(k,l);return l;};
+    if(A.por==='produto'){
+      (D.itens||[]).forEach(i=>{if(!pid.has(i.pedido_id))return;const q=+i.quantidade||0,v=q*(+i.valor_unitario||0);const p=prod(i.sku);
+        const lt=p?q*(+p.un_cx||1)*(+p.litragem||0):0;const nome=(p&&p.descricao)||i.descricao||i.sku;
+        if(A.fam){const f=(p&&p.tanque)||'Sem família';const l=soma('f:'+f,f,v,q,lt,true);const c=l.filhos.get(i.sku)||{nome,valor:0,cx:0,lt:0};c.valor+=v;c.cx+=q;c.lt+=lt;l.filhos.set(i.sku,c);}
+        else soma(i.sku,nome,v,q,lt,false);});
+    }else peds.forEach(p=>{const k=A.por==='cliente'?(p.cliente_doc||p.cliente):(p.vendedor||'Sem representante');soma(k,A.por==='cliente'?p.cliente:(p.vendedor||'Sem representante'),+p.total||0,0,0,false);});
+    const med=A.por==='produto'?A.med:'valor';const val=x=>med==='valor'?x.valor:med==='caixas'?x.cx:x.lt;
+    const l=[...linhas.values()].sort((a,b)=>val(b)-val(a));const tot=l.reduce((s,x)=>s+val(x),0)||1;let ac=0;
+    l.forEach(x=>{x.pct=val(x)/tot*100;ac+=x.pct;x.acum=ac;x.curva=ac-x.pct<80?'A':ac-x.pct<95?'B':'C';});
+    return {l,tot,val,med,n:peds.length};
+  }
+  const fmtV=(med,v)=>med==='valor'?'R$ '+nf(Math.round(v)):nf(Math.round(v));
+  const nomePor={produto:A=>A.fam?'famílias':'produtos',cliente:()=>'clientes',representante:()=>'representantes'};
+  async function telaABC(){
+    try{if(!PF.vend||!PF.vend.length)PF.vend=await pfVendedores();}catch(e){}
+    if(!A.per)A.per={...perNovo('mes'),m:'int',de:perHoje().slice(0,4)+'-01-01',ate:perHoje()};
+    const sitsTodas=PF_SITS;const sitsOn=A.sits||new Set(pfSitsOn().map(semAc));
+    const repsTodos=(()=>{try{return (PF.vend&&PF.vend.length?PF.vend:[]).map(v=>v.nome);}catch(e){return [];}})();
+    $('app').innerHTML=`<div class="migalha"><a href="#performance" class="mlk">Vendas</a> › <a href="#relatorios" class="mlk">Relatórios</a> › Curva ABC</div>
+      <div class="v8top"><h1>Curva ABC</h1></div>
+      <div class="v8f"><span class="v8seg">${[['produto','Produto'],['cliente','Cliente'],['representante','Representante']].map(([k,r])=>`<button data-por="${k}" class="${A.por===k?'on':''}">${r}</button>`).join('')}</span>
+        ${A.por==='produto'?`<span class="v8seg">${[['valor','Valor'],['caixas','Caixas'],['litros','Litros']].map(([k,r])=>`<button data-med="${k}" class="${A.med===k?'on':''}">${r}</button>`).join('')}</span>
+        <span class="v8tg ${A.fam?'on':''}" id="v8Fam"><i></i>Agrupar por família</span>`:''}
+        ${perBotao('v8Per',A.per)}
+        <button class="v8fb" id="v8Sit">${sv('filt')}Situações <small>${sitsOn.size>=sitsTodas.length?'todas':sitsOn.size+' de '+sitsTodas.length}</small></button>
+        <button class="v8fb" id="v8Rep">${sv('user')}Representantes <small>${A.reps.size?(A.reps.size===1?[...A.reps][0]:A.reps.size+' escolhidos'):'todos'}</small></button>
+        <span style="flex:1"></span><button class="v8fb" id="v8Pdf">${sv('imp')}Imprimir / PDF</button></div>
+      <div id="v8Corpo"></div>`;
+    document.querySelectorAll('[data-por]').forEach(b=>b.onclick=()=>{A.por=b.dataset.por;A.aberto.clear();telaABC();});
+    document.querySelectorAll('[data-med]').forEach(b=>b.onclick=()=>{A.med=b.dataset.med;telaABC();});
+    if($('v8Fam'))$('v8Fam').onclick=()=>{A.fam=!A.fam;A.aberto.clear();telaABC();};
+    $('v8Per').onclick=()=>abrirPeriodo($('v8Per'),A.per,{},p=>{A.per=p;telaABC();});
+    const multi=(btn,lista,sel,ok)=>pop(btn,lista.map(([v,r])=>`<label><input type="checkbox" value="${esc(v)}" ${sel.has(v)?'checked':''}>${esc(r)}</label>`).join(''),p=>p.querySelectorAll('input').forEach(i=>i.onchange=()=>{sel.clear();p.querySelectorAll('input:checked').forEach(x=>sel.add(x.value));ok();}));
+    $('v8Sit').onclick=()=>{if(!A.sits)A.sits=new Set(sitsOn);multi($('v8Sit'),sitsTodas.map(s=>[semAc(s),s]),A.sits,()=>desenha());};
+    $('v8Rep').onclick=()=>multi($('v8Rep'),repsTodos.map(r=>[r,r]),A.reps,()=>{const b=$('v8Rep');b.querySelector('small').textContent=A.reps.size?(A.reps.size===1?[...A.reps][0]:A.reps.size+' escolhidos'):'todos';desenha();});
+    let D;try{D=await dados();}catch(e){$('v8Corpo').innerHTML=`<div class="vazio">Não consegui ler os pedidos: ${esc(e.message)}</div>`;return;}
+    function desenha(){
+      const R=calc(D);const med=R.med;const cv=k=>R.l.filter(x=>x.curva===k);const nm=nomePor[A.por](A);
+      const kp=['A','B','C'].map((k,i)=>{const l=cv(k);const v=l.reduce((s,x)=>s+R.val(x),0);return `<div class="v8kp"><span>Curva ${k} · ${['80%','15%','5%'][i]}</span><b>${l.length} ${nm}</b><small>${fmtV(med,v)}${med==='litros'?' L':med==='caixas'?' cx':''}</small></div>`;}).join('');
+      const colP=A.por==='produto';
+      $('v8Corpo').innerHTML=`<div class="v8k">${kp}</div><div class="v8t"><table><thead><tr><th>#</th><th>${A.por==='produto'?(A.fam?'Família / item':'Produto'):A.por==='cliente'?'Cliente':'Representante'}</th>${colP?'<th class="n">Litros</th><th class="n">Caixas</th>':''}<th class="n">Valor</th><th class="n">% da venda</th><th>% acumulado</th><th>Curva</th></tr></thead><tbody>
+        ${R.l.slice(0,400).map((x,i)=>{const ab=A.aberto.has(x.k);
+          const linha=`<tr class="${x.fam?'fam':''}" data-k="${esc(x.k)}"><td>${i+1}</td><td><b>${x.fam?(ab?'▾ ':'▸ '):''}${esc(x.nome)}</b></td>${colP?`<td class="n">${nf(Math.round(x.lt))}</td><td class="n">${nf(Math.round(x.cx))}</td>`:''}<td class="n">R$ ${nf(Math.round(x.valor))}</td><td class="n">${x.pct.toFixed(1).replace('.',',')}%</td><td><span class="v8bar"><i style="width:${Math.min(100,x.acum)}%"></i></span>${x.acum.toFixed(1).replace('.',',')}%</td><td><span class="v8p ${x.curva.toLowerCase()}">${x.curva}</span></td></tr>`;
+          const filhos=x.fam&&ab?[...x.filhos.values()].sort((a,b)=>R.val(b)-R.val(a)).map(f=>`<tr class="sub"><td></td><td>${esc(f.nome)}</td><td class="n">${nf(Math.round(f.lt))}</td><td class="n">${nf(Math.round(f.cx))}</td><td class="n">R$ ${nf(Math.round(f.valor))}</td><td class="n">${(R.val(f)/R.tot*100).toFixed(1).replace('.',',')}%</td><td></td><td></td></tr>`).join(''):'';
+          return linha+filhos;}).join('')||`<tr><td colspan="8" class="vazio">Nenhuma venda no período.</td></tr>`}</tbody></table></div>`;
+      document.querySelectorAll('.v8t tr.fam').forEach(tr=>tr.onclick=()=>{const k=tr.dataset.k;if(A.aberto.has(k))A.aberto.delete(k);else A.aberto.add(k);desenha();});
+      $('v8Pdf').onclick=()=>pdf(R);
+    }
+    function pdf(R){
+      const titulo='Curva ABC · '+({produto:A.fam?'famílias':'produtos',cliente:'clientes',representante:'representantes'})[A.por];
+      const per=perRotulo(A.per);const colP=A.por==='produto';
+      const corpo=`<style>table{width:100%;border-collapse:collapse;font-size:10.5px}th{text-align:left;font-size:9px;text-transform:uppercase;color:#6B7280;border-bottom:1.5px solid #12151A;padding:4px 6px}td{padding:4px 6px;border-bottom:1px solid #E5E7EB}.n{text-align:right}.s td{color:#4B5563}.s td:nth-child(2){padding-left:18px}</style>
+        <div style="font-size:10.5px;color:#4B5563;margin:6px 0 10px">Período: ${esc(per)} · medida: ${esc(R.med)} · representantes: ${esc(A.reps.size?[...A.reps].join(', '):'todos')}</div>
+        <table><thead><tr><th>#</th><th>${A.por==='produto'?(A.fam?'Família / item':'Produto'):A.por==='cliente'?'Cliente':'Representante'}</th>${colP?'<th class="n">Litros</th><th class="n">Caixas</th>':''}<th class="n">Valor</th><th class="n">%</th><th class="n">Acum.</th><th>Curva</th></tr></thead><tbody>
+        ${R.l.slice(0,300).map((x,i)=>`<tr><td>${i+1}</td><td><b>${esc(x.nome)}</b></td>${colP?`<td class="n">${nf(Math.round(x.lt))}</td><td class="n">${nf(Math.round(x.cx))}</td>`:''}<td class="n">R$ ${nf(Math.round(x.valor))}</td><td class="n">${x.pct.toFixed(1).replace('.',',')}%</td><td class="n">${x.acum.toFixed(1).replace('.',',')}%</td><td>${x.curva}</td></tr>${x.fam&&A.aberto.has(x.k)?[...x.filhos.values()].sort((a,b)=>R.val(b)-R.val(a)).map(f=>`<tr class="s"><td></td><td>${esc(f.nome)}</td><td class="n">${nf(Math.round(f.lt))}</td><td class="n">${nf(Math.round(f.cx))}</td><td class="n">R$ ${nf(Math.round(f.valor))}</td><td></td><td></td><td></td></tr>`).join(''):''}`).join('')}</tbody></table>`;
+      try{const P=window.parent;P.csFolhaModal({titulo,sub:per,arquivo:titulo+' '+per.replace(/\//g,'-'),html:P.folha(titulo,'',per,corpo)});}catch(e){toast('Não consegui montar a folha.',true);}
+    }
+    desenha();
+  }
+  /* a página já tinha sido desenhada antes deste bloco carregar: redesenha se for a de relatórios */
+  try{if(/^#relatorios/.test(location.hash||''))render();}catch(e){}
+})();
 
 </script>
 </body></html>
