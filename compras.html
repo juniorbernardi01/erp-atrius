@@ -3901,7 +3901,8 @@ th .cfsort{font-size:10px;margin-left:3px;color:#1D4ED8}
         const s=gs.reduce((a,g)=>{const v=numero(textoCel(g.rs[0].cells[k]));return a+(v&&v.n!=null?v.n:0);},0);
         if(Math.abs(s-tv.n)<=Math.max(0.6,Math.abs(tv.n)*0.005)){c.soma=true;c.totHtml=tc.innerHTML;c.totTxt=textoCel(tc);c.dec=tv.dec||0;c.h=tv.h;}});}
     hr.querySelectorAll('.cfb').forEach(x=>x.remove());
-    t._cf.cols.forEach((c,k)=>{const b=document.createElement('button');b.type='button';b.className='cfb';b.innerHTML=FUNIL;b.title='Filtrar e ordenar';
+    /* coluna sem título (caixa de seleção, três pontinhos) não tem o que filtrar */
+    t._cf.cols.forEach((c,k)=>{if(!c.th.textContent.trim())return;const b=document.createElement('button');b.type='button';b.className='cfb';b.innerHTML=FUNIL;b.title='Filtrar e ordenar';
       b.addEventListener('click',e=>{e.stopPropagation();e.preventDefault();abre(t,k,b);});b.addEventListener('mousedown',e=>e.stopPropagation());c.th.appendChild(b);});
     aplica(t);
   }

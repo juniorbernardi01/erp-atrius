@@ -1,6 +1,6 @@
 {
- "v": "v483",
- "versao": "4.8.3",
+ "v": "v484",
+ "versao": "4.8.4",
  "data": "26/10/2026",
- "o_que_mudou": "Proteção contra versão antiga e dados de exemplo; espaço do navegador liberado (financeiro voltava a perder dados); juntar ou identificar cliente no financeiro; relatório importado hoje conta como importado"
+ "o_que_mudou": "Novo relatório de vendas: Contatos dos clientes (WhatsApp de quem comprou no período, por representante, com colunas escolhidas para o PDF); selo de cliente sem cadastro no financeiro"
 }

@@ -5504,7 +5504,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v483';const VERSAO_DATA='24/10/2026';
+const VERSAO_APP='v484';const VERSAO_DATA='24/10/2026';
 /* número que aparece na tela: v438 → v4.3.8 (por dentro continua v438, que é o que as versões comparam) */
 const csRotVer=v=>{const d=String(v||'').replace(/\D/g,'');return d.length>=3?'v'+d.slice(0,-2)+'.'+d.slice(-2,-1)+'.'+d.slice(-1):String(v||'');};
 const VERSAO_ROTULO=csRotVer(VERSAO_APP)+' · '+VERSAO_DATA;
@@ -34153,7 +34153,8 @@ th .cfsort{font-size:10px;margin-left:3px;color:#1D4ED8}
         const s=gs.reduce((a,g)=>{const v=numero(textoCel(g.rs[0].cells[k]));return a+(v&&v.n!=null?v.n:0);},0);
         if(Math.abs(s-tv.n)<=Math.max(0.6,Math.abs(tv.n)*0.005)){c.soma=true;c.totHtml=tc.innerHTML;c.totTxt=textoCel(tc);c.dec=tv.dec||0;c.h=tv.h;}});}
     hr.querySelectorAll('.cfb').forEach(x=>x.remove());
-    t._cf.cols.forEach((c,k)=>{const b=document.createElement('button');b.type='button';b.className='cfb';b.innerHTML=FUNIL;b.title='Filtrar e ordenar';
+    /* coluna sem título (caixa de seleção, três pontinhos) não tem o que filtrar */
+    t._cf.cols.forEach((c,k)=>{if(!c.th.textContent.trim())return;const b=document.createElement('button');b.type='button';b.className='cfb';b.innerHTML=FUNIL;b.title='Filtrar e ordenar';
       b.addEventListener('click',e=>{e.stopPropagation();e.preventDefault();abre(t,k,b);});b.addEventListener('mousedown',e=>e.stopPropagation());c.th.appendChild(b);});
     aplica(t);
   }
@@ -34239,7 +34240,7 @@ th .cfsort{font-size:10px;margin-left:3px;color:#1D4ED8}
   window.CF_VARRE=varre;
 })();
 
-try{csNucleo.versao='v483';}catch(e){}
+try{csNucleo.versao='v484';}catch(e){}
 </script>
 <script>
 /* cópia local de cada módulo: IndexedDB (cabe muito mais); lê também a cópia antiga do localStorage e a apaga */

@@ -6731,7 +6731,7 @@ document.head.insertAdjacentHTML("beforeend",'<style>.perb2{display:inline-flex;
     const empresas=[...new Set(pend.flatMap(p=>p.grupo.sources||[]))].join(' · ');
     const pinta=()=>{
       const algum=pend.some(p=>esc_[p.grupo.customer]);
-      v.innerHTML=`<div class="k8m"><h2>Confira ${pend.length} cliente${pend.length>1?'s':''}</h2><div class="k8s">${esc(empresas)}</div>
+      v.innerHTML=`<div class="k8m"><h2>${pend.length===1&&pend[0].max?'Identificar ou juntar cliente':'Confira '+pend.length+' cliente'+(pend.length>1?'s':'')}</h2><div class="k8s">${esc(empresas)}</div>
         ${pend.map((p,i)=>{const g=p.grupo,e=esc_[g.customer];
           return `<div class="k8r"><div class="nm"><b>${esc(g.customer)}</b><small>${esc((g.sources||[]).join(', '))} · ${(g.titles||[]).length} título(s) · ${money(g.total||0)}${g.doc?' · '+esc(fmtDoc(g.doc)):''}</small></div><div class="sa">→</div>
           <div class="k8o">${p.sugestoes.slice(0,p.max||1).map((s,j)=>`<button class="k8c ${e&&e.tipo==='sug'&&e.alvo===s.customer?'on':''}" data-i="${i}" data-sug="${j}"><span class="rd"></span><b>${p.max?'Juntar com ':''}${esc(s.customer)}</b><small>${esc([s.doc?fmtDoc(s.doc):'',s.seller&&s.seller!=='Não identificado'?s.seller:''].filter(Boolean).join(' · ')||(s.historico?'do histórico':''))}</small></button>`).join('')}
@@ -6874,6 +6874,13 @@ document.head.insertAdjacentHTML("beforeend",'<style>.perb2{display:inline-flex;
   let t=null;new MutationObserver(()=>{clearTimeout(t);t=setTimeout(marca,150);}).observe(document.body,{childList:true,subtree:true});
   setTimeout(marca,600);
   document.addEventListener('click',e=>{const a=e.target.closest&&e.target.closest('[data-k8id]');if(!a)return;e.preventDefault();e.stopPropagation();k8Identificar(a.dataset.k8id);},true);
+})();
+/* v4.8.3 · a busca e os filtros de Cobranças chamavam o desenho ANTIGO da lista (o evento ficou preso à função de antes
+   do redesenho): ao digitar "FSR" a lista voltava ao formato velho. Agora chamam sempre o desenho atual. */
+(function(){
+  const atual=()=>{try{window.renderCollections();}catch(e){console.warn(e);}};
+  document.addEventListener('input',e=>{if(e.target&&e.target.id==='collectionSearch'){e.stopImmediatePropagation();atual();}},true);
+  document.addEventListener('change',e=>{if(e.target&&(e.target.id==='collectionSeller'||e.target.id==='collectionCompany')){e.stopImmediatePropagation();atual();}},true);
 })();
 
 
@@ -7224,7 +7231,8 @@ th .cfsort{font-size:10px;margin-left:3px;color:#1D4ED8}
         const s=gs.reduce((a,g)=>{const v=numero(textoCel(g.rs[0].cells[k]));return a+(v&&v.n!=null?v.n:0);},0);
         if(Math.abs(s-tv.n)<=Math.max(0.6,Math.abs(tv.n)*0.005)){c.soma=true;c.totHtml=tc.innerHTML;c.totTxt=textoCel(tc);c.dec=tv.dec||0;c.h=tv.h;}});}
     hr.querySelectorAll('.cfb').forEach(x=>x.remove());
-    t._cf.cols.forEach((c,k)=>{const b=document.createElement('button');b.type='button';b.className='cfb';b.innerHTML=FUNIL;b.title='Filtrar e ordenar';
+    /* coluna sem título (caixa de seleção, três pontinhos) não tem o que filtrar */
+    t._cf.cols.forEach((c,k)=>{if(!c.th.textContent.trim())return;const b=document.createElement('button');b.type='button';b.className='cfb';b.innerHTML=FUNIL;b.title='Filtrar e ordenar';
       b.addEventListener('click',e=>{e.stopPropagation();e.preventDefault();abre(t,k,b);});b.addEventListener('mousedown',e=>e.stopPropagation());c.th.appendChild(b);});
     aplica(t);
   }
