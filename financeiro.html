@@ -6755,11 +6755,11 @@ document.head.insertAdjacentHTML("beforeend",'<style>.perb2{display:inline-flex;
             /* cliente do cadastro do ERP: se já existe na base com esse CNPJ, junta; senão fica ligado pelo CNPJ */
             const mesmo=(DATA.current||[]).find(o=>o!==g&&dg(o.doc)&&dg(o.doc)===dg(e.doc));
             if(mesmo){try{fundirClientes(g.customer,mesmo.customer);}catch(x){}}
-            else{g.doc=g.doc||e.doc;if((!g.seller||g.seller==='Não identificado')&&e.seller)g.seller=e.seller;if(!g.whatsapp&&e.wa)g.whatsapp=e.wa;
+            else{g.doc=e.doc||g.doc;g.cadastro_erp=true;g.cnpj_por='cadastro';if((!g.seller||g.seller==='Não identificado')&&e.seller)g.seller=e.seller;if(!g.whatsapp&&e.wa)g.whatsapp=e.wa;
               VINCULOS[norm(g.customer)]={separado:true,doc:e.doc,cadastro:e.alvo,em:new Date().toLocaleString('pt-BR')};saveVinculos();try{persistirBase();}catch(x){}}
           }
           VISTOS.add(g.customer);});
-        guardaVistos();v.remove();try{refreshAllAfterImport();}catch(x){}try{toast&&toast('Clientes conferidos.');}catch(x){}
+        guardaVistos();v.remove();try{window.cobLigarPorCnpj&&cobLigarPorCnpj();}catch(x){}try{persistirBase();}catch(x){}try{refreshAllAfterImport();}catch(x){}try{toast&&toast('Clientes conferidos.');}catch(x){}
       };
     };
     pinta();
@@ -6848,17 +6848,28 @@ document.head.insertAdjacentHTML("beforeend",'<style>.perb2{display:inline-flex;
     const sug=parecidos(nome);
     if(typeof window.k8Abrir==='function')window.k8Abrir([{grupo:g,sugestoes:sug,max:4}]);
   };
-  try{const st=document.createElement('style');st.textContent=`.k8id{cursor:pointer;color:#1D4ED8!important;font-weight:700;text-decoration:underline;text-underline-offset:2px;margin-left:6px}
-  .k8idb{height:34px;padding:0 12px;border-radius:9px;border:1px solid #C7D5FB;background:#F5F8FF;color:#1D4ED8;font:600 13px Inter,system-ui;cursor:pointer}`;document.head.appendChild(st);}catch(e){}
-  /* onde aparece: Cobranças (linha), Clientes e crédito (linha e página do cliente) */
+  try{const st=document.createElement('style');st.textContent=`
+.k8pill{display:inline-flex;align-items:center;gap:4px;margin-left:8px;padding:2px 9px;border-radius:999px;background:#FEF3C7;color:#92400E;font:700 11px Inter,system-ui;cursor:pointer;vertical-align:middle;white-space:nowrap;border:1px solid #FDE68A}
+.k8pill:hover{background:#FDE68A}.k8pill svg{flex:none}
+#collectionTable tr[data-cli] .av.lj.k8esc{display:none}
+.f6-erp.nao[data-k8id]{cursor:pointer;text-decoration:underline;text-underline-offset:2px}
+.k8idb{height:34px;padding:0 12px;border-radius:9px;border:1px solid #FDE68A;background:#FEF3C7;color:#92400E;font:700 13px Inter,system-ui;cursor:pointer}`;document.head.appendChild(st);}catch(e){}
+  const LAPIS='<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg>';
+  const pill=nome=>`<span class="k8pill" data-k8id="${String(nome).replace(/"/g,'&quot;')}" title="Toque para identificar no cadastro ou juntar com outro cliente">sem cadastro ${LAPIS}</span>`;
   function marca(){
+    /* Cobranças: selo ao lado do nome (no lugar da linha embaixo) */
     try{document.querySelectorAll('#collectionTable tr[data-cli]').forEach(tr=>{const av=[...tr.querySelectorAll('.av.lj')].find(x=>/sem CNPJ|sem cadastro/.test(x.textContent));
-      if(av&&!av.querySelector('.k8id'))av.insertAdjacentHTML('beforeend',` <a class="k8id" data-k8id="${String(tr.dataset.cli).replace(/"/g,'&quot;')}">Identificar ›</a>`);});}catch(e){}
-    try{document.querySelectorAll('table.c7-t tbody tr').forEach(tr=>{const b=tr.querySelector('td b'),s=tr.querySelector('td .s');
-      if(b&&s&&/^sem CNPJ/.test(s.textContent)&&!s.querySelector('.k8id'))s.insertAdjacentHTML('beforeend',` <a class="k8id" data-k8id="${b.textContent.replace(/"/g,'&quot;')}">Identificar ›</a>`);});}catch(e){}
+      if(!av)return;av.classList.add('k8esc');const b=tr.querySelector('td.l > b');if(b&&!tr.querySelector('.k8pill'))b.insertAdjacentHTML('afterend',pill(tr.dataset.cli));});}catch(e){}
+    /* Clientes e crédito: selo ao lado do nome de quem não tem cadastro */
+    try{document.querySelectorAll('table.c7-t tbody tr[data-cli]').forEach(tr=>{const b=tr.querySelector('td b'),s=tr.querySelector('td .s');
+      if(b&&s&&/^sem CNPJ/.test(s.textContent)&&!tr.querySelector('.k8pill'))b.insertAdjacentHTML('afterend',pill(tr.dataset.cli||b.textContent));});}catch(e){}
+    /* painel do cliente (Cobranças): o selo "sem cadastro" abre a janela */
+    try{document.querySelectorAll('#collectionDetail .f6-erp.nao').forEach(x=>{if(x.dataset.k8id)return;const h=document.querySelector('#collectionDetail h2,#collectionDetail .f6-det h3,#collectionDetail .f6-det b');
+      const tr=document.querySelector('#collectionTable tr.on[data-cli]');const nome=tr?tr.dataset.cli:(h?h.textContent.trim():'');if(nome){x.dataset.k8id=nome;x.title='Toque para identificar no cadastro ou juntar com outro cliente';}});}catch(e){}
+    /* página do cliente (Clientes e crédito) */
     try{const top=document.querySelector('.c7-cli .c7-topo');if(top&&!top.querySelector('#k8IdBt')){const h=top.querySelector('h2');
       if(h&&!/cadastro do ERP/.test(h.textContent)){const nome=h.childNodes[0]?h.childNodes[0].textContent.trim():h.textContent.trim();const tb=top.querySelector('.toolbar');
-        if(tb)tb.insertAdjacentHTML('afterbegin',`<button class="k8idb" id="k8IdBt" data-k8id="${nome.replace(/"/g,'&quot;')}">Juntar / identificar</button>`);}}}catch(e){}
+        if(tb)tb.insertAdjacentHTML('afterbegin',`<button class="k8idb" id="k8IdBt" data-k8id="${nome.replace(/"/g,'&quot;')}">Identificar / juntar</button>`);}}}catch(e){}
   }
   let t=null;new MutationObserver(()=>{clearTimeout(t);t=setTimeout(marca,150);}).observe(document.body,{childList:true,subtree:true});
   setTimeout(marca,600);
@@ -7024,6 +7035,10 @@ document.head.insertAdjacentHTML("beforeend",'<style>.perb2{display:inline-flex;
     /* v4.8.0: nome, WhatsApp e e-mail de cada vendedor vêm do cadastro (Envio aos vendedores usa daqui) */
     FIN_CAD.vendInfo=(c.vendedores||[]).filter(v=>v&&v.ativo!==false).map(v=>({nome:v.nome||'',tinyNome:v.tinyNome||'',whats:v.whats||v.fone||'',email:v.email||'',acesso:v.acesso===true}));
     FIN_CAD.clientes=(c.contatos||[]).filter(x=>x&&x.nome&&(x.doc||x.nome)&&!(x.papeis||[]).includes('Funcionário')&&x.tipo!=='Funcionário').map(x=>({v:x.vendedor||'',n:x.nome,d:x.doc||'',wa:x.fone||''}));
+    /* v4.8.3: a lista CADASTRO do financeiro nasceu antes do cadastro carregar (ficava a lista embutida antiga): troca pelo cadastro do ERP e liga de novo pelo CNPJ */
+    try{if(FIN_CAD.clientes.length&&typeof CADASTRO!=='undefined'){CADASTRO.splice(0,CADASTRO.length,...FIN_CAD.clientes);
+      if(typeof CADASTRO_IDX!=='undefined')CADASTRO_IDX.splice(0,CADASTRO_IDX.length,...CADASTRO.map(x=>({...x,nn:norm(x.n)})));
+      setTimeout(()=>{try{if(window.cobLigarPorCnpj&&cobLigarPorCnpj()){try{persistirBase();}catch(e){}try{refreshAllAfterImport();}catch(e){}}}catch(e){}},1500);}}catch(e){}
     FIN_CAD.motivos=(c.motivosCob||[]).filter(m=>m&&m.ativo!==false&&/exclus/i.test(m.uso||'Exclusão')).map(m=>m.nome).filter(Boolean);
     FIN_CAD.bancos=(c.bancos||[]).filter(b=>b&&b.ativo!==false);
   }}}catch(e){}
