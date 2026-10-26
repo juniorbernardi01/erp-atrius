@@ -2270,49 +2270,6 @@ function render(){
 (function(){DB={};render();})();
 
 </script>
-<script>
-/* ===== v4.8.0 · o caminho da página (Módulo › Página › Item) vira link em todo o sistema =====
-   Pedido de 24/10: o caminho no topo das páginas tem que levar de volta. Cada pedaço, menos o último, vira um link:
-   o nome do módulo leva à primeira página dele; o nome de uma página leva a ela (procurada no menu do ERP).
-   Links que a própria página já tinha (ex.: "Clientes e crédito" dentro da ficha do cliente) ficam como estão. */
-(function(){
-  if(window.__mg480)return;window.__mg480=true;
-  /* CS_MOD, MOD_ATUAL e FIN_PAG são let/const no ERP: não ficam em window, por isso a leitura passa por eval */
-  const P=(()=>{try{if(window.parent!==window&&typeof window.parent.csIr==='function')return window.parent;}catch(e){}return typeof window.csIr==='function'?window:null;})();
-  const V=n=>{try{return P.eval(n);}catch(e){return undefined;}};
-  const nrm=s=>String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/\s+/g,' ').trim();
-  try{const st=document.createElement('style');st.textContent='.mg-a{color:inherit;cursor:pointer;text-decoration:none;border-radius:4px}.mg-a:hover{color:#1D4ED8;text-decoration:underline}';document.head.appendChild(st);}catch(e){}
-  function destino(txt){
-    if(!P)return null;const t=nrm(txt);if(!t)return null;
-    const mods=V('CS_MOD')||[];let atualMod=null;const MA=V('MOD_ATUAL'),FP=V('FIN_PAG');
-    try{atualMod=mods.find(m=>(m.pgs||[]).some(p=>p.mod&&p.mod===MA&&p.fin===FP));}catch(e){}
-    const ordem=atualMod?[atualMod,...mods.filter(m=>m!==atualMod)]:mods;
-    const pode=p=>{try{return typeof P.csPode!=='function'||P.csPode(p);}catch(e){return true;}};
-    for(const m of ordem){const pgs=(m.pgs||[]);
-      const g=pgs.find(p=>p.grupo&&p.acord&&nrm(p.n)===t);if(g){const f=pgs.find(p=>p.pai===g.acord&&!p.grupo&&pode(p));if(f)return f;}
-      const p=pgs.find(p=>!p.grupo&&nrm(p.n)===t&&pode(p));if(p)return p;}
-    const m=mods.find(m=>nrm(m.nome)===t);
-    if(m){const f=(m.pgs||[]).find(p=>!p.grupo&&!p.breve&&pode(p)&&(p.page||p.fin||p.acao));if(f)return f;}
-    return null;
-  }
-  function liga(el){
-    if(el.dataset.mg===el.innerHTML.length+'')return;
-    const partes=el.innerHTML.split('›');
-    if(partes.length<2){el.dataset.mg=el.innerHTML.length+'';return;}
-    const nova=partes.map((h,i)=>{if(i===partes.length-1||/<a[\s>]/i.test(h)||/mg-a/.test(h))return h;
-      const tx=h.replace(/<[^>]+>/g,'').trim();if(!destino(tx))return h;
-      return h.replace(tx,`<a class="mg-a" data-mg="${tx.replace(/"/g,'&quot;')}">${tx}</a>`);}).join('›');
-    if(nova!==el.innerHTML)el.innerHTML=nova;
-    el.dataset.mg=el.innerHTML.length+'';
-  }
-  const varre=()=>{try{document.querySelectorAll('.migalha,.c7-mig,.c9mig,.migal,.cfgmig').forEach(liga);}catch(e){}};
-  document.addEventListener('click',e=>{const a=e.target.closest&&e.target.closest('[data-mg]');if(!a)return;e.preventDefault();e.stopPropagation();
-    const d=destino(a.dataset.mg);if(d&&P){try{P.eval("CS_ABERTO=''");}catch(x){}try{P.csIr(d);}catch(x){}}},true);
-  let t=null;new MutationObserver(()=>{clearTimeout(t);t=setTimeout(varre,60);}).observe(document.documentElement,{childList:true,subtree:true});
-  setTimeout(varre,300);
-})();
-
-</script>
 <script data-v481="cf">
 window.CF_ONDE=()=>/^#relatorios/.test(location.hash||'')?document.querySelectorAll('#app table'):[];
 /* ===== v4.8.1 · filtro em todas as colunas das tabelas dos relatórios =====
@@ -2641,6 +2598,49 @@ th .cfsort{font-size:10px;margin-left:3px;color:#1D4ED8}
   }
   /* a página já tinha sido desenhada antes deste bloco carregar: redesenha se for a de relatórios */
   try{if(/^#relatorios/.test(location.hash||''))render();}catch(e){}
+})();
+
+</script>
+<script>
+/* ===== v4.8.0 · o caminho da página (Módulo › Página › Item) vira link em todo o sistema =====
+   Pedido de 24/10: o caminho no topo das páginas tem que levar de volta. Cada pedaço, menos o último, vira um link:
+   o nome do módulo leva à primeira página dele; o nome de uma página leva a ela (procurada no menu do ERP).
+   Links que a própria página já tinha (ex.: "Clientes e crédito" dentro da ficha do cliente) ficam como estão. */
+(function(){
+  if(window.__mg480)return;window.__mg480=true;
+  /* CS_MOD, MOD_ATUAL e FIN_PAG são let/const no ERP: não ficam em window, por isso a leitura passa por eval */
+  const P=(()=>{try{if(window.parent!==window&&typeof window.parent.csIr==='function')return window.parent;}catch(e){}return typeof window.csIr==='function'?window:null;})();
+  const V=n=>{try{return P.eval(n);}catch(e){return undefined;}};
+  const nrm=s=>String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/\s+/g,' ').trim();
+  try{const st=document.createElement('style');st.textContent='.mg-a{color:inherit;cursor:pointer;text-decoration:none;border-radius:4px}.mg-a:hover{color:#1D4ED8;text-decoration:underline}';document.head.appendChild(st);}catch(e){}
+  function destino(txt){
+    if(!P)return null;const t=nrm(txt);if(!t)return null;
+    const mods=V('CS_MOD')||[];let atualMod=null;const MA=V('MOD_ATUAL'),FP=V('FIN_PAG');
+    try{atualMod=mods.find(m=>(m.pgs||[]).some(p=>p.mod&&p.mod===MA&&p.fin===FP));}catch(e){}
+    const ordem=atualMod?[atualMod,...mods.filter(m=>m!==atualMod)]:mods;
+    const pode=p=>{try{return typeof P.csPode!=='function'||P.csPode(p);}catch(e){return true;}};
+    for(const m of ordem){const pgs=(m.pgs||[]);
+      const g=pgs.find(p=>p.grupo&&p.acord&&nrm(p.n)===t);if(g){const f=pgs.find(p=>p.pai===g.acord&&!p.grupo&&pode(p));if(f)return f;}
+      const p=pgs.find(p=>!p.grupo&&nrm(p.n)===t&&pode(p));if(p)return p;}
+    const m=mods.find(m=>nrm(m.nome)===t);
+    if(m){const f=(m.pgs||[]).find(p=>!p.grupo&&!p.breve&&pode(p)&&(p.page||p.fin||p.acao));if(f)return f;}
+    return null;
+  }
+  function liga(el){
+    if(el.dataset.mgk===el.innerHTML.length+'')return;
+    const partes=el.innerHTML.split('›');
+    if(partes.length<2){el.dataset.mgk=el.innerHTML.length+'';return;}
+    const nova=partes.map((h,i)=>{if(i===partes.length-1||/<a[\s>]/i.test(h)||/mg-a/.test(h))return h;
+      const tx=h.replace(/<[^>]+>/g,'').trim();if(!destino(tx))return h;
+      return h.replace(tx,`<a class="mg-a" data-mglk="${tx.replace(/"/g,'&quot;')}">${tx}</a>`);}).join('›');
+    if(nova!==el.innerHTML)el.innerHTML=nova;
+    el.dataset.mgk=el.innerHTML.length+'';
+  }
+  const varre=()=>{try{document.querySelectorAll('.migalha,.c7-mig,.c9mig,.migal,.cfgmig').forEach(liga);}catch(e){}};
+  document.addEventListener('click',e=>{const a=e.target.closest&&e.target.closest('[data-mglk]');if(!a)return;e.preventDefault();e.stopPropagation();
+    const d=destino(a.dataset.mglk);if(d&&P){try{P.eval("CS_ABERTO=''");}catch(x){}try{P.csIr(d);}catch(x){}}},true);
+  let t=null;new MutationObserver(()=>{clearTimeout(t);t=setTimeout(varre,60);}).observe(document.documentElement,{childList:true,subtree:true});
+  setTimeout(varre,300);
 })();
 
 </script>

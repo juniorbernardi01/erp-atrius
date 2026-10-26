@@ -1,6 +1,6 @@
 {
- "v": "v481",
- "versao": "4.8.1",
- "data": "24/10/2026",
- "o_que_mudou": "Inadimplência dos clientes foi para o Financeiro; relatórios de Compras com busca, listas e botão Gerar; filtro em todas as colunas das tabelas dos relatórios"
+ "v": "v482",
+ "versao": "4.8.2",
+ "data": "26/10/2026",
+ "o_que_mudou": "Corrigido: os motivos (setup, envase, pausa) voltam a aceitar o toque"
 }
