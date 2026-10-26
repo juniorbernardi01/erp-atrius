@@ -1,6 +1,26 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-<head>
+<head><script>/* ===== v4.8.3 · ESPAÇO DO NAVEGADOR =====
+   26/10: "O navegador não conseguiu salvar os dados (armazenamento cheio)". O navegador dá ~5 MB por site para TODAS
+   as páginas do ERP juntas, e estavam ocupados por cópias que não precisam ficar ali: a cópia antiga de recuperação
+   do PCP (pcp-atrius-v6-rec326, de semanas atrás) e as cópias dos módulos (Cadastros sozinho tem 2,5 MB), que agora
+   ficam no IndexedDB (que aguenta muito mais). Se mesmo assim faltar espaço, o ERP libera essas cópias e tenta de novo
+   antes de avisar. Os dados de verdade estão no banco: isso é só o que fica guardado neste aparelho. */
+(function(){
+  if(window.CS_ESPACO483)return;window.CS_ESPACO483=1;
+  const DESC=k=>/^pcp-atrius-v6-rec326$/.test(k)||/^pcp-atrius-v6-mod-/.test(k)||/^pcp-atrius-v6-(copia|bak|ant)/.test(k);
+  function libera(){let n=0;try{const ks=[];for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&DESC(k))ks.push(k);}
+    ks.forEach(k=>{try{n+=(localStorage.getItem(k)||'').length;localStorage.removeItem(k);}catch(e){}});}catch(e){}return n;}
+  window.csLiberaEspaco=libera;
+  try{const _set=Storage.prototype.setItem;Storage.prototype.setItem=function(k,v){
+    try{return _set.call(this,k,v);}catch(e){
+      if(this===window.localStorage&&/quota|exceed/i.test(String(e&&(e.name+' '+e.message)))&&!DESC(String(k))){
+        if(libera()>0)return _set.call(this,k,v);}
+      throw e;}};}catch(e){}
+  /* a cópia de recuperação antiga sai de vez (só ocupa espaço) */
+  try{if(localStorage.getItem('pcp-atrius-v6-rec326')!=null)localStorage.removeItem('pcp-atrius-v6-rec326');}catch(e){}
+})();
+</script>
 <meta charset="utf-8">
 <script>try{if(location.hash==='#soltar'){localStorage.removeItem('erp.quiosque');localStorage.removeItem('erp.maqTablet');sessionStorage.setItem('erp.qSaiu','1');history.replaceState(null,'',location.pathname+'#home');}}catch(e){}</script>
 <script>try{if(!sessionStorage.getItem('erp.qSaiu')&&(localStorage.getItem('erp.quiosque')==='tq'||location.hash==='#optq'))document.documentElement.classList.add('cs-tqboot');}catch(e){}</script>
@@ -5484,7 +5504,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v482';const VERSAO_DATA='24/10/2026';
+const VERSAO_APP='v483';const VERSAO_DATA='24/10/2026';
 /* número que aparece na tela: v438 → v4.3.8 (por dentro continua v438, que é o que as versões comparam) */
 const csRotVer=v=>{const d=String(v||'').replace(/\D/g,'');return d.length>=3?'v'+d.slice(0,-2)+'.'+d.slice(-2,-1)+'.'+d.slice(-1):String(v||'');};
 const VERSAO_ROTULO=csRotVer(VERSAO_APP)+' · '+VERSAO_DATA;
@@ -18204,7 +18224,7 @@ async function nuvemVersao(){
    nesse meio tempo, o banco não altera nada e devolve lista vazia. */
 async function nuvemGravar(texto){
   const corpo={dados:JSON.parse(texto),versao:VERSAO_NUVEM+1,
-    atualizado_em:new Date().toISOString(),atualizado_por:emailDaSessao()};
+    atualizado_em:new Date().toISOString(),atualizado_por:emailDaSessao()+' · '+VERSAO_APP};
   const r=await fetch(
     `${SUPA.url}/rest/v1/pcp_estado?id=eq.${SUPA.linha}&versao=eq.${VERSAO_NUVEM}`,
     {method:'PATCH',headers:cabecalhos({'Prefer':'return=representation'}),
@@ -22201,7 +22221,7 @@ window.csNucleo=(function(){
   }
   async function ler(id){
     let local=null;
-    try{const s=localStorage.getItem(chaveLocal(id));if(s)local=JSON.parse(s);}catch(e){}
+    try{local=await csModLocalLer(chaveLocal(id));}catch(e){}
     if(!temNuvem()||!SESSAO)return local;
     const r=await fetch(`${SUPA.url}/rest/v1/pcp_estado?id=eq.${LINHA(id)}&select=dados,versao`,{headers:cabecalhos()});
     if(r.status===401&&await renovarSessao())return ler(id);
@@ -22212,9 +22232,9 @@ window.csNucleo=(function(){
   }
   /* mesma trava do PCP: só grava se ninguém gravou depois da leitura */
   async function gravar(id,dados){
-    try{localStorage.setItem(chaveLocal(id),JSON.stringify(dados));}catch(e){}
+    try{csModLocalGrava(chaveLocal(id),dados);}catch(e){}
     if(!temNuvem()||!SESSAO)return {ok:true,local:true};
-    const corpo={dados,atualizado_em:new Date().toISOString(),atualizado_por:emailDaSessao()};
+    const corpo={dados,atualizado_em:new Date().toISOString(),atualizado_por:emailDaSessao()+' · '+VERSAO_APP};
     if(VERS[id]==null){
       const r=await fetch(`${SUPA.url}/rest/v1/pcp_estado`,{method:'POST',
         headers:cabecalhos({'Prefer':'return=representation'}),body:JSON.stringify({id:LINHA(id),versao:1,...corpo})});
@@ -34219,7 +34239,44 @@ th .cfsort{font-size:10px;margin-left:3px;color:#1D4ED8}
   window.CF_VARRE=varre;
 })();
 
-try{csNucleo.versao='v482';}catch(e){}
+try{csNucleo.versao='v483';}catch(e){}
+</script>
+<script>
+/* cópia local de cada módulo: IndexedDB (cabe muito mais); lê também a cópia antiga do localStorage e a apaga */
+(function(){let P=null;const db=()=>P||(P=new Promise((ok,er)=>{try{const q=indexedDB.open('erp-atrius-modulos',1);q.onupgradeneeded=()=>{try{q.result.createObjectStore('m');}catch(e){}};q.onsuccess=()=>ok(q.result);q.onerror=()=>er(q.error);}catch(e){er(e);}}));
+  window.csModLocalLer=async function(k){
+    try{const s=localStorage.getItem(k);if(s){const v=JSON.parse(s);try{await csModLocalGrava(k,v);localStorage.removeItem(k);}catch(e){}return v;}}catch(e){}
+    try{const d=await db();return await new Promise(ok=>{const r=d.transaction('m','readonly').objectStore('m').get(k);r.onsuccess=()=>ok(r.result==null?null:r.result);r.onerror=()=>ok(null);});}catch(e){return null;}};
+  window.csModLocalGrava=async function(k,v){try{const d=await db();await new Promise(ok=>{const t=d.transaction('m','readwrite');t.objectStore('m').put(JSON.parse(JSON.stringify(v)),k);t.oncomplete=ok;t.onerror=ok;});}catch(e){}};
+})();
+
+/* ===================== v4.8.3 · VERSÃO ANTIGA NÃO GRAVA =====================
+   26/10: um computador que ficou desde quarta com o sistema antigo aberto (na tela de login) entrou hoje e,
+   com o código velho, gravou os dados de exemplo por cima do sistema. Agora:
+   1) toda gravação leva a versão (atualizado_por "… · v483") e o BANCO recusa versão abaixo da mínima
+      (erp_config 'versao_minima', supabase-versao-minima-v483.sql);
+   2) se o banco recusar (versão antiga ou dados de exemplo), a tela recarrega sozinha — nada fica para trás;
+   3) antes de entrar (login), confere se há versão nova no site e recarrega primeiro. */
+(function(){
+  const _f=window.fetch.bind(window);let recarregando=false;
+  window.fetch=async function(u,o){
+    const r=await _f(u,o);
+    try{const url=String((u&&u.url)||u||'');
+      if(!r.ok&&/\/rest\/v1\//.test(url)&&!recarregando){
+        const txt=await r.clone().text();
+        if(/ERP: (versão antiga|gravação recusada)/.test(txt)){recarregando=true;
+          try{const a=document.createElement('div');a.style.cssText='position:fixed;inset:0;z-index:999999;background:rgba(14,27,51,.94);color:#fff;display:flex;align-items:center;justify-content:center;font:600 20px Inter,system-ui;text-align:center;padding:24px';
+            a.textContent='Esta tela estava desatualizada. Recarregando…';document.body.appendChild(a);}catch(e){}
+          setTimeout(()=>{try{location.reload();}catch(e){}},1500);}
+      }}catch(e){}
+    return r;};
+  try{const _au=autenticar;autenticar=async function(){
+    try{const x=new URL('versao.json',location.href);x.searchParams.set('t',Date.now());
+      const r=await _f(x.toString(),{cache:'no-store'});
+      if(r.ok){const j=await r.json();if(j&&j.v&&csVnum(j.v)>csVnum(VERSAO_APP)){location.reload();throw new Error('Atualizando o sistema… entre de novo em instantes.');}}}
+    catch(e){if(/Atualizando/.test(e.message))throw e;}
+    return _au.apply(this,arguments);};}catch(e){}
+})();
 </script>
 </body>
 </html>

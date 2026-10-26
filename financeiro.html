@@ -1,4 +1,24 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Atrius | Gestão de Cobranças</title>
+<!doctype html><html lang="pt-BR"><head><script data-v483="esp">/* ===== v4.8.3 · ESPAÇO DO NAVEGADOR =====
+   26/10: "O navegador não conseguiu salvar os dados (armazenamento cheio)". O navegador dá ~5 MB por site para TODAS
+   as páginas do ERP juntas, e estavam ocupados por cópias que não precisam ficar ali: a cópia antiga de recuperação
+   do PCP (pcp-atrius-v6-rec326, de semanas atrás) e as cópias dos módulos (Cadastros sozinho tem 2,5 MB), que agora
+   ficam no IndexedDB (que aguenta muito mais). Se mesmo assim faltar espaço, o ERP libera essas cópias e tenta de novo
+   antes de avisar. Os dados de verdade estão no banco: isso é só o que fica guardado neste aparelho. */
+(function(){
+  if(window.CS_ESPACO483)return;window.CS_ESPACO483=1;
+  const DESC=k=>/^pcp-atrius-v6-rec326$/.test(k)||/^pcp-atrius-v6-mod-/.test(k)||/^pcp-atrius-v6-(copia|bak|ant)/.test(k);
+  function libera(){let n=0;try{const ks=[];for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&DESC(k))ks.push(k);}
+    ks.forEach(k=>{try{n+=(localStorage.getItem(k)||'').length;localStorage.removeItem(k);}catch(e){}});}catch(e){}return n;}
+  window.csLiberaEspaco=libera;
+  try{const _set=Storage.prototype.setItem;Storage.prototype.setItem=function(k,v){
+    try{return _set.call(this,k,v);}catch(e){
+      if(this===window.localStorage&&/quota|exceed/i.test(String(e&&(e.name+' '+e.message)))&&!DESC(String(k))){
+        if(libera()>0)return _set.call(this,k,v);}
+      throw e;}};}catch(e){}
+  /* a cópia de recuperação antiga sai de vez (só ocupa espaço) */
+  try{if(localStorage.getItem('pcp-atrius-v6-rec326')!=null)localStorage.removeItem('pcp-atrius-v6-rec326');}catch(e){}
+})();
+</script><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Atrius | Gestão de Cobranças</title>
 <style>
 :root{--bg:#f7f9fc;--surface:#fff;--line:#e6ebf2;--text:#1b2636;--muted:#6d7787;--navy:#164b94;--navy2:#0e3b78;--green:#14825b;--greenbg:#eaf7f1;--amber:#a86d00;--amberbg:#fff5db;--red:#b42318;--redbg:#fff0ee;--bluebg:#edf4ff;--shadow:0 1px 2px rgba(16,24,40,.04),0 8px 24px rgba(16,24,40,.04)}
 *{box-sizing:border-box}body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--bg);color:var(--text)}button,input,select,textarea{font:inherit}.lateral{position:fixed;top:0;left:0;bottom:0;width:238px;background:#fff;border-right:1px solid var(--line);
@@ -764,7 +784,7 @@ function valorTitulo(t){
 const money=v=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Number(v||0));const safe=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));const norm=s=>String(s??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
 DATA.current.forEach(g=>ensureState(g));save();
 let storageWarned=false;
-function persist(key,value){try{localStorage.setItem(key,JSON.stringify(value));return true}catch(e){console.warn('Falha ao gravar no armazenamento local:',key,e);if(!storageWarned){storageWarned=true;alert('O navegador nao conseguiu salvar os dados (armazenamento cheio ou bloqueado). As alteracoes desta sessao continuam na tela, mas podem se perder ao recarregar.')}return false}}
+function persist(key,value){try{localStorage.setItem(key,JSON.stringify(value));return true}catch(e){console.warn('Falha ao gravar no armazenamento local:',key,e);return !!(window.FIN_MEM&&key in window.FIN_MEM)}}
 function save(){persist('atrius-gerencial-v62',state)}
 function ensureState(g){if(!g)return {status:'Pendente',message:'',action:'Acompanhar'};const k=g.customer;if(!state[k]||typeof state[k]!=='object'){const msg=buildMessage(g);state[k]={status:g.status,message:msg,action:g.recommendation,auto:msg}}if(state[k].auto===undefined)state[k].auto=state[k].message;return state[k]}
 function status(g){return ensureState(g).status||g.status}
@@ -4011,7 +4031,7 @@ confirmImportFile.addEventListener('click',async()=>{
         saveCarteira();
       }
     }catch(e){console.warn('N\u00e3o foi poss\u00edvel atualizar a posi\u00e7\u00e3o da carteira:',e)}
-    if(BAIXAS_PENDENTES.length){aplicarBaixas(BAIXAS_PENDENTES,company);BAIXAS_PENDENTES=[]}if(reportIso===localDateKey(now)){const d=loadDailyImports();d.date=localDateKey(now);d.companies[company]={imported:true,file:pendingImportFile.name,time:now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}),dispensed:false};saveDailyImports(d);renderDailyImports()}refreshAllAfterImport(true);renderCarteira();if(typeof renderBaixas==='function')renderBaixas();closeImportModal();switchView('collections');const currentTitles=DATA.current.reduce((n,g)=>n+Number(g.title_count||0),0);alert(`${lidos.length} título(s) lidos de ${company} (posição de ${isoToBr(reportIso)}). ${titles.length} vencido(s) entraram na cobrança; ${lidos.length-titles.length} a vencer ficam só no histórico e na aba Carteira.${updatedCurrent?` A posição atual foi atualizada e agora possui ${DATA.current.length} cliente(s) e ${currentTitles} título(s).`:' O histórico foi atualizado sem substituir uma posição mais recente.'}`)}catch(e){alert(`Não foi possível atualizar os títulos: ${e.message}`)}finally{confirmImportFile.textContent='Confirmar importação';refreshImportConfirm()}
+    if(BAIXAS_PENDENTES.length){aplicarBaixas(BAIXAS_PENDENTES,company);BAIXAS_PENDENTES=[]}if(reportIso>=localDateKey(new Date(now.getTime()-5*864e5))){const d=loadDailyImports();d.date=localDateKey(now);d.companies[company]={imported:true,file:pendingImportFile.name,time:now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}),dispensed:false};saveDailyImports(d);renderDailyImports()}refreshAllAfterImport(true);renderCarteira();if(typeof renderBaixas==='function')renderBaixas();closeImportModal();switchView('collections');const currentTitles=DATA.current.reduce((n,g)=>n+Number(g.title_count||0),0);alert(`${lidos.length} título(s) lidos de ${company} (posição de ${isoToBr(reportIso)}). ${titles.length} vencido(s) entraram na cobrança; ${lidos.length-titles.length} a vencer ficam só no histórico e na aba Carteira.${updatedCurrent?` A posição atual foi atualizada e agora possui ${DATA.current.length} cliente(s) e ${currentTitles} título(s).`:' O histórico foi atualizado sem substituir uma posição mais recente.'}`)}catch(e){alert(`Não foi possível atualizar os títulos: ${e.message}`)}finally{confirmImportFile.textContent='Confirmar importação';refreshImportConfirm()}
 });
 importReportModal.addEventListener('click',e=>{if(e.target===importReportModal)closeImportModal()});
 document.addEventListener('keydown',e=>{if(e.key!=='Escape')return;if(acaoModal.style.display==='flex')fecharAcaoModal();if(pagProtModal.style.display==='flex')fecharPagProtesto();if(msgProtModal.style.display==='flex')fecharMsgProtesto();if(protModal.style.display==='flex')fecharProtModal();if(loteModal.style.display==='flex')fecharLote();if(motivoModal.style.display==='flex')fecharMotivoModal();if(vendedorModal.style.display==='flex')fecharVendedorModal();if(removerVendedorModal.style.display==='flex')fecharRemoverVendedor();if(manualModal.style.display==='flex')closeManualModal();if(importReportModal.style.display==='flex')closeImportModal()});
@@ -5617,17 +5637,17 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden)renderDail
   let el=$('f6Topo');if(!el){el=document.createElement('div');el.id='f6Topo';const h=sec.querySelector('.head');h.parentNode.insertBefore(el,h.nextSibling);}
   const hj=hojeIso(),util=(()=>{try{return ehDiaUtil(new Date());}catch(e){return true;}})();
   const emps=EMPRESAS.filter(e=>(CART.posicoes||{})[e]||DATA.current.some(g=>(g.titles||[]).some(t=>canonicalCompany(t.source)===e)));
-  const chips=emps.map(e=>{const p=posicaoEmpresa(e);if(!p.data)return '';const velho=p.data<hj&&util;
+  const chips=emps.map(e=>{const p=posicaoEmpresa(e);if(!p.data)return '';const impHj=(()=>{try{const l=loadDailyImports();return !!(l&&l.date===hj&&l.companies&&l.companies[e]&&l.companies[e].imported);}catch(x){return false;}})();const velho=p.data<hj&&util&&!impHj;
    const pc=(CART.posicoes||{})[e];const dc=pc&&pc.data?brToIso(pc.data):'';
    const nov=dc?(pc.titulos||[]).filter(t=>!t.baixa&&dateDays(t.venc,dc)===0&&dateDays(t.venc,hj)>0&&!tituloBaixado({source:e,title:t.titulo,due:t.venc})).length:0;
    const disp=semDiario(e);
    if(disp&&p.data<hj)return `<span class="f6-chip" style="background:#F3F4F6;border-color:#E5E7EB;color:#4B5563" title="Empresa sem relatório diário"><i></i>${esc(e)} · sem relatório diário (último ${curto(dBr(p.data))})</span>`;
-   return `<span class="f6-chip ${velho?'velho':''}" title="${velho?'A fila desta empresa usa o relatório de '+dBr(p.data)+(nov?'. '+nov+' título(s) venceram depois dele e só entram na fila com o relatório de hoje (podem ter sido pagos no vencimento).':'.')+' Importe o relatório de hoje.':'Relatório de hoje importado.'}"><i></i>${esc(e)} · ${velho?'relatório de '+curto(dBr(p.data)):'hoje'}${velho&&nov?' · '+nov+' a confirmar':''}</span>`;}).join('');
+   return `<span class="f6-chip ${velho?'velho':''}" title="${velho?'A fila desta empresa usa o relatório de '+dBr(p.data)+(nov?'. '+nov+' título(s) venceram depois dele e só entram na fila com o relatório de hoje (podem ter sido pagos no vencimento).':'.')+' Importe o relatório de hoje.':'Relatório de hoje importado.'}"><i></i>${esc(e)} · ${velho?'relatório de '+curto(dBr(p.data)):(impHj&&p.data<hj?'importado hoje · posição de '+curto(dBr(p.data)):'hoje')}${velho&&nov?' · '+nov+' a confirmar':''}</span>`;}).join('');
   const ativos=DATA.current.filter(g=>g.title_count>0);
   const nT=ativos.reduce((n,g)=>n+g.title_count,0),face=ativos.reduce((n,g)=>n+g.total,0);
   let hoje=0;ativos.forEach(g=>{try{hoje+=cobHojeDe(g);}catch(e){hoje+=g.total;}});
   const ap=ativos.filter(g=>status(g)==='Aprovado').length,cart=ativos.filter(g=>g.cartorio>0).length;
-  const velhos=emps.filter(e=>{const p=posicaoEmpresa(e);return p.data&&p.data<hj&&util&&!semDiario(e);});
+  const velhos=emps.filter(e=>{const p=posicaoEmpresa(e);const impHj=(()=>{try{const l=loadDailyImports();return !!(l&&l.date===hj&&l.companies&&l.companies[e]&&l.companies[e].imported);}catch(x){return false;}})();return p.data&&p.data<hj&&util&&!semDiario(e)&&!impHj;});
   el.innerHTML=`<div class="f6-pos">${chips}${velhos.length?`<span class="f6-chip velho" style="background:#fff"><button id="f6Imp">Importar relatórios de hoje ›</button></span>`:''}</div>
    <div class="f6-topo">
     <div class="f6-k"><small>Clientes a cobrar</small><b>${ativos.length}</b><span>${DATA.current.length-ativos.length?(DATA.current.length-ativos.length)+' sem nada a cobrar':'na fila'}</span></div>
@@ -6714,7 +6734,7 @@ document.head.insertAdjacentHTML("beforeend",'<style>.perb2{display:inline-flex;
       v.innerHTML=`<div class="k8m"><h2>Confira ${pend.length} cliente${pend.length>1?'s':''}</h2><div class="k8s">${esc(empresas)}</div>
         ${pend.map((p,i)=>{const g=p.grupo,e=esc_[g.customer];
           return `<div class="k8r"><div class="nm"><b>${esc(g.customer)}</b><small>${esc((g.sources||[]).join(', '))} · ${(g.titles||[]).length} título(s) · ${money(g.total||0)}${g.doc?' · '+esc(fmtDoc(g.doc)):''}</small></div><div class="sa">→</div>
-          <div class="k8o">${p.sugestoes.slice(0,1).map((s,j)=>`<button class="k8c ${e&&e.tipo==='sug'&&e.alvo===s.customer?'on':''}" data-i="${i}" data-sug="${j}"><span class="rd"></span><b>${esc(s.customer)}</b><small>${esc([s.doc?fmtDoc(s.doc):'',s.seller&&s.seller!=='Não identificado'?s.seller:''].filter(Boolean).join(' · ')||(s.historico?'do histórico':''))}</small></button>`).join('')}
+          <div class="k8o">${p.sugestoes.slice(0,p.max||1).map((s,j)=>`<button class="k8c ${e&&e.tipo==='sug'&&e.alvo===s.customer?'on':''}" data-i="${i}" data-sug="${j}"><span class="rd"></span><b>${p.max?'Juntar com ':''}${esc(s.customer)}</b><small>${esc([s.doc?fmtDoc(s.doc):'',s.seller&&s.seller!=='Não identificado'?s.seller:''].filter(Boolean).join(' · ')||(s.historico?'do histórico':''))}</small></button>`).join('')}
             ${e&&e.tipo==='cad'?`<button class="k8c on" data-i="${i}" data-cadx="1"><span class="rd"></span><b>${esc(e.alvo)}</b><small>${esc(fmtDoc(e.doc))} · do cadastro</small></button>`:''}
             <div class="k8w"><label class="k8q"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#8A8F98" stroke-width="2"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4-4"/></svg><input data-q="${i}" placeholder="Buscar outro cliente no cadastro: nome ou CNPJ"></label>
             <div class="k8l" data-l="${i}"></div></div>
@@ -6744,6 +6764,7 @@ document.head.insertAdjacentHTML("beforeend",'<style>.perb2{display:inline-flex;
     };
     pinta();
   }
+  window.k8Abrir=abrir;
   window.k8Conferir=function(forca){
     let pend=[];try{pend=pendenciasIdentidade();}catch(e){return;}
     if(!forca)pend=pend.filter(p=>!VISTOS.has(p.grupo.customer));
@@ -6803,6 +6824,47 @@ document.head.insertAdjacentHTML("beforeend",'<style>.perb2{display:inline-flex;
   try{if((location.hash||'').replace('#','').split(/[/?&]/)[0]==='relhub')switchView('relhub');}catch(e){}
 })();
 
+/* ===== v4.8.3 · Juntar ou identificar UM cliente, de onde ele aparece =====
+   26/10: "COMERCIO DE ALIMENTOS FSR" e "COMERCIO DE ALIMENTOS FSR 34649/004…" (sem CNPJ) — não tinha onde agir.
+   Agora, em Cobranças e em Clientes e crédito, o cliente sem cadastro mostra "Identificar ›": abre a mesma janela da
+   conferência, com os clientes parecidos (para juntar os dois) e a busca no cadastro do ERP (nome ou CNPJ). */
+(function(){
+  const nrm=s=>String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+  const dg=s=>String(s||'').replace(/\D/g,'');
+  const PAL=new Set(['ltda','me','epp','eireli','sa','s','a','de','da','do','das','dos','e','comercio','com','industria','ind','loja','lojas','mercado','supermercado','comercial']);
+  const chave=s=>nrm(s).split(' ').filter(w=>w&&!PAL.has(w)&&!/^\d+$/.test(w));
+  function parecidos(nome){
+    const a=nrm(nome),ka=chave(nome);const vistos=new Set([nome]);const out=[];
+    const nomes=[...(DATA.current||[]).map(g=>({customer:g.customer,doc:g.doc,seller:g.seller,atual:true})),
+      ...((DATA.history||DATA.historico||[]).map?((DATA.history||DATA.historico||[]).map(h=>({customer:h.customer||h.cliente,doc:h.doc,seller:h.seller}))):[])];
+    nomes.forEach(o=>{if(!o.customer||vistos.has(o.customer))return;const b=nrm(o.customer),kb=chave(o.customer);
+      let s=0;if(b&&a&&(b.startsWith(a)||a.startsWith(b)))s=3;
+      else if(ka.length&&kb.length){const com=ka.filter(w=>kb.includes(w)).length;s=com/Math.max(ka.length,kb.length)*2;}
+      if(s>=1){vistos.add(o.customer);out.push({...o,s});}});
+    return out.sort((x,y)=>y.s-x.s||(y.atual?1:0)-(x.atual?1:0)).slice(0,4);
+  }
+  window.k8Identificar=function(nome){
+    const g=(DATA.current||[]).find(x=>x.customer===nome)||{customer:nome,titles:[],sources:[],total:0};
+    const sug=parecidos(nome);
+    if(typeof window.k8Abrir==='function')window.k8Abrir([{grupo:g,sugestoes:sug,max:4}]);
+  };
+  try{const st=document.createElement('style');st.textContent=`.k8id{cursor:pointer;color:#1D4ED8!important;font-weight:700;text-decoration:underline;text-underline-offset:2px;margin-left:6px}
+  .k8idb{height:34px;padding:0 12px;border-radius:9px;border:1px solid #C7D5FB;background:#F5F8FF;color:#1D4ED8;font:600 13px Inter,system-ui;cursor:pointer}`;document.head.appendChild(st);}catch(e){}
+  /* onde aparece: Cobranças (linha), Clientes e crédito (linha e página do cliente) */
+  function marca(){
+    try{document.querySelectorAll('#collectionTable tr[data-cli]').forEach(tr=>{const av=[...tr.querySelectorAll('.av.lj')].find(x=>/sem CNPJ|sem cadastro/.test(x.textContent));
+      if(av&&!av.querySelector('.k8id'))av.insertAdjacentHTML('beforeend',` <a class="k8id" data-k8id="${String(tr.dataset.cli).replace(/"/g,'&quot;')}">Identificar ›</a>`);});}catch(e){}
+    try{document.querySelectorAll('table.c7-t tbody tr').forEach(tr=>{const b=tr.querySelector('td b'),s=tr.querySelector('td .s');
+      if(b&&s&&/^sem CNPJ/.test(s.textContent)&&!s.querySelector('.k8id'))s.insertAdjacentHTML('beforeend',` <a class="k8id" data-k8id="${b.textContent.replace(/"/g,'&quot;')}">Identificar ›</a>`);});}catch(e){}
+    try{const top=document.querySelector('.c7-cli .c7-topo');if(top&&!top.querySelector('#k8IdBt')){const h=top.querySelector('h2');
+      if(h&&!/cadastro do ERP/.test(h.textContent)){const nome=h.childNodes[0]?h.childNodes[0].textContent.trim():h.textContent.trim();const tb=top.querySelector('.toolbar');
+        if(tb)tb.insertAdjacentHTML('afterbegin',`<button class="k8idb" id="k8IdBt" data-k8id="${nome.replace(/"/g,'&quot;')}">Juntar / identificar</button>`);}}}catch(e){}
+  }
+  let t=null;new MutationObserver(()=>{clearTimeout(t);t=setTimeout(marca,150);}).observe(document.body,{childList:true,subtree:true});
+  setTimeout(marca,600);
+  document.addEventListener('click',e=>{const a=e.target.closest&&e.target.closest('[data-k8id]');if(!a)return;e.preventDefault();e.stopPropagation();k8Identificar(a.dataset.k8id);},true);
+})();
+
 
 </script>
 <script id="finNuvem">
@@ -6823,9 +6885,12 @@ document.head.insertAdjacentHTML("beforeend",'<style>.perb2{display:inline-flex;
   const lsSet=(k,v)=>{try{_set.call(localStorage,k,v);}catch(e){}};
   const lsGet=k=>{try{return _get.call(localStorage,k);}catch(e){return null;}};
   const lsRem=k=>{try{_rem.call(localStorage,k);}catch(e){}};
+  /* v4.8.3: o que o navegador não conseguiu guardar (espaço cheio) fica na memória, a tela lê de lá e sobe ao banco do mesmo jeito */
+  const MEM={};window.FIN_MEM=MEM;
+  P.getItem=function(k){if(this===localStorage&&k in MEM)return MEM[k];return _get.call(this,k);};
   const chaves=()=>{const ks=[];for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith('atrius-'))ks.push(k);}return ks;};
-  const foto=()=>{const d={};chaves().forEach(k=>d[k]=localStorage.getItem(k));return d;};
-  const aplicar=d=>{chaves().forEach(k=>_rem.call(localStorage,k));Object.entries(d||{}).forEach(([k,v])=>{try{_set.call(localStorage,k,v);}catch(e){}});};
+  const foto=()=>{const d={};chaves().forEach(k=>d[k]=localStorage.getItem(k));Object.entries(MEM).forEach(([k,v])=>{if(v===null)delete d[k];else d[k]=v;});return d;};
+  const aplicar=d=>{chaves().forEach(k=>_rem.call(localStorage,k));Object.keys(MEM).forEach(k=>delete MEM[k]);Object.entries(d||{}).forEach(([k,v])=>{try{_set.call(localStorage,k,v);}catch(e){MEM[k]=v;}});};
   /* impressão digital curta de um texto (pode ter megas): tamanho + FNV-1a */
   const hash=s=>{if(s==null)return '';s=String(s);let h=0x811c9dc5;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}return s.length+':'+(h>>>0).toString(36);};
   const SUJO='fin-sujo',IMP='fin-base-hash';
@@ -6940,8 +7005,11 @@ document.head.insertAdjacentHTML("beforeend",'<style>.perb2{display:inline-flex;
     document.addEventListener('visibilitychange',()=>{if(document.hidden&&t){clearTimeout(t);t=null;subir();}});
     window.addEventListener('pagehide',()=>{if(t){clearTimeout(t);t=null;subir();}});
     window.addEventListener('beforeunload',e=>{if(t||salvando||pend){e.preventDefault();e.returnValue='';}});
-    P.setItem=function(k,v){const r=_set.call(this,k,v);if(this===localStorage&&String(k).startsWith('atrius-'))agendar();return r;};
-    P.removeItem=function(k){const r=_rem.call(this,k);if(this===localStorage&&String(k).startsWith('atrius-'))agendar();return r;};
+    P.setItem=function(k,v){const fin=this===localStorage&&String(k).startsWith('atrius-');
+      if(!fin)return _set.call(this,k,v);
+      let r;try{r=_set.call(this,k,v);delete MEM[k];}catch(e){MEM[k]=String(v);agendar();throw e;}
+      agendar();return r;};
+    P.removeItem=function(k){const r=_rem.call(this,k);if(this===localStorage&&String(k).startsWith('atrius-')){if(k in MEM)MEM[k]=null;agendar();}return r;};
     /* recuperou lançamentos na abertura: sobe já */
     if(lsGet(SUJO))setTimeout(subir,1200);
     /* outra pessoa gravou? a cada 60 s confere; se mudou e eu não tenho nada pendente, recarrega/avisa */

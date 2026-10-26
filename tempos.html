@@ -1,4 +1,24 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Tempos de processo · ERP Atrius</title>
+<!doctype html><html lang="pt-BR"><head><script data-v483="esp">/* ===== v4.8.3 · ESPAÇO DO NAVEGADOR =====
+   26/10: "O navegador não conseguiu salvar os dados (armazenamento cheio)". O navegador dá ~5 MB por site para TODAS
+   as páginas do ERP juntas, e estavam ocupados por cópias que não precisam ficar ali: a cópia antiga de recuperação
+   do PCP (pcp-atrius-v6-rec326, de semanas atrás) e as cópias dos módulos (Cadastros sozinho tem 2,5 MB), que agora
+   ficam no IndexedDB (que aguenta muito mais). Se mesmo assim faltar espaço, o ERP libera essas cópias e tenta de novo
+   antes de avisar. Os dados de verdade estão no banco: isso é só o que fica guardado neste aparelho. */
+(function(){
+  if(window.CS_ESPACO483)return;window.CS_ESPACO483=1;
+  const DESC=k=>/^pcp-atrius-v6-rec326$/.test(k)||/^pcp-atrius-v6-mod-/.test(k)||/^pcp-atrius-v6-(copia|bak|ant)/.test(k);
+  function libera(){let n=0;try{const ks=[];for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&DESC(k))ks.push(k);}
+    ks.forEach(k=>{try{n+=(localStorage.getItem(k)||'').length;localStorage.removeItem(k);}catch(e){}});}catch(e){}return n;}
+  window.csLiberaEspaco=libera;
+  try{const _set=Storage.prototype.setItem;Storage.prototype.setItem=function(k,v){
+    try{return _set.call(this,k,v);}catch(e){
+      if(this===window.localStorage&&/quota|exceed/i.test(String(e&&(e.name+' '+e.message)))&&!DESC(String(k))){
+        if(libera()>0)return _set.call(this,k,v);}
+      throw e;}};}catch(e){}
+  /* a cópia de recuperação antiga sai de vez (só ocupa espaço) */
+  try{if(localStorage.getItem('pcp-atrius-v6-rec326')!=null)localStorage.removeItem('pcp-atrius-v6-rec326');}catch(e){}
+})();
+</script><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Tempos de processo · ERP Atrius</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
 <style>
