@@ -1,6 +1,6 @@
 {
- "v": "v484",
- "versao": "4.8.4",
- "data": "26/10/2026",
- "o_que_mudou": "Novo relatório de vendas: Contatos dos clientes (WhatsApp de quem comprou no período, por representante, com colunas escolhidas para o PDF); selo de cliente sem cadastro no financeiro"
+ "v": "v485",
+ "versao": "4.8.5",
+ "data": "27/10/2026",
+ "o_que_mudou": "Cadastros › Itens: página única por grupo, ficha nova (como é obtido, ficha técnica, dimensões, estoque), dados e fotos do Notion, SKU automático; relatório de contatos dos clientes em Vendas"
 }

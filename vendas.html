@@ -2882,4 +2882,44 @@ th .cfsort{font-size:10px;margin-left:3px;color:#1D4ED8}
 })();
 
 </script>
+<script data-v485="ped">
+/* ===================== v4.8.5 · VENDAS › imprimir o pedido de venda =====================
+   Pedido em folha A4 no modal padrão (Salvar em PDF / Imprimir), com os dados do cliente do cadastro
+   do ERP (endereço, telefone), itens, total e observação. Abre pelo botão dentro do pedido e pelos três pontinhos. */
+(function(){
+  const dig=s=>String(s||'').replace(/\D/g,'');
+  let CAD=null;async function cliente(doc,nome){
+    try{if(!CAD){const c=await N.ler('cadastros');CAD=(c&&c.contatos)||[];}}catch(e){CAD=[];}
+    const d=dig(doc);return CAD.find(x=>d&&dig(x.doc)===d)||CAD.find(x=>semAc(x.nome||'')===semAc(nome||''))||null;}
+  async function imprimirPedido(id){
+    let r;try{r=await fn({acao:'vendas_pedido',id});}catch(e){return toast('Não consegui ler o pedido: '+e.message,true);}
+    const p=r&&r.pedido;if(!p)return toast('Pedido não encontrado.',true);const itens=r.itens||[];
+    const c=await cliente(p.cliente_doc,p.cliente);
+    const end=c?[[c.endereco,c.numero].filter(Boolean).join(', '),c.bairro,[c.cidade||p.cidade,c.uf||p.uf].filter(Boolean).join(' / '),c.cep?('CEP '+c.cep):''].filter(Boolean).join(' · '):[p.cidade,p.uf].filter(Boolean).join(' / ');
+    const ct=c&&Array.isArray(c.contatos)?(c.contatos.find(x=>x.principal)||c.contatos[0]):null;
+    const fone=(ct&&ct.fone)||(c&&(c.celular||c.fone))||'';
+    const qt=itens.reduce((s,i)=>s+(+i.quantidade||0),0);const soma=itens.reduce((s,i)=>s+(+i.quantidade||0)*(+i.valor_unitario||0),0);
+    const dB=s=>s?br(s):'—';
+    const corpo=`<style>.vpk{display:grid;grid-template-columns:1.6fr 1fr;gap:10px;margin:10px 0 12px}.vpb{border:1px solid #D7DAE0;border-radius:8px;padding:8px 10px}.vpb h4{font-size:8px;letter-spacing:.12em;text-transform:uppercase;color:#6B7280;margin:0 0 4px}
+      .vpb b{font-size:12px}.vpb div{font-size:10.5px;color:#374151;margin-top:2px}.vpg{display:grid;grid-template-columns:repeat(4,1fr);gap:6px 10px}.vpg span{display:block;font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:#6B7280}.vpg b{font-size:11.5px}
+      table.vpt{width:100%;border-collapse:collapse;font-size:10.5px}.vpt th{text-align:left;font-size:8px;letter-spacing:.08em;text-transform:uppercase;color:#6B7280;border-bottom:1.5px solid #12151A;padding:5px 6px}
+      .vpt td{padding:5px 6px;border-bottom:1px solid #E5E7EB}.vpt .n{text-align:right;white-space:nowrap}.vpt tfoot td{border-top:1.5px solid #12151A;border-bottom:0;font-weight:800;font-size:12px}.vobs{margin-top:10px;font-size:10.5px;border:1px solid #D7DAE0;border-radius:8px;padding:8px 10px}</style>
+      <div class="vpk"><div class="vpb"><h4>Cliente</h4><b>${esc(p.cliente)}</b>${c&&c.fantasia&&semAc(c.fantasia)!==semAc(p.cliente)?`<div>${esc(c.fantasia)}</div>`:''}<div>${esc(p.cliente_doc||'')}${c&&c.ie?' · IE '+esc(c.ie):''}</div><div>${esc(end)}</div>${fone?`<div>${esc(fone)}${ct&&ct.nome?' · '+esc(ct.nome):''}</div>`:''}</div>
+        <div class="vpb"><h4>Pedido</h4><div class="vpg"><div><span>Número</span><b>${esc(p.numero)}</b></div><div><span>Data</span><b>${dB(p.data_pedido)}</b></div><div><span>Previsto</span><b>${dB(p.data_prevista)}</b></div><div><span>Situação</span><b>${esc(sitDe(p.situacao)[1])}</b></div>
+          <div style="grid-column:span 4"><span>Vendedor</span><b>${esc(p.vendedor||'—')}</b></div></div></div></div>
+      <table class="vpt"><thead><tr><th>#</th><th>Código</th><th>Produto</th><th class="n">Qtde</th><th>Un</th><th class="n">Preço</th><th class="n">Total</th></tr></thead><tbody>
+      ${itens.map((i,k)=>`<tr><td>${k+1}</td><td>${esc(i.sku)}</td><td>${esc(i.descricao)}</td><td class="n">${nq(i.quantidade)}</td><td>${esc(i.un||'')}</td><td class="n">${nf(i.valor_unitario,2)}</td><td class="n">${nf((+i.quantidade||0)*(+i.valor_unitario||0),2)}</td></tr>`).join('')||'<tr><td colspan="7">Itens ainda não lidos do Tiny.</td></tr>'}</tbody>
+      <tfoot><tr><td colspan="3">${itens.length} ite${itens.length===1?'m':'ns'}</td><td class="n">${nq(qt)}</td><td></td><td class="n">Total</td><td class="n">R$ ${nf(+p.total||soma,2)}</td></tr></tfoot></table>
+      ${p.obs?`<div class="vobs"><b>Observações</b><br>${esc(p.obs)}</div>`:''}`;
+    const tit='Pedido de venda nº '+(p.numero||'');
+    try{const P=window.parent;P.csFolhaModal({titulo:tit,sub:'Pedido '+p.numero,arquivo:'Pedido '+p.numero+' '+String(p.cliente||'').slice(0,40),html:P.folha(tit,'','',corpo)});}catch(e){toast('Não consegui montar a folha.',true);}
+  }
+  window.imprimirPedido=imprimirPedido;
+  /* botão dentro do pedido */
+  try{const _ab=abrirPedido;abrirPedido=async function(id){const r=await _ab.apply(this,arguments);try{const gx=$('gX');if(gx&&!$('gImp')){gx.insertAdjacentHTML('beforebegin','<button class="btn sm" id="gImp" style="margin-left:auto;margin-right:6px">Imprimir / PDF</button>');gx.style.marginLeft='0';$('gImp').onclick=()=>imprimirPedido(id);}}catch(e){}return r;};}catch(e){}
+  /* três pontinhos */
+  try{const _mp=menuPedido;menuPedido=function(botao,p){_mp.apply(this,arguments);try{const m=document.getElementById('m3v');if(m&&m.dataset.id===String(p.id)){const b=document.createElement('button');b.textContent='Imprimir / PDF';b.onclick=()=>{m.remove();imprimirPedido(p.id);};const h=m.querySelector('.mh');h?h.after(b):m.prepend(b);}}catch(e){}};}catch(e){}
+})();
+
+</script>
 </body></html>

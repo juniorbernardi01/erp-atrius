@@ -4908,6 +4908,8 @@ function diasHorizonte(ref,qtd){
   return out;}
 const uid=()=>Math.random().toString(16).slice(2,10).toUpperCase();
 const prodOf=c=>PRODUTOS.find(p=>p.codigo===String(c));
+/* v4.8.5: ficha técnica própria do produto vale no lugar da embalagem do tanque (kit, unidade avulsa) */
+const embDoProd=p=>!p?[]:Array.isArray(p.ficha)?p.ficha:(((FORMULAS[p.tanque]||{}).emb||{})[fmtLit(+p.litragem||0)]||[]);
 const fmtLit=l=>l<1?`${Math.round(l*1000)}ML`:`${String(l).replace('.',',')}L`;
 const ABREV={
   'ÁGUA SANITÁRIA':'Água Sanit.',
@@ -5504,7 +5506,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v484';const VERSAO_DATA='24/10/2026';
+const VERSAO_APP='v485';const VERSAO_DATA='24/10/2026';
 /* número que aparece na tela: v438 → v4.3.8 (por dentro continua v438, que é o que as versões comparam) */
 const csRotVer=v=>{const d=String(v||'').replace(/\D/g,'');return d.length>=3?'v'+d.slice(0,-2)+'.'+d.slice(-2,-1)+'.'+d.slice(-1):String(v||'');};
 const VERSAO_ROTULO=csRotVer(VERSAO_APP)+' · '+VERSAO_DATA;
@@ -8778,7 +8780,7 @@ function imprimirOPTanque(b){
 function embalagemDe(o){
   const p=prodOf(o.codigo);if(!p)return [];
   const lit=fmtLit(p.litragem);
-  const itens=(formulaDe(p.tanque).emb||{})[lit]||[];
+  const itens=embDoProd(p);
   const un=caixasPrev(o)*p.un_cx;
   /* a troca entra antes da conta: assim a separação, a reserva de estoque
      e a OP impressa passam a falar do item que vai de verdade, sem cada
@@ -9166,7 +9168,7 @@ function imprimirOPSopro(x){
 function imprimirOPRotulo(x){
   const p=prodOf(x.codigo);
   const lit=fmtLit(p.litragem);
-  const rot=((formulaDe(p.tanque).emb||{})[lit]||[])
+  const rot=embDoProd(p)
     .find(i=>/rótulo|rotulo/i.test(i.comp));
   const alvo=x.boas||x.un;
   const maq=recursosDe('rotulo').find(r=>r.id===rotuladoraDe(x.oc));
@@ -14047,7 +14049,7 @@ function modalTrocaEmb(o,nomeSai,escolha){
   if(!linha){toast('Item não encontrado na embalagem.',true);return;}
   const original=linha._orig||linha.nome;
   const jaTrocado=!!linha._orig;
-  const base=((formulaDe(p.tanque).emb||{})[fmtLit(p.litragem)]||[])
+  const base=embDoProd(p)
     .find(x=>x.nome===original)||{};
   const un=caixasPrev(o)*(p.un_cx||0);
   const totalBase=Math.ceil((+base.qtd||0)*un);
@@ -15554,7 +15556,7 @@ function abrirTanque(t,aba){
 function abrirProdutoCad(cod,aba){
   const p=prodOf(cod);if(!p)return toast('Produto não encontrado.',true);
   const d=JSON.parse(JSON.stringify(p));const tp=JSON.parse(JSON.stringify(TEMPOS[String(p.codigo)]||{lote:3800,t:{}}));
-  const litK=fmtLit(+p.litragem||0);let emb=JSON.parse(JSON.stringify(((FORMULAS[p.tanque]||{}).emb||{})[litK]||[]));
+  const litK=fmtLit(+p.litragem||0);let emb=JSON.parse(JSON.stringify(embDoProd(p)));
   let foto=FOTOS_PROD[String(p.codigo)]||(typeof CS_FOTOS!=='undefined'&&CS_FOTOS[String(p.codigo)])||'';const foto0=foto;   /* v360: a foto do Tiny também aparece */
   const desenha=(a,c)=>{
     const liga=()=>c.querySelectorAll('[data-pf]').forEach(i=>i.onchange=()=>{const k=i.dataset.pf;d[k]=i.type==='number'?cpLeNum(i.value):i.value;});
@@ -15583,7 +15585,7 @@ function abrirProdutoCad(cod,aba){
   cpJanela(p.descricao,'<span style="color:#15803D">Produto acabado</span>',[['ger','Geral'],['emb','Embalagens'],['fis','Fiscal'],['pcp','PCP'],['est','Estoque']],aba||'ger',desenha,()=>{
     if(!String(d.descricao||'').trim())return toast('O nome não pode ficar vazio.',true),false;
     Object.assign(p,d);if(foto&&foto!==foto0)FOTOS_PROD[String(p.codigo)]=foto;TEMPOS[String(p.codigo)]=tp;
-    const F=FORMULAS[p.tanque]=FORMULAS[p.tanque]||{mp:[],emb:{}};F.emb=F.emb||{};F.emb[fmtLit(+p.litragem||0)]=emb;});
+    const F=FORMULAS[p.tanque]=FORMULAS[p.tanque]||{mp:[],emb:{}};F.emb=F.emb||{};if(Array.isArray(p.ficha))p.ficha=emb;else F.emb[fmtLit(+p.litragem||0)]=emb;});
 }
 function abrirInsumoCad(sku){
   const i=INSUMOS.find(x=>x.sku===sku);if(!i)return;const d=JSON.parse(JSON.stringify(i));
@@ -15865,8 +15867,10 @@ function consumoDaOP(o,caixas){
   const cx=caixas!=null?caixas:(o.caixas!=null?o.caixas:caixasPrev(o));
   const un=cx*p.un_cx;
   const out=[];
-  ((formulaDe(p.tanque).emb||{})[fmtLit(p.litragem)]||[]).forEach(e=>{
+  embDoProd(p).forEach(e=>{
     const ins=insPorSku(e.sku)||insPorNome(e.nome);
+    /* item com a chave de estoque desligada não baixa */
+    if(ins&&ins.ctrlEst===false)return;
     const qt=(+e.qtd||0)*un;
     if(qt>0)out.push({tipo:e.comp||'Embalagem',nome:e.nome,sku:e.sku,
       tiny:tinyDe(ins),qtd:Math.ceil(qt),un:'un'});
@@ -18476,7 +18480,7 @@ const PERM_MODS=[
   {id:'gestao',nome:'Indicadores (no PCP)',itens:[{k:'gestao',n:'Indicadores',acoes:true}]},
   {id:'cadastros',nome:'Cadastros e configurações',itens:[
     {k:'admin',n:'Configurações',acoes:true},
-    {k:'cadprod',n:'Produtos',acoes:true},
+    {k:'cadprod',n:'Itens',acoes:true},
     {k:'cad.transp',n:'Transportadores',acoes:true},
     {k:'cad.clientes',n:'Clientes e fornecedores',acoes:true},
     {k:'cad.vend',n:'Vendedores',acoes:true},
@@ -19740,7 +19744,7 @@ const CS_MOD=[
    {n:'OEE',page:'oee',ic:'ind'},
    {n:'Relatórios',page:'relatorio',ic:'rel'}]},
  {id:'cadastros',nome:'Cadastros',ic:'cad',pgs:[
-   {n:'Produtos',page:'cadprod',ic:'prod'},
+   {n:'Itens',page:'cadprod',ic:'prod'},
    {n:'Transportadores',mod:'transportadores',fin:'lista',perm:'cad.transp',ic:'com'},
    {n:'Clientes e fornecedores',mod:'cadastros',fin:'clientes',perm:'cad.clientes',ic:'pes'},
    {n:'Vendedores',mod:'cadastros',fin:'vendedores',perm:'cad.vend',ic:'pes'},
@@ -22188,7 +22192,7 @@ window.csNucleo=(function(){
       if(versoes&&data&&typeof FORM_VERS!=='undefined'&&FORM_VERS[p.tanque]){
         const v=FORM_VERS[p.tanque].find(v=>(!v.desde||v.desde<=data)&&(!v.ate||v.ate>data));if(v)mp=v.mp;}
       mp.forEach(m=>soma(m.sku,m.nome,lit*(+m.pct||0)/100));
-      ((F.emb||{})[fmtLit(+p.litragem||0)]||[]).forEach(e=>soma(e.sku,e.nome,un*(+e.qtd||0)));
+      embDoProd(p).forEach(e=>soma(e.sku,e.nome,un*(+e.qtd||0)));
     });
     return out;
   }
@@ -34240,7 +34244,7 @@ th .cfsort{font-size:10px;margin-left:3px;color:#1D4ED8}
   window.CF_VARRE=varre;
 })();
 
-try{csNucleo.versao='v484';}catch(e){}
+try{csNucleo.versao='v485';}catch(e){}
 </script>
 <script>
 /* cópia local de cada módulo: IndexedDB (cabe muito mais); lê também a cópia antiga do localStorage e a apaga */
@@ -34278,6 +34282,405 @@ try{csNucleo.versao='v484';}catch(e){}
     catch(e){if(/Atualizando/.test(e.message))throw e;}
     return _au.apply(this,arguments);};}catch(e){}
 })();
+</script>
+<script data-v485="itens">
+/* ===================== v4.8.5 · CADASTROS › ITENS =====================
+   Uma página só para todos os itens, organizada por GRUPO (nome padrão do sistema; "tag" vira
+   "marcador", livre). Tudo continua morando onde já morava — PRODUTOS, INSUMOS, FORMULAS (formulação,
+   embalagem por litragem e modo de fazer), TEMPOS — para não mexer no que as OPs, o tablet dos tanques
+   e o estoque leem hoje. O que é novo fica em campos novos do próprio item:
+     cgrupo   grupo (tanques, pa, preformas, frascos, rotulos, tampas, caixas, fitas, embkit, mp, fragr, corantes, uso, rev)
+     obtem    {p,c,i}: produzido (OP), comprado (OC), industrializado (OC de industrialização)
+     indForn  fornecedores que industrializam
+     ficha    ficha técnica própria (produto que não usa a embalagem do tanque, frasco fabricado, kit)
+     ctrlEst  false = não movimenta estoque
+   O tanque guarda os seus em FORMULAS[t].cad. Os tempos ficam em Configurações › Tempos de processo. */
+(function(){
+  const GR=[
+    {k:'fab',n:'Produtos fabricados',f:[['tanques','Tanques'],['pa','Produtos acabados']]},
+    {k:'emb',n:'Embalagens',f:[['preformas','Preformas'],['frascos','Frascos'],['rotulos','Rótulos'],['tampas','Tampas'],['caixas','Caixas'],['fitas','Fitas e filmes'],['embkit','Embalagens de kit']]},
+    {k:'mpg',n:'Matérias-primas',f:[['mp','Matérias-primas'],['fragr','Fragrâncias'],['corantes','Corantes']]},
+    {k:'uso',n:'Uso e consumo',f:[]},{k:'rev',n:'Revenda',f:[]}];
+  const FOLHAS=[];GR.forEach(g=>{if(g.f.length)g.f.forEach(([k,n])=>FOLHAS.push({k,n,pai:g.k}));else FOLHAS.push({k:g.k,n:g.n,pai:g.k});});
+  const nomeG=k=>(FOLHAS.find(f=>f.k===k)||{}).n||'—';const paiG=k=>(FOLHAS.find(f=>f.k===k)||{}).pai||'';
+  const NOTION={"303": {"nome": "ALVEJANTE SEM CLORO 5L - FD C/4 UN", "ean": "7898556040891", "dun": "17898556040898", "ncm": "3402.50.00", "pesoLiqUn": 5.0, "pesoBrutoUn": 5.21, "medUn": "28 × 18,5 × 14", "medidas": "30 × 38 × 30", "medPalete": "1,32 × 1,20 × 1,0", "cxCamada": 11, "camadas": 4, "validade": 24, "ipi": "3,25%", "icms": "17%", "status": "ATIVO", "foto": "fotos/p303.jpg"}, "922": {"nome": "DESINFETANTE 5L EUCALIPTO - FD C/4 UN", "ean": "7898556040617", "dun": "17898556040614", "ncm": "3808.94.19", "pesoLiqUn": 5.0, "pesoBrutoUn": 5.21, "medUn": "30 × 16 × 14", "medidas": "33 × 32 × 22", "medPalete": "1,32 × 1,20 × 1,0", "cxCamada": 11, "camadas": 4, "validade": 24, "ipi": "5,00%", "icms": "17%", "status": "ATIVO", "foto": "fotos/p922.jpg"}, "923": {"nome": "DESINFETANTE 5L FLORAL - FD C/4 UN", "ean": "7898556040754", "dun": "17898556040751", "ncm": "3808.94.19", "pesoLiqUn": 5.0, "pesoBrutoUn": 5.21, "medUn": "30 × 16 × 14", "medidas": "33 × 32 × 22", "medPalete": "1,32 × 1,20 × 1,0", "cxCamada": 11, "camadas": 4, "validade": 24, "ipi": "5,00%", "icms": "17%", "status": "ATIVO", "foto": "fotos/p923.jpg"}, "924": {"nome": "DESINFETANTE 5L LAVANDA - FD C/4 UN", "ean": "7898556040600", "dun": "17898556040607", "ncm": "3808.94.19", "pesoLiqUn": 5.0, "pesoBrutoUn": 5.21, "medUn": "30 × 16 × 14", "medidas": "33 × 32 × 22", "medPalete": "1,32 × 1,20 × 1,0", "cxCamada": 11, "camadas": 4, "validade": 24, "ipi": "5,00%", "icms": "17%", "status": "ATIVO", "foto": "fotos/p924.jpg"}, "403": {"nome": "AGUA SANITARIA 5L - FD C/4 UN", "ean": "7898556040105", "dun": "17898556040102", "ncm": "2828.90.11", "pesoLiqUn": 5.0, "pesoBrutoUn": 5.21, "medUn": "28 × 18,5 × 14", "medidas": "30 × 38 × 30", "medPalete": "1,32 × 1,20 × 1,0", "cxCamada": 11, "camadas": 4, "validade": 6, "ipi": "0,00%", "icms": "17%", "status": "ATIVO", "foto": "fotos/p403.jpg"}, "926": {"nome": "DESINFETANTE 5L PINHO - FD C/4 UN", "ean": "7898556040761", "dun": "17898556040768", "ncm": "3808.94.19", "pesoLiqUn": 5.0, "pesoBrutoUn": 5.21, "medUn": "30 × 16 × 14", "medidas": "33 × 32 × 22", "medPalete": "1,32 × 1,20 × 1,0", "cxCamada": 11, "camadas": 4, "validade": 24, "ipi": "5,00%", "icms": "17%", "status": "ATIVO", "foto": "fotos/p926.jpg"}, "925": {"nome": "DESINFETANTE 5L MARINE - FD C/4 UN", "ean": "7898556040624", "dun": "17898556040621", "ncm": "3808.94.19", "pesoLiqUn": 5.0, "pesoBrutoUn": 5.21, "medUn": "30 × 16 × 14", "medidas": "33 × 32 × 22", "medPalete": "1,32 × 1,20 × 1,0", "cxCamada": 11, "camadas": 4, "validade": 24, "ipi": "5,00%", "icms": "17%", "status": "ATIVO", "foto": "fotos/p925.jpg"}, "813": {"nome": "AMACIANTE 5L AZUL - FD C/4 UN", "ean": "7898556041164", "dun": "17898556041161", "ncm": "3809.91.90", "pesoLiqUn": 5.0, "pesoBrutoUn": 5.21, "medUn": "30 × 16 × 14", "medidas": "33 × 32 × 22", "medPalete": "1,32 × 1,20 × 1,0", "cxCamada": 11, "camadas": 4, "validade": 12, "ipi": "0,00%", "icms": "17%", "status": "ATIVO", "foto": "fotos/p813.jpg"}, "811": {"nome": "AMACIANTE 5L ROSA - FD C/4 UN", "ean": "7898556041157", "dun": "17898556041154", "ncm": "3809.91.90", "pesoLiqUn": 5.0, "pesoBrutoUn": 5.21, "medUn": "30 × 16 × 14", "medidas": "33 × 32 × 22", "medPalete": "1,32 × 1,20 × 1,0", "cxCamada": 11, "camadas": 4, "validade": 12, "ipi": "0,00%", "icms": "17%", "status": "ATIVO", "foto": "fotos/p811.jpg"}, "812": {"nome": "AMACIANTE 5L ROXO - FD C/4 UN", "ean": "7898556041140", "dun": "17898556041147", "ncm": "3809.91.90", "pesoLiqUn": 5.0, "pesoBrutoUn": 5.21, "medUn": "30 × 16 × 14", "medidas": "33 × 32 × 22", "medPalete": "1,32 × 1,20 × 1,0", "cxCamada": 11, "camadas": 4, "validade": 12, "ipi": "0,00%", "icms": "17%", "status": "ATIVO", "foto": "fotos/p812.jpg"}, "814": {"nome": "AMACIANTE 5L VERDE - FD C/4 UN", "ean": "7898556041133", "dun": "17898556041130", "ncm": "3809.91.90", "pesoLiqUn": 5.0, "pesoBrutoUn": 5.21, "medUn": "30 × 16 × 14", "medidas": "33 × 32 × 22", "medPalete": "1,32 × 1,20 × 1,0", "cxCamada": 11, "camadas": 4, "validade": 12, "ipi": "0,00%", "icms": "17%", "status": "ATIVO", "foto": "fotos/p814.jpg"}, "625": {"nome": "LAVA ROUPAS 5L GLICERINA - FD C/4 UN", "ean": "7898556040365", "dun": "17898556040362", "ncm": "3402.50.00", "pesoLiqUn": 5.0, "pesoBrutoUn": 5.21, "medUn": "30 × 16 × 14", "medidas": "33 × 32 × 22", "medPalete": "1,32 × 1,20 × 1,0", "cxCamada": 11, "camadas": 4, "validade": 24, "ipi": "3,25%", "icms": "17%", "status": "ATIVO", "foto": "fotos/p625.jpg"}, "624": {"nome": "LAVA ROUPAS 5L PREMIUM - FD C/4 UN", "ean": "7898556040259", "dun": "17898556040256", "ncm": "3402.50.00", "pesoLiqUn": 5.0, "pesoBrutoUn": 5.21, "medUn": "30 × 16 × 14", "medidas": "33 × 32 × 22", "medPalete": "1,32 × 1,20 × 1,0", "cxCamada": 11, "camadas": 4, "validade": 24, "ipi": "3,25%", "icms": "17%", "status": "ATIVO", "foto": "fotos/p624.jpg"}, "302": {"nome": "ALVEJANTE SEM CLORO 2L - CX C/ 6UN", "ean": "7898556040372", "dun": "17898556040379", "ncm": "3402.50.00", "pesoLiqUn": 2.0, "pesoBrutoUn": 2.19, "medUn": "32 × 11 × 11", "medidas": "33 × 22 × 22", "medPalete": "1,65 × 1,20 × 1,0", "cxCamada": 16, "camadas": 5, "validade": 24, "ipi": "3,25%", "icms": "17%", "status": "ATIVO", "foto": "fotos/p302.jpg"}, "301": {"nome": "ALVEJANTE SEM  CLORO 1L - CX C/ 12 UN", "ean": "7898556040884", "dun": "17898556040881", "ncm": "3402.50.00", "pesoLiqUn": 1.0, "pesoBrutoUn": 1.1, "medUn": "31 × 8 × 8", "medidas": "33 × 22 × 22", "medPalete": "1,65 × 1,20 × 1,0", "cxCamada": 15, "camadas": 5, "validade": 24, "ipi": "3,25%", "icms": "17%", "status": "ATIVO", "foto": "fotos/p301.jpg"}, "101": {"nome": "CLORO GEL 1L - CX  C/12 UN", "ean": "7898556041089", "dun": "17898556041086", "ncm": "3402.90.39", "pesoLiqUn": 1.0, "pesoBrutoUn": 1.1, "medUn": "31 × 8 × 8", "medidas": "33 × 22 × 22", "medPalete": "1,65 × 1,20 × 1,0", "cxCamada": 15, "camadas": 5, "validade": 24, "ipi": "0,00%", "icms": "17%", "status": "ATIVO", "foto": "fotos/p101.jpg"}, "37": {"nome": "DESENGORDURANTE 1L - CX C/ 12 UN", "ean": "7898556040952", "dun": "17898556040959", "ncm": "3402.50.00", "pesoLiqUn": 1.0, "pesoBrutoUn": 1.1, "medUn": "31 × 8 × 8", "medidas": "33 × 22 × 22", "medPalete": "1,65 × 1,20 × 1,0", "cxCamada": 15, "camadas": 5, "validade": 24, "ipi": "3,25%", "icms": "17%", "status": "ATIVO", "foto": "fotos/p37.jpg"}, "39": {"nome": "DESENGORDURANTE 5L - FD C/4 UN", "ean": "7898556040037", "dun": "17898556040034", "ncm": "3402.50.00", "pesoLiqUn": 5.0, "pesoBrutoUn": 5.21, "medUn": "28 × 18,5 × 14", "medidas": "30 × 38 × 30", "medPalete": "1,32 × 1,20 × 1,0", "cxCamada": 11, "camadas": 4, "validade": 24, "ipi": "3,25%", "icms": "17%", "status": "ATIVO", "foto": "fotos/p39.jpg"}, "912": {"nome": "DESINFETANTE 2L EUCALIPTO - CX C/ 6UN", "ean": "7898556040594", "dun": "17898556040591", "ncm": "3808.94.19", "pesoLiqUn": 2.0, "pesoBrutoUn": 2.19, "medUn": "32 × 11 × 11", "medidas": "33 × 22 × 22", "medPalete": "1,65 × 1,20 × 1,0", "cxCamada": 16, "camadas": 5, "validade": 24, "ipi": "5,00%", "icms": "17%", "status": "ATIVO", "foto": "fotos/p912.jpg"}, "913": {"nome": "DESINFETANTE 2L FLORAL - CX C/ 6UN", "ean": "7898556040785", "dun": "17898556040782", "ncm": "3808.94.19", "pesoLiqUn": 2.0, "pesoBrutoUn": 2.19, "medUn": "32 × 11 × 11", "medidas": "33 × 22 × 22", "medPalete": "1,65 × 1,20 × 1,0", "cxCamada": 16, "camadas": 5, "validade": 24, "ipi": "5,00%", "icms": "17%", "status": "ATIVO", "foto": "fotos/p913.jpg"}, "914": {"nome": "DESINFETANTE 2L LAVANDA - CX C/ 6UN", "ean": "7898556040570", "dun": "17898556040577", "ncm": "3808.94.19", "pesoLiqUn": 2.0, "pesoBrutoUn": 2.19, "medUn": "32 × 11 × 11", "medidas": "33 × 22 × 22", "medPalete": "1,65 × 1,20 × 1,0", "cxCamada": 16, "camadas": 5, "validade": 24, "ipi": "5,00%", "icms": "17%", "status": "ATIVO", "foto": "fotos/p914.jpg"}, "915": {"nome": "DESINFETANTE 2L MARINE - CX C/ 6UN", "ean": "7898556040587", "dun": "17898556040584", "ncm": "3808.94.19", "pesoLiqUn": 2.0, "pesoBrutoUn": 2.19, "medUn": "32 × 11 × 11", "medidas": "33 × 22 × 22", "medPalete": "1,65 × 1,20 × 1,0", "cxCamada": 16, "camadas": 5, "validade": 24, "ipi": "5,00%", "icms": "17%", "status": "ATIVO", "foto": "fotos/p915.jpg"}, "916": {"nome": "DESINFETANTE 2L PINHO - CX C/ 6UN", "ean": "7898556040792", "dun": "17898556040799", "ncm": "3808.94.19", "pesoLiqUn": 2.0, "pesoBrutoUn": 2.19, "medUn": "32 × 11 × 11", "medidas": "33 × 22 × 22", "medPalete": "1,65 × 1,20 × 1,0", "cxCamada": 16, "camadas": 5, "validade": 24, "ipi": "5,00%", "icms": "17%", "status": "ATIVO", "foto": "fotos/p916.jpg"}, "703": {"nome": "LAVA LOUÇAS 500ML MAÇÃ - CX C/ 24UN", "ean": "7898556040068", "dun": "17898556040065", "ncm": "3402.50.00", "pesoLiqUn": 0.5, "pesoBrutoUn": 0.77, "medUn": "30 × 5 × 5", "medidas": "33 × 22 × 22", "medPalete": "1,65 × 1,20 × 1,0", "cxCamada": 15, "camadas": 5, "validade": 24, "ipi": "5,00%", "icms": "17%", "status": "INATIVO", "foto": "fotos/p703.jpg"}, "704": {"nome": "LAVA LOUÇAS 500ML NEUTRO - CX C/ 24UN", "ean": "7898556040075", "dun": "27898556040079", "ncm": "3402.50.00", "pesoLiqUn": 0.5, "pesoBrutoUn": 0.77, "medUn": "30 × 5 × 5", "medidas": "33 × 22 × 22", "medPalete": "1,65 × 1,20 × 1,0", "cxCamada": 15, "camadas": 5, "validade": 24, "ipi": "5,00%", "icms": "17%", "status": "INATIVO", "foto": "fotos/p704.jpg"}, "733": {"nome": "LAVA LOUÇAS 1L MAÇÃ -  CX C/ 12 UN", "ean": "7898556040877", "dun": "17898556040874", "ncm": "3402.50.00", "pesoLiqUn": 1.0, "pesoBrutoUn": 1.1, "medUn": "31 × 8 × 8", "medidas": "33 × 22 × 22", "medPalete": "1,60 × 1,20 × 1,0", "cxCamada": 15, "camadas": 5, "validade": 24, "ipi": "3,25%", "icms": "17%", "status": "ATIVO", "foto": "fotos/p733.jpg"}, "734": {"nome": "LAVA LOUÇAS 1L NEUTRO - CX C/ 12 UN", "ean": "7898556040563", "dun": "17898556040560", "ncm": "3402.50.00", "pesoLiqUn": 1.0, "pesoBrutoUn": 1.1, "medUn": "31 × 8 × 8", "medidas": "33 × 22 × 22", "medPalete": "1,60 × 1,20 × 1,0", "cxCamada": 15, "camadas": 5, "validade": 24, "ipi": "3,25%", "icms": "17%", "status": "ATIVO", "foto": "fotos/p734.jpg"}, "724": {"nome": "LAVA LOUÇAS 5L NEUTRO  - FD C/4 UN", "ean": "7898556040440", "dun": "17898556040447", "ncm": "3402.50.00", "pesoLiqUn": 5.0, "pesoBrutoUn": 5.21, "medUn": "30 × 16 × 14", "medidas": "33 × 32 × 22", "medPalete": "1,32 × 1,20 × 1,0", "cxCamada": 11, "camadas": 4, "validade": 24, "ipi": "3,25%", "icms": "17%", "status": "ATIVO", "foto": "fotos/p724.jpg"}, "568": {"nome": "LIMPA VIDROS 500ML  GATILHO - CX C/12UN", "ean": "7898556041256", "dun": "17898556041253", "ncm": "3402.50.00", "pesoLiqUn": 0.5, "pesoBrutoUn": 0.81, "medUn": "31 × 8 × 5", "medidas": "33 × 22 × 22", "medPalete": "1,60 × 1,20 × 1,0", "cxCamada": 15, "camadas": 5, "validade": 24, "ipi": "3,25%", "icms": "17%", "status": "ATIVO", "foto": "fotos/p568.jpg"}, "569": {"nome": "LIMPA VIDROS 500ML REFIL - CX C/12UN", "ean": "7898556040556", "dun": "17898556040553", "ncm": "3402.50.00", "pesoLiqUn": 0.5, "pesoBrutoUn": 0.81, "medUn": "31 × 8 × 5", "medidas": "33 × 22 × 22", "medPalete": "1,60 × 1,20 × 1,0", "cxCamada": 15, "camadas": 5, "validade": 24, "ipi": "3,25%", "icms": "17%", "status": "ATIVO", "foto": "fotos/p569.jpg"}, "1005": {"nome": "LIMPADOR PERFUMADO 2L EUFORIA - CX C/ 6 UN", "ean": "7898556040648", "dun": "17898556040645", "ncm": "3402.50.00", "pesoLiqUn": 2.0, "pesoBrutoUn": 2.19, "medUn": "32 × 11 × 11", "medidas": "33 × 22 × 22", "medPalete": "1,65 × 1,20 × 1,0", "cxCamada": 15, "camadas": 5, "validade": 24, "ipi": "3,25%", "icms": "17%", "status": "ATIVO", "foto": "fotos/p1005.jpg"}, "1006": {"nome": "LIMPADOR PERFUMADO 2L FELICIDADE - CX C/ 6 UN", "ean": "7898556040631", "dun": "27898556040635", "ncm": "3402.50.00", "pesoLiqUn": 2.0, "pesoBrutoUn": 2.19, "medUn": "32 × 11 × 11", "medidas": "33 × 22 × 22", "medPalete": "1,65 × 1,20 × 1,0", "cxCamada": 15, "camadas": 5, "validade": 24, "ipi": "3,25%", "icms": "17%", "status": "ATIVO", "foto": "fotos/p1006.jpg"}, "1003": {"nome": "LIMPADOR PERFUMADO 5L EUFORIA - FD C/4 UN", "ean": "7898556040167", "dun": "17898556040164", "ncm": "3402.50.00", "pesoLiqUn": 5.0, "pesoBrutoUn": 5.21, "medUn": "30 × 16 × 14", "medidas": "33 × 32 × 22", "medPalete": "1,32 × 1,20 × 1,0", "cxCamada": 11, "camadas": 4, "validade": 24, "ipi": "3,25%", "icms": "17%", "status": "ATIVO", "foto": "fotos/p1003.jpg"}, "1004": {"nome": "LIMPADOR PERFUMADO 5L FELICIDADE - FD C/4 UN", "ean": "7898556040457", "dun": "17898556040638", "ncm": "3402.50.00", "pesoLiqUn": 5.0, "pesoBrutoUn": 5.21, "medUn": "30 × 16 × 14", "medidas": "33 × 32 × 22", "medPalete": "1,32 × 1,20 × 1,0", "cxCamada": 11, "camadas": 4, "validade": 24, "ipi": "3,25%", "icms": "17%", "status": "ATIVO", "foto": "fotos/p1004.jpg"}, "401": {"nome": "AGUA SANITARIA 1L - CX C/ 12 UN", "ean": "7898556040143", "dun": "17898556040140", "ncm": "2828.90.11", "pesoLiqUn": 1.0, "pesoBrutoUn": 1.1, "medUn": "31 × 8 × 8", "medidas": "33 × 22 × 22", "medPalete": "1,65 × 1,20 × 1,0", "cxCamada": 15, "camadas": 5, "validade": 6, "ipi": "0,00%", "icms": "17%", "status": "ATIVO", "foto": "fotos/p401.jpg"}, "402": {"nome": "AGUA SANITARIA 2L - CX C/ 6UN", "ean": "7898556040334", "dun": "17898556040331", "ncm": "2828.90.11", "pesoLiqUn": 2.0, "pesoBrutoUn": 2.19, "medUn": "32 × 11 × 11", "medidas": "33 × 22 × 22", "medPalete": "1,65 × 1,20 × 1,0", "cxCamada": 16, "camadas": 5, "validade": 6, "ipi": "0,00%", "icms": "17%", "status": "ATIVO", "foto": "fotos/p402.jpg"}, "803": {"nome": "AMACIANTE 2L AZUL - CX C/ 6UN", "ean": "7898556041096", "dun": "17898556041093", "ncm": "3809.91.90", "pesoLiqUn": 2.0, "pesoBrutoUn": 2.19, "medUn": "32 × 11 × 11", "medidas": "33 × 22 × 22", "medPalete": "1,65 × 1,20 × 1,0", "cxCamada": 15, "camadas": 5, "validade": 12, "ipi": "0,00%", "icms": "17%", "status": "ATIVO", "foto": "fotos/p803.jpg"}, "801": {"nome": "AMACIANTE 2L ROSA - CX C/ 6UN", "ean": "7898556041102", "dun": "17898556041109", "ncm": "3809.91.90", "pesoLiqUn": 2.0, "pesoBrutoUn": 2.19, "medUn": "32 × 11 × 11", "medidas": "33 × 22 × 22", "medPalete": "1,65 × 1,20 × 1,0", "cxCamada": 15, "camadas": 5, "validade": 12, "ipi": "0,00%", "icms": "17%", "status": "ATIVO", "foto": "fotos/p801.jpg"}, "802": {"nome": "AMACIANTE 2L VERDE- CX C/ 6UN", "ean": "7898556041126", "dun": "17898556041123", "ncm": "3809.91.90", "pesoLiqUn": 2.0, "pesoBrutoUn": 2.19, "medUn": "32 × 11 × 11", "medidas": "33 × 22 × 22", "medPalete": "1,65 × 1,20 × 1,0", "cxCamada": 15, "camadas": 5, "validade": 12, "ipi": "0,00%", "icms": "17%", "status": "ATIVO", "foto": "fotos/p802.jpg"}, "804": {"nome": "AMACIANTE 2L ROXO - CX C/ 6UN", "ean": "7898556041119", "dun": "17898556041116", "ncm": "3809.91.90", "pesoLiqUn": 2.0, "pesoBrutoUn": 2.19, "medUn": "32 × 11 × 11", "medidas": "33 × 22 × 22", "medPalete": "1,65 × 1,20 × 1,0", "cxCamada": 15, "camadas": 5, "validade": 12, "ipi": "0,00%", "icms": "17%", "status": "ATIVO", "foto": "fotos/p804.jpg"}, "644": {"nome": "LAVA ROUPAS 3L PREMIUM - FD C/ 6UN", "ean": "7898556040907", "dun": "17898556040904", "ncm": "3402.50.00", "pesoLiqUn": null, "pesoBrutoUn": 3.2, "medUn": "31 × 8 × 15", "medidas": "32 × 29 × 30", "medPalete": "1,32 × 1,20 × 1,0", "cxCamada": 12, "camadas": 4, "validade": 24, "ipi": "3,25%", "icms": "17%", "status": "ATIVO", "foto": "fotos/p644.jpg"}, "615": {"nome": "LAVA ROUPAS 2L  GLICERINA - CX C/ 6UN", "ean": "7898556040471", "dun": "17898556040478", "ncm": "3402.50.00", "pesoLiqUn": 2.0, "pesoBrutoUn": 2.19, "medUn": "32 × 11 × 11", "medidas": "33 × 22 × 22", "medPalete": "1,65 × 1,20 × 1,0", "cxCamada": 15, "camadas": 5, "validade": 24, "ipi": "3,25%", "icms": "17%", "status": "ATIVO", "foto": "fotos/p615.jpg"}, "645": {"nome": "LAVA ROUPAS 3L GLICERINA - FD C/ 6UN", "ean": "7898556040938", "dun": "17898556040935", "ncm": "3402.50.00", "pesoLiqUn": null, "pesoBrutoUn": 3.13, "medUn": "31 × 8 × 15", "medidas": "32 × 29 × 30", "medPalete": "1,32 × 1,20 × 1,0", "cxCamada": 12, "camadas": 4, "validade": 24, "ipi": "3,25%", "icms": "17%", "status": "ATIVO", "foto": "fotos/p645.jpg"}, "614": {"nome": "LAVA ROUPAS 2L PREMIUM - CX C/ 6UN", "ean": "7898556040266", "dun": "17898556040263", "ncm": "3402.50.00", "pesoLiqUn": 2.0, "pesoBrutoUn": 2.19, "medUn": "32 × 11 × 11", "medidas": "33 × 22 × 22", "medPalete": "1,65 × 1,20 × 1,0", "cxCamada": 15, "camadas": 5, "validade": 24, "ipi": "3,25%", "icms": "17%", "status": "ATIVO", "foto": "fotos/p614.jpg"}, "1100": {"nome": "LIMPA CANIL 1L  - CX C/ 12 UN", "ean": "7898556040341", "dun": "17898556040386", "ncm": "3402.50.00", "pesoLiqUn": 1.0, "pesoBrutoUn": 1.1, "medUn": "31 × 8 × 8", "medidas": "33 × 22 × 22", "medPalete": "1,65 × 1,20 × 1,0", "cxCamada": 15, "camadas": 5, "validade": 24, "ipi": "3,25%", "icms": "17%", "status": "ATIVO", "foto": "fotos/p1100.jpg"}, "1102": {"nome": "LIMPA CANIL 5L - FD  C/4 UN", "ean": "7898556040389", "dun": "27898556040383", "ncm": "3402.50.00", "pesoLiqUn": 5.0, "pesoBrutoUn": 5.21, "medUn": "28 × 18,5 × 14", "medidas": "30 × 38 × 30", "medPalete": "1,32 × 1,20 × 1,0", "cxCamada": 11, "camadas": 4, "validade": 24, "ipi": "3,25%", "icms": "17%", "status": "ATIVO", "foto": "fotos/p1102.jpg"}, "405": {"nome": "LIMPEZA PESADA  1L - CX C/ 12 UN", "ean": "7898556040921", "dun": "17898556040928", "ncm": "3402.50.00", "pesoLiqUn": 1.0, "pesoBrutoUn": 1.1, "medUn": "31 × 8 × 8", "medidas": "33 × 22 × 22", "medPalete": "1,65 × 1,20 × 1,0", "cxCamada": 15, "camadas": 5, "validade": 24, "ipi": "3,25%", "icms": "17%", "status": "ATIVO", "foto": "fotos/p405.jpg"}, "406": {"nome": "LIMPEZA PESADA 5L -  FD C/4 UN", "ean": "7898556040020", "dun": "17898556040027", "ncm": "3402.50.00", "pesoLiqUn": 5.0, "pesoBrutoUn": 5.21, "medUn": "28 × 18,5 × 14", "medidas": "30 × 38 × 30", "medPalete": "1,32 × 1,20 × 1,0", "cxCamada": 11, "camadas": 4, "validade": 24, "ipi": "3,25%", "icms": "17%", "status": "ATIVO", "foto": "fotos/p406.jpg"}};
+  const sem=s=>String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toUpperCase();
+  /* ---------- grupo de cada item (lido do tipo antigo; só na primeira vez) ---------- */
+  function grupoIns(i){const t=sem(i.tipo),n=sem(i.nome);
+    if(i.grupo==='uso')return 'uso';
+    if(/SACO|EMBALAGEM DE KIT/.test(n))return 'embkit';
+    if(/FITA|FILME|STRETCH/.test(n))return 'fitas';
+    if(/ROTULO/.test(t)||/^ROTULO|ETIQUETA/.test(n))return 'rotulos';
+    if(/PREFORMA/.test(t+n))return 'preformas';
+    if(/TAMPA/.test(t)||/^TAMPA/.test(n))return 'tampas';
+    if(/CAIXA/.test(t)||/^CAIXA/.test(n))return 'caixas';
+    if(/EMBALAGE|FRASCO/.test(t)||/^FRASCO/.test(n))return 'frascos';
+    if(/FRAGRAN|ESSENCIA/.test(t))return 'fragr';if(/CORANTE/.test(t))return 'corantes';
+    return 'mp';}
+  const grupoProd=p=>p.frasco?'frascos':p.grupoCad==='rev'?'rev':'pa';
+  function migra(){try{
+    if(!CS_MIGRA.includes('cgrupo485')){INSUMOS.forEach(i=>{if(!i.cgrupo)i.cgrupo=grupoIns(i);});PRODUTOS.forEach(p=>{if(!p.cgrupo)p.cgrupo=grupoProd(p);});CS_MIGRA.push('cgrupo485');agendarSalvar();}
+    if(!CS_MIGRA.includes('tqsku485')){let n=0;cpTanques().forEach(t=>{const c=tqCad(t);if(!c.sku){n++;c.sku='T'+String(n).padStart(2,'0');}else{const m=+(String(c.sku).match(/^T(\d+)$/)||[])[1];if(m>n)n=m;}});CS_MIGRA.push('tqsku485');agendarSalvar();}
+    if(!CS_MIGRA.includes('notion485')){let n=0;PRODUTOS.forEach(p=>{const x=NOTION[String(p.codigo)];if(!x)return;
+        ['ean','dun','ncm','pesoLiqUn','pesoBrutoUn','medUn','medidas','medPalete','cxCamada','camadas'].forEach(k=>{if((p[k]==null||p[k]==='')&&x[k]!=null&&x[k]!=='')p[k]=x[k];});
+        if(p.validadeMeses==null&&x.validade)p.validadeMeses=x.validade;
+        const c=String(p.codigo);if(x.foto&&!FOTOS_PROD[c]&&!(typeof CS_FOTOS!=='undefined'&&CS_FOTOS[c]))FOTOS_PROD[c]=x.foto;n++;});
+      CS_MIGRA.push('notion485');agendarSalvar();}
+  }catch(e){console.warn('itens485 migra',e);}}
+  setTimeout(migra,7000);
+  /* ---------- linhas ---------- */
+  const tqCad=t=>{const f=FORMULAS[t]=FORMULAS[t]||{mp:[],emb:{}};f.cad=f.cad||{};return f.cad;};
+  const obtDe=(tipo,x,g)=>{const o=tipo==='t'?((FORMULAS[x]||{}).cad||{}).obtem:x.obtem;if(o)return o;return (g==='tanques'||g==='pa')?{p:true}:{c:true};};
+  function linhas(){
+    const tq=cpTanques().map(t=>{const c=(FORMULAS[t]||{}).cad||{};return {tipo:'t',id:t,cod:c.sku||'—',nome:t,x:{nome:t,ativo:c.ativo},g:'tanques',ativo:c.ativo!==false,tags:c.tags||[]};});
+    const pr=PRODUTOS.map(p=>({tipo:'p',id:String(p.codigo),cod:String(p.codigo),nome:p.descricao,x:p,g:p.cgrupo||grupoProd(p),ativo:ativoProd(p),tags:Array.isArray(p.tags)?p.tags.filter(t=>t!=='Produto Acabado'):[]}));
+    const ins=INSUMOS.map(i=>({tipo:'i',id:i.sku,cod:i.sku,nome:i.nome,x:i,g:i.cgrupo||grupoIns(i),ativo:i.ativo!==false,tags:Array.isArray(i.tags)?i.tags.filter(t=>t!==i.tipo):[]}));
+    return tq.concat(pr,ins).map(l=>({...l,obt:obtDe(l.tipo,l.tipo==='t'?l.id:l.x,l.g)}));
+  }
+  /* ---------- SKU automático ---------- */
+  function skuSug(g,tanque){
+    const L=linhas();
+    if(g==='pa'){const ir=PRODUTOS.filter(p=>p.tanque===tanque).map(p=>+p.codigo).filter(n=>n>0);
+      const usados=new Set(PRODUTOS.map(p=>String(p.codigo)));
+      let n=ir.length?Math.max(...ir)+1:Math.ceil((Math.max(0,...PRODUTOS.map(p=>+p.codigo).filter(n=>n>0&&n<2000))+1)/100)*100+1;
+      while(usados.has(String(n)))n++;return String(n);}
+    if(g==='tanques'){const ns=L.filter(l=>l.tipo==='t').map(l=>+(String(l.cod).match(/^T(\d+)$/)||[])[1]).filter(n=>n>0);return 'T'+String((ns.length?Math.max(...ns):0)+1).padStart(2,'0');}
+    const cfg=((CAD_GRUPOS||{}).sku||{})[g];
+    const skus=L.filter(l=>l.tipo==='i'&&l.g===g).map(l=>String(l.cod));
+    const conta={};skus.forEach(s=>{const m=s.match(/^([A-Z]+-?)(\d+)/);if(m)conta[m[1]]=(conta[m[1]]||0)+1;});
+    const pref=cfg&&cfg.pref||Object.keys(conta).sort((a,b)=>conta[b]-conta[a])[0]||({preformas:'PREF',frascos:'FR',rotulos:'ROT',tampas:'TAM',caixas:'CX',fitas:'FT',embkit:'EK',mp:'MP-',fragr:'FRG',corantes:'COR',uso:'UC',rev:'RV'}[g]||'IT');
+    const nums=skus.map(s=>s.startsWith(pref)?(s.slice(pref.length).match(/^\d+/)||[])[0]:null).filter(Boolean);
+    const dig=cfg&&cfg.dig||Math.max(3,...nums.map(x=>x.length));
+    const todos=new Set(L.map(l=>String(l.cod)));let n=(nums.length?Math.max(...nums.map(Number)):0)+1;
+    while(todos.has(pref+String(n).padStart(dig,'0')))n++;return pref+String(n).padStart(dig,'0');
+  }
+  /* ---------- estilo ---------- */
+  try{const s=document.createElement('style');s.textContent=`
+.i5{display:grid;grid-template-columns:250px 1fr;gap:20px;align-items:start}
+.i5arv{border-right:1px solid var(--line);padding-right:12px;display:flex;flex-direction:column;gap:1px;position:sticky;top:8px}
+.i5arv button{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:9px;font-size:13.5px;color:var(--ink2);text-align:left;background:none;border:0;cursor:pointer;width:100%}
+.i5arv button.g{font-weight:700;color:var(--ink);font-size:14px}.i5arv button.s{padding-left:30px}
+.i5arv button i{margin-left:auto;font-style:normal;font-size:12px;color:var(--ink3);font-weight:600}
+.i5arv button.on{background:#EEF3FF;color:#1D4ED8}.i5arv button.on i{color:#1D4ED8}.i5arv .sep{height:1px;background:var(--line);margin:6px 0}
+.i5top{display:flex;align-items:center;gap:10px;margin-bottom:12px}.i5top h2{margin:0;font-size:24px;font-weight:800;flex:1}
+.i5bar{display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap}
+.i5bus{flex:1;min-width:220px;height:40px;border:1px solid var(--line);border-radius:10px;padding:0 12px;font-size:14px}
+.i5seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;height:40px}.i5seg button{padding:0 12px;font-weight:600;font-size:13px;color:var(--ink2);border:0;border-right:1px solid var(--line);background:#fff;cursor:pointer}.i5seg button:last-child{border-right:0}.i5seg button.on{background:#0E1B33;color:#fff}
+.i5sel{height:40px;border:1px solid var(--line);border-radius:10px;padding:0 10px;font-weight:600;background:#fff}
+.i5t{width:100%;border-collapse:collapse;font-size:13.5px}
+.i5tb{border:1px solid var(--line);border-radius:14px;overflow:auto}
+.i5t th{font:700 11px Inter,system-ui;color:var(--ink3);letter-spacing:.06em;text-transform:uppercase;text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);background:#FAFAFB;white-space:nowrap}
+.i5t td{padding:9px 12px;border-bottom:1px solid #F1F2F4;vertical-align:middle}.i5t td.n,.i5t th.n{text-align:right;font-variant-numeric:tabular-nums}
+.i5t tr.cl{cursor:pointer}.i5t tr.cl:hover td{background:#FAFBFF}.i5t tr.ina td{opacity:.5}.i5t tr.sel td{background:#F2F6FF}
+.i5t td.sk{color:var(--ink3);font-weight:600;white-space:nowrap}.i5t td.nm b{font-weight:600}.i5t td.nm small{display:block;color:var(--ink3);font-size:12px}
+.i5t tr.mae td{background:#F7F9FF;font-weight:700}.i5t tr.fil td.nm{padding-left:36px}.i5t tr.fil td.nm:before{content:'└ ';color:#C9CCD3}
+.i5c{font:700 11px Inter,system-ui;border-radius:999px;padding:3px 8px;white-space:nowrap;display:inline-block;margin:1px 3px 1px 0}
+.i5c.p{background:#EEF3FF;color:#1D4ED8}.i5c.c{background:#ECFDF3;color:#15803D}.i5c.i{background:#F3E8FF;color:#7E22CE}.i5c.n{background:#F3F4F6;color:#6B7280}.i5c.m{background:#FEF3C7;color:#92400E}
+.i5ck{width:17px;height:17px;border-radius:5px;border:2px solid #C9CCD3;display:inline-block;cursor:pointer;vertical-align:middle}.i5ck.on{background:#1D4ED8;border-color:#1D4ED8;box-shadow:inset 0 0 0 2px #fff}
+.i5dt{border:0;background:none;color:var(--ink3);font-weight:800;cursor:pointer;padding:4px 8px;border-radius:7px}.i5dt:hover{background:var(--line3)}
+.i5bulk{display:flex;gap:8px;align-items:center;background:#F2F6FF;border:1px solid #C9D8F5;border-radius:12px;padding:8px 12px;margin-bottom:10px}
+.i5menu{position:fixed;z-index:90;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 12px 32px rgba(14,27,51,.16);padding:6px;min-width:190px}
+.i5menu button{display:block;width:100%;text-align:left;padding:8px 10px;border-radius:8px;border:0;background:none;cursor:pointer;font-size:13.5px}.i5menu button:hover{background:var(--line3)}
+/* ficha */
+.i5f{display:grid;grid-template-columns:190px 1fr;gap:20px;align-items:start}
+.i5nav{position:sticky;top:8px;display:flex;flex-direction:column;gap:2px}.i5nav a{padding:8px 12px;border-radius:9px;font-weight:600;font-size:13.5px;color:var(--ink2);text-decoration:none;cursor:pointer;display:flex;gap:8px;align-items:center}
+.i5nav a i{font-style:normal;width:20px;height:20px;border-radius:50%;background:var(--line2);font-size:11px;display:grid;place-items:center;color:var(--ink3)}.i5nav a:hover{background:#EEF3FF;color:#1D4ED8}
+.i5frm{display:flex;flex-direction:column;gap:12px;max-width:1120px;padding-bottom:80px}
+.i5blk{border:1px solid var(--line);border-radius:14px;padding:14px 18px;display:flex;flex-direction:column;gap:10px;background:#fff}
+.i5blk h3{font:700 12.5px Inter,system-ui;letter-spacing:.08em;text-transform:uppercase;color:var(--ink2);display:flex;align-items:center;gap:8px;margin:0}
+.i5blk h3 .nu{width:22px;height:22px;border-radius:50%;background:#EEF3FF;color:#1D4ED8;display:grid;place-items:center;font-size:11px;letter-spacing:0}
+.i5blk h3 .k{margin-left:auto;text-transform:none;letter-spacing:0;font-weight:500;color:var(--ink3)}
+.i5g{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:11px}.i5g .s2{grid-column:span 2}.i5g .s3{grid-column:span 3}.i5g .s4{grid-column:span 4}.i5g .s6{grid-column:span 6}
+.i5g label{display:block;font-size:12px;color:var(--ink3);margin-bottom:5px}
+.i5g input,.i5g select{width:100%;height:40px;border:1px solid var(--line);border-radius:10px;padding:0 12px;font-size:14px;background:#fff;box-sizing:border-box}
+.i5g input[readonly]{background:var(--line3);color:var(--ink2)}
+.i5auto{font:700 10.5px Inter,system-ui;color:#15803D;background:#ECFDF3;border-radius:6px;padding:1px 6px;margin-left:4px}
+.i5ob{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.i5ot{border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:6px;cursor:pointer;background:#fff}
+.i5ot .t{display:flex;align-items:center;gap:9px;font-weight:700;font-size:15px}.i5ot small{color:var(--ink3);font-size:12.5px}
+.i5ot.on.p{border:2px solid #1D4ED8;background:#F7F9FF;padding:11px 13px}.i5ot.on.c{border:2px solid #15803D;background:#F6FEF9;padding:11px 13px}.i5ot.on.i{border:2px solid #7E22CE;background:#FBF7FF;padding:11px 13px}
+.i5ot .ck{width:18px;height:18px;border-radius:5px;border:2px solid #C9CCD3;flex:none}
+.i5ot.on.p .ck{background:#1D4ED8;border-color:#1D4ED8;box-shadow:inset 0 0 0 3px #fff}.i5ot.on.c .ck{background:#15803D;border-color:#15803D;box-shadow:inset 0 0 0 3px #fff}.i5ot.on.i .ck{background:#7E22CE;border-color:#7E22CE;box-shadow:inset 0 0 0 3px #fff}
+.i5chips{display:flex;gap:6px;flex-wrap:wrap}.i5chips span{border:1px solid var(--line);border-radius:9px;padding:5px 9px;font-size:12.5px;background:#fff}.i5chips span em{font-style:normal;color:var(--ink3);cursor:pointer;margin-left:6px}
+.i5add{color:#1D4ED8;font-weight:700;font-size:13px;cursor:pointer;background:none;border:0;padding:0;text-align:left}
+.i5in{height:32px;border:1px solid var(--line);border-radius:8px;padding:0 8px;width:90px;text-align:right}
+.i5sw{display:flex;align-items:center;gap:12px;border:1px solid var(--line);border-radius:12px;padding:12px 14px;cursor:pointer}
+.i5sw i{width:42px;height:24px;border-radius:12px;background:#C9CCD3;position:relative;flex:none}.i5sw i:after{content:'';position:absolute;left:3px;top:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:.15s}
+.i5sw.on i{background:#15803D}.i5sw.on i:after{left:21px}.i5sw b{font-size:15px}.i5sw small{display:block;color:var(--ink3);font-size:12.5px}
+.i5foto{width:140px;height:140px;border:1px solid var(--line);border-radius:12px;display:grid;place-items:center;background:#fff center/contain no-repeat;cursor:pointer;color:var(--ink3);font-weight:600;flex:none}
+.i5proc{display:flex;flex-direction:column;gap:6px}.i5proc div{display:flex;gap:10px;align-items:center}.i5proc b{width:24px;height:24px;border-radius:50%;background:#EEF3FF;color:#1D4ED8;display:grid;place-items:center;font-size:12px;flex:none}
+.i5proc input{flex:1;height:36px;border:1px solid var(--line);border-radius:9px;padding:0 10px;font-size:13.5px}
+.i5aviso{font-size:12.5px;color:#92400E;background:#FFF7ED;border-radius:9px;padding:8px 12px}.i5ok{font-size:12.5px;color:#15803D;background:#ECFDF3;border-radius:9px;padding:8px 12px}
+.i5ft{position:sticky;bottom:0;background:#fff;border-top:1px solid var(--line);padding:12px 0;display:flex;justify-content:flex-end;gap:10px;margin-top:8px}
+@media(max-width:900px){.i5,.i5f{grid-template-columns:1fr}.i5arv,.i5nav{position:static}.i5g{grid-template-columns:repeat(2,1fr)}.i5ob{grid-template-columns:1fr}}`;document.head.appendChild(s);}catch(e){}
+
+  const I5={g:'todos',obt:'',modo:'tanque',q:'',sit:'ativos',sel:new Set(),ficha:null};
+  window.I5=I5;
+  const conta=(L,k)=>L.filter(l=>k==='todos'||l.g===k||paiG(l.g)===k).length;
+  const chipsObt=l=>{const o=l.obt||{};const r=[];
+    if(o.p)r.push(`<span class="i5c p">Produzido</span>`);if(o.c)r.push(`<span class="i5c c">Comprado</span>`);
+    if(o.i)r.push(`<span class="i5c i">Industrializado${l.tipo!=='t'&&Array.isArray(l.x.indForn)&&l.x.indForn.length?' · '+escAttr(l.x.indForn[0]):''}</span>`);return r.join('');};
+  const estDe=l=>{if(l.tipo==='t')return '<span class="i5c n">não controla</span>';if(l.x.ctrlEst===false)return '<span class="i5c n">não controla</span>';return csEst(l.x.tiny);};
+  const resDe=l=>{try{const r=l.tipo==='p'?CP2.res&&CP2.res['p|'+l.cod]:l.tipo==='i'?CP2.res&&CP2.res['i|'+l.cod]:null;return r?nf(Math.round(r)):'—';}catch(e){return '—';}};
+  const unDe=l=>l.tipo==='t'?'L':l.tipo==='p'?cpEmb(l.x).toUpperCase():escAttr(l.x.un||'');
+
+  gradeCadProd=function(){
+    const el=M('cpgrid');if(!el)return;
+    if(I5.ficha)return fichaDesenha();
+    try{csCarregaReservas();}catch(e){}
+    const L=linhas();const q=sem(I5.q).trim();
+    const noG=l=>I5.g==='todos'||l.g===I5.g||paiG(l.g)===I5.g;
+    const noObt=l=>!I5.obt||(l.obt||{})[I5.obt];
+    const naSit=l=>I5.sit==='todos'||(I5.sit==='ativos'?l.ativo:!l.ativo);
+    const casa=l=>!q||sem(l.nome+' '+l.cod+' '+(l.tags||[]).join(' ')).includes(q);
+    let vis=L.filter(l=>noG(l)&&noObt(l)&&naSit(l)&&casa(l));
+    const arvoreOk=['fab','tanques','pa'].includes(I5.g)&&I5.modo==='tanque';
+    let ordem=vis;
+    if(arvoreOk){ordem=[];const tqs=vis.filter(l=>l.tipo==='t');const pas=vis.filter(l=>l.tipo==='p');const usados=new Set();
+      const nomesTq=new Set(L.filter(l=>l.tipo==='t').map(l=>l.id));
+      const todosTq=[...new Set([...tqs.map(l=>l.id),...pas.map(p=>p.x.tanque).filter(t=>t&&nomesTq.has(t))])].sort((a,b)=>a.localeCompare(b,'pt-BR'));
+      todosTq.forEach(t=>{const lt=L.find(l=>l.tipo==='t'&&l.id===t);ordem.push({...lt,mae:true});
+        pas.filter(p=>p.x.tanque===t).sort((a,b)=>(+a.x.litragem-+b.x.litragem)||a.cod.localeCompare(b.cod)).forEach(p=>{ordem.push({...p,fil:true});usados.add(p.id);});});
+      pas.filter(p=>!usados.has(p.id)).forEach(p=>ordem.push(p));vis.filter(l=>l.tipo==='i').forEach(l=>ordem.push(l));}
+    else ordem=vis.slice().sort((a,b)=>a.nome.localeCompare(b.nome,'pt-BR'));
+    const arv=`<nav class="i5arv"><button class="g ${I5.g==='todos'?'on':''}" data-ig="todos">Todos<i>${conta(L,'todos')}</i></button><div class="sep"></div>
+      ${GR.map(g=>`<button class="g ${I5.g===g.k?'on':''}" data-ig="${g.k}">${g.n}<i>${conta(L,g.k)}</i></button>${g.f.map(([k,n])=>`<button class="s ${I5.g===k?'on':''}" data-ig="${k}">${n}<i>${conta(L,k)}</i></button>`).join('')}`).join('')}
+      <div class="sep"></div><button class="s" id="i5Cfg" style="padding-left:10px">⚙ Grupos e SKU</button></nav>`;
+    const k=l=>l.tipo+'|'+l.id;
+    const linha=l=>`<tr class="cl ${l.ativo?'':'ina'} ${I5.sel.has(k(l))?'sel':''} ${l.mae?'mae':''} ${l.fil?'fil':''}" data-ia="${escAttr(k(l))}">
+      <td style="width:30px"><span class="i5ck ${I5.sel.has(k(l))?'on':''}" data-ick="${escAttr(k(l))}"></span></td><td class="sk">${escAttr(l.cod)}</td>
+      <td class="nm"><b>${escAttr(l.nome)}</b>${l.tipo==='p'&&!l.fil&&l.x.tanque?`<small>${escAttr(l.x.tanque)}</small>`:''}${l.tags&&l.tags.length?`<small>${l.tags.map(t=>`<span class="i5c m">${escAttr(t)}</span>`).join('')}</small>`:''}</td>
+      <td>${escAttr(nomeG(l.g))}</td><td>${chipsObt(l)}</td><td>${unDe(l)}</td><td class="n">${estDe(l)}</td><td class="n" style="color:#C2410C">${l.tipo==='t'?'':resDe(l)}</td>
+      <td style="width:40px"><button class="i5dt" data-idt="${escAttr(k(l))}">⋯</button></td></tr>`;
+    const tit=I5.g==='todos'?'Itens':(GR.find(g=>g.k===I5.g)||{}).n||nomeG(I5.g);
+    el.innerHTML=`<div class="i5top"><h2>${escAttr(tit)}</h2><button class="btn pri" id="i5Novo">＋ Novo item</button></div>
+      <div class="i5">${arv}<div>
+      <div class="i5bar"><input class="i5bus" id="i5Q" placeholder="Buscar por nome, SKU ou marcador" value="${escAttr(I5.q)}">
+        <div class="i5seg">${[['','Todos'],['p','Produzido'],['c','Comprado'],['i','Industrializado']].map(([v,r])=>`<button data-io="${v}" class="${I5.obt===v?'on':''}">${r}</button>`).join('')}</div>
+        ${['fab','tanques','pa'].includes(I5.g)?`<div class="i5seg">${[['tanque','Por tanque'],['lista','Lista']].map(([v,r])=>`<button data-im="${v}" class="${I5.modo===v?'on':''}">${r}</button>`).join('')}</div>`:''}
+        <select class="i5sel" id="i5Sit">${[['ativos','Ativos'],['inativos','Inativos'],['todos','Ativos e inativos']].map(([v,r])=>`<option value="${v}" ${I5.sit===v?'selected':''}>${r}</option>`).join('')}</select></div>
+      ${I5.sel.size?`<div class="i5bulk"><b>${I5.sel.size} selecionado${I5.sel.size>1?'s':''}</b><span style="flex:1"></span>
+        <select class="i5sel" id="i5BG"><option value="">Mudar grupo…</option>${FOLHAS.filter(f=>f.k!=='tanques').map(f=>`<option value="${f.k}">${f.n}</option>`).join('')}</select>
+        <button class="btn sm" id="i5BM">＋ Marcador</button><button class="btn sm" id="i5BI">Inativar</button><button class="btn sm" id="i5BR">Reativar</button><button class="btn sm" id="i5BX">Desmarcar</button></div>`:''}
+      <div class="i5tb"><table class="i5t"><thead><tr><th><span class="i5ck ${vis.length&&vis.every(l=>I5.sel.has(k(l)))?'on':''}" id="i5CkT"></span></th><th>SKU</th><th>Nome</th><th>Grupo</th><th>Como é obtido</th><th>Un</th><th class="n">Estoque</th><th class="n">Reservado</th><th></th></tr></thead>
+      <tbody>${ordem.map(linha).join('')||'<tr><td colspan="9" style="padding:30px;text-align:center;color:var(--ink3)">Nada aqui com esses filtros.</td></tr>'}</tbody></table></div></div></div>`;
+    el.querySelectorAll('[data-ig]').forEach(b=>b.onclick=()=>{I5.g=b.dataset.ig;I5.sel.clear();gradeCadProd();});
+    el.querySelectorAll('[data-io]').forEach(b=>b.onclick=()=>{I5.obt=b.dataset.io;gradeCadProd();});
+    el.querySelectorAll('[data-im]').forEach(b=>b.onclick=()=>{I5.modo=b.dataset.im;gradeCadProd();});
+    M('i5Sit').onchange=e=>{I5.sit=e.target.value;gradeCadProd();};
+    M('i5Q').oninput=e=>{I5.q=e.target.value;gradeCadProd();const x=M('i5Q');x.focus();x.setSelectionRange(x.value.length,x.value.length);};
+    M('i5Novo').onclick=()=>novoItem();M('i5Cfg').onclick=()=>cfgGrupos();
+    el.querySelectorAll('[data-ick]').forEach(c=>c.onclick=ev=>{ev.stopPropagation();const x=c.dataset.ick;I5.sel.has(x)?I5.sel.delete(x):I5.sel.add(x);gradeCadProd();});
+    M('i5CkT').onclick=()=>{const t=vis.length&&vis.every(l=>I5.sel.has(k(l)));vis.forEach(l=>t?I5.sel.delete(k(l)):I5.sel.add(k(l)));gradeCadProd();};
+    el.querySelectorAll('[data-ia]').forEach(tr=>tr.onclick=ev=>{if(ev.target.closest('[data-ick],[data-idt]'))return;abrir(tr.dataset.ia);});
+    el.querySelectorAll('[data-idt]').forEach(b=>b.onclick=ev=>{ev.stopPropagation();menu(b,b.dataset.idt);});
+    const objs=()=>[...I5.sel].map(s=>{const [tp,id]=s.split(/\|(.*)/s);return tp==='p'?prodOf(id):tp==='i'?INSUMOS.find(i=>i.sku===id):tp==='t'?tqCad(id):null;}).filter(Boolean);
+    if(M('i5BX'))M('i5BX').onclick=()=>{I5.sel.clear();gradeCadProd();};
+    if(M('i5BI'))M('i5BI').onclick=()=>{objs().forEach(o=>o.ativo=false);agendarSalvar();I5.sel.clear();gradeCadProd();toast('Inativados.');};
+    if(M('i5BR'))M('i5BR').onclick=()=>{objs().forEach(o=>o.ativo=true);agendarSalvar();I5.sel.clear();gradeCadProd();toast('Reativados.');};
+    if(M('i5BG'))M('i5BG').onchange=e=>{const g=e.target.value;if(!g)return;let n=0;[...I5.sel].forEach(s=>{const [tp,id]=s.split(/\|(.*)/s);const o=tp==='p'?prodOf(id):tp==='i'?INSUMOS.find(i=>i.sku===id):null;if(o){o.cgrupo=g;n++;}});
+      agendarSalvar();I5.sel.clear();gradeCadProd();toast(`${n} ite${n>1?'ns':'m'} em ${nomeG(g)}.`);};
+    if(M('i5BM'))M('i5BM').onclick=()=>{const t=(prompt('Marcador:')||'').trim();if(!t)return;objs().forEach(o=>{o.tags=Array.isArray(o.tags)?o.tags:[];if(!o.tags.includes(t))o.tags.push(t);});agendarSalvar();I5.sel.clear();gradeCadProd();toast(`Marcador "${t}" incluído.`);};
+  };
+  function menu(btn,key){
+    document.querySelectorAll('.i5menu').forEach(x=>x.remove());
+    const [tp,id]=key.split(/\|(.*)/s);const o=tp==='p'?prodOf(id):tp==='i'?INSUMOS.find(i=>i.sku===id):tqCad(id);const at=o&&o.ativo!==false;
+    const m=document.createElement('div');m.className='i5menu';
+    m.innerHTML=`<button data-a="ab">Abrir</button>${tp!=='t'?`<button data-a="du">Duplicar</button>`:''}<button data-a="at" style="color:${at?'var(--danger)':'inherit'}">${at?'Inativar':'Reativar'}</button>`;
+    document.body.appendChild(m);const r=btn.getBoundingClientRect();m.style.left=Math.max(8,r.right-m.offsetWidth)+'px';m.style.top=Math.min(r.bottom+4,innerHeight-m.offsetHeight-8)+'px';
+    m.onclick=ev=>{ev.stopPropagation();const a=ev.target.closest('[data-a]');if(!a)return;m.remove();
+      if(a.dataset.a==='ab')abrir(key);
+      if(a.dataset.a==='at'){o.ativo=!at;agendarSalvar();gradeCadProd();toast(at?'Inativado.':'Reativado.');}
+      if(a.dataset.a==='du')duplicar(tp,o);};
+    setTimeout(()=>document.addEventListener('click',function f(){m.remove();document.removeEventListener('click',f);}),0);
+  }
+  function duplicar(tp,o){
+    const c=JSON.parse(JSON.stringify(o));
+    if(tp==='p'){c.codigo=skuSug('pa',o.tanque);c.descricao=o.descricao+' (CÓPIA)';delete c.tiny;PRODUTOS.push(c);TEMPOS[c.codigo]=JSON.parse(JSON.stringify(TEMPOS[String(o.codigo)]||{lote:3800,t:{}}));agendarSalvar();abrir('p|'+c.codigo);}
+    else{c.sku=skuSug(o.cgrupo||grupoIns(o));c.nome=o.nome+' (CÓPIA)';delete c.tiny;c.tiny='ERP-'+c.sku;INSUMOS.push(c);agendarSalvar();abrir('i|'+c.sku);}
+    toast('Cópia criada. Confira o nome.');
+  }
+  /* ---------- ficha ---------- */
+  let FOR=null;
+  async function fornecedores(){if(FOR)return FOR;try{const c=await csNucleo.ler('cadastros');const l=(c&&c.contatos)||[];
+    const t=x=>Array.isArray(x.tiposTiny)?x.tiposTiny:[],pap=x=>Array.isArray(x.papeis)?x.papeis:[];
+    FOR=l.filter(x=>x.ativo!==false&&(pap(x).includes('Fornecedor')||t(x).some(y=>/fornec/i.test(y))||x.tipo==='Fornecedor')).map(x=>x.fantasia||x.nome).filter(Boolean).sort((a,b)=>a.localeCompare(b,'pt-BR'));}catch(e){FOR=[];}return FOR;}
+  function abrir(key){const [tp,id]=key.split(/\|(.*)/s);
+    if(tp==='p'){const p=prodOf(id);if(!p)return;I5.ficha={tp,id,d:JSON.parse(JSON.stringify(p)),foto:FOTOS_PROD[String(p.codigo)]||(typeof CS_FOTOS!=='undefined'&&CS_FOTOS[String(p.codigo)])||'',
+      emb:JSON.parse(JSON.stringify(Array.isArray(p.ficha)?p.ficha:(((FORMULAS[p.tanque]||{}).emb||{})[fmtLit(+p.litragem||0)]||[]))),propria:Array.isArray(p.ficha)};}
+    else if(tp==='i'){const i=INSUMOS.find(x=>x.sku===id);if(!i)return;I5.ficha={tp,id,d:JSON.parse(JSON.stringify(i)),emb:JSON.parse(JSON.stringify(i.ficha||[]))};}
+    else{const f=FORMULAS[id]||{mp:[],emb:{}};I5.ficha={tp,id,d:JSON.parse(JSON.stringify(f.cad||{})),proc:JSON.parse(JSON.stringify(f.proc||[]))};}
+    fornecedores().then(()=>{if(I5.ficha)fichaDesenha();});
+    fichaDesenha();try{M('cpgrid').scrollIntoView({block:'start'});}catch(e){}
+  }
+  const v=x=>x==null?'':escAttr(String(x));
+  const nfx=(x,d)=>x==null||x===''?'':(+x).toLocaleString('pt-BR',{maximumFractionDigits:d==null?3:d});
+  const lnum=s=>{const t=String(s||'').trim();if(!t)return null;const n=+t.replace(/\./g,'').replace(',','.');return isFinite(n)?n:null;};
+  function fichaDesenha(){
+    const F=I5.ficha,el=M('cpgrid');const d=F.d;const tp=F.tp;
+    const g=tp==='t'?'tanques':tp==='p'?(d.cgrupo||grupoProd(d)):(d.cgrupo||grupoIns(d));
+    const ob=d.obtem||((g==='tanques'||g==='pa')?{p:true}:{c:true});d.obtem=ob;
+    const nome=tp==='t'?F.id:tp==='p'?d.descricao:d.nome;const sku=tp==='t'?(d.sku||''):tp==='p'?d.codigo:d.sku;
+    const temFT=ob.p||ob.i;const kit=tp==='p'&&/^KIT/i.test(d.descricao||'');
+    const secs=[['id','Identificação'],['ob','Como é obtido']];if(temFT)secs.push(['ft',tp==='t'?'Formulação':'Ficha técnica']);if(tp==='t')secs.push(['mf','Modo de fazer']);
+    if(tp!=='t')secs.push(['dm','Dimensões e peso'],['fi','Fiscal']);secs.push(['es','Estoque']);
+    const n=k=>secs.findIndex(s=>s[0]===k)+1;
+    const grupoSel=tp==='t'?`<input value="Tanques" readonly>`:`<select data-f="cgrupo">${FOLHAS.filter(f=>f.k!=='tanques').map(f=>`<option value="${f.k}" ${f.k===g?'selected':''}>${(GR.find(x=>x.k===f.pai)||{}).f&&GR.find(x=>x.k===f.pai).f.length?GR.find(x=>x.k===f.pai).n+' › ':''}${f.n}</option>`).join('')}</select>`;
+    const marc=(d.tags||[]).filter(t=>t!=='Produto Acabado'&&t!==d.tipo);
+    /* 1 identificação */
+    let idb='';
+    if(tp==='p')idb=`<div style="display:flex;gap:16px"><label class="i5foto" style="${F.foto?`background-image:url('${escAttr(F.foto)}');color:transparent`:''}">${F.foto?'':'＋ foto'}<input type="file" id="i5Ft" accept="image/*" hidden></label>
+      <div class="i5g" style="flex:1;align-content:start"><div class="s3"><label>Nome</label><input data-f="descricao" value="${v(d.descricao)}"></div><div><label>SKU</label><input value="${v(d.codigo)}" readonly></div><div class="s2"><label>Grupo</label>${grupoSel}</div>
+      <div class="s2"><label>Tanque</label><select data-f="tanque"><option value="">— sem tanque —</option>${cpTanques().map(t=>`<option ${t===d.tanque?'selected':''}>${escAttr(t)}</option>`).join('')}</select></div>
+      <div><label>Litros por unidade</label><input data-n="litragem" value="${nfx(d.litragem)}"></div><div><label>Unidades por ${cpEmb(d)==='fd'?'fardo':'caixa'}</label><input data-n="un_cx" value="${nfx(d.un_cx,0)}"></div>
+      <div><label>Família</label><input data-f="grupo" value="${v(d.grupo)}"></div><div><label>Situação</label><select data-b="ativo"><option value="1" ${d.ativo!==false?'selected':''}>Ativo</option><option value="0" ${d.ativo===false?'selected':''}>Inativo</option></select></div>
+      <div class="s6"><label>Marcadores</label><div class="i5chips" id="i5Mk">${marc.map((t,j)=>`<span>${escAttr(t)}<em data-mx="${j}">✕</em></span>`).join('')}<button class="i5add" id="i5MkA">＋ marcador</button></div></div></div></div>`;
+    else if(tp==='i')idb=`<div class="i5g"><div class="s3"><label>Nome</label><input data-f="nome" value="${v(d.nome)}"></div><div><label>SKU</label><input value="${v(d.sku)}" readonly></div><div class="s2"><label>Grupo</label>${grupoSel}</div>
+      <div><label>Unidade</label><input data-f="un" value="${v(d.un)}"></div><div><label>Código no Tiny</label><input data-f="tiny" value="${v(String(d.tiny||'').startsWith('ERP-')?'':d.tiny)}" placeholder="—"></div>
+      <div><label>Situação</label><select data-b="ativo"><option value="1" ${d.ativo!==false?'selected':''}>Ativo</option><option value="0" ${d.ativo===false?'selected':''}>Inativo</option></select></div>
+      <div class="s3"><label>Marcadores</label><div class="i5chips" id="i5Mk">${marc.map((t,j)=>`<span>${escAttr(t)}<em data-mx="${j}">✕</em></span>`).join('')}<button class="i5add" id="i5MkA">＋ marcador</button></div></div></div>`;
+    else idb=`<div class="i5g"><div class="s3"><label>Nome</label><input value="${v(F.id)}" readonly></div><div><label>SKU</label><input data-f="sku" value="${v(d.sku)}" placeholder="${skuSug('tanques')}"></div><div class="s2"><label>Grupo</label>${grupoSel}</div>
+      <div class="s6"><label>Produtos acabados deste tanque</label><div class="i5chips">${cpFilhas(F.id).map(p=>`<span style="cursor:pointer" data-ab="p|${escAttr(p.codigo)}">${escAttr(p.codigo)} · ${escAttr(p.descricao)}</span>`).join('')||'<span>nenhum ainda</span>'}</div></div></div>`;
+    /* 2 como é obtido */
+    const ondeP=tp==='t'?'OP de tanque':tp==='p'?(kit?'OP de fechamento de kit':'OP de envase'):g==='frascos'?'OP de sopro ou de rotulagem':'ordem de produção';
+    const indL=Array.isArray(d.indForn)?d.indForn:[];
+    const obb=`<div class="i5ob">
+      <div class="i5ot p ${ob.p?'on':''}" data-ob="p"><div class="t"><span class="ck"></span>Produzido</div><small>${ondeP}</small></div>
+      <div class="i5ot c ${ob.c?'on':''}" data-ob="c"><div class="t"><span class="ck"></span>Comprado</div><small>ordem de compra</small></div>
+      <div class="i5ot i ${ob.i?'on':''}" data-ob="i"><div class="t"><span class="ck"></span>Industrializado</div><small>ordem de compra de industrialização · nós mandamos material</small></div></div>
+      ${ob.i?`<div><div style="font:700 12px Inter;color:var(--ink2);margin:4px 0 6px">Industrializado por</div><div class="i5chips">${indL.map((f,j)=>`<span>${escAttr(f)}<em data-fx="${j}">✕</em></span>`).join('')}
+        <input id="i5FA" list="i5FL" placeholder="＋ fornecedor" style="height:32px;border:1px solid var(--line);border-radius:9px;padding:0 10px;width:220px"><datalist id="i5FL">${(FOR||[]).map(x=>`<option value="${escAttr(x)}">`).join('')}</datalist></div></div>`:''}
+      ${ob.p&&(tp==='t'||tp==='p')?`<div class="i5ok">Os tempos de ${tp==='t'?'tanque':'envase'} ficam em Configurações › Tempos de processo. <a style="cursor:pointer;font-weight:700" id="i5Tp">Abrir ›</a></div>`:''}`;
+    /* 3 ficha técnica */
+    let ftb='';
+    if(temFT&&tp==='t'){const f=FORMULAS[F.id]||{mp:[]};ftb=`<table class="i5t"><thead><tr><th>Matéria-prima</th><th>SKU</th><th class="n">%</th></tr></thead><tbody>${(f.mp||[]).map(m=>`<tr><td><b>${escAttr(m.nome)}</b></td><td class="sk">${escAttr(m.sku||'')}</td><td class="n">${nfx(m.pct,4)}%</td></tr>`).join('')||'<tr><td colspan="3" style="color:var(--ink3)">sem matérias-primas</td></tr>'}</tbody></table>
+      <div><button class="btn sm" id="i5Form">Editar formulação ›</button> <button class="btn sm" id="i5Cert">Certificado de análise ›</button></div>`;}
+    else if(temFT){const base=tp==='p'?(cpEmb(d)==='fd'?'fardo':'caixa'):'';
+      const opts=INSUMOS.filter(x=>x.ativo!==false&&x.sku!==d.sku).map(x=>`<option value="i|${escAttr(x.sku)}">${escAttr(x.nome)} · ${escAttr(x.sku)}</option>`).join('')+(tp==='p'?PRODUTOS.filter(x=>ativoProd(x)&&String(x.codigo)!==String(d.codigo)&&(+x.un_cx===1||/- ?UN$/i.test(x.descricao))).map(x=>`<option value="p|${escAttr(x.codigo)}">${escAttr(x.descricao)} · ${escAttr(x.codigo)}</option>`).join(''):'');
+      ftb=`${tp==='p'?(F.propria?`<div class="i5ok">Ficha própria deste produto. <a style="cursor:pointer;font-weight:700" id="i5Volta">Voltar a usar a do tanque</a></div>`
+        :`<div class="i5aviso">Igual para todos os ${escAttr(fmtLit(+d.litragem||0))} do tanque ${escAttr(d.tanque||'—')}. Mudar aqui muda todos eles. <a style="cursor:pointer;font-weight:700" id="i5Prop">Usar uma só deste produto</a></div>`):''}
+      <table class="i5t"><thead><tr><th>Componente</th><th>Grupo</th><th class="n">Por unidade</th>${base?`<th class="n">Por ${base}</th>`:''}<th></th></tr></thead><tbody>
+      ${F.emb.map((e,j)=>{const ins=insPorSku(e.sku);const pr=e.prod?prodOf(e.sku):null;return `<tr><td><b>${escAttr(e.nome)}</b> <span class="sk" style="font-size:12px;color:var(--ink3)">${escAttr(e.sku||'')}</span></td><td>${escAttr(pr?nomeG(pr.cgrupo||'pa'):ins?nomeG(ins.cgrupo||grupoIns(ins)):(e.comp||''))}</td>
+        <td class="n"><input class="i5in" data-eq="${j}" value="${nfx(e.qtd,4)}"></td>${base?`<td class="n">${nfx((+e.qtd||0)*(+d.un_cx||0),3)}</td>`:''}<td><button class="i5dt" data-ex="${j}">✕</button></td></tr>`;}).join('')}
+      <tr><td colspan="5"><select class="i5sel" id="i5EA" style="width:100%"><option value="">＋ componente…</option>${opts}</select></td></tr></tbody></table>`;}
+    /* modo de fazer (tanque) */
+    const mfb=tp==='t'?`<div class="i5proc">${F.proc.map((s,j)=>`<div><b>${j+1}</b><input data-pr="${j}" value="${escAttr(s)}"><button class="i5dt" data-px="${j}">✕</button></div>`).join('')}</div><button class="i5add" id="i5PA">＋ passo</button>`:'';
+    /* dimensões */
+    const porPal=(+d.cxCamada||0)*(+d.camadas||0);
+    const dmb=tp==='p'?`<div class="i5g"><div><label>EAN 13 · unidade</label><input data-f="ean" value="${v(d.ean)}"></div><div><label>DUN 14 · ${cpEmb(d)==='fd'?'fardo':'caixa'}</label><input data-f="dun" value="${v(d.dun)}"></div>
+      <div><label>Peso líquido un (kg)</label><input data-n="pesoLiqUn" value="${nfx(d.pesoLiqUn)}"></div><div><label>Peso bruto un (kg)</label><input data-n="pesoBrutoUn" value="${nfx(d.pesoBrutoUn)}"></div>
+      <div><label>Validade (meses)</label><input data-n="validadeMeses" value="${nfx(d.validadeMeses,0)}"></div><div></div>
+      <div class="s2"><label>Unidade · A × C × L (cm)</label><input data-f="medUn" value="${v(d.medUn)}"></div><div class="s2"><label>${cpEmb(d)==='fd'?'Fardo':'Caixa'} · A × C × L (cm)</label><input data-f="medidas" value="${v(d.medidas)}"></div><div class="s2"><label>Palete · A × C × L (m)</label><input data-f="medPalete" value="${v(d.medPalete)}"></div>
+      <div><label>${cpEmb(d)==='fd'?'Fardos':'Caixas'} por camada</label><input data-n="cxCamada" value="${nfx(d.cxCamada,0)}"></div><div><label>Camadas</label><input data-n="camadas" value="${nfx(d.camadas,0)}"></div><div><label>Por palete</label><input value="${porPal||''}" readonly></div></div>`
+      :`<div class="i5g"><div><label>Peso (kg)</label><input data-n="peso" value="${nfx(d.peso)}"></div><div class="s2"><label>Medidas · A × C × L (cm)</label><input data-f="medidas" value="${v(d.medidas)}"></div><div><label>Unidades por caixa do fornecedor</label><input data-n="porCx" value="${nfx(d.porCx,0)}"></div></div>`;
+    const fib=`<div class="i5g"><div><label>NCM</label><input data-f="ncm" value="${v(d.ncm)}"></div><div><label>CEST</label><input data-f="cest" value="${v(d.cest)}"></div><div class="s2"><label>Origem</label><select data-f="origem">${[['0','0 · Nacional'],['1','1 · Estrangeira, importação direta'],['2','2 · Estrangeira, mercado interno']].map(([a,b])=>`<option value="${a}" ${String(d.origem||'0')===a?'selected':''}>${b}</option>`).join('')}</select></div></div>
+      <div style="font-size:12.5px;color:var(--ink3)">Os impostos (ICMS, diferimento, IPI, IBS/CBS) vão ser regrados por NCM em Configurações, não item a item.</div>`;
+    const ctrl=tp==='t'?false:d.ctrlEst!==false;
+    const esb=tp==='t'?`<div class="i5sw"><i></i><div><b>Não controla estoque</b><small>o estoque fica nos produtos acabados</small></div></div>`
+      :`<div class="i5sw ${ctrl?'on':''}" id="i5Sw"><i></i><div><b>Controla estoque</b><small>${ctrl?'entra e sai pelas OPs, compras, notas e ajustes':'não movimenta estoque: só compra e custo'}</small></div></div>
+      ${ctrl?`<div class="i5g"><div><label>Estoque mínimo</label><input data-n="estoqueMin" value="${nfx(d.estoqueMin)}"></div><div><label>Estoque máximo</label><input data-n="estoqueMax" value="${nfx(d.estoqueMax)}"></div><div class="s2"><label>Localização</label><input data-f="local" value="${v(d.local)}"></div><div class="s2"><label>Estoque agora</label><input value="${csEst(d.tiny)}" readonly></div></div>`:''}`;
+    const blk=(k,t,body,kk)=>`<div class="i5blk" id="i5s-${k}"><h3><span class="nu">${n(k)}</span>${t}${kk?`<span class="k">${kk}</span>`:''}</h3>${body}</div>`;
+    el.innerHTML=`<div class="i5top"><div style="flex:1"><div style="font-size:12.5px;color:var(--ink3)"><a style="cursor:pointer" id="i5Vol">Itens</a> › ${escAttr(nomeG(g))}</div><h2 style="margin-top:2px">${escAttr(nome||'Novo item')}</h2></div>
+      ${(()=>{const l={tipo:tp,x:d,obt:ob};return chipsObt(l);})()}<button class="btn" id="i5Fec">Fechar ✕</button></div>
+      <div class="i5f"><nav class="i5nav">${secs.map(([k,t],j)=>`<a data-go="${k}"><i>${j+1}</i>${t}</a>`).join('')}</nav><div class="i5frm">
+      ${blk('id','Identificação',idb)}${blk('ob','Como é obtido',obb,'pode marcar mais de um')}
+      ${temFT?blk('ft',tp==='t'?'Formulação':'Ficha técnica',ftb,tp==='t'?'a mesma do tablet dos tanques':'para 1 unidade'):''}
+      ${tp==='t'?blk('mf','Modo de fazer',mfb,'o mesmo do tablet dos tanques'):''}
+      ${tp!=='t'?blk('dm','Dimensões e peso',dmb)+blk('fi','Fiscal',fib):''}${blk('es','Estoque',esb)}
+      <div class="i5ft"><button class="btn" id="i5Can">Cancelar</button><button class="btn pri" id="i5Sal">Salvar</button></div></div></div>`;
+    /* ligações */
+    const fecha=()=>{I5.ficha=null;gradeCadProd();};
+    M('i5Vol').onclick=fecha;M('i5Fec').onclick=fecha;M('i5Can').onclick=fecha;
+    el.querySelectorAll('[data-go]').forEach(a=>a.onclick=()=>{const s=M('i5s-'+a.dataset.go);if(s)s.scrollIntoView({behavior:'smooth',block:'start'});});
+    el.querySelectorAll('[data-f]').forEach(i=>i.onchange=()=>{d[i.dataset.f]=i.value;if(i.dataset.f==='cgrupo'||i.dataset.f==='tanque')fichaDesenha();});
+    el.querySelectorAll('[data-n]').forEach(i=>i.onchange=()=>{d[i.dataset.n]=lnum(i.value);fichaDesenha();});
+    el.querySelectorAll('[data-b]').forEach(i=>i.onchange=()=>{d[i.dataset.b]=i.value==='1';});
+    el.querySelectorAll('[data-ob]').forEach(b=>b.onclick=()=>{const k=b.dataset.ob;ob[k]=!ob[k];if(!ob.p&&!ob.c&&!ob.i)ob[k]=true;fichaDesenha();});
+    el.querySelectorAll('[data-ab]').forEach(b=>b.onclick=()=>abrir(b.dataset.ab));
+    el.querySelectorAll('[data-mx]').forEach(b=>b.onclick=()=>{const t=marc[+b.dataset.mx];d.tags=(d.tags||[]).filter(x=>x!==t);fichaDesenha();});
+    if(M('i5MkA'))M('i5MkA').onclick=()=>{const t=(prompt('Marcador:')||'').trim();if(!t)return;d.tags=Array.isArray(d.tags)?d.tags:[];if(!d.tags.includes(t))d.tags.push(t);fichaDesenha();};
+    el.querySelectorAll('[data-fx]').forEach(b=>b.onclick=()=>{d.indForn=indL.filter((_,j)=>j!==+b.dataset.fx);fichaDesenha();});
+    if(M('i5FA'))M('i5FA').onchange=e=>{const x=e.target.value.trim();if(!x)return;d.indForn=indL.concat(indL.includes(x)?[]:[x]);fichaDesenha();};
+    if(M('i5Tp'))M('i5Tp').onclick=()=>{try{csAbrirTempos(tp==='t'?F.id:d.tanque||'');}catch(e){}};
+    if(M('i5Form'))M('i5Form').onclick=()=>abrirTanque(F.id,'form');
+    if(M('i5Cert'))M('i5Cert').onclick=()=>abrirTanque(F.id,'cert');
+    el.querySelectorAll('[data-eq]').forEach(i=>i.onchange=()=>{const x=lnum(i.value);if(x!=null)F.emb[+i.dataset.eq].qtd=x;fichaDesenha();});
+    el.querySelectorAll('[data-ex]').forEach(b=>b.onclick=()=>{F.emb.splice(+b.dataset.ex,1);fichaDesenha();});
+    if(M('i5EA'))M('i5EA').onchange=e=>{const [t,id]=e.target.value.split(/\|(.*)/s);if(t==='i'){const x=insPorSku(id);if(x)F.emb.push({comp:nomeG(x.cgrupo||grupoIns(x)),nome:x.nome,sku:x.sku,qtd:1});}
+      else if(t==='p'){const x=prodOf(id);if(x)F.emb.push({comp:'Produto',nome:x.descricao,sku:String(x.codigo),qtd:1,prod:true});}fichaDesenha();};
+    if(M('i5Prop'))M('i5Prop').onclick=()=>{F.propria=true;fichaDesenha();};
+    if(M('i5Volta'))M('i5Volta').onclick=()=>{F.propria=false;F.emb=JSON.parse(JSON.stringify(((FORMULAS[d.tanque]||{}).emb||{})[fmtLit(+d.litragem||0)]||[]));fichaDesenha();};
+    el.querySelectorAll('[data-pr]').forEach(i=>i.onchange=()=>{F.proc[+i.dataset.pr]=i.value;});
+    el.querySelectorAll('[data-px]').forEach(b=>b.onclick=()=>{F.proc.splice(+b.dataset.px,1);fichaDesenha();});
+    if(M('i5PA'))M('i5PA').onclick=()=>{F.proc.push('');fichaDesenha();const l=el.querySelectorAll('[data-pr]');if(l.length)l[l.length-1].focus();};
+    if(M('i5Sw'))M('i5Sw').onclick=()=>{d.ctrlEst=d.ctrlEst===false?true:false;fichaDesenha();};
+    if(M('i5Ft'))M('i5Ft').onchange=e=>{const fl=e.target.files[0];if(!fl)return;const r=new FileReader();r.onload=()=>{const img=new Image();img.onload=()=>{const cv=document.createElement('canvas');const s=Math.min(1,400/Math.max(img.width,img.height));cv.width=img.width*s;cv.height=img.height*s;const c=cv.getContext('2d');c.fillStyle='#fff';c.fillRect(0,0,cv.width,cv.height);c.drawImage(img,0,0,cv.width,cv.height);F.foto=cv.toDataURL('image/jpeg',.82);fichaDesenha();};img.src=r.result;};r.readAsDataURL(fl);};
+    M('i5Sal').onclick=salvar;
+  }
+  function salvar(){
+    const F=I5.ficha,d=F.d;
+    if(F.tp==='p'){const p=prodOf(F.id);if(!p)return;if(!String(d.descricao||'').trim())return toast('O nome não pode ficar vazio.',true);
+      const litAntes=fmtLit(+p.litragem||0),tqAntes=p.tanque;
+      const emb=F.emb.map(e=>({...e}));delete d.ficha;Object.assign(p,d);
+      if(F.propria)p.ficha=emb;else{delete p.ficha;if(p.tanque){const f=FORMULAS[p.tanque]=FORMULAS[p.tanque]||{mp:[],emb:{}};f.emb=f.emb||{};
+        /* só regrava a embalagem do tanque quando ela foi mexida: assim mudar o nome não toca nos outros produtos */
+        const atual=JSON.stringify((f.emb[fmtLit(+p.litragem||0)])||[]);if(atual!==JSON.stringify(emb)&&tqAntes===p.tanque&&litAntes===fmtLit(+p.litragem||0))f.emb[fmtLit(+p.litragem||0)]=emb;}}
+      const c=String(p.codigo);if(F.foto&&F.foto!==(FOTOS_PROD[c]||(typeof CS_FOTOS!=='undefined'&&CS_FOTOS[c])||''))FOTOS_PROD[c]=F.foto;}
+    else if(F.tp==='i'){const i=INSUMOS.find(x=>x.sku===F.id);if(!i)return;if(!String(d.nome||'').trim())return toast('O nome não pode ficar vazio.',true);
+      if(!String(d.tiny||'').trim())d.tiny=i.tiny&&String(i.tiny).startsWith('ERP-')?i.tiny:('ERP-'+i.sku);
+      Object.assign(i,d);if(d.obtem&&(d.obtem.p||d.obtem.i))i.ficha=F.emb.map(e=>({...e}));}
+    else{const f=FORMULAS[F.id]=FORMULAS[F.id]||{mp:[],emb:{}};f.cad=Object.assign(f.cad||{},d);f.proc=F.proc.map(s=>String(s).trim()).filter(Boolean);}
+    agendarSalvar();toast('Cadastro salvo.');I5.ficha=null;gradeCadProd();
+  }
+  /* ---------- novo item ---------- */
+  function novoItem(){
+    if(M('mAcao'))M('mAcao').innerHTML='';M('modal').classList.add('wide');M('mTit').textContent='Novo item';M('mSub').hidden=true;
+    const st={g:'',nome:'',tq:'',lit:'',un:''};
+    const pinta=()=>{const g=st.g;const sku=g?skuSug(g,st.tq):'';
+      M('mB').innerHTML=`<div class="i5g" style="grid-template-columns:repeat(4,1fr)">
+        <div class="s2"><label>Grupo</label><select id="nvG"><option value="">escolha o grupo…</option>${GR.map(x=>`<optgroup label="${x.n}">${(x.f.length?x.f:[[x.k,x.n]]).map(([k,n])=>`<option value="${k}" ${k===g?'selected':''}>${n}</option>`).join('')}</optgroup>`).join('')}</select></div>
+        <div class="s2"><label>SKU <span class="i5auto">automático</span></label><input id="nvS" value="${escAttr(sku)}" ${g==='tanques'?'':''}></div>
+        ${g?`<div class="s4"><label>Nome</label><input id="nvN" value="${escAttr(st.nome)}" placeholder="${g==='tanques'?'ex.: LAVA ROUPAS PREMIUM':g==='pa'?'ex.: LAVA ROUPAS 2L PREMIUM - UN':'nome completo, sem abreviar'}"></div>`:''}
+        ${g==='pa'?`<div class="s2"><label>Tanque</label><select id="nvT"><option value="">— sem tanque (kit) —</option>${cpTanques().map(t=>`<option ${t===st.tq?'selected':''}>${escAttr(t)}</option>`).join('')}</select></div>
+          <div><label>Litros por unidade</label><input id="nvL" value="${escAttr(st.lit)}" placeholder="ex.: 2"></div><div><label>Unidades por caixa</label><input id="nvU" value="${escAttr(st.un)}" placeholder="1 = unidade avulsa"></div>`:''}
+        ${g&&g!=='pa'&&g!=='tanques'?`<div><label>Unidade</label><select id="nvUn">${['UN','KG','L','M','CX','PAR'].map(x=>`<option>${x}</option>`).join('')}</select></div>`:''}</div>`;
+      M('nvG').onchange=e=>{st.g=e.target.value;pinta();};
+      if(M('nvT'))M('nvT').onchange=e=>{st.tq=e.target.value;st.nome=(M('nvN')||{}).value||st.nome;pinta();};
+      ['nvN','nvL','nvU'].forEach(k=>{if(M(k))M(k).oninput=e=>{st[{nvN:'nome',nvL:'lit',nvU:'un'}[k]]=e.target.value;};});};
+    pinta();
+    M('mF').innerHTML='<div style="flex:1"></div><button class="btn" id="nvX">Cancelar</button><button class="btn pri" id="nvOk">Criar e abrir</button>';
+    M('nvX').onclick=fecharModal;
+    M('nvOk').onclick=()=>{const g=st.g;if(!g)return toast('Escolha o grupo.',true);const nome=String((M('nvN')||{}).value||'').trim().toUpperCase();if(!nome)return toast('Informe o nome.',true);
+      const sku=String(M('nvS').value||'').trim().toUpperCase();if(!sku)return toast('Informe o SKU.',true);
+      const L=linhas();if(L.some(l=>String(l.cod)===sku))return toast('Já existe esse SKU.',true);
+      if(g==='tanques'){if(FORMULAS[nome]||PRODUTOS.some(p=>p.tanque===nome))return toast('Já existe um tanque com esse nome.',true);
+        FORMULAS[nome]={mp:[],emb:{},proc:[],cad:{sku,obtem:{p:true}}};try{FORM_VERS[nome]=[{v:1,desde:'',mp:[]}];}catch(e){}fecharModal();agendarSalvar();abrir('t|'+nome);return;}
+      if(g==='pa'){const tq=(M('nvT')||{}).value||'';const lit=lnum(M('nvL').value)||1;const un=Math.max(1,Math.round(lnum(M('nvU').value)||1));
+        const p={codigo:sku,descricao:nome,tanque:tq,litragem:lit,un_cx:un,cgrupo:'pa',ativo:true,obtem:{p:true}};
+        if(!tq)p.ficha=[];PRODUTOS.push(p);TEMPOS[sku]={lote:3800,t:{}};fecharModal();agendarSalvar();abrir('p|'+sku);return;}
+      const i={sku,nome,tipo:nomeG(g),un:(M('nvUn')||{}).value||'UN',tiny:'ERP-'+sku,ativo:true,cgrupo:g,obtem:{c:true}};if(g==='uso')i.grupo='uso';
+      INSUMOS.push(i);fecharModal();agendarSalvar();abrir('i|'+sku);};
+    abrirMask();
+  }
+  /* ---------- Grupos e SKU ---------- */
+  function cfgGrupos(){
+    if(!CAD_GRUPOS)CAD_GRUPOS=grupoPadrao();CAD_GRUPOS.sku=CAD_GRUPOS.sku||{};const C=CAD_GRUPOS.sku;
+    if(M('mAcao'))M('mAcao').innerHTML='';M('modal').classList.add('wide');M('mTit').textContent='Grupos e SKU';M('mSub').hidden=true;
+    const L=linhas();
+    M('mB').innerHTML=`<table class="i5t"><thead><tr><th>Grupo</th><th class="n">Itens</th><th>Prefixo</th><th>Dígitos</th><th>Próximo SKU</th></tr></thead><tbody>
+      ${FOLHAS.map(f=>{const c=C[f.k]||{};const fixo=f.k==='pa'||f.k==='tanques';return `<tr><td><b>${(GR.find(x=>x.k===f.pai)||{}).f&&GR.find(x=>x.k===f.pai).f.length?escAttr(GR.find(x=>x.k===f.pai).n)+' › ':''}${escAttr(f.n)}</b></td><td class="n">${L.filter(l=>l.g===f.k).length}</td>
+        <td>${fixo?`<span style="color:var(--ink3)">${f.k==='pa'?'série do tanque (40x, 80x…)':'T + número'}</span>`:`<input class="i5in" style="width:80px;text-align:left" data-cp="${f.k}" value="${escAttr(c.pref||'')}" placeholder="auto">`}</td>
+        <td>${fixo?'':`<input class="i5in" style="width:60px" data-cd="${f.k}" value="${escAttr(c.dig||'')}" placeholder="auto">`}</td><td><b>${f.k==='pa'?'—':escAttr(skuSug(f.k))}</b></td></tr>`;}).join('')}</tbody></table>
+      <p style="font-size:12.5px;color:var(--ink3);margin-top:10px">Os SKUs que já existem não mudam. "auto" segue o padrão que o grupo já usa.</p>`;
+    M('mB').querySelectorAll('[data-cp]').forEach(i=>i.onchange=()=>{const k=i.dataset.cp;C[k]=C[k]||{};C[k].pref=i.value.trim().toUpperCase()||undefined;agendarSalvar();cfgGrupos();});
+    M('mB').querySelectorAll('[data-cd]').forEach(i=>i.onchange=()=>{const k=i.dataset.cd;C[k]=C[k]||{};C[k].dig=+i.value||undefined;agendarSalvar();cfgGrupos();});
+    M('mF').innerHTML='<div style="flex:1"></div><button class="btn" id="cgX">Fechar</button>';M('cgX').onclick=()=>{fecharModal();gradeCadProd();};abrirMask();
+  }
+  /* o menu lateral chamava a página de "Produtos": agora é Itens */
+  try{document.querySelectorAll('[data-page="cadprod"],[data-pg="cadprod"]').forEach(b=>{if(/Produtos/.test(b.textContent))b.innerHTML=b.innerHTML.replace('Produtos','Itens');});}catch(e){}
+  try{if(S.page==='cadprod')gradeCadProd();}catch(e){}
+})();
+
 </script>
 </body>
 </html>
