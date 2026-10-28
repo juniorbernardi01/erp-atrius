@@ -18294,9 +18294,6 @@ function telaLogin(msg){
       try{ if(M('lgLembrar').checked){localStorage.setItem(LEMBRA_MAIL,e);localStorage.removeItem(LEMBRA_MAIL+'.nao');}
            else{localStorage.removeItem(LEMBRA_MAIL);localStorage.setItem(LEMBRA_MAIL+'.nao','1');} }catch(x){}
       el.hidden=true;
-      /* o navegador entende que o login deu certo: o formulário sai da página (volta uma cópia limpa) e o endereço muda */
-      try{const f=M('lgForm');if(f&&f.parentNode){const c=f.cloneNode(true);c.querySelector('#lgSenha').value='';f.parentNode.replaceChild(c,f);}}catch(x){}
-      try{history.pushState(null,'',location.pathname+location.search+'#home');}catch(x){}
       await iniciarComNuvem();
     }catch(err){
       M('lgK').disabled=false;M('lgK').textContent='Entrar';
@@ -34769,7 +34766,7 @@ try{csNucleo.versao='v485';}catch(e){}
   /* página de Configurações (não é janela): Grupos e famílias dos produtos */
   try{abrirCfgProd=function(){cfgGrupos();};}catch(e){}
   try{const m=CS_MOD.find(x=>x.id==='config');const p=m&&m.pgs.find(x=>x.acao==='cfgprod');if(p){p.n='Grupos e famílias dos produtos';delete p.acao;p.page='admin';p.aba='grpfam';}
-    CS_CFG_INFO['Grupos e famílias dos produtos']=['cadastros','Grupos dos itens, o padrão do SKU de cada grupo e as famílias dos produtos (Amaciante, Lava roupas…)','grupo família sku prefixo produto'];}catch(e){}
+    CS_CFG_INFO['Grupos e famílias dos produtos']=['geral','Grupos dos itens, o padrão do SKU de cada grupo e as famílias dos produtos (Amaciante, Lava roupas…)','grupo família sku prefixo produto'];}catch(e){}
   try{const _ga=gradeAdmin;gradeAdmin=function(){const r=_ga.apply(this,arguments);
     try{if(ABA_ADMIN==='grpfam'){const g=M('adgrid');const c=g&&(g.querySelector('.adcorpo')||g.querySelector('.c8main'));if(c){g.querySelectorAll('.adtit,.adabas').forEach(x=>x.style.display='none');c.innerHTML='<div id="i5Cg"></div>';cfgGruposEm(M('i5Cg'),cfgGrupos.aba||'g');}}}catch(e){console.warn(e);}return r;};}catch(e){}
   /* o menu lateral chamava a página de "Produtos": agora é Itens */
