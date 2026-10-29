@@ -5508,7 +5508,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v489';const VERSAO_DATA='24/10/2026';
+const VERSAO_APP='v490';const VERSAO_DATA='24/10/2026';
 /* número que aparece na tela: v438 → v4.3.8 (por dentro continua v438, que é o que as versões comparam) */
 const csRotVer=v=>{const d=String(v||'').replace(/\D/g,'');return d.length>=3?'v'+d.slice(0,-2)+'.'+d.slice(-2,-1)+'.'+d.slice(-1):String(v||'');};
 const VERSAO_ROTULO=csRotVer(VERSAO_APP)+' · '+VERSAO_DATA;
@@ -19712,7 +19712,8 @@ const CS_IC={
  cad:'<rect x="3.5" y="4" width="17" height="16" rx="2.4"/><path d="M8 9h8M8 13h8M8 17h5"/>',
  casa:'<path d="M3.5 10.5 12 4l8.5 6.5"/><path d="M5.5 9v10.5h13V9"/><path d="M10 19.5v-5h4v5"/>',
  pcp:'<path d="M3 21V11l5 3V11l5 3V11l5 3V5h3v16z"/><path d="M3 21h18"/><path d="M7 17h2M12 17h2M17 17h1"/>',
- est:'<path d="M3 8.5 12 4l9 4.5v7L12 20l-9-4.5v-7z"/><path d="M3 8.5 12 13l9-4.5M12 13v7"/>',
+ est:'<rect x="2.8" y="13" width="8.4" height="7.5" rx="1"/><rect x="12.8" y="13" width="8.4" height="7.5" rx="1"/><rect x="7.8" y="4" width="8.4" height="7.5" rx="1"/><path d="M5.6 13v2.4M15.6 13v2.4M10.6 4v2.4"/>',
+ sup:'<path d="M3 4h2.4l2.4 12.2h12.4"/><circle cx="9" cy="19.6" r="1.5"/><circle cx="17.6" cy="19.6" r="1.5"/><rect x="9" y="9.2" width="5.2" height="5" rx=".7"/><rect x="14.6" y="6.6" width="5.2" height="7.6" rx=".7"/>',
  gest:'<path d="M4 20V11M9.5 20V5M15 20v-6M20.5 20v-9M2.5 20h19"/>',
  plan:'<rect x="3.5" y="5" width="17" height="15" rx="2.2"/><path d="M3.5 9.5h17M8.5 3v4M15.5 3v4"/>',
  ven:'<path d="M3 5h2.2l2 10.5h10.3L20 8H6.4"/><circle cx="9.5" cy="19" r="1.4"/><circle cx="17" cy="19" r="1.4"/>',
@@ -19812,6 +19813,15 @@ const CS_MOD=[
    {n:'Relatórios',mod:'vendas',fin:'relatorios',perm:'vendas.perf',ic:'loj'}]},
  {id:'logistica',nome:'Logística',ic:'log',fase:'fase 13'}
 ];
+(function(){try{const by=id=>CS_MOD.find(m=>m.id===id);const e=by('estoque'),c=by('compras');if(!e||!c)return;
+  const sup={id:'suprimentos',nome:'Suprimentos',ic:'sup',pgs:[
+    {n:'Controle de estoque',mod:'estoque',fin:'saldos',perm:'estoque.saldos',ic:'est'},
+    ...c.pgs.filter(p=>p.fin!=='consumo')]};
+  const ordem=['inicio','cadastros','pcp','financeiro','suprimentos','vendas','config'];
+  const resto=CS_MOD.filter(m=>m!==e&&m!==c&&!ordem.includes(m.id));
+  CS_MOD.splice(0,CS_MOD.length,...ordem.map(id=>id==='suprimentos'?sup:by(id)).filter(Boolean),...resto);
+  const cfg=by('config');if(cfg)cfg.pgs.forEach(p=>{if(p.mod==='estoque'&&p.fin==='depositos')p.n='Controle de estoque';});
+}catch(x){console.warn('[v490] menu',x);}})();
 let CS_ABERTO='pcp', CS_FIX=true;
 try{CS_FIX=localStorage.getItem('atrius.fix')==='1';}catch(e){}
 /* o fixar prende só a barra azul; o painel branco abre quando se pede */
@@ -34254,7 +34264,7 @@ th .cfsort{font-size:10px;margin-left:3px;color:#1D4ED8}
   window.CF_VARRE=varre;
 })();
 
-try{csNucleo.versao='v489';}catch(e){}
+try{csNucleo.versao='v490';}catch(e){}
 </script>
 <script>
 /* cópia local de cada módulo: IndexedDB (cabe muito mais); lê também a cópia antiga do localStorage e a apaga */
@@ -38288,6 +38298,13 @@ try{Object.assign(csNucleo,{
   gruposArvore:()=>{try{return window.csGruposArvore?csGruposArvore():[];}catch(e){return [];}},
   versao:'v489'});}catch(e){}
 
+</script>
+<script data-v490="topo">
+/* v4.9.0 · o nome do grupo ao lado do logo também nas páginas de dentro (o item do estoque, uma ordem aberta…) */
+try{const _gt490=csGrupoTopo;csGrupoTopo=function(){_gt490.apply(this,arguments);
+  try{const g=document.getElementById('csGrupoTop');if(!g||g.textContent)return;
+    if(S.page==='financeiro'&&typeof MOD_ATUAL!=='undefined'&&MOD_ATUAL){const m=CS_MOD.find(x=>(x.pgs||[]).some(p=>p.mod===MOD_ATUAL));if(m){g.textContent=m.nome;g.hidden=false;}}}catch(e){}};}catch(e){}
+try{if(CS_CFG_INFO['Estoques']&&!CS_CFG_INFO['Controle de estoque'])CS_CFG_INFO['Controle de estoque']=CS_CFG_INFO['Estoques'];}catch(e){}
 </script>
 </body>
 </html>

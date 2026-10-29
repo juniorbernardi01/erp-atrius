@@ -1,6 +1,6 @@
 {
- "v": "v489",
- "versao": "4.8.9",
+ "v": "v490",
+ "versao": "4.9.0",
  "data": "29/10/2026",
- "o_que_mudou": "Planilha das ordens de produção no sistema (frascos rotulados, nomes novos, Uruguai, kits); Estoque numa página só com grupos, movimentos e inventário; quarentena como depósito"
+ "o_que_mudou": "Suprimentos (Controle de estoque e Compras) no menu; estoque com colunas que ordenam e se escolhem; ordem de compra com industrialização mais clara; datas digitáveis"
 }

@@ -601,7 +601,7 @@ function telaInvs(){
   if(!INVL.per)INVL.per=perNovo('sem');const fx=perFaixa(INVL.per);const naData=i=>{if(!fx.de)return true;const d=perLe(i.abertoEm)||'';return d>=fx.de&&d<=fx.ate;};
   const l=DB.invs.slice().sort((a,b)=>b.num>a.num?1:-1).filter(i=>(INVL.sit==='todos'||i.sit===INVL.sit)&&naData(i));
   const c=k=>DB.invs.filter(i=>(k==='todos'||i.sit===k)&&naData(i)).length;
-  $('app').innerHTML=`<div class="migalha">Estoque › Inventário</div>
+  $('app').innerHTML=`<div class="migalha">Suprimentos › Controle de estoque › Inventário</div>
   <div class="topo"><h1>Inventário</h1><span class="salvo"></span><button class="btn pri" id="bNovo">＋ Novo inventário</button></div>
   <div class="barra">${perBotao('bPer',INVL.per)}</div>
   <div class="sts">${[['todos','Todos'],['contagem','Em contagem'],['conferencia','Em conferência'],['enviado',N.semTinyEstoque?'Ajustes lançados':'Enviado ao Tiny'],['cancelado','Cancelado']].map(([k,r])=>
@@ -881,7 +881,7 @@ function telaItem(id){
   const podeL=pode('estoque.lanc','editar'),todosD=SEL.size===deps.length;
   const ddTxt=todosD?'Todos os depósitos':SEL.size?[...SEL].map(depNome).join(', '):'Nenhum depósito';
   const tpTxt=IT.tipos.size===3?'Todos os tipos':IT.tipos.size?[...IT.tipos].map(t=>TIPO_NOME[t]).join(', '):'Nenhum tipo';
-  $('app').innerHTML=`<div class="migalha"><a class="lkv" id="iVolta">Estoque › Saldos</a> › item</div>
+  $('app').innerHTML=`<div class="migalha"><a class="lkv" id="iVolta" style="cursor:pointer">‹ Controle de estoque</a></div>
   <div class="topo"><div style="margin-right:auto"><h1 style="margin:0">${esc(it.nome)}</h1><div class="k">${esc(it.cod)} · ${esc(it.un)}${it.acabado?(N.semTinyEstoque?' · produto acabado (o saldo é controlado no ERP)':' · produto acabado (o saldo é o do Tiny)'):' · insumo (o saldo é controlado no ERP)'}</div></div>
     ${podeL&&deps.length>1?'<button class="btn" id="bTr">⇄ Transferir entre depósitos</button>':''}${podeL?'<button class="btn pri" id="bInc">＋ Incluir lançamento</button>':''}</div>
   <div class="cards ikp">
@@ -1105,8 +1105,8 @@ function formDep(d){
    transferência em azul. Inventário é um botão. Excluir inventário pede a senha de gestor e vai para "Excluídos".
    ===================================================================== */
 const EST=(()=>{let v={};try{v=JSON.parse(localStorage.getItem('erp.est489')||'{}');}catch(e){}
-  return {g:v.g||'todos',vista:v.vista||'saldos',dep:'',q:'',neg:false,tipo:'tudo',per:null};})();
-const estGuarda=()=>{try{localStorage.setItem('erp.est489',JSON.stringify({g:EST.g,vista:EST.vista}));}catch(e){}};
+  return {g:v.g||'todos',vista:v.vista||'saldos',dep:'',q:'',neg:false,tipo:'tudo',per:null,ord:v.ord||{k:'nome',d:1}};})();
+const estGuarda=()=>{try{localStorage.setItem('erp.est489',JSON.stringify({g:EST.g,vista:EST.vista,ord:EST.ord}));}catch(e){}};
 (function(){const s=document.createElement('style');s.textContent=`
 .e9{display:block}
 .gbar{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 12px;align-items:center;position:relative}
@@ -1145,7 +1145,8 @@ const estGuarda=()=>{try{localStorage.setItem('erp.est489',JSON.stringify({g:EST
 .e9cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:12px}
 .e9cards div{border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:#fff}.e9cards span{display:block;font-size:11.5px;color:var(--ink3);font-weight:600}.e9cards b{font-size:20px}
 .e9cards .neg b{color:#DC2626}.e9cards .q b{color:#EA580C}
-tr.ient td{background:#F7FEF9}tr.isai td{background:#FFF8F8}
+tr.ient td{background:#F7FEF9}
+.e9t th.up::after{content:' ▲';color:#1D4ED8}.e9t th.dn::after{content:' ▼';color:#1D4ED8}.e9t th.srt:hover{color:var(--ink)}tr.isai td{background:#FFF8F8}
 @media(max-width:1100px){.e9t .opc{display:none}}@media(max-width:1000px){.e9cards{grid-template-columns:repeat(2,1fr)}}`;document.head.appendChild(s);})();
 
 /* ---------- os itens, cada um com o seu grupo e a sua chave de estoque ---------- */
@@ -1168,7 +1169,7 @@ function estOnde(i){
   if(!i.id||!N.saldoDeps)return '';const sd=N.saldoDeps(i.id)||{por:{}},deps=depsN(),pr=(deps.find(d=>d.princ)||{}).id;
   return deps.map(d=>{const v=sd.por[d.id];if(v==null||Math.abs(+v)<1e-9)return '';
     const nm=d.princ?estNomeG(i.g):d.nome,cl=d.id==='quar'?'q':d.forn?'f':'';
-    return `<span class="e9d ${cl} ${+v<0?'neg':''}">${esc(nm)} <b>${nq(v)}</b></span>`;}).join('')||'<span class="k">—</span>';
+    return `<span class="e9d ${cl} ${+v<0?'neg':''}">${esc(nm)}</span>`;}).join('')||'<span class="k">—</span>';
 }
 /* ---------- a página ---------- */
 function telaSaldos(){
@@ -1179,11 +1180,12 @@ function telaSaldos(){
   const em=k=>ng(k)?`<em title="itens com saldo negativo">${ng(k)}</em>`:'';
   const sub=arv.find(g=>g.f.some(f=>f.k===EST.g));
   const tree=`<div class="gbar" id="gbar"><button class="${EST.g==='todos'?'on':''}" data-eg="todos">Todos <i>${cnt('todos')}</i>${em('todos')}</button>
-    ${arv.map(g=>{const fs=g.f.find(f=>f.k===EST.g),on=EST.g===g.k||!!fs;const k=fs?fs.k:g.k;
+    ${arv.map(g=>{if(g.f.length===1){const f=g.f[0];return `<button class="${EST.g===f.k||EST.g===g.k?'on':''}" data-eg="${f.k}">${esc(f.n)} <i>${cnt(f.k)}</i>${em(f.k)}</button>`;}
+      const fs=g.f.find(f=>f.k===EST.g),on=EST.g===g.k||!!fs;const k=fs?fs.k:g.k;
       return `<button class="${on?'on':''}" ${g.f.length?`data-egm="${g.k}"`:`data-eg="${g.k}"`}>${esc(fs?g.n+' › '+fs.n:g.n)} <i>${cnt(k)}</i>${em(k)}${g.f.length?'<span class="car">▼</span>':''}</button>`;}).join('')}
     ${nQ?`<button class="lar ${EST.g==='__quar'?'on':''}" data-eg="__quar">Na quarentena <i>${cnt('__quar')}</i></button>`:''}
     <button class="alerta ${EST.g==='__neg'?'on':''}" data-eg="__neg">Saldo negativo <i>${cnt('__neg')}</i></button></div>`;
-  const tit=EST.g==='todos'?'Estoque':EST.g==='__neg'?'Saldo negativo':EST.g==='__quar'?'Na quarentena':(estFolhas().find(f=>f.k===EST.g)||arv.find(g=>g.k===EST.g)||{n:'Estoque'}).n;
+  const tit=EST.g==='todos'?'Controle de estoque':EST.g==='__neg'?'Saldo negativo':EST.g==='__quar'?'Na quarentena':(estFolhas().find(f=>f.k===EST.g)||arv.find(g=>g.k===EST.g)||{n:'Controle de estoque'}).n;
   const deps=depsN();
   $('app').innerHTML=`<div class="e9top"><h1>${esc(tit)}</h1><span class="salvo">${quando()}</span>
       <button class="btn" id="eInv">▦ Inventário</button><button class="btn" id="eExc">Excluídos</button>${pode('estoque.cfg','ver')?'<button class="btn" id="eDep">Depósitos</button>':''}</div>
@@ -1204,7 +1206,7 @@ function estBarra(){
   return `<div class="e9bar"><div class="e9seg">${[['saldos','Saldos'],['mov','Movimentos']].map(([k,n])=>`<button data-ev="${k}" class="${EST.vista===k?'on':''}">${n}</button>`).join('')}</div>
     <input class="e9bus" id="eQ" placeholder="Buscar item por nome ou código" value="${esc(EST.q)}">
     <select class="e9sel" id="eDp"><option value="">Todos os depósitos</option>${deps.map(d=>`<option value="${esc(d.id)}" ${EST.dep===d.id?'selected':''}>${esc(d.princ?'Na empresa (depósito do grupo)':d.nome)}</option>`).join('')}</select>
-    ${EST.vista==='mov'?`<select class="e9sel" id="eTp">${[['tudo','Entradas e saídas'],['E','Só entradas'],['S','Só saídas'],['T','Transferências']].map(([k,n])=>`<option value="${k}" ${EST.tipo===k?'selected':''}>${n}</option>`).join('')}</select>${perBotao('ePer',EST.per)}`:''}
+    ${EST.vista==='saldos'?colsBotao('eCols'):''}${EST.vista==='mov'?`<select class="e9sel" id="eTp">${[['tudo','Entradas e saídas'],['E','Só entradas'],['S','Só saídas'],['T','Transferências']].map(([k,n])=>`<option value="${k}" ${EST.tipo===k?'selected':''}>${n}</option>`).join('')}</select>${perBotao('ePer',EST.per)}`:''}
   </div>`;
 }
 function estLigaBarra(re){
@@ -1220,18 +1222,22 @@ function estCorpo(todos){
   const q=EST.q.toLowerCase();
   let l=todos.filter(i=>estNoGrupo(i,EST.g)&&(!q||(i.cod+' '+i.nome).toLowerCase().includes(q)));
   if(EST.dep){l=l.filter(i=>{const sd=i.id&&N.saldoDeps?N.saldoDeps(i.id):null;const v=sd&&sd.por[EST.dep];return v!=null&&Math.abs(+v)>1e-9;});}
-  l.sort((a,b)=>String(a.nome).localeCompare(String(b.nome),'pt-BR'));
+  const O=EST.ord||{k:'nome',d:1},vk=i=>O.k==='g'?estNomeG(i.g):O.k==='dep'?'':i[O.k];
+  l.sort((a,b)=>{const x=vk(a),y=vk(b);if(typeof x==='number'||typeof y==='number'){const xn=x==null?-Infinity:+x,yn=y==null?-Infinity:+y;return (xn-yn)*O.d;}return String(x||'').localeCompare(String(y||''),'pt-BR')*O.d;});
+  const th=(k,t,cl)=>`<th class="${cl||''} srt ${O.k===k?(O.d>0?'up':'dn'):''}" data-es="${k}" style="cursor:pointer;user-select:none">${t}</th>`;
   const neg=l.filter(i=>i.fis!=null&&i.fis<0).length,qua=N.quarentena?l.filter(i=>N.quarentena(i.id)>0).length:0;
   const pa=EST.g==='pa'||EST.g==='todos'||EST.g==='fab';
   $('e9c').innerHTML=estBarra()+`${pa&&N.semTinyEstoque?'<div id="nfSt" class="nfst">Notas fiscais do Tiny: consultando…</div>':''}
     <div class="e9cards" style="margin-top:10px"><div><span>Itens</span><b>${nq(l.length)}</b></div><div class="neg"><span>Com saldo negativo</span><b>${nq(neg)}</b></div>
       <div class="q"><span>Na quarentena</span><b>${nq(qua)}</b></div><div><span>Sem saldo</span><b>${nq(l.filter(i=>!i.fis).length)}</b></div></div>
-    <div class="e9tb"><table class="e9t"><thead><tr><th>Código</th><th>Item</th>${EST.g==='todos'?'<th class="opc">Grupo</th>':''}<th>Onde está</th><th class="n">Físico</th><th class="n opc">Reservado</th><th class="n">Disponível</th><th></th></tr></thead><tbody>
+    <div class="e9tb"><table class="e9t" id="tabE9"><thead><tr>${th('cod','Código')}${th('nome','Item')}${EST.g==='todos'?th('g','Grupo','opc'):''}<th>Depósito</th>${th('fis','Físico','n')}${th('res','Reservado','n opc')}${th('disp','Disponível','n')}<th></th></tr></thead><tbody>
     ${l.map(i=>{const qq=N.quarentena?N.quarentena(i.id):0;return `<tr class="cl" data-ei="${esc(i.id||'')}"><td class="sk">${esc(i.cod)}</td><td><b>${esc(i.nome)}</b></td>${EST.g==='todos'?`<td class="k opc">${esc(estNomeG(i.g))}</td>`:''}
       <td>${estOnde(i)}</td><td class="n ${i.fis!=null&&i.fis<0?'neg':''}">${i.fis==null?'—':nq(i.fis)+' '+esc(i.un)}</td>
       <td class="n opc">${i.res?nq(i.res):'—'}</td><td class="n ${i.disp!=null&&i.disp<0?'neg':''}">${i.disp==null?'—':nq(i.disp)}</td>
       <td class="n">${qq>0&&pode('estoque.lanc','editar')?`<button class="e9lib" data-elib="${esc(i.id)}">Liberar ${nq(qq)}</button>`:''}</td></tr>`;}).join('')||'<tr><td colspan="8" class="vazio">Nada aqui com esses filtros.</td></tr>'}</tbody></table></div>
-    <div class="leg"><b>Onde está</b>: o depósito do grupo dentro da empresa, <span class="e9d q">Quarentena</span> (saiu do envase e espera liberação) e <span class="e9d f">fornecedor</span> (material nosso que está com ele). Clique no item para ver todos os movimentos.</div>`;
+    <div class="leg"><b>Depósito</b>: o do grupo, dentro da empresa · <span class="e9d q">Quarentena</span> saiu do envase e espera liberação · <span class="e9d f">fornecedor</span> material nosso que está com ele.</div>`;
+  document.querySelectorAll('[data-es]').forEach(h=>h.onclick=()=>{const k=h.dataset.es;EST.ord=EST.ord&&EST.ord.k===k?{k,d:-EST.ord.d}:{k,d:['fis','res','disp'].includes(k)?-1:1};estGuarda();estCorpo();});
+  try{const rot=colsTabela($('tabE9'),'estoque9',[]);if($('eCols'))$('eCols').onclick=()=>colsPainel('estoque9',rot,[],['Item'],()=>estCorpo());}catch(e){}
   estLigaBarra(()=>estCorpo());
   document.querySelectorAll('[data-ei]').forEach(r=>r.onclick=ev=>{if(ev.target.closest('[data-elib]'))return;if(r.dataset.ei)ir('item',r.dataset.ei);});
   document.querySelectorAll('[data-elib]').forEach(b=>b.onclick=ev=>{ev.stopPropagation();estLiberar(b.dataset.elib);});

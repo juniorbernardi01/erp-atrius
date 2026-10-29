@@ -1189,7 +1189,7 @@ function telaOrdens(){
   const comps=[...new Set(DB.ocs.map(o=>o.comprador).filter(Boolean))].sort();
   const p=LST.per,nsel=[...LST.sel].filter(id=>DB.ocs.some(o=>o.id===id)).length;
   const col=(k,r,st)=>`<span class="so ${s.k===k?(s.dir>0?'asc':'desc'):''}" data-sort="${k}" style="${st||''}">${r}<i></i></span>`;
-  $('app').innerHTML=`<div class="migalha">Compras › Ordens de compra</div>
+  $('app').innerHTML=`<div class="migalha">Suprimentos › Ordens de compra</div>
   <div class="topo"><h1>Ordens de compra</h1><span class="salvo"></span>${pode('compras.oc','editar')?'<button class="btn pri" id="bNova">＋ Nova ordem de compra</button>':''}</div>
   <div class="barra"><div class="busca">⌕<input id="q" placeholder="Pesquise por fornecedor, Nº OC, NF, item ou marcador" value="${esc(LST.q)}"></div>
     ${perBotao('bPer',LST.per)}
@@ -1347,7 +1347,7 @@ function telaOC(id){
   const totUn=(oc.itens||[]).reduce((s,i)=>s+(+i.qtd||0),0),totCx=(oc.itens||[]).reduce((s,i)=>s+(i.modo==='cx'?+i.qtdCx||0:0),0);
   const unRes=[...new Set(oc.itens.map(i=>i.un))].length===1&&oc.itens.length?oc.itens[0].un:'un';
   $('app').innerHTML=`<div class="ocv2"><div class="migalha"><button class="btn lk sm" id="volta">‹ Ordens de compra</button></div>
-  <div class="ed-top"><h1>${ED.nova?(oc.benef?'Nova ordem de industrialização':'Nova ordem de compra'):(L?'Ordem ':'Editar ordem ')+esc(oc.num)+(oc.benef?' · industrialização':'')}</h1>${ED.nova?'':`<span class="pill p-${oc.sit}">${SIT[oc.sit]}</span>`}</div>
+  <div class="ed-top"><h1>${ED.nova?'Nova ordem de compra':(L?'Ordem ':'Editar ordem ')+esc(oc.num)+(oc.benef?' · industrialização':'')}</h1>${ED.nova?'':`<span class="pill p-${oc.sit}">${SIT[oc.sit]}</span>`}</div>
   ${L&&!ED.nova?`<div class="aviso">🔒 <div>${oc.sit==='rec'?'A mercadoria já chegou: preços e boletos se acertam em <b>Conferir nota</b>.':oc.sit==='con'?'Ordem concluída. Para corrigir, use <b>Reabrir ordem</b> nos três pontinhos.':oc.sit==='can'?'Ordem cancelada.':'Você não tem permissão para editar ordens.'}</div></div>`:''}
   <div class="ocg"><div class="ocm">
   <div class="bloco"><div class="t"><span class="n">1</span>Fornecedor e entrega</div><div class="c"><div class="g3" style="grid-template-columns:2fr 1fr">
@@ -1356,7 +1356,7 @@ function telaOC(id){
       ${f?`<div class="lk2"><button id="lD">dados do fornecedor</button><button id="lU">ver últimas compras</button></div>`:`<div class="lk2">${DB.cfg.soCadastro&&!N.teste?'':'<button id="fNovo">＋ novo fornecedor'+(N.teste&&DB.cfg.soCadastro?' (só no TESTE)':'')+'</button>'}<button id="fTiny">buscar no Tiny</button></div>`}
       <label class="chk2" id="endC"><span class="ck ${oc.entrega.outro?'on':''}"></span>Entregar em outro endereço</label>
       <label class="chk2" id="benC" title="O fornecedor recebe material nosso (pré-forma, rótulo) e devolve o item pronto."><span class="ck ${oc.benef?'on':''}"></span>Industrialização</label>
-      ${oc.benef?'<div class="s2" style="margin-top:6px;color:#5B21B6">O item é o que volta pronto. Embaixo, <b>＋ sub-item</b> é o que sai do nosso estoque (rótulo, pré-forma).</div>':''}</div>
+      ${oc.benef?'<div class="s2" style="margin-top:6px;color:#5B21B6">O item é o que volta pronto, com o preço do fornecedor. Embaixo vai o material nosso que ele usa (rótulo, preforma), saindo do depósito dele.</div>':''}</div>
     <div class="fl"><label>Previsão de entrega<span class="req">*</span></label><input class="inp dt-in dest" data-cal="1" id="prev" value="${oc.prev?br(oc.prev):''}" placeholder="dd/mm/aaaa" ${dis}></div></div>
     <div class="exp" id="xD" hidden>${f?`<div class="g2"><div><span>CNPJ</span>${esc(f.cnpj||'—')}</div><div><span>Inscrição estadual</span>${esc(f.ie||'—')}</div><div><span>Cidade</span>${esc([f.cidade,f.uf].filter(Boolean).join(' · ')||'—')}</div>
       <div><span>Endereço</span>${esc(f.end||'—')}</div><div><span>Contato</span>${esc([f.contato,f.fone,f.email].filter(Boolean).join(' · ')||'—')}</div><div><span>No Tiny</span>${f.tinyId?'ligado · '+esc(f.tinyId):'<span style="color:var(--amb)">sem código do Tiny</span>'}</div></div>`:''}</div>
@@ -1911,7 +1911,7 @@ function folhaOC(o){
     <div><span class="rot">Entregar em</span>${ent?`<b>${esc(ent.end||'')}${ent.num?', '+esc(ent.num):''}</b><p>${esc([ent.bairro,ent.cidade,ent.uf,ent.cep].filter(Boolean).join(' · '))}${ent.compl?'<br>'+esc(ent.compl):''}${ent.hora?'<br>Recebimento: '+esc(ent.hora):''}${ent.quem?'<br>'+esc(ent.quem):''}</p>`
       :`<b>${esc(e.razao)}</b><p>${esc([e.end,e.cidade,e.uf,e.cep].filter(Boolean).join(' · '))}${e.horario?'<br>Recebimento: '+esc(e.horario):''}</p>`}</div></div>
   <div class="tbox"><table class="t2"><thead><tr><th class="c">#</th><th>Item</th><th class="c">UN</th><th class="n">Qtde</th><th class="n">Preço unit.</th><th class="n">ICMS</th><th class="n">IPI</th><th class="n">Total</th></tr></thead><tbody>${itens}</tbody></table></div>
-  <div class="c4"><div class="obs"><div class="lc2 inl"><span class="rot">Comprador</span><b>${esc(o.comprador||'')}</b></div><div class="lc2 ob"><span class="rot">Observações</span><p>${o.benef?'Compra com industrialização: o serviço de cada item está na linha abaixo dele.'+(o.obs?'<br>':''):''}${esc(o.obs||'')}</p></div></div>
+  <div class="c4"><div class="obs"><div class="lc2 inl"><span class="rot">Comprador</span><b>${esc(o.comprador||'')}</b></div><div class="lc2 ob"><span class="rot">Observações</span><p>${esc(o.obs||'')}</p></div></div>
     <div class="tots2 bxo"><div><span>Produtos</span><b>${nf(t.produtos,2)}</b></div><div><span>IPI</span><b>${nf(t.ipi,2)}</b></div><div><span>Desconto</span><b>${nf(t.desconto,2)}</b></div><div class="g"><span>Total</span><b>R$ ${nf(t.total,2)}</b></div></div></div>
   <div class="c5"><span class="rot">Pagamento</span><b>${esc(formas)}</b><span class="sepv"></span><span class="rot">Prazo</span><b>${esc(prazo)}</b><span class="sepv"></span><span class="rot">Frete</span><b>${o.frete.tipo}${o.frete.tipo==='FOB'?(o.frete.quem==='proprio'?' · retirada pela Atrius':o.frete.transp?' · '+esc(o.frete.transp.nome):''):''}</b></div>
   ${DB.cfg.assinatura?`<div class="ass2"><div>${esc(o.comprador||'')} · comprador</div><div>De acordo do fornecedor</div></div>`:''}</div>`;
@@ -2359,7 +2359,7 @@ async function telaNecessidade(){
   const grpTxt=NEC.tagsF.length?(NEC.tagsF.length===1?NEC.tagsF[0]:NEC.tagsF.length+' grupos'):'Todos os grupos';
   /* resumo dos filtros em vigor, para quando eles estão escondidos */
   const resumo=[{pedido:'data do pedido',faturamento:'data do faturamento',prevista:'data prevista'}[c.nCampo],`média de ${c.nMeses} ${c.nMeses>1?'meses':'mês'}`,`cobrir ${c.cobN} ${{d:'dia(s)',s:'semana(s)',m:'mês(es)'}[c.cobU]}`,c.nVersoes?'todas as versões':'formulações atuais',`${c.nSits.length} situações${c.nEnv?' + envase':''}${c.nTq?' + tanques':''}`,c.cresc?`+${nq(c.cresc)}%`:'',c.nVirt==='e'?'virtual = físico + entradas':'virtual = físico + entradas − saídas',NEC.tags.length?NEC.tags.join(', '):'todos os grupos'].filter(Boolean).join(' · ');
-  $('app').innerHTML=`<div class="migalha">Compras › Necessidade de compra</div>
+  $('app').innerHTML=`<div class="migalha">Suprimentos › Necessidade de compra</div>
   <div class="topo"><h1>Necessidade de compra</h1><span class="salvo"></span><span class="k" style="color:var(--ink3);font-size:12px">${NDADOS.em?'pedidos lidos às '+new Date(NDADOS.em).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}):''}</span><span style="flex:1"></span>${N.semTinyEstoque?'':'<button class="btn" id="bSal">↻ Sincronizar pedidos</button>'}</div>
   ${NDADOS.erro?`<div class="aviso">⚠ <div>Não consegui ler os pedidos (${esc(NDADOS.erro)}). O consumo sai das OPs concluídas até resolver.</div></div>`:''}
   ${NDADOS.fonte==='ops'&&!NDADOS.erro?'<div class="aviso">ℹ <div>Ainda não há histórico de pedidos no ERP: o consumo sai das OPs concluídas. Depois da carga do Tiny, ele passa a sair dos pedidos pela fórmula.</div></div>':''}
@@ -2577,7 +2577,7 @@ async function telaConsumo(){
   const proj=(l,i)=>meses[i]===mAt?l.v[i]/diaHj*dm:l.v[i];
   const tend=l=>{const n=meses.length;if(n<2)return null;const a=proj(l,n-1),b=proj(l,n-2);return b?(a/b-1)*100:null;};
   const tot=meses.map((m,i)=>linhas.reduce((s,l)=>s+l.v[i],0));const nm=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
-  $('app').innerHTML=`<div class="migalha">Compras › Consumo e venda</div><div class="topo"><h1>Consumo e venda</h1><span class="salvo"></span></div>
+  $('app').innerHTML=`<div class="migalha">Suprimentos › Relatórios › Consumo e venda</div><div class="topo"><h1>Relatório de consumo e venda</h1><span class="salvo"></span></div>
   <div class="barra"><span class="seg"><button data-cv="ins" class="${CON.ver==='ins'?'on':''}">Insumos</button><button data-cv="prod" class="${CON.ver==='prod'?'on':''}">Produtos</button></span>
     <div class="busca">⌕<input id="cq" placeholder="Escreva o produto ou insumo · ex.: amaciante" value="${esc(CON.q)}"></div>${perBotao('cPer',CON.per)}</div>
   <div class="caixa rolx">${linhas.length?`<table class="ntb"><thead><tr><th>${CON.ver==='prod'?'Produto':'Insumo'}</th>${meses.map(m=>`<th class="n">${nm[+m.slice(5)-1]}${m===mAt?'*':''}</th>`).join('')}<th class="n">Média/mês</th><th class="n">Tendência</th></tr></thead><tbody>
@@ -2598,7 +2598,7 @@ async function telaConsumo(){
    ===================================================================== */
 const COT={modo:'mapas',item:''};
 function telaCotacoes(){
-  $('app').innerHTML=`<div class="migalha">Compras › Cotações</div>
+  $('app').innerHTML=`<div class="migalha">Suprimentos › Cotações</div>
   <div class="topo"><h1>Cotações</h1><span class="salvo"></span>
     ${COT.modo==='mapas'?'<button class="btn pri" id="bNovaCot">＋ Nova cotação</button>':'<button class="btn pri" id="bRegPr">＋ Registrar preço</button>'}</div>
   <div style="display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#fff;margin-bottom:14px">
@@ -2762,7 +2762,7 @@ function telaRelatorios(){
   const l=DB.ocs.filter(o=>o.sit!=='can'&&o.sit!=='ras'&&o.data>=REL.de&&o.data<=REL.ate);
   const por={};l.forEach(o=>{const k=(o.forn&&o.forn.nome)||'?';const t=contaOC(o);(por[k]=por[k]||{n:0,v:0,c:0});por[k].n++;por[k].v+=t.total;por[k].c+=t.credito;});
   const lin=Object.entries(por).sort((a,b)=>b[1].v-a[1].v);const tot=lin.reduce((s,x)=>s+x[1].v,0);
-  $('app').innerHTML=`<div class="migalha">Compras › Relatórios</div><div class="topo"><h1>Relatórios</h1><button class="btn" onclick="window.print()">⎙ Imprimir</button></div>
+  $('app').innerHTML=`<div class="migalha">Suprimentos › Relatórios</div><div class="topo"><h1>Relatórios</h1><button class="btn" onclick="window.print()">⎙ Imprimir</button></div>
   <div class="barra"><label class="cmp"><label>De</label><input class="dt-in" data-cal="1" id="rDe" value="${br(REL.de)}"></label><label class="cmp"><label>Até</label><input class="dt-in" data-cal="1" id="rAte" value="${br(REL.ate)}"></label></div>
   <div class="caixa"><h3>Compras por fornecedor</h3>${lin.length?`<table><thead><tr><th>Fornecedor</th><th class="n">Ordens</th><th class="n">Total</th><th class="n">Créditos</th><th class="n">Parte</th></tr></thead><tbody>
     ${lin.map(([f,x])=>`<tr><td>${esc(f)}</td><td class="n">${x.n}</td><td class="n">${nf(x.v,2)}</td><td class="n">${nf(x.c,2)}</td><td class="n">${tot?nf(x.v/tot*100,1):'0'}%</td></tr>`).join('')}
@@ -2966,7 +2966,7 @@ function telaHomologacao(){
         <td class="n">${uc?nf(uc.preco,4):'—'}</td><td><span class="st st-${v.sit}">${SITV[v.sit]}</span></td><td><button class="btn lk sm" data-hgo="${v.fid}">editar no fornecedor</button></td></tr>`;}).join('')||'<tr><td colspan="6" class="vazio">Nenhum fornecedor homologado para este item.</td></tr>'}</tbody></table></div>
       <div class="leg">Esta aba se preenche sozinha com o que está nos fornecedores. Não se digita duas vezes.</div>`:'<div class="vazio">Escolha um item para ver quem fornece.</div>'}`;
   }
-  $('app').innerHTML=`<div class="migalha">Compras › Homologação</div><div class="topo"><h1>Homologação de fornecedores</h1><span class="salvo"></span></div>${tabs}${corpo}
+  $('app').innerHTML=`<div class="migalha">Suprimentos › Homologação</div><div class="topo"><h1>Homologação de fornecedores</h1><span class="salvo"></span></div>${tabs}${corpo}
   <div class="leg"><b>Compra em</b> só vira escolha quando há escolha: item em unidade compra em <b>unidade</b> ou em <b>caixa</b> (e aí se diz quantas vêm na caixa).
   Item em kg ou litro compra sempre em kg ou litro. ${DB.cfg.soHomologados?'Com a regra ligada, a ordem só aceita item <b>homologado</b> no fornecedor.':'A regra "só homologados" está desligada: item fora da homologação entra na ordem como "em avaliação".'}</div>`;
   document.querySelectorAll('[data-ha]').forEach(b=>b.onclick=()=>{HOM.aba=b.dataset.ha;telaHomologacao();});
@@ -3403,7 +3403,7 @@ function telaRelatorios(){
         <td class="n">${nf(y.s.v+y.s.ipi,2)}</td><td class="n">pm ${rl5P(y.s.pm)}</td></tr>`).join(''):''}`;}).join('')}
     <tr class="tot"><td>Total · ${g.length} fornecedor(es)</td><td class="n">${S.ocs.size}</td><td class="n">${S.itens.size}</td><td class="n">${nf(S.v,2)}</td><td class="n">${nf(S.ipi,2)}</td><td class="n">${nf(totV,2)}</td><td class="n">${nf(S.cred,2)}</td></tr></tbody></table>`;
   }
-  $('app').innerHTML=`<div class="migalha">Compras › Relatórios</div>
+  $('app').innerHTML=`<div class="migalha">Suprimentos › Relatórios</div>
   <div class="topo"><h1>Compras do período</h1><span style="flex:1"></span>
     <button class="btn" id="r5Xls">⤓ Baixar Excel</button><button class="btn" id="r5Pdf">⎙ Imprimir / PDF</button></div>
   <div class="r5per">
@@ -3533,15 +3533,16 @@ function rl5Imprimir(l,fNome,perTxt,grupo){
 
   const REL=[['compras','car','Compras do período','Por fornecedor e por item: quantidade, valor, IPI e crédito. Com Excel e PDF.'],
     ['areceber','cam','Ordens a receber','O que está a caminho: fornecedor, previsão de entrega, atraso e valor.'],
-    ['precos','pre','Preço por item','Último preço pago, o anterior, a variação, a média, o mínimo e o máximo de cada item.']];
+    ['precos','pre','Preço por item','Último preço pago, o anterior, a variação, a média, o mínimo e o máximo de cada item.'],
+    ['consumo','pre','Consumo e venda','Quanto cada item foi consumido nas OPs e vendido, por mês: base para a necessidade de compra.']];
   let QH='';
   function hub(){
     const q=semAc(QH);const l=REL.filter(r=>!q||semAc(r[2]+' '+r[3]).includes(q));
-    $('app').innerHTML=`<div class="migalha">Compras › Relatórios</div><div class="p8top"><h1>Relatórios</h1><label class="p8bus">${sv('busca')}<input id="p8Q" placeholder="Buscar relatório" value="${esc(QH)}"></label></div>
-      <div class="p8gr">${l.map(([k,i,t,d])=>`<a class="p8rc" href="#relatorios/${k}"><span class="p8ico">${sv(i,20)}</span><b>${t}</b><small>${d}</small></a>`).join('')}</div>`;
+    $('app').innerHTML=`<div class="migalha">Suprimentos › Relatórios</div><div class="p8top"><h1>Relatórios</h1><label class="p8bus">${sv('busca')}<input id="p8Q" placeholder="Buscar relatório" value="${esc(QH)}"></label></div>
+      <div class="p8gr">${l.map(([k,i,t,d])=>`<a class="p8rc" href="${k==='consumo'?'#consumo':'#relatorios/'+k}"><span class="p8ico">${sv(i,20)}</span><b>${t}</b><small>${d}</small></a>`).join('')}</div>`;
     const i=$('p8Q');i.oninput=()=>{QH=i.value;const p=i.selectionStart;hub();const n=$('p8Q');n.focus();n.setSelectionRange(p,p);};
   }
-  const cab=t=>`<div class="migalha">Compras › Relatórios › ${t}</div>`;
+  const cab=t=>`<div class="migalha">Suprimentos › Relatórios › ${t}</div>`;
   const hojeS=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
   const brD=s=>s?String(s).slice(0,10).split('-').reverse().join('/'):'—';
   const totOC=o=>(o.itens||[]).reduce((s,i)=>{let c;try{c=contaItem(i);}catch(e){c={base:(+i.qtd||0)*(+i.preco||0),val:{ipi:0}};}return s+(c.base||0)+((c.val&&c.val.ipi)||0);},0);
@@ -3989,5 +3990,64 @@ th .cfsort{font-size:10px;margin-left:3px;color:#1D4ED8}
 })();
 
 /* v489-ind */
+</script>
+<script data-v490="compras">
+/* =====================================================================
+   v4.9.0 · COMPRAS
+   1) Item com ficha técnica (ex.: frasco rotulado) numa ordem com industrialização: o sistema já põe embaixo só o
+      material NOSSO que vai junto (rótulo, preforma), saindo do depósito do fornecedor, com o último preço do serviço.
+      O frasco que o fornecedor vende não vira sub-item: o preço do item já é o do frasco (o último pago por ele,
+      ou pelo frasco de base da ficha, se o item ainda não foi comprado).
+   2) Data: dá para digitar (29102026 vira 29/10/2026) e o calendário abre no botãozinho ao lado.
+   3) Campo de número (quantidade, preço, ICMS, IPI): ao entrar no campo, o valor fica selecionado — é só digitar.
+   ===================================================================== */
+const c490Ins=sku=>{try{return (N?N.insumos():[]).find(i=>String(i.sku)===String(sku))||null;}catch(e){return null;}};
+function c490UltServ(sku,fid){
+  const l=(DB.ocs||[]).filter(o=>o.sit!=='can').slice().sort((a,b)=>String(b.data).localeCompare(String(a.data)));
+  for(const pref of [true,false])for(const o of l){if(pref&&!(o.forn&&o.forn.id===fid))continue;
+    for(const it of (o.itens||[]))for(const e of envsDe(it))if(String(e.sku)===String(sku)&&+e.preco>0)return +e.preco;}
+  return 0;
+}
+function c490Ficha(oc,it){
+  try{if(!oc||!oc.benef||!it||envsDe(it).length)return;
+    const x=c490Ins(it.sku);const fi=x&&Array.isArray(x.ficha)?x.ficha:[];if(!fi.length)return;
+    const fid=oc.forn&&oc.forn.id,dep=(depBenef(oc,true)||{}).id||depPrinc();
+    const nosso=fi.filter(f=>!/^frasco/i.test(String(f.comp||''))),base=fi.find(f=>/^frasco/i.test(String(f.comp||'')));
+    it.envs=nosso.map(f=>{const y=c490Ins(f.sku)||{sku:f.sku,nome:f.nome};
+      return {sku:y.sku,nome:y.nome,tiny:y.tiny||('ERP-'+y.sku),un:unDoItem(y),tipo:y.tipo||'',fator:+f.qtd||1,dep,preco:c490UltServ(y.sku,fid)};});
+    if(!(+it.preco>0)&&base){const mp=melhorPreco(base.sku,fid),uc=ultimaCompra(base.sku,fid)||ultimaCompra(base.sku);it.preco=mp?mp.preco:(uc?uc.preco:0);
+      const imp=DB.imp[base.sku];if(imp){if(!(+it.icms>0))it.icms=+imp.icms||0;if(!(+it.ipi>0))it.ipi=+imp.ipi||0;}}
+  }catch(e){console.warn('[v490] ficha',e);}
+}
+try{const _ai490=adicionarItem;adicionarItem=function(oc,x){const ok=_ai490.apply(this,arguments);if(ok)c490Ficha(oc,oc.itens[oc.itens.length-1]);return ok;};}catch(e){}
+/* ligou "Industrialização" depois de pôr os itens: completa os que têm ficha */
+document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.closest('#benC');if(!b)return;
+  setTimeout(()=>{try{if(ED&&ED.oc&&ED.oc.benef){let m=0;ED.oc.itens.forEach(it=>{const n=envsDe(it).length;c490Ficha(ED.oc,it);if(envsDe(it).length!==n)m++;});if(m){try{recalc();}catch(e){}render();}}}catch(e){}},0);},true);
+/* datas: digita ou escolhe no calendário */
+(function(){const s=document.createElement('style');s.textContent=`.c490d{position:relative;display:inline-flex;align-items:center;max-width:100%}
+.c490d>input{padding-right:34px!important}.c490d>button{position:absolute;right:5px;top:50%;transform:translateY(-50%);width:26px;height:26px;border:0;border-radius:7px;background:#EEF3FF;color:#1D4ED8;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
+.c490d>button:disabled{opacity:.4;cursor:default}`;document.head.appendChild(s);})();
+const c490Mask=v=>{const d=String(v||'').replace(/\D/g,'').slice(0,8);return d.length>4?d.slice(0,2)+'/'+d.slice(2,4)+'/'+d.slice(4):d.length>2?d.slice(0,2)+'/'+d.slice(2):d;};
+ligaCalendarios=function(raiz){
+  (raiz||document).querySelectorAll('input[data-cal]').forEach(inp=>{
+    if(inp._cal)return;inp._cal=1;inp.autocomplete='off';inp.setAttribute('inputmode','numeric');inp.maxLength=10;
+    inp.addEventListener('input',()=>{const a=inp.value,m=c490Mask(a);if(m!==a)inp.value=m;});
+    inp.addEventListener('blur',()=>{const d=inp.value.replace(/\D/g,'');if(d.length===6){inp.value=d.slice(0,2)+'/'+d.slice(2,4)+'/20'+d.slice(4);inp.dispatchEvent(new Event('change',{bubbles:true}));}});
+    inp.addEventListener('keydown',ev=>{if(ev.key==='Enter'){ev.preventDefault();inp.blur();}});
+    const w=document.createElement('span');w.className='c490d';const cs=getComputedStyle(inp);
+    if(cs.display==='block'||/100%/.test(inp.style.width||'')||inp.offsetWidth>=(inp.parentNode&&inp.parentNode.clientWidth||0)-2)w.style.display='flex';
+    inp.parentNode.insertBefore(w,inp);w.appendChild(inp);if(w.style.display==='flex')inp.style.width='100%';
+    const b=document.createElement('button');b.type='button';b.title='Escolher no calendário';b.disabled=inp.disabled;b.tabIndex=-1;
+    b.innerHTML='<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.9"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 9.5h17M8 3v4M16 3v4"/></svg>';
+    b.onclick=ev=>{ev.stopPropagation();if(!inp.disabled)abreCalendario(inp);};w.appendChild(b);
+  });
+};
+/* número: entrou no campo, o valor fica selecionado (digita por cima, sem apagar zero por zero) */
+(function(){const eh=t=>t&&t.tagName==='INPUT'&&!t.hasAttribute('data-cal')&&(t.type==='text'||t.type==='number'||!t.type)&&
+  (t.matches('.in3,.in5,.vl,#addQ,#addP,#addIc,#addI,[data-it],[data-cq],[data-sp],[data-spi]'));
+  document.addEventListener('focusin',e=>{const t=e.target;if(!eh(t))return;t._sel=true;setTimeout(()=>{try{t.select();}catch(_){}},0);});
+  document.addEventListener('mouseup',e=>{const t=e.target;if(eh(t)&&t._sel){e.preventDefault();t._sel=false;try{t.select();}catch(_){}}},true);
+})();
+
 </script>
 </body></html>
