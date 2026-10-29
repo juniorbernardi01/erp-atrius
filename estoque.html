@@ -901,7 +901,7 @@ function telaItem(id){
     <button class="btn lk" id="fLimpa">⊖ limpar filtros</button></div>
   ${IT.aba==='est'?`${NFI&&NFI.aviso?`<div class="aviso">⚠ <div>${esc(NFI.aviso)}</div></div>`:''}${NFI&&NFI.lendo?'<div class="k" style="margin-bottom:8px">Lendo as notas de saída…</div>':''}
   <div class="caixa rolx"><table class="tv" id="tabI" style="min-width:820px"><thead><tr><th style="width:40px"></th><th>Data e hora</th><th>Depósito</th><th class="n">Entrada</th><th class="n">Saída</th><th>Observação</th><th>Tipo</th></tr></thead><tbody>
-    ${l.map((x,i)=>`<tr data-i="${i}" class="${x.tipo==='BAL'?'ibal':''} ${x.pend?'ipend':''} ${IT.marcaTr&&x.tr===IT.marcaTr?'imarca':''}" style="cursor:pointer">
+    ${l.map((x,i)=>`<tr data-i="${i}" class="${x.tr?'':x.tipo==='E'?'ient':x.tipo==='S'?'isai':''} ${x.tipo==='BAL'?'ibal':''} ${x.pend?'ipend':''} ${IT.marcaTr&&x.tr===IT.marcaTr?'imarca':''}" style="cursor:pointer">
       <td><button class="dots" data-mn="${i}" title="Ações">⋯</button></td><td class="m">${quandoEm(x.em)}</td><td>${esc(depNome(x.dep))}</td>
       <td class="n" style="color:var(--ok)">${x.tipo==='E'?nq(x.qtd):x.tipo==='BAL'?`<b title="o saldo do depósito passa a ser este">= ${nq(x.qtd)}</b>`:''}</td>
       <td class="n" style="color:var(--danger)">${x.tipo==='S'?nq(x.qtd):''}</td>
@@ -1095,6 +1095,221 @@ function formDep(d){
   let t=null;new MutationObserver(()=>{clearTimeout(t);t=setTimeout(varre,60);}).observe(document.documentElement,{childList:true,subtree:true});
   setTimeout(varre,300);
 })();
+
+</script>
+<script data-v489="est">
+/* =====================================================================
+   v4.8.9 · ESTOQUE NUMA PÁGINA SÓ
+   À esquerda, a mesma árvore de grupos de Cadastros › Itens. À direita, os saldos (onde está cada item: o depósito
+   do grupo, a Quarentena, os fornecedores) ou os movimentos de todos os itens: entrada em verde, saída em vermelho,
+   transferência em azul. Inventário é um botão. Excluir inventário pede a senha de gestor e vai para "Excluídos".
+   ===================================================================== */
+const EST=(()=>{let v={};try{v=JSON.parse(localStorage.getItem('erp.est489')||'{}');}catch(e){}
+  return {g:v.g||'todos',vista:v.vista||'saldos',dep:'',q:'',neg:false,tipo:'tudo',per:null};})();
+const estGuarda=()=>{try{localStorage.setItem('erp.est489',JSON.stringify({g:EST.g,vista:EST.vista}));}catch(e){}};
+(function(){const s=document.createElement('style');s.textContent=`
+.e9{display:block}
+.gbar{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 12px;align-items:center;position:relative}
+.gbar>button{height:36px;padding:0 12px;border-radius:999px;border:1px solid var(--line);background:#fff;font:600 13.5px Inter,system-ui;color:var(--ink2);display:inline-flex;align-items:center;gap:7px;cursor:pointer;white-space:nowrap}
+.gbar>button i{font-style:normal;font-size:12px;color:var(--ink3)}.gbar>button.on{background:#0E1B33;color:#fff;border-color:#0E1B33}.gbar>button.on i{color:#C9D3E6}
+.gbar>button em{font-style:normal;font-size:11px;font-weight:800;color:#fff;background:#DC2626;border-radius:999px;padding:1px 6px}
+.gbar .car{font-size:10px;opacity:.6}.gbar>button.alerta{border-color:#FCA5A5;color:#B91C1C}.gbar>button.alerta.on{background:#B91C1C;color:#fff;border-color:#B91C1C}
+.gbar>button.lar{border-color:#FDBA74;color:#C2410C}.gbar>button.lar.on{background:#EA580C;color:#fff;border-color:#EA580C}
+.gbdd{position:absolute;z-index:50;background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:0 14px 34px rgba(14,27,51,.16);padding:6px;min-width:240px}
+.gbdd button{display:flex;align-items:center;gap:8px;width:100%;padding:9px 12px;border:0;background:none;border-radius:9px;font:500 14px Inter,system-ui;color:var(--ink);cursor:pointer;text-align:left}
+.gbdd button i{margin-left:auto;font-style:normal;color:var(--ink3);font-size:12.5px}.gbdd button.on{background:#EEF3FF;color:#1D4ED8}.gbdd .t{font-weight:700}
+.gbdd button em{font-style:normal;font-size:11px;font-weight:800;color:#fff;background:#DC2626;border-radius:999px;padding:1px 6px}
+.e9arv{border-right:1px solid var(--line);padding-right:10px;position:sticky;top:8px;display:flex;flex-direction:column;gap:1px}
+.e9arv button{display:flex;align-items:center;gap:8px;padding:6px 9px;border-radius:9px;font-size:13.5px;color:var(--ink2);text-align:left;background:none;border:0;cursor:pointer;width:100%}
+.e9arv button.g{font-weight:700;color:var(--ink)}.e9arv button.s{padding-left:26px}
+.e9arv button i{margin-left:auto;font-style:normal;font-size:12px;color:var(--ink3);font-weight:600}
+.e9arv button em{font-style:normal;font-size:11px;font-weight:800;color:#fff;background:#DC2626;border-radius:999px;padding:1px 6px;margin-left:4px}
+.e9arv button.on{background:#EEF3FF;color:#1D4ED8}.e9arv .sep{height:1px;background:var(--line);margin:6px 0}
+.e9top{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}.e9top h1{margin:0;flex:1}
+.e9bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+.e9seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;height:38px}.e9seg button{padding:0 14px;font-weight:600;font-size:13px;color:var(--ink2);border:0;border-right:1px solid var(--line);background:#fff;cursor:pointer}.e9seg button:last-child{border-right:0}.e9seg button.on{background:#0E1B33;color:#fff}
+.e9sel{height:38px;border:1px solid var(--line);border-radius:10px;padding:0 10px;font-weight:600;background:#fff}
+.e9bus{flex:1;min-width:200px;height:38px;border:1px solid var(--line);border-radius:10px;padding:0 12px;font-size:14px}
+.e9t{width:100%;border-collapse:collapse;font-size:13.5px}.e9tb{border:1px solid var(--line);border-radius:14px;overflow:auto;background:#fff}
+.e9t th{font:700 11px Inter,system-ui;color:var(--ink3);letter-spacing:.06em;text-transform:uppercase;text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);background:#FAFAFB;white-space:nowrap}
+.e9t td{padding:9px 12px;border-bottom:1px solid #F1F2F4;vertical-align:middle}.e9t td.n,.e9t th.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.e9t tr.cl{cursor:pointer}.e9t tr.cl:hover td{background:#FAFBFF}.e9t td.sk{color:var(--ink3);font-weight:600;white-space:nowrap}
+.e9t td.neg{color:#DC2626;font-weight:800}
+.e9d{display:inline-flex;align-items:center;gap:5px;font:600 11.5px Inter,system-ui;border-radius:999px;padding:3px 9px;margin:1px 4px 1px 0;background:#F1F5F9;color:#334155;white-space:nowrap}
+.e9d b{font-weight:800}.e9d.q{background:#FFEDD5;color:#9A3412}.e9d.f{background:#EDE9FE;color:#5B21B6}.e9d.neg{background:#FEE2E2;color:#B91C1C}
+.e9mv{display:inline-flex;align-items:center;gap:6px;font:800 11.5px Inter,system-ui;border-radius:8px;padding:4px 9px;white-space:nowrap}
+.e9mv.E{background:#DCFCE7;color:#166534}.e9mv.S{background:#FEE2E2;color:#991B1B}.e9mv.T{background:#DBEAFE;color:#1E40AF}.e9mv.B{background:#F1F5F9;color:#334155}
+.e9q.E{color:#15803D;font-weight:800}.e9q.S{color:#DC2626;font-weight:800}.e9q.T{color:#1D4ED8;font-weight:800}
+.e9tag{font:700 10.5px Inter,system-ui;border:1px solid var(--line);border-radius:6px;padding:1px 6px;color:var(--ink2);margin-right:6px}
+.e9lib{border:0;background:#EA580C;color:#fff;font:700 11.5px Inter,system-ui;border-radius:8px;padding:5px 10px;cursor:pointer}
+.e9cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:12px}
+.e9cards div{border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:#fff}.e9cards span{display:block;font-size:11.5px;color:var(--ink3);font-weight:600}.e9cards b{font-size:20px}
+.e9cards .neg b{color:#DC2626}.e9cards .q b{color:#EA580C}
+tr.ient td{background:#F7FEF9}tr.isai td{background:#FFF8F8}
+@media(max-width:1100px){.e9t .opc{display:none}}@media(max-width:1000px){.e9cards{grid-template-columns:repeat(2,1fr)}}`;document.head.appendChild(s);})();
+
+/* ---------- os itens, cada um com o seu grupo e a sua chave de estoque ---------- */
+function estArvore(){const a=(N.gruposArvore&&N.gruposArvore())||[];return a.filter(g=>g.k!=='fab'||true).map(g=>({k:g.k,n:g.n,f:(g.f||[]).filter(x=>x.k!=='tanques')}));}
+function estFolhas(){const l=[];estArvore().forEach(g=>{if(g.f.length)g.f.forEach(f=>l.push({k:f.k,n:f.n,pai:g.k}));else l.push({k:g.k,n:g.n,pai:g.k});});return l;}
+function estItens(){
+  const F=estFolhas(),porNome={};F.forEach(f=>porNome[f.n]=f.k);
+  const s=N.saldos();
+  const ps=N.produtos().filter(p=>p.ativo!==false).map(p=>({tp:'p',cod:p.codigo,nome:p.descricao,id:chaveEst(p.tiny),un:/\bFD\b|FARDO/i.test(p.descricao||'')?'fd':/ - UN$|^UY /i.test(p.descricao||'')?'un':'cx',g:p.cgrupo&&p.cgrupo!=='tanques'?p.cgrupo:'pa',x:p}));
+  const is=N.insumos().filter(x=>x.ativo!==false).map(x=>({tp:'i',cod:x.sku,nome:x.nome,id:chaveEst(x.tiny),un:unDe(x),g:x.cgrupo||porNome[grupoX(x)]||'outros',x}));
+  const res=N.reservado();
+  return [...ps,...is].map(i=>{const fis=i.id&&s[i.id]!==undefined?+s[i.id]:null;
+    const r=i.tp==='i'?(res[i.cod]||res[i.nome]||{qtd:0}).qtd:0;return {...i,fis,res:r,disp:fis==null?null:fis-r};});
+}
+const estNomeG=k=>(estFolhas().find(f=>f.k===k)||{}).n||'Outros';
+function estNoGrupo(i,g){if(g==='todos')return true;if(g==='__neg')return i.fis!=null&&i.fis<0;if(g==='__quar')return N.quarentena&&N.quarentena(i.id)>0;
+  const f=estFolhas().find(x=>x.k===i.g);return i.g===g||(f&&f.pai===g);}
+/* onde está: o depósito do grupo (o principal, com o nome do grupo), a Quarentena e os fornecedores */
+function estOnde(i){
+  if(!i.id||!N.saldoDeps)return '';const sd=N.saldoDeps(i.id)||{por:{}},deps=depsN(),pr=(deps.find(d=>d.princ)||{}).id;
+  return deps.map(d=>{const v=sd.por[d.id];if(v==null||Math.abs(+v)<1e-9)return '';
+    const nm=d.princ?estNomeG(i.g):d.nome,cl=d.id==='quar'?'q':d.forn?'f':'';
+    return `<span class="e9d ${cl} ${+v<0?'neg':''}">${esc(nm)} <b>${nq(v)}</b></span>`;}).join('')||'<span class="k">—</span>';
+}
+/* ---------- a página ---------- */
+function telaSaldos(){
+  const todos=estItens();const arv=estArvore();
+  const cnt=g=>todos.filter(i=>estNoGrupo(i,g)).length,ng=g=>todos.filter(i=>estNoGrupo(i,g)&&i.fis!=null&&i.fis<0).length;
+  const nQ=N.temQuarentena&&N.temQuarentena()?todos.filter(i=>N.quarentena(i.id)>0).length:0;
+  /* grupos numa barra em cima (o mesmo jeito do Cadastro): o grupo com subgrupos abre uma lista */
+  const em=k=>ng(k)?`<em title="itens com saldo negativo">${ng(k)}</em>`:'';
+  const sub=arv.find(g=>g.f.some(f=>f.k===EST.g));
+  const tree=`<div class="gbar" id="gbar"><button class="${EST.g==='todos'?'on':''}" data-eg="todos">Todos <i>${cnt('todos')}</i>${em('todos')}</button>
+    ${arv.map(g=>{const fs=g.f.find(f=>f.k===EST.g),on=EST.g===g.k||!!fs;const k=fs?fs.k:g.k;
+      return `<button class="${on?'on':''}" ${g.f.length?`data-egm="${g.k}"`:`data-eg="${g.k}"`}>${esc(fs?g.n+' › '+fs.n:g.n)} <i>${cnt(k)}</i>${em(k)}${g.f.length?'<span class="car">▼</span>':''}</button>`;}).join('')}
+    ${nQ?`<button class="lar ${EST.g==='__quar'?'on':''}" data-eg="__quar">Na quarentena <i>${cnt('__quar')}</i></button>`:''}
+    <button class="alerta ${EST.g==='__neg'?'on':''}" data-eg="__neg">Saldo negativo <i>${cnt('__neg')}</i></button></div>`;
+  const tit=EST.g==='todos'?'Estoque':EST.g==='__neg'?'Saldo negativo':EST.g==='__quar'?'Na quarentena':(estFolhas().find(f=>f.k===EST.g)||arv.find(g=>g.k===EST.g)||{n:'Estoque'}).n;
+  const deps=depsN();
+  $('app').innerHTML=`<div class="e9top"><h1>${esc(tit)}</h1><span class="salvo">${quando()}</span>
+      <button class="btn" id="eInv">▦ Inventário</button><button class="btn" id="eExc">Excluídos</button>${pode('estoque.cfg','ver')?'<button class="btn" id="eDep">Depósitos</button>':''}</div>
+    <div class="e9">${tree}<div id="e9c"></div></div>`;
+  document.querySelectorAll('[data-eg]').forEach(b=>b.onclick=()=>{EST.g=b.dataset.eg;estGuarda();telaSaldos();});
+  document.querySelectorAll('[data-egm]').forEach(b=>b.onclick=ev=>{ev.stopPropagation();const g=arv.find(x=>x.k===b.dataset.egm);const bar=$('gbar');
+    let dd=$('gbdd');if(dd){const era=dd.dataset.g;dd.remove();if(era===g.k)return;}
+    dd=document.createElement('div');dd.className='gbdd';dd.id='gbdd';dd.dataset.g=g.k;
+    dd.style.left=(b.offsetLeft)+'px';dd.style.top=(b.offsetTop+b.offsetHeight+6)+'px';
+    dd.innerHTML=`<button class="t ${EST.g===g.k?'on':''}" data-eg2="${g.k}">Todos de ${esc(g.n)}<i>${cnt(g.k)}</i>${em(g.k)}</button>`+g.f.map(f=>`<button class="${EST.g===f.k?'on':''}" data-eg2="${f.k}">${esc(f.n)}${em(f.k)}<i>${cnt(f.k)}</i></button>`).join('');
+    bar.appendChild(dd);dd.querySelectorAll('[data-eg2]').forEach(x=>x.onclick=()=>{EST.g=x.dataset.eg2;estGuarda();telaSaldos();});
+    setTimeout(()=>document.addEventListener('click',function f(e){if(!e.target.closest('#gbdd')){const d=$('gbdd');if(d)d.remove();document.removeEventListener('click',f);}}),0);});
+  $('eInv').onclick=()=>ir('inventario');$('eExc').onclick=()=>ir('excluidos');if($('eDep'))$('eDep').onclick=()=>ir('depositos');
+  estCorpo(todos);
+}
+function estBarra(){
+  const deps=depsN();
+  return `<div class="e9bar"><div class="e9seg">${[['saldos','Saldos'],['mov','Movimentos']].map(([k,n])=>`<button data-ev="${k}" class="${EST.vista===k?'on':''}">${n}</button>`).join('')}</div>
+    <input class="e9bus" id="eQ" placeholder="Buscar item por nome ou código" value="${esc(EST.q)}">
+    <select class="e9sel" id="eDp"><option value="">Todos os depósitos</option>${deps.map(d=>`<option value="${esc(d.id)}" ${EST.dep===d.id?'selected':''}>${esc(d.princ?'Na empresa (depósito do grupo)':d.nome)}</option>`).join('')}</select>
+    ${EST.vista==='mov'?`<select class="e9sel" id="eTp">${[['tudo','Entradas e saídas'],['E','Só entradas'],['S','Só saídas'],['T','Transferências']].map(([k,n])=>`<option value="${k}" ${EST.tipo===k?'selected':''}>${n}</option>`).join('')}</select>${perBotao('ePer',EST.per)}`:''}
+  </div>`;
+}
+function estLigaBarra(re){
+  document.querySelectorAll('[data-ev]').forEach(b=>b.onclick=()=>{EST.vista=b.dataset.ev;estGuarda();telaSaldos();});
+  $('eQ').oninput=e=>{EST.q=e.target.value;clearTimeout(window._e9);window._e9=setTimeout(()=>{re();const i=$('eQ');i.focus();i.setSelectionRange(i.value.length,i.value.length);},250);};
+  $('eDp').onchange=e=>{EST.dep=e.target.value;re();};
+  if($('eTp'))$('eTp').onchange=e=>{EST.tipo=e.target.value;re();};
+  if($('ePer'))$('ePer').onclick=ev=>{ev.stopPropagation();abrirPeriodo(ev.currentTarget,EST.per||perNovo('sem'),{},st=>{EST.per=st;re();});};
+}
+function estCorpo(todos){
+  todos=todos||estItens();
+  if(EST.vista==='mov')return estMovs(todos);
+  const q=EST.q.toLowerCase();
+  let l=todos.filter(i=>estNoGrupo(i,EST.g)&&(!q||(i.cod+' '+i.nome).toLowerCase().includes(q)));
+  if(EST.dep){l=l.filter(i=>{const sd=i.id&&N.saldoDeps?N.saldoDeps(i.id):null;const v=sd&&sd.por[EST.dep];return v!=null&&Math.abs(+v)>1e-9;});}
+  l.sort((a,b)=>String(a.nome).localeCompare(String(b.nome),'pt-BR'));
+  const neg=l.filter(i=>i.fis!=null&&i.fis<0).length,qua=N.quarentena?l.filter(i=>N.quarentena(i.id)>0).length:0;
+  const pa=EST.g==='pa'||EST.g==='todos'||EST.g==='fab';
+  $('e9c').innerHTML=estBarra()+`${pa&&N.semTinyEstoque?'<div id="nfSt" class="nfst">Notas fiscais do Tiny: consultando…</div>':''}
+    <div class="e9cards" style="margin-top:10px"><div><span>Itens</span><b>${nq(l.length)}</b></div><div class="neg"><span>Com saldo negativo</span><b>${nq(neg)}</b></div>
+      <div class="q"><span>Na quarentena</span><b>${nq(qua)}</b></div><div><span>Sem saldo</span><b>${nq(l.filter(i=>!i.fis).length)}</b></div></div>
+    <div class="e9tb"><table class="e9t"><thead><tr><th>Código</th><th>Item</th>${EST.g==='todos'?'<th class="opc">Grupo</th>':''}<th>Onde está</th><th class="n">Físico</th><th class="n opc">Reservado</th><th class="n">Disponível</th><th></th></tr></thead><tbody>
+    ${l.map(i=>{const qq=N.quarentena?N.quarentena(i.id):0;return `<tr class="cl" data-ei="${esc(i.id||'')}"><td class="sk">${esc(i.cod)}</td><td><b>${esc(i.nome)}</b></td>${EST.g==='todos'?`<td class="k opc">${esc(estNomeG(i.g))}</td>`:''}
+      <td>${estOnde(i)}</td><td class="n ${i.fis!=null&&i.fis<0?'neg':''}">${i.fis==null?'—':nq(i.fis)+' '+esc(i.un)}</td>
+      <td class="n opc">${i.res?nq(i.res):'—'}</td><td class="n ${i.disp!=null&&i.disp<0?'neg':''}">${i.disp==null?'—':nq(i.disp)}</td>
+      <td class="n">${qq>0&&pode('estoque.lanc','editar')?`<button class="e9lib" data-elib="${esc(i.id)}">Liberar ${nq(qq)}</button>`:''}</td></tr>`;}).join('')||'<tr><td colspan="8" class="vazio">Nada aqui com esses filtros.</td></tr>'}</tbody></table></div>
+    <div class="leg"><b>Onde está</b>: o depósito do grupo dentro da empresa, <span class="e9d q">Quarentena</span> (saiu do envase e espera liberação) e <span class="e9d f">fornecedor</span> (material nosso que está com ele). Clique no item para ver todos os movimentos.</div>`;
+  estLigaBarra(()=>estCorpo());
+  document.querySelectorAll('[data-ei]').forEach(r=>r.onclick=ev=>{if(ev.target.closest('[data-elib]'))return;if(r.dataset.ei)ir('item',r.dataset.ei);});
+  document.querySelectorAll('[data-elib]').forEach(b=>b.onclick=ev=>{ev.stopPropagation();estLiberar(b.dataset.elib);});
+  if($('nfSt'))nfStatus();
+}
+function estLiberar(id){
+  const it=estItens().find(i=>i.id===id);const tem=N.quarentena(id);
+  gaveta(`<div class="gt"><h2>Liberar da quarentena</h2><button class="btn sm" id="gX">Fechar ✕</button></div><div class="gc">
+    <div class="k" style="margin-bottom:12px">${esc(it?it.nome:id)} · na quarentena: <b>${nq(tem)} ${esc(it?it.un:'')}</b></div>
+    <div class="cmp"><label>Quantidade liberada</label><input id="lbQ" type="number" min="0" step="1" value="${tem}" style="width:160px"></div>
+    <div class="cmp" style="margin-top:12px"><label>Observação</label><input id="lbO" style="width:100%" placeholder="ex.: lote 3603 aprovado"></div>
+    <div class="aviso" style="margin-top:14px">⚠ <div>Passa da Quarentena para o Produto acabado. O total do item não muda.</div></div></div>
+    <div class="gr"><button class="btn" id="gN">Cancelar</button><button class="btn pri" id="gOk">Liberar</button></div>`);
+  $('gX').onclick=$('gN').onclick=()=>gaveta(null);
+  $('gOk').onclick=async()=>{const q=num($('lbQ').value);if(!(q>0))return toast('Digite a quantidade.',true);if(q>tem+1e-9)return toast('A quarentena só tem '+nq(tem)+'.',true);
+    try{await N.liberarQuarentena(id,q,('Liberado da quarentena '+($('lbO').value.trim()?'· '+$('lbO').value.trim():'')).trim());gaveta(null);toast('Liberado para o produto acabado.');telaSaldos();}
+    catch(e){toast(e.message,true);}};
+}
+/* ---------- todos os movimentos, de todos os itens ---------- */
+function estMovs(todos){
+  const q=EST.q.toLowerCase(),porId={};todos.forEach(i=>{if(i.id)porId[i.id]=i;});
+  const fx=perFaixa(EST.per||perNovo('sem'));
+  let l=(N.razaoTudo?N.razaoTudo():[]).filter(x=>!x.rm&&!x.pend);
+  l=l.filter(x=>{const i=porId[String(x.id)];if(!i)return EST.g==='todos'&&!q;if(!estNoGrupo(i,EST.g))return false;
+    if(q&&!(i.cod+' '+i.nome).toLowerCase().includes(q))return false;
+    if(EST.dep&&x.dep!==EST.dep)return false;
+    const tr=!!x.tr||x.origem==='Transferência';
+    if(EST.tipo==='T'&&!tr)return false;if((EST.tipo==='E'||EST.tipo==='S')&&(tr||x.tipo!==EST.tipo))return false;
+    const d=String(x.em||'').slice(0,10);if(fx.de&&(d<fx.de||d>fx.ate))return false;return true;});
+  l.sort((a,b)=>String(b.em).localeCompare(String(a.em)));
+  const tot=l.length;const ent=l.filter(x=>x.tipo==='E'&&!x.tr).length,sai=l.filter(x=>x.tipo==='S'&&!x.tr).length,ntr=l.filter(x=>x.tr).length;l=l.slice(0,600);
+  const deps=depsN(),dn=(x,i)=>{const d=deps.find(d=>d.id===x.dep);return d?(d.princ?estNomeG(i?i.g:''):d.nome):x.dep;};
+  const mv=x=>{const tr=!!x.tr||x.origem==='Transferência';if(tr)return ['T','⇄ Transferência'];if(x.tipo==='BAL')return ['B','= Balanço'];return x.tipo==='E'?['E','▲ Entrada']:['S','▼ Saída'];};
+  $('e9c').innerHTML=estBarra()+`<div class="e9cards" style="margin-top:10px"><div><span>Movimentos</span><b>${nq(tot)}</b></div><div><span>Entradas</span><b style="color:#15803D">${nq(ent)}</b></div><div><span>Saídas</span><b style="color:#DC2626">${nq(sai)}</b></div><div><span>Transferências</span><b style="color:#1D4ED8">${nq(ntr)}</b></div></div>
+    <div class="e9tb"><table class="e9t"><thead><tr><th>Quando</th><th>Movimento</th><th>Item</th><th class="n">Quantidade</th><th>Depósito</th><th>Origem</th><th>Quem</th></tr></thead><tbody>
+    ${l.map(x=>{const i=porId[String(x.id)],[c,r]=mv(x);const sg=c==='E'?'+':c==='S'?'−':'';
+      return `<tr class="cl" data-ei="${esc(String(x.id))}"><td class="k" style="white-space:nowrap">${esc(String(x.em||'').split(' ')[0].split('-').reverse().join('/'))} ${esc(String(x.em||'').split(' ')[1]||'')}</td>
+      <td><span class="e9mv ${c}">${r}</span></td><td><b>${esc(i?i.nome:x.id)}</b><span class="k" style="display:block;font-size:11.5px">${esc(i?i.cod:'')}</span></td>
+      <td class="n"><span class="e9q ${c}">${sg}${nq(x.qtd)}</span> <span class="k">${esc(i?i.un:'')}</span></td><td>${esc(dn(x,i))}</td>
+      <td>${x.cod?`<span class="e9tag">${esc(x.cod)}</span>`:''}${esc(x.obs||x.origem||'')}</td><td class="k">${esc(x.quem||'')}</td></tr>`;}).join('')||'<tr><td colspan="7" class="vazio">Nenhum movimento com esses filtros.</td></tr>'}</tbody></table></div>
+    ${tot>600?`<div class="leg">Mostrando os 600 mais recentes de ${nq(tot)}. Use o período ou a busca para ver os outros.</div>`:''}`;
+  estLigaBarra(()=>estCorpo());
+  document.querySelectorAll('[data-ei]').forEach(r=>r.onclick=()=>ir('item',r.dataset.ei));
+}
+/* ---------- inventário: excluir só com senha de gestor; o que foi excluído fica em "Excluídos" ---------- */
+function estExcluirInv(inv){
+  gaveta(`<div class="gt"><h2>Excluir ${esc(inv.num)}</h2><button class="btn sm" id="gX">Fechar ✕</button></div><div class="gc">
+    <div class="k" style="margin-bottom:12px">${esc(inv.nome)} · aberto em ${esc(inv.abertoEm)} por ${esc(inv.por||'')} · ${esc(SITI[inv.sit]||inv.sit)}</div>
+    ${inv.sit==='enviado'?'<div class="aviso">⚠ <div>Os ajustes deste inventário já foram lançados. Excluir aqui <b>não desfaz</b> os ajustes no estoque: só tira o inventário da lista.</div></div>':''}
+    <div class="cmp" style="margin-top:12px"><label>Por que está excluindo? <b>*</b></label><input id="xM" style="width:100%" placeholder="ex.: teste, aberto por engano"></div>
+    <div class="cmp" style="margin-top:12px"><label>PIN do gestor ou a senha da sua conta <b>*</b></label><input id="xP" type="password" autocomplete="off" style="width:220px"></div></div>
+    <div class="gr"><button class="btn" id="gN">Cancelar</button><button class="btn pri" id="gOk" style="background:#B91C1C;border-color:#B91C1C">Excluir</button></div>`);
+  $('gX').onclick=$('gN').onclick=()=>gaveta(null);
+  $('gOk').onclick=async()=>{const m=$('xM').value.trim();if(!m)return toast('Diga o motivo.',true);
+    const g=N.gestor?await N.gestor($('xP').value):null;if(!g)return toast('PIN ou senha de gestor não confere.',true);
+    DB.lixo=Array.isArray(DB.lixo)?DB.lixo:[];
+    DB.lixo.push({tipo:'Inventário',ref:inv.num,nome:inv.nome,em:agora(),quem:usuario(),gestor:g.nome,motivo:m,dados:inv});
+    DB.invs=DB.invs.filter(i=>i.id!==inv.id);salvar();gaveta(null);toast(inv.num+' excluído.');telaInvs();};
+}
+try{const _ti489=telaInvs;telaInvs=function(){_ti489.apply(this,arguments);
+  try{const top=document.querySelector('.topo');if(top&&!$('eVolta'))top.insertAdjacentHTML('afterbegin','<button class="btn" id="eVolta">‹ Estoque</button>');if($('eVolta'))$('eVolta').onclick=()=>ir('saldos');
+    const th=document.querySelector('.caixa table thead tr');if(th)th.insertAdjacentHTML('beforeend','<th></th>');
+    document.querySelectorAll('[data-inv]').forEach(r=>{r.insertAdjacentHTML('beforeend',`<td class="n"><button class="btn sm del" data-xinv="${esc(r.dataset.inv)}" title="Excluir (senha de gestor)">Excluir</button></td>`);});
+    document.querySelectorAll('[data-xinv]').forEach(b=>b.onclick=ev=>{ev.stopPropagation();const inv=DB.invs.find(i=>i.id===b.dataset.xinv);if(inv)estExcluirInv(inv);});
+  }catch(e){}};}catch(e){}
+/* ---------- Excluídos: inventários e lançamentos removidos, com quem, quando e por quê ---------- */
+function telaExcluidos(){
+  const porId={};try{estItens().forEach(i=>{if(i.id)porId[i.id]=i;});}catch(e){}
+  const inv=(DB.lixo||[]).map(x=>({em:x.em,tipo:x.tipo,ref:x.ref,item:x.nome,quem:x.quem+(x.gestor?' · autorizado por '+x.gestor:''),mot:x.motivo}));
+  const lanc=(N.razaoTudo?N.razaoTudo():[]).filter(x=>x.rm).map(x=>{const i=porId[String(x.id)];return {em:x.rm.em||'',tipo:'Lançamento',ref:`${x.tipo==='E'?'▲ entrada':x.tipo==='S'?'▼ saída':x.tipo} de ${nq(x.qtd)} · ${x.obs||x.origem||''}`,item:i?i.nome:x.id,quem:x.rm.quem||'',mot:x.rm.mot||''};});
+  const l=[...inv,...lanc].sort((a,b)=>String(b.em).localeCompare(String(a.em)));
+  $('app').innerHTML=`<div class="e9top"><button class="btn" id="eVolta">‹ Estoque</button><h1>Excluídos</h1></div>
+    <div class="e9tb"><table class="e9t"><thead><tr><th>Quando</th><th>O quê</th><th>Item / inventário</th><th>Detalhe</th><th>Quem</th><th>Motivo</th></tr></thead><tbody>
+    ${l.map(x=>`<tr><td class="k" style="white-space:nowrap">${esc(x.em)}</td><td><span class="e9mv S">${esc(x.tipo)}</span></td><td><b>${esc(x.item)}</b></td><td class="k">${esc(x.ref)}</td><td>${esc(x.quem)}</td><td>${esc(x.mot)}</td></tr>`).join('')||'<tr><td colspan="6" class="vazio">Nada foi excluído.</td></tr>'}</tbody></table></div>
+    <div class="leg">Tudo o que sai do estoque por exclusão fica aqui: inventário excluído (com a senha do gestor) e lançamento removido do item.</div>`;
+  $('eVolta').onclick=()=>ir('saldos');
+}
+try{const _rd489=render;render=function(){const {pag}=lerHash();if(pag==='excluidos'&&N&&DB){PAG=pag;return telaExcluidos();}return _rd489.apply(this,arguments);};}catch(e){}
 
 </script>
 </body></html>

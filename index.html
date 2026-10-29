@@ -4909,6 +4909,8 @@ function diasHorizonte(ref,qtd){
 const uid=()=>Math.random().toString(16).slice(2,10).toUpperCase();
 const prodOf=c=>PRODUTOS.find(p=>p.codigo===String(c));
 /* v4.8.5: ficha técnica própria do produto vale no lugar da embalagem do tanque (kit, unidade avulsa) */
+const csFdPal=p=>+(p&&p.fdPallet)||((+(p&&p.cxCamada)||0)*(+(p&&p.camadas)||0))||44;
+const csPorPal=(e,p,cx)=>Math.ceil((+cx||0)/csFdPal(p))*(+e.porPallet||0);
 const embDoProd=p=>!p?[]:Array.isArray(p.ficha)?p.ficha:(((FORMULAS[p.tanque]||{}).emb||{})[fmtLit(+p.litragem||0)]||[]);
 const fmtLit=l=>l<1?`${Math.round(l*1000)}ML`:`${String(l).replace('.',',')}L`;
 const ABREV={
@@ -5506,7 +5508,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v488';const VERSAO_DATA='24/10/2026';
+const VERSAO_APP='v489';const VERSAO_DATA='24/10/2026';
 /* número que aparece na tela: v438 → v4.3.8 (por dentro continua v438, que é o que as versões comparam) */
 const csRotVer=v=>{const d=String(v||'').replace(/\D/g,'');return d.length>=3?'v'+d.slice(0,-2)+'.'+d.slice(-2,-1)+'.'+d.slice(-1):String(v||'');};
 const VERSAO_ROTULO=csRotVer(VERSAO_APP)+' · '+VERSAO_DATA;
@@ -8408,7 +8410,8 @@ function folha(titulo,cod,codsub,corpo){
     border-radius:4px;overflow:hidden;margin-bottom:6px}
   .qtd > div{padding:4px 8px 24px;border-right:1px solid #DCDEE3}
   .qtd > div:last-child{border-right:0}
-  .qtd > div:first-child{background:#F2F3F5;padding-bottom:8px}
+  .qtd > div:first-child{background:#12151A;color:#fff;padding-bottom:8px}
+  .qtd > div:first-child .k{color:#C9CED6}.qtd > div:first-child .v{font-size:24px}.qtd > div:first-child .v small{color:#C9CED6}
   .qtd .k{font-size:7px;font-weight:700;letter-spacing:.11em;text-transform:uppercase;
     color:#6B7280}
   .qtd .v{font-size:15px;font-weight:800;margin-top:1px}
@@ -8786,7 +8789,7 @@ function embalagemDe(o){
      e a OP impressa passam a falar do item que vai de verdade, sem cada
      uma precisar saber que houve troca */
   return (typeof aplicarTrocasEmb==='function'?aplicarTrocasEmb(o,itens):itens)
-    .map(x=>({...x,precisa:Math.ceil((+x.qtd||0)*un)}));
+    .map(x=>({...x,precisa:x.porPallet>0?csPorPal(x,p,caixasPrev(o)):Math.ceil((+x.qtd||0)*un)}));
 }
 
 /* escape local: o esc() do certificado vive dentro de outra função */
@@ -9089,7 +9092,7 @@ function imprimirOPEnvase(o){
         <td class="n forte">${u==='kg'?pesoKg(x.precisa):nf(x.precisa)}</td>
         <td class="c und">${u}</td>
         <td class="c">${quadroG()}</td></tr>`;}).join('')}
-      </tbody></table>`
+      </tbody></table>${emb.some(x=>x.obs)?`<div class="livre" style="padding:4px 8px 5px;margin:6px 0 0"><div class="k">Observações de itens</div><div style="font-size:11px;line-height:1.35">${emb.filter(x=>x.obs).map(x=>`<b>${escP(x.nome)}</b> — ${escP(x.obs)}`).join('<br>')}</div></div>`:''}`
       :'<p class="aviso">Nenhuma embalagem cadastrada para esta litragem.</p>'}
 
     ${'' /* O operador vai no alto, ao lado do título e em corpo maior: é a
@@ -10482,7 +10485,7 @@ function embalagemHTML(o){
           ?'O envase já terminou — a troca só vale antes do fim'
           :'Trocar este item nesta OP'}">${SVG_TROCA}</button></td>
       <td><b>${x.comp}</b></td>
-      <td>${x.nome}${x.sku&&x.sku.indexOf('SEMSKU')<0?` <span class="k">${x.sku}</span>`:''}
+      <td>${x.nome}${x.sku&&x.sku.indexOf('SEMSKU')<0?` <span class="k">${x.sku}</span>`:''}${x.obs?`<span style="display:block;font-size:11.5px;color:#B45309;font-weight:600">${escAttr(x.obs)}</span>`:''}
         ${x._orig?`<span class="k" style="display:block;font-size:10.5px">no lugar de
           ${x._orig}${x._quem?` · ${x._quem}`:''}</span>`:''}</td>
       <td class="n mono">${x.qtd}</td>
@@ -15871,9 +15874,9 @@ function consumoDaOP(o,caixas){
     const ins=insPorSku(e.sku)||insPorNome(e.nome);
     /* item com a chave de estoque desligada não baixa */
     if(ins&&ins.ctrlEst===false)return;
-    const qt=(+e.qtd||0)*un;
+    const qt=e.porPallet>0?csPorPal(e,p,cx):(+e.qtd||0)*un;
     if(qt>0)out.push({tipo:e.comp||'Embalagem',nome:e.nome,sku:e.sku,
-      tiny:tinyDe(ins),qtd:Math.ceil(qt),un:'un'});
+      tiny:tinyDe(ins),qtd:Math.ceil(qt),un:(typeof unDoItem==='function'?unDoItem(e):'un'),obs:e.obs||''});
   });
   return out;
 }
@@ -19754,9 +19757,7 @@ const CS_MOD=[
    {n:'Vendedores',mod:'cadastros',fin:'vendedores',perm:'cad.vend',ic:'pes'},
    {n:'Funcionários',mod:'cadastros',fin:'funcionarios',perm:'cad.func',ic:'pes'}]},  /* v381: Bancos e FIDCs mora em Financeiro › Gestão de Cobranças › Carteira */
  {id:'estoque',nome:'Estoque',ic:'est',pgs:[
-   {n:'Saldos',mod:'estoque',fin:'saldos',perm:'estoque.saldos',ic:'est'},
-   {n:'Movimentos',page:'estoque',esaba:'mov',ic:'mov'},
-   {n:'Inventário',mod:'estoque',fin:'inventario',perm:'estoque.inv',ic:'inv'}]},
+   {n:'Estoque',mod:'estoque',fin:'saldos',perm:'estoque.saldos',ic:'est'}]},
  {id:'compras',nome:'Compras',ic:'car',pgs:[
    {n:'Ordens de compra',mod:'compras',fin:'ordens',perm:'compras.oc',ic:'car'},
    {n:'Necessidade de compra',mod:'compras',fin:'necessidade',perm:'compras.nec',ic:'nec'},
@@ -22196,7 +22197,7 @@ window.csNucleo=(function(){
       if(versoes&&data&&typeof FORM_VERS!=='undefined'&&FORM_VERS[p.tanque]){
         const v=FORM_VERS[p.tanque].find(v=>(!v.desde||v.desde<=data)&&(!v.ate||v.ate>data));if(v)mp=v.mp;}
       mp.forEach(m=>soma(m.sku,m.nome,lit*(+m.pct||0)/100));
-      embDoProd(p).forEach(e=>soma(e.sku,e.nome,un*(+e.qtd||0)));
+      embDoProd(p).forEach(e=>soma(e.sku,e.nome,e.porPallet>0?csPorPal(e,p,cx):un*(+e.qtd||0)));
     });
     return out;
   }
@@ -24076,8 +24077,8 @@ function csMateriais(o){
   d.className='cs-matop on';
   d.innerHTML=`<div class="tp"><div><b>Materiais necessários</b><i>OP ${escAttr(rotuloOP(o))} · ${escAttr(nomeCurto(o.codigo))} · ${nf(caixasPrev(o))} ${und(o)}</i></div><button class="x" data-mx="1" aria-label="Fechar">&times;</button></div>
     <div class="ls"><table><thead><tr><th>Material</th><th>Quantidade</th></tr></thead><tbody>
-    ${l.map(x=>`<tr><td>${escAttr(x.nome||x.sku||'')}</td><td>${nf(x.qtd)} ${escAttr(x.un||'un')}</td></tr>`).join('')||'<tr><td colspan="2" class="vz">Esta OP não tem embalagem cadastrada.</td></tr>'}
-    </tbody></table></div><div class="rd"><button data-mx="1">Voltar para a OP</button></div>`;
+    ${l.map(x=>`<tr><td>${escAttr(x.nome||x.sku||'')}${x.obs?' <span style="color:#B45309;font-weight:800">•</span>':''}</td><td>${nf(x.qtd)} ${escAttr(x.un||'un')}</td></tr>`).join('')||'<tr><td colspan="2" class="vz">Esta OP não tem embalagem cadastrada.</td></tr>'}
+    </tbody></table>${l.some(x=>x.obs)?`<div style="margin:14px 0 0;padding:10px 14px;border-radius:12px;background:#FFF7E6;border:1px solid #F5C77E;font-size:15px;color:#7A4B00"><div style="font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px">Observações de itens</div>${l.filter(x=>x.obs).map(x=>`<b>${escAttr(x.nome)}</b> — ${escAttr(x.obs)}`).join('<br>')}</div>`:''}</div><div class="rd"><button data-mx="1">Voltar para a OP</button></div>`;
   d.onclick=ev=>{if(ev.target.closest('[data-mx]'))d.className='cs-matop';};
 }
 try{const _mo=csMenuOperador;csMenuOperador=function(maq,atual){const r=_mo.apply(this,arguments);
@@ -34253,7 +34254,7 @@ th .cfsort{font-size:10px;margin-left:3px;color:#1D4ED8}
   window.CF_VARRE=varre;
 })();
 
-try{csNucleo.versao='v488';}catch(e){}
+try{csNucleo.versao='v489';}catch(e){}
 </script>
 <script>
 /* cópia local de cada módulo: IndexedDB (cabe muito mais); lê também a cópia antiga do localStorage e a apaga */
@@ -34307,7 +34308,7 @@ try{csNucleo.versao='v488';}catch(e){}
 (function(){
   const GR=[
     {k:'fab',n:'Produtos fabricados',f:[['tanques','Tanques'],['pa','Produtos acabados']]},
-    {k:'emb',n:'Embalagens',f:[['preformas','Preformas'],['frascos','Frascos'],['rotulos','Rótulos'],['tampas','Tampas'],['caixas','Caixas'],['fitas','Fitas e filmes'],['embkit','Embalagens de kit']]},
+    {k:'emb',n:'Embalagens',f:[['preformas','Preformas'],['frascos','Frascos'],['frrot','Frascos rotulados'],['rotulos','Rótulos'],['tampas','Tampas'],['caixas','Caixas'],['fitas','Fitas e filmes'],['embkit','Embalagens de kit']]},
     {k:'mpg',n:'Matérias-primas',f:[['mp','Matérias-primas'],['fragr','Fragrâncias'],['corantes','Corantes']]},
     {k:'uso',n:'Uso e consumo',f:[]},{k:'rev',n:'Revenda',f:[]}];
   const FOLHAS=[];
@@ -34322,7 +34323,7 @@ try{csNucleo.versao='v488';}catch(e){}
   const ic=k=>`<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${IC[k]}</svg>`;
   const nomeG=k=>(FOLHAS.find(f=>f.k===k)||{}).n||'—';const paiG=k=>(FOLHAS.find(f=>f.k===k)||{}).pai||'';
   /* v4.8.6 · o Estoque (saldos e inventário) separa pelos mesmos grupos do cadastro */
-  window.csGrupoNome=k=>{const f=FOLHAS.find(x=>x.k===k);return f?f.n:'';};window.csGruposOrdem=()=>FOLHAS.map(f=>f.n);
+  window.csGrupoNome=k=>{const f=FOLHAS.find(x=>x.k===k);return f?f.n:'';};window.csGruposOrdem=()=>FOLHAS.map(f=>f.n);window.csGruposArvore=()=>GR.map(g=>({k:g.k,n:g.n,f:g.f.map(([k,n])=>({k,n}))}));
   const NOTION={"303": {"nome": "ALVEJANTE SEM CLORO 5L - FD C/4 UN", "ean": "7898556040891", "dun": "17898556040898", "ncm": "3402.50.00", "pesoLiqUn": 5.0, "pesoBrutoUn": 5.21, "medUn": "28 × 18,5 × 14", "medidas": "30 × 38 × 30", "medPalete": "1,32 × 1,20 × 1,0", "cxCamada": 11, "camadas": 4, "validade": 24, "ipi": "3,25%", "icms": "17%", "status": "ATIVO"}, "922": {"nome": "DESINFETANTE 5L EUCALIPTO - FD C/4 UN", "ean": "7898556040617", "dun": "17898556040614", "ncm": "3808.94.19", "pesoLiqUn": 5.0, "pesoBrutoUn": 5.21, "medUn": "30 × 16 × 14", "medidas": "33 × 32 × 22", "medPalete": "1,32 × 1,20 × 1,0", "cxCamada": 11, "camadas": 4, "validade": 24, "ipi": "5,00%", "icms": "17%", "status": "ATIVO"}, "923": {"nome": "DESINFETANTE 5L FLORAL - FD C/4 UN", "ean": "7898556040754", "dun": "17898556040751", "ncm": "3808.94.19", "pesoLiqUn": 5.0, "pesoBrutoUn": 5.21, "medUn": "30 × 16 × 14", "medidas": "33 × 32 × 22", "medPalete": "1,32 × 1,20 × 1,0", "cxCamada": 11, "camadas": 4, "validade": 24, "ipi": "5,00%", "icms": "17%", "status": "ATIVO"}, "924": {"nome": "DESINFETANTE 5L LAVANDA - FD C/4 UN", "ean": "7898556040600", "dun": "17898556040607", "ncm": "3808.94.19", "pesoLiqUn": 5.0, "pesoBrutoUn": 5.21, "medUn": "30 × 16 × 14", "medidas": "33 × 32 × 22", "medPalete": "1,32 × 1,20 × 1,0", "cxCamada": 11, "camadas": 4, "validade": 24, "ipi": "5,00%", "icms": "17%", "status": "ATIVO"}, "403": {"nome": "AGUA SANITARIA 5L - FD C/4 UN", "ean": "7898556040105", "dun": "17898556040102", "ncm": "2828.90.11", "pesoLiqUn": 5.0, "pesoBrutoUn": 5.21, "medUn": "28 × 18,5 × 14", "medidas": "30 × 38 × 30", "medPalete": "1,32 × 1,20 × 1,0", "cxCamada": 11, "camadas": 4, "validade": 6, "ipi": "0,00%", "icms": "17%", "status": "ATIVO"}, "926": {"nome": "DESINFETANTE 5L PINHO - FD C/4 UN", "ean": "7898556040761", "dun": "17898556040768", "ncm": "3808.94.19", "pesoLiqUn": 5.0, "pesoBrutoUn": 5.21, "medUn": "30 × 16 × 14", "medidas": "33 × 32 × 22", "medPalete": "1,32 × 1,20 × 1,0", "cxCamada": 11, "camadas": 4, "validade": 24, "ipi": "5,00%", "icms": "17%", "status": "ATIVO"}, "925": {"nome": "DESINFETANTE 5L MARINE - FD C/4 UN", "ean": "7898556040624", "dun": "17898556040621", "ncm": "3808.94.19", "pesoLiqUn": 5.0, "pesoBrutoUn": 5.21, "medUn": "30 × 16 × 14", "medidas": "33 × 32 × 22", "medPalete": "1,32 × 1,20 × 1,0", "cxCamada": 11, "camadas": 4, "validade": 24, "ipi": "5,00%", "icms": "17%", "status": "ATIVO"}, "813": {"nome": "AMACIANTE 5L AZUL - FD C/4 UN", "ean": "7898556041164", "dun": "17898556041161", "ncm": "3809.91.90", "pesoLiqUn": 5.0, "pesoBrutoUn": 5.21, "medUn": "30 × 16 × 14", "medidas": "33 × 32 × 22", "medPalete": "1,32 × 1,20 × 1,0", "cxCamada": 11, "camadas": 4, "validade": 12, "ipi": "0,00%", "icms": "17%", "status": "ATIVO"}, "811": {"nome": "AMACIANTE 5L ROSA - FD C/4 UN", "ean": "7898556041157", "dun": "17898556041154", "ncm": "3809.91.90", "pesoLiqUn": 5.0, "pesoBrutoUn": 5.21, "medUn": "30 × 16 × 14", "medidas": "33 × 32 × 22", "medPalete": "1,32 × 1,20 × 1,0", "cxCamada": 11, "camadas": 4, "validade": 12, "ipi": "0,00%", "icms": "17%", "status": "ATIVO"}, "812": {"nome": "AMACIANTE 5L ROXO - FD C/4 UN", "ean": "7898556041140", "dun": "17898556041147", "ncm": "3809.91.90", "pesoLiqUn": 5.0, "pesoBrutoUn": 5.21, "medUn": "30 × 16 × 14", "medidas": "33 × 32 × 22", "medPalete": "1,32 × 1,20 × 1,0", "cxCamada": 11, "camadas": 4, "validade": 12, "ipi": "0,00%", "icms": "17%", "status": "ATIVO"}, "814": {"nome": "AMACIANTE 5L VERDE - FD C/4 UN", "ean": "7898556041133", "dun": "17898556041130", "ncm": "3809.91.90", "pesoLiqUn": 5.0, "pesoBrutoUn": 5.21, "medUn": "30 × 16 × 14", "medidas": "33 × 32 × 22", "medPalete": "1,32 × 1,20 × 1,0", "cxCamada": 11, "camadas": 4, "validade": 12, "ipi": "0,00%", "icms": "17%", "status": "ATIVO"}, "625": {"nome": "LAVA ROUPAS 5L GLICERINA - FD C/4 UN", "ean": "7898556040365", "dun": "17898556040362", "ncm": "3402.50.00", "pesoLiqUn": 5.0, "pesoBrutoUn": 5.21, "medUn": "30 × 16 × 14", "medidas": "33 × 32 × 22", "medPalete": "1,32 × 1,20 × 1,0", "cxCamada": 11, "camadas": 4, "validade": 24, "ipi": "3,25%", "icms": "17%", "status": "ATIVO"}, "624": {"nome": "LAVA ROUPAS 5L PREMIUM - FD C/4 UN", "ean": "7898556040259", "dun": "17898556040256", "ncm": "3402.50.00", "pesoLiqUn": 5.0, "pesoBrutoUn": 5.21, "medUn": "30 × 16 × 14", "medidas": "33 × 32 × 22", "medPalete": "1,32 × 1,20 × 1,0", "cxCamada": 11, "camadas": 4, "validade": 24, "ipi": "3,25%", "icms": "17%", "status": "ATIVO"}, "302": {"nome": "ALVEJANTE SEM CLORO 2L - CX C/ 6UN", "ean": "7898556040372", "dun": "17898556040379", "ncm": "3402.50.00", "pesoLiqUn": 2.0, "pesoBrutoUn": 2.19, "medUn": "32 × 11 × 11", "medidas": "33 × 22 × 22", "medPalete": "1,65 × 1,20 × 1,0", "cxCamada": 16, "camadas": 5, "validade": 24, "ipi": "3,25%", "icms": "17%", "status": "ATIVO"}, "301": {"nome": "ALVEJANTE SEM  CLORO 1L - CX C/ 12 UN", "ean": "7898556040884", "dun": "17898556040881", "ncm": "3402.50.00", "pesoLiqUn": 1.0, "pesoBrutoUn": 1.1, "medUn": "31 × 8 × 8", "medidas": "33 × 22 × 22", "medPalete": "1,65 × 1,20 × 1,0", "cxCamada": 15, "camadas": 5, "validade": 24, "ipi": "3,25%", "icms": "17%", "status": "ATIVO"}, "101": {"nome": "CLORO GEL 1L - CX  C/12 UN", "ean": "7898556041089", "dun": "17898556041086", "ncm": "3402.90.39", "pesoLiqUn": 1.0, "pesoBrutoUn": 1.1, "medUn": "31 × 8 × 8", "medidas": "33 × 22 × 22", "medPalete": "1,65 × 1,20 × 1,0", "cxCamada": 15, "camadas": 5, "validade": 24, "ipi": "0,00%", "icms": "17%", "status": "ATIVO"}, "37": {"nome": "DESENGORDURANTE 1L - CX C/ 12 UN", "ean": "7898556040952", "dun": "17898556040959", "ncm": "3402.50.00", "pesoLiqUn": 1.0, "pesoBrutoUn": 1.1, "medUn": "31 × 8 × 8", "medidas": "33 × 22 × 22", "medPalete": "1,65 × 1,20 × 1,0", "cxCamada": 15, "camadas": 5, "validade": 24, "ipi": "3,25%", "icms": "17%", "status": "ATIVO"}, "39": {"nome": "DESENGORDURANTE 5L - FD C/4 UN", "ean": "7898556040037", "dun": "17898556040034", "ncm": "3402.50.00", "pesoLiqUn": 5.0, "pesoBrutoUn": 5.21, "medUn": "28 × 18,5 × 14", "medidas": "30 × 38 × 30", "medPalete": "1,32 × 1,20 × 1,0", "cxCamada": 11, "camadas": 4, "validade": 24, "ipi": "3,25%", "icms": "17%", "status": "ATIVO"}, "912": {"nome": "DESINFETANTE 2L EUCALIPTO - CX C/ 6UN", "ean": "7898556040594", "dun": "17898556040591", "ncm": "3808.94.19", "pesoLiqUn": 2.0, "pesoBrutoUn": 2.19, "medUn": "32 × 11 × 11", "medidas": "33 × 22 × 22", "medPalete": "1,65 × 1,20 × 1,0", "cxCamada": 16, "camadas": 5, "validade": 24, "ipi": "5,00%", "icms": "17%", "status": "ATIVO"}, "913": {"nome": "DESINFETANTE 2L FLORAL - CX C/ 6UN", "ean": "7898556040785", "dun": "17898556040782", "ncm": "3808.94.19", "pesoLiqUn": 2.0, "pesoBrutoUn": 2.19, "medUn": "32 × 11 × 11", "medidas": "33 × 22 × 22", "medPalete": "1,65 × 1,20 × 1,0", "cxCamada": 16, "camadas": 5, "validade": 24, "ipi": "5,00%", "icms": "17%", "status": "ATIVO"}, "914": {"nome": "DESINFETANTE 2L LAVANDA - CX C/ 6UN", "ean": "7898556040570", "dun": "17898556040577", "ncm": "3808.94.19", "pesoLiqUn": 2.0, "pesoBrutoUn": 2.19, "medUn": "32 × 11 × 11", "medidas": "33 × 22 × 22", "medPalete": "1,65 × 1,20 × 1,0", "cxCamada": 16, "camadas": 5, "validade": 24, "ipi": "5,00%", "icms": "17%", "status": "ATIVO"}, "915": {"nome": "DESINFETANTE 2L MARINE - CX C/ 6UN", "ean": "7898556040587", "dun": "17898556040584", "ncm": "3808.94.19", "pesoLiqUn": 2.0, "pesoBrutoUn": 2.19, "medUn": "32 × 11 × 11", "medidas": "33 × 22 × 22", "medPalete": "1,65 × 1,20 × 1,0", "cxCamada": 16, "camadas": 5, "validade": 24, "ipi": "5,00%", "icms": "17%", "status": "ATIVO"}, "916": {"nome": "DESINFETANTE 2L PINHO - CX C/ 6UN", "ean": "7898556040792", "dun": "17898556040799", "ncm": "3808.94.19", "pesoLiqUn": 2.0, "pesoBrutoUn": 2.19, "medUn": "32 × 11 × 11", "medidas": "33 × 22 × 22", "medPalete": "1,65 × 1,20 × 1,0", "cxCamada": 16, "camadas": 5, "validade": 24, "ipi": "5,00%", "icms": "17%", "status": "ATIVO"}, "703": {"nome": "LAVA LOUÇAS 500ML MAÇÃ - CX C/ 24UN", "ean": "7898556040068", "dun": "17898556040065", "ncm": "3402.50.00", "pesoLiqUn": 0.5, "pesoBrutoUn": 0.77, "medUn": "30 × 5 × 5", "medidas": "33 × 22 × 22", "medPalete": "1,65 × 1,20 × 1,0", "cxCamada": 15, "camadas": 5, "validade": 24, "ipi": "5,00%", "icms": "17%", "status": "INATIVO"}, "704": {"nome": "LAVA LOUÇAS 500ML NEUTRO - CX C/ 24UN", "ean": "7898556040075", "dun": "27898556040079", "ncm": "3402.50.00", "pesoLiqUn": 0.5, "pesoBrutoUn": 0.77, "medUn": "30 × 5 × 5", "medidas": "33 × 22 × 22", "medPalete": "1,65 × 1,20 × 1,0", "cxCamada": 15, "camadas": 5, "validade": 24, "ipi": "5,00%", "icms": "17%", "status": "INATIVO"}, "733": {"nome": "LAVA LOUÇAS 1L MAÇÃ -  CX C/ 12 UN", "ean": "7898556040877", "dun": "17898556040874", "ncm": "3402.50.00", "pesoLiqUn": 1.0, "pesoBrutoUn": 1.1, "medUn": "31 × 8 × 8", "medidas": "33 × 22 × 22", "medPalete": "1,60 × 1,20 × 1,0", "cxCamada": 15, "camadas": 5, "validade": 24, "ipi": "3,25%", "icms": "17%", "status": "ATIVO"}, "734": {"nome": "LAVA LOUÇAS 1L NEUTRO - CX C/ 12 UN", "ean": "7898556040563", "dun": "17898556040560", "ncm": "3402.50.00", "pesoLiqUn": 1.0, "pesoBrutoUn": 1.1, "medUn": "31 × 8 × 8", "medidas": "33 × 22 × 22", "medPalete": "1,60 × 1,20 × 1,0", "cxCamada": 15, "camadas": 5, "validade": 24, "ipi": "3,25%", "icms": "17%", "status": "ATIVO"}, "724": {"nome": "LAVA LOUÇAS 5L NEUTRO  - FD C/4 UN", "ean": "7898556040440", "dun": "17898556040447", "ncm": "3402.50.00", "pesoLiqUn": 5.0, "pesoBrutoUn": 5.21, "medUn": "30 × 16 × 14", "medidas": "33 × 32 × 22", "medPalete": "1,32 × 1,20 × 1,0", "cxCamada": 11, "camadas": 4, "validade": 24, "ipi": "3,25%", "icms": "17%", "status": "ATIVO"}, "568": {"nome": "LIMPA VIDROS 500ML  GATILHO - CX C/12UN", "ean": "7898556041256", "dun": "17898556041253", "ncm": "3402.50.00", "pesoLiqUn": 0.5, "pesoBrutoUn": 0.81, "medUn": "31 × 8 × 5", "medidas": "33 × 22 × 22", "medPalete": "1,60 × 1,20 × 1,0", "cxCamada": 15, "camadas": 5, "validade": 24, "ipi": "3,25%", "icms": "17%", "status": "ATIVO"}, "569": {"nome": "LIMPA VIDROS 500ML REFIL - CX C/12UN", "ean": "7898556040556", "dun": "17898556040553", "ncm": "3402.50.00", "pesoLiqUn": 0.5, "pesoBrutoUn": 0.81, "medUn": "31 × 8 × 5", "medidas": "33 × 22 × 22", "medPalete": "1,60 × 1,20 × 1,0", "cxCamada": 15, "camadas": 5, "validade": 24, "ipi": "3,25%", "icms": "17%", "status": "ATIVO"}, "1005": {"nome": "LIMPADOR PERFUMADO 2L EUFORIA - CX C/ 6 UN", "ean": "7898556040648", "dun": "17898556040645", "ncm": "3402.50.00", "pesoLiqUn": 2.0, "pesoBrutoUn": 2.19, "medUn": "32 × 11 × 11", "medidas": "33 × 22 × 22", "medPalete": "1,65 × 1,20 × 1,0", "cxCamada": 15, "camadas": 5, "validade": 24, "ipi": "3,25%", "icms": "17%", "status": "ATIVO", "foto": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBAUEBAYFBQUGBgYHCQ4JCQgICRINDQoOFRIWFhUSFBQXGiEcFxgfGRQUHScdHyIjJSUlFhwpLCgkKyEkJST/2wBDAQYGBgkICREJCREkGBQYJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCT/wAARCAGQAZADASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwD6pooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKhvb2202zmvLyeO3toEMkksjYVFHUk00r6ICaivEvEP7U/h2wkeLRNKvNV2kjzpGEEbe4yCxH1Arl/8AhqDxJfyFbXR9KtV7b98h/mB+levRyHG1VdQsvNpf8E454+hF25j6Vor5huv2jvGduxYQ6WyjsYCP/ZqpS/tReNYSCbLR+M8GF+f/AB6un/VjG76feZ/2lR8z6ror5h0/9rTXUK/b/Dumzr38iR4j+u6vQfDX7S/hLWCkepw3Wju2AXlHmRA+7DkD3xXLWyPG0ldwuvKz/wCCaxx1GTtzWPXaKbDNHcRJNDIskcihkdDkMDyCD3FOryDrCiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAK85/aFuTbfCXWsAnzDDHx2zKlejV5n+0YjP8ACfVAvaSAn6CRa68Bb6zTv/MvzMcR/Cl6M+PY5MKR1FaOkyhJcnpisJHZjnp9K6nwteafbSlru8hi9nkC1+pQmlFtnzHJ7yQ3UbnJYNG5yBjC1jXM/mHLJIBz1XFa/iLU9OuJc295E6+quSK52aeMni5Qg/7VaKrCysw5Jcz0AyAEVfju42hMbKBxVC2Kl8eYrf8AAgau3WflCwxj3UYqJO6uKe/KfbPwen+0fDDw247WSJ1/u5X+ldjXG/Buyew+F/hyB/vfZBJ/30S3/s1dlX5Ti7e3nbu/zPqqP8OPogooornNAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAK4L436Jc+Ivh7eabaM6yTSxcqM4AcE59B713tBAYEEAg9QaunNwkpx3RMoqScWfDE/gq50YSQ22krfvk/vZkMxBXg4GMAZ/wBmo/DEOsXt60KXNpZJu2lorCJmB9Pu8dK9O+LXia6sdevbS20Vo/JlYRXHnBByWG4DBxwf0HpXmekeK7vw5dm4hj052LDKuTJn8PMXP5V7uFm6tN86uzzKqUKis9DN8dS6vo0pgGu3kuDjgmP9FxXN2esarLEC+p3hwcYMrEfqa9D8S+PJr65Sa68OaDdIw3fNZomffgv/ADrJfxl5aobXw14fgQ+tlG/88V6EI2SvAxck07PqZ3hm2v8AxFqcdoDHcM5zmSESf0zXVS+Abm71R9PXTVsbhG8sSwO4jc4zko2cZHoBV7wv8X9X0m6jNppugKVG3EVkEO3uMoxP6V6p8OPGS+K/H640oi2cMWkByqttOCykA5JA5I9K8/F4itSfNTXL6M2owpydpO9z1T4cW9xaeBNDtrtCk8FokTgjHK/L/Sujo6cCivBlJybk+p6iVlZBRRRUjCiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiikkkWJGd2CqoySegFAAzBQSxwBVC5vJMkIQqnoO5riPFHxi8NaBK4vtYsYUUHZGGMjs3+6ma5Gf8AaV8HWqlwmpX0nby4dgP4E8Voqcmc08VTi7Nnod34Otrq/e9+zWMzzDLvPCjyIe20sp4+tTad4fntroLOLGe3OOlskZH02gZryOf9q3S1BNt4bvm9PNmUfyrMn/a2nAJj8JKPQNdA/wAsVajO1jB4yhfR/mfQ/wBnt4somkRMvsqc0xrVJFZU0iOI/wAIdEKn8jXzoP2r9VuIyV0Oytm6ASyNx79xVd/2m9Yv4pDcaLfsF3Ef2feRBT02ggDdj1Oe/FHs31H9ch0T/A9w1S3jRza3Gk6MZm6K1ssjP6YH+IrO0nQYdN1D+0o3sbCZUKuY7dY9xIz82AB2zx715dY/tR6WVeKXwbdxhkB4cMyt3+br7/1q1J+1ZoaXFrO1jqLzRRsssb2uwc4GAcnJPXPH05xVa2sQq0ea9/wPctO8SEuEvvLRH/1coPEgzjP8uOvNdArBgGUgg8gjvXzla/HjwdcPJqVzFe2skmT5RgJZD1yMfKRxg9D6Zr0T4f8Axe0HxQ32aG/t8gD5WbawJ7AHBx74rOdNo3o4qM9Gek0UUVkdYUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAV4T8efjHp2kxt4esroSsf8Aj48j5mZh/AMenevRviH4+0bwppN1Bdah5N7NCyRJENzoSMBsDp6818ha3r/h4XbmBtUkdeAUEaY/E5ralC+rOHGV3FcsN35/8OclqWpT387TPBO24/LlMUyDTb+d94QJ7MwFWp9ThuG/cx6hnORvmVj+iU83OpcFI7zb/tRBh/6DXSrPc8acpxVla/zEHh7WZV3JZtKo7owNdR4C8L+HtSknTxU1zpzoQYmeURpIO45HUfWsCDxFqcBEXl2wBOD5sOz9ciuptdE1zWoFl/sW5lgPSWwInU/grNVJRZm51Utk/S53sHwY+HmrIGttYkJ/6Y6jEx/LBrG8Qfs+29mDcaPrsyqozsuYuv8AwJSP5V5/rng6/SU7zJaqoxi9tJYP1K4qhH/wlGjIp03VZBH6Wt9wf+A5/pWT0Z2KUXHVWfqVNUhfStQnsZdjTQNtZojkE/XinWmolDyHYejAMP1qlf3N89zJcX0UrSucu5XqfU4qKK+ibvVKWphKipR2ub8LWNw2bm1AH96I7GH4Hj9a0NO8iwuXvIvt8kMWGE8cWRF7SDHT3B49DXPW90jEDcB9a0re6mtd0ltM8TkEEocBh3BHcVpfmRypezmm7n1f8Dfi5ZeO9M/syebZqVquFSQ/NIg/mR/KvVq+FPB+q2mk63Z6hEslhcpIrJcQH5CwPRk7fUH8K+39H1ez1zTob+xuIp4ZVBDRnIB7j2Iriqw5WfSYPEKrG19UXKKKKyOwKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACud8d+NLHwNoM2pXjrvwVhi7yP/AIDqa6Kvnn49+I9B1DU0il1u2MUEPlbUBkKvuJbpwe35VUI3ZjXqckGzw/x143uPFWoz3MDyMZGJ8xz3PU1zNlYiY/vZxGnclSxJq5eR6PC5W0mv7j0byVRT+potLK9nTfa2l1hjxuVcfyrsitdj5+rN2budZ4d0/wAPwRKraqsTt96SSFjn8u1d9onhbQb4bo/GOiqw/hl3xn9RXldtp/iGM4XSzKq9f3KH+lX49SurWQC/8Mbh3Kjb+gIra7tZXOJKN+aST+Z6dqPhS1ZSLfVtEuwOMLdL/I4ri9Z8GJb5litYQc53W0gH4/Kaof2np+oHy7TTGgkH8LzrHn/vt+acdA1iSMvFp2pAdcxxNIuPqmRVJrqzOrzy+GLXmn/wDl28R69pF5Kmma3qsCq23C3bgflnFSN468QzqVv/ALDqSnqb2zikY/8AAtu79aXUNMiiuGW5ikhmJ5JymT9HAqi+nFQSsjY91yPzGRWLjrodsa7jFKRHc6m1xOZo7C3swR9y23qv6sTTRPHMP38Kv/voG/Xg/rSGCQHja30NNIZPvKR9RRqJ8r1Q2bTraUZhJibttbj8j/jUQivbTJB3J9Mfr0/WrKfMcetaVtZFhkM0Zx1FOMb7EyruCtJ3XmavgHRrTxXFe6ddRzW1yMPHdAnCZ4GV6EZ+h9z0r1z4N+KbvwJ4kfw5r0ogMhCEFvkkGcLIh7j9eteO6Rc6n4Z1CO/tfLcZ+cFSVI/2gOa2/Gfh/wAT6k+meJLm9tJ7OTCWt/bcwP8AMSUY4BRxzwwU8VNSD2Z1YWvB+/T3R9tdaK4z4R67d654Mtzf7jc2jG2dm6sFAIPvwRz7V2dcLVnY+hjLmVwooopFBRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFAHA/GTxBPpHhtbS1maGa9ZlLKcHy1HzAfUlR+Jr4x1wC51aecbsbiMfTj/Gvp79oe5uY7mwjjjJX7M5Vu27dyPrwK+X73UX0u4ZrjTkn5x+9cqG/AHNddFJRuzw8fOcq3JFEVuA0qR9Nxx9K9f8AeIdM06ePz7dHCAABmxXjiXslyxeKySJG7JExIqcM/TzZlx6Jit01ax5rUozUux9yaZ4k0VdHW4MNvHuTcyKAa8b8ZfEXw5qMkwi0545WJBYOCPyxXh1vqF0keBqF4ueOCRRncdzXcg92qKdKKdzbE5hOcVFK34m/qV5bTuXiAA9CoFc3qdz5I3w4jlJwHT5SPxFWEt5J+Vv4wP9oU288NX8iK4uLKbuAkwB/I4rebbVkjzaEYqfNKRWt/GHiG1QRx6zflR/C8zOv5NkU9vFt3cf8AH/YaVfe8loiN/wB9R7TVGbRtQt/9ZaSY9V+YfpVRlZDh1ZT7jFczTR6anGWzuXp9StLiTctibUf3YZWIH4MTSx3UR/5ag+0iY/VSP5VQHJpdoNUpMiVKLL5jjlydp/4AQ/6fKf51ZtJhAyolyMj+F8qfyasfJU8cVahlZlwTkHseRVRlqZVKV1ZvQ7Gx1Exj9/bLIp49DW7bpqk/h/UdC8M3VvdWd9IlzJYzny5YpUOfkB4O4ccHnA6V57bPJBgwOYwOdoJCn8OldP4fkk1FWQ2N59rTLRzWjgMcein7x9hzW7kpLU4adOVGd4K6fyPSPgZ421DwrrJ8PagZBZXEwQwSjDW7ngEZ6c8EV9M18JzeJ9XPiS1l8uV1QrG1wYyjHB6sPb19q+1fCGtL4h8M6dqa9Z4Ru/3hw36g15+Iir3R9VllSTp8kne35GvRRRXOemFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAcJ8Z7Szm8GTT3BVZoXXyWK55J5H4gH8q+NNdD6trMkNs/2cdCQ3zP/AIV9rfFXQJfEHhGeOAnzLZhcbR/EACGH5En8K+OfHEM2jKPs8RbLgFsc100LcrueNmSnzx5UZiaS1gcTzPIe/wDpAP8AI10Oi6zpmmqBJbtIM95TmuIhF243zMgz25NWFjkYffA/CumM7bI8erQ5neUj3TQfiR4LhEaX+kXwHdkugR/3yRXVan48+E1zYoraZBMWHP8Ao8Rdfrkc18yiGTtJ+lLi4U53rScU9TaFacVy3T9Ues63N8OdQLNawGD+6BHt/wDQTXnmumzspQ1hdJKpPABYMv8ASsk3l1Hk4jcDswqB9TWQFZLGIj1Xim5JKxj7Gcpcz/AvR6y6H95JcY/2XDfoR/WpxqsUy4NzGR6Twlf1XcKxjPaN1inj+hyKTbA/+ruQPZ1xU+0fct4aD6W/r5mz9kguuUtUl97WVXP/AHyDn9Kqy2FvvKLcNE/9yZcH9cVnNbS9QqS47qQanTVL2BRGZpdn9yUeYv5NkUc66oFRmvgl/X4j5NOuE5Chx6qaSJWThgVOe4qSPUYXxvtFVv71pIYj/wB8nKn8hVgPG4/d3yAnol4nlH/vsZU/jihJboHKaVpL+vlf8bD4Oa6v4e6tLY695GEkt5UJeNxlSRyOK5GeeSwCPd2MnlN/y0i+YH6MuQa1tC1rSIbpZoLweaRjbL8uPx6VtGzdmzlqOUVzxV/TU9U+IGlaPpliniLRYfssx2tcWgO6GXccHg9D9K9j+C3inTPEXgu1hsIvs8lmoSWAnO3JJBHqDz+Rr578Qa1FfeG5YvM+banyN1+8OnqPpXof7Mch825QAhTaEk9uHGP5mufEU7R1PXyzFc9a0dme/wBFFFcJ9CFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUADKGUqwBBGCD3r5U+MvgK80a5uEa3Z7aRmNvKBlSvUD6jp+FfVdcn8UbxLHwZeTPAk/zRqFdQw5YD+Wa0pT5ZHJjKCrU2m7WPhmJMAxt95eCPSnRrgkV0PiSTw/d3UktlIbO9Y8oFJXPoy9R9RmufZjbMq3AALcB0O5G+hrtR827skAoK09VyPlO4eopCccVdjG5XnXKkDuKzM+taslZUo2yMvoayqHZQfQM0U0GlBrI6LDtq9hg+opyyyJwJGI9Dz/ADpgOaKZNr7km5W+9GpJ7rwauJDMowyPt9xkfpVayj8y5RcZ5zXTW0ecVtTjzHHia3s9DOtrdE/eqs0aj7zWz4P5dPzrprP4Xr4k02XUtNu7PUAF3+SP9Gu/cbTlGP4jPrSQWUUuC6D6jg/nSTzXejSi4tbhlUds4IrodHS7PPp4/wB+y3/rqcla6dqJvGsybpreNiCsiFXTHYjt+FfUP7NOk3Nva6hdyIwgVEgjdv4jnJ/IAfnXh/h3XGvvFCTXsIlt5GDP7kY79iefzr7U0jTLLSNPitNPgWC3UZVVHrzk+9cOIfKuVH0eWR9pL2r0a/rUuUUUVyHuBRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABVHXNLi1rSLvT5lDLPGVGex7H8Dg1eooBq58KeNPDNtY6nLeTyG2JbBJXIVunIHP5flWXYaSl9IIbm6jtZZeI5WO6J/Tkdq9N+PGkC21rVIguF85pB9Gw/8AWvJ4tptQnOB2r0Yaq58jiE4Tcez/AANbV/h54p8OQC8udMmksz0u7bMkX/fS9PxxWSjFuJHIP+0M12vw7+MWv+BpzbRP9ssG+/bTnK49vSvQb+x8AfFNWvtMlstI1dlLSWNyvlb2/wBh1xn8c/SpTa9DSVONRe67S7f5P+meFPZzsu5E81fVDk/l1rHu0ZJSWUr7EYrtfEOgXnhi4bz7W5gjB+WVcSxH/gS/1ArL/ty3ZQt7bQ3sZ4Jzhl/Orkk1uYU51IS+G5y+aXNdDLp/h+8G+0vJbRz/AMs5hx+BqnceG7uEbo9kyHoUNZezl0OlYqne0tH5mWDS5p8lrNCcSRun1FRlW7DP0qNTdNPVM0dGTdO7egxXTWiZxXK6U/lXB38KwxzXV2Lq3IIxXZQ2PGzG6lc2rOLcPoM1heJLv/liO9b0N3FBaSEZd2GAF5rnI7Z9U12ON14RtzD2Hb866KsrRsjzMFT5qvM+h6P8FPhtL4h1GPz4/wDRLVlmnlPc5ztHucflX1fXK/DLw2vhnwhZW7IFuJlE8x77m5A/AYFdVXi1Z80j9CwWHVGml1er9QooorM6wooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooA+dv2ibQDVrmTgeZbI36Ef+y187LJti619F/tI3aR6jKvUraITj/gZr5kGqQvwAwx6iuynJKKPn8ZRk60mloaNmN0rE9hW1Zx9DXO6ddq7uQrEcV0ulFrhgFQ8VvTatc8rFUpt8qNI63qFtGYluXZCMFX+YEfjWBqbW1y2820cT9/LGAfw7Vs3lpNgkRk57ViXNrcHP7o/nVys1oYU1KMvfdvmZDQwEna5Q+xojN1bnME3H+ycfypJ7e5DHEBP0IqArcJz5Eg+mK5np0PVirrdMvjW7yMYniEq/7S5/limnUdNuDiaHym9apC7nTrFJ+Io+0iT/AFlqx98Yo533J+rxWqVvRl1YrOTmGbI9M1ZhgjUY88qD69P0rLijtmJMYaJj6ir8CzRbXMfnIDyEPJH0NXFmdWLStf7zuNGfT47VYZLuNGVAAeoq58L9JXXfG8MZdWjmuUQ4Ofl3ZP6CufubLQU0SO9Ml/b3lwP3MZgfY7Zxtzggn6Gva/2b/BtrM0mu3UMiXFqFEaMMDcwPzfgP51pWre7Ywy/At1k++rv959BAAAADAFFFFeWfaBRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUjMEUsxAUDJJ6CgD5h/aA1HUItd1KNtPWbJUKXAC+WFAGCeORn868IfxBaAC3Tw5arMT88gbdn8AMV778dfHeialqUhtLxmCRCEnyyd2M8r3I5rwCXVFVtkAd1H9+Mqf512QbUV0PnsVGLqydub5ssRaxKn7u3t4Yj6LET/AErcsNd8QICtss7EjpFbZP8AKsvRbS5vyCrWELMfvT3G0flXp3gvwH4h1C4Y2OreEiVGWDSSsVHvitOey1Zxxw/NK0V/mcodQ8RQqJL7TtQZD2khZP8ACql54gtpIyr6XKjjq25v/iq9L8RaVdRqYNR8VeDPMUbcIJ2IHpXnesaZotrue48QadKg6tbQN/U01NtEzwyjOzOYn1C0LFkmuIgeq8HH51XNxb/w383Pqo4pZ38NNISLq+K9iioAfzNRbfDrfdutRH/AUP8A7NWTmzrjhopdf6+QjLCwz/acn4qtNCQnj+0AfqooaHSScR3d1j/bQD+RpPslgORdSf8AfP8A9ejUTSWl393/AACSO2iH/L4G/wCA1ch8uNl/fyf8BWs5EtkYbJnY+6f/AF6sQT3MNxHJGYHVGBw4I/rVR0M6kW+v6fod7bfE2Uaa2k30EWoWxGFSdQx3YxkZHX3r1H9mi61ldYuoJknSzkiZmRh8q4xt/HOfzrzLVG8Qal4RhYeFUFqxHmXUZMhTGDu2hchcDrk17r+zjqumSaFcafBeRzXQKyFQpB2gY7+hpVpe6zoy+jJVU2/xPY6KKK4j6EKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACsjxfOtv4X1WR32D7LIu73IwP1Na9ec/G/XV07wytgr7ZLttzc9ETn+ZX8qcVdkVJcsWz5G8dpHca8wJYmMH5g3qf/wBVcs1khfA3lif7xrX1O6NzdT3DHO9jj6U7RLCW7uE8uJpZJHCRxqMl2JwAB65rt5bux85Ku0nIfYaPt8tYkleU8Ki5JY+w712djb/FTRNPkTS9G1i1glHzMmmMSR9SpNetImj/ALPHhCDUryyh1TxjqCZSEkfuRxnB7IuRkjljx9OGb9pfx8ZjIJ9NVCciMWo2genXP61nOotorQ0jD2VnWm+Z9F0PJNbutbtpXbVvtsMn8QnjKH8iBWHLcw3q7XnkKHt0r6Otf2odTuIhBr/hjSNTi6MFymfwbcKJPHfwP8VEjX/h7/Z0j9ZbSFRj3zEVP6Vm5s3p+weqlr6WPm1NMtpPuOp/3nqX+yWUZ+yBl9VAavoWT4Q/BDxaB/wjvjifR526RXMo2g+m2UKT/wB9Vk6t+yX4utU+0+HNe0rWIOqYcwu306r/AOPUrx6o3cKktYSueFm2iU8xKD6YxSiKMfwCuy8QeAPH3hMMde8L34gXgzeT5sf/AH2mR+tcxvs5+zW7+nVf8aqyexhJ1I/GiusETMMg4+pq2lnCwx83P+1UUltJGN3DJ/eU5FTQTcCrjpuZTk2rxZ7Z8J9s/hdrVHZniUrgt6H/AANW/wBnfOm+PpLN3ZCs8seCep2nj9K5j4LaxHZ649lK3yT4Iz+R/mPyrctnfwZ8Xnmf5FeVLhffnn/2armrpjoVHzRk31PreimxSJNEksbBkdQykdwadXEe+FFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFADZpo7eJ5pXCRxqWZmPCgdTXzB8f/Fy6tdObVyYnAt4D0+UdT+ZP6V7j8VNSFl4TltlbEl8624GcHb1b9AR+NfJfjvUhqWuSBD+5tRsA/2u9dFCF3c8vM6/JDlXU42WPfIsQ7nFfQH7P/ge00+0n8f66gjsbAMLIOPvOOGkx3x91ffPoK8l+Hvg+58deLrTSLbKiZ/3kgH+qiHLv+A6e5FevfGfx5aaZqFp8PNDiEel6VAouWQ8LIB8ie+Byfc+1ayd3yrqeZT9yEsQ1fl2Xd/8A4Px5rp8b67d+Ibq4McpBWKNjxDEM4Qf19STXEaHpNz4g1OHTbMxieUOVMjYX5ULHJ+impNWn+2J5UF4saDqApy59M11vw88DT39jpniOz8TxaNfzagbO0Vo1JZt0aHblsscSk4CkYU5IzWda0bJEYCjUqXlVbbffoUdB+FniHxJplvqVgbIwTpHInmTFTteV4skY7FGY+ijNXm+CnipBCWawAlneE/vGxGFMoLk7cFf3Ln5cnGMjkV2UPhLxVcW9y0Hjq6gVLz7CsZtETcHZEY7UY4BN22MAjk5IyKy5/DHibVNTN7YeNL2+2LfWTXsca4i2IshTdG5VfMaUrnIPX6VhzHqfVYJbM5qL4O+Jp2MKnT/ALQs7xPA0xDoqS+U0p4xsDe+cc4q7aeCPG/hTRrvxDpWvR2tlaxrOs1neSIs8ZVWDL8oHIdcBsEnIANdnfeCPGsVzbRHx/dS2wu3me4SEK0cSIXSYkkZ3MjLtJxkZPWqFx4C8XajBLa6l4wuwZ5JYrqFrXMTxh3j2x4OGci2UiMAcbcGi5X1aK2TMvwz+0l470plivJ7XWYgPu3UQV/++1x+ua6WL4nfC34iyy2/jTwJHY3IyGvbdQ2fU702v+GDXker+Gj4c8Uy6SLp5lW3jnV2j8uQLIiuFdMna4DYIzwaIYxFG0UYRJmUnA5C57mtoU+ZXPPr4+pQk6b1236He+Ov2dUh0hvFHw11V9b0vaXez3B5VXqdhH38d1IDfWvFVHmqDHCVfODt6fl2r174f+PtS8A6tDc2srSWOMXVqW+WZOOfZhgkH+lavxx8B6ZPa2fxN8IbX0XVwr3axDAjkbpJjtuPDDs31quVxlZ7Dp144mk6sFaS3R45ompzaTqcF0hIeFw2PbuPyr2j4jWo1/QdG8aWHz+SViuiO2f8/rXil5CoIukHBwGx/OvWvhVrH9r+GtR8P3RzbyxmPaex6q34f0rS1iKcub5/mfQnwo8WW2v+F7K2MwN3bxbGU9WVeAR+BFdvXy78ItafRvFdhFcsUW3ma2b02uNvP6flX1FXJUjZnvYar7SCYUUUVB0BRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFMmmjt4XmlYJHGpdmPQADJNAHkXx21UWMtqzSZFvbPKE9CTjP47cV8t3kzFHlY5klYufqa9c+OHihda1GSWFmEdwyxxqf+eajOfxP86808K+H5vGfjLTNBt8/wCkzBXYfwJ1ZvwUE/hXdSXLC7PmsfJ1cRyx6HtHwms4PhX8KtT8fXsIN/fp5VjGw5YZwgH+8/zH/ZUGvC9Tu3mnm1C+Lz3lyxklLnOWJySfU5Ne6/HnXbU32neDdOjUW2kRoTGPuo5XCj/gKf8AoVeH+K7DUNG1a5sb2wmiWObykndCqyr/AHhnqOpFKEkk5PqTUvUq+xpr3Ybu9rt7/wBeRW0G+huLgrdxOCeIwHAXH07GrZ8IzySr9i1UrEjl4lO7MZPcEHrwOR6CsvTl+yXMnmMPLYLyexJwP6VdnuZ7V3S3ndARkKD0NXCnzR9/c5sTKcK7eGdk0vT8di9c+HdXX/SJ/FEhfuzyyZHTqSfYfkPSsvT9K1C4S6Sx1eUWispkdWdUkfORxnkjGcmqOoTPqaWt0JpGYOFKk8Z9cevBrr7DNv4Zs7YLgmSVyQMZ+bAz68AVmqUW7JaGlbEV6NHnnP3npay0119TnZNI1WRhajU55xMQhQM5DDPAIzz1ouNI19GVJry7/dv5iB3f5W/vDJ4PvXe+CtP8/UGvpQBFbjC+8h6fl1/Kq3iTVFudf02zZ/3lx5i4xySPu/nSdOFzGGNxMorld276W7anH6XbXVpeSXM/mXM8vBJJLEk9SSeffNbaWvLOByxyeOp96i1jdp8bzDPEZP1OagstQXUItyeYrAfMrdq1haPunn1pVcRH6x02bNm18M3NzaSPLvVJc/MxAZs+g9K7z4I+IIbFr34b+KgtxpGss62xfhY3YYMfsW6j0Ye9cbpviCeK3FldSM0QH7tzyV9j6j+VQ6zIYbY3Sqd8P7xHT7ykdx6GiUOaOpphcbLD1Vyap7ozvHvgi58A+Krzw7ebpLc/PbTEf66Fvut9ex9wag+HWpNoniqGF2/ds2xh69x/n3r2fxXbp8bPg/b+IrZRJ4i0FSZgo+aVQAXGP9pcOPcEV89SzGGW3vYzh1IyR6jkVMJXWu6PWrQVOalD4Zar+vwPV9eSPRfHrToCtneoJ4vqOSP519WabN9p061m3iTzIUfcP4sqDmvk/wAYSrqPhPRtdjOTbOu8jrtOAf6V9BfCXxLb614Vs7QSlrm0iCsD3QEhSPwAFY1o7M9XAT1lH5nb0UUVznphRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFc78Qr/wDs/wAH6lIDh5I/IX6uQv8AImuirifi3/yLUXz7cXKnb/e+Vv8A9dOO5E3aLZ8seP70XGteWPu20QH/AAI8/wCFd/8AszaNb6bb+IvH+ori3sIXhiYj0XdIR74Cj/gRryLxNffaLq9ue7ytj6DgV7/r9pB8PP2d9P0WWU297fQpK6j70kjMJGU/TIH0FdlV2SifO4W7lOv2v/wDK+HBm1mXV/E2pQp9o1G4aVJiyt8pJymOq4469QB6Vt+NbS113wzfaRdKrG4ib7MM8rMOU2/jXnvgT4h2miaUllq1ldMkZLCSHBAVjnpjPH1rt7DUbX4hXT23hzTLi98gAiVwECO3ckn5QBk88k9Aax5byvLY2w2IUafLB+9+Nz5ukd7Z5Ibu3dZYnMci46EHvUd5eyNZ3WWy0m0AnkgDPT86+nrj9mEaxeTX2o67Hayy/wANpAWH1JZhk++KrzfsjabIF2+KrsFeebVcE/TdVTmmrKX4G1KhJtSlSt8169/I+ZrELbC2Vjgk72X07Zrr7B5bu1ijDFgSQnsue36169N+yEsrAr4uK+/2Hn/0Oup8Mfs06NokSJf63f6htP8ACixAj07n9aqFZR93oYZjl1XEwU4/F2fzPKtFiu5BHYabaT3LryI4ELMT64HvWfq3wi+Jl5qA1Gy8NXqeQAYj5kKvkc9GbPXtivrjRfD+l+HbUWulWUNrF32Dlj6k9SfrXhk37R+rS+L5LW10+0GmRXRtxEysZZFDbc7s8MfTH51z4jFxitj0ck4Wq1p35ryS9F+P/APJfHOm+INO0O3udZ8OanptyZSkqyQnaTwdwYfKQcHvXCJeTxQedBGU2tt542epr9FyFkTDKCrDkEVkz+D/AA3dOXn8P6RK7dWezjJP4kU/avqTDLadPSC0vf8A4B8KaVrc93cR2bos0hUnj73t0rpW0zxBeafNDDoGtEbCUlWzkZR7ZAr7PsdB0jSzusdLsLQ+sFuifyFcrrnxt8AeHrt7O98R27XCHa6W6tNtPoSgIB/GtYVZyVkrnLVyShKpz7eXmfOPwX8b3nw58awWusB7fT9RxbXiSgrsJPySbT0wTz7E1B8cfAH/AAg/iy6ito9umaiDd2ZA4Tn5ox/unp7EV9JSr4F+N2gT/ZJbXUlhOxbhYys1rJjI6gMPp0Ncb4v8MXPjz4RT6dc4n8Q+GmbDAcuY8qwH+8oI9yoNSp2lroaV8K+TkWttU/zR5H4Guhrvga90qTllRgufXt/SvQv2cdaJv0tnP34Wh57Ec/8AsteRfCm88rUZ7XdgNyB6g8f4V33wXf7H8RptOLeWEvCUz6EZA/p+Na1NYmGEk1UR9TUUUVxnvBRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFeRfHXxDFHZ/YYmIks0aeU9slflH5fzr12vmv45Xu+51xi33p0hHPoFU/wAjWlJXkcuMny0mzyTwhoZ8U+NdA0QruS6vIxKP9gHc/wD46DXqH7RmqHWviHYaHG/7qygSIKD8okkIJ/QpWb+zRo/9o/E6S/ZcpptlJID6O5CD9C1cr411mXVvHOr6ujMd1/I8begVsL+gFbVXeZ4a9zCr+8/6/E9IsPhBZpqNrbzyu1zdqIWCnKhsfeXoeMdDXpWveJPC/wCz/wCErC3+yzzmeTYscIXzblwMtIxOB6c+4FJ8F70+J9Dj1y6DyTxFrfzHQKGYfeYfgQM+ua8J+Luu3PxV+LcWiaW/mW8E66ZaY5Utu/eSfTOefRRTpQ9pLllstz1MJh6NOKq0lq18z1bwb+0ra+MfGGneH4vDs1pHeu0YuJLkMVO0kfKF74x1711nxi+KKfDDQILuCCC71G6mEcFtK5AIHLOcc4HH4kV8teFbY+D/AIwabZSS+Z/Z2tLbNJjG4CXYTjtkVb+OGkeJtI8dXP8Awk98L2W5DT2riUuq25dgqgcbcY6YroeGpuoktrfednO+U+ofh/8AFPRvF+haPNd6npVtrOoId2nx3Kl1cE5UKTu6DODSeIvjR4L8L68dB1DUpP7RWRI3iit3fyy2MZIGOhHevLPgz8Anil8O+ObrW16JepZxweo4Bcn39K80+MN+bP40a1ehQ5tr2KQKehKIhA/Sso4enOo4xeg3NpXZ7t8Tf2itM8Ca0+iadpp1e+gIFyfO8uOE/wBzODlvX0rzi/8AiH4esviwE0/4f6Ul02pJFJczTyMzOzAM4QYRWySc4PNbHwl+Alj4w0ceLPGct3cTanI1zFbpIUypbO9z1JY5OPSvNr6NZfjxJEo+X/hJAgHoBcAf0q40aMm42u0UqtSGsXa56hoXxm8Ya38a4/DLXdtHpC6nPbGGO3XLRpvxljk5+UdMV6L8fdUu9I+Fmr3NjdTWlwWhRZYXKOAZVBwRyOM14H8KB9s/aESTr/p99J+klev/ALUmoJa/DVLUth7y/hQD1ChmP/oIqakEq0IpdiU3yts8O0PxlrWkfCXxCsF/dmXU9UgtXmaVmZUMTs+CTwW2gH2zXRfA/wCDPhj4i6Hdahq2rXIuYpjELO1kVGjUAYZsgk5zx24q78Efh/afEb4YeJdGupmt3bUI5YJwufKlWPg47j5iCPQ1xfi74Q+OfhkW1Z0b7JAwxqOnzHCc4BOMMvOOox710OSblCLs7kWejaPq34efDrSPhtpE2m6S9xKk8xnkluCC7HAAGQBwAKxbG+XRvibrcLmKO2untyxdscyRgAD6sh/M1zf7N/xM1bxpp2oaRrtw13eadseO5f78kTZGGPcgjr3zXE/tGXV9a+PxHbzGOH7Ja3W1evmo8oVh9Oa86cJKbjLcjE1o0qXtHsjj/G3hk/D/AOMV5YwJ5dpcv9ptsdPLf5gB9CGX/gNaml339kfFO1vIh8sixTHHfa2P5V1fx0WPxR4P8GfEO1UbwUguCvYSDp9FdWH/AAKvPdQn26/oN4pxuDRMfwzW8XeGp5c0oVrx20aPsmxvYNRs4by2bfDModD7Gp6wPAUvm+EtOJ6hCp/BjW/XEz3k7q4UUUUDCiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAr5X+OuLbULyAOWL35JJ78Fv619TswRSzHAAyTXyN8ar+K/1j7TCzGO4uJZlz129v51vh17x52Zu1FnU/s4RjS/C/jbxEeGiiEaN/uRu5/Vlry/S7FL+/trCBjLdXUqxRxplizscfzNepfDwf2Z+zd4mvR8rXU8wz6g+XH/AI0z9m/waNT1648TXUWYNOHlW+RwZmHJH+6p/wDHhWntFFyZ4+Iwsq7o0Vta/wCJ6P491e2+Dnwja309glykIsrQjq075y/4fM/4V5T+yt4NOo69feKrpC0Wnr9nt2b+KZx8x/Bf/Qqyv2mfGx8R+NU0G1k32ejAxsF5DXDY3/kML9c1y2ieF/ilLYCx0fTvFENiWLiKLzIYiT1PUDmumnStR1dnI+hVotRitEHxRP8AZPxi1yZCP3WqC4BB6HKv/Wuq/amuRceP7FlOV/sqJh+Lua8s8RaJq3h7VbjTtbtpbbUI8NLHKwZvmG4EkE5yCD1r0b49WN5dTeFvEZikey1DQ7ZBMASokUEspPr8wNb2SlDXoLoz6e+G0Xk/D7w4npptv/6LFfIXxbiN98XfEEC9ZdR8ofjtWt/wpafFP4qx6XpNtf31vpGm+WsVyV8mGEJ91sgAyMAOOtberfBHx5qnxQudTOnrLZnUkna9kmjQSoGUl9uc5IBOMVz0oxpTblJXKk3JaI+n9Nso9M061sYVCxW0SQoB2CgAfyr4y07/AEr4/Rd9/iYn/wAmDX2rXjejfs42um+PB4sn8QTzGPUGv47ZbcKMlywVmyehPYVzYerGHNzdUaTi3ax4X4M8UQfDv4vS6vrFvO0Vpd3cU6RKC6li65AJGcE1c+MvxSn+Kl7FNY2U9tomlcIJcbi7nG58cAnGAMnoa+hvG/wR8C+LdUfWdWilsrqTmaa3uBEJcd2ByM+/BqK2b4P+A9DbRWvPDqWZcSSxTSpcPK46Mw5JI/St/rEG1NRbkRyPa+h4d8OPiZqfwx+HMl7pemxXr3usMkjTqxjRFhTjK4wSSMfQ1L4w/aB8T/EbQ5vDVloMEC3oEcv2bfNLIMg7VGOM4969U1L9on4Z6FatZ6XbzX8Y6Q2VkI4if+B7R+leb69+07qUm+Hwr4d07Rd/AndRLL+AACg/XNXFOUub2evmxPRWuelfs6/DDUfA+k3uq63EbfUNT2Bbcn5oYlyRu/2iTnHbAriP2kTJbfETT7mPgjTYmyRnlZpMVofAnw/8RNZ8Wjxj4j1DVI9P8txsu5GH2ssMACM8BR1zgdBisD9oG/bWPHU9zBhrLTo49MMgPBnG6Rx+G8A+9ctW/tbt3Zx5lb6q16fmdVoOoP8AET4G+KtOmjhFzYb5o1iTaAVAlUgdiWVvzryDUH32Gi3HTbdIM+xzXqv7M93BcT+INEeFc3FusrSZ5dclcEdON/X3ryfXI2tNHit34a1vFQ/8BbFVTd+ZHm3cqdKb7Nfcz67+HSBPB2nMG3B0LfTk10lcl8LruGfwfZwRtl7cFXHpkkj9DXW1yPc+jh8KCiiikUFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFAEF+cWNwf+mTfyNfG/xLb59OHpE/8ASvsyeITwSREkB1K5HbIxXxr8W4DZazDaE5MAljJ9cMB/SujD/EeXmv8ACPQYv9A/ZWgxwbmbn3zdH/Cuy8N65Z/DH4B22t4TzTamdAf+WtxKTtH5kfgK43Xz5f7LmggfxSx5/wC/rmpvhD8UPC154Xh8GeNVsxFbN/o0l7GGgkXOVDE8Kyk8E8YxzUNrmu9rhRlGNSN/5Ujzz4EeEpfH3xGS/v8ANxbWDm/u3bkSSbsqD9W5+gNfZNYumXfhXTLUtplxotpbNyTbPEiH3+XisDxB8bfAXh0Ms+v293Mv/LGxzcOf++cgfiRVV6zqyuegrQWrPI/jj8IPGHi74j3Gp6HpBurS4toR5xmRFDKNpByQewr2fwZ4b1fSvAOiaLfPYpeWlqkUyyw+em4dMfMOgxXk/iD9qS9uPMi8K+G0yPuy6jLgn3CL/Vq4HUPjR8WNQkzLqZsVPRLWGJAPxIJ/WidWUoqL6HFVzDDUm7y1Pp650zxnt2WWvaHbqOFB0pyB/wCRqxbvw98VJc+R430SH/d0f/FzXznJ41+I0oQ3PirWYQ43KftDLuHqMAVcstc8V3EirJ4v8RSMxACpfSDJ/Opi5eX3HFU4gwsN7ns154D+MF3kH4nWkYP/ADy01U/kK5/V/hH46KFtZ+MU0EZ673eNf/QwKxtPPjKSzuZI9V1pooFbzWnvnyNoy33mycDrj1FMTwdcPP8Abb/UI5Z7WI3c9tIvnSKnl714PBJygweMsOuCK0VWS7fcjkXEHtXalRl6t2MTUPhN4XEh/tf4tx3LZ52W7zn895qbS/g/8MrmQK3jzUZ/Xy7Lyx+ZU1s6v4W0W3ub691ae2dldYha2xSL7PmEMdwTgHzG25OB8rcE4FRz6Rp+iaTYS2rRebJbsZd0m6VpAzKTgEgIRgj+tUsRUelzPE5tiaScuWNl633t3N3wt8Fvg9ql99itdUvdWu1UuYZbhkJA6nAVa9P0vwF4G8EwG7tNF0nTkiGTcyquV9y78j86+UrnxVq/h/U5JdF1KfT53Qo8sOAxUnOMkHHTtWHqus6nrsnm6vqd9qLjkG6naQD6AnArKc5y0bPQwWaOpQjUqR959tj6F+JX7RWnWNtNpfguVb+/cFG1DH+j2/upP+sb0xx7npXz019dSW5t5bqaWMytOwds7pG+859SfWqm6jdUpWMMTXnXfvbHr/7Nxmg8eFyhENzYzIG7EqyHH6VyPxNiFtqeuQKMCPVZAB/21Ndn+z0c+J9MOOSl3z7bV/xrjfivJnxN4iQdf7XkA/77rWjuy5R5aEF5/ofRfwb/AOQNdH/aj/8AQa9BriPhFZ+T4WS6L5NwR8vpt4rt6wlue7S+BBRRRUmgUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUABIUEk4A5NfGvxmuEuvEYniz5csk7KfUFsivsllDKVPQjFfGPxWjMd1Z8H5WkQ/5/Ct8P8R5uafwj0DXD5/7LGiuP+WcsefwncV4Tur3Sx/4mP7KNwo5NnM2fbFyD/Jq8F31Et2c1WN1B+SJDHGesaH8KcCFGAAB6Cod5o30jHkNDTpMXkfucV6BY6Ra38VxJM8hlgs2mt4I8bp5AVAXnqACWIHJCmvM4bgwyrIuCVOcGti48WSzwJF9mjGzo241Seh5OOwVWpWhUgrpbns2pXHh/UoJL7UGhJMi3L6Y8m17aSWP94M5BIyiAf3QTwTilTxR4e0dY7bTWh3WU1u0M8dqGWQpDhpCTgkl2bI9hXhn9qXkwJjKKPbH9aai3d44WWfCfxM0gwB64zzUOSW50/Va89bJPvu/0Pbr74oaLYW89tYxWttb/vkiV2MjhHYMeB0OQPwAFcbrvxJTUbO1W3ivJL6IkSXat5fmKBhQeckgcZPbiuNXQ43QMmq2BwCZB5n3evT+907VDdWBhRhb31vcxhj/AKtwOPXBwefSoVaDdkypZTNx9+Tf3JfJL+kWJtXupGLi3iUk5+eTJNKfF+r20flx2tqR7Bv8ayvJk9F/76H+NRb60UuzM3lVHaUblue9lvnE00YjkIwVByKuadpLXkD3lzcx2VjG2xriQE7mxnYijlmxzgcDuRWTvr0Pw7p+l6teRaTqdqJbVfDst3aSecyeVOI2kZxg4YlwVIP90elFzvpUEkorZHMiDw5IfLXU9TiboJZbNCn4hXLAfTP0qHVdB1DR44ri4i32dwSLe7jO6G4wM5Ru/XkdR0ODXrY8GeE9N8OGTX9Dt7e7fSjNJLYXe5QTJEFCNIzZlAZiSBtwcDNeeeOxqenK+hvrR1LQ9Lv5rXT9xU8BVJZcdsMoPOM0XNp0OVanon7OMEj+JbNzsMa2l04wOfvRryfxrz34jzC48T6uwOfN1mX/ANGn/CvUP2ZrVV1W4ufLK+XpnzMT13zZyPQYT8cV4zrFydS1yNgc+dqDTfm5P9a2odWRiNIU4+v6H198KJI28F2caNloywYehJz/ACIrsK4z4TwmLwmhP8Up/RVH9K7OueW57dP4UFFFFIsKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACvk34+aOdI1Zog29VuNwJ64Ybv619ZV80ftKiOa/uZYusRiD/UAf0IrWi7SOHMY3osm+E/8AxO/2f/Gmk9Xt2uHUf9slcfqprxCz8P6rf2iXdvaGSBzhX3qMn05Ne1fssXSXknivQZSNl1bRyY9vmRv/AEIVV8A3UPhTwY0F34ksb5muvIm0m8nCR6bElx88ixkEvKdpIxgDPeippJmFGKqUoN9jxK5hms53t50McsZ2spI4NR769C+IXg2TVfHGpahpmueGrm11O8mngMWpxjy0LZG/OAvUVz03w91eJHcXuhSqiu5MeqwHIXrj5uT6DvUXE6TT0Oe31b0loW1SzFxs8kzp5m/7u3cM59sVpyeANejM426e/wBnxvKX8JHK7hj5uePT6VHrHgXX9BsXv7+2t0t027mjuopCMnA4Vif0pS1VhKDTvYdMtvJqbRSC3VXt5FiyYlXfg7clDtHPc0tuNPtboJP9nJisSXIVZR52ewzhjgjv29q55LkxjAKfioP86mt9R8qQGSKCVCRuUxrkj2OOKxdOVrXNVNXvY2LMxTxTy2sNlNcmb7twFQCLHUKTgc9cHjirdl/Y63F0vm2ixG8REMsfmZjw24AnkDOPm+lZi65pqRqBotsSQfMJc47/AHc5x17k9Kr3eq2z7ltLC3tlJPUbzt7ctnn3GPpWbhKTas1939fgaJxik9H9/wDX4lyGKwnW0SSSO3U3MxmYtlkiAUge/G4D1NR621m9wlzYvD5cy5aOMFRG44IAPODwfxrL+2Me8f8A3wv+FR+aPUfnWyg073MJSTjaxPvre0q4GpaZ9hv7C9uba1bMV1ZpultdxyVI6MhOTtJGDkgjJzzXmj1FdR4f8V6do0EASz1BZk+aWS2uygmb5gMjpgKcfia1IjHXUm/4Rmwt5AZDrl5hBKIIdO8typ6ZYswXPrg/SsjXNRnublYJbQWMVovkxWYBHkLnJBzyWJOSTySfoK6O28WWMgl/4levzBSroqXsnzNnGWI6e3X9awvEN7DqN5BO2kz6Z5jfvZZndzN0yxLDk9zjrmi5UoK2h798DkTRvCXi3VQW/wBGsoo9zNnDJC7kD2+ccV4Lpim41nT4x1DFj+Ve6aNPFo/7OniLU4ioXUppViYDbvVmWAED3Ck14v4Og+1+J7dD91V6+mTiuijpBs58Wr1acP61Ps/wZph0nw3ZW7PuYoJG46FucfhmtuobF45LK3eE5iaJSn+7gYqauVnupWVgooooGFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABXz7+0TpnmT3xA+aW2SVfcgEf+yivoKvNvjb4eS/8ADzakufNhAiYdihJ/r/Orpu0jDEw5qbR4L+zXrP8AZvxQs4XbauoW0tsfc43j9UrX8fR+IdD8ba7ZWXi26021W8aSG1XZhVkAfgFwcfvD2xya8w8K6q3hbxfpWpnI+wXscjf7of5h+Wa9++O9mLLxRZ6mj7YdQtB84lKDehwSCJUH3XQ55+7WlZa3PPwMuam49meUWeq+J5WDR+LJt7wLG3m2kbEIpwF6npk/XI/B3n+LFRoP7ativmtM6NpqtiXO45+Q9z/kVIbiKebcb2HMvz7/ADkLNkfdYGc44XGfpSRmK4gSXdbARnIffG52sABkZJ7ngjj8qxOvlHpe+L4EjhGo6WYySyb9FJ37st/zwOeCTzTZdS8XSCKUtoBjiTzVP9jfKqhSO8PTDE+mTQsf2jbHHHb7SkmVaOJy33QWB8o45J46+lNXTneS4QW0Zmh+TBiQrtCjOcW/XA60BYZbz+KrO0SxC6CYAWJ83SCcZJbLEw578exApIbrxLbJIVtPDREzEkPpBbrkjH7rjOePqKtfZ2a5jlayTH+s2m348pCMk7bXp82Mj2psdnIEwtsY/N+dIWtznjH/AE7cgZUemTQKwGbxXNexzx2HhV3wzfu9H+XacclfK6ZQAHHf3NVgPEzOxWx8OlWkadiulHany+Wf+WXC4B9sgnrUyWkroLgQv5UYyu63Zgi54DYt+RtzwP8A61T2+npO8zrbmUM3Cx2bDJDcKP8AReuT9PWgOUilk8VMr22zw2jfKzLHpB3KAQRz5OccfjzRHqHjRWeW3l0n5xHkR6JxgH5TjyMDr+lSwpbun26WBZGCv0siANxzg/6Jjt+AzjHNQ6Xo99q+tQ6ToukrfXdxHI7B1jgWEJt3FjJAOAG7dyKAsJNd+LbtlYajpzEJvXy9I2hhjOceV7/Sn3GueMpInim8ULHBMOfKsI4wytwf4V7Uz7DLHLHE8GkCeZ/KQ/aM/MDgjAt8dTWhd+GdZ0dIDPPpMCTQrcoI55jnarHf8sa4Pyk49qCuSRnya34sljkEnjrUDCnPyNEvIOV48wY5X9B6iqN9ZXOrtGda1u/1VnUlTJJHI0IIBJAEjbWIXHNdXZeF9avDYkaxp6i7d9g/0tw21QxDDzB2YD8KwHTxDJ8SLPwVdpp5kvbiCJpoFkJMEm18qWYkfIfqMUClBrc9E+LIXwn8CPCPhxSVkuTCzg9cKhkbP/AmWvNPhdYm81iVsHLFY1PuT/8AXFdj+1Rra3Pi7TNEiIEenWe9lHRXkPT/AL5Vfzq3+zh4cXU7vzZgQkRFyT6lWGB+YrpXu0zhlHnxdl00PpmCJYIY4kGFjUKPoBin0UVyntBRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFY3jKwOp+F9StgMs0DMo9xyP5Vs0jKHUqwyCMEUITV1Y+AvFVl9l1m6QjAZtw/GvoPWLv8A4TT4FeHPEAYtPprRw3LB2Uhc+TJyuT12P0PQcV5R8ZNDbSPEsyFcBXeP8jx+hrrv2dPFmmXllq3w519lFnq6ubfecBmZdrxg9iQAR7g98V1VFzRTPEwsvZ15QfU5i7nFu6vHBeJ86qDHLOSwww5LFR7/AJe9QC+S3hUtJIMDauLhWGMjJ+aXg4B6eoq/4r+FHj/wxrTWT2yXekxnfb6na2Ak3Ko+USCIblYjg54PvWTc2viW0kcNcaQYuDskgvIEXDdQpVcE8HA9BXMelqTLNYyTIYE2Mu8hXng5U+7SHDLycY9j7OWLTxJLbrJJ9oVQwOLRxtGcnJY9AM++Pes6G41wavbwC/0QfaFmbzvtd0sSEL1clgVZuQPXJBqvFd65ZTySC40OWIRiFIRqzqsKj+7+8Bx8q9yOBQK5s/Z9GkS1RJTGGkMZXybRjvXkDPXGO54NN/4lcZkV/MYIo4+zwHcSzBR/qzj/AD6Vm2+pazaiNfK8PzGJfLDHWM8Ek45l6Zz0+tRaNPrWn28SC20u7hQ8BdZiQgklgPv8Yz6evNAXNnbYsBbwxyx4Ujm2hIIO05P7rn7nc8fnQXgDiKEKyoCZna2thtYplcL5eSDnPHpjvxjWd3qdxBalrOweNl82LzNXSPYHPGcng8jg+mTTrnxDqsNutxHb6bEnnZZV1cM77uxG7pz94D60Bc2IY9KhulWRd77gg/dWwV8DB6pjoK634IRxRfEeJYpUkD6Xdr8qxLg/uieI/fJ5+g6VwEF/ra7UW20JYmGxkl1tcHABBP73IwB+uK2/BXi298OeMLXVNU/ss2scEtq6WesK8iK+05Us7DjaPTr16UDT1I7zjVtO9r6T/wBDX/Gu18a/8e+je+mMP/IM3+FJB4t+H73OI9EuZmgcSLJNcQ4YsCeCFOSMjPuorTk8caZevEbbwjf3hhTEeHncIpUjaNlsfU9/x5pHRzxK3h47ofDZ/wCnicfnCP8ACrfgnwz/AGp+0Pc6xImYNK0S0m3EceZJboi/pvP4VNDrfjHVLuOy0L4YNJA/zNPfXFxaxRHcf76pn14FaPxA8T23wn8Jaj59xZP4w1+JYhFaAhIEVPLXaD8wSNc4LcsxJ74DSu7EVJxUeZ7I+efiL4hPi3x1rWrKxZLi6ZYf+ua/Kn/jqivpj9njRf7P8Nz3LLguUiB+gyf1Ir5R0O1N5q1tAOcuCa+4/h1pn9l+D9PiK7WkTzWHu3P8sVvWdlY83L4uU5VGdJRRRXOeuFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRnFNaQLQA6iq0l9HH1NU5tftofvOBQB4R+01oBS5TUI04lQSE47j5T/SvnUSGORZEYqynIIOCD619cfGu707XvCj/v0SWAkhj0KkYIP6H8K+Q7xJbWd4XjYbf4uoI9q6aUvdseLj6LVTmXU9Y8L/ALRHj3RbdbX7Rb6xFGML9tiLuB/vqQT+Oa6aP9qnxZEu648J2LgdSglX+ea+fra6ST7vG3qc4NaNv4s1PT2C2uo3IVf4S25fyOatwi9bHPCvXi+W7Pdl/a41HA87wTFj1N2w/mlDftd26nE3gqJj6C8H/wAbryWx+L2u2rKJbbS7tB2mtgCfxUit+2+M2muC+o+DbOV8cG3upoxn3Bc1DhHsdaxFTrKx3J/a00NhmfwHGR/19If/AGnUZ/ar8ISn958Og3/AoW/mledX3xS0e9yF8FWCg9d0zMf/AB4GuZ1XxZYzITB4W0xGPTOP6LS9miliZ3te57V/w1B4APLfDc7vaK3P9KUftT+Bl+58OSP+AwD/ANlr5gvFnu52mSC3tw38EZIUVALO67bP++jUcq7HSqjtq0fVA/as8ID/AFfw+A+rxD/2SnN+1zp8Q/0TwEq+mbtV/lHXy7BY3QGW8oD1yaka1kGPmQmnyrsZSrSvZSPpWX9sm8TiLwbbIP8AavSf5IKpT/th+IpeLfQNHh9PMeR/5EV8+KjJjLDH0zVmMw8b1yPUVSguxlPETtuevaz+1J481OBoYLvTdNDDBe1t/nH0LlsV5pcapea1eS6jf3c95czHLzzuXdz7k1T22kR3eUOe4OalZl4WMlmPRQOa0jFI46lSU9Hc774R6I+teKbdVXOXVPpk4/xr7chiSCJIoxhEUKo9AK+QfgpqVr4b1SK6uGzOoLbBztJGBn9a+ibD4gW93jB61z1ZXZ6+DpclM7eisi01yO4AINaMdyHHFZnWTUUgbNLQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAhGaikiLCpqKAMm7015QcE1gah4XmnBw5rtaQqD2oA8i1b4e3F7E8UhZkcYINeYa78B9RVClg6mIElY5Vzt9geoHtX1WYkPUCo2tIm6oKabWxM4RmrSVz4nuvgp4ngY4to2+maybn4R+JYixGmsc9drf/Wr7qbTbZusa/lUbaNaN1iT8qr2kjn+p0ui/FnwJP8PvEVo2Dpt3+C5qH/hFfEMQJ/sy5x/tRV9+toFi3WCM/hUTeGNObrbR/wDfIp+1Yngqb3PgI6Jq4Pz6VOfpGRUMulXq/wCs024X/tm3+Fff58I6UTzaRf8AfIpD4O0g9bKA/wDABT9qyfqFPuz8/f7Nn6fYLj/v03+FSxaPfvxHplwf+2Rr7+Hg7Rh/y42//fAqRPCukp92ygH/AAAUe1YfUYd2fAv/AAjutSL8ukXZH/XI02Lwvrc7bV0e8J9oTX6BL4f05OlrEP8AgIp6aLYIcraxA/7ope1YLA011Z8BD4feJ5mG3QrwD/cxWnZfCTxXcgY0aReefMbbX3d/ZtqP+WMf/fNL/Z9uOkS/lR7Rl/U4eZ8WwfAvxXPtLwW0Q9OWx/Kui0f9nvV96tdXW0dxGm39etfWIsYB/wAs1/Kni1iHRB+VJ1JMqOFpR1SPD9C+C8OnIqohHqe5rtNM8AJagdeK78RIOgFKFA7VB0GLZ6EtuAB2rUitglT0UAIFxS0UUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAf/2Q=="}, "1006": {"nome": "LIMPADOR PERFUMADO 2L FELICIDADE - CX C/ 6 UN", "ean": "7898556040631", "dun": "27898556040635", "ncm": "3402.50.00", "pesoLiqUn": 2.0, "pesoBrutoUn": 2.19, "medUn": "32 × 11 × 11", "medidas": "33 × 22 × 22", "medPalete": "1,65 × 1,20 × 1,0", "cxCamada": 15, "camadas": 5, "validade": 24, "ipi": "3,25%", "icms": "17%", "status": "ATIVO", "foto": "data:image/jpeg;base64,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"}, "1003": {"nome": "LIMPADOR PERFUMADO 5L EUFORIA - FD C/4 UN", "ean": "7898556040167", "dun": "17898556040164", "ncm": "3402.50.00", "pesoLiqUn": 5.0, "pesoBrutoUn": 5.21, "medUn": "30 × 16 × 14", "medidas": "33 × 32 × 22", "medPalete": "1,32 × 1,20 × 1,0", "cxCamada": 11, "camadas": 4, "validade": 24, "ipi": "3,25%", "icms": "17%", "status": "ATIVO"}, "1004": {"nome": "LIMPADOR PERFUMADO 5L FELICIDADE - FD C/4 UN", "ean": "7898556040457", "dun": "17898556040638", "ncm": "3402.50.00", "pesoLiqUn": 5.0, "pesoBrutoUn": 5.21, "medUn": "30 × 16 × 14", "medidas": "33 × 32 × 22", "medPalete": "1,32 × 1,20 × 1,0", "cxCamada": 11, "camadas": 4, "validade": 24, "ipi": "3,25%", "icms": "17%", "status": "ATIVO"}, "401": {"nome": "AGUA SANITARIA 1L - CX C/ 12 UN", "ean": "7898556040143", "dun": "17898556040140", "ncm": "2828.90.11", "pesoLiqUn": 1.0, "pesoBrutoUn": 1.1, "medUn": "31 × 8 × 8", "medidas": "33 × 22 × 22", "medPalete": "1,65 × 1,20 × 1,0", "cxCamada": 15, "camadas": 5, "validade": 6, "ipi": "0,00%", "icms": "17%", "status": "ATIVO"}, "402": {"nome": "AGUA SANITARIA 2L - CX C/ 6UN", "ean": "7898556040334", "dun": "17898556040331", "ncm": "2828.90.11", "pesoLiqUn": 2.0, "pesoBrutoUn": 2.19, "medUn": "32 × 11 × 11", "medidas": "33 × 22 × 22", "medPalete": "1,65 × 1,20 × 1,0", "cxCamada": 16, "camadas": 5, "validade": 6, "ipi": "0,00%", "icms": "17%", "status": "ATIVO"}, "803": {"nome": "AMACIANTE 2L AZUL - CX C/ 6UN", "ean": "7898556041096", "dun": "17898556041093", "ncm": "3809.91.90", "pesoLiqUn": 2.0, "pesoBrutoUn": 2.19, "medUn": "32 × 11 × 11", "medidas": "33 × 22 × 22", "medPalete": "1,65 × 1,20 × 1,0", "cxCamada": 15, "camadas": 5, "validade": 12, "ipi": "0,00%", "icms": "17%", "status": "ATIVO"}, "801": {"nome": "AMACIANTE 2L ROSA - CX C/ 6UN", "ean": "7898556041102", "dun": "17898556041109", "ncm": "3809.91.90", "pesoLiqUn": 2.0, "pesoBrutoUn": 2.19, "medUn": "32 × 11 × 11", "medidas": "33 × 22 × 22", "medPalete": "1,65 × 1,20 × 1,0", "cxCamada": 15, "camadas": 5, "validade": 12, "ipi": "0,00%", "icms": "17%", "status": "ATIVO"}, "802": {"nome": "AMACIANTE 2L VERDE- CX C/ 6UN", "ean": "7898556041126", "dun": "17898556041123", "ncm": "3809.91.90", "pesoLiqUn": 2.0, "pesoBrutoUn": 2.19, "medUn": "32 × 11 × 11", "medidas": "33 × 22 × 22", "medPalete": "1,65 × 1,20 × 1,0", "cxCamada": 15, "camadas": 5, "validade": 12, "ipi": "0,00%", "icms": "17%", "status": "ATIVO"}, "804": {"nome": "AMACIANTE 2L ROXO - CX C/ 6UN", "ean": "7898556041119", "dun": "17898556041116", "ncm": "3809.91.90", "pesoLiqUn": 2.0, "pesoBrutoUn": 2.19, "medUn": "32 × 11 × 11", "medidas": "33 × 22 × 22", "medPalete": "1,65 × 1,20 × 1,0", "cxCamada": 15, "camadas": 5, "validade": 12, "ipi": "0,00%", "icms": "17%", "status": "ATIVO"}, "644": {"nome": "LAVA ROUPAS 3L PREMIUM - FD C/ 6UN", "ean": "7898556040907", "dun": "17898556040904", "ncm": "3402.50.00", "pesoLiqUn": null, "pesoBrutoUn": 3.2, "medUn": "31 × 8 × 15", "medidas": "32 × 29 × 30", "medPalete": "1,32 × 1,20 × 1,0", "cxCamada": 12, "camadas": 4, "validade": 24, "ipi": "3,25%", "icms": "17%", "status": "ATIVO"}, "615": {"nome": "LAVA ROUPAS 2L  GLICERINA - CX C/ 6UN", "ean": "7898556040471", "dun": "17898556040478", "ncm": "3402.50.00", "pesoLiqUn": 2.0, "pesoBrutoUn": 2.19, "medUn": "32 × 11 × 11", "medidas": "33 × 22 × 22", "medPalete": "1,65 × 1,20 × 1,0", "cxCamada": 15, "camadas": 5, "validade": 24, "ipi": "3,25%", "icms": "17%", "status": "ATIVO"}, "645": {"nome": "LAVA ROUPAS 3L GLICERINA - FD C/ 6UN", "ean": "7898556040938", "dun": "17898556040935", "ncm": "3402.50.00", "pesoLiqUn": null, "pesoBrutoUn": 3.13, "medUn": "31 × 8 × 15", "medidas": "32 × 29 × 30", "medPalete": "1,32 × 1,20 × 1,0", "cxCamada": 12, "camadas": 4, "validade": 24, "ipi": "3,25%", "icms": "17%", "status": "ATIVO"}, "614": {"nome": "LAVA ROUPAS 2L PREMIUM - CX C/ 6UN", "ean": "7898556040266", "dun": "17898556040263", "ncm": "3402.50.00", "pesoLiqUn": 2.0, "pesoBrutoUn": 2.19, "medUn": "32 × 11 × 11", "medidas": "33 × 22 × 22", "medPalete": "1,65 × 1,20 × 1,0", "cxCamada": 15, "camadas": 5, "validade": 24, "ipi": "3,25%", "icms": "17%", "status": "ATIVO"}, "1100": {"nome": "LIMPA CANIL 1L  - CX C/ 12 UN", "ean": "7898556040341", "dun": "17898556040386", "ncm": "3402.50.00", "pesoLiqUn": 1.0, "pesoBrutoUn": 1.1, "medUn": "31 × 8 × 8", "medidas": "33 × 22 × 22", "medPalete": "1,65 × 1,20 × 1,0", "cxCamada": 15, "camadas": 5, "validade": 24, "ipi": "3,25%", "icms": "17%", "status": "ATIVO"}, "1102": {"nome": "LIMPA CANIL 5L - FD  C/4 UN", "ean": "7898556040389", "dun": "27898556040383", "ncm": "3402.50.00", "pesoLiqUn": 5.0, "pesoBrutoUn": 5.21, "medUn": "28 × 18,5 × 14", "medidas": "30 × 38 × 30", "medPalete": "1,32 × 1,20 × 1,0", "cxCamada": 11, "camadas": 4, "validade": 24, "ipi": "3,25%", "icms": "17%", "status": "ATIVO"}, "405": {"nome": "LIMPEZA PESADA  1L - CX C/ 12 UN", "ean": "7898556040921", "dun": "17898556040928", "ncm": "3402.50.00", "pesoLiqUn": 1.0, "pesoBrutoUn": 1.1, "medUn": "31 × 8 × 8", "medidas": "33 × 22 × 22", "medPalete": "1,65 × 1,20 × 1,0", "cxCamada": 15, "camadas": 5, "validade": 24, "ipi": "3,25%", "icms": "17%", "status": "ATIVO"}, "406": {"nome": "LIMPEZA PESADA 5L -  FD C/4 UN", "ean": "7898556040020", "dun": "17898556040027", "ncm": "3402.50.00", "pesoLiqUn": 5.0, "pesoBrutoUn": 5.21, "medUn": "28 × 18,5 × 14", "medidas": "30 × 38 × 30", "medPalete": "1,32 × 1,20 × 1,0", "cxCamada": 11, "camadas": 4, "validade": 24, "ipi": "3,25%", "icms": "17%", "status": "ATIVO"}};
   const sem=s=>String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toUpperCase();
   /* ---------- grupo de cada item (lido do tipo antigo; só na primeira vez) ---------- */
@@ -34368,7 +34369,7 @@ try{csNucleo.versao='v488';}catch(e){}
     const cfg=((CAD_GRUPOS||{}).sku||{})[g];
     const skus=L.filter(l=>l.tipo==='i'&&l.g===g).map(l=>String(l.cod));
     const conta={};skus.forEach(s=>{const m=s.match(/^([A-Z]+-?)(\d+)/);if(m)conta[m[1]]=(conta[m[1]]||0)+1;});
-    const pref=cfg&&cfg.pref||Object.keys(conta).sort((a,b)=>conta[b]-conta[a])[0]||({preformas:'PREF',frascos:'FR',rotulos:'ROT',tampas:'TAM',caixas:'CX',fitas:'FT',embkit:'EK',mp:'MP-',fragr:'FRG',corantes:'COR',uso:'UC',rev:'RV'}[g]||'IT');
+    const pref=cfg&&cfg.pref||Object.keys(conta).sort((a,b)=>conta[b]-conta[a])[0]||({preformas:'PREF',frascos:'FR',frrot:'FRR',rotulos:'ROT',tampas:'TAM',caixas:'CX',fitas:'FT',embkit:'EK',mp:'MP-',fragr:'FRG',corantes:'COR',uso:'UC',rev:'RV'}[g]||'IT');
     const nums=skus.map(s=>s.startsWith(pref)?(s.slice(pref.length).match(/^\d+/)||[])[0]:null).filter(Boolean);
     const dig=cfg&&cfg.dig||Math.max(3,...nums.map(x=>x.length));
     const todos=new Set(L.map(l=>String(l.cod)));let n=(nums.length?Math.max(...nums.map(Number)):0)+1;
@@ -34376,7 +34377,15 @@ try{csNucleo.versao='v488';}catch(e){}
   }
   /* ---------- estilo ---------- */
   try{const s=document.createElement('style');s.textContent=`
-.i5{display:grid;grid-template-columns:250px 1fr;gap:20px;align-items:start}
+.i5{display:block}
+.gbar{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 12px;align-items:center;position:relative}
+.gbar>button{height:36px;padding:0 12px;border-radius:999px;border:1px solid var(--line);background:#fff;font:600 13.5px Inter,system-ui;color:var(--ink2);display:inline-flex;align-items:center;gap:7px;cursor:pointer;white-space:nowrap}
+.gbar>button i{font-style:normal;font-size:12px;color:var(--ink3)}.gbar>button.on{background:#0E1B33;color:#fff;border-color:#0E1B33}.gbar>button.on i{color:#C9D3E6}
+.gbar .car{font-size:10px;opacity:.6}.gbar .cfg{width:36px;padding:0;justify-content:center;margin-left:auto}
+.gbdd{position:absolute;z-index:50;background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:0 14px 34px rgba(14,27,51,.16);padding:6px;min-width:240px}
+.gbdd button{display:flex;align-items:center;gap:8px;width:100%;padding:9px 12px;border:0;background:none;border-radius:9px;font:500 14px Inter,system-ui;color:var(--ink);cursor:pointer;text-align:left}
+.gbdd button i{margin-left:auto;font-style:normal;color:var(--ink3);font-size:12.5px}.gbdd button.on{background:#EEF3FF;color:#1D4ED8}.gbdd .t{font-weight:700}
+@media(max-width:1100px){.i5t th:nth-child(4),.i5t td:nth-child(4),.i5t th:nth-child(8),.i5t td:nth-child(8){display:none}}
 .i5arv{border-right:1px solid var(--line);padding-right:12px;display:flex;flex-direction:column;gap:1px;position:sticky;top:8px}
 .i5arv button{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:9px;font-size:13.5px;color:var(--ink2);text-align:left;background:none;border:0;cursor:pointer;width:100%}
 .i5arv button.g{font-weight:700;color:var(--ink);font-size:14px}.i5arv button.s{padding-left:30px}
@@ -34464,9 +34473,11 @@ try{csNucleo.versao='v488';}catch(e){}
         pas.filter(p=>p.x.tanque===t).sort((a,b)=>(+a.x.litragem-+b.x.litragem)||a.cod.localeCompare(b.cod)).forEach(p=>{ordem.push({...p,fil:true});usados.add(p.id);});});
       pas.filter(p=>!usados.has(p.id)).forEach(p=>ordem.push(p));vis.filter(l=>l.tipo==='i').forEach(l=>ordem.push(l));}
     else ordem=vis.slice().sort((a,b)=>a.nome.localeCompare(b.nome,'pt-BR'));
-    const arv=`<nav class="i5arv"><button class="g ${I5.g==='todos'?'on':''}" data-ig="todos">Todos<i>${conta(L,'todos')}</i></button><div class="sep"></div>
-      ${GR.map(g=>`<button class="g ${I5.g===g.k?'on':''}" data-ig="${g.k}">${g.n}<i>${conta(L,g.k)}</i></button>${g.f.map(([k,n])=>`<button class="s ${I5.g===k?'on':''}" data-ig="${k}">${n}<i>${conta(L,k)}</i></button>`).join('')}`).join('')}
-      <div class="sep"></div><button class="s" id="i5Cfg" style="padding-left:10px">⚙ Grupos e famílias</button></nav>`;
+    /* grupos numa barra em cima (combinado em 28/10): o grupo com subgrupos abre uma lista; funciona em tela pequena */
+    const arv=`<div class="gbar" id="i5gb"><button class="${I5.g==='todos'?'on':''}" data-ig="todos">Todos <i>${conta(L,'todos')}</i></button>
+      ${GR.map(g=>{const fs=g.f.find(([k])=>k===I5.g),on=I5.g===g.k||!!fs;const kk=fs?fs[0]:g.k;
+        return `<button class="${on?'on':''}" ${g.f.length?`data-igm="${g.k}"`:`data-ig="${g.k}"`}>${escAttr(fs?g.n+' › '+fs[1]:g.n)} <i>${conta(L,kk)}</i>${g.f.length?'<span class="car">▼</span>':''}</button>`;}).join('')}
+      <button class="cfg" id="i5Cfg" title="Grupos e famílias">⚙</button></div>`;
     const k=l=>l.tipo+'|'+l.id;
     const linha=l=>`<tr class="cl ${l.ativo?'':'ina'} ${I5.sel.has(k(l))?'sel':''} ${l.mae?'mae':''} ${l.fil?'fil':''}" data-ia="${escAttr(k(l))}">
       <td style="width:30px"><span class="i5ck ${I5.sel.has(k(l))?'on':''}" data-ick="${escAttr(k(l))}"></span></td><td class="sk">${escAttr(l.cod)}</td>
@@ -34475,9 +34486,9 @@ try{csNucleo.versao='v488';}catch(e){}
       <td style="width:40px"><button class="i5dt" data-idt="${escAttr(k(l))}">⋯</button></td></tr>`;
     const tit=I5.g==='todos'?'Itens':(GR.find(g=>g.k===I5.g)||{}).n||nomeG(I5.g);
     el.innerHTML=`<div class="i5top"><h2>${escAttr(tit)}</h2><button class="btn pri" id="i5Novo">＋ Novo item</button></div>
-      <div class="i5">${arv}<div>
+      ${arv}<div class="i5"><div>
       <div class="i5bar"><input class="i5bus" id="i5Q" placeholder="Buscar por nome ou SKU" value="${escAttr(I5.q)}">
-        <div class="i5seg">${[['','Todos'],['p','Produzido'],['c','Comprado'],['i','Industrializado']].map(([v,r])=>`<button data-io="${v}" class="${I5.obt===v?'on':''}">${r}</button>`).join('')}</div>
+        <select class="i5sel" id="i5Ob">${[['','Como é obtido: todos'],['p','Produzido'],['c','Comprado'],['i','Industrializado']].map(([v,r])=>`<option value="${v}" ${I5.obt===v?'selected':''}>${r}</option>`).join('')}</select>
         ${['fab','tanques','pa'].includes(I5.g)?`<div class="i5seg">${[['tanque','Por tanque'],['lista','Lista']].map(([v,r])=>`<button data-im="${v}" class="${I5.modo===v?'on':''}">${r}</button>`).join('')}</div>`:''}
         <select class="i5sel" id="i5Sit">${[['ativos','Ativos'],['inativos','Inativos'],['todos','Ativos e inativos']].map(([v,r])=>`<option value="${v}" ${I5.sit===v?'selected':''}>${r}</option>`).join('')}</select></div>
       ${I5.sel.size?`<div class="i5bulk"><b>${I5.sel.size} selecionado${I5.sel.size>1?'s':''}</b><span style="flex:1"></span>
@@ -34486,7 +34497,13 @@ try{csNucleo.versao='v488';}catch(e){}
       <div class="i5tb"><table class="i5t"><thead><tr><th><span class="i5ck ${vis.length&&vis.every(l=>I5.sel.has(k(l)))?'on':''}" id="i5CkT"></span></th><th>SKU</th><th>Nome</th><th>Grupo</th><th>Como é obtido</th><th>Un</th><th class="n">Estoque</th><th class="n">Reservado</th><th></th></tr></thead>
       <tbody>${ordem.map(linha).join('')||'<tr><td colspan="9" style="padding:30px;text-align:center;color:var(--ink3)">Nada aqui com esses filtros.</td></tr>'}</tbody></table></div></div></div>`;
     el.querySelectorAll('[data-ig]').forEach(b=>b.onclick=()=>{I5.g=b.dataset.ig;I5.sel.clear();gradeCadProd();});
-    el.querySelectorAll('[data-io]').forEach(b=>b.onclick=()=>{I5.obt=b.dataset.io;gradeCadProd();});
+    if(M('i5Ob'))M('i5Ob').onchange=e=>{I5.obt=e.target.value;gradeCadProd();};
+    el.querySelectorAll('[data-igm]').forEach(b=>b.onclick=ev=>{ev.stopPropagation();const g=GR.find(x=>x.k===b.dataset.igm);const bar=M('i5gb');
+      let dd=M('i5dd');if(dd){const era=dd.dataset.g;dd.remove();if(era===g.k)return;}
+      dd=document.createElement('div');dd.className='gbdd';dd.id='i5dd';dd.dataset.g=g.k;dd.style.left=b.offsetLeft+'px';dd.style.top=(b.offsetTop+b.offsetHeight+6)+'px';
+      dd.innerHTML=`<button class="t ${I5.g===g.k?'on':''}" data-ig2="${g.k}">Todos de ${escAttr(g.n)}<i>${conta(L,g.k)}</i></button>`+g.f.map(([k,n])=>`<button class="${I5.g===k?'on':''}" data-ig2="${k}">${escAttr(n)}<i>${conta(L,k)}</i></button>`).join('');
+      bar.appendChild(dd);dd.querySelectorAll('[data-ig2]').forEach(x=>x.onclick=()=>{I5.g=x.dataset.ig2;I5.sel.clear();gradeCadProd();});
+      setTimeout(()=>document.addEventListener('click',function f(e){if(!e.target.closest('#i5dd')){const d=M('i5dd');if(d)d.remove();document.removeEventListener('click',f);}}),0);});
     el.querySelectorAll('[data-im]').forEach(b=>b.onclick=()=>{I5.modo=b.dataset.im;gradeCadProd();});
     M('i5Sit').onchange=e=>{I5.sit=e.target.value;gradeCadProd();};
     M('i5Q').oninput=e=>{I5.q=e.target.value;gradeCadProd();const x=M('i5Q');x.focus();x.setSelectionRange(x.value.length,x.value.length);};
@@ -34828,6 +34845,3449 @@ async function csNfBarConfere(){
   }catch(er){/* sem a função publicada: não avisa nada */}
 }
 setTimeout(csNfBarConfere,20000);setInterval(csNfBarConfere,10*60000);
+</script>
+<script data-v489="ops">
+/* v4.8.9 · a planilha das ordens de produção (aprovada em 29/10) entra no sistema uma vez:
+   nomes novos (frascos, preformas, caixas, tampas), os 50 frascos rotulados com ficha técnica (frasco + rótulo),
+   frascos soprados com a preforma, a embalagem de cada litragem já com o frasco rotulado, o modo de fazer limpo,
+   os itens do Uruguai (UY) e os kits, Lava Louças Clear e Limão inativos, 45 fardos no pallet da Água Sanitária e do
+   Alvejante 5L, e os depósitos Quarentena e Nuova Plus. Só roda num computador de quem administra (não no tablet). */
+(function(){
+  const P={
+"ren": {
+"FR003": "FRASCOS - 1L PEAD BRANCO",
+"FR011": "FRASCOS - 1L PEAD ROSA",
+"FR010": "FRASCOS - 1L PEAD VERDE",
+"FR004": "FRASCOS - 2L PEAD ROSA",
+"FR005": "FRASCOS - 2L PEAD VERDE",
+"FR022": "FRASCOS - 2L PET PCO28 REDONDA",
+"FR023": "FRASCOS - 2L PET PCO38 QUADRADA",
+"FR028": "FRASCOS - 500ML DETERGENTE",
+"FR002": "FRASCOS - 5L PEAD BRANCO",
+"FR029": "FRASCOS - 5L PEAD ROSA",
+"FR0009": "FRASCOS - 5L PEAD VERDE",
+"FR025": "FRASCOS - 5L PET",
+"FR013": "FRASCOS - BOTINHA 500ML",
+"PREF003": "PREFORMAS - 42,5G PCO28 REDONDA",
+"PREF008": "PREFORMAS - 45G PCO38 QUAD",
+"PREF001-9": "PREFORMAS - 75G PCO48",
+"PREF005": "PREFORMAS - 86G PCO48",
+"PREF002": "PREFORMAS - 28,5G PCO28",
+"TAM018": "TAMPA 5L C/LACRE AZUL ESC SANTA LUZIA",
+"TAM009": "TAMPA AZUL ESC PET PCO 48MM 3L E 5L",
+"TAM014": "ALÇA PET AZUL ESC 3L E 5L",
+"TAM015": "TAMPA AZUL ESC PCO38 QUAD",
+"TAM003": "TAMPA AZUL ESC C VEDANTE",
+"TAM004": "TAMPA AZUL ESC FLIPTOP",
+"TAM006": "TAMPA GATILHO",
+"TAM002": "TAMPA MULTIUSO PCO28 AZUL ESC",
+"TAM005": "TAMPA AZUL ESC PUSHPULL DET",
+"CX002": "CAIXA 1L PRETA - 09",
+"CX001": "CAIXA 1L VERDE - 07",
+"CX004": "CAIXA 2L - PRETA 06",
+"CX011": "CAIXA 2L - ROXA 03",
+"CX012": "CAIXA 3L 08",
+"CX007": "CAIXA 500ML GATILHO 05",
+"CX008": "CAIXA 500ML REFIL 04",
+"CX005": "CAIXA 5L AZUL 02",
+"CX010": "CAIXA 5L PRETA 01",
+"CX006": "CAIXA DETERGENTE 500ML 10"
+},
+"tanques": {
+"ALVEJANTE SEM CLORO": {
+"mp": [
+{
+"sku": "MP-020",
+"nome": "PERÓXIDO DE HIDROGÊNIO",
+"pct": 2,
+"un": "kg"
+},
+{
+"sku": "MP-013",
+"nome": "LAURIL ÉTER SULFATO DE SÓDIO 70%",
+"pct": 0.1,
+"un": "kg"
+},
+{
+"sku": "MP-002",
+"nome": "ACIDO SULFONICO 90",
+"pct": 0.15,
+"un": "kg"
+},
+{
+"sku": "ESS-002",
+"nome": "FRAGRÂNCIA FLORAL",
+"pct": 0.1,
+"un": "kg"
+},
+{
+"sku": "MP001",
+"nome": "EDTA TETRASSÓDICO",
+"pct": 0.1,
+"un": "kg"
+}
+],
+"emb": {
+"1L": [
+{
+"comp": "Frasco rotulado",
+"sku": "novo",
+"nome": "FRASCO 1L PEAD ROSA ALVEJ SEM CLORO",
+"qtd": 1
+},
+{
+"comp": "Caixa",
+"sku": "CX001",
+"nome": "CAIXA 1L VERDE - 07",
+"qtd": 0.0833
+},
+{
+"comp": "Tampa",
+"sku": "TAM003",
+"nome": "TAMPA AZUL ESC C VEDANTE",
+"qtd": 1
+}
+],
+"2L": [
+{
+"comp": "Frasco rotulado",
+"sku": "novo",
+"nome": "FRASCO 2L PEAD ROSA ALVEJ SEM CLORO",
+"qtd": 1
+},
+{
+"comp": "Caixa",
+"sku": "CX004",
+"nome": "CAIXA 2L - PRETA 06",
+"qtd": 0.1667
+},
+{
+"comp": "Tampa",
+"sku": "TAM003",
+"nome": "TAMPA AZUL ESC C VEDANTE",
+"qtd": 1
+}
+],
+"5L": [
+{
+"comp": "Frasco rotulado",
+"sku": "novo",
+"nome": "FRASCO 5L PEAD ROSA ALVEJ SEM CLORO",
+"qtd": 1
+},
+{
+"comp": "Caixa",
+"sku": "CX003",
+"nome": "FILME TERMO ENCOLHIVEL",
+"qtd": 0.0139
+},
+{
+"comp": "Tampa",
+"sku": "TAM018",
+"nome": "TAMPA 5L C/LACRE AZUL ESC SANTA LUZIA",
+"qtd": 1
+},
+{
+"comp": "Caixa",
+"sku": "CX005",
+"nome": "CAIXA 5L AZUL 02",
+"porPallet": 5,
+"qtd": 0,
+"obs": "5 unidades na base do pallet"
+}
+]
+},
+"proc": [
+"ADICIONE ÁGUA ATÉ 70% DO VOLUME DO TANQUE",
+"SOB AGITAÇÃO, ADICIONE O EDTA DEIXEI POR 5 MIN.",
+"SOB AGITAÇÃO, ADICIONE O ÁCIDO SULFÔNICO",
+"SOB AGITAÇÃO, ADICIONE O LAURIL ÉTER SULFATO DE SÓDIO",
+"SOB AGITAÇÃO, ADICIONE A FRAGRÂNCIA",
+"SOB AGITAÇÃO, ADICIONE O PERÓXIDO DE HIDROGÊNIO",
+"COMPLETE O TANQUE DE ÁGUA",
+"Enviar amostra para análise",
+"Enviar amostra de retenção ao controle de qualidade"
+],
+"sub": {
+"1L": "301 ALVEJANTE SEM CLORO 1L - CX C/12 UN",
+"2L": "302 ALVEJANTE SEM CLORO 2L - CX C/6 UN",
+"5L": "303 ALVEJANTE SEM CLORO 5L - FD C/4 UN"
+}
+},
+"AMACIANTE AZUL": {
+"mp": [
+{
+"sku": "MP-011",
+"nome": "BASE DE AMACIANTE",
+"pct": 0.5,
+"un": "kg"
+},
+{
+"sku": "ESS-023",
+"nome": "FRAGRÂNCIA AM AZUL",
+"pct": 0.1,
+"un": "kg"
+},
+{
+"sku": "COR-005",
+"nome": "CORANTE AZUL IRACOR",
+"pct": 0.00211,
+"un": "kg"
+}
+],
+"emb": {
+"2L": [
+{
+"comp": "Frasco rotulado",
+"sku": "novo",
+"nome": "FRASCO 2L ROT QUAD ADES AMA AZUL",
+"qtd": 1
+},
+{
+"comp": "Caixa",
+"sku": "CX011",
+"nome": "CAIXA 2L - ROXA 03",
+"qtd": 0.1667
+},
+{
+"comp": "Tampa",
+"sku": "TAM015",
+"nome": "TAMPA AZUL ESC PCO38 QUAD",
+"qtd": 1
+}
+],
+"2L UN": [
+{
+"comp": "Frasco rotulado",
+"sku": "novo",
+"nome": "FRASCO 2L ROT QUAD ADES AMA AZUL",
+"qtd": 1
+},
+{
+"comp": "Tampa",
+"sku": "TAM015",
+"nome": "TAMPA AZUL ESC PCO38 QUAD",
+"qtd": 1
+}
+],
+"5L": [
+{
+"comp": "Frasco rotulado",
+"sku": "novo",
+"nome": "FRASCO 5L ROT ADES AMA AZUL",
+"qtd": 1
+},
+{
+"comp": "Alça",
+"sku": "TAM014",
+"nome": "ALÇA PET AZUL ESC 3L E 5L",
+"qtd": 1
+},
+{
+"comp": "Caixa",
+"sku": "CX003",
+"nome": "FILME TERMO ENCOLHIVEL",
+"qtd": 0.0139
+},
+{
+"comp": "Tampa",
+"sku": "TAM009",
+"nome": "TAMPA AZUL ESC PET PCO 48MM 3L E 5L",
+"qtd": 1
+}
+]
+},
+"proc": [
+"ADICIONAR ÁGUA ATÉ 50% DO VOLUME DO TANQUE",
+"SOB AGITAÇÃO, ADICIONAR O CORANTE E FRAGRÂNCIA",
+"SOB AGITAÇÃO, ADICIONAR LENTAMENTE A BASE DE AMACIANTE",
+"MANTER SOB AGITAÇÃO, COMPLETAR O TANQUE COM ÁGUA (Obs. Evitando encher com pressão de água)",
+"DESLIGAR O MOTOR E DEIXAR DESCANSAR POR 30 MINUTOS",
+"Enviar amostra para análise",
+"Enviar amostra de retenção ao controle de qualidade"
+],
+"sub": {
+"2L": "803 AMACIANTE 2L AZUL - CX C/6 UN",
+"2L UN": "novo · UY AMACIANTE AZUL 2L  (unidade, sem caixa, mesmo tanque)",
+"5L": "813 AMACIANTE 5L AZUL - FD C/4 UN"
+}
+},
+"AMACIANTE ROSA": {
+"mp": [
+{
+"sku": "MP-011",
+"nome": "BASE DE AMACIANTE",
+"pct": 0.5,
+"un": "kg"
+},
+{
+"sku": "COR-007",
+"nome": "CORANTE VERMELHO IRACOR",
+"pct": 0.0025,
+"un": "kg"
+},
+{
+"sku": "ESS-031",
+"nome": "FRAGRÂNCIA AM ROSA",
+"pct": 0.1,
+"un": "kg"
+}
+],
+"emb": {
+"2L": [
+{
+"comp": "Frasco rotulado",
+"sku": "novo",
+"nome": "FRASCO 2L ROT QUAD ADES AMA ROSA",
+"qtd": 1
+},
+{
+"comp": "Caixa",
+"sku": "CX011",
+"nome": "CAIXA 2L - ROXA 03",
+"qtd": 0.1667
+},
+{
+"comp": "Tampa",
+"sku": "TAM015",
+"nome": "TAMPA AZUL ESC PCO38 QUAD",
+"qtd": 1
+}
+],
+"5L": [
+{
+"comp": "Frasco rotulado",
+"sku": "novo",
+"nome": "FRASCO 5L ROT ADES AMA ROSA",
+"qtd": 1
+},
+{
+"comp": "Alça",
+"sku": "TAM014",
+"nome": "ALÇA PET AZUL ESC 3L E 5L",
+"qtd": 1
+},
+{
+"comp": "Caixa",
+"sku": "CX003",
+"nome": "FILME TERMO ENCOLHIVEL",
+"qtd": 0.0139
+},
+{
+"comp": "Tampa",
+"sku": "TAM009",
+"nome": "TAMPA AZUL ESC PET PCO 48MM 3L E 5L",
+"qtd": 1
+}
+]
+},
+"proc": [
+"ADICIONAR ÁGUA ATÉ 50% DO VOLUME DO TANQUE",
+"SOB AGITAÇÃO, ADICIONAR O CORANTE E FRAGRÂNCIA",
+"SOB AGITAÇÃO, ADICIONAR LENTAMENTE A BASE DE AMACIANTE",
+"MANTER SOB AGITAÇÃO, COMPLETAR O TANQUE COM ÁGUA (Obs. Evitando encher com pressão de água)",
+"DESLIGAR O MOTOR E DEIXAR DESCANSAR POR 30 MINUTOS",
+"Enviar amostra para análise",
+"Enviar amostra de retenção ao controle de qualidade"
+],
+"sub": {
+"2L": "801 AMACIANTE 2L ROSA - CX C/6 UN",
+"5L": "811 AMACIANTE 5L ROSA - FD C/4 UN"
+}
+},
+"AMACIANTE ROXO": {
+"mp": [
+{
+"sku": "MP-011",
+"nome": "BASE DE AMACIANTE",
+"pct": 0.5,
+"un": "kg"
+},
+{
+"sku": "COR-024",
+"nome": "CORANTE VIOLETA IRACOR",
+"pct": 0.0025,
+"un": "kg"
+},
+{
+"sku": "FR008",
+"nome": "FRAGRÂNCIA AM ROXO",
+"pct": 0.1,
+"un": "kg"
+}
+],
+"emb": {
+"2L": [
+{
+"comp": "Frasco rotulado",
+"sku": "novo",
+"nome": "FRASCO 2L ROT QUAD ADES AMA ROXO",
+"qtd": 1
+},
+{
+"comp": "Caixa",
+"sku": "CX011",
+"nome": "CAIXA 2L - ROXA 03",
+"qtd": 0.1667
+},
+{
+"comp": "Tampa",
+"sku": "TAM015",
+"nome": "TAMPA AZUL ESC PCO38 QUAD",
+"qtd": 1
+}
+],
+"2L UN": [
+{
+"comp": "Frasco rotulado",
+"sku": "novo",
+"nome": "FRASCO 2L ROT QUAD ADES AMA ROXO",
+"qtd": 1
+},
+{
+"comp": "Tampa",
+"sku": "TAM015",
+"nome": "TAMPA AZUL ESC PCO38 QUAD",
+"qtd": 1
+}
+],
+"5L": [
+{
+"comp": "Frasco rotulado",
+"sku": "novo",
+"nome": "FRASCO 5L ROT ADES AMA ROXO",
+"qtd": 1
+},
+{
+"comp": "Alça",
+"sku": "TAM014",
+"nome": "ALÇA PET AZUL ESC 3L E 5L",
+"qtd": 1
+},
+{
+"comp": "Caixa",
+"sku": "CX003",
+"nome": "FILME TERMO ENCOLHIVEL",
+"qtd": 0.0139
+},
+{
+"comp": "Tampa",
+"sku": "TAM009",
+"nome": "TAMPA AZUL ESC PET PCO 48MM 3L E 5L",
+"qtd": 1
+}
+]
+},
+"proc": [
+"ADICIONAR ÁGUA ATÉ 50% DO VOLUME DO TANQUE",
+"SOB AGITAÇÃO, ADICIONAR O CORANTE E FRAGRÂNCIA",
+"SOB AGITAÇÃO, ADICIONAR LENTAMENTE A BASE DE AMACIANTE",
+"MANTER SOB AGITAÇÃO, COMPLETAR O TANQUE COM ÁGUA (Obs. Evitando encher com pressão de água)",
+"DESLIGAR O MOTOR E DEIXAR DESCANSAR POR 30 MINUTOS",
+"Enviar amostra para análise",
+"Enviar amostra de retenção ao controle de qualidade"
+],
+"sub": {
+"2L": "804 AMACIANTE 2L ROXO - CX C/6 UN",
+"2L UN": "novo · UY AMACIANTE ROXO 2L  (unidade, sem caixa, mesmo tanque)",
+"5L": "814 AMACIANTE 5L ROXO - FD C/4 UN"
+}
+},
+"AMACIANTE TRADICIONAL": {
+"mp": [
+{
+"sku": "MP-011",
+"nome": "BASE DE AMACIANTE",
+"pct": 0.448,
+"un": "kg"
+},
+{
+"sku": "COR-005",
+"nome": "CORANTE AZUL IRACOR",
+"pct": 0.00211,
+"un": "kg"
+},
+{
+"sku": "ESS-023",
+"nome": "FRAGRÂNCIA AM AZUL",
+"pct": 0.075,
+"un": "kg"
+}
+],
+"emb": {
+"2L": [
+{
+"comp": "Frasco rotulado",
+"sku": "novo",
+"nome": "FRASCO 2L ROT BOPP AMA TRADICIONAL",
+"qtd": 1
+},
+{
+"comp": "Caixa",
+"sku": "CX004",
+"nome": "CAIXA 2L - PRETA 06",
+"qtd": 0.1667
+},
+{
+"comp": "Tampa",
+"sku": "TAM002",
+"nome": "TAMPA MULTIUSO PCO28 AZUL ESC",
+"qtd": 1
+}
+]
+},
+"proc": [
+"ADICIONAR ÁGUA ATÉ 50% DO VOLUME DO TANQUE",
+"SOB AGITAÇÃO, ADICIONAR O CORANTE E FRAGRÂNCIA",
+"SOB AGITAÇÃO, ADICIONAR LENTAMENTE A BASE DE AMACIANTE",
+"MANTER SOB AGITAÇÃO, COMPLETAR O TANQUE COM ÁGUA (Obs. Evitando encher com pressão de água)",
+"DESLIGAR O MOTOR E DEIXAR DESCANSAR POR 30 MINUTOS",
+"Enviar amostra para análise",
+"Enviar amostra de retenção ao controle de qualidade"
+],
+"sub": {
+"2L": "503 AMACIANTE 2L TRADICIONAL - CX C/6 UN"
+}
+},
+"AMACIANTE VERDE": {
+"mp": [
+{
+"sku": "MP-011",
+"nome": "BASE DE AMACIANTE",
+"pct": 0.5,
+"un": "kg"
+},
+{
+"sku": "ESS-030",
+"nome": "FRAGRÂNCIA AM VERDE",
+"pct": 0.1,
+"un": "kg"
+},
+{
+"sku": "COR-023",
+"nome": "CORANTE VERDE IRACOR",
+"pct": 0.0033,
+"un": "kg"
+}
+],
+"emb": {
+"2L": [
+{
+"comp": "Frasco rotulado",
+"sku": "novo",
+"nome": "FRASCO 2L ROT QUAD ADES AMA VERDE",
+"qtd": 1
+},
+{
+"comp": "Caixa",
+"sku": "CX011",
+"nome": "CAIXA 2L - ROXA 03",
+"qtd": 0.1667
+},
+{
+"comp": "Tampa",
+"sku": "TAM015",
+"nome": "TAMPA AZUL ESC PCO38 QUAD",
+"qtd": 1
+}
+],
+"5L": [
+{
+"comp": "Frasco rotulado",
+"sku": "novo",
+"nome": "FRASCO 5L ROT ADES AMA VERDE",
+"qtd": 1
+},
+{
+"comp": "Alça",
+"sku": "TAM014",
+"nome": "ALÇA PET AZUL ESC 3L E 5L",
+"qtd": 1
+},
+{
+"comp": "Caixa",
+"sku": "CX003",
+"nome": "FILME TERMO ENCOLHIVEL",
+"qtd": 0.0139
+},
+{
+"comp": "Tampa",
+"sku": "TAM009",
+"nome": "TAMPA AZUL ESC PET PCO 48MM 3L E 5L",
+"qtd": 1
+}
+]
+},
+"proc": [
+"ADICIONAR ÁGUA ATÉ 50% DO VOLUME DO TANQUE",
+"SOB AGITAÇÃO, ADICIONAR O CORANTE E FRAGRÂNCIA",
+"SOB AGITAÇÃO, ADICIONAR LENTAMENTE A BASE DE AMACIANTE",
+"MANTER SOB AGITAÇÃO, COMPLETAR O TANQUE COM ÁGUA (Obs. Evitando encher com pressão de água)",
+"DESLIGAR O MOTOR E DEIXAR DESCANSAR POR 30 MINUTOS",
+"Enviar amostra para análise",
+"Enviar amostra de retenção ao controle de qualidade"
+],
+"sub": {
+"2L": "802 AMACIANTE 2L VERDE - CX C/6 UN",
+"5L": "812 AMACIANTE 5L VERDE - FD C/4 UN"
+}
+},
+"CLORO GEL": {
+"mp": [
+{
+"sku": "MP-005",
+"nome": "HIPOCLORITO DE SÓDIO",
+"pct": 20,
+"un": "kg"
+},
+{
+"sku": "MP-013",
+"nome": "LAURIL ÉTER SULFATO DE SÓDIO 70%",
+"pct": 5,
+"un": "kg"
+},
+{
+"sku": "MP-017",
+"nome": "HIDROXIDO DE SODIO",
+"pct": 1.75,
+"un": "kg"
+}
+],
+"emb": {
+"1L": [
+{
+"comp": "Frasco rotulado",
+"sku": "novo",
+"nome": "FRASCO 1L PEAD AZUL CLORO GEL",
+"qtd": 1
+},
+{
+"comp": "Caixa",
+"sku": "CX001",
+"nome": "CAIXA 1L VERDE - 07",
+"qtd": 0.0833
+},
+{
+"comp": "Tampa",
+"sku": "TAM003",
+"nome": "TAMPA AZUL ESC C VEDANTE",
+"qtd": 1
+}
+]
+},
+"proc": [
+"ADICIONE ÁGUA AO TANQUE",
+"ENQUANTO O TANQUE ENCHE, ADICIONAR O HIPOCLORITO DE SÓDIO (100kg = ~ 85L)",
+"ADICIONAR SODA EM ESCAMAS (HIDRÓXIDO DE SÓDIO)",
+"ADICIONAR O LAURIL ÉTER SULFATO DE SÓDIO",
+"SOB AGITAÇÃO, COMPLETE O TANQUE COM ÁGUA",
+"Enviar amostra para análise",
+"Enviar amostra de retenção ao controle de qualidade"
+],
+"sub": {
+"1L": "101 CLORO GEL 1L - CX C/12 UN"
+}
+},
+"DESENGORDURANTE": {
+"mp": [
+{
+"sku": "MP-013",
+"nome": "LAURIL ÉTER SULFATO DE SÓDIO 70%",
+"pct": 4,
+"un": "kg"
+},
+{
+"sku": "MP-017",
+"nome": "HIDROXIDO DE SODIO",
+"pct": 4,
+"un": "kg"
+},
+{
+"sku": "COR-001",
+"nome": "CORANTE VERMELHO LIMPOL",
+"pct": 0.0033,
+"un": "kg"
+},
+{
+"sku": "COR-004",
+"nome": "CORANTE AMARELO TARTRAZ",
+"pct": 0.0033,
+"un": "kg"
+},
+{
+"sku": "ESS-026",
+"nome": "FRAGRÂNCIA  LIMAO",
+"pct": 0.04,
+"un": "kg"
+}
+],
+"emb": {
+"1L": [
+{
+"comp": "Frasco rotulado",
+"sku": "novo",
+"nome": "FRASCO 1L PEAD BRANCO DESENGORDURANTE",
+"qtd": 1
+},
+{
+"comp": "Caixa",
+"sku": "CX001",
+"nome": "CAIXA 1L VERDE - 07",
+"qtd": 0.0833
+},
+{
+"comp": "Tampa",
+"sku": "TAM003",
+"nome": "TAMPA AZUL ESC C VEDANTE",
+"qtd": 1
+}
+],
+"5L": [
+{
+"comp": "Frasco rotulado",
+"sku": "novo",
+"nome": "FRASCO 5L PEAD BRANCO DESENGORDURANTE",
+"qtd": 1
+},
+{
+"comp": "Caixa",
+"sku": "CX003",
+"nome": "FILME TERMO ENCOLHIVEL",
+"qtd": 0.0139
+},
+{
+"comp": "Tampa",
+"sku": "TAM018",
+"nome": "TAMPA 5L C/LACRE AZUL ESC SANTA LUZIA",
+"qtd": 1
+}
+]
+},
+"proc": [
+"ADICIONAR ÁGUA ATE 70% DO TANQUE",
+"SOB AGITAÇÃO, ADICIONE A SODA",
+"SOB AGITAÇÃO, ADICIONE O LAURIL ÉTER SULFATO DE SÓDIO",
+"SOB AGITAÇÃO, ADICIONE CORANTE E FRAGRÂNCIA",
+"COMPLETE O TANQUE COM ÁGUA",
+"Enviar amostra para análise",
+"Enviar amostra de retenção ao controle de qualidade"
+],
+"sub": {
+"1L": "37 DESENGORDURANTE 1L - CX C/12 UN",
+"5L": "39 DESENGORDURANTE 5L - FD C/4 UN"
+}
+},
+"DESINFETANTE EUCALIPTO": {
+"mp": [
+{
+"sku": "MP-004",
+"nome": "QUATERNARIO DE 5º GERAÇÃO",
+"pct": 0.5,
+"un": "kg"
+},
+{
+"sku": "ESS-006",
+"nome": "FRAGRÂNCIA EUCALIPTO",
+"pct": 0.08333,
+"un": "kg"
+},
+{
+"sku": "MP-003",
+"nome": "NONIL FENOL",
+"pct": 0.2,
+"un": "kg"
+},
+{
+"sku": "COR-006",
+"nome": "CORANTE VERDE ALIZARINE",
+"pct": 0.004,
+"un": "kg"
+}
+],
+"emb": {
+"2L": [
+{
+"comp": "Frasco rotulado",
+"sku": "novo",
+"nome": "FRASCO 2L ROT BOPP DES EUCALIPTO",
+"qtd": 1
+},
+{
+"comp": "Caixa",
+"sku": "CX004",
+"nome": "CAIXA 2L - PRETA 06",
+"qtd": 0.1667
+},
+{
+"comp": "Tampa",
+"sku": "TAM002",
+"nome": "TAMPA MULTIUSO PCO28 AZUL ESC",
+"qtd": 1
+}
+],
+"5L": [
+{
+"comp": "Frasco rotulado",
+"sku": "novo",
+"nome": "FRASCO 5L ROT ADES DES EUCALIPTO",
+"qtd": 1
+},
+{
+"comp": "Alça",
+"sku": "TAM014",
+"nome": "ALÇA PET AZUL ESC 3L E 5L",
+"qtd": 1
+},
+{
+"comp": "Caixa",
+"sku": "CX003",
+"nome": "FILME TERMO ENCOLHIVEL",
+"qtd": 0.0139
+},
+{
+"comp": "Tampa",
+"sku": "TAM009",
+"nome": "TAMPA AZUL ESC PET PCO 48MM 3L E 5L",
+"qtd": 1
+}
+]
+},
+"proc": [
+"ADICIONE ÁGUA ATÉ 80% DO VOLUME DO TANQUE",
+"SOB AGITAÇÃO, ADICIONE O CORANTE",
+"EM UM RECIPIENTE SEPARADO, MISTURE O NONIL FENOL E A FRAGRÂNCIA",
+"SOB AGITAÇÃO, ADICIONE A MISTURA AO TANQUE",
+"SOB AGITAÇÃO, ADICIONE O QUATERNÁRIO DE AMÔNIA",
+"COMPLETE O TANQUE COM ÁGUA",
+"Enviar amostra para análise",
+"Enviar amostra de retenção ao controle de qualidade"
+],
+"sub": {
+"2L": "912 DESINFETANTE 2L EUCALIPTO - CX C/6 UN",
+"5L": "922 DESINFETANTE 5L EUCALIPTO - FD C/4 UN"
+}
+},
+"DESINFETANTE FLORAL": {
+"mp": [
+{
+"sku": "MP-004",
+"nome": "QUATERNARIO DE 5º GERAÇÃO",
+"pct": 0.5,
+"un": "kg"
+},
+{
+"sku": "MP-003",
+"nome": "NONIL FENOL",
+"pct": 0.13333,
+"un": "kg"
+},
+{
+"sku": "COR-003",
+"nome": "CORANTE RODAMINA",
+"pct": 0.001,
+"un": "kg"
+},
+{
+"sku": "ESS-002",
+"nome": "FRAGRÂNCIA FLORAL",
+"pct": 0.1,
+"un": "kg"
+}
+],
+"emb": {
+"2L": [
+{
+"comp": "Frasco rotulado",
+"sku": "novo",
+"nome": "FRASCO 2L ROT BOPP DES FLORAL",
+"qtd": 1
+},
+{
+"comp": "Caixa",
+"sku": "CX004",
+"nome": "CAIXA 2L - PRETA 06",
+"qtd": 0.1667
+},
+{
+"comp": "Tampa",
+"sku": "TAM002",
+"nome": "TAMPA MULTIUSO PCO28 AZUL ESC",
+"qtd": 1
+}
+],
+"5L": [
+{
+"comp": "Frasco rotulado",
+"sku": "novo",
+"nome": "FRASCO 5L ROT ADES DES FLORAL",
+"qtd": 1
+},
+{
+"comp": "Alça",
+"sku": "TAM014",
+"nome": "ALÇA PET AZUL ESC 3L E 5L",
+"qtd": 1
+},
+{
+"comp": "Caixa",
+"sku": "CX003",
+"nome": "FILME TERMO ENCOLHIVEL",
+"qtd": 0.0139
+},
+{
+"comp": "Tampa",
+"sku": "TAM009",
+"nome": "TAMPA AZUL ESC PET PCO 48MM 3L E 5L",
+"qtd": 1
+}
+]
+},
+"proc": [
+"ADICIONE ÁGUA ATÉ 80% DO VOLUME DO TANQUE",
+"SOB AGITAÇÃO, ADICIONE O CORANTE",
+"EM UM RECIPIENTE SEPARADO, MISTURE O NONIL FENOL E A FRAGRÂNCIA",
+"SOB AGITAÇÃO, ADICIONE A MISTURA AO TANQUE",
+"SOB AGITAÇÃO, ADICIONE O QUATERNÁRIO DE AMÔNIA",
+"COMPLETE O TANQUE COM ÁGUA",
+"Enviar amostra para análise",
+"Enviar amostra de retenção ao controle de qualidade"
+],
+"sub": {
+"2L": "913 DESINFETANTE 2L FLORAL - CX C/6 UN",
+"5L": "923 DESINFETANTE 5L FLORAL - FD C/4 UN"
+}
+},
+"DESINFETANTE LAVANDA": {
+"mp": [
+{
+"sku": "MP-004",
+"nome": "QUATERNARIO DE 5º GERAÇÃO",
+"pct": 0.5,
+"un": "kg"
+},
+{
+"sku": "ESS-003",
+"nome": "FRAGRÂNCIA LAVANDA",
+"pct": 0.1,
+"un": "kg"
+},
+{
+"sku": "MP-003",
+"nome": "NONIL FENOL",
+"pct": 0.13333,
+"un": "kg"
+},
+{
+"sku": "COR-022",
+"nome": "CORANTE VIOLETA",
+"pct": 0.001,
+"un": "kg"
+}
+],
+"emb": {
+"2L": [
+{
+"comp": "Frasco rotulado",
+"sku": "novo",
+"nome": "FRASCO 2L ROT BOPP DES LAVANDA",
+"qtd": 1
+},
+{
+"comp": "Caixa",
+"sku": "CX004",
+"nome": "CAIXA 2L - PRETA 06",
+"qtd": 0.1667
+},
+{
+"comp": "Tampa",
+"sku": "TAM002",
+"nome": "TAMPA MULTIUSO PCO28 AZUL ESC",
+"qtd": 1
+}
+],
+"5L": [
+{
+"comp": "Frasco rotulado",
+"sku": "novo",
+"nome": "FRASCO 5L ROT ADES DES LAVANDA",
+"qtd": 1
+},
+{
+"comp": "Alça",
+"sku": "TAM014",
+"nome": "ALÇA PET AZUL ESC 3L E 5L",
+"qtd": 1
+},
+{
+"comp": "Caixa",
+"sku": "CX003",
+"nome": "FILME TERMO ENCOLHIVEL",
+"qtd": 0.0139
+},
+{
+"comp": "Tampa",
+"sku": "TAM009",
+"nome": "TAMPA AZUL ESC PET PCO 48MM 3L E 5L",
+"qtd": 1
+}
+]
+},
+"proc": [
+"ADICIONE ÁGUA ATÉ 80% DO VOLUME DO TANQUE",
+"SOB AGITAÇÃO, ADICIONE O CORANTE",
+"EM UM RECIPIENTE SEPARADO, MISTURE O NONIL FENOL E A FRAGRÂNCIA",
+"SOB AGITAÇÃO, ADICIONE A MISTURA AO TANQUE",
+"SOB AGITAÇÃO, ADICIONE O QUATERNÁRIO DE AMÔNIA",
+"COMPLETE O TANQUE COM ÁGUA",
+"Enviar amostra para análise",
+"Enviar amostra de retenção ao controle de qualidade"
+],
+"sub": {
+"2L": "914 DESINFETANTE 2L LAVANDA - CX C/6 UN",
+"5L": "924 DESINFETANTE 5L LAVANDA - FD C/4 UN"
+}
+},
+"DESINFETANTE MARINE": {
+"mp": [
+{
+"sku": "MP-004",
+"nome": "QUATERNARIO DE 5º GERAÇÃO",
+"pct": 0.5,
+"un": "kg"
+},
+{
+"sku": "ESS-005",
+"nome": "FRAGRÂNCIA MARINE",
+"pct": 0.1,
+"un": "kg"
+},
+{
+"sku": "MP-003",
+"nome": "NONIL FENOL",
+"pct": 0.13333,
+"un": "kg"
+},
+{
+"sku": "COR-002",
+"nome": "CORANTE AZUL TURQUEZA",
+"pct": 0.00276,
+"un": "kg"
+}
+],
+"emb": {
+"2L": [
+{
+"comp": "Frasco rotulado",
+"sku": "novo",
+"nome": "FRASCO 2L ROT BOPP DES MARINE",
+"qtd": 1
+},
+{
+"comp": "Caixa",
+"sku": "CX004",
+"nome": "CAIXA 2L - PRETA 06",
+"qtd": 0.1667
+},
+{
+"comp": "Tampa",
+"sku": "TAM002",
+"nome": "TAMPA MULTIUSO PCO28 AZUL ESC",
+"qtd": 1
+}
+],
+"5L": [
+{
+"comp": "Frasco rotulado",
+"sku": "novo",
+"nome": "FRASCO 5L ROT ADES DES MARINE",
+"qtd": 1
+},
+{
+"comp": "Alça",
+"sku": "TAM014",
+"nome": "ALÇA PET AZUL ESC 3L E 5L",
+"qtd": 1
+},
+{
+"comp": "Caixa",
+"sku": "CX003",
+"nome": "FILME TERMO ENCOLHIVEL",
+"qtd": 0.0139
+},
+{
+"comp": "Tampa",
+"sku": "TAM009",
+"nome": "TAMPA AZUL ESC PET PCO 48MM 3L E 5L",
+"qtd": 1
+}
+]
+},
+"proc": [
+"ADICIONE ÁGUA ATÉ 80% DO VOLUME DO TANQUE",
+"SOB AGITAÇÃO, ADICIONE O CORANTE",
+"EM UM RECIPIENTE SEPARADO, MISTURE O NONIL FENOL E A FRAGRÂNCIA",
+"SOB AGITAÇÃO, ADICIONE A MISTURA AO TANQUE",
+"SOB AGITAÇÃO, ADICIONE O QUATERNÁRIO DE AMÔNIA",
+"COMPLETE O TANQUE COM ÁGUA",
+"Enviar amostra para análise",
+"Enviar amostra de retenção ao controle de qualidade"
+],
+"sub": {
+"2L": "915 DESINFETANTE 2L MARINE - CX C/6 UN",
+"5L": "925 DESINFETANTE 5L MARINE - FD C/4 UN"
+}
+},
+"DESINFETANTE PINHO": {
+"mp": [
+{
+"sku": "MP-004",
+"nome": "QUATERNARIO DE 5º GERAÇÃO",
+"pct": 0.5,
+"un": "kg"
+},
+{
+"sku": "ESS-007",
+"nome": "FRAGRÂNCIA PINHO",
+"pct": 0.0833,
+"un": "kg"
+},
+{
+"sku": "MP-003",
+"nome": "NONIL FENOL",
+"pct": 0.13333,
+"un": "kg"
+},
+{
+"sku": "COR-001",
+"nome": "CORANTE VERMELHO LIMPOL",
+"pct": 0.00119,
+"un": "kg"
+},
+{
+"sku": "COR-004",
+"nome": "CORANTE AMARELO TARTRAZ",
+"pct": 0.00211,
+"un": "kg"
+},
+{
+"sku": "COR-002",
+"nome": "CORANTE AZUL TURQUEZA",
+"pct": 0.00053,
+"un": "kg"
+}
+],
+"emb": {
+"2L": [
+{
+"comp": "Frasco rotulado",
+"sku": "novo",
+"nome": "FRASCO 2L ROT BOPP DES PINHO",
+"qtd": 1
+},
+{
+"comp": "Caixa",
+"sku": "CX004",
+"nome": "CAIXA 2L - PRETA 06",
+"qtd": 0.1667
+},
+{
+"comp": "Tampa",
+"sku": "TAM002",
+"nome": "TAMPA MULTIUSO PCO28 AZUL ESC",
+"qtd": 1
+}
+],
+"5L": [
+{
+"comp": "Frasco rotulado",
+"sku": "novo",
+"nome": "FRASCO 5L ROT ADES DES PINHO",
+"qtd": 1
+},
+{
+"comp": "Alça",
+"sku": "TAM014",
+"nome": "ALÇA PET AZUL ESC 3L E 5L",
+"qtd": 1
+},
+{
+"comp": "Caixa",
+"sku": "CX003",
+"nome": "FILME TERMO ENCOLHIVEL",
+"qtd": 0.0139
+},
+{
+"comp": "Tampa",
+"sku": "TAM009",
+"nome": "TAMPA AZUL ESC PET PCO 48MM 3L E 5L",
+"qtd": 1
+}
+]
+},
+"proc": [
+"ADICIONE ÁGUA ATÉ 80% DO VOLUME DO TANQUE",
+"SOB AGITAÇÃO, ADICIONE O CORANTE",
+"EM UM RECIPIENTE SEPARADO, MISTURE O NONIL FENOL E A FRAGRÂNCIA",
+"SOB AGITAÇÃO, ADICIONE A MISTURA AO TANQUE",
+"SOB AGITAÇÃO, ADICIONE O QUATERNÁRIO DE AMÔNIA",
+"COMPLETE O TANQUE COM ÁGUA",
+"Enviar amostra para análise",
+"Enviar amostra de retenção ao controle de qualidade"
+],
+"sub": {
+"2L": "916 DESINFETANTE 2L PINHO - CX C/6 UN",
+"5L": "926 DESINFETANTE 5L PINHO - FD C/4 UN"
+}
+},
+"LAVA LOUÇAS MAÇÃ": {
+"mp": [
+{
+"sku": "MP-035",
+"nome": "SAL REFINADO NÃO IODADO",
+"pct": 4.6,
+"un": "kg"
+},
+{
+"sku": "COR-001",
+"nome": "CORANTE VERMELHO LIMPOL",
+"pct": 0.004,
+"un": "kg"
+},
+{
+"sku": "ESS-011",
+"nome": "FRAGRÂNCIA MAÇÃ",
+"pct": 0.03,
+"un": "kg"
+},
+{
+"sku": "9522",
+"nome": "ALPHADT 120",
+"pct": 4.6,
+"un": "kg"
+}
+],
+"emb": {
+"500ML": [
+{
+"comp": "Frasco rotulado",
+"sku": "novo",
+"nome": "FRASCO 500ML ROT DET MAÇA",
+"qtd": 1
+},
+{
+"comp": "Caixa",
+"sku": "CX006",
+"nome": "CAIXA DETERGENTE 500ML 10",
+"qtd": 0.0417
+},
+{
+"comp": "Tampa",
+"sku": "TAM005",
+"nome": "TAMPA AZUL ESC PUSHPULL DET",
+"qtd": 1
+}
+],
+"1L": [
+{
+"comp": "Frasco rotulado",
+"sku": "novo",
+"nome": "FRASCO 1L ROT DET MAÇA",
+"qtd": 1
+},
+{
+"comp": "Caixa",
+"sku": "CX002",
+"nome": "CAIXA 1L PRETA - 09",
+"qtd": 0.0833
+},
+{
+"comp": "Tampa",
+"sku": "TAM004",
+"nome": "TAMPA AZUL ESC FLIPTOP",
+"qtd": 1
+}
+]
+},
+"proc": [
+"ADICIONE ÁGUA ATÉ 80% DO VOLUME DO TANQUE",
+"SOB AGITAÇÃO, ADICIONE ATÉ 40% DE SAL REFINADO TOTAL",
+"SOB AGITAÇÃO, ADICIONE O ALPHADT120",
+"SOB AGITAÇÃO, ADICIONE O CORANTE E FRAGRÂNCIA",
+"SOB AGITAÇÃO, ADICIONE O RESTANTE DE SAL REFINADO",
+"COMPLETE DE ÁGUA O TANQUE.",
+"Enviar amostra para análise",
+"Enviar amostra de retenção ao controle de qualidade"
+],
+"sub": {
+"500ML": "703 LAVA LOUÇAS 500ML MAÇÃ - CX C/24 UN",
+"1L": "733 LAVA LOUÇAS 1L MAÇÃ - CX C/12 UN"
+}
+},
+"LAVA LOUÇAS NEUTRO": {
+"mp": [
+{
+"sku": "MP-035",
+"nome": "SAL REFINADO NÃO IODADO",
+"pct": 4.6,
+"un": "kg"
+},
+{
+"sku": "COR-004",
+"nome": "CORANTE AMARELO TARTRAZ",
+"pct": 0.004,
+"un": "kg"
+},
+{
+"sku": "9522",
+"nome": "ALPHADT 120",
+"pct": 4.6,
+"un": "kg"
+}
+],
+"emb": {
+"500ML": [
+{
+"comp": "Frasco rotulado",
+"sku": "novo",
+"nome": "FRASCO 500ML ROT DET NEUTRO",
+"qtd": 1
+},
+{
+"comp": "Caixa",
+"sku": "CX006",
+"nome": "CAIXA DETERGENTE 500ML 10",
+"qtd": 0.0417
+},
+{
+"comp": "Tampa",
+"sku": "TAM005",
+"nome": "TAMPA AZUL ESC PUSHPULL DET",
+"qtd": 1
+}
+],
+"1L": [
+{
+"comp": "Frasco rotulado",
+"sku": "novo",
+"nome": "FRASCO 1L ROT DET NEUTRO",
+"qtd": 1
+},
+{
+"comp": "Caixa",
+"sku": "CX002",
+"nome": "CAIXA 1L PRETA - 09",
+"qtd": 0.0833
+},
+{
+"comp": "Tampa",
+"sku": "TAM004",
+"nome": "TAMPA AZUL ESC FLIPTOP",
+"qtd": 1
+}
+],
+"2L": [
+{
+"comp": "Frasco rotulado",
+"sku": "novo",
+"nome": "FRASCO 2L ROT ADES DET NEUTRO",
+"qtd": 1
+},
+{
+"comp": "Caixa",
+"sku": "CX004",
+"nome": "CAIXA 2L - PRETA 06",
+"qtd": 0.1667
+},
+{
+"comp": "Tampa",
+"sku": "TAM002",
+"nome": "TAMPA MULTIUSO PCO28 AZUL ESC",
+"qtd": 1
+}
+],
+"5L": [
+{
+"comp": "Frasco rotulado",
+"sku": "novo",
+"nome": "FRASCO 5L ROT ADES DET NEUTRO",
+"qtd": 1
+},
+{
+"comp": "Alça",
+"sku": "TAM014",
+"nome": "ALÇA PET AZUL ESC 3L E 5L",
+"qtd": 1
+},
+{
+"comp": "Caixa",
+"sku": "CX003",
+"nome": "FILME TERMO ENCOLHIVEL",
+"qtd": 0.0139
+},
+{
+"comp": "Tampa",
+"sku": "TAM009",
+"nome": "TAMPA AZUL ESC PET PCO 48MM 3L E 5L",
+"qtd": 1
+}
+]
+},
+"proc": [
+"ADICIONE ÁGUA ATÉ 80% DO VOLUME DO TANQUE",
+"SOB AGITAÇÃO, ADICIONE ATÉ 40% DE SAL REFINADO TOTAL",
+"SOB AGITAÇÃO, ADICIONE O ALPHADT120",
+"SOB AGITAÇÃO, ADICIONE O CORANTE",
+"SOB AGITAÇÃO, ADICIONE O RESTANTE DE SAL REFINADO",
+"COMPLETE DE ÁGUA O TANQUE.",
+"Enviar amostra para análise",
+"Enviar amostra de retenção ao controle de qualidade"
+],
+"sub": {
+"500ML": "704 LAVA LOUÇAS 500ML NEUTRO - CX C/24 UN",
+"1L": "734 LAVA LOUÇAS 1L NEUTRO - CX C/12 UN",
+"2L": "714 LAVA LOUÇAS 2L NEUTRO - CX C/6 UN",
+"5L": "724 LAVA LOUÇAS 5L NEUTRO - FD C/4 UN"
+}
+},
+"LAVA ROUPAS GLICERINA": {
+"mp": [
+{
+"sku": "MP-035",
+"nome": "SAL REFINADO NÃO IODADO",
+"pct": 5,
+"un": "kg"
+},
+{
+"sku": "MP-037",
+"nome": "GLICERINA BIDESTILADA",
+"pct": 0.2,
+"un": "kg"
+},
+{
+"sku": "CO001",
+"nome": "CORANTE AMARELO METANIL",
+"pct": 0.0037,
+"un": "kg"
+},
+{
+"sku": "9522",
+"nome": "ALPHADT 120",
+"pct": 5,
+"un": "kg"
+},
+{
+"sku": "ESS-031",
+"nome": "FRAGRÂNCIA AM ROSA",
+"pct": 0.1,
+"un": "kg"
+}
+],
+"emb": {
+"2L": [
+{
+"comp": "Frasco rotulado",
+"sku": "novo",
+"nome": "FRASCO 2L ROT QUAD ADES LR GLICERINA",
+"qtd": 1
+},
+{
+"comp": "Caixa",
+"sku": "CX011",
+"nome": "CAIXA 2L - ROXA 03",
+"qtd": 0.1667
+},
+{
+"comp": "Tampa",
+"sku": "TAM015",
+"nome": "TAMPA AZUL ESC PCO38 QUAD",
+"qtd": 1
+}
+],
+"3L": [
+{
+"comp": "Frasco rotulado",
+"sku": "novo",
+"nome": "FRASCO 3L ROT ADES LR GLICERINA",
+"qtd": 1
+},
+{
+"comp": "Alça",
+"sku": "TAM014",
+"nome": "ALÇA PET AZUL ESC 3L E 5L",
+"qtd": 1
+},
+{
+"comp": "Caixa",
+"sku": "CX003",
+"nome": "FILME TERMO ENCOLHIVEL",
+"qtd": 0.0093
+},
+{
+"comp": "Tampa",
+"sku": "TAM009",
+"nome": "TAMPA AZUL ESC PET PCO 48MM 3L E 5L",
+"qtd": 1
+}
+],
+"5L": [
+{
+"comp": "Frasco rotulado",
+"sku": "novo",
+"nome": "FRASCO 5L ROT ADES LR GLICERINA",
+"qtd": 1
+},
+{
+"comp": "Alça",
+"sku": "TAM014",
+"nome": "ALÇA PET AZUL ESC 3L E 5L",
+"qtd": 1
+},
+{
+"comp": "Caixa",
+"sku": "CX003",
+"nome": "FILME TERMO ENCOLHIVEL",
+"qtd": 0.0139
+},
+{
+"comp": "Tampa",
+"sku": "TAM009",
+"nome": "TAMPA AZUL ESC PET PCO 48MM 3L E 5L",
+"qtd": 1
+}
+]
+},
+"proc": [
+"ADICIONE ÁGUA ATÉ 80% DO VOLUME DO TANQUE",
+"SOB AGITAÇÃO, ADICIONE ATÉ 40% DE SAL REFINADO TOTAL",
+"SOB AGITAÇÃO, ADICIONE O ALPHADT120",
+"SOB AGITAÇÃO, ADICIONE O CORANTE E FRAGRÂNCIA",
+"SOB AGITAÇÃO, ADICIONE GLICERINA BIDESTILADA",
+"SOB AGITAÇÃO, ADICIONE O RESTANTE DE SAL REFINADO",
+"COMPLETE DE ÁGUA O TANQUE.",
+"Enviar amostra para análise",
+"Enviar amostra de retenção ao controle de qualidade"
+],
+"sub": {
+"2L": "615 LAVA ROUPAS 2L GLICERINA - CX C/6 UN",
+"3L": "645 LAVA ROUPAS 3L GLICERINA - FD C/6 UN",
+"5L": "625 LAVA ROUPAS 5L GLICERINA - FD C/4 UN"
+}
+},
+"LAVA ROUPAS PREMIUM": {
+"mp": [
+{
+"sku": "MP-035",
+"nome": "SAL REFINADO NÃO IODADO",
+"pct": 5,
+"un": "kg"
+},
+{
+"sku": "COR-002",
+"nome": "CORANTE AZUL TURQUEZA",
+"pct": 0.0048,
+"un": "kg"
+},
+{
+"sku": "9522",
+"nome": "ALPHADT 120",
+"pct": 5,
+"un": "kg"
+},
+{
+"sku": "FR008",
+"nome": "FRAGRÂNCIA AM ROXO",
+"pct": 0.1,
+"un": "kg"
+}
+],
+"emb": {
+"2L": [
+{
+"comp": "Frasco rotulado",
+"sku": "novo",
+"nome": "FRASCO 2L ROT QUAD ADES LR PREMIUM",
+"qtd": 1
+},
+{
+"comp": "Caixa",
+"sku": "CX011",
+"nome": "CAIXA 2L - ROXA 03",
+"qtd": 0.1667
+},
+{
+"comp": "Tampa",
+"sku": "TAM015",
+"nome": "TAMPA AZUL ESC PCO38 QUAD",
+"qtd": 1
+}
+],
+"2L UN": [
+{
+"comp": "Frasco rotulado",
+"sku": "novo",
+"nome": "FRASCO 2L ROT QUAD ADES LR PREMIUM",
+"qtd": 1
+},
+{
+"comp": "Tampa",
+"sku": "TAM015",
+"nome": "TAMPA AZUL ESC PCO38 QUAD",
+"qtd": 1
+}
+],
+"3L": [
+{
+"comp": "Frasco rotulado",
+"sku": "novo",
+"nome": "FRASCO 3L ROT ADES LR PREMIUM",
+"qtd": 1
+},
+{
+"comp": "Alça",
+"sku": "TAM014",
+"nome": "ALÇA PET AZUL ESC 3L E 5L",
+"qtd": 1
+},
+{
+"comp": "Caixa",
+"sku": "CX003",
+"nome": "FILME TERMO ENCOLHIVEL",
+"qtd": 0.0093
+},
+{
+"comp": "Tampa",
+"sku": "TAM009",
+"nome": "TAMPA AZUL ESC PET PCO 48MM 3L E 5L",
+"qtd": 1
+}
+],
+"5L": [
+{
+"comp": "Frasco rotulado",
+"sku": "novo",
+"nome": "FRASCO 5L ROT ADES LR PREMIUM",
+"qtd": 1
+},
+{
+"comp": "Alça",
+"sku": "TAM014",
+"nome": "ALÇA PET AZUL ESC 3L E 5L",
+"qtd": 1
+},
+{
+"comp": "Caixa",
+"sku": "CX003",
+"nome": "FILME TERMO ENCOLHIVEL",
+"qtd": 0.0139
+},
+{
+"comp": "Tampa",
+"sku": "TAM009",
+"nome": "TAMPA AZUL ESC PET PCO 48MM 3L E 5L",
+"qtd": 1
+}
+]
+},
+"proc": [
+"ADICIONE ÁGUA ATÉ 80% DO VOLUME DO TANQUE",
+"SOB AGITAÇÃO, ADICIONE ATÉ 40% DE SAL REFINADO TOTAL",
+"SOB AGITAÇÃO, ADICIONE O ALPHADT120",
+"SOB AGITAÇÃO, ADICIONE O CORANTE E FRAGRÂNCIA",
+"SOB AGITAÇÃO, ADICIONE O RESTANTE DE SAL REFINADO",
+"COMPLETE DE ÁGUA O TANQUE.",
+"Enviar amostra para análise",
+"Enviar amostra de retenção ao controle de qualidade"
+],
+"sub": {
+"2L": "614 LAVA ROUPAS 2L PREMIUM - CX C/6 UN",
+"2L UN": "novo · UY LAVA ROUPAS PREMIUM 2L  (unidade, sem caixa, mesmo tanque)",
+"3L": "644 LAVA ROUPAS 3L PREMIUM - FD C/6 UN",
+"5L": "624 LAVA ROUPAS 5L PREMIUM - FD C/4 UN"
+}
+},
+"LIMPA CANIL": {
+"mp": [
+{
+"sku": "MP-004",
+"nome": "QUATERNARIO DE 5º GERAÇÃO",
+"pct": 1.5,
+"un": "kg"
+},
+{
+"sku": "ESS-018",
+"nome": "FRAGRÂNCIA CITRONELA",
+"pct": 0.5,
+"un": "kg"
+},
+{
+"sku": "MP-003",
+"nome": "NONIL FENOL",
+"pct": 1,
+"un": "kg"
+},
+{
+"sku": "COR-006",
+"nome": "CORANTE VERDE ALIZARINE",
+"pct": 0.005,
+"un": "kg"
+}
+],
+"emb": {
+"1L": [
+{
+"comp": "Frasco rotulado",
+"sku": "novo",
+"nome": "FRASCO 1L PEAD BRANCO LIMP CANIL",
+"qtd": 1
+},
+{
+"comp": "Caixa",
+"sku": "CX001",
+"nome": "CAIXA 1L VERDE - 07",
+"qtd": 0.0833
+},
+{
+"comp": "Tampa",
+"sku": "TAM003",
+"nome": "TAMPA AZUL ESC C VEDANTE",
+"qtd": 1
+}
+],
+"5L": [
+{
+"comp": "Frasco rotulado",
+"sku": "novo",
+"nome": "FRASCO 5L PEAD BRANCO LIMP CANIL",
+"qtd": 1
+},
+{
+"comp": "Caixa",
+"sku": "CX003",
+"nome": "FILME TERMO ENCOLHIVEL",
+"qtd": 0.0139
+},
+{
+"comp": "Tampa",
+"sku": "TAM018",
+"nome": "TAMPA 5L C/LACRE AZUL ESC SANTA LUZIA",
+"qtd": 1
+}
+]
+},
+"proc": [
+"ADICIONE ÁGUA ATÉ 80% DO VOLUME DO TANQUE",
+"SOB AGITAÇÃO, ADICIONE O CORANTE",
+"EM UM RECIPIENTE SEPARADO, MISTURE O NONIL FENOL E A FRAGRÂNCIA",
+"SOB AGITAÇÃO, ADICIONE A MISTURA AO TANQUE",
+"SOB AGITAÇÃO, ADICIONE O QUATERNÁRIO DE AMÔNIA",
+"COMPLETE O TANQUE COM ÁGUA",
+"Enviar amostra para análise",
+"Enviar amostra de retenção ao controle de qualidade"
+],
+"sub": {
+"1L": "1100 LIMPA CANIL 1L - CX C/12 UN",
+"5L": "1102 LIMPA CANIL 5L - FD C/4 UN"
+}
+},
+"LIMPA VIDROS": {
+"mp": [
+{
+"sku": "MP-015",
+"nome": "BUTILGLICOL",
+"pct": 6,
+"un": "kg"
+},
+{
+"sku": "MP-009",
+"nome": "ALCOOL ETILICO HIDRATADO 92",
+"pct": 5,
+"un": "kg"
+},
+{
+"sku": "MP-013",
+"nome": "LAURIL ÉTER SULFATO DE SÓDIO 70%",
+"pct": 0.05,
+"un": "kg"
+},
+{
+"sku": "COR-002",
+"nome": "CORANTE AZUL TURQUEZA",
+"pct": 0.0005,
+"un": "kg"
+}
+],
+"emb": {
+"500MLGATILHO": [
+{
+"comp": "Frasco rotulado",
+"sku": "novo",
+"nome": "FRASCO 500ML BOT LIMP VIDROS GATILHO",
+"qtd": 1
+},
+{
+"comp": "Caixa",
+"sku": "CX007",
+"nome": "CAIXA 500ML GATILHO 05",
+"qtd": 0.0833
+},
+{
+"comp": "Tampa",
+"sku": "TAM006",
+"nome": "TAMPA GATILHO",
+"qtd": 1
+}
+],
+"500MLREFIL": [
+{
+"comp": "Frasco rotulado",
+"sku": "novo",
+"nome": "FRASCO 500ML BOT LIMP VIDROS REFIL",
+"qtd": 1
+},
+{
+"comp": "Caixa",
+"sku": "CX008",
+"nome": "CAIXA 500ML REFIL 04",
+"qtd": 0.0833
+},
+{
+"comp": "Tampa",
+"sku": "TAM002",
+"nome": "TAMPA MULTIUSO PCO28 AZUL ESC",
+"qtd": 1
+}
+]
+},
+"proc": [
+"ADICIONE ÁGUA ATÉ 70% DO VOLUME DO TANQUE",
+"SOB AGITAÇÃO, ADICIONE O CORANTE",
+"SOB AGITAÇÃO, ADICIONE BUTILGLICOL",
+"SOB AGITAÇÃO, ADICIONE ALCOOL ETILICO HIDRATADO 92",
+"SOB AGITAÇÃO, ADICIONE LAURIL ÉTER SULFATO DE SÓDIO",
+"COMPLETE O TANQUE COM ÁGUA",
+"Enviar amostra para análise",
+"Enviar amostra de retenção ao controle de qualidade"
+],
+"sub": {
+"500MLGATILHO": "568 LIMPA VIDROS 500ML GATILHO - CX C/12 UN · 569 LIMPA VIDROS 500ML REFIL - CX C/12 UN",
+"500MLREFIL": "568 LIMPA VIDROS 500ML GATILHO - CX C/12 UN · 569 LIMPA VIDROS 500ML REFIL - CX C/12 UN"
+}
+},
+"LIMPADOR PERFUMADO EUFORIA": {
+"mp": [
+{
+"sku": "MP-003",
+"nome": "NONIL FENOL",
+"pct": 0.8,
+"un": "kg"
+},
+{
+"sku": "MP-004",
+"nome": "QUATERNARIO DE 5º GERAÇÃO",
+"pct": 0.5,
+"un": "kg"
+},
+{
+"sku": "ESS-012",
+"nome": "FRAGRÂNCIA LP EUFORIA",
+"pct": 0.15,
+"un": "kg"
+},
+{
+"sku": "COR-002",
+"nome": "CORANTE AZUL TURQUEZA",
+"pct": 0.004,
+"un": "kg"
+},
+{
+"sku": "COR-004",
+"nome": "CORANTE AMARELO TARTRAZ",
+"pct": 0.0005,
+"un": "kg"
+}
+],
+"emb": {
+"2L": [
+{
+"comp": "Frasco rotulado",
+"sku": "novo",
+"nome": "FRASCO 2L ROT QUAD ADES LP EUFORIA",
+"qtd": 1
+},
+{
+"comp": "Caixa",
+"sku": "CX011",
+"nome": "CAIXA 2L - ROXA 03",
+"qtd": 0.1667
+},
+{
+"comp": "Tampa",
+"sku": "TAM015",
+"nome": "TAMPA AZUL ESC PCO38 QUAD",
+"qtd": 1
+}
+],
+"5L": [
+{
+"comp": "Frasco rotulado",
+"sku": "novo",
+"nome": "FRASCO 5L ROT ADES LP EUFORIA",
+"qtd": 1
+},
+{
+"comp": "Alça",
+"sku": "TAM014",
+"nome": "ALÇA PET AZUL ESC 3L E 5L",
+"qtd": 1
+},
+{
+"comp": "Caixa",
+"sku": "CX003",
+"nome": "FILME TERMO ENCOLHIVEL",
+"qtd": 0.0139
+},
+{
+"comp": "Tampa",
+"sku": "TAM009",
+"nome": "TAMPA AZUL ESC PET PCO 48MM 3L E 5L",
+"qtd": 1
+}
+]
+},
+"proc": [
+"ADICIONE ÁGUA ATÉ 70% DO VOLUME DO TANQUE",
+"SOB AGITAÇÃO, ADICIONE O CORANTE",
+"EM UM RECIPIENTE SEPARADO, MISTURE O NONIL FENOL E A FRAGRÂNCIA",
+"SOB AGITAÇÃO, ADICIONE A MISTURA AO TANQUE",
+"SOB AGITAÇÃO, ADICIONE O QUATERNÁRIO DE AMÔNIA",
+"COMPLETE O TANQUE COM ÁGUA",
+"Enviar amostra para análise",
+"Enviar amostra de retenção ao controle de qualidade"
+],
+"sub": {
+"2L": "1005 LIMPADOR PERFUMADO 2L EUFORIA - CX C/6 UN",
+"5L": "1003 LIMPADOR PERFUMADO 5L EUFORIA - FD C/4 UN"
+}
+},
+"LIMPADOR PERFUMADO FELICIDADE": {
+"mp": [
+{
+"sku": "MP-003",
+"nome": "NONIL FENOL",
+"pct": 0.8,
+"un": "kg"
+},
+{
+"sku": "MP-004",
+"nome": "QUATERNARIO DE 5º GERAÇÃO",
+"pct": 0.5,
+"un": "kg"
+},
+{
+"sku": "ESS-013",
+"nome": "FRAGRÂNCIA LP FELICIDADE",
+"pct": 0.075,
+"un": "kg"
+},
+{
+"sku": "ESS-003",
+"nome": "FRAGRÂNCIA LAVANDA",
+"pct": 0.075,
+"un": "kg"
+},
+{
+"sku": "COR-001",
+"nome": "CORANTE VERMELHO LIMPOL",
+"pct": 0.0047,
+"un": "kg"
+}
+],
+"emb": {
+"2L": [
+{
+"comp": "Frasco rotulado",
+"sku": "novo",
+"nome": "FRASCO 2L ROT QUAD ADES LP FELICIDADE",
+"qtd": 1
+},
+{
+"comp": "Caixa",
+"sku": "CX011",
+"nome": "CAIXA 2L - ROXA 03",
+"qtd": 0.1667
+},
+{
+"comp": "Tampa",
+"sku": "TAM015",
+"nome": "TAMPA AZUL ESC PCO38 QUAD",
+"qtd": 1
+}
+],
+"5L": [
+{
+"comp": "Frasco rotulado",
+"sku": "novo",
+"nome": "FRASCO 5L ROT ADES LP FELICIDADE",
+"qtd": 1
+},
+{
+"comp": "Alça",
+"sku": "TAM014",
+"nome": "ALÇA PET AZUL ESC 3L E 5L",
+"qtd": 1
+},
+{
+"comp": "Caixa",
+"sku": "CX003",
+"nome": "FILME TERMO ENCOLHIVEL",
+"qtd": 0.0139
+},
+{
+"comp": "Tampa",
+"sku": "TAM009",
+"nome": "TAMPA AZUL ESC PET PCO 48MM 3L E 5L",
+"qtd": 1
+}
+]
+},
+"proc": [
+"ADICIONE ÁGUA ATÉ 70% DO VOLUME DO TANQUE",
+"SOB AGITAÇÃO, ADICIONE O CORANTE",
+"EM UM RECIPIENTE SEPARADO, MISTURE O NONIL FENOL E A FRAGRÂNCIA",
+"SOB AGITAÇÃO, ADICIONE A MISTURA AO TANQUE",
+"SOB AGITAÇÃO, ADICIONE O QUATERNÁRIO DE AMÔNIA",
+"COMPLETE O TANQUE COM ÁGUA",
+"Enviar amostra para análise",
+"Enviar amostra de retenção ao controle de qualidade"
+],
+"sub": {
+"2L": "1006 LIMPADOR PERFUMADO 2L FELICIDADE - CX C/6 UN",
+"5L": "1004 LIMPADOR PERFUMADO 5L FELICIDADE - FD C/4 UN"
+}
+},
+"LIMPEZA PESADA": {
+"mp": [
+{
+"sku": "MP-019",
+"nome": "AMÔNIA LÍQUIDA",
+"pct": 1,
+"un": "kg"
+},
+{
+"sku": "MP-013",
+"nome": "LAURIL ÉTER SULFATO DE SÓDIO 70%",
+"pct": 0.7,
+"un": "kg"
+},
+{
+"sku": "MP-015",
+"nome": "BUTILGLICOL",
+"pct": 0.5,
+"un": "kg"
+},
+{
+"sku": "ESS-008",
+"nome": "FRAGRÂNCIA UVA",
+"pct": 0.1,
+"un": "kg"
+},
+{
+"sku": "COR-022",
+"nome": "CORANTE VIOLETA",
+"pct": 0.0033,
+"un": "kg"
+}
+],
+"emb": {
+"1L": [
+{
+"comp": "Frasco rotulado",
+"sku": "novo",
+"nome": "FRASCO 1L PEAD BRANCO LIMP PESADA",
+"qtd": 1
+},
+{
+"comp": "Caixa",
+"sku": "CX001",
+"nome": "CAIXA 1L VERDE - 07",
+"qtd": 0.0833
+},
+{
+"comp": "Tampa",
+"sku": "TAM003",
+"nome": "TAMPA AZUL ESC C VEDANTE",
+"qtd": 1
+}
+],
+"5L": [
+{
+"comp": "Frasco rotulado",
+"sku": "novo",
+"nome": "FRASCO 5L PEAD BRANCO LIMP PESADA",
+"qtd": 1
+},
+{
+"comp": "Caixa",
+"sku": "CX003",
+"nome": "FILME TERMO ENCOLHIVEL",
+"qtd": 0.0139
+},
+{
+"comp": "Tampa",
+"sku": "TAM018",
+"nome": "TAMPA 5L C/LACRE AZUL ESC SANTA LUZIA",
+"qtd": 1
+}
+]
+},
+"proc": [
+"ADICIONE ÁGUA ATÉ 70% DO VOLUME DO TANQUE",
+"SOB AGITAÇÃO, ADICIONE O BUTILGLICOL",
+"SOB AGITAÇÃO, ADICIONE O LAURIL ÉTER SULFATO DE SÓDIO",
+"SOB AGITAÇÃO, ADICIONE O FRAGRÂNCIA",
+"SOB AGITAÇÃO, ADICIONE A AMÔNIA LÍQUIDA",
+"COMPLETE O TANQUE COM ÁGUA",
+"Enviar amostra para análise",
+"Enviar amostra de retenção ao controle de qualidade"
+],
+"sub": {
+"1L": "405 LIMPEZA PESADA 1L - CX C/12 UN",
+"5L": "406 LIMPEZA PESADA 5L - FD C/4 UN"
+}
+},
+"ÁGUA SANITÁRIA": {
+"mp": [
+{
+"sku": "MP-005",
+"nome": "HIPOCLORITO DE SÓDIO",
+"pct": 12,
+"un": "kg"
+},
+{
+"sku": "MP-017",
+"nome": "HIDROXIDO DE SODIO",
+"pct": 0.1075,
+"un": "kg"
+}
+],
+"emb": {
+"1L": [
+{
+"comp": "Frasco rotulado",
+"sku": "novo",
+"nome": "FRASCO 1L PEAD VERDE AGUA SANITARIA",
+"qtd": 1
+},
+{
+"comp": "Caixa",
+"sku": "CX001",
+"nome": "CAIXA 1L VERDE - 07",
+"qtd": 0.0833
+},
+{
+"comp": "Tampa",
+"sku": "TAM003",
+"nome": "TAMPA AZUL ESC C VEDANTE",
+"qtd": 1
+}
+],
+"2L": [
+{
+"comp": "Frasco rotulado",
+"sku": "novo",
+"nome": "FRASCO 2L PEAD VERDE AGUA SANITARIA",
+"qtd": 1
+},
+{
+"comp": "Caixa",
+"sku": "CX004",
+"nome": "CAIXA 2L - PRETA 06",
+"qtd": 0.1667
+},
+{
+"comp": "Tampa",
+"sku": "TAM003",
+"nome": "TAMPA AZUL ESC C VEDANTE",
+"qtd": 1
+}
+],
+"5L": [
+{
+"comp": "Frasco rotulado",
+"sku": "novo",
+"nome": "FRASCO 5L PEAD VERDE AGUA SANITARIA",
+"qtd": 1
+},
+{
+"comp": "Caixa",
+"sku": "CX003",
+"nome": "FILME TERMO ENCOLHIVEL",
+"qtd": 0.0139
+},
+{
+"comp": "Tampa",
+"sku": "TAM018",
+"nome": "TAMPA 5L C/LACRE AZUL ESC SANTA LUZIA",
+"qtd": 1
+},
+{
+"comp": "Caixa",
+"sku": "CX005",
+"nome": "CAIXA 5L AZUL 02",
+"porPallet": 5,
+"qtd": 0,
+"obs": "5 unidades na base do pallet"
+}
+]
+},
+"proc": [
+"ADICIONE ÁGUA AO TANQUE",
+"ENQUANTO O TANQUE ENCHE, ADICIONAR O HIPOCLORITO DE SÓDIO",
+"ADICIONAR SODA EM ESCAMA (HIDROXIDO DE SÓDIO)",
+"COMPLETE O TANQUE DE ÁGUA",
+"Enviar amostra para análise",
+"Enviar amostra de retenção ao controle de qualidade"
+],
+"sub": {
+"1L": "401 ÁGUA SANITÁRIA 1L - CX C/12 UN",
+"2L": "402 ÁGUA SANITÁRIA 2L - CX C/6 UN",
+"5L": "403 ÁGUA SANITÁRIA 5L - FD C/4 UN"
+}
+}
+},
+"kits": {
+"KIT ROUPAS AZUL/PREMIUM": [
+{
+"comp": "Produto",
+"sku": "novo",
+"nome": "UY AMACIANTE AZUL 2L",
+"qtd": 4
+},
+{
+"comp": "Produto",
+"sku": "novo",
+"nome": "UY LAVA ROUPAS PREMIUM 2L",
+"qtd": 4
+},
+{
+"comp": "Caixa",
+"sku": "novo",
+"nome": "SACO KIT UY - 29X40X0,06 VIRGEM",
+"qtd": 4
+},
+{
+"comp": "Etiqueta",
+"sku": "ROT-1252",
+"nome": "ETIQUETA PROMO URUGUAI",
+"qtd": 4
+},
+{
+"comp": "Caixa",
+"sku": "novo",
+"nome": "CAIXA KIT UY 11",
+"qtd": 1
+},
+{
+"comp": "Fita",
+"sku": "CX-144",
+"nome": "FITA ADESIVA ACRÍLICA INC 48 X 1200",
+"qtd": 0.000833
+}
+],
+"KIT ROUPAS ROXO/PREMIUM": [
+{
+"comp": "Produto",
+"sku": "novo",
+"nome": "UY AMACIANTE ROXO 2L",
+"qtd": 4
+},
+{
+"comp": "Produto",
+"sku": "novo",
+"nome": "UY LAVA ROUPAS PREMIUM 2L",
+"qtd": 4
+},
+{
+"comp": "Caixa",
+"sku": "novo",
+"nome": "SACO KIT UY - 29X40X0,06 VIRGEM",
+"qtd": 4
+},
+{
+"comp": "Etiqueta",
+"sku": "ROT-1252",
+"nome": "ETIQUETA PROMO URUGUAI",
+"qtd": 4
+},
+{
+"comp": "Caixa",
+"sku": "novo",
+"nome": "CAIXA KIT UY 11",
+"qtd": 1
+},
+{
+"comp": "Fita",
+"sku": "CX-144",
+"nome": "FITA ADESIVA ACRÍLICA INC 48 X 1200",
+"qtd": 0.000833
+}
+]
+},
+"rotulados": [
+{
+"sku": "FRR001",
+"nome": "FRASCO 2L ROT BOPP DES EUCALIPTO",
+"cgrupo": "frrot",
+"obtem": {
+"p": true,
+"i": true
+},
+"ficha": [
+{
+"comp": "Frasco",
+"sku": "FR022",
+"qtd": 1
+},
+{
+"comp": "Rótulo",
+"sku": "ROT021",
+"qtd": 1
+}
+]
+},
+{
+"sku": "FRR002",
+"nome": "FRASCO 2L ROT BOPP DES FLORAL",
+"cgrupo": "frrot",
+"obtem": {
+"p": true,
+"i": true
+},
+"ficha": [
+{
+"comp": "Frasco",
+"sku": "FR022",
+"qtd": 1
+},
+{
+"comp": "Rótulo",
+"sku": "ROT022",
+"qtd": 1
+}
+]
+},
+{
+"sku": "FRR003",
+"nome": "FRASCO 2L ROT BOPP DES LAVANDA",
+"cgrupo": "frrot",
+"obtem": {
+"p": true,
+"i": true
+},
+"ficha": [
+{
+"comp": "Frasco",
+"sku": "FR022",
+"qtd": 1
+},
+{
+"comp": "Rótulo",
+"sku": "ROT023",
+"qtd": 1
+}
+]
+},
+{
+"sku": "FRR004",
+"nome": "FRASCO 2L ROT BOPP DES MARINE",
+"cgrupo": "frrot",
+"obtem": {
+"p": true,
+"i": true
+},
+"ficha": [
+{
+"comp": "Frasco",
+"sku": "FR022",
+"qtd": 1
+},
+{
+"comp": "Rótulo",
+"sku": "ROT024",
+"qtd": 1
+}
+]
+},
+{
+"sku": "FRR005",
+"nome": "FRASCO 2L ROT BOPP DES PINHO",
+"cgrupo": "frrot",
+"obtem": {
+"p": true,
+"i": true
+},
+"ficha": [
+{
+"comp": "Frasco",
+"sku": "FR022",
+"qtd": 1
+},
+{
+"comp": "Rótulo",
+"sku": "ROT027",
+"qtd": 1
+}
+]
+},
+{
+"sku": "FRR006",
+"nome": "FRASCO 2L ROT BOPP AMA TRADICIONAL",
+"cgrupo": "frrot",
+"obtem": {
+"p": true,
+"i": true
+},
+"ficha": [
+{
+"comp": "Frasco",
+"sku": "FR022",
+"qtd": 1
+},
+{
+"comp": "Rótulo",
+"sku": "ROT010",
+"qtd": 1
+}
+]
+},
+{
+"sku": "FRR007",
+"nome": "FRASCO 2L ROT QUAD ADES AMA AZUL",
+"cgrupo": "frrot",
+"obtem": {
+"p": true
+},
+"ficha": [
+{
+"comp": "Frasco",
+"sku": "FR023",
+"qtd": 1
+},
+{
+"comp": "Rótulo",
+"sku": "ROT073",
+"qtd": 1
+}
+]
+},
+{
+"sku": "FRR008",
+"nome": "FRASCO 2L ROT QUAD ADES AMA ROSA",
+"cgrupo": "frrot",
+"obtem": {
+"p": true
+},
+"ficha": [
+{
+"comp": "Frasco",
+"sku": "FR023",
+"qtd": 1
+},
+{
+"comp": "Rótulo",
+"sku": "ROT070",
+"qtd": 1
+}
+]
+},
+{
+"sku": "FRR009",
+"nome": "FRASCO 2L ROT QUAD ADES AMA ROXO",
+"cgrupo": "frrot",
+"obtem": {
+"p": true
+},
+"ficha": [
+{
+"comp": "Frasco",
+"sku": "FR023",
+"qtd": 1
+},
+{
+"comp": "Rótulo",
+"sku": "ROT072",
+"qtd": 1
+}
+]
+},
+{
+"sku": "FRR010",
+"nome": "FRASCO 2L ROT QUAD ADES AMA VERDE",
+"cgrupo": "frrot",
+"obtem": {
+"p": true
+},
+"ficha": [
+{
+"comp": "Frasco",
+"sku": "FR023",
+"qtd": 1
+},
+{
+"comp": "Rótulo",
+"sku": "ROT071",
+"qtd": 1
+}
+]
+},
+{
+"sku": "FRR011",
+"nome": "FRASCO 2L ROT QUAD ADES LP EUFORIA",
+"cgrupo": "frrot",
+"obtem": {
+"p": true
+},
+"ficha": [
+{
+"comp": "Frasco",
+"sku": "FR023",
+"qtd": 1
+},
+{
+"comp": "Rótulo",
+"sku": "ROT001-87",
+"qtd": 1
+}
+]
+},
+{
+"sku": "FRR012",
+"nome": "FRASCO 2L ROT QUAD ADES LP FELICIDADE",
+"cgrupo": "frrot",
+"obtem": {
+"p": true
+},
+"ficha": [
+{
+"comp": "Frasco",
+"sku": "FR023",
+"qtd": 1
+},
+{
+"comp": "Rótulo",
+"sku": "ROT001-88",
+"qtd": 1
+}
+]
+},
+{
+"sku": "FRR013",
+"nome": "FRASCO 2L ROT QUAD ADES LR PREMIUM",
+"cgrupo": "frrot",
+"obtem": {
+"p": true
+},
+"ficha": [
+{
+"comp": "Frasco",
+"sku": "FR023",
+"qtd": 1
+},
+{
+"comp": "Rótulo",
+"sku": "ROT045",
+"qtd": 1
+}
+]
+},
+{
+"sku": "FRR014",
+"nome": "FRASCO 2L ROT QUAD ADES LR GLICERINA",
+"cgrupo": "frrot",
+"obtem": {
+"p": true
+},
+"ficha": [
+{
+"comp": "Frasco",
+"sku": "FR023",
+"qtd": 1
+},
+{
+"comp": "Rótulo",
+"sku": "ROT076",
+"qtd": 1
+}
+]
+},
+{
+"sku": "FRR015",
+"nome": "FRASCO 500ML ROT DET NEUTRO",
+"cgrupo": "frrot",
+"obtem": {
+"i": true
+},
+"ficha": [
+{
+"comp": "Frasco",
+"sku": "FR028",
+"qtd": 1
+},
+{
+"comp": "Rótulo",
+"sku": "ROT034",
+"qtd": 1
+}
+]
+},
+{
+"sku": "FRR016",
+"nome": "FRASCO 500ML ROT DET MAÇA",
+"cgrupo": "frrot",
+"obtem": {
+"i": true
+},
+"ficha": [
+{
+"comp": "Frasco",
+"sku": "FR028",
+"qtd": 1
+},
+{
+"comp": "Rótulo",
+"sku": "ROT033",
+"qtd": 1
+}
+]
+},
+{
+"sku": "FRR017",
+"nome": "FRASCO 1L ROT DET NEUTRO",
+"cgrupo": "frrot",
+"obtem": {
+"p": true
+},
+"ficha": [
+{
+"comp": "Frasco",
+"sku": "FR024",
+"qtd": 1
+},
+{
+"comp": "Rótulo",
+"sku": "ROT037",
+"qtd": 1
+}
+]
+},
+{
+"sku": "FRR018",
+"nome": "FRASCO 1L ROT DET MAÇA",
+"cgrupo": "frrot",
+"obtem": {
+"p": true
+},
+"ficha": [
+{
+"comp": "Frasco",
+"sku": "FR024",
+"qtd": 1
+},
+{
+"comp": "Rótulo",
+"sku": "ROT036",
+"qtd": 1
+}
+]
+},
+{
+"sku": "FRR019",
+"nome": "FRASCO 5L ROT ADES AMA AZUL",
+"cgrupo": "frrot",
+"obtem": {
+"p": true
+},
+"ficha": [
+{
+"comp": "Frasco",
+"sku": "FR025",
+"qtd": 1
+},
+{
+"comp": "Rótulo",
+"sku": "ROT075",
+"qtd": 1
+}
+]
+},
+{
+"sku": "FRR020",
+"nome": "FRASCO 5L ROT ADES AMA ROSA",
+"cgrupo": "frrot",
+"obtem": {
+"p": true
+},
+"ficha": [
+{
+"comp": "Frasco",
+"sku": "FR025",
+"qtd": 1
+},
+{
+"comp": "Rótulo",
+"sku": "ROT079",
+"qtd": 1
+}
+]
+},
+{
+"sku": "FRR021",
+"nome": "FRASCO 5L ROT ADES AMA ROXO",
+"cgrupo": "frrot",
+"obtem": {
+"p": true
+},
+"ficha": [
+{
+"comp": "Frasco",
+"sku": "FR025",
+"qtd": 1
+},
+{
+"comp": "Rótulo",
+"sku": "ROT077",
+"qtd": 1
+}
+]
+},
+{
+"sku": "FRR022",
+"nome": "FRASCO 5L ROT ADES AMA VERDE",
+"cgrupo": "frrot",
+"obtem": {
+"p": true
+},
+"ficha": [
+{
+"comp": "Frasco",
+"sku": "FR025",
+"qtd": 1
+},
+{
+"comp": "Rótulo",
+"sku": "ROT078",
+"qtd": 1
+}
+]
+},
+{
+"sku": "FRR023",
+"nome": "FRASCO 5L ROT ADES LR PREMIUM",
+"cgrupo": "frrot",
+"obtem": {
+"p": true
+},
+"ficha": [
+{
+"comp": "Frasco",
+"sku": "FR025",
+"qtd": 1
+},
+{
+"comp": "Rótulo",
+"sku": "ROT046",
+"qtd": 1
+}
+]
+},
+{
+"sku": "FRR024",
+"nome": "FRASCO 5L ROT ADES LR GLICERINA",
+"cgrupo": "frrot",
+"obtem": {
+"p": true
+},
+"ficha": [
+{
+"comp": "Frasco",
+"sku": "FR025",
+"qtd": 1
+},
+{
+"comp": "Rótulo",
+"sku": "ROT067",
+"qtd": 1
+}
+]
+},
+{
+"sku": "FRR025",
+"nome": "FRASCO 3L ROT ADES LR PREMIUM",
+"cgrupo": "frrot",
+"obtem": {
+"p": true
+},
+"ficha": [
+{
+"comp": "Frasco",
+"sku": "FR026",
+"qtd": 1
+},
+{
+"comp": "Rótulo",
+"sku": "ROT080",
+"qtd": 1
+}
+]
+},
+{
+"sku": "FRR026",
+"nome": "FRASCO 3L ROT ADES LR GLICERINA",
+"cgrupo": "frrot",
+"obtem": {
+"p": true
+},
+"ficha": [
+{
+"comp": "Frasco",
+"sku": "FR026",
+"qtd": 1
+},
+{
+"comp": "Rótulo",
+"sku": "ROT081",
+"qtd": 1
+}
+]
+},
+{
+"sku": "FRR027",
+"nome": "FRASCO 1L PEAD ROSA ALVEJ SEM CLORO",
+"cgrupo": "frrot",
+"obtem": {
+"i": true
+},
+"ficha": [
+{
+"comp": "Frasco",
+"sku": "FR011",
+"qtd": 1
+},
+{
+"comp": "Rótulo",
+"sku": "ROT005",
+"qtd": 1
+}
+]
+},
+{
+"sku": "FRR028",
+"nome": "FRASCO 2L PEAD ROSA ALVEJ SEM CLORO",
+"cgrupo": "frrot",
+"obtem": {
+"i": true
+},
+"ficha": [
+{
+"comp": "Frasco",
+"sku": "FR004",
+"qtd": 1
+},
+{
+"comp": "Rótulo",
+"sku": "ROT006",
+"qtd": 1
+}
+]
+},
+{
+"sku": "FRR029",
+"nome": "FRASCO 5L PEAD ROSA ALVEJ SEM CLORO",
+"cgrupo": "frrot",
+"obtem": {
+"i": true
+},
+"ficha": [
+{
+"comp": "Frasco",
+"sku": "FR029",
+"qtd": 1
+},
+{
+"comp": "Rótulo",
+"sku": "ROT007",
+"qtd": 1
+}
+]
+},
+{
+"sku": "FRR030",
+"nome": "FRASCO 5L ROT ADES DES EUCALIPTO",
+"cgrupo": "frrot",
+"obtem": {
+"p": true
+},
+"ficha": [
+{
+"comp": "Frasco",
+"sku": "FR025",
+"qtd": 1
+},
+{
+"comp": "Rótulo",
+"sku": "ROT028",
+"qtd": 1
+}
+]
+},
+{
+"sku": "FRR031",
+"nome": "FRASCO 5L ROT ADES DES FLORAL",
+"cgrupo": "frrot",
+"obtem": {
+"p": true
+},
+"ficha": [
+{
+"comp": "Frasco",
+"sku": "FR025",
+"qtd": 1
+},
+{
+"comp": "Rótulo",
+"sku": "ROT029",
+"qtd": 1
+}
+]
+},
+{
+"sku": "FRR032",
+"nome": "FRASCO 5L ROT ADES DES LAVANDA",
+"cgrupo": "frrot",
+"obtem": {
+"p": true
+},
+"ficha": [
+{
+"comp": "Frasco",
+"sku": "FR025",
+"qtd": 1
+},
+{
+"comp": "Rótulo",
+"sku": "ROT030",
+"qtd": 1
+}
+]
+},
+{
+"sku": "FRR033",
+"nome": "FRASCO 5L ROT ADES DES MARINE",
+"cgrupo": "frrot",
+"obtem": {
+"p": true
+},
+"ficha": [
+{
+"comp": "Frasco",
+"sku": "FR025",
+"qtd": 1
+},
+{
+"comp": "Rótulo",
+"sku": "ROT064",
+"qtd": 1
+}
+]
+},
+{
+"sku": "FRR034",
+"nome": "FRASCO 5L ROT ADES DES PINHO",
+"cgrupo": "frrot",
+"obtem": {
+"p": true
+},
+"ficha": [
+{
+"comp": "Frasco",
+"sku": "FR025",
+"qtd": 1
+},
+{
+"comp": "Rótulo",
+"sku": "ROT031",
+"qtd": 1
+}
+]
+},
+{
+"sku": "FRR035",
+"nome": "FRASCO 1L PEAD VERDE AGUA SANITARIA",
+"cgrupo": "frrot",
+"obtem": {
+"i": true
+},
+"ficha": [
+{
+"comp": "Frasco",
+"sku": "FR010",
+"qtd": 1
+},
+{
+"comp": "Rótulo",
+"sku": "ROT002",
+"qtd": 1
+}
+]
+},
+{
+"sku": "FRR036",
+"nome": "FRASCO 2L PEAD VERDE AGUA SANITARIA",
+"cgrupo": "frrot",
+"obtem": {
+"i": true
+},
+"ficha": [
+{
+"comp": "Frasco",
+"sku": "FR005",
+"qtd": 1
+},
+{
+"comp": "Rótulo",
+"sku": "ROT003",
+"qtd": 1
+}
+]
+},
+{
+"sku": "FRR037",
+"nome": "FRASCO 5L PEAD VERDE AGUA SANITARIA",
+"cgrupo": "frrot",
+"obtem": {
+"i": true
+},
+"ficha": [
+{
+"comp": "Frasco",
+"sku": "FR0009",
+"qtd": 1
+},
+{
+"comp": "Rótulo",
+"sku": "ROT004",
+"qtd": 1
+}
+]
+},
+{
+"sku": "FRR038",
+"nome": "FRASCO 5L ROT ADES LP EUFORIA",
+"cgrupo": "frrot",
+"obtem": {
+"p": true
+},
+"ficha": [
+{
+"comp": "Frasco",
+"sku": "FR025",
+"qtd": 1
+},
+{
+"comp": "Rótulo",
+"sku": "ROT055",
+"qtd": 1
+}
+]
+},
+{
+"sku": "FRR039",
+"nome": "FRASCO 5L ROT ADES LP FELICIDADE",
+"cgrupo": "frrot",
+"obtem": {
+"p": true
+},
+"ficha": [
+{
+"comp": "Frasco",
+"sku": "FR025",
+"qtd": 1
+},
+{
+"comp": "Rótulo",
+"sku": "ROT066",
+"qtd": 1
+}
+]
+},
+{
+"sku": "FRR040",
+"nome": "FRASCO 500ML BOT LIMP VIDROS GATILHO",
+"cgrupo": "frrot",
+"obtem": {
+"i": true
+},
+"ficha": [
+{
+"comp": "Frasco",
+"sku": "FR013",
+"qtd": 1
+},
+{
+"comp": "Rótulo",
+"sku": "ROT050",
+"qtd": 1
+}
+]
+},
+{
+"sku": "FRR041",
+"nome": "FRASCO 500ML BOT LIMP VIDROS REFIL",
+"cgrupo": "frrot",
+"obtem": {
+"i": true
+},
+"ficha": [
+{
+"comp": "Frasco",
+"sku": "FR013",
+"qtd": 1
+},
+{
+"comp": "Rótulo",
+"sku": "ROT051",
+"qtd": 1
+}
+]
+},
+{
+"sku": "FRR042",
+"nome": "FRASCO 1L PEAD BRANCO LIMP PESADA",
+"cgrupo": "frrot",
+"obtem": {
+"i": true
+},
+"ficha": [
+{
+"comp": "Frasco",
+"sku": "FR003",
+"qtd": 1
+},
+{
+"comp": "Rótulo",
+"sku": "ROT056",
+"qtd": 1
+}
+]
+},
+{
+"sku": "FRR043",
+"nome": "FRASCO 5L PEAD BRANCO LIMP PESADA",
+"cgrupo": "frrot",
+"obtem": {
+"i": true
+},
+"ficha": [
+{
+"comp": "Frasco",
+"sku": "FR002",
+"qtd": 1
+},
+{
+"comp": "Rótulo",
+"sku": "ROT057",
+"qtd": 1
+}
+]
+},
+{
+"sku": "FRR044",
+"nome": "FRASCO 1L PEAD BRANCO LIMP CANIL",
+"cgrupo": "frrot",
+"obtem": {
+"i": true
+},
+"ficha": [
+{
+"comp": "Frasco",
+"sku": "FR003",
+"qtd": 1
+},
+{
+"comp": "Rótulo",
+"sku": "ROT047",
+"qtd": 1
+}
+]
+},
+{
+"sku": "FRR045",
+"nome": "FRASCO 5L PEAD BRANCO LIMP CANIL",
+"cgrupo": "frrot",
+"obtem": {
+"i": true
+},
+"ficha": [
+{
+"comp": "Frasco",
+"sku": "FR002",
+"qtd": 1
+},
+{
+"comp": "Rótulo",
+"sku": "ROT049",
+"qtd": 1
+}
+]
+},
+{
+"sku": "FRR046",
+"nome": "FRASCO 1L PEAD AZUL CLORO GEL",
+"cgrupo": "frrot",
+"obtem": {
+"i": true
+},
+"ficha": [
+{
+"comp": "Frasco",
+"sku": "FR020",
+"qtd": 1
+},
+{
+"comp": "Rótulo",
+"sku": "ROT068",
+"qtd": 1
+}
+]
+},
+{
+"sku": "FRR047",
+"nome": "FRASCO 1L PEAD BRANCO DESENGORDURANTE",
+"cgrupo": "frrot",
+"obtem": {
+"i": true
+},
+"ficha": [
+{
+"comp": "Frasco",
+"sku": "FR003",
+"qtd": 1
+},
+{
+"comp": "Rótulo",
+"sku": "ROT018",
+"qtd": 1
+}
+]
+},
+{
+"sku": "FRR048",
+"nome": "FRASCO 5L PEAD BRANCO DESENGORDURANTE",
+"cgrupo": "frrot",
+"obtem": {
+"i": true
+},
+"ficha": [
+{
+"comp": "Frasco",
+"sku": "FR002",
+"qtd": 1
+},
+{
+"comp": "Rótulo",
+"sku": "ROT019",
+"qtd": 1
+}
+]
+},
+{
+"sku": "FRR049",
+"nome": "FRASCO 5L ROT ADES DET NEUTRO",
+"cgrupo": "frrot",
+"obtem": {
+"p": true
+},
+"ficha": [
+{
+"comp": "Frasco",
+"sku": "FR025",
+"qtd": 1
+},
+{
+"comp": "Rótulo",
+"sku": "ROT039",
+"qtd": 1
+}
+]
+},
+{
+"sku": "FRR050",
+"nome": "FRASCO 2L ROT ADES DET NEUTRO",
+"cgrupo": "frrot",
+"obtem": {
+"i": true
+},
+"ficha": [
+{
+"comp": "Frasco",
+"sku": "FR022",
+"qtd": 1
+},
+{
+"comp": "Rótulo",
+"sku": "ROT038",
+"qtd": 1
+}
+]
+}
+],
+"soprados": {
+"FR024": "PREF002",
+"FR022": "PREF003",
+"FR023": "PREF008",
+"FR026": "PREF001-9",
+"FR025": "PREF005",
+"FR028": "PREF004"
+},
+"novosIns": [
+{
+"nome": "CAIXA KIT UY 11",
+"cgrupo": "caixas"
+},
+{
+"nome": "SACO KIT UY - 29X40X0,06 VIRGEM",
+"cgrupo": "caixas"
+},
+{
+"nome": "TAMPA 5L C/LACRE AZUL ESC PLASFAR",
+"cgrupo": "tampas"
+}
+],
+"uy": [
+{
+"codigo": "UY803",
+"descricao": "UY AMACIANTE AZUL 2L",
+"tanque": "AMACIANTE AZUL",
+"base": "803"
+},
+{
+"codigo": "UY804",
+"descricao": "UY AMACIANTE ROXO 2L",
+"tanque": "AMACIANTE ROXO",
+"base": "804"
+},
+{
+"codigo": "UY614",
+"descricao": "UY LAVA ROUPAS PREMIUM 2L",
+"tanque": "LAVA ROUPAS PREMIUM",
+"base": "614"
+}
+],
+"inativarTanques": [
+"LAVA LOUÇAS CLEAR",
+"LAVA LOUÇAS LIMÃO"
+],
+"fdPallet": {
+"403": 45,
+"303": 45
+}
+};
+  function roda(){try{
+    if(typeof CS_MIGRA==='undefined'||CS_MIGRA.includes('ops488'))return;
+    if(!(typeof csEhMaster==='function'&&csEhMaster()))return;
+    if(typeof csChaoFabrica==='function'&&csChaoFabrica())return;
+    if(!INSUMOS.length||!PRODUTOS.length||!Object.keys(FORMULAS).length)return;
+    const log=[];
+    const S=s=>INSUMOS.find(i=>String(i.sku)===String(s));
+    const porNome=n=>INSUMOS.find(i=>String(i.nome||'').trim().toUpperCase()===String(n||'').trim().toUpperCase());
+    const prox=pref=>{let n=0;INSUMOS.forEach(i=>{const m=String(i.sku).match(new RegExp('^'+pref+'(\\d+)$'));if(m)n=Math.max(n,+m[1]);});return pref+String(n+1).padStart(3,'0');};
+    /* 1) nomes */
+    Object.entries(P.ren).forEach(([k,v])=>{const i=S(k);if(i&&i.nome!==v){i.nome=v;log.push('nome '+k);}});
+    /* 2) itens novos */
+    P.novosIns.forEach(x=>{if(porNome(x.nome))return;const sk=prox(x.cgrupo==='caixas'?'CX':'TAM');
+      INSUMOS.push({sku:sk,nome:x.nome,tiny:'ERP-'+sk,cgrupo:x.cgrupo,tipo:x.cgrupo==='caixas'?'Caixas':'Tampas',un:'un',ativo:true,obtem:{c:true}});log.push('novo '+sk);});
+    /* 3) frascos rotulados */
+    P.rotulados.forEach(x=>{let i=S(x.sku)||porNome(x.nome);
+      if(!i){i={sku:x.sku,nome:x.nome,tiny:'ERP-'+x.sku,un:'un',ativo:true};INSUMOS.push(i);log.push('rotulado '+x.sku);}
+      i.cgrupo='frrot';i.tipo='Frascos rotulados';i.obtem=x.obtem;
+      i.ficha=x.ficha.map(f=>{const j=S(f.sku);return {comp:f.comp,sku:f.sku,nome:j?j.nome:f.sku,qtd:f.qtd};});});
+    /* 4) frascos soprados: 1 preforma */
+    Object.entries(P.soprados).forEach(([fr,pf])=>{const i=S(fr),j=S(pf);if(!i||!j)return;i.obtem={p:true};i.ficha=[{comp:'Preforma',sku:pf,nome:j.nome,qtd:1}];});
+    /* 5) pallet de 45 fardos */
+    Object.entries(P.fdPallet).forEach(([c,n])=>{const p=PRODUTOS.find(p=>String(p.codigo)===c);if(p)p.fdPallet=n;});
+    const fdPal=p=>+p.fdPallet||((+p.cxCamada||0)*(+p.camadas||0))||44;
+    const resolve=e=>{let sk=e.sku;if(!sk||sk==='novo'||sk==='não achei'){const j=porNome(e.nome);sk=j?j.sku:'';}const j=S(sk);
+      const o={comp:e.comp,sku:sk,nome:j?j.nome:e.nome,qtd:+e.qtd||0};if(e.obs)o.obs=e.obs;if(e.porPallet)o.porPallet=+e.porPallet;return o;};
+    const litDe=p=>{const l=+p.litragem||0;return l<1?Math.round(l*1000)+'ML':(Number.isInteger(l)?l:l)+'L';};
+    /* 6) embalagem de cada litragem e modo de fazer, por tanque */
+    Object.entries(P.tanques).forEach(([t,d])=>{const f=FORMULAS[t];if(!f){log.push('sem tanque '+t);return;}
+      const emb={};
+      Object.entries(d.emb).forEach(([lit,es])=>{if(lit==='2L UN')return;
+        const l=es.map(resolve);
+        const p=PRODUTOS.find(p=>p.tanque===t&&lit.startsWith(litDe(p)));
+        l.forEach(o=>{if(o.porPallet&&p)o.qtd=+(o.porPallet/(fdPal(p)*(+p.un_cx||1))).toFixed(5);});
+        emb[lit]=l;});
+      f.emb=emb;f.proc=(d.proc||[]).slice();
+      /* produto com ficha própria antiga passa a usar a nova */
+      PRODUTOS.filter(p=>p.tanque===t&&Array.isArray(p.ficha)&&!/^UY/.test(String(p.codigo))).forEach(p=>{delete p.ficha;});
+    });
+    /* 7) itens do Uruguai: unidade, sem caixa, do mesmo tanque */
+    P.uy.forEach(u=>{if(PRODUTOS.some(p=>String(p.codigo)===u.codigo))return;const b=PRODUTOS.find(p=>String(p.codigo)===u.base)||{};
+      const lst=((P.tanques[u.tanque]||{emb:{}}).emb['2L UN']||[]).map(resolve);
+      PRODUTOS.push({codigo:u.codigo,descricao:u.descricao,tanque:u.tanque,litragem:2,un_cx:1,grupo:b.grupo||'',cgrupo:'pa',ativo:true,tiny:'ERP-'+u.codigo,ficha:lst,obtem:{p:true}});
+      try{TEMPOS[u.codigo]=TEMPOS[u.codigo]||JSON.parse(JSON.stringify(TEMPOS[u.base]||{lote:3800,t:{}}));}catch(e){}log.push('produto '+u.codigo);});
+    /* 8) kits (quantidade da planilha é por caixa do kit) */
+    Object.entries(P.kits).forEach(([nome,l])=>{const p=PRODUTOS.find(p=>String(p.descricao||'').toUpperCase().startsWith(nome.toUpperCase()));
+      if(!p){log.push('kit não achado: '+nome);return;}const uc=+p.un_cx||1;
+      p.ficha=l.map(e=>{let sk=e.sku,nm=e.nome;
+        if(e.comp==='Produto'){const q=PRODUTOS.find(x=>x.descricao===e.nome);sk=q?q.codigo:'';}else{const o=resolve(e);sk=o.sku;nm=o.nome;}
+        return {comp:e.comp,sku:sk,nome:nm,qtd:+((+e.qtd||0)/uc).toFixed(6)};});});
+    /* 9) Lava Louças Clear e Limão: inativos */
+    P.inativarTanques.forEach(t=>{PRODUTOS.filter(p=>p.tanque===t).forEach(p=>{p.ativo=false;});const f=FORMULAS[t];if(f)f.cad=Object.assign(f.cad||{},{ativo:false});});
+    /* 10) depósitos */
+    if(!CS_EDEP.deps.some(d=>d.id==='quar'))CS_EDEP.deps.push({id:'quar',nome:'Quarentena',forn:'',fornId:'',princ:false,interno:true});
+    if(!CS_EDEP.deps.some(d=>/nuova/i.test((d.nome||'')+' '+(d.forn||''))))CS_EDEP.deps.push({id:'dnuova',nome:'Na Nuova Plus',forn:'NUOVA PLUS',fornId:'',princ:false});
+    CS_MIGRA.push('ops488');agendarSalvar();
+    try{CS_OPS488_LOG=log;}catch(e){}console.info('[ops488]',log.length,'mudanças',log);
+    try{toast('Cadastro atualizado com a planilha das ordens de produção.');}catch(e){}
+  }catch(e){console.warn('[ops488]',e);}}
+  setTimeout(roda,9000);setTimeout(roda,30000);
+})();
+
+</script>
+<script data-v489="nucleo">
+/* v4.8.9 · QUARENTENA COMO DEPÓSITO
+   O que sai do envase (entrada de produto acabado pela OP) entra no depósito Quarentena. Quando o lote é liberado,
+   "Liberar" no Estoque transfere da Quarentena para o Produto acabado. Estorno/correção da OP sai da Quarentena
+   enquanto o produto ainda estiver lá. Sem o depósito Quarentena cadastrado, tudo continua como antes. */
+const csChaveEst=v=>{v=String(v||'').trim();return /^ERP-/i.test(v)?v:v.replace(/\D/g,'');};
+function csTemQuar(){try{return CS_EDEP.deps.some(d=>d.id==='quar');}catch(e){return false;}}
+function csQuarSaldo(id){try{return +((CS_EDEP.sal.quar||{})[String(id)]||0);}catch(e){return 0;}}
+try{const _edf489=enviarDaFila;enviarDaFila=async function(ch){
+  const n0=CS_ELOG.length;const it=await _edf489.apply(this,arguments);
+  try{if(csTemQuar()&&CS_ELOG.length>n0){
+    const pa=new Set(PRODUTOS.map(p=>csChaveEst(p.tiny)).filter(Boolean));
+    const s=CS_EDEP.sal.quar||(CS_EDEP.sal.quar={});let mud=0;
+    CS_ELOG.slice(n0).forEach(x=>{if(x.dep||!pa.has(String(x.id))||!/^OP /.test(String(x.origem||'')))return;const q=+x.qtd||0;if(!(q>0))return;
+      if(x.tipo==='E'){x.dep='quar';s[x.id]=(+s[x.id]||0)+q;mud++;}
+      else if(x.tipo==='S'&&(+s[x.id]||0)>=q-1e-9){x.dep='quar';s[x.id]=(+s[x.id]||0)-q;if(Math.abs(s[x.id])<1e-9)delete s[x.id];mud++;}});
+    if(mud)agendarSalvar();}}catch(e){console.warn('[v489] quarentena',e);}
+  return it;};}catch(e){}
+/* o núcleo entrega aos módulos: o razão inteiro, a conferência de gestor, a liberação e a árvore de grupos */
+try{Object.assign(csNucleo,{
+  razaoTudo:()=>{try{csEUids();}catch(e){}return CS_ELOG.map(x=>{let c={cod:'',ref:''};try{c=csECod(x);}catch(e){}return {...x,dep:x.dep||csEPrinc(),cod:c.cod,ref:c.ref};});},
+  /* PIN de gestor (ou master), ou a senha da conta de quem está logado, se ela for de gestor */
+  gestor:async cred=>{const v=String(cred||'').trim();if(!v)return null;
+    try{const q=autorizadorEdicao(v);if(q)return {nome:q.nome};}catch(e){}
+    try{const eu=(typeof MEU_ACESSO!=='undefined'&&MEU_ACESSO)||null;if(!eu||!NIVEL_EDITA.includes(nivelDe(eu)))return null;
+      const email=(typeof emailDaSessao==='function'?emailDaSessao():'')||'';if(!email||!temNuvem())return null;
+      const r=await fetch(`${SUPA.url}/auth/v1/token?grant_type=password`,{method:'POST',headers:{'apikey':SUPA.key,'Content-Type':'application/json'},body:JSON.stringify({email,password:v})});
+      return r.ok?{nome:nomeDaSessao()}:null;}catch(e){return null;}},
+  quarentena:id=>csQuarSaldo(id),temQuarentena:()=>csTemQuar(),
+  liberarQuarentena:(id,qtd,obs)=>csETransferir({id,qtd,de:'quar',para:csEPrinc(),obs:obs||'Liberado da quarentena'}),
+  gruposArvore:()=>{try{return window.csGruposArvore?csGruposArvore():[];}catch(e){return [];}},
+  versao:'v489'});}catch(e){}
+
 </script>
 </body>
 </html>

@@ -895,7 +895,7 @@ function contaItem(it,fu){
   const baseF=q*p,v=k=>baseF*(+it[k]||0)/100;
   const valF={icms:v('icms'),ipi:v('ipi'),pis:v('pis'),cof:v('cof'),cbs:v('cbs'),ibs:v('ibs')};
   const credF={icms:!bf&&cr.icms?valF.icms:0,pis:cr.pis?valF.pis:0,cof:cr.cof?valF.cof:0,cbs:cr.cbs?valF.cbs:0,ibs:cr.ibs?valF.ibs:0};
-  /* sub-itens com preço: beneficiamento (padrão) ou venda */
+  /* sub-itens com preço: industrialização (padrão) ou venda */
   let baseS=0,sPis=0,sCof=0,sIcms=0,sRef=0;const subs=[];
   envsDe(it).forEach(e=>{const b=r3((+e.fator||1)*q)*(+e.preco||0),vend=e.tipo==='venda';
     const pi=vend?(+it.pis||0):(e.pis!=null?+e.pis:sd.pis),co=vend?(+it.cof||0):(e.cof!=null?+e.cof:sd.cof);
@@ -924,13 +924,13 @@ const depsLista=()=>{try{return N&&N.depositos?N.depositos():[{id:'fab',nome:'F�
 const depPrinc=()=>{try{return N&&N.depPrincipal?N.depPrincipal():'fab';}catch(e){return 'fab';}};
 const depNomeDe=id=>{const d=depsLista().find(x=>x.id===id);return d?d.nome:'Fábrica';};
 const depDoSub=(oc,e)=>(e&&e.dep&&depsLista().some(d=>d.id===e.dep))?e.dep:((depBenef(oc,false)||{}).id||depPrinc());
-const selTipo=(attr,val,L)=>`<select class="tsel ${val}" ${attr} ${L?'disabled':''} title="Venda: o fornecedor vende (impostos normais). Beneficiamento: mão de obra, crédito somente PIS/COFINS."><option value="v" ${val==='v'?'selected':''}>Venda</option><option value="b" ${val==='b'?'selected':''}>Beneficiamento</option></select>`;
+const selTipo=(attr,val,L)=>`<select class="tsel ${val}" ${attr} ${L?'disabled':''} title="Venda: o fornecedor vende (impostos normais). Industrialização: mão de obra, crédito somente PIS/COFINS."><option value="v" ${val==='v'?'selected':''}>Venda</option><option value="b" ${val==='b'?'selected':''}>Industrialização</option></select>`;
 const ehRotulo=e=>/r[oó]tulo|etiqueta/i.test((e.nome||'')+' '+(e.tipo||''));
 function tipoAuto(envs){const r=envs.some(ehRotulo),s=envs.some(e=>!ehRotulo(e));return r&&s?'soprorot':r?'rot':'sopro';}
 function benefBox(oc,it,i,L){
   const dis=L?'disabled':'',sv=it.serv||{},envs=envsDe(it),q=+it.qtd||0,c=contaItem(it),sd=svPadrao(it);
   const dF=depBenef(oc,false);
-  return `<div class="bnf"><div class="bnf-h"><b>Beneficiamento</b>
+  return `<div class="bnf"><div class="bnf-h"><b>Industrialização</b>
       <span class="bnf-t">${Object.entries(TIPO_B).map(([k,r])=>`<button class="${sv.tipo===k?'on':''}" data-svt="${i}|${k}" ${dis}>${r}</button>`).join('')}</span>
       <span class="s2">o fornecedor devolve <b>${esc(it.nome)}</b> pronto</span></div>
     <div class="bnf-p"><span>Material <b>${nf(+it.preco||0,4)}</b> por ${esc(it.un||'un')} <span class="bnf-s">· o que o fornecedor vende (ex.: frasco branco). 0 se o material é todo nosso. Impostos e créditos normais, acima.</span></span>
@@ -955,7 +955,7 @@ function subLinhas(oc,it,i,L){
       <td class="n"><input class="in3" data-sp="${k}" value="${ps?nf(ps,4):''}" placeholder="0,00" ${dis}></td><td class="n"><span class="s3">${e.tipo==='venda'?nq(it.icms)+'%':'PIS/COFINS'}</span></td><td></td>
       <td class="n">${ps?`<b>${nf(tot*ps,2)}</b>`:'<span class="s3">—</span>'}</td>
       <td><button class="btn ic sm ${ab?'on':''}" data-smenu="${k}" title="Impostos, mandar mais, remover">⋯</button></td></tr>
-      ${ab?`<tr class="x sub"><td colspan="10">${e.tipo==='venda'?`<div class="lnx">Venda: usa os impostos do item principal (ICMS ${nq(it.icms)}% · PIS ${nq(it.pis)}% · COFINS ${nq(it.cof)}%).</div>`:`<div class="lnx" style="color:#6D28D9;flex-wrap:wrap"><b>Beneficiamento (mão de obra) · crédito somente PIS/COFINS</b>
+      ${ab?`<tr class="x sub"><td colspan="10">${e.tipo==='venda'?`<div class="lnx">Venda: usa os impostos do item principal (ICMS ${nq(it.icms)}% · PIS ${nq(it.pis)}% · COFINS ${nq(it.cof)}%).</div>`:`<div class="lnx" style="color:#6D28D9;flex-wrap:wrap"><b>Industrialização (mão de obra) · crédito somente PIS/COFINS</b>
         PIS <input class="in3 p" data-spi="${k}" data-k="pis" value="${nq(e.pis!=null?e.pis:svPadrao(it).pis)}" ${dis} style="height:24px;min-width:50px">% e COFINS <input class="in3 p" data-spi="${k}" data-k="cof" value="${nq(e.cof!=null?e.cof:svPadrao(it).cof)}" ${dis} style="height:24px;min-width:50px">% <b>− ${nf(sx.pis+sx.cof,2)}</b></div>`}</td></tr>`:''}`;});
   if(!L)h+=ED.busca===i?`<tr class="sub add"><td colspan="10"><span class="sl">↳</span><span class="rel"><input class="in3" style="min-width:380px;text-align:left" data-benq="${i}" placeholder="Qual item sai do nosso estoque? Ex.: rótulo desengordurante, pré-forma 500ml"></span> <button class="btn lk sm" data-buscax="1">cancelar</button></td></tr>`
     :`<tr class="sub add"><td colspan="10"><span class="sl"></span><button class="btn sm addc" data-addc="${i}">＋ sub-item</button><span class="s3">${envs.length?'outro material nosso que vai junto':'o que sai do nosso estoque para o fornecedor usar: rótulo, pré-forma'}</span></td></tr>`;
@@ -975,7 +975,7 @@ function menuItem(botao,L,html){
 }
 function pdfBenef(it){const envs=envsDe(it);if(!envs.length&&!it.mo)return '';
   const q=+it.qtd||0;
-  return `<small>${it.mo?'<b>Mão de obra</b>':'<b>Beneficiamento</b>'}${envs.map(e=>{const n=nq(r3((+e.fator||1)*q));
+  return `<small>${it.mo?'<b>Mão de obra</b>':'<b>Industrialização</b>'}${envs.map(e=>{const n=nq(r3((+e.fator||1)*q));
     return ' · '+(ehRotulo(e)?'com o rótulo '+esc(String(e.nome).replace(/^(r[oó]tulos?|etiquetas?)\s*[-–:]?\s*/i,'')):'usando '+esc(e.nome))+` (${n} ${esc(e.un||'un')} da Atrius)`+(+e.preco?` · mão de obra ${nf(e.preco,4)}/un`:'');}).join('')}</small>`;}
 function contaOC(oc){
   const t={produtos:0,ipi:0,cIcms:0,cPis:0,cCof:0,credito:0};
@@ -1098,7 +1098,7 @@ async function lancarEntrada(oc,r){
   const movs=r.itens.filter(x=>x.tiny&&x.qtd>0).map(x=>({id:x.tiny,tipo:'E',qtd:x.qtd,preco:x.preco||0}));
   r.itens.forEach(x=>envsReceb(x).forEach(e=>{if(e.tiny&&e.qtd>0)movs.push(e.dep?{id:e.tiny,tipo:'S',qtd:e.qtd,dep:e.dep}:{id:e.tiny,tipo:'S',qtd:e.qtd});}));
   if(!movs.length){r.tiny={erro:'nenhum item para lançar'};return false;}
-  try{const x=await tiny({acao:'movimentar',movimentos:movs,obs:`OC ${oc.num}${oc.benef?' · beneficiamento':''}${r.nf?' · NF '+r.nf:''} · ${oc.forn?oc.forn.nome:''}`});
+  try{const x=await tiny({acao:'movimentar',movimentos:movs,obs:`OC ${oc.num}${oc.benef?' · industrialização':''}${r.nf?' · NF '+r.nf:''} · ${oc.forn?oc.forn.nome:''}`});
     const fal=(x&&x.falhas)||[];
     r.tiny=fal.length?{erro:fal.length+' item(ns) recusado(s): '+fal.map(f=>f.erro).join('; ').slice(0,180)}:{ok:true,em:agora()};
   }catch(e){r.tiny={erro:e.message};}
@@ -1209,7 +1209,7 @@ function telaOrdens(){
       return `<div class="r ${LST.sel.has(o.id)?'sel':''}" data-oc="${o.id}"><span class="mw"><button class="dots" data-menu="${o.id}">${IC_PTS}</button></span>
       <span class="ck ${LST.sel.has(o.id)?'on':''}" data-ck="${o.id}"></span><span class="num">${esc(o.num)}</span><span class="dt">${br(o.data)}</span>
       <span class="dt pr" style="${atr?'color:var(--danger)':''}">${br(o.prev)}${atr?'<small>atrasada</small>':''}</span>
-      <span class="fo">${esc(o.forn?o.forn.nome:'sem fornecedor')}<small>${o.benef?'<b style="color:#1D4ED8">beneficiamento</b> · ':''}${(o.itens||[]).length} ${(o.itens||[]).length===1?'item':'itens'}${o.saldoDe?' · saldo da '+esc(o.saldoDe):''}</small></span>
+      <span class="fo">${esc(o.forn?o.forn.nome:'sem fornecedor')}<small>${o.benef?'<b style="color:#1D4ED8">industrialização</b> · ':''}${(o.itens||[]).length} ${(o.itens||[]).length===1?'item':'itens'}${o.saldoDe?' · saldo da '+esc(o.saldoDe):''}</small></span>
       <span class="tot">${nf(t.total,2)}</span><span><span class="pill p-${o.sit}">${SIT[o.sit]}</span></span>
       <span class="mks">${(o.marcadores||[]).map(chipMk).join('')}</span><span class="nf ${o.nf?'':'v'}">${esc(o.nf||'—')}</span>${iconesInteg(o)}</div>`;}).join('')}`
     :`<div class="vazio">Nenhuma ordem ${LST.sit==='todas'?'':'nesta situação '}com esses filtros.</div>`}</div>
@@ -1347,7 +1347,7 @@ function telaOC(id){
   const totUn=(oc.itens||[]).reduce((s,i)=>s+(+i.qtd||0),0),totCx=(oc.itens||[]).reduce((s,i)=>s+(i.modo==='cx'?+i.qtdCx||0:0),0);
   const unRes=[...new Set(oc.itens.map(i=>i.un))].length===1&&oc.itens.length?oc.itens[0].un:'un';
   $('app').innerHTML=`<div class="ocv2"><div class="migalha"><button class="btn lk sm" id="volta">‹ Ordens de compra</button></div>
-  <div class="ed-top"><h1>${ED.nova?(oc.benef?'Nova ordem de beneficiamento':'Nova ordem de compra'):(L?'Ordem ':'Editar ordem ')+esc(oc.num)+(oc.benef?' · beneficiamento':'')}</h1>${ED.nova?'':`<span class="pill p-${oc.sit}">${SIT[oc.sit]}</span>`}</div>
+  <div class="ed-top"><h1>${ED.nova?(oc.benef?'Nova ordem de industrialização':'Nova ordem de compra'):(L?'Ordem ':'Editar ordem ')+esc(oc.num)+(oc.benef?' · industrialização':'')}</h1>${ED.nova?'':`<span class="pill p-${oc.sit}">${SIT[oc.sit]}</span>`}</div>
   ${L&&!ED.nova?`<div class="aviso">🔒 <div>${oc.sit==='rec'?'A mercadoria já chegou: preços e boletos se acertam em <b>Conferir nota</b>.':oc.sit==='con'?'Ordem concluída. Para corrigir, use <b>Reabrir ordem</b> nos três pontinhos.':oc.sit==='can'?'Ordem cancelada.':'Você não tem permissão para editar ordens.'}</div></div>`:''}
   <div class="ocg"><div class="ocm">
   <div class="bloco"><div class="t"><span class="n">1</span>Fornecedor e entrega</div><div class="c"><div class="g3" style="grid-template-columns:2fr 1fr">
@@ -1355,7 +1355,7 @@ function telaOC(id){
       :`<div class="rel"><input class="inp" id="fBusca" placeholder="buscar fornecedor cadastrado · nome ou CNPJ" ${dis}></div>`}
       ${f?`<div class="lk2"><button id="lD">dados do fornecedor</button><button id="lU">ver últimas compras</button></div>`:`<div class="lk2">${DB.cfg.soCadastro&&!N.teste?'':'<button id="fNovo">＋ novo fornecedor'+(N.teste&&DB.cfg.soCadastro?' (só no TESTE)':'')+'</button>'}<button id="fTiny">buscar no Tiny</button></div>`}
       <label class="chk2" id="endC"><span class="ck ${oc.entrega.outro?'on':''}"></span>Entregar em outro endereço</label>
-      <label class="chk2" id="benC" title="O fornecedor recebe material nosso (pré-forma, rótulo) e devolve o item pronto."><span class="ck ${oc.benef?'on':''}"></span>Beneficiamento</label>
+      <label class="chk2" id="benC" title="O fornecedor recebe material nosso (pré-forma, rótulo) e devolve o item pronto."><span class="ck ${oc.benef?'on':''}"></span>Industrialização</label>
       ${oc.benef?'<div class="s2" style="margin-top:6px;color:#5B21B6">O item é o que volta pronto. Embaixo, <b>＋ sub-item</b> é o que sai do nosso estoque (rótulo, pré-forma).</div>':''}</div>
     <div class="fl"><label>Previsão de entrega<span class="req">*</span></label><input class="inp dt-in dest" data-cal="1" id="prev" value="${oc.prev?br(oc.prev):''}" placeholder="dd/mm/aaaa" ${dis}></div></div>
     <div class="exp" id="xD" hidden>${f?`<div class="g2"><div><span>CNPJ</span>${esc(f.cnpj||'—')}</div><div><span>Inscrição estadual</span>${esc(f.ie||'—')}</div><div><span>Cidade</span>${esc([f.cidade,f.uf].filter(Boolean).join(' · ')||'—')}</div>
@@ -1471,14 +1471,14 @@ function linhaItem(oc,it,i,fu,L){
     <td class="n"><span class="qx"><input class="qn" data-it="${i}" data-k="${cx?'qtdCx':'qtd'}" value="${nq(cx?it.qtdCx:it.qtd)}" ${dis}></span>${cx?`<span class="s2">caixa de ${nf(it.cx)} = ${nf(it.qtd)} ${esc(it.un||'un')}</span>`:''}</td>
     <td>${cx?'cx':esc(it.un||'un')}</td>${oc.benef?`<td>${selTipo(`data-tps="${i}"`,it.mo?'b':'v',L)}</td>`:''}
     <td class="n"><input class="in3" data-it="${i}" data-k="preco" value="${it.preco?nf(it.preco,4):''}" ${oc.benef?'placeholder="0,00"':''} ${dis}></td>
-    <td class="n">${mo?'<span class="s3" title="Beneficiamento: crédito somente PIS/COFINS">PIS/COFINS</span>':`<input class="in3 p" data-it="${i}" data-k="icms" value="${nq(it.icms)}" ${dis}>`}</td>
+    <td class="n">${mo?'<span class="s3" title="Industrialização: crédito somente PIS/COFINS">PIS/COFINS</span>':`<input class="in3 p" data-it="${i}" data-k="icms" value="${nq(it.icms)}" ${dis}>`}</td>
     <td class="n"><input class="in3 p" data-it="${i}" data-k="ipi" value="${nq(it.ipi)}" ${dis}></td>
     <td class="n"><b>${nf(oc.benef?c.baseF:c.base,2)}</b></td><td><button class="btn ic sm ${ab?'on':''}" data-imenu="${i}" title="Impostos, mão de obra, código no fornecedor, remover">⋯</button></td></tr>
     ${ab?`<tr class="x"><td colspan="${oc.benef?10:9}">
-      ${mo?'<div class="mob">Beneficiamento (mão de obra) · crédito somente PIS/COFINS</div>':''}
+      ${mo?'<div class="mob">Industrialização (mão de obra) · crédito somente PIS/COFINS</div>':''}
       <div class="cx4">
       ${CREDITAVEIS.map(([k,r])=>`<div>${r} <input class="in3 p" data-it="${i}" data-k="${k}" value="${nq(it[k])}" ${dis} style="height:24px;min-width:50px">%<b>− ${nf(c.valF[k],2)}</b>
-        ${k==='icms'&&mo?'<span class="s2">sem crédito (beneficiamento)</span>':`<label class="ckl"><span class="ck ${c.cr[k]?'on':''}" data-cr="${i}|${k}"></span>gera crédito</label>`}</div>`).join('')}
+        ${k==='icms'&&mo?'<span class="s2">sem crédito (industrialização)</span>':`<label class="ckl"><span class="ck ${c.cr[k]?'on':''}" data-cr="${i}|${k}"></span>gera crédito</label>`}</div>`).join('')}
       <div class="re">Custo real por ${esc(it.un||'un')}<b>${nf(c.real,4)}</b><small>preço − créditos${c.baseS?' (com a mão de obra dos sub-itens)':''}${fu?' + frete rateado '+nf(fu,4):''}</small></div></div>
       <div class="lnx"><label>Código no fornecedor <input class="in3" style="min-width:120px;justify-content:flex-start;text-align:left" data-it="${i}" data-k="codForn" value="${esc(it.codForn||'')}" ${dis}></label>
         <span>IPI ${nq(it.ipi)}% · ${nf(c.val.ipi,2)} vem na nota e volta inteiro</span>
@@ -1561,14 +1561,14 @@ function ligaOC(){
   if(document.querySelector('[data-buscax]'))document.querySelector('[data-buscax]').onclick=()=>{ED.busca=null;re();};
   document.querySelectorAll('[data-imenu]').forEach(b=>b.onclick=ev=>{ev.stopPropagation();const i=+b.dataset.imenu,it=oc.itens[i];
     const l=[['Ajustar impostos','%',()=>{ED.aberto.has(i)?ED.aberto.delete(i):ED.aberto.add(i);re();},true,oc.benef?'ICMS, IPI, PIS, COFINS e se é mão de obra':'ICMS, IPI, PIS, COFINS e créditos']];
-    if(oc.benef&&!L){l.push([it.mo?'Mudar para venda':'Mudar para beneficiamento','⇄',()=>{it.mo=!it.mo;recalc();re();},true,it.mo?'o fornecedor vende o item':'mão de obra · crédito somente PIS/COFINS']);
+    if(oc.benef&&!L){l.push([it.mo?'Mudar para venda':'Mudar para industrialização','⇄',()=>{it.mo=!it.mo;recalc();re();},true,it.mo?'o fornecedor vende o item':'mão de obra · crédito somente PIS/COFINS']);
       l.push(['Adicionar sub-item','＋',()=>abreBusca(i),true,'o que sai do nosso estoque (rótulo, pré-forma)']);}
     l.push(['Código no fornecedor','✎',()=>{ED.aberto.add(i);re();},true]);
     l.push(['Estoque, consumo e compras','▦',()=>estoqueItemGaveta(it,oc),true,'físico, cobertura, entradas previstas e últimas compras']);
     if(!L)l.push('sep',['Remover item','✕',()=>{oc.itens.splice(i,1);ED.aberto.clear();ED.abSub.clear();ED.busca=null;recalc();re();},true,'',true]);
     menuItem(b,l);});
   document.querySelectorAll('[data-smenu]').forEach(b=>b.onclick=ev=>{ev.stopPropagation();const k=b.dataset.smenu,s=subDe(k);if(!s.e)return;
-    const l=[['Ajustar impostos','%',()=>{ED.abSub.has(k)?ED.abSub.delete(k):ED.abSub.add(k);re();},true,'venda ou beneficiamento']];
+    const l=[['Ajustar impostos','%',()=>{ED.abSub.has(k)?ED.abSub.delete(k):ED.abSub.add(k);re();},true,'venda ou industrialização']];
     if(!L&&oc.forn)l.push(['Mandar mais para o fornecedor','↗',()=>enviaPop(b,s.i,s.j),true,'transfere da Fábrica para o depósito dele']);
     if(!L)l.push('sep',['Remover sub-item','✕',()=>{const x=envsDe(s.it).slice();x.splice(s.j,1);s.it.envs=x;ED.abSub.clear();recalc();re();},true,'',true]);
     menuItem(b,l);});
@@ -1713,7 +1713,7 @@ function validarOC(oc){
   return f;
 }
 function salvarOC(){
-  if(ED&&ED.oc&&ED.oc.benef&&ED.oc.itens.length&&!ED.oc.itens.some(x=>envsDe(x).length))return toast('Beneficiamento ligado, mas nenhum item tem sub-item. Use ＋ sub-item no item que leva material nosso (rótulo, pré-forma) ou desligue Beneficiamento.',true);
+  if(ED&&ED.oc&&ED.oc.benef&&ED.oc.itens.length&&!ED.oc.itens.some(x=>envsDe(x).length))return toast('Industrialização ligado, mas nenhum item tem sub-item. Use ＋ sub-item no item que leva material nosso (rótulo, pré-forma) ou desligue Industrialização.',true);
   const oc=ED.oc;const f=validarOC(oc);
   if(f.length){$('obr').textContent='Falta preencher: '+f.join(', ');toast('Falta preencher: '+f.join(', '),true);return;}
   if(ED.nova){DB.seq=Math.max(DB.seq,...DB.ocs.map(o=>+o.num||0))+1;oc.num=String(DB.seq);hist(oc,'Criou a ordem',oc.origem&&oc.origem!=='Manual'?oc.origem:'');DB.ocs.push(oc);}
@@ -1899,19 +1899,19 @@ function folhaOC(o){
     return `<tr class="${envs.length?'pr':''}"><td class="c k">${k+1}</td><td><b>${esc(it.nome)}</b>${forn?`<small>${forn}</small>`:''}</td>
     <td class="c">${esc((it.un||'un').toUpperCase())}</td><td class="n">${nq(it.qtd)}</td><td class="n">${nf(it.preco,4)}</td><td class="n">${mo?'—':nq(it.icms)+'%'}</td><td class="n">${nq(it.ipi)}%</td><td class="n">${nf(o.benef?c.baseF:c.base,2)}</td></tr>`
     +envs.map(e=>{const q=r3((+e.fator||1)*(+it.qtd||0)),ps=+e.preco||0,vend=e.tipo==='venda',na=/^na\s/i.test(dpN(e));
-      return `<tr class="sb"><td></td><td>↳ ${esc(e.nome)}</td>
+      return `<tr class="sb"><td></td><td>↳ ${ehRotulo(e)?'Rotulagem · Rótulo '+esc(String(e.nome).replace(/^(r[oó]tulos?|etiquetas?)\s*[-–:]?\s*/i,'')):'Industrialização · '+esc(e.nome)}</td>
         <td class="c">${esc((e.un||'un').toUpperCase())}</td><td class="n">${nq(q)}</td><td class="n">${ps?nf(ps,4):'—'}</td><td class="n">${ps&&vend?nq(it.icms)+'%':'—'}</td><td class="n">—</td><td class="n">${ps?nf(q*ps,2):'—'}</td></tr>`;}).join('');}).join('');
   const prazo=(o.pag.parcelas||[]).length===1&&o.pag.parcelas[0].d===0?'à vista':(o.pag.parcelas||[]).map(p=>p.d).join('/')+' dias';
   const formas=[...new Set((o.pag.parcelas||[]).map(p=>p.forma))].join(' + ')||o.pag.forma;
   return `<div class="folha f2">
   <div class="c1">${logo?`<img src="${logo}" alt="Atrius">`:'<b style="font-size:22pt;color:#1B4F9C">Atrius</b>'}<div class="empd"><b>${esc(e.razao)}</b>${[e.cnpj&&'CNPJ '+e.cnpj,e.ie&&'IE '+e.ie].filter(Boolean).join(' · ')}<br>${esc([e.end,e.cidade+' · '+e.uf,e.cep].filter(Boolean).join(' · '))}<br>${esc([e.fone,e.email].filter(Boolean).join(' · '))}</div></div>
-  <div class="c2"><div><span class="rot">${o.benef?'Ordem de beneficiamento':'Ordem de compra'}</span><span class="nro"><i>Nº</i> ${esc(o.num)}</span></div>
+  <div class="c2"><div><span class="rot">Ordem de compra</span><span class="nro"><i>Nº</i> ${esc(o.num)}</span></div>
     <div class="datas"><div class="emi"><span>Emissão</span><b>${br(o.data)}</b></div><div class="ent"><span>Entrega prevista</span><b>${br(o.prev)}</b></div></div></div>
   <div class="c3"><div><span class="rot">Fornecedor</span><b>${esc(f.nome||'')}</b><p>${[f.cnpj&&'CNPJ '+esc(f.cnpj),f.ie&&'IE '+esc(f.ie)].filter(Boolean).join(' · ')}<br>${esc([f.end,[f.cidade,f.uf].filter(Boolean).join(' · ')].filter(Boolean).join(' · '))}</p></div>
     <div><span class="rot">Entregar em</span>${ent?`<b>${esc(ent.end||'')}${ent.num?', '+esc(ent.num):''}</b><p>${esc([ent.bairro,ent.cidade,ent.uf,ent.cep].filter(Boolean).join(' · '))}${ent.compl?'<br>'+esc(ent.compl):''}${ent.hora?'<br>Recebimento: '+esc(ent.hora):''}${ent.quem?'<br>'+esc(ent.quem):''}</p>`
       :`<b>${esc(e.razao)}</b><p>${esc([e.end,e.cidade,e.uf,e.cep].filter(Boolean).join(' · '))}${e.horario?'<br>Recebimento: '+esc(e.horario):''}</p>`}</div></div>
   <div class="tbox"><table class="t2"><thead><tr><th class="c">#</th><th>Item</th><th class="c">UN</th><th class="n">Qtde</th><th class="n">Preço unit.</th><th class="n">ICMS</th><th class="n">IPI</th><th class="n">Total</th></tr></thead><tbody>${itens}</tbody></table></div>
-  <div class="c4"><div class="obs"><div class="lc2 inl"><span class="rot">Comprador</span><b>${esc(o.comprador||'')}</b></div><div class="lc2 ob"><span class="rot">Observações</span><p>${esc(o.obs||'')}</p></div></div>
+  <div class="c4"><div class="obs"><div class="lc2 inl"><span class="rot">Comprador</span><b>${esc(o.comprador||'')}</b></div><div class="lc2 ob"><span class="rot">Observações</span><p>${o.benef?'Compra com industrialização: o serviço de cada item está na linha abaixo dele.'+(o.obs?'<br>':''):''}${esc(o.obs||'')}</p></div></div>
     <div class="tots2 bxo"><div><span>Produtos</span><b>${nf(t.produtos,2)}</b></div><div><span>IPI</span><b>${nf(t.ipi,2)}</b></div><div><span>Desconto</span><b>${nf(t.desconto,2)}</b></div><div class="g"><span>Total</span><b>R$ ${nf(t.total,2)}</b></div></div></div>
   <div class="c5"><span class="rot">Pagamento</span><b>${esc(formas)}</b><span class="sepv"></span><span class="rot">Prazo</span><b>${esc(prazo)}</b><span class="sepv"></span><span class="rot">Frete</span><b>${o.frete.tipo}${o.frete.tipo==='FOB'?(o.frete.quem==='proprio'?' · retirada pela Atrius':o.frete.transp?' · '+esc(o.frete.transp.nome):''):''}</b></div>
   ${DB.cfg.assinatura?`<div class="ass2"><div>${esc(o.comprador||'')} · comprador</div><div>De acordo do fornecedor</div></div>`:''}</div>`;
@@ -2086,7 +2086,7 @@ function telaConferir(id){
       <td class="n" style="color:var(--ink3)">${nf(it.precoOC??(o.itens[i]||{}).preco,4)}</td>
       <td class="n"><input class="in3" data-ci="${i}" data-k="preco" value="${nf(it.preco,4)}" ${dis}></td><td class="n"><input class="in3 p" data-ci="${i}" data-k="icms" value="${nq(it.icms)}" ${dis}></td>
       <td class="n"><input class="in3 p" data-ci="${i}" data-k="ipi" value="${nq(it.ipi)}" ${dis}></td><td class="n"><b>${nf(contaItem(it).baseF+contaItem(it).val.ipi,2)}</b></td></tr>
-      ${c.benef?envsDe(it).map((e,j)=>+e.preco?`<tr class="sub"><td><span class="sl">↳</span>${esc(e.nome)} <span class="s3">${e.tipo==='venda'?'venda':'beneficiamento'}</span></td><td class="n">${nq(r3((+e.fator||1)*(+it.qtd||0)))} ${esc(e.un||'un')}</td><td></td>
+      ${c.benef?envsDe(it).map((e,j)=>+e.preco?`<tr class="sub"><td><span class="sl">↳</span>${esc(e.nome)} <span class="s3">${e.tipo==='venda'?'venda':'industrialização'}</span></td><td class="n">${nq(r3((+e.fator||1)*(+it.qtd||0)))} ${esc(e.un||'un')}</td><td></td>
         <td class="n"><input class="in3" data-cs="${i}|${j}" value="${nf(e.preco,4)}" ${dis}></td><td></td><td></td><td class="n"><b>${nf(r3((+e.fator||1)*(+it.qtd||0))*(+e.preco||0),2)}</b></td></tr>`:'').join(''):''}`).join('')}</tbody></table></div>${totaisOC(c,t,!podeC,'cDesc')}</div>
   <div class="bloco"><div class="t"><span class="n">2</span>Frete</div><div class="c">
     <div class="cfr" style="grid-template-columns:minmax(0,420px)"><div class="fl"><label>Frete</label><select class="inp" id="cFrT" ${dis}><option value="CIF" ${c.frete.tipo!=='FOB'?'selected':''}>CIF · por conta do fornecedor</option><option value="FOBp" ${c.frete.tipo==='FOB'&&c.frete.quem==='proprio'?'selected':''}>FOB · nossa frota busca</option><option value="FOBt" ${c.frete.tipo==='FOB'&&c.frete.quem==='terceiro'?'selected':''}>FOB · transportadora (conta separada)</option></select></div></div>
@@ -3988,5 +3988,6 @@ th .cfsort{font-size:10px;margin-left:3px;color:#1D4ED8}
   window.CF_VARRE=varre;
 })();
 
+/* v489-ind */
 </script>
 </body></html>

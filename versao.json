@@ -1,6 +1,6 @@
 {
- "v": "v488",
- "versao": "4.8.8",
+ "v": "v489",
+ "versao": "4.8.9",
  "data": "29/10/2026",
- "o_que_mudou": "Notas fiscais lidas pela API do Tiny que não vence; saldo antigo sem dono saiu do estoque; cada item com a sua chave de estoque"
+ "o_que_mudou": "Planilha das ordens de produção no sistema (frascos rotulados, nomes novos, Uruguai, kits); Estoque numa página só com grupos, movimentos e inventário; quarentena como depósito"
 }
