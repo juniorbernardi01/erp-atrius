@@ -5508,7 +5508,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v490';const VERSAO_DATA='24/10/2026';
+const VERSAO_APP='v492';const VERSAO_DATA='29/10/2026';
 /* número que aparece na tela: v438 → v4.3.8 (por dentro continua v438, que é o que as versões comparam) */
 const csRotVer=v=>{const d=String(v||'').replace(/\D/g,'');return d.length>=3?'v'+d.slice(0,-2)+'.'+d.slice(-2,-1)+'.'+d.slice(-1):String(v||'');};
 const VERSAO_ROTULO=csRotVer(VERSAO_APP)+' · '+VERSAO_DATA;
@@ -24771,8 +24771,8 @@ async function csETransferir(o){
   const n=++CS_EDEP.trSeq,em=csEEm(o.em),obs=String(o.obs||'transferência').trim(),quem=quemAssina();
   /* o total não muda: sai de um e entra no outro, nada vai ao Tiny */
   csEAplica(id,de,-q);csEAplica(id,para,q);
-  CS_ELOG.push({em,id,tipo:'S',qtd:q,dif:-q,dep:de,origem:'Transferência',tr:n,obs:`${obs} → ${csEDepNome(para)}`,quem,uid:csENovoUid(),man:true},
-    {em,id,tipo:'E',qtd:q,dif:q,dep:para,origem:'Transferência',tr:n,obs:`${obs} ← ${csEDepNome(de)}`,quem,uid:csENovoUid(),man:true});
+  CS_ELOG.push({em,id,tipo:'S',qtd:q,dif:-q,dep:de,origem:'Transferência',tr:n,obs:`${obs} → ${typeof csDepNomeItem==='function'?csDepNomeItem(para,id):csEDepNome(para)}`,quem,uid:csENovoUid(),man:true},
+    {em,id,tipo:'E',qtd:q,dif:q,dep:para,origem:'Transferência',tr:n,obs:`${obs} ← ${typeof csDepNomeItem==='function'?csDepNomeItem(de,id):csEDepNome(de)}`,quem,uid:csENovoUid(),man:true});
   agendarSalvar();return {tr:n};
 }
 const csEAchar=uid=>{csEUids();const x=CS_ELOG.find(x=>x.uid===uid);if(!x)throw new Error('Lançamento não encontrado (talvez outra pessoa já o removeu).');if(x.rm)throw new Error('Este lançamento já foi removido.');return x;};
@@ -32006,7 +32006,7 @@ function csDepFornecedor(f,criar){
   let d=CS_EDEP.deps.find(d=>!d.princ&&fid&&String(d.fornId||'')===fid)||CS_EDEP.deps.find(d=>!d.princ&&nn&&(csNormF(d.forn)===nn));
   if(!d&&criar){
     const pal=String(f.fantasia||f.nome||'fornecedor').trim().split(/\s+/);const curto=pal[0].length<4&&pal[1]?pal.slice(0,2).join(' '):pal[0];
-    let nome='Na '+curto,k=2;while(CS_EDEP.deps.some(x=>x.nome.toLowerCase()===nome.toLowerCase()))nome='Na '+curto+' '+(k++);
+    const base=typeof csDepFornNome==='function'?csDepFornNome(f):curto.toUpperCase();let nome=base,k=2;while(CS_EDEP.deps.some(x=>x.nome.toLowerCase()===nome.toLowerCase()))nome=base+' '+(k++);
     const novo={id:'d'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),nome,forn:String(f.nome||'').trim(),fornId:fid,princ:false};
     csEDepsSalvar([...CS_EDEP.deps.map(x=>({...x})),novo]);d=CS_EDEP.deps.find(x=>x.id===novo.id);
   }
@@ -34264,7 +34264,7 @@ th .cfsort{font-size:10px;margin-left:3px;color:#1D4ED8}
   window.CF_VARRE=varre;
 })();
 
-try{csNucleo.versao='v490';}catch(e){}
+try{csNucleo.versao='v491';}catch(e){}
 </script>
 <script>
 /* cópia local de cada módulo: IndexedDB (cabe muito mais); lê também a cópia antiga do localStorage e a apaga */
@@ -38255,8 +38255,7 @@ setTimeout(csNfBarConfere,20000);setInterval(csNfBarConfere,10*60000);
     /* 9) Lava Louças Clear e Limão: inativos */
     P.inativarTanques.forEach(t=>{PRODUTOS.filter(p=>p.tanque===t).forEach(p=>{p.ativo=false;});const f=FORMULAS[t];if(f)f.cad=Object.assign(f.cad||{},{ativo:false});});
     /* 10) depósitos */
-    if(!CS_EDEP.deps.some(d=>d.id==='quar'))CS_EDEP.deps.push({id:'quar',nome:'Quarentena',forn:'',fornId:'',princ:false,interno:true});
-    if(!CS_EDEP.deps.some(d=>/nuova/i.test((d.nome||'')+' '+(d.forn||''))))CS_EDEP.deps.push({id:'dnuova',nome:'Na Nuova Plus',forn:'NUOVA PLUS',fornId:'',princ:false});
+    if(!CS_EDEP.deps.some(d=>d.id==='quar'))CS_EDEP.deps.push({id:'quar',nome:'QUARENTENA',forn:'',fornId:'',princ:false,interno:true});
     CS_MIGRA.push('ops488');agendarSalvar();
     try{CS_OPS488_LOG=log;}catch(e){}console.info('[ops488]',log.length,'mudanças',log);
     try{toast('Cadastro atualizado com a planilha das ordens de produção.');}catch(e){}
@@ -38305,6 +38304,60 @@ try{const _gt490=csGrupoTopo;csGrupoTopo=function(){_gt490.apply(this,arguments)
   try{const g=document.getElementById('csGrupoTop');if(!g||g.textContent)return;
     if(S.page==='financeiro'&&typeof MOD_ATUAL!=='undefined'&&MOD_ATUAL){const m=CS_MOD.find(x=>(x.pgs||[]).some(p=>p.mod===MOD_ATUAL));if(m){g.textContent=m.nome;g.hidden=false;}}}catch(e){}};}catch(e){}
 try{if(CS_CFG_INFO['Estoques']&&!CS_CFG_INFO['Controle de estoque'])CS_CFG_INFO['Controle de estoque']=CS_CFG_INFO['Estoques'];}catch(e){}
+</script>
+<script data-v491="deps">
+/* v4.9.1 · DEPÓSITOS DA EMPRESA
+   Dentro da empresa, cada item fica no depósito do seu grupo: DEPÓSITO DE PRODUTO ACABADO, DEPÓSITO DE RÓTULOS,
+   DEPÓSITO DE PREFORMAS… (é o principal, com o nome do grupo do item). Além deles, QUARENTENA. O depósito de um
+   fornecedor (NA PLASFAR, NA HPAC…) nasce sozinho na primeira ordem de compra com industrialização daquele fornecedor.
+   Todos os nomes em maiúsculas. */
+const CS_DEPG_NOME={pa:'PRODUTO ACABADO'};
+function csDepGrupo(k){if(!k)return 'FÁBRICA';if(CS_DEPG_NOME[k])return 'DEPÓSITO DE '+CS_DEPG_NOME[k];
+  let n='';try{n=window.csGrupoNome?csGrupoNome(k):'';}catch(e){}return n?'DEPÓSITO DE '+n.toUpperCase():'FÁBRICA';}
+function csDepNomeItem(dep,id){
+  const d=CS_EDEP.deps.find(x=>x.id===dep);if(!d)return String(dep||'');if(!d.princ)return d.nome;
+  id=String(id||'');const p=PRODUTOS.find(x=>csChaveEst(x.tiny)===id);if(p)return csDepGrupo(p.cgrupo&&p.cgrupo!=='tanques'?p.cgrupo:'pa');
+  const i=INSUMOS.find(x=>csChaveEst(x.tiny)===id);return csDepGrupo(i&&i.cgrupo);
+}
+try{Object.assign(csNucleo,{depNomeItem:(dep,id)=>csDepNomeItem(dep,id),depGrupo:k=>csDepGrupo(k),versao:'v491'});}catch(e){}
+/* nomes em maiúsculas; o depósito da Nuova Plus feito à mão sai (o do fornecedor nasce pela ordem de compra) */
+function csDeps491(){try{
+  if(typeof CS_MIGRA==='undefined'||CS_MIGRA.includes('deps491'))return;
+  if(!(typeof csEhMaster==='function'&&csEhMaster()))return;if(typeof csChaoFabrica==='function'&&csChaoFabrica())return;
+  let mud=0;
+  const x=CS_EDEP.deps.find(d=>d.id==='dnuova');
+  if(x&&!Object.values(CS_EDEP.sal.dnuova||{}).some(v=>Math.abs(+v)>1e-9)&&!CS_ELOG.some(e=>e.dep==='dnuova')){CS_EDEP.deps=CS_EDEP.deps.filter(d=>d.id!=='dnuova');delete CS_EDEP.sal.dnuova;mud++;}
+  CS_EDEP.deps.forEach(d=>{const n=d.princ?'FÁBRICA':String(d.nome||'').toUpperCase();if(d.nome!==n){d.nome=n;mud++;}});
+  CS_MIGRA.push('deps491');agendarSalvar();if(mud)console.info('[deps491]',mud);
+}catch(e){console.warn('[deps491]',e);}}
+setTimeout(csDeps491,12000);setTimeout(csDeps491,32000);
+
+</script>
+<script data-v492="deps">
+/* v4.9.2 · NOMES DOS DEPÓSITOS (sem "DEPÓSITO DE" e sem "NA")
+   Da empresa: EXPEDIÇÃO (produto acabado), QUARENTENA, PREFORMAS, FRASCOS, FRASCOS ROTULADOS e FÁBRICA (todo o resto).
+   Do fornecedor: o nome dele (PLASFAR, HPACK, NUOVA PLAS…), que nasce sozinho na ordem de compra com industrialização. */
+const CS_DEPG492={pa:'EXPEDIÇÃO',preformas:'PREFORMAS',frascos:'FRASCOS',frrot:'FRASCOS ROTULADOS'};
+csDepGrupo=function(k){return CS_DEPG492[k]||'FÁBRICA';};
+function csDepFornNome(f){
+  const s=String((f&&(f.fantasia||f.nome))||'FORNECEDOR').toUpperCase().trim();
+  if(/NUOVA/.test(s))return 'NUOVA PLAS';if(/HPAC/.test(s))return 'HPACK';
+  const pal=s.split(/\s+/);return pal[0].length<4&&pal[1]?pal.slice(0,2).join(' '):pal[0];
+}
+try{Object.assign(csNucleo,{depGrupo:k=>csDepGrupo(k),versao:'v492'});}catch(e){}
+/* tira o "NA " dos depósitos de fornecedor que já existem */
+function csDeps492(){try{
+  if(typeof CS_MIGRA==='undefined'||CS_MIGRA.includes('deps492'))return;
+  if(!(typeof csEhMaster==='function'&&csEhMaster()))return;if(typeof csChaoFabrica==='function'&&csChaoFabrica())return;
+  let mud=0;
+  CS_EDEP.deps.forEach(d=>{if(d.princ||d.id==='quar')return;const forn=d.forn||/^NA /i.test(d.nome||'');if(!forn)return;
+    let n=d.forn?csDepFornNome({nome:d.forn}):String(d.nome).replace(/^NA\s+/i,'').toUpperCase();
+    if(!d.forn)n=/NUOVA/.test(n)?'NUOVA PLAS':/HPAC/.test(n)?'HPACK':n;
+    if(n&&d.nome!==n&&!CS_EDEP.deps.some(x=>x!==d&&x.nome===n)){d.nome=n;mud++;}});
+  CS_MIGRA.push('deps492');agendarSalvar();if(mud)console.info('[deps492]',mud);
+}catch(e){console.warn('[deps492]',e);}}
+setTimeout(csDeps492,14000);setTimeout(csDeps492,34000);
+
 </script>
 </body>
 </html>

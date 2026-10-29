@@ -816,7 +816,7 @@ const itemDe=id=>{id=String(id||'');const sem=chaveEst;
   const x=N.insumos().find(x=>sem(x.tiny)===id);
   if(x)return {id,nome:x.nome,cod:x.sku,un:unDe(x),acabado:false,x};
   return null;};
-const depsN=()=>N.depositos?N.depositos():[{id:'fab',nome:'Fábrica',princ:true}];
+const depsN=()=>{const l=N.depositos?N.depositos():[{id:'fab',nome:'Fábrica',princ:true}];const g=window.__DEPGRP;if(g)l.forEach(d=>{if(d.princ)d.nome=g;});return l;};
 const depNome=id=>(depsN().find(d=>d.id===id)||{}).nome||'Fábrica';
 const quandoEm=s=>{const [d,h]=String(s||'').split(' ');return d?d.split('-').reverse().join('/')+(h?' · '+h:''):'—';};
 const agoraLocal=()=>{const d=new Date();return ymd(d)+'T'+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');};
@@ -1205,7 +1205,7 @@ function estBarra(){
   const deps=depsN();
   return `<div class="e9bar"><div class="e9seg">${[['saldos','Saldos'],['mov','Movimentos']].map(([k,n])=>`<button data-ev="${k}" class="${EST.vista===k?'on':''}">${n}</button>`).join('')}</div>
     <input class="e9bus" id="eQ" placeholder="Buscar item por nome ou código" value="${esc(EST.q)}">
-    <select class="e9sel" id="eDp"><option value="">Todos os depósitos</option>${deps.map(d=>`<option value="${esc(d.id)}" ${EST.dep===d.id?'selected':''}>${esc(d.princ?'Na empresa (depósito do grupo)':d.nome)}</option>`).join('')}</select>
+    <select class="e9sel" id="eDp"><option value="">Todos os depósitos</option>${deps.map(d=>`<option value="${esc(d.id)}" ${EST.dep===d.id?'selected':''}>${esc(d.princ?'DEPÓSITOS DA EMPRESA (do grupo)':d.nome)}</option>`).join('')}</select>
     ${EST.vista==='saldos'?colsBotao('eCols'):''}${EST.vista==='mov'?`<select class="e9sel" id="eTp">${[['tudo','Entradas e saídas'],['E','Só entradas'],['S','Só saídas'],['T','Transferências']].map(([k,n])=>`<option value="${k}" ${EST.tipo===k?'selected':''}>${n}</option>`).join('')}</select>${perBotao('ePer',EST.per)}`:''}
   </div>`;
 }
@@ -1269,7 +1269,7 @@ function estMovs(todos){
     const d=String(x.em||'').slice(0,10);if(fx.de&&(d<fx.de||d>fx.ate))return false;return true;});
   l.sort((a,b)=>String(b.em).localeCompare(String(a.em)));
   const tot=l.length;const ent=l.filter(x=>x.tipo==='E'&&!x.tr).length,sai=l.filter(x=>x.tipo==='S'&&!x.tr).length,ntr=l.filter(x=>x.tr).length;l=l.slice(0,600);
-  const deps=depsN(),dn=(x,i)=>{const d=deps.find(d=>d.id===x.dep);return d?(d.princ?estNomeG(i?i.g:''):d.nome):x.dep;};
+  const deps=depsN(),dn=(x,i)=>{const d=deps.find(d=>d.id===x.dep);if(!d)return x.dep;if(d.princ)return (N.depNomeItem?N.depNomeItem(d.id,String(x.id)):estNomeG(i?i.g:''));return d.nome;};
   const mv=x=>{const tr=!!x.tr||x.origem==='Transferência';if(tr)return ['T','⇄ Transferência'];if(x.tipo==='BAL')return ['B','= Balanço'];return x.tipo==='E'?['E','▲ Entrada']:['S','▼ Saída'];};
   $('e9c').innerHTML=estBarra()+`<div class="e9cards" style="margin-top:10px"><div><span>Movimentos</span><b>${nq(tot)}</b></div><div><span>Entradas</span><b style="color:#15803D">${nq(ent)}</b></div><div><span>Saídas</span><b style="color:#DC2626">${nq(sai)}</b></div><div><span>Transferências</span><b style="color:#1D4ED8">${nq(ntr)}</b></div></div>
     <div class="e9tb"><table class="e9t"><thead><tr><th>Quando</th><th>Movimento</th><th>Item</th><th class="n">Quantidade</th><th>Depósito</th><th>Origem</th><th>Quem</th></tr></thead><tbody>
@@ -1316,6 +1316,90 @@ function telaExcluidos(){
   $('eVolta').onclick=()=>ir('saldos');
 }
 try{const _rd489=render;render=function(){const {pag}=lerHash();if(pag==='excluidos'&&N&&DB){PAG=pag;return telaExcluidos();}return _rd489.apply(this,arguments);};}catch(e){}
+
+/* v4.9.1 · depósitos com o nome certo: o da empresa é o do grupo do item (DEPÓSITO DE …), QUARENTENA, e o do
+   fornecedor (NA PLASFAR…), que nasce sozinho na ordem de compra com industrialização. Sem "fornecedor ligado" à mão. */
+const depG491=(dep,id)=>{try{return N.depNomeItem?N.depNomeItem(dep,id):'';}catch(e){return '';}};
+estOnde=function(i){
+  if(!i.id||!N.saldoDeps)return '';const sd=N.saldoDeps(i.id)||{por:{}},deps=depsN();
+  return deps.map(d=>{const v=sd.por[d.id];if(v==null||Math.abs(+v)<1e-9)return '';
+    const nm=depG491(d.id,i.id)||d.nome,cl=d.id==='quar'?'q':d.forn||/^NA /i.test(d.nome)?'f':'';
+    return `<span class="e9d ${cl} ${+v<0?'neg':''}">${esc(nm)}</span>`;}).join('')||'<span class="k">—</span>';
+};
+try{const _ti491=telaItem;telaItem=function(id){try{const pr=(N.depositos().find(d=>d.princ)||{}).id;window.__DEPGRP=depG491(pr,id)||null;}catch(e){window.__DEPGRP=null;}return _ti491.apply(this,arguments);};}catch(e){}
+try{const _ts491=telaSaldos;telaSaldos=function(){window.__DEPGRP=null;return _ts491.apply(this,arguments);};}catch(e){}
+try{const _tv491=telaInvs;telaInvs=function(){window.__DEPGRP=null;return _tv491.apply(this,arguments);};}catch(e){}
+/* a lista dos depósitos */
+telaDepositos=function(){
+  window.__DEPGRP=null;
+  const deps=N.depositos(),pe=pode('estoque.cfg','editar'),px=pode('estoque.cfg','excluir');
+  const its=estItens(),com=(dep,f)=>its.filter(i=>{if(!i.id)return false;const sd=N.saldoDeps(i.id);const v=sd&&sd.por[dep];return v!=null&&Math.abs(+v)>1e-9&&(!f||f(i));}).length;
+  const pr=(deps.find(d=>d.princ)||{}).id;
+  const gr=estFolhas().filter(f=>f.k!=='tanques');
+  const lin=(nome,tipo,n,acoes)=>`<tr><td><b>${esc(nome)}</b></td><td class="k">${tipo}</td><td class="n">${nq(n)}</td><td class="n" style="white-space:nowrap">${acoes||''}</td></tr>`;
+  $('app').innerHTML=`<div class="migalha">Configurações › Suprimentos › Controle de estoque</div>
+  <div class="topo"><h1>Depósitos</h1>${pe?'<button class="btn pri" id="dNovo">＋ Novo depósito</button>':''}</div>
+  <div class="caixa rolx"><table class="tv"><thead><tr><th>Depósito</th><th>Tipo</th><th class="n">Itens com saldo</th><th></th></tr></thead><tbody>
+    ${gr.map(f=>lin(N.depGrupo?N.depGrupo(f.k):f.n,'da empresa · do grupo '+esc(f.n),com(pr,i=>i.g===f.k||(f.k==='pa'&&i.tp==='p')))).join('')}
+    ${deps.filter(d=>!d.princ).map(d=>{const forn=d.forn||/^NA /i.test(d.nome);return lin(d.nome,d.id==='quar'?'da empresa · saiu do envase e espera liberação':forn?'no fornecedor · nasceu pela ordem de compra':'da empresa',com(d.id),
+      (pe&&!forn?`<button class="btn sm" data-de="${esc(d.id)}">Renomear</button> `:'')+(px&&d.id!=='quar'?`<button class="btn sm del" data-dx="${esc(d.id)}">Excluir</button>`:''));}).join('')}
+  </tbody></table></div>
+  <div class="leg">Cada item fica no depósito do seu grupo (um rótulo está sempre no DEPÓSITO DE RÓTULOS). Para mudar de lugar, use <b>Transferir entre depósitos</b> no item: para a QUARENTENA ou para um fornecedor.
+  O depósito do fornecedor nasce sozinho na primeira ordem de compra com industrialização dele. Só exclui depósito sem saldo.</div>`;
+  if($('dNovo'))$('dNovo').onclick=()=>formDep(null);
+  document.querySelectorAll('[data-de]').forEach(b=>b.onclick=()=>formDep(N.depositos().find(d=>d.id===b.dataset.de)));
+  document.querySelectorAll('[data-dx]').forEach(b=>b.onclick=()=>{const d=N.depositos().find(x=>x.id===b.dataset.dx);if(!d)return;
+    const u=N.usoDeposito?N.usoDeposito(d.id):{itens:0,lanc:0};if(u.itens)return toast(`${d.nome} ainda tem saldo. Transfira antes de excluir.`,true);
+    if(!confirm(`Excluir o depósito ${d.nome}?`))return;try{N.salvarDepositos(N.depositos().filter(x=>x.id!==d.id));toast('Depósito excluído.');}catch(e){toast(e.message,true);}telaDepositos();});
+};
+formDep=function(d){
+  gaveta(`<div class="gt"><h2>${d?'Renomear depósito':'Novo depósito'}</h2><button class="btn sm" id="gX">Fechar ✕</button></div><div class="gc">
+    <div class="cmp"><label>Nome do depósito</label><input id="dN" value="${d?esc(d.nome):''}" placeholder="ex.: ALMOXARIFADO" style="text-transform:uppercase;width:100%"></div></div>
+    <div class="gr"><button class="btn" id="gC">Cancelar</button><button class="btn pri" id="gOk">Salvar</button></div>`);
+  $('gX').onclick=$('gC').onclick=()=>gaveta(null);
+  $('gOk').onclick=()=>{const n=$('dN').value.trim().toUpperCase();if(!n)return toast('Dê um nome ao depósito.',true);
+    const l=N.depositos();if(d){const x=l.find(x=>x.id===d.id);x.nome=n;}else l.push({id:'d'+Date.now().toString(36),nome:n,forn:'',fornId:'',princ:false});
+    try{N.salvarDepositos(l);gaveta(null);toast('Depósito salvo.');telaDepositos();}catch(e){toast(e.message,true);}};
+};
+
+/* v4.9.2 · lista dos depósitos com os nomes curtos: os da empresa (EXPEDIÇÃO, QUARENTENA, PREFORMAS, FRASCOS,
+   FRASCOS ROTULADOS, FÁBRICA) e os dos fornecedores (nascem pela ordem de compra; dá para renomear). */
+estOnde=function(i){
+  if(!i.id||!N.saldoDeps)return '';const sd=N.saldoDeps(i.id)||{por:{}},deps=depsN();
+  return deps.map(d=>{const v=sd.por[d.id];if(v==null||Math.abs(+v)<1e-9)return '';
+    const nm=depG491(d.id,i.id)||d.nome,cl=d.id==='quar'?'q':(!d.princ&&d.forn)?'f':'';
+    return `<span class="e9d ${cl} ${+v<0?'neg':''}">${esc(nm)}</span>`;}).join('')||'<span class="k">—</span>';
+};
+telaDepositos=function(){
+  window.__DEPGRP=null;
+  const deps=N.depositos(),pe=pode('estoque.cfg','editar'),px=pode('estoque.cfg','excluir');
+  const its=estItens(),com=(dep,f)=>its.filter(i=>{if(!i.id)return false;const sd=N.saldoDeps(i.id);const v=sd&&sd.por[dep];return v!=null&&Math.abs(+v)>1e-9&&(!f||f(i));}).length;
+  const pr=(deps.find(d=>d.princ)||{}).id;
+  /* os grupos que caem em cada depósito da empresa */
+  const ord=['EXPEDIÇÃO','PREFORMAS','FRASCOS','FRASCOS ROTULADOS','FÁBRICA'],por={};
+  estFolhas().filter(f=>f.k!=='tanques').forEach(f=>{const n=N.depGrupo?N.depGrupo(f.k):'FÁBRICA';(por[n]=por[n]||[]).push(f);});
+  const lin=(nome,tipo,n,acoes)=>`<tr><td><b>${esc(nome)}</b></td><td class="k">${tipo}</td><td class="n">${nq(n)}</td><td class="n" style="white-space:nowrap">${acoes||''}</td></tr>`;
+  const empresa=ord.filter(n=>por[n]).map(n=>{const fs=por[n],ks=fs.map(f=>f.k);
+    return lin(n,'da empresa · '+esc(fs.map(f=>f.n).join(', ')),com(pr,i=>ks.includes(i.g)||(n==='EXPEDIÇÃO'&&i.tp==='p')));});
+  const q=deps.find(d=>d.id==='quar');
+  const outros=deps.filter(d=>!d.princ&&d.id!=='quar');
+  $('app').innerHTML=`<div class="migalha">Configurações › Suprimentos › Controle de estoque</div>
+  <div class="topo"><h1>Depósitos</h1>${pe?'<button class="btn pri" id="dNovo">＋ Novo depósito</button>':''}</div>
+  <div class="caixa rolx"><table class="tv"><thead><tr><th>Depósito</th><th>O que fica nele</th><th class="n">Itens com saldo</th><th></th></tr></thead><tbody>
+    ${empresa[0]||''}
+    ${q?lin(q.nome,'da empresa · produto acabado que saiu do envase e espera liberação',com(q.id)):''}
+    ${empresa.slice(1).join('')}
+    ${outros.map(d=>lin(d.nome,d.forn?'no fornecedor · '+esc(d.forn):'da empresa',com(d.id),
+      (pe?`<button class="btn sm" data-de="${esc(d.id)}">Renomear</button> `:'')+(px?`<button class="btn sm del" data-dx="${esc(d.id)}">Excluir</button>`:''))).join('')}
+  </tbody></table></div>
+  <div class="leg">Cada item fica no depósito do seu grupo. Para mudar de lugar, use <b>Transferir entre depósitos</b> no item.
+  O depósito do fornecedor nasce sozinho na primeira ordem de compra com industrialização dele. Só exclui depósito sem saldo.</div>`;
+  if($('dNovo'))$('dNovo').onclick=()=>formDep(null);
+  document.querySelectorAll('[data-de]').forEach(b=>b.onclick=()=>formDep(N.depositos().find(d=>d.id===b.dataset.de)));
+  document.querySelectorAll('[data-dx]').forEach(b=>b.onclick=()=>{const d=N.depositos().find(x=>x.id===b.dataset.dx);if(!d)return;
+    const u=N.usoDeposito?N.usoDeposito(d.id):{itens:0,lanc:0};if(u.itens)return toast(`${d.nome} ainda tem saldo. Transfira antes de excluir.`,true);
+    if(!confirm(`Excluir o depósito ${d.nome}?`))return;try{N.salvarDepositos(N.depositos().filter(x=>x.id!==d.id));toast('Depósito excluído.');}catch(e){toast(e.message,true);}telaDepositos();});
+};
 
 </script>
 </body></html>

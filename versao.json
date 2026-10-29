@@ -1,6 +1,6 @@
 {
- "v": "v490",
- "versao": "4.9.0",
+ "v": "v492",
+ "versao": "4.9.2",
  "data": "29/10/2026",
- "o_que_mudou": "Suprimentos (Controle de estoque e Compras) no menu; estoque com colunas que ordenam e se escolhem; ordem de compra com industrialização mais clara; datas digitáveis"
+ "o_que_mudou": "Depósitos com nome curto: EXPEDIÇÃO, QUARENTENA, PREFORMAS, FRASCOS, FRASCOS ROTULADOS, FÁBRICA e os dos fornecedores (PLASFAR, HPACK, NUOVA PLAS); cadastro de clientes e fornecedores editável no ERP"
 }

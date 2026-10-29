@@ -933,7 +933,7 @@ async function importarContatos(){
       (r.contatos||[]).forEach(x=>{const tid=String(x.id||'');if(!tid)return;
         const dados={tinyId:tid,codigo:x.codigo||'',nome:x.nome||'',fantasia:x.fantasia||'',doc:x.cpf_cnpj||'',ie:x.ie||'',endereco:x.endereco||'',numero:x.numero||'',bairro:x.bairro||'',cep:x.cep||'',
           cidade:x.cidade||'',uf:x.uf||'',fone:x.fone||'',email:x.email||'',vendedor:x.nome_vendedor||'',situacaoTiny:x.situacao||''};
-        const a=porId.get(tid);if(a)Object.assign(a,dados,a.vendedorERP?{vendedor:a.vendedor}:{});else{const c={id:uid(),...dados,ativo:true};DB.contatos.push(c);porId.set(tid,c);novos++;}n++;});
+        const a=porId.get(tid);if(a&&a.editadoERP){n++;return;}if(a)Object.assign(a,dados,a.vendedorERP?{vendedor:a.vendedor}:{});else{const c={id:uid(),...dados,ativo:true};DB.contatos.push(c);porId.set(tid,c);novos++;}n++;});
       const s=document.querySelector('.sync');if(s)s.innerHTML=`<b>Importando do Tiny…</b> página ${pag} de ${paginas||'?'} · ${nf(n)} contatos lidos`;
       pag++;
     }
@@ -1324,14 +1324,14 @@ function fichaContato(id,novoPapel){
   const ed=pode('cad.clientes','editar');
   const novo=!orig;
   const c=JSON.parse(JSON.stringify(orig||{tipoPessoa:'J',papeis:[novoPapel||'Fornecedor'],contribICMS:'1',ativo:true}));
-  const cadEd=ed&&(novo||doERP(c));      /* parte cadastral: só no que nasceu no ERP */
+  const cadEd=ed;      /* v491-edita: o cadastro todo se edita no ERP, também o que veio do Tiny */
   const ro=cadEd?'':'disabled';const rf=ed?'':'disabled';
   const pf=()=>c.tipoPessoa==='F';
   const papeis=Array.isArray(c.papeis)&&c.papeis.length?c.papeis.slice():papeisDe(c);
   const opt=(l,v)=>l.map(([k,n])=>`<option value="${esc(k)}" ${String(v??'')===k?'selected':''}>${esc(n)}</option>`).join('');
   const html=()=>`<div class="gt"><h2>${novo?'Novo cadastro':esc(c.nome||'Cadastro')}</h2>${novo?'':`<span class="tpc">${tipoDe(orig)}</span>`}<button class="btn sm" id="gX" style="margin-left:auto">Fechar ✕</button></div>
   <div class="gc cad5">
-    ${!novo&&!doERP(c)?`<div class="tiny5">Veio do Tiny (código ${esc(c.tinyId)}): nome, documento, endereço e contato mudam no Tiny. Tipo, grupo, dados fiscais e de pagamento são do ERP e mudam aqui.</div>`:''}
+    ${!novo&&!doERP(c)?`<div class="tiny5">Veio do Tiny (código ${esc(c.tinyId)}). Pode editar tudo aqui: o que você salvar no ERP vale, mesmo se o Tiny for importado de novo.</div>`:''}
     <div class="bloco"><h3><span class="num">1</span>Identificação</h3>
       <div class="g">
         <div class="s6"><div class="seg" id="kP"><button data-tp="J" class="${pf()?'':'on'}" ${ro}>Pessoa jurídica (CNPJ)</button><button data-tp="F" class="${pf()?'on':''}" ${ro}>Pessoa física (CPF)</button></div></div>
@@ -1443,7 +1443,7 @@ function fichaContato(id,novoPapel){
       c.papeis=PAPEIS.filter(p=>papeis.includes(p));c.tipo=c.papeis[0];
       const quem=(N&&N.usuario)?N.usuario():'';const agora=new Date().toISOString();
       if(novo){Object.assign(c,{id:uid(),origem:'erp',criadoEm:agora,criadoPor:quem,ativo:true});DB.contatos.push(c);}
-      else{c.atualizadoEm=agora;c.atualizadoPor=quem;Object.keys(orig).forEach(k=>delete orig[k]);Object.assign(orig,c);}
+      else{c.atualizadoEm=agora;c.atualizadoPor=quem;if(c.tinyId)c.editadoERP=true;Object.keys(orig).forEach(k=>delete orig[k]);Object.assign(orig,c);}
       salvar();gaveta(null);render();toast(novo?`${c.nome} cadastrado.`:'Cadastro salvo.');};
   };
   const msg=(t,erro,ok)=>{const m=$('kMsg');if(!m)return t&&toast(t,erro);m.textContent=t||'';m.style.color=erro?'#B91C1C':ok?'#047857':'';};
