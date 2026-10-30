@@ -5508,7 +5508,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v492';const VERSAO_DATA='29/10/2026';
+const VERSAO_APP='v493';const VERSAO_DATA='29/10/2026';
 /* número que aparece na tela: v438 → v4.3.8 (por dentro continua v438, que é o que as versões comparam) */
 const csRotVer=v=>{const d=String(v||'').replace(/\D/g,'');return d.length>=3?'v'+d.slice(0,-2)+'.'+d.slice(-2,-1)+'.'+d.slice(-1):String(v||'');};
 const VERSAO_ROTULO=csRotVer(VERSAO_APP)+' · '+VERSAO_DATA;
@@ -38357,6 +38357,149 @@ function csDeps492(){try{
   CS_MIGRA.push('deps492');agendarSalvar();if(mud)console.info('[deps492]',mud);
 }catch(e){console.warn('[deps492]',e);}}
 setTimeout(csDeps492,14000);setTimeout(csDeps492,34000);
+
+</script>
+<script data-v493="inicio">
+/* v4.9.3 · INÍCIO
+   Vendas: Faturamento/Venda escolhido no próprio card (mês e previsão), sem meta na previsão, Prazo de entrega
+   (pedido → faturamento), Top 5 da semana ou do mês. PCP: período 7/15/30 dias, Aproveitamento da capacidade no
+   lugar do OEE, volume com média por dia, ranking das máquinas e dos envasadores. Compras: top itens comprados. */
+(function(){
+const LBL={ven:{fat:'Faturamento do mês',prev:'Previsão de faturamento',tvend:'Top 5 representantes'},pcp:{oee:'Aproveitamento da capacidade',vol:'Volume produzido',perd:'Perdas e paradas'}};
+[['pcp','oee',2],['pcp','vol',2],['pcp','perd',2],['pcp','ocup',1]].forEach(([m,k,s])=>{const x=HM_IND[m].find(i=>i[0]===k);if(x)x[2]=s;});
+Object.entries(LBL).forEach(([m,o])=>Object.entries(o).forEach(([k,n])=>{const x=HM_IND[m].find(i=>i[0]===k);if(x)x[1]=n;}));
+const add=(m,k,n,s,dep)=>{if(HM_IND[m].some(i=>i[0]===k))return;const L=HM_IND[m];const j=dep?L.findIndex(i=>i[0]===dep):-1;L.splice(j<0?L.length:j+1,0,[k,n,s]);
+  const P=HM_PAD.ind[m];const q=dep?P.indexOf(dep):-1;P.splice(q<0?P.length:q+1,0,k);};
+add('ven','prz','Prazo de entrega',2,'dia');add('pcp','renv','Ranking dos envasadores',2,'vol');add('pcp','rmaq','Ranking das máquinas',2,'vol');add('com','titc','Top itens comprados',2,'tforn');
+/* quem já tinha o painel montado ganha os novos uma vez */
+const _cfg=hmCfg;hmCfg=function(){const c=_cfg.apply(this,arguments);if(!c.v493){c.v493=1;
+  [['ven','prz','dia'],['pcp','rmaq','vol'],['pcp','renv','rmaq'],['com','titc','tforn']].forEach(([m,k,dep])=>{const L=c.ind[m];if(!L||L.includes(k))return;const j=L.indexOf(dep);L.splice(j<0?L.length:j+1,0,k);});
+  try{localStorage.setItem(hmChave(),JSON.stringify(c));}catch(e){}}
+  c.op=Object.assign({fat:'fat',prev:'fat',top:'mes',pcp:7,prz:30,com:'sem'},c.op||{});return c;};
+const op=()=>hmCfg().op;
+const ymdD=d=>ymd(d),hojeD=()=>new Date();
+/* ---------------- dados de vendas ---------------- */
+const VC={};
+async function painel(campo,de,ate){const k=campo+'|'+de+'|'+ate;const x=VC[k];if(x&&Date.now()-x.em<5*60000)return x.p;
+  const p=chamarTiny({acao:'painel_vendas',de,ate,campo});VC[k]={em:Date.now(),p};p.catch(()=>{delete VC[k];});return p;}
+async function prazo(de,ate){const k='prz|'+de+'|'+ate;const x=VC[k];if(x&&Date.now()-x.em<5*60000)return x.p;
+  const p=chamarTiny({acao:'painel_prazo',de,ate});VC[k]={em:Date.now(),p};p.catch(()=>{delete VC[k];});return p;}
+function teste(campo){const t=hmVendasTeste();if(campo==='pedido'){t.r.dias.forEach(x=>x.total*=1.12);t.a.dias.forEach(x=>x.total*=1.08);}return t;}
+hmDadosVen=async function(){
+  const o=op(),h=new Date(),hj=ymd(h),ini=hj.slice(0,8)+'01';
+  const antIni=ymd(new Date(h.getFullYear(),h.getMonth()-1,1)),antAte=ymd(new Date(h.getFullYear(),h.getMonth()-1,Math.min(h.getDate(),new Date(h.getFullYear(),h.getMonth(),0).getDate())));
+  const sem=ymd(addD(h,-6)),pzDe=ymd(addD(h,-(o.prz-1)));
+  if(typeof temNuvem==='function'&&!temNuvem()){const F=teste('faturamento'),P=teste('pedido');
+    return {F,P,S:F.r,Z:{pedidos:312,media:3.4,anterior:4.0,no_prazo:271,com_prev:312,atrasados:14,faixas:[[0,12],[1,48],[2,96],[3,71],[4,38],[5,22],[6,11],[7,6],[8,8]].map(([d,n])=>({d,n}))}};}
+  const usa=c=>[o.fat,o.prev].includes(c);
+  const par=c=>Promise.all([painel(c,ini,hj),painel(c,antIni,antAte).catch(()=>({}))]).then(([r,a])=>({r,a}));
+  const F=await par('faturamento');
+  const [P,S,Z]=await Promise.all([usa('ven')?par('pedido').catch(e=>({erro:e.message})):null,
+    o.top==='sem'?painel('faturamento',sem,hj).catch(e=>({erro:e.message})):null,
+    prazo(pzDe,hj).catch(e=>({erro:/vendas_prazo|could not find|desconhecid|ação|acao/i.test(e.message)?'Falta rodar o supabase-v4.9.3-1-prazo-entrega.sql e publicar a função do Tiny nova.':e.message}))]);
+  return {F,P,S:S||F.r,Z};
+};
+/* ---------------- os cards ---------------- */
+const SEL=(id,v,ops)=>`<select class="hm-dd" data-hop="${id}">${ops.map(([k,n])=>`<option value="${k}" ${String(v)===String(k)?'selected':''}>${n}</option>`).join('')}</select>`;
+function acumDoMes(r){const mapa={};(r.dias||[]).forEach(x=>mapa[x.dia]=+x.total);const h=new Date();const acum=[];let s=0;for(let i=1;i<=h.getDate();i++){s+=mapa[ymd(new Date(h.getFullYear(),h.getMonth(),i))]||0;acum.push(s);}return {acum,s,mapa};}
+const _bloco=hmBloco;
+hmBloco=function(m,k,dados){
+  try{
+  if(m==='ven'&&dados&&!dados.erro&&dados.F){const o=op(),h=new Date(),nDias=new Date(h.getFullYear(),h.getMonth()+1,0).getDate();
+    if(k==='fat'||k==='prev'){const c=o[k];const D=c==='ven'?dados.P:dados.F;if(!D||D.erro)return `<div class="hm-vz">${D&&D.erro?escAttr(D.erro):'carregando…'}</div>`;
+      const {acum,s}=acumDoMes(D.r||{});const totAnt=((D.a||{}).dias||[]).reduce((t,x)=>t+(+x.total),0);
+      if(k==='fat')return `<div class="hm-v">${hmRs(s)}${hmDelta(s,totAnt)}</div><div class="hm-sub">${c==='ven'?'vendido (pedidos que entraram)':'faturado'} no mês até hoje · contra o mês passado no mesmo dia</div>${hmLinha(acum,{id:'fat',zero:true,tend:true,tot:nDias,cor:c==='ven'?'#0E7490':'#1D6FE8'})}<div class="hm-leg"><span><i style="background:${c==='ven'?'#0E7490':'#1D6FE8'}"></i>acumulado</span><span><i style="background:#8B93A1"></i>tendência</span></div>`;
+      const ritmo=h.getDate()?s/h.getDate():0,prev=s+ritmo*(nDias-h.getDate());const proj=Array(nDias).fill(null);proj[h.getDate()-1]=s;proj[nDias-1]=prev;
+      return `<div class="hm-v">${hmRs(prev)}</div><div class="hm-sub">previsão de ${c==='ven'?'venda':'faturamento'} para fechar o mês pelo ritmo atual</div>${hmLinha(acum,{id:'prev',cor:'#15803D',zero:true,tot:nDias,proj})}`;}
+    if(k==='prz'){const Z=dados.Z;if(!Z||Z.erro)return `<div class="hm-vz">${Z&&Z.erro?escAttr(Z.erro):'carregando…'}</div>`;
+      if(!+Z.pedidos)return '<div class="hm-vz">nenhum pedido faturado no período</div>';
+      const md=+Z.media||0,an=+Z.anterior||0,pc=Z.com_prev?Z.no_prazo/Z.com_prev:null,fx=Array(9).fill(0);(Z.faixas||[]).forEach(x=>fx[Math.min(8,+x.d)]=+x.n);
+      const dd=an?md-an:null,d1=v=>hmNf(v,1);
+      return `<div class="hm-dois"><div><div class="hm-v">${d1(md)} dias</div><div class="hm-sub">do pedido ao faturamento · média de ${hmNf(Z.pedidos)} pedidos${dd!=null?`<span class="hm-dl ${dd<=0?'up':'dn'}">${dd<=0?'▼':'▲'} ${d1(Math.abs(dd))} dia</span>`:''}</div></div>
+        ${pc!=null?`<div><div class="hm-v" style="color:${pc>=.85?'#15803D':pc>=.6?'#C2410C':'#B3261E'}">${hmNf(pc*100)}%</div><div class="hm-sub">faturados até a data prevista</div></div>`:''}
+        <div><div class="hm-v" style="color:${+Z.atrasados?'#C2410C':'#15803D'}">${hmNf(Z.atrasados)}</div><div class="hm-sub">pedidos em aberto atrasados</div></div></div>
+        ${hmBarras(fx,{cor:'#0E7490',h:70,tit:i=>(i<8?i:'8 ou mais')+' dias:'})}<div class="hm-eixo">${fx.map((_,i)=>`<span>${i<8?i:'8+'}</span>`).join('')}</div><div class="hm-leg"><span><i style="background:#0E7490"></i>pedidos por dias até faturar</span></div>`;}
+    if(['tprod','tcli','tvend'].includes(k)){const r=dados.S||{};if(r.erro)return `<div class="hm-vz">${escAttr(r.erro)}</div>`;
+      if(k==='tprod')return hmTop((r.produtos||[]).map(x=>[x.nome||x.sku,+x.total]),'#1D6FE8',hmRs);
+      if(k==='tcli')return hmTop((r.clientes||[]).map(x=>[x.nome,+x.total]),'#0E7490',hmRs);
+      return hmTop((r.vendedores||[]).map(x=>[x.nome,+x.total]),'#6B21A8',hmRs);}
+    if(['tkt','ped','dia'].includes(k))return _bloco.call(this,m,k,Object.assign({},dados.F));
+  }
+  if(m==='pcp'&&['oee','vol','rmaq','renv','perd','ocup'].includes(k)){const n=+op().pcp||7,ds=[];for(let i=n-1;i>=0;i--)ds.push(ymd(addD(new Date(),-i)));
+    if(k==='oee'){const L=MAQUINAS.map(x=>capacidadeMaquina(x,ds));const cx=L.reduce((s,x)=>s+x.caixas,0),cap=L.reduce((s,x)=>s+x.capacidade,0);
+      const lit=L.reduce((s,x)=>s+x.litros,0),litPos=L.reduce((s,x)=>s+(x.caixas>0?x.litros/x.caixas*x.capacidade:0),0);const p=cap?cx/cap:0;
+      const ls=L.filter(x=>x.capacidade>0).map(x=>[x.maq,x.caixas/x.capacidade]).sort((a,b)=>b[1]-a[1]);
+      return `<div class="hm-cap">${hmAnel(p,p>=.85?'#15803D':p>=.6?'#C2410C':'#B3261E')}
+        <div><div class="hm-sub" style="margin:0 0 6px">produzimos <b>${hmNf(lit)} L</b>${litPos>lit?` de <b>${hmNf(litPos)} L</b> possíveis`:''} · o que as máquinas fazem nas horas do turno, no ritmo cadastrado</div>
+        ${ls.map(x=>`<div class="hm-mq"><span>${escAttr(x[0])}</span><div class="br"><b style="width:${Math.min(100,x[1]*100)}%"></b></div><b>${hmNf(x[1]*100)}%</b></div>`).join('')||'<div class="hm-vz">sem jornada no período</div>'}</div></div>`;}
+    if(k==='vol'){const sDia=d=>{try{return metaDoDia(d,d===ymd(new Date())?agoraMin():null);}catch(e){return {produzido:0,meta:0};}};
+      const v=ds.map(sDia),tot=v.reduce((s,x)=>s+x.produzido,0),uteis=v.filter(x=>x.meta>0||x.produzido>0).length,med=uteis?tot/uteis:0;
+      const da=[];for(let i=2*n-1;i>=n;i--)da.push(ymd(addD(new Date(),-i)));const va=da.map(sDia),ta=va.reduce((s,x)=>s+x.produzido,0),ua=va.filter(x=>x.meta>0||x.produzido>0).length,ma=ua?ta/ua:0;
+      return `<div class="hm-dois"><div><div class="hm-v">${hmNf(tot)} L</div><div class="hm-sub">total nos ${n} dias</div></div><div><div class="hm-v">${hmNf(med)} L</div><div class="hm-sub">média por dia trabalhado${hmDelta(med,ma)}</div></div></div>
+        ${hmBarras(v.map(x=>x.produzido),{cor:'#0E1B33',tend:true,h:90,hl:(x,i)=>v[i].meta>0&&x<v[i].meta*.85,tit:i=>dCurto(ds[i])})}<div class="hm-leg"><span><i style="background:#0E1B33"></i>litros do dia</span><span><i style="background:#C2410C"></i>abaixo do programado</span></div>`;}
+    if(k==='rmaq'){const L=MAQUINAS.map(x=>capacidadeMaquina(x,ds)).filter(x=>x.litros>0).sort((a,b)=>b.litros-a.litros);
+      return hmTop(L.map((x,i)=>[(i?'':'🏆 ')+x.maq,x.litros]),'#0E1B33',v=>hmNf(v)+' L');}
+    if(k==='renv'){const t={},soma=(q,l)=>{q=String(q||'').trim()||'sem operador';t[q]=(t[q]||0)+l;};
+      ORDENS.forEach(o=>{if(!naGrade(o)||o.caixas==null)return;const lc=litrosCx(o)||0;
+        (o.turnos||[]).forEach(x=>{if(ds.includes(x.data))soma(x.operador||o.operador,(+x.caixas||0)*lc);});
+        if(ds.includes(o.data))soma(o.operador,(+csCxDia(o)||0)*lc);});
+      const ls=Object.entries(t).filter(x=>x[1]>0&&x[0]!=='sem operador').sort((a,b)=>b[1]-a[1]).slice(0,5);
+      return hmTop(ls.map((x,i)=>[(i?'':'🏆 ')+x[0],x[1]]),'#15803D',v=>hmNf(v)+' L');}
+    if(k==='perd'){const oc=OCORRENCIAS.filter(o=>ds.includes(o.data)&&(o.tipo==='parada'||o.tipo==='perda'));
+      if(!oc.length)return '<div class="hm-vz">nenhuma perda ou parada registrada no período</div>';
+      const lit=oc.reduce((s,o)=>s+(o.tipo==='perda'?+o.litros||0:0),0),min=oc.reduce((s,o)=>s+(o.tipo==='parada'?+o.min||0:0),0);
+      let prod=0;try{ds.forEach(d=>{prod+=metaDoDia(d,d===ymd(new Date())?agoraMin():null).produzido||0;});}catch(e){}
+      const hh=v=>v>=60?hmNf(Math.floor(v/60))+' h'+(v%60?' '+hmNf(v%60)+' min':''):hmNf(v)+' min';
+      const cs=porCausa(oc).slice(0,3);const mq={};oc.forEach(o=>{const n=o.maq||'sem máquina';const x=mq[n]||(mq[n]={n,lit:0,min:0,q:0});x.lit+=o.tipo==='perda'?+o.litros||0:0;x.min+=o.tipo==='parada'?+o.min||0:0;x.q++;});
+      const pior=Object.values(mq).filter(x=>x.n!=='sem máquina').sort((a,b)=>b.lit-a.lit||b.min-a.min)[0];
+      return `<div class="hm-dois"><div><div class="hm-v" style="color:#B3261E">${hmNf(lit)} L</div><div class="hm-sub">perdidos${prod&&lit?` · ${hmNf(lit/prod*100,lit/prod<.001?2:1)}% do produzido`:''}</div></div>
+        <div><div class="hm-v" style="color:#C2410C">${hh(min)}</div><div class="hm-sub">de máquina parada</div></div><div><div class="hm-v">${hmNf(oc.length)}</div><div class="hm-sub">ocorrências</div></div></div>
+        <div class="hm-sub" style="margin:8px 0 2px;font-weight:600;color:var(--ink2)">3 principais motivos</div>
+        ${(()=>{const mL=Math.max(1,...cs.map(c=>c.litros||0)),mM=Math.max(1,...cs.map(c=>c.min||0));
+          return `<div class="hm-tops">${cs.map((c,i)=>{const w=c.litros?c.litros/mL:c.min/mM;return `<div class="r"><i>${i+1}</i><span class="nm" title="${escAttr(c.causa)}">${escAttr(c.causa)}</span><span class="vl">${[c.litros?hmNf(c.litros)+' L':'',c.min?hh(c.min):''].filter(Boolean).join(' · ')} · ${c.n}×</span><div class="br"><b style="width:${Math.max(2,w*100)}%;background:${c.litros?'#B3261E':'#C2410C'}"></b></div></div>`;}).join('')}</div>`;})()}
+        ${pior?`<div class="hm-aten">⚠ Precisa de atenção: <b>${escAttr(pior.n)}</b> · ${pior.lit?hmNf(pior.lit)+' L perdidos':''}${pior.lit&&pior.min?' · ':''}${pior.min?hh(pior.min)+' parada':''} · ${pior.q} ocorrências</div>`:''}`;}
+    if(k==='ocup'){const cap=capacidadeFabrica(ds);return hmTop(cap.linhas.map(l=>[l.maq||l.m||'',l.pctOcup||0]),'#0E1B33',v=>hmNf(v)+'%');}}
+  if(m==='com'&&k==='titc'){const D=(dados&&dados.d)||{};const ocs=(D.ocs||[]).filter(o=>o.sit!=='can'&&o.sit!=='ras');
+    const de=ymd(addD(new Date(),op().com==='sem'?-6:-29));const t={};
+    ocs.filter(o=>String(o.data||'')>=de).forEach(o=>(o.itens||[]).forEach(i=>{const n=i.nome||i.desc||'—';t[n]=(t[n]||0)+(+i.qtd||0)*(+i.preco||0)*(1+(+i.ipi||0)/100);}));
+    return hmTop(Object.entries(t).filter(x=>x[1]>0).sort((a,b)=>b[1]-a[1]).slice(0,5).map((x,i)=>[(i?'':'🏆 ')+x[0],x[1]]),'#B45309',hmRs);}
+  }catch(e){return `<div class="hm-vz">não consegui calcular: ${escAttr(e.message)}</div>`;}
+  return _bloco.apply(this,arguments);
+};
+/* ---------------- seletores: no título do card e no cabeçalho do módulo ---------------- */
+const TIT={'ven|fat':()=>SEL('fat',op().fat,[['fat','Faturamento'],['ven','Venda']])+' do mês',
+  'ven|prev':()=>'Previsão de '+SEL('prev',op().prev,[['fat','faturamento'],['ven','venda']]),
+  'ven|prz':()=>'Prazo de entrega '+SEL('prz',op().prz,[[7,'7 dias'],[30,'30 dias'],[90,'90 dias']]),
+  'com|titc':()=>'Top itens comprados '+SEL('com',op().com,[['sem','na semana'],['mes','em 30 dias']])};
+const tag=t=>` <span class="hm-tag">${t}</span>`;
+const _grade=gradeInicio;
+gradeInicio=function(){
+  _grade.apply(this,arguments);
+  try{const o=op();
+    document.querySelectorAll('.hm-card[data-hc]').forEach(c=>{const hc=c.dataset.hc,t=c.querySelector('.hm-t');if(!t)return;
+      if(TIT[hc])t.innerHTML=TIT[hc]();
+      else if(/^ven\|t(prod|cli|vend)$/.test(hc))t.innerHTML+=tag(o.top==='sem'?'semana':'mês');
+      else if(/^pcp\|(oee|vol|rmaq|renv|perd|ocup)$/.test(hc))t.innerHTML+=tag((hc==='pcp|rmaq'||hc==='pcp|renv'?'litros · ':'')+o.pcp+' dias');});
+    const seg=(id,v,ops)=>`<span class="hm-seg">${ops.map(([k,n])=>`<b data-hseg="${id}" data-v="${k}" class="${String(v)===String(k)?'on':''}">${n}</b>`).join('')}</span>`;
+    const ab=m=>document.querySelector(`.hm-secm [data-hm="${m}"]`);
+    if(ab('ven'))ab('ven').insertAdjacentHTML('beforebegin',seg('top',o.top,[['sem','Semana'],['mes','Mês']]));
+    if(ab('pcp'))ab('pcp').insertAdjacentHTML('beforebegin',seg('pcp',o.pcp,[[7,'7 dias'],[15,'15 dias'],[30,'30 dias']]));
+    const muda=(id,v)=>{const c=hmCfg();c.op[id]=/^\d+$/.test(v)?+v:v;hmGuardar();gradeInicio();};
+    document.querySelectorAll('[data-hseg]').forEach(b=>b.onclick=()=>muda(b.dataset.hseg,b.dataset.v));
+    document.querySelectorAll('[data-hop]').forEach(s=>{s.onclick=ev=>ev.stopPropagation();s.onchange=()=>muda(s.dataset.hop,s.value);});
+  }catch(e){console.warn('[inicio493]',e);}
+};
+const css=document.createElement('style');css.textContent=`
+.hm-dd{font:inherit;font-size:12.5px;font-weight:700;color:var(--ink);border:1px solid var(--line,#E6E3DC);border-radius:6px;padding:1px 4px;background:#fff;cursor:pointer;margin:0 1px}
+.hm-tag{font-size:11px;font-weight:600;color:var(--ink3);background:#F1F0EC;border-radius:5px;padding:1px 6px;margin-left:4px}
+.hm-seg{display:inline-flex;background:#ECEAE4;border-radius:9px;padding:3px}.hm-seg b{padding:4px 11px;border-radius:7px;font-weight:600;font-size:12px;color:var(--ink2);cursor:pointer}.hm-seg b.on{background:#fff;color:var(--ink);box-shadow:0 1px 2px #0002}
+.hm-dois{display:flex;gap:18px;margin-bottom:6px}.hm-dois>div{min-width:0}.hm-dois .hm-v{white-space:nowrap}.hm-eixo{display:flex;font-size:10px;color:var(--ink3)}.hm-eixo span{flex:1;text-align:center}
+.hm-aten{margin-top:10px;background:#FDECEC;color:#8A1C14;border-radius:8px;padding:8px 10px;font-size:12.5px}
+.hm-cap{display:grid;grid-template-columns:120px 1fr;gap:14px;align-items:center;position:relative}.hm-capv{position:absolute;left:0;width:120px;top:50%;transform:translateY(-50%);text-align:center;font-size:20px;font-weight:800}
+.hm-mq{display:grid;grid-template-columns:minmax(80px,140px) 1fr 42px;gap:8px;align-items:center;font-size:12px;margin:5px 0}.hm-mq .br{height:8px;background:#F1F0EC;border-radius:4px}.hm-mq .br b{display:block;height:100%;border-radius:4px;background:#0E1B33}.hm-mq>b{text-align:right}
+@media (max-width:640px){.hm-secm{flex-wrap:wrap}.hm-cap{grid-template-columns:1fr}.hm-capv{display:none}}`;document.head.appendChild(css);
+try{if(typeof S!=='undefined'&&S.page==='home')setTimeout(()=>{try{gradeInicio();}catch(e){}},0);}catch(e){}
+})();
 
 </script>
 </body>

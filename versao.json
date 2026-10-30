@@ -1,6 +1,6 @@
 {
- "v": "v492",
- "versao": "4.9.2",
+ "v": "v493",
+ "versao": "4.9.3",
  "data": "29/10/2026",
- "o_que_mudou": "Depósitos com nome curto: EXPEDIÇÃO, QUARENTENA, PREFORMAS, FRASCOS, FRASCOS ROTULADOS, FÁBRICA e os dos fornecedores (PLASFAR, HPACK, NUOVA PLAS); cadastro de clientes e fornecedores editável no ERP"
+ "o_que_mudou": "Início: faturamento ou venda no card, prazo de entrega, PCP por período com aproveitamento da capacidade e rankings, top itens comprados"
 }
