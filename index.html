@@ -5508,7 +5508,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v493';const VERSAO_DATA='29/10/2026';
+const VERSAO_APP='v494';const VERSAO_DATA='29/10/2026';
 /* número que aparece na tela: v438 → v4.3.8 (por dentro continua v438, que é o que as versões comparam) */
 const csRotVer=v=>{const d=String(v||'').replace(/\D/g,'');return d.length>=3?'v'+d.slice(0,-2)+'.'+d.slice(-2,-1)+'.'+d.slice(-1):String(v||'');};
 const VERSAO_ROTULO=csRotVer(VERSAO_APP)+' · '+VERSAO_DATA;
@@ -38500,6 +38500,46 @@ const css=document.createElement('style');css.textContent=`
 @media (max-width:640px){.hm-secm{flex-wrap:wrap}.hm-cap{grid-template-columns:1fr}.hm-capv{display:none}}`;document.head.appendChild(css);
 try{if(typeof S!=='undefined'&&S.page==='home')setTimeout(()=>{try{gradeInicio();}catch(e){}},0);}catch(e){}
 })();
+
+</script>
+<script data-v494="ficha">
+/* v4.9.4 · CONSUMO PELA FICHA TÉCNICA DO INSUMO
+   Desde a v4.8.9 a embalagem do produto usa o FRASCO ROTULADO (que tem ficha: frasco + rótulo) e o frasco soprado
+   tem ficha (preforma). A explosão dos pedidos, o consumo das OPs e a reserva paravam no frasco rotulado, e o
+   rótulo, o frasco e a preforma ficaram sem consumo, sem saídas e sem sugestão na Necessidade de compra.
+   Agora cada item com ficha também gera o consumo dos componentes dele (até 3 níveis), no passado e no futuro.
+   A baixa de estoque da OP não muda: continua baixando o frasco rotulado. */
+(function(){
+  const N=window.csNucleo;if(!N||N.__ficha494)return;N.__ficha494=true;
+  const ins=(sku,nome)=>{try{return insPorSku(sku)||insPorNome(nome);}catch(e){return null;}};
+  function desce(out,tipo){
+    const add=(sku,nome,qtd,nivel,ori)=>{const i=ins(sku,nome);if(!i||!Array.isArray(i.ficha)||!i.ficha.length||nivel>3)return;
+      i.ficha.forEach(f=>{const c=ins(f.sku,f.nome);if(c&&c.ctrlEst===false)return;const k=(c&&c.sku)||f.sku||f.nome;const q=qtd*(+f.qtd||0);if(!k||!(q>0))return;
+        const r=out[k]||(out[k]={sku:k,nome:(c&&c.nome)||f.nome,qtd:0});r.qtd+=q;
+        if(tipo==='res'){r.ops=(r.ops||0)+(ori.ops||0);r.origens=r.origens||[];(ori.origens||[]).forEach(o=>{if(r.origens.length<12&&!r.origens.includes(o))r.origens.push(o);});
+          r.det=r.det||[];(ori.det||[]).forEach(d=>r.det.push({o:d.o,q:d.q*(+f.qtd||0)}));}
+        add(f.sku,f.nome,q,nivel+1,tipo==='res'?{ops:0,origens:ori.origens,det:(ori.det||[]).map(d=>({o:d.o,q:d.q*(+f.qtd||0)}))}:ori);});};
+    Object.values(out).slice().forEach(x=>add(x.sku,x.nome,+x.qtd||0,1,x));
+    return out;
+  }
+  const _e=N.explodir,_c=N.consumo,_r=N.reservado;
+  if(_e)N.explodir=function(){return desce(_e.apply(this,arguments)||{});};
+  if(_c)N.consumo=function(){return desce(_c.apply(this,arguments)||{});};
+  if(_r)N.reservado=function(){return desce(_r.apply(this,arguments)||{},'res');};
+  try{N.versao='v494';}catch(e){}
+})();
+/* produto de um tanque com duas embalagens na mesma litragem (LIMPA VIDROS 500ML GATILHO e REFIL): a embalagem
+   está guardada como 500MLGATILHO / 500MLREFIL e o produto não achava a dele. Liga cada produto à sua, uma vez. */
+function csEmb494(){try{
+  if(typeof CS_MIGRA==='undefined'||CS_MIGRA.includes('emb494'))return;
+  if(!(typeof csEhMaster==='function'&&csEhMaster()))return;if(typeof csChaoFabrica==='function'&&csChaoFabrica())return;
+  let n=0;const sa=s=>String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toUpperCase().replace(/[^A-Z0-9]/g,'');
+  PRODUTOS.forEach(p=>{if(embDoProd(p).length)return;const E=(FORMULAS[p.tanque]||{}).emb||{};const b=sa(fmtLit(+p.litragem||0));const d=sa(p.descricao);
+    const ks=Object.keys(E).filter(k=>sa(k).startsWith(b)&&sa(k)!==b&&d.includes(sa(k).slice(b.length)));
+    if(ks.length===1&&(E[ks[0]]||[]).length){p.ficha=JSON.parse(JSON.stringify(E[ks[0]]));n++;}});
+  CS_MIGRA.push('emb494');agendarSalvar();if(n)console.info('[emb494]',n);
+}catch(e){console.warn('[emb494]',e);}}
+setTimeout(csEmb494,15000);setTimeout(csEmb494,36000);
 
 </script>
 </body>

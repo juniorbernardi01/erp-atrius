@@ -1,6 +1,6 @@
 {
- "v": "v493",
- "versao": "4.9.3",
- "data": "29/10/2026",
- "o_que_mudou": "Início: faturamento ou venda no card, prazo de entrega, PCP por período com aproveitamento da capacidade e rankings, top itens comprados"
+ "v": "v494",
+ "versao": "4.9.4",
+ "data": "30/10/2026",
+ "o_que_mudou": "Necessidade de compra: rótulos, frascos e preformas voltam a ter consumo, saídas e sugestão (pela ficha do frasco rotulado e do frasco soprado)"
 }
