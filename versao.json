@@ -1,6 +1,6 @@
 {
- "v": "v494",
- "versao": "4.9.4",
- "data": "30/10/2026",
- "o_que_mudou": "Necessidade de compra: rótulos, frascos e preformas voltam a ter consumo, saídas e sugestão (pela ficha do frasco rotulado e do frasco soprado)"
+ "v": "v496",
+ "versao": "4.9.6",
+ "data": "03/11/2026",
+ "o_que_mudou": "Relatório de saldos do fim do mês (inventário com custo, por grupo, com ou sem créditos); acerto de MP só nos lotes novos e no 3607"
 }

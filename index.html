@@ -5508,7 +5508,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v494';const VERSAO_DATA='29/10/2026';
+const VERSAO_APP='v496';const VERSAO_DATA='29/10/2026';
 /* número que aparece na tela: v438 → v4.3.8 (por dentro continua v438, que é o que as versões comparam) */
 const csRotVer=v=>{const d=String(v||'').replace(/\D/g,'');return d.length>=3?'v'+d.slice(0,-2)+'.'+d.slice(-2,-1)+'.'+d.slice(-1):String(v||'');};
 const VERSAO_ROTULO=csRotVer(VERSAO_APP)+' · '+VERSAO_DATA;
@@ -38540,6 +38540,134 @@ function csEmb494(){try{
   CS_MIGRA.push('emb494');agendarSalvar();if(n)console.info('[emb494]',n);
 }catch(e){console.warn('[emb494]',e);}}
 setTimeout(csEmb494,15000);setTimeout(csEmb494,36000);
+
+</script>
+<script data-v495="mplote">
+/* v4.9.5 · BAIXA DE MATÉRIA-PRIMA QUE NÃO BATE COM A FÓRMULA DO LOTE
+   A matéria-prima do lote sai do estoque uma vez, na liberação (ou no fim do envase), pelo volume que o lote tinha
+   naquela hora. Se depois o lote muda de volume (OP editada, OP que saiu do lote ou foi para outro dia), a baixa
+   ficava a do volume antigo. Agora a ficha do lote compara o que já saiu com o que a fórmula de hoje pede e,
+   com o PIN de gestor, lança só a diferença (devolve o que saiu a mais ou baixa o que faltou). */
+(function(){
+  const nomeTiny=id=>{try{const i=INSUMOS.find(x=>String(tinyDe(x))===String(id));return i?i.nome:String(id);}catch(e){return String(id);}};
+  window.csMPDif495=function(b){
+    try{if(!b||b.origem==='saldo'||String(b.data||'')<CS_CORTE_MP)return [];
+      /* pedido de 03/11: os lotes antigos não mexe (o estoque até 02/11 já foi acertado), só o 3607 */
+      if(String(b.data||'')<'2026-11-03'&&!String(b.lote||'').split(/\s*,\s*/).includes('3607'))return [];
+      if(!FILA_TINY.some(x=>x.chave===`lote|${b.chave}|mp`))return [];
+      const alvo=csMPAlvo(b),ja=csMPJa(b),out=[];
+      new Set([...Object.keys(alvo),...Object.keys(ja)]).forEach(id=>{const d=Math.round(((alvo[id]||0)-(ja[id]||0))*1000)/1000;
+        if(Math.abs(d)>=0.01)out.push({id,nome:nomeTiny(id),ja:ja[id]||0,alvo:alvo[id]||0,d});});
+      return out;}catch(e){return [];}
+  };
+  const nk=v=>(+v).toLocaleString('pt-BR',{maximumFractionDigits:3});
+  const _ab=abrirLote;
+  abrirLote=function(b){
+    const r=_ab.apply(this,arguments);
+    try{if(typeof ABA_LOTE!=='undefined'&&ABA_LOTE!=='preparo')return r;
+      const dif=csMPDif495(b);if(!dif.length)return r;
+      const alvoEl=[...document.querySelectorAll('#mB .lin .linh')].find(e=>/^Formulação ·/.test(e.textContent.trim()));
+      const box=document.createElement('div');box.className='alert q';box.id='mp495';
+      box.innerHTML=`<b>A baixa de matéria-prima deste lote não bate com a fórmula de ${nf(b.volume)} L.</b>
+        <table class="certt" style="margin:8px 0;background:#fff"><thead><tr><th>Insumo</th><th class="n">Já saiu do estoque</th><th class="n">A fórmula pede</th><th class="n">Acerto</th></tr></thead><tbody>
+        ${dif.map(x=>`<tr><td>${escAttr(x.nome)}</td><td class="n">${nk(x.ja)} kg</td><td class="n">${nk(x.alvo)} kg</td><td class="n"><b>${x.d<0?'devolve '+nk(-x.d):'baixa mais '+nk(x.d)} kg</b></td></tr>`).join('')}</tbody></table>
+        Provável causa: o volume do lote mudou depois da baixa (OP editada ou mudada de dia).
+        <div style="display:flex;gap:8px;margin-top:8px;align-items:center;flex-wrap:wrap"><input id="mp495p" type="password" placeholder="PIN de gestor" style="width:150px">
+        <button class="btn pri" id="mp495b">Acertar o estoque</button></div>`;
+      if(alvoEl&&alvoEl.closest('.lin'))alvoEl.closest('.lin').before(box);else{const mb=M('mB');if(mb)mb.prepend(box);}
+      M('mp495b').onclick=async()=>{const pin=M('mp495p').value;let g=null;try{g=await csNucleo.gestor(pin);}catch(e){}
+        if(!g)return toast('PIN de gestor não confere.',true);
+        csMPNaLiberacao(b);(b.ordens||[]).forEach(o=>registrar(o,'Acerto da matéria-prima pelo volume do lote',null,`${dif.map(x=>x.nome+' '+(x.d<0?'+':'-')+nk(Math.abs(x.d))+' kg').join(' · ')} · gestor ${g.nome||g.email||''}`));
+        agendarSalvar();setTimeout(()=>{try{abrirLote(b);}catch(e){}},1500);};
+    }catch(e){console.warn('[mp495]',e);}
+    return r;
+  };
+})();
+/* DAQUI PARA A FRENTE, SOZINHO: quando uma OP muda depois da baixa do lote (volume, dia, tanque, produto,
+   cancelada ou apagada), o aparelho onde a mudança foi feita lança na hora só a diferença da matéria-prima
+   do lote antigo e do novo. O lote que deixou de existir (todas as OPs saíram dele) devolve tudo o que baixou;
+   o lote novo baixa na liberação dele, como sempre. Mudança que chega de outro aparelho não dispara nada aqui. */
+(function(){
+  const SNAP={};let pronto=false,rodando=false;
+  const janela=()=>{const d=new Date();d.setDate(d.getDate()-45);const j=ymd(d);return j>'2026-11-03'?j:'2026-11-03';};   /* só lotes de 03/11 em diante */
+  const sig=o=>{let a=1;try{a=ativa(o)?1:0;}catch(e){}return [o.data,o.tanque||'',+o.litros||0,o.codigo,a,o.saldoId||'',o.inicio??''].join('|');};
+  const chavesDoDia=(d,cache)=>{if(cache[d])return cache[d];const m={};try{bateladas(d).forEach(b=>(b.ordens||[]).forEach(o=>{m[o.id]=b.chave;}));}catch(e){}return cache[d]=m;};
+  function foto(){const j=janela(),cache={};Object.keys(SNAP).forEach(k=>delete SNAP[k]);
+    ORDENS.forEach(o=>{if(!o||!o.id||String(o.data||'')<j)return;SNAP[o.id]={sig:sig(o),data:o.data,chave:chavesDoDia(o.data,cache)[o.id]||''};});pronto=true;}
+  function devolveTudo(chave,data,quem){
+    const pl=`lote|${chave}|`,ja={};
+    FILA_TINY.filter(x=>String(x.chave).startsWith(pl)&&!/\|x\d+/.test(x.chave)).forEach(x=>(x.movs||[]).forEach(v=>{ja[v.id]=(ja[v.id]||0)+(v.tipo==='S'?1:-1)*(+v.qtd||0);}));
+    const movs=Object.entries(ja).map(([id,q])=>({id,q:Math.round(q*1000)/1000})).filter(x=>Math.abs(x.q)>=0.001).map(x=>({id:x.id,tipo:x.q>0?'E':'S',qtd:Math.abs(x.q)}));
+    if(!movs.length)return;const ch=`${pl}aj${Date.now().toString(36)}`;
+    enfileirar({chave:ch,origem:`Lote ${chave.split('|')[2]||''}`,rotulo:'Devolução da matéria-prima · o lote mudou',movs,obs:`as OPs saíram do lote ${chave} (mudaram de dia, de tanque ou foram canceladas) · devolve o que tinha baixado`});
+    quem.forEach(o=>{try{registrar(o,'Matéria-prima devolvida: a OP saiu do lote',null,`lote ${chave}`);}catch(e){}});
+    enviarDaFila(ch).catch(()=>{});
+  }
+  function confere(){
+    if(rodando)return;rodando=true;
+    try{
+      if(typeof temNuvem!=='function'||!temNuvem()||typeof SESSAO==='undefined'||!SESSAO||MODO_TV)return;
+      if(!pronto){foto();return;}
+      const j=janela(),afet=new Map(),porId={};ORDENS.forEach(o=>{if(o&&o.id)porId[o.id]=o;});
+      const cache={};
+      Object.entries(SNAP).forEach(([id,s])=>{const o=porId[id];if(!o||sig(o)!==s.sig){if(s.chave)afet.set(s.chave,{data:s.data,ops:[]});
+        if(o&&String(o.data||'')>=j){const c=chavesDoDia(o.data,cache)[o.id];if(c&&!afet.has(c))afet.set(c,{data:o.data,ops:[]});}}});
+      ORDENS.forEach(o=>{if(o&&o.id&&!SNAP[o.id]&&String(o.data||'')>=j){const c=chavesDoDia(o.data,cache)[o.id];if(c&&!afet.has(c))afet.set(c,{data:o.data,ops:[]});}});
+      if(!afet.size)return;
+      afet.forEach((v,chave)=>{
+        if(!FILA_TINY.some(x=>x.chave===`lote|${chave}|mp`))return;           /* lote ainda sem baixa: sai na liberação */
+        let b=null;try{b=bateladas(chave.split('|')[0]).find(x=>x.chave===chave);}catch(e){}
+        if(b){if(csMPDif495(b).length)csMPNaLiberacao(b);}
+        else{const quem=Object.entries(SNAP).filter(([,s])=>s.chave===chave).map(([id])=>porId[id]).filter(Boolean);devolveTudo(chave,v.data,quem);}
+      });
+    }catch(e){console.warn('[mp495 auto]',e);}
+    finally{try{foto();}catch(e){}rodando=false;}
+  }
+  window.csMPConfere495=confere;
+  /* agendarSalvar é constante: a conferência entra na gravação, que vem 0,6 s depois de toda mudança feita aqui */
+  try{const _pe=persistir;persistir=async function(){try{confere();}catch(e){}return _pe.apply(this,arguments);};}catch(e){console.warn('[mp495] sem gancho',e);}
+  try{const _ae=aplicarEstado;aplicarEstado=function(){const r=_ae.apply(this,arguments);try{if(!rodando)foto();}catch(e){}return r;};}catch(e){}
+  setTimeout(()=>{try{if(!pronto)foto();}catch(e){}},8000);
+})();
+
+</script>
+<script data-v496="nucleo">
+/* v4.9.6 · o núcleo entrega ao relatório de saldos do fim do mês: todos os itens (também os inativos, que podem ter
+   saldo), a composição de cada produto acabado por caixa (matéria-prima pela fórmula, embalagem pela ficha) e o custo
+   do cadastro de cada insumo (o que vem gravado na fórmula, usado só quando o item não tem compra no ERP). */
+try{Object.assign(csNucleo,{
+  custoBase:()=>{
+    const cad={};const nota=(sku,c)=>{if(sku&&+c>0&&cad[sku]==null)cad[sku]=+c;};
+    try{INSUMOS.forEach(i=>nota(i.sku,i.custo));}catch(e){}
+    try{Object.values(FORMULAS).forEach(F=>{(F.mp||[]).forEach(m=>nota(m.sku,m.custo));Object.values(F.emb||{}).forEach(l=>(l||[]).forEach(e=>{const i=(()=>{try{return insPorSku(e.sku)||insPorNome(e.nome);}catch(x){return null;}})();nota(i?i.sku:e.sku,e.custo);}));});}catch(e){}
+    try{PRODUTOS.forEach(p=>(Array.isArray(p.ficha)?p.ficha:[]).forEach(e=>nota(e.sku,e.custo)));}catch(e){}
+    const res=(sku,nome)=>{try{const i=insPorSku(sku)||insPorNome(nome);if(i)return {t:'i',sku:i.sku};}catch(e){}
+      try{const p=prodOf(sku);if(p)return {t:'p',sku:String(p.codigo)};}catch(e){}return {t:'?',sku:sku||nome};};
+    const prod=PRODUTOS.map(p=>{const ucx=+p.un_cx||1,lit=ucx*(+p.litragem||0);const F=FORMULAS[p.tanque]||{};
+      const mp=Array.isArray(p.ficha)?[]:(F.mp||[]).map(m=>({...res(m.sku,m.nome),nome:m.nome,q:lit*(+m.pct||0)/100})).filter(x=>x.q>0);
+      const emb=(embDoProd(p)||[]).map(e=>({...res(e.sku,e.nome),nome:e.nome,q:(+e.qtd||0)*ucx})).filter(x=>x.q>0);
+      return {codigo:String(p.codigo),nome:p.descricao,key:csChaveEst(p.tiny),sal:+(ESTOQUE[p.tiny]??ESTOQUE[csChaveEst(p.tiny)]??0)||0,un:p.un||(String(p.descricao||'').match(/- (FD|CX)/i)||[,'cx'])[1].toLowerCase(),ativo:p.ativo!==false,grupo:(()=>{try{return csNucleo.grupoDe(p);}catch(e){return 'Produtos acabados';}})(),mp,emb};});
+    try{csInsNorm();}catch(e){}
+    const ins=INSUMOS.map(i=>({sku:i.sku,nome:i.nome,tipo:i.tipo||'',key:csChaveEst(i.tiny||('ERP-'+i.sku)),sal:+(ESTOQUE[i.tiny||('ERP-'+i.sku)]??ESTOQUE[csChaveEst(i.tiny||('ERP-'+i.sku))]??0)||0,un:(typeof unDoItem==='function'?unDoItem(i):i.un)||'un',ativo:i.ativo!==false,
+      grupo:(()=>{try{return csNucleo.grupoDe(i);}catch(e){return i.tipo||'Sem grupo';}})(),ficha:(i.ficha||[]).map(f=>({...res(f.sku,f.nome),nome:f.nome,q:+f.qtd||0}))}));
+    return {cad,prod,ins,ordem:(()=>{try{return window.csGruposOrdem?csGruposOrdem():[];}catch(e){return [];}})()};
+  },
+  logTamanho:()=>CS_ELOG.length,quem:()=>{try{return quemAssina();}catch(e){return '';}},
+  versao:'v496'});}catch(e){console.warn('[v496] núcleo',e);}
+
+/* custos do cadastro em 21/10/2026 (a embalagem da fórmula perdeu o custo na troca para o frasco rotulado, v4.8.9) */
+const CS_CUSTO_1021={"CX001":1.827,"ROT068":0.0473,"TAM003":0.0725,"ROT047":0.0473,"SEMSKU-FILME TERMO ENCOLHIVEL":19,"NOME|FILME TERMO ENCOLHIVEL":19,"FR002":3.3548,"ROT049":0.17,"TAM018":0.1575,"CX008":1.4884,"FR013":0.65,"ROT051":0.15,"TAM002":0.0601,"CX007":1.5593,"ROT050":0.15,"TAM006":0.7374,"CX011":1.6695,"PREF008":0.6223,"ROT073":0.15,"TAM015":0.0567,"TAM014":0.12,"PREF005":1.1549,"ROT075":0.18,"TAM009":0.125,"ROT070":0.15,"ROT079":0.18,"ROT072":0.15,"ROT077":0.18,"ROT056":0.0473,"ROT057":0.17,"ROT071":0.15,"ROT078":0.18,"ROT018":0.0473,"ROT001":0.15,"PREF001-9":1.0482,"ROT019":0.18,"FR010":0.68,"ROT002":0.0473,"CX004":1.7207,"FR005":0.8741,"ROT003":0.1103,"FR0009":1.7719,"ROT004":0.17,"PREF003":0.5693,"ROT027":0.0473,"ROT031":0.18,"CX002":1.8246,"PREF002":0.3795,"ROT035":0.0473,"TAM004":0.063,"SEMSKU-CAIXAS - 500ml Multiuso":1.953,"NOME|CAIXAS - 500ml Multiuso":1.953,"SEMSKU-PREFORMAS - 500ML DET":0.2344,"NOME|PREFORMAS - 500ML DET":0.2344,"ROT032":0.0473,"TAM005":0.0394,"FR011":0.98,"ROT005":0.0473,"FR004":1.6853,"ROT006":0.1103,"FR029":3.5044,"ROT007":0.17,"ROT022":0.0473,"ROT029":0.18,"ROT024":0.0473,"ROT064":0.18,"ROT082":0.0473,"ROT036":0.0473,"ROT033":0.0473,"ROT037":0.0473,"ROT038":0.15,"ROT039":0.18,"ROT034":0.0473,"ROT045":0.15,"ROT080":0.18,"ROT046":0.18,"ROT023":0.0473,"ROT030":0.18,"ROT010":0.15,"ROT076":0.15,"ROT081":0.18,"ROT067":0.18,"ROT021":0.0473,"ROT028":0.18,"ROT001-87":0.15,"ROT055":0.18,"ROT001-88":0.15,"ROT066":0.18,"MP-005":1.2364,"MP-013":12.8625,"MP-017":5.7094,"MP-004":10.8281,"ESS-018":88.2,"MP-003":14.8838,"COR-006":59.3688,"MP-015":10.9463,"MP-009":4.6463,"COR-002":80.1749,"MP-011":32.2088,"ESS-023":71.1979,"COR-005":70.875,"COR-007":86.2943,"ESS-031":58.0545,"COR-024":196.875,"SEMSKU-FRAGRANCIA AM ROXO":66.402,"MP-019":5.1188,"ESS-008":68.796,"COR-022":196.875,"ESS-030":63.0236,"COR-023":89.8931,"COR-001":100.3649,"COR-004":83.8421,"ESS-026":29.1375,"ESS-007":33.075,"MP-040":11.2775,"MP-035":0.9075,"MP-020":2.9138,"MP-002":15.0019,"ESS-002":64.4175,"COR-003":188.8554,"ESS-005":47.25,"ESS-011":94.5945,"ESS-003":40.95,"MP-037":8.6468,"SEMSKU-CORANTE AMARELO METANIL":70.8655,"ESS-006":43.9425,"ESS-012":41.7375,"ESS-013":40.95};
+function csCustos496(){try{
+  if(typeof CS_MIGRA==='undefined'||CS_MIGRA.includes('custo496'))return;
+  if(!(typeof csEhMaster==='function'&&csEhMaster()))return;if(typeof csChaoFabrica==='function'&&csChaoFabrica())return;
+  const de=(sku,nome)=>{if(sku&&CS_CUSTO_1021[sku]!=null)return CS_CUSTO_1021[sku];if(CS_CUSTO_1021['NOME|'+nome]!=null)return CS_CUSTO_1021['NOME|'+nome];
+    try{const i=insPorSku(sku)||insPorNome(nome);if(i&&CS_CUSTO_1021[i.sku]!=null)return CS_CUSTO_1021[i.sku];}catch(e){}return null;};
+  let n=0;Object.values(FORMULAS).forEach(F=>Object.values(F.emb||{}).forEach(l=>(l||[]).forEach(e=>{if(+e.custo>0)return;const c=de(e.sku,e.nome);if(c!=null){e.custo=c;n++;}})));
+  PRODUTOS.forEach(p=>(Array.isArray(p.ficha)?p.ficha:[]).forEach(e=>{if(+e.custo>0)return;const c=de(e.sku,e.nome);if(c!=null){e.custo=c;n++;}}));
+  INSUMOS.forEach(i=>{if(+i.custo>0)return;const c=de(i.sku,i.nome);if(c!=null){i.custo=c;n++;}});
+  CS_MIGRA.push('custo496');agendarSalvar();if(n)console.info('[custo496]',n);
+}catch(e){console.warn('[custo496]',e);}}
+setTimeout(csCustos496,16000);setTimeout(csCustos496,38000);
 
 </script>
 </body>
