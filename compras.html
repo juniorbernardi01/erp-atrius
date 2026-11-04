@@ -4246,8 +4246,8 @@ ligaCalendarios=function(raiz){
    "ver tendência" abre o gráfico com a linha de tendência, por 1 D (comercial do dia), 7 D, 15 D, 30 D e 1 A (PTAX).
    Cor do lado de quem compra: dólar subindo é vermelho, caindo é verde. Os dados vêm da função do Tiny (acao cambio). */
 (function(){
-  const FX={per:'30d',aberta:false,dados:{},carregando:{},erro:''};
-  try{const s=JSON.parse(localStorage.getItem('erp.fx499')||'{}');if(s.per)FX.per=s.per;}catch(e){}   /* sempre abre fechada; só o período fica lembrado */
+  const FX={per:'1d',aberta:false,dados:{},carregando:{},erro:''};
+  /* sempre abre fechada e em 1 D */
   const guarda=()=>{try{localStorage.setItem('erp.fx499',JSON.stringify({per:FX.per}));}catch(e){}};
   const PERS=[['1d','1 D'],['7d','7 D'],['15d','15 D'],['30d','30 D'],['1a','1 A']];
   const n4=v=>v==null||isNaN(v)?'—':(+v).toLocaleString('pt-BR',{minimumFractionDigits:4,maximumFractionDigits:4});
@@ -4260,7 +4260,7 @@ ligaCalendarios=function(raiz){
     if(FX.carregando[per])return FX.carregando[per];
     FX.carregando[per]=(async()=>{try{
       if(N&&N.teste){const b=5.4;const n=per==='1d'?60:per==='1a'?250:+per.replace('d','');const serie=Array.from({length:n},(_,i)=>({t:String(i),v:b+Math.sin(i/4)*.04+i*.002}));
-        return {agora:{compra:5.4712,venda:5.4718,pct:.31,hora:'10:52'},ptax:{d:'2026-11-03',c:5.4546,v:5.4552},mes:{de:5.312,para:5.4552,pct:2.7},serie,fonte:'teste'};}
+        return {agora:{compra:5.4712,venda:5.4718,pct:.31,hora:'10:52'},ptax:{d:'2026-11-03',c:5.4546,v:5.4552},mes:{de:5.312,para:5.4552,pct:2.7},serie,fonte:'teste',fonteAgora:'teste'};}
       const r=await N.tiny({acao:'cambio',per});if(r&&r.erro)throw new Error(r.erro);return r;}
       finally{setTimeout(()=>{delete FX.carregando[per];},0);}})();
     const v=await FX.carregando[per];FX.dados[per]={em:Date.now(),v};return v;
@@ -4282,15 +4282,16 @@ ligaCalendarios=function(raiz){
   function tendTxt(serie){if(!serie||serie.length<3)return '';const vs=serie.map(x=>+x.v),n=vs.length,m1=(n-1)/2,m2=vs.reduce((a,b)=>a+b,0)/n;let a=0,b=0;vs.forEach((v,i)=>{a+=(i-m1)*(v-m2);b+=(i-m1)**2;});
     const k=b?a/b*(n-1)/m2*100:0;return Math.abs(k)<0.3?'tendência estável':k>0?'tendência de alta':'tendência de baixa';}
   function html(){
-    const D=(FX.dados[FX.per]||FX.dados['30d']||{}).v;
+    const D=(FX.dados[FX.per]||FX.dados['1d']||{}).v;
     if(!D)return `<div class="fx499l"><span class="fxlb">Dólar</span><span class="fxsb">${FX.erro?'não consegui ler agora: '+esc(FX.erro):'lendo…'}</span></div>`;
-    const a=D.agora||{},p=D.ptax||{},m=D.mes||null,mini=(FX.dados['30d']||{}).v;
+    const a=D.agora||{},p=D.ptax||{},m=D.mes||null,mini=(FX.dados['1d']||{}).v;
     const ser=D.serie||[],vs=ser.map(x=>+x.v);
     return `<div class="fx499l">
-      <span>${a.venda?'<i class="fxlive"></i>':''}<span class="fxlb">Dólar agora</span><span class="fxvl">${n4(a.venda)}</span><span class="fxvl ${cor(a.pct)}" style="font-size:12.5px">${a.pct!=null?seta(a.pct)+' '+pc(Math.abs(a.pct)).replace('+',''):''}</span><span class="fxsb">${esc(a.hora||'')}</span></span>
+      <span>${a.venda?'<i class="fxlive"></i>':''}<span class="fxlb">Dólar agora</span><span class="fxvl">${n4(a.venda)}</span><span class="fxvl ${cor(a.pct)}" style="font-size:12.5px">${a.pct!=null?seta(a.pct)+' '+pc(Math.abs(a.pct)).replace('+',''):''}</span><span class="fxsb">${a.venda?esc(a.hora||''):`<span title="${esc(D.agoraErro||'')}">sem cotação agora</span>`}</span></span>
       <span><span class="fxlb">PTAX ${brD(p.d)}</span><span class="fxvl">${n4(p.v)}</span><span class="fxsb">compra ${n4(p.c)}</span></span>
       <span><span class="fxlb">No mês</span><span class="fxvl ${m?cor(m.pct):''}">${m?pc(m.pct):'—'}</span></span>
       <span class="fxsem">${mini?linha(mini.serie,120,22,false):''}</span>
+      <span class="fxfo">${esc([D.fonteAgora?'dólar: '+D.fonteAgora:'',D.ptax?'PTAX: Banco Central':''].filter(Boolean).join(' · '))}</span>
       <button class="fxab" id="fxAb">${FX.aberta?'▴ fechar':'▾ ver tendência'}</button></div>
       <div class="fx499p"><div class="fxgl"><span>${esc(D.fonte||'')}</span><span class="fxseg">${PERS.map(([k,n])=>`<b data-fxp="${k}" class="${k===FX.per?'on':''}">${n}</b>`).join('')}</span><span style="flex:1"></span>
         <span>${vs.length?`mín ${n4(Math.min(...vs))} · máx ${n4(Math.max(...vs))} · ${tendTxt(ser)}`:(D.serieErro?'sem gráfico agora: '+esc(D.serieErro):'')}</span></div>
@@ -4305,13 +4306,13 @@ ligaCalendarios=function(raiz){
     try{const {pag,arg}=lerHash();if(!((pag==='ordens'&&!arg)||pag==='necessidade'))return;
       const app=document.getElementById('app');if(!app||document.getElementById('fx499'))return;
       const h=app.querySelector('h1');if(!h)return;let topo=h.closest('.topo,.ed-top,.q1top,.p8top')||h.parentElement;
-      FX.aberta=false;const el=document.createElement('div');el.id='fx499';topo.insertAdjacentElement('afterend',el);pinta();
-      vai('30d');if(FX.aberta&&FX.per!=='30d')vai(FX.per);
+      FX.aberta=false;FX.per='1d';const el=document.createElement('div');el.id='fx499';topo.insertAdjacentElement('afterend',el);pinta();
+      vai('1d');
     }catch(e){console.warn('[fx499]',e);}
   }
   let tm=null;const ob=new MutationObserver(()=>{clearTimeout(tm);tm=setTimeout(poe,60);});
   const ini=()=>{const app=document.getElementById('app');if(!app)return setTimeout(ini,300);ob.observe(app,{childList:true});poe();};ini();
-  setInterval(()=>{if(document.visibilityState!=='visible'||!document.getElementById('fx499'))return;delete FX.dados['30d'];delete FX.dados[FX.per];vai('30d');if(FX.per!=='30d')vai(FX.per);},5*60000);
+  setInterval(()=>{if(document.visibilityState!=='visible'||!document.getElementById('fx499'))return;delete FX.dados['1d'];delete FX.dados[FX.per];vai('1d');if(FX.per!=='1d')vai(FX.per);},5*60000);
   const s=document.createElement('style');s.textContent=`
 .fx499{background:#0B1424;color:#E8EDF5;border-radius:10px;overflow:hidden;margin:0 0 14px}
 .fx499l{display:flex;align-items:center;height:44px;padding:0 6px 0 14px;font-size:12.5px;white-space:nowrap;overflow-x:auto;scrollbar-width:none}
@@ -4321,6 +4322,7 @@ ligaCalendarios=function(raiz){
 .fx499 .up{color:#34D399}.fx499 .dn{color:#F87171}
 .fxlive{display:inline-block;width:7px;height:7px;border-radius:50%;background:#34D399;box-shadow:0 0 0 3px #34D39933;align-self:center}
 .fxsem{border-right:0!important;align-self:center}.fxm{width:120px;height:22px;display:block}
+.fxfo{margin-left:auto;border-right:0!important;font-size:10px;color:#5E6F88;padding-right:10px!important}
 .fxab{margin-left:auto;border:0;background:#132036;color:#C9D4E5;border-radius:7px;padding:6px 10px;font:600 12px Inter,system-ui;cursor:pointer}
 .fx499p{border-top:1px solid #1E2A3E;padding:10px 14px 12px;display:none}.fx499.aberta .fx499p{display:block}
 .fxgl{display:flex;gap:14px;align-items:center;font-size:11.5px;color:#8EA0BA;margin-bottom:6px;flex-wrap:wrap}
