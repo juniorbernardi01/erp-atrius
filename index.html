@@ -5508,7 +5508,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v500';const VERSAO_DATA='29/10/2026';
+const VERSAO_APP='v500';const VERSAO_DATA='04/11/2026';
 /* número que aparece na tela: v438 → v4.3.8 (por dentro continua v438, que é o que as versões comparam) */
 const csRotVer=v=>{const d=String(v||'').replace(/\D/g,'');return d.length>=3?'v'+d.slice(0,-2)+'.'+d.slice(-2,-1)+'.'+d.slice(-1):String(v||'');};
 const VERSAO_ROTULO=csRotVer(VERSAO_APP)+' · '+VERSAO_DATA;
@@ -18171,6 +18171,8 @@ let SESSAO=null, VERSAO_NUVEM=0, ONLINE=false, tPoll=null;
 const temNuvem=()=>!!(SUPA.url&&SUPA.key);
 
 try{const s=localStorage.getItem(SUPA_SESSAO);if(s)SESSAO=JSON.parse(s);}catch(e){}
+/* v5.0.0 · a TV volta com a cópia própria da sessão se a do navegador sumiu */
+try{if(typeof MODO_TV!=='undefined'&&MODO_TV&&!SESSAO){const c=localStorage.getItem('erp.tv.sessao');if(c){SESSAO=JSON.parse(c);localStorage.setItem(SUPA_SESSAO,c);}}}catch(e){}
 
 const cabecalhos=(extra)=>Object.assign({
   'apikey':SUPA.key,
@@ -38686,6 +38688,55 @@ function csCustos496(){try{
   CS_MIGRA.push('custo496');agendarSalvar();if(n)console.info('[custo496]',n);
 }catch(e){console.warn('[custo496]',e);}}
 setTimeout(csCustos496,16000);setTimeout(csCustos496,38000);
+
+</script>
+<script data-v500="tv">
+/* v5.0.0 · A TV NÃO VAI MAIS PARA O LOGIN
+   A TV ficava indo para a tela de login de tempos em tempos. Ela abre na mesma conta do computador (ou numa conta
+   própria) e dependia da sessão guardada no navegador: quando o computador saía (inatividade, versão nova, conta em
+   outro aparelho) ou a renovação do acesso falhava, a TV recarregava sem sessão e caía no login. Agora, só na TV:
+   1) ela guarda uma cópia própria da sessão e volta com ela se a do navegador sumir;
+   2) renova o acesso sozinha a cada 10 minutos (não deixa vencer nem ficar "parada" para o Supabase);
+   3) nada na TV chama "sair": versão nova, comando do administrador ou conta em outro aparelho só recarregam;
+   4) se mesmo assim a sessão não valer, ela não mostra o login: segue com a última tela, mostra "reconectando" num
+      canto e tenta de novo a cada 30 s — e entra sozinha assim que alguém fizer login nesse navegador. */
+(function(){
+  if(typeof MODO_TV==='undefined'||!MODO_TV)return;
+  const K='erp.tv.sessao';
+  const guarda=()=>{try{if(SESSAO&&SESSAO.refresh_token)localStorage.setItem(K,JSON.stringify(SESSAO));}catch(e){}};
+  const copia=()=>{try{return JSON.parse(localStorage.getItem(K)||'null');}catch(e){return null;}};
+  const doNav=()=>{try{return JSON.parse(localStorage.getItem(SUPA_SESSAO)||'null');}catch(e){return null;}};
+  /* (1) renovar também guarda a cópia; se a sessão do navegador sumiu, renova com a cópia */
+  try{const _rn=renovarSessao;renovarSessao=async function(){
+    if(!SESSAO){const c=doNav()||copia();if(c)SESSAO=c;}
+    let ok=false;try{ok=await _rn.apply(this,arguments);}catch(e){}
+    if(!ok){const n=doNav(),c=copia();
+      for(const s of [n,c])if(s&&s.refresh_token&&(!SESSAO||s.refresh_token!==SESSAO.refresh_token)){const ant=SESSAO;SESSAO=s;try{ok=await _rn.apply(this,arguments);}catch(e){}if(ok)break;SESSAO=ant;}}
+    if(ok){guarda();try{if(!localStorage.getItem(SUPA_SESSAO))localStorage.setItem(SUPA_SESSAO,JSON.stringify(SESSAO));}catch(e){}
+      try{CS_SESSAO_VENCEU=false;}catch(e){}tira();}
+    return ok;};}catch(e){}
+  /* (2) a cada 10 min renova, mesmo sem precisar */
+  setInterval(()=>{try{if(SESSAO&&SESSAO.refresh_token)renovarSessao();}catch(e){}},10*60000);
+  setInterval(guarda,60000);setTimeout(guarda,3000);
+  /* (3) na TV, sair é só recarregar (a sessão fica) */
+  try{sair=function(){try{guarda();}catch(e){}location.reload();};}catch(e){}
+  try{csSaiCom=function(){try{guarda();}catch(e){}location.reload();};}catch(e){}
+  /* (4) nunca a tela de login na TV */
+  let tent=null;
+  function aviso(){let a=document.getElementById('tvRecon');if(!a){a=document.createElement('div');a.id='tvRecon';
+    a.style.cssText='position:fixed;right:18px;bottom:18px;z-index:99999;background:#0E1B33;color:#fff;border-radius:10px;padding:10px 16px;font:600 15px Inter,system-ui,sans-serif;opacity:.92';
+    a.textContent='Reconectando ao sistema…';document.body.appendChild(a);}}
+  function tira(){const a=document.getElementById('tvRecon');if(a)a.remove();}
+  async function tenta(){try{
+    const n=doNav();if(n&&n.access_token&&(!SESSAO||n.access_token!==SESSAO.access_token)){SESSAO=n;guarda();location.reload();return;}
+    if(await renovarSessao()){location.reload();return;}}catch(e){}
+    tent=setTimeout(tenta,30000);}
+  try{telaLogin=function(){try{const l=document.getElementById('login');if(l)l.hidden=true;}catch(e){}aviso();if(!tent)tent=setTimeout(tenta,1500);};}catch(e){}
+  /* alguém entrou nesse navegador: a TV pega a sessão nova na hora */
+  window.addEventListener('storage',ev=>{try{if(ev.key===SUPA_SESSAO&&ev.newValue&&document.getElementById('tvRecon')){SESSAO=JSON.parse(ev.newValue);guarda();location.reload();}}catch(e){}});
+  /* a tela de login já estava aberta quando este bloco carregou */
+  setTimeout(()=>{try{const l=document.getElementById('login');if(l&&!l.hidden)telaLogin('');}catch(e){}},500);
+})();
 
 </script>
 </body>

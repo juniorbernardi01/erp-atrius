@@ -2,5 +2,5 @@
  "v": "v500",
  "versao": "5.0.0",
  "data": "04/11/2026",
- "o_que_mudou": "Ordem de compra: item de industrialização com sub-itens de compra e industrialização; PIS/COFINS num campo só"
+ "o_que_mudou": "Ordem de compra: item de industrialização com sub-itens de compra e industrialização; PIS/COFINS num campo só; a TV não vai mais para o login"
 }
