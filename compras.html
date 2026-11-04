@@ -4425,16 +4425,17 @@ ligaCalendarios=function(raiz){
   const crTxt=x=>[+x.icms?'ICMS':'',(+x.pis||0)+(+x.cof||0)?'PIS/COFINS':'',reforma()&&(+x.cbs||0)+(+x.ibs||0)?'CBS/IBS':''].filter(Boolean).join(' · ')||'sem crédito';
   const inp=(attr,v,d,ph)=>`<input class="in3 o5i" ${attr} value="${d?(+v?nf(v,d):''):pz(v)}" placeholder="${ph||'0'}">`;
   function linhaNormal(oc,it,i,L){
-    const c=contaItem(it,freteUnOC(oc)),ed=S.ed===i&&!L,x=insumo(it.sku)||{};const leg=envsDe(it);const vira=leg.length&&window.c497Vira?c497Vira(it):null;
+    const c=contaItem(it,freteUnOC(oc)),ed=S.ed===i&&!L;const leg=envsDe(it);const vira=leg.length&&window.c497Vira?c497Vira(it):null;
     const pc=(+it.pis||0)+(+it.cof||0);
-    const ed2=ed?`<div class="o5subs"><div class="o5g o5g6">
+    const ed2=ed?`<div class="o5subs"><div class="o5sbe o5sbn"><div class="o5n"><span class="o5tag tc">Compra</span></div>
         <label><span class="lb">Qtde</span>${inp(`data-o5="${i}|qtd"`,it.qtd)}</label><label><span class="lb">Preço</span>${inp(`data-o5="${i}|preco"`,it.preco,4)}</label>
         <label><span class="lb">ICMS %</span>${inp(`data-o5="${i}|icms"`,it.icms)}</label><label><span class="lb">IPI %</span>${inp(`data-o5="${i}|ipi"`,it.ipi)}</label>
         <label><span class="lb">PIS/COFINS %</span>${inp(`data-o5="${i}|pc"`,pc,0,'—')}</label>${reforma()?`<label><span class="lb">CBS %</span>${inp(`data-o5="${i}|cbs"`,it.cbs)}</label><label><span class="lb">IBS %</span>${inp(`data-o5="${i}|ibs"`,it.ibs)}</label>`:''}</div>
-        <div class="o5g o5g2"><label><span class="lb">Como o fornecedor chama</span><input class="in3 o5t" data-o5t="${i}|nomeForn" value="${esc(it.nomeForn||'')}"></label><label><span class="lb">Código no fornecedor</span><input class="in3 o5t" data-o5t="${i}|codForn" value="${esc(it.codForn||'')}"></label></div></div>
+        <div class="o5sbe o5sbf"><div></div><label><span class="lb">Como o fornecedor chama</span><input class="in3 o5t" data-o5t="${i}|nomeForn" value="${esc(it.nomeForn||'')}"></label><label><span class="lb">Código no fornecedor</span><input class="in3 o5t" data-o5t="${i}|codForn" value="${esc(it.codForn||'')}"></label></div></div>
       <div class="o5res"><span class="k">editando · os valores já recalculam</span><span style="flex:1"></span><button class="btn pri sm" data-o5ok="${i}">Pronto</button></div>`:'';
-    return `<div class="o5it ${leg.length?'ind':''}"><div class="o5h"><div class="o5n"><b>${esc(it.nome)}</b><small>${esc(it.sku)}${it.nomeForn?' · no fornecedor: '+esc(it.nomeForn):''} · compra${vira?` · <span class="o5vira sm">🔄 vira: ${esc(vira.nome)}</span>`:''}</small>${ed?estHTML(it.sku,it.tiny):''}</div>
-      <span class="n"><b>${nq(it.qtd)}</b> ${esc(it.un||'un')}</span><span class="n o5hd">R$ ${nf(it.preco,4)}<small>ICMS ${nq(it.icms)}% · IPI ${nq(it.ipi)}% · ${crTxt(it)}</small></span>
+    const chave=L?'<span></span>':`<span class="n o5hd"><label class="o5chv" data-o5ind="${i}" title="ligue se o fornecedor devolve este item pronto com material nosso (rótulo, preforma)"><span class="o5sw"></span>Industrialização</label></span>`;
+    return `<div class="o5it ${leg.length?'ind':''}"><div class="o5h"><div class="o5n"><b>${esc(it.nome)}</b><small>${esc(it.sku)} · compra · R$ ${nf(it.preco,4)} · ICMS ${nq(it.icms)}% · IPI ${nq(it.ipi)}% · ${crTxt(it)}${it.nomeForn?' · no fornecedor: '+esc(it.nomeForn):''}${vira?` · entra como ${esc(vira.nome)}`:''}</small>${ed?estHTML(it.sku,it.tiny):''}</div>
+      <span class="n"><b>${nq(it.qtd)}</b> ${esc(it.un||'un')}</span>${chave}
       <span class="n o5tot">${nf(c.nota,2)}</span>${L?'<span></span>':`<button class="o5mn" data-o5m="${i}">⋯</button>`}</div>
       ${leg.length?`<div class="o5subs">${leg.map(e=>`<div class="o5sb"><span class="o5tag ti">Industrialização</span><span><b>${esc(e.nome)}</b> <small>sai do depósito ${esc(depNomeDe(depDoSub(oc,e)))}</small></span><span class="n">${+e.preco?'R$ '+nf(e.preco,4):'—'}</span><span class="n k">${nq(r3_((+e.fator||1)*(+it.qtd||0)))} ${esc(e.un||'un')}</span></div>`).join('')}</div>`:''}
       ${ed2}${menu(i)}</div>`;
@@ -4444,9 +4445,10 @@ ligaCalendarios=function(raiz){
     const k=`${i}|${tipo}|${j}`;const pc=(+x.pis||0)+(+x.cof||0);const dep=tipo==='i'?depDoSub(oc,s):null;
     return `<div class="o5sbe"><div class="o5n"><b>${esc(s.nome)}</b><small>${esc(s.sku)}${tipo==='i'?' · sai do depósito '+esc(depNomeDe(dep)):' · o fornecedor fatura'}</small>${comEst?estHTML(s.sku,s.tiny,dep):''}</div>
       <label><span class="lb">Tipo</span><select class="o5sel t${tipo}" data-o5tp="${k}"><option value="c" ${tipo==='c'?'selected':''}>Compra</option><option value="i" ${tipo==='i'?'selected':''}>Industrialização</option></select></label>
-      <label><span class="lb">Qtde</span>${inp(`data-o5s="${k}|q"`,q)}</label><label><span class="lb">${tipo==='i'?'Mão de obra':'Preço'}</span>${inp(`data-o5s="${k}|preco"`,x.preco,4)}</label>
+      <label><span class="lb">Qtde</span><span class="o5q">${nq(q)} ${esc(s.un||'un')}</span></label><label><span class="lb">${tipo==='i'?'Mão de obra':'Preço'}</span>${inp(`data-o5s="${k}|preco"`,x.preco,4)}</label>
       ${tipo==='c'?`<label><span class="lb">ICMS %</span>${inp(`data-o5s="${k}|icms"`,x.icms)}</label><label><span class="lb">IPI %</span>${inp(`data-o5s="${k}|ipi"`,x.ipi)}</label>`:'<span></span><span></span>'}
       <label><span class="lb">PIS/COFINS %</span>${inp(`data-o5s="${k}|pc"`,pc,0,'—')}</label>
+      <span class="n o5stot"><span class="lb">Total</span><b>${nf(q*(+x.preco||0)*(1+(tipo==='c'?(+x.ipi||0):0)/100),2)}</b></span>
       <button class="o5x" data-o5sx="${k}" title="tirar">✕</button></div>`;
   }
   function linhaInd(oc,it,i,L){
@@ -4457,9 +4459,9 @@ ligaCalendarios=function(raiz){
         <span class="o5cr">${+x.preco||tipo==='c'?crTxt(x):'<span class="k">não é cobrado</span>'}</span><b class="n">${+x.preco?nf(b*(1+(tipo==='c'?(+x.ipi||0):0)/100),2):'—'}</b></div>`;};
     const corpo=ed?cs.map((s,j)=>subEd(oc,it,i,j,s,'c')).join('')+es.map((s,j)=>subEd(oc,it,i,j,s,'i')).join('')+subNovo(oc,it,i)
       :cs.map((s,j)=>ver(s,'c',j)).join('')+es.map((s,j)=>ver(s,'i',j)).join('');
-    return `<div class="o5it ind"><div class="o5h"><div class="o5n"><span class="o5vira">🔄 vira: ${esc(it.nome)}</span><small>${esc(it.sku)} · nosso item · entra no estoque</small>${ed?estHTML(it.sku,it.tiny):''}</div>
+    return `<div class="o5it ind"><div class="o5h"><div class="o5n"><b>${esc(it.nome)}</b><small>${esc(it.sku)} · nosso item · é o que entra no estoque · embaixo, o que o fornecedor usa para fazer</small>${ed?estHTML(it.sku,it.tiny):''}</div>
       ${ed?`<label><span class="lb">Qtde do nosso item</span>${inp(`data-o5="${i}|qtdInd"`,it.qtd)}</label>`:`<span class="n"><b>${nq(it.qtd)}</b> ${esc(it.un||'un')}</span>`}
-      <span class="n o5hd"><span class="o5chv on"><span class="o5sw on"></span>Industrialização</span></span><span class="n o5tot">${nf(c.nota,2)}</span>${L?'<span></span>':`<button class="o5mn" data-o5m="${i}">⋯</button>`}</div>
+      <span class="n o5hd">${L?'<span class="o5chv on"><span class="o5sw on"></span>Industrialização</span>':`<label class="o5chv" data-o5ind="${i}" title="desligar: volta a ser compra normal"><span class="o5sw on"></span>Industrialização</label>`}</span><span class="n o5tot">${nf(c.nota,2)}</span>${L?'<span></span>':`<button class="o5mn" data-o5m="${i}">⋯</button>`}</div>
       <div class="o5subs">${corpo||'<div class="k" style="padding:8px 0">sem sub-itens</div>'}</div>
       <div class="o5res"><span class="k">cada unidade do nosso item custa</span><span>sem créditos <b>R$ ${nf(q?c.nota/q:0,4)}</b></span><span>com créditos <b>R$ ${nf(q?(c.nota-c.credito)/q:0,4)}</b></span><span class="k">+ o material nosso</span>${ed?`<span style="flex:1"></span><button class="btn sm" data-o5ok="${i}" style="background:#6D28D9;color:#fff;border-color:#6D28D9">Pronto</button>`:''}</div>${menu(i)}</div>`;
   }
@@ -4495,7 +4497,7 @@ ligaCalendarios=function(raiz){
         <label><span class="lb">ICMS %</span>${inp('data-o5n="icms"',n.icms)}</label><label><span class="lb">IPI %</span>${inp('data-o5n="ipi"',n.ipi)}</label><label><span class="lb">PIS/COFINS %</span>${inp('data-o5n="pc"',n.pc,0,'—')}</label><span></span></div>
       <div class="o5nvf"><span class="k">PIS/COFINS: preencha só se a nota der crédito.</span><span style="flex:1"></span><button class="btn pri" id="o5Ok">Incluir item</button></div></div>`;
     const it=n.it;
-    return `<div class="o5nv ind"><div class="o5nvr"><div class="o5n" style="flex:1"><span class="o5vira">🔄 vira: ${esc(x.nome||n.sku)}</span><small>${esc(n.sku)} · nosso item</small></div>
+    return `<div class="o5nv ind"><div class="o5nvr"><div class="o5n" style="flex:1"><b>${esc(x.nome||n.sku)}</b><small>${esc(n.sku)} · nosso item · é o que entra no estoque</small></div>
        <label style="width:150px"><span class="lb">Qtde do nosso item</span>${inp('data-o5n="qtdInd"',it.qtd)}</label>${chave}<button class="o5x" id="o5X">✕</button></div>
       <div class="o5subs">${comps(it).map((s,j)=>subEd(oc,it,'n',j,s,'c')).join('')}${envsDe(it).map((s,j)=>subEd(oc,it,'n',j,s,'i')).join('')}${subNovo(oc,it,'n')}</div>
       <div class="o5nvf"><span class="k">Compra = o fornecedor fatura · Industrialização = material nosso, sai do depósito dele (mão de obra se ele cobrar).</span><span style="flex:1"></span><button class="btn" id="o5Ok" style="background:#6D28D9;color:#fff;border-color:#6D28D9">Incluir item</button></div></div>`;
@@ -4554,6 +4556,14 @@ ligaCalendarios=function(raiz){
     Q('[data-o5ed]').forEach(b=>b.onclick=()=>{S.ed=+b.dataset.o5ed;S.menu=null;rr();});
     Q('[data-o5rm]').forEach(b=>b.onclick=()=>{const it=oc.itens[+b.dataset.o5rm];if(!confirm(`Tirar ${it?it.nome:'o item'} da ordem?`))return;oc.itens.splice(+b.dataset.o5rm,1);S.menu=null;S.ed=null;try{recalc();}catch(e){}rr();});
     Q('[data-o5ok]').forEach(b=>b.onclick=()=>{S.ed=null;try{recalc();}catch(e){}rr();});
+    Q('[data-o5ind]').forEach(b=>b.onclick=e=>{e.preventDefault();const i=+b.dataset.o5ind;const it=oc.itens[i];if(!it)return;
+      if(!ehInd(it)){const x=insumo(it.sku);if(!temFicha(x))return toast(`${it.nome} não tem ficha técnica (frasco + rótulo). Cadastre a ficha no item para fazer industrialização.`,true);
+        if(recebidoDe(oc,it.sku)>0)return toast('Este item já teve recebimento: não dá para trocar.',true);
+        Object.assign(it,{ind:true,compras:[],envs:[],preco:0,icms:0,ipi:0,pis:0,cof:0,cbs:0,ibs:0,modo:'un',qtdCx:0,cx:0,nomeForn:'',codForn:''});delete it.env;it._sn=null;S.ed=i;S.menu=null;
+        toast('Agora inclua os sub-itens: o frasco como Compra e o rótulo como Industrialização (os da ficha aparecem como atalho).');}
+      else{if(!confirm(`Desligar a industrialização de ${it.nome}? Os sub-itens saem e ele volta a ser uma compra normal.`))return;
+        const c0=comps(it)[0];Object.assign(it,{ind:false,envs:[]});delete it.compras;if(!c0){it.preco=0;}S.ed=i;}
+      try{recalc();}catch(x){}rr();});
     Q('input.o5i').forEach(x=>x.addEventListener('focus',()=>x.select()));
     Q('[data-o5]').forEach(x=>x.onchange=()=>{const [i,k]=x.dataset.o5.split('|');const it=oc.itens[+i];const v=num(x.value);
       if(k==='pc'){it.pis=v;it.cof=0;}else if(k==='qtdInd'){it.qtd=v;}else{it[k]=v;if(k==='qtd'&&it.modo==='cx'&&+it.cx>0){it.qtdCx=Math.ceil(v/it.cx);it.qtd=r3_(it.qtdCx*it.cx);}}
@@ -4600,6 +4610,7 @@ ligaCalendarios=function(raiz){
   const s=document.createElement('style');s.textContent=`
 #benC,#benC+div.s2{display:none!important}
 .o5bl{padding:0 16px 12px}
+.o5sbn{grid-template-columns:minmax(0,1fr) 100px 110px 80px 80px 110px auto!important}.o5sbf{grid-template-columns:minmax(0,1fr) 260px 200px!important;border-bottom:0!important}
 .o5it{border:1px solid var(--line);border-radius:12px;margin:10px 0;background:#fff;position:relative}
 .o5it.ind{border-color:#C4B5FD;box-shadow:0 0 0 3px #F5F3FF}
 .o5h{display:grid;grid-template-columns:minmax(0,1fr) 130px 170px 110px 34px;gap:12px;align-items:center;padding:11px 14px}
@@ -4613,10 +4624,12 @@ ligaCalendarios=function(raiz){
 .o5sb{display:grid;grid-template-columns:118px minmax(0,1fr) 100px 190px 110px 100px;gap:10px;align-items:center;padding:7px 0;border-bottom:1px solid #F3F1FA;font-size:13px}.o5sb:last-child{border-bottom:0}
 .o5sb small{color:var(--ink3);font-size:11.5px}.o5cr{font-size:11px;color:#15803D}
 .o5tag{font-size:11px;font-weight:700;border-radius:6px;padding:3px 8px;white-space:nowrap;justify-self:start}.o5tag.tc{background:#EFF6FF;color:#1D4ED8}.o5tag.ti{background:#F5F3FF;color:#6D28D9}
-.o5sbe{display:grid;grid-template-columns:minmax(0,1fr) 150px 92px 100px 70px 70px 96px 28px;gap:8px;align-items:end;padding:9px 0;border-bottom:1px solid #F1EEFA;font-size:13px}
+.o5sbe{display:grid;grid-template-columns:minmax(0,1fr) 150px 90px 100px 66px 66px 92px 96px 24px;gap:8px;align-items:end;padding:9px 0;border-bottom:1px solid #F1EEFA;font-size:13px}
 .o5sel{border:1px solid var(--line);border-radius:8px;height:34px;padding:0 8px;background:#fff;font-weight:600;width:100%;font:inherit;font-size:13px}.o5sel.tc{color:#1D4ED8;background:#EFF6FF;border-color:#BFDBFE}.o5sel.ti{color:#6D28D9;background:#F5F3FF;border-color:#DDD6FE}
 .o5i{width:100%!important;min-width:0!important;height:34px}.o5t{width:100%!important;text-align:left!important;justify-content:flex-start}
 .lb{display:block;font-size:11px;color:var(--ink3);margin-bottom:3px;font-weight:500}
+.o5q{display:flex;align-items:center;justify-content:flex-end;height:34px;font-weight:700;font-variant-numeric:tabular-nums}.o5stot b{display:flex;align-items:center;justify-content:flex-end;height:34px}
+.o5subs .o5sbe .o5n b{font-size:13.5px;font-weight:600}
 .o5x{border:0;background:none;color:var(--ink3);cursor:pointer;font-size:14px;padding:0 4px 9px}.o5x:hover{color:#B3261E}
 .o5res{display:flex;gap:16px;align-items:center;justify-content:flex-end;padding:8px 14px;background:#FAFAFB;border-top:1px solid #F1F1F3;font-size:12.5px;flex-wrap:wrap;border-radius:0 0 12px 12px}
 .o5vira{display:inline-flex;align-items:center;gap:6px;background:#ECFDF3;color:#15803D;border:1px solid #BBF7D0;border-radius:8px;padding:3px 9px;font-weight:700;font-size:13px}.o5vira.sm{font-size:11px;padding:1px 6px}
