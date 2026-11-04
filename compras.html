@@ -4247,8 +4247,8 @@ ligaCalendarios=function(raiz){
    Cor do lado de quem compra: dólar subindo é vermelho, caindo é verde. Os dados vêm da função do Tiny (acao cambio). */
 (function(){
   const FX={per:'30d',aberta:false,dados:{},carregando:{},erro:''};
-  try{const s=JSON.parse(localStorage.getItem('erp.fx499')||'{}');if(s.per)FX.per=s.per;FX.aberta=!!s.aberta;}catch(e){}
-  const guarda=()=>{try{localStorage.setItem('erp.fx499',JSON.stringify({per:FX.per,aberta:FX.aberta}));}catch(e){}};
+  try{const s=JSON.parse(localStorage.getItem('erp.fx499')||'{}');if(s.per)FX.per=s.per;}catch(e){}   /* sempre abre fechada; só o período fica lembrado */
+  const guarda=()=>{try{localStorage.setItem('erp.fx499',JSON.stringify({per:FX.per}));}catch(e){}};
   const PERS=[['1d','1 D'],['7d','7 D'],['15d','15 D'],['30d','30 D'],['1a','1 A']];
   const n4=v=>v==null||isNaN(v)?'—':(+v).toLocaleString('pt-BR',{minimumFractionDigits:4,maximumFractionDigits:4});
   const pc=v=>v==null||isNaN(v)?'—':(v>0?'+':'')+(+v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+'%';
@@ -4305,7 +4305,7 @@ ligaCalendarios=function(raiz){
     try{const {pag,arg}=lerHash();if(!((pag==='ordens'&&!arg)||pag==='necessidade'))return;
       const app=document.getElementById('app');if(!app||document.getElementById('fx499'))return;
       const h=app.querySelector('h1');if(!h)return;let topo=h.closest('.topo,.ed-top,.q1top,.p8top')||h.parentElement;
-      const el=document.createElement('div');el.id='fx499';topo.insertAdjacentElement('afterend',el);pinta();
+      FX.aberta=false;const el=document.createElement('div');el.id='fx499';topo.insertAdjacentElement('afterend',el);pinta();
       vai('30d');if(FX.aberta&&FX.per!=='30d')vai(FX.per);
     }catch(e){console.warn('[fx499]',e);}
   }
