@@ -1,6 +1,6 @@
 {
- "v": "v498",
- "versao": "4.9.8",
+ "v": "v499",
+ "versao": "4.9.9",
  "data": "04/11/2026",
- "o_que_mudou": "Acerto da matéria-prima do lote pelo razão do estoque"
+ "o_que_mudou": "Faixa do dólar (comercial e PTAX, com tendência) em Ordens de compra e Necessidade de compra"
 }
