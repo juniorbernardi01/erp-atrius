@@ -4117,7 +4117,7 @@ ligaCalendarios=function(raiz){
       (o.itens||[]).forEach(it=>{const q=+it.qtd||0;if(!(q>0)||!it.sku)return;let c;try{c=contaItem(it);}catch(e){return;}
         const fu=prodT?fr*(c.base/prodT)/q:0;const vira=window.c497Vira?c497Vira(it):null;
         const x={b:(c.nota||0)/q+fu,l:((c.nota||0)-(c.credito||0))/q+fu,q,data:String(o.data||''),o:`OC ${o.num} · ${brD(o.data)}`,
-          envs:vira?envsDe(it).map(e=>({sku:e.sku,f:+e.fator||1})):[]};
+          envs:(vira||it.ind)?envsDe(it).filter(e=>e.tipo!=='venda').map(e=>({sku:e.sku,f:+e.fator||1})):[]};
         const k=vira?vira.sku:it.sku;((it.mo?M:L)[k]=(it.mo?M:L)[k]||[]).push(x);});});
     const pega=(ls)=>{if(!ls||!ls.length)return null;const ult=ls[ls.length-1];
       if(base==='med'){const m=ls.filter(x=>x.data>=ini);if(m.length){const qt=m.reduce((s,x)=>s+x.q,0);
@@ -4329,6 +4329,315 @@ ligaCalendarios=function(raiz){
 .fxseg{display:inline-flex;background:#132036;border-radius:7px;padding:2px}.fxseg b{padding:3px 11px;border-radius:5px;font-size:11.5px;color:#8EA0BA;cursor:pointer}.fxseg b.on{background:#24324A;color:#fff}
 .fxg{width:100%;height:120px;display:block}
 .fxlg{display:flex;gap:14px;font-size:11px;color:#8EA0BA;margin-top:4px}.fxlg i{display:inline-block;width:14px;height:2px;vertical-align:middle;margin-right:5px}`;document.head.appendChild(s);
+})();
+
+</script>
+<script data-v500="oc">
+/* v5.0.0 · ORDEM DE COMPRA · ITEM DE INDUSTRIALIZAÇÃO
+   Cada item tem a sua chave "Industrialização". Ligada, o item é o NOSSO (o que entra no estoque, ex.: FRASCO 5L
+   PEAD ROSA ALVEJ SEM CLORO) e embaixo vão os sub-itens, um por um, com o tipo:
+     · Compra: o que o fornecedor fatura (frasco), com preço, ICMS, IPI e PIS/COFINS (um campo só, digitado).
+     · Industrialização: material nosso que sai do depósito dele (rótulo, preforma), com a mão de obra se ele cobrar.
+   Estoque ao receber: entra o nosso item; sai do depósito do fornecedor o que é industrialização; a compra não passa
+   pelo estoque (já volta transformada). PDF: só o que o fornecedor fatura e a rotulagem cobrada.
+   Gravação: it.ind=true; it.compras=[{sku,nome,tiny,un,fator,...}] (a 1ª usa it.preco/icms/ipi/pis do item);
+   it.envs = o material nosso (o mesmo formato de antes), então recebimento, depósito e conferência seguem iguais.
+   Reforma tributária: CBS e IBS já são guardados e entram na conta; só aparecem na tela com DB.cfg.reforma ligado. */
+(function(){
+  const S={nv:null,menu:null,ed:null,foco:null};
+  const r3_=v=>Math.round((+v||0)*1000)/1000;
+  const pz=v=>+v?nq(v):'';
+  const reforma=()=>!!(DB&&DB.cfg&&DB.cfg.reforma);
+  const fid=()=>ED&&ED.oc&&ED.oc.forn&&ED.oc.forn.id;
+  const comps=it=>Array.isArray(it.compras)?it.compras:[];
+  const cpQ=(it,c)=>r3_((+c.fator||1)*(+it.qtd||0));
+  const ehInd=it=>!!(it&&it.ind);
+  const temFicha=x=>!!(x&&Array.isArray(x.ficha)&&x.ficha.length);
+  const precoDe=sku=>{const f=fid();const mp=melhorPreco(sku,f),uc=ultimaCompra(sku,f)||ultimaCompra(sku);return mp?mp.preco:(uc?uc.preco:0);};
+  const impDe=sku=>(DB.imp&&DB.imp[sku])||{};
+  /* ---------- contas do item industrializado ---------- */
+  const _ci=contaItem;
+  contaItem=function(it,fu){
+    if(!ehInd(it))return _ci.apply(this,arguments);
+    fu=+fu||0;const q=+it.qtd||0;let base=0,baseF=0,baseS=0;const val={icms:0,ipi:0,pis:0,cof:0,cbs:0,ibs:0};const cred={icms:0,pis:0,cof:0,ref:0};
+    comps(it).forEach((c,k)=>{const x=k===0?it:c;const qq=cpQ(it,c),b=qq*(+x.preco||0);base+=b;baseF+=b;
+      val.ipi+=b*(+x.ipi||0)/100;val.icms+=b*(+x.icms||0)/100;const pc=b*((+x.pis||0)+(+x.cof||0))/100;val.pis+=pc;
+      const rf=b*((+x.cbs||0)+(+x.ibs||0))/100;val.cbs+=b*(+x.cbs||0)/100;val.ibs+=b*(+x.ibs||0)/100;
+      cred.icms+=b*(+x.icms||0)/100;cred.pis+=pc;cred.ref+=rf;});
+    envsDe(it).forEach(e=>{const qq=r3_((+e.fator||1)*q),b=qq*(+e.preco||0);base+=b;baseS+=b;const pc=b*((+e.pis||0)+(+e.cof||0))/100;val.pis+=pc;cred.pis+=pc;
+      const rf=b*((+e.cbs||0)+(+e.ibs||0))/100;cred.ref+=rf;});
+    const credito=cred.icms+cred.pis+cred.cof+cred.ref;
+    return {base,baseF,baseS,sPis:0,sCof:0,subs:[],valF:{...val},credF:{...cred},cred,val,cr:{icms:true,pis:true,cof:true},credito,fu,nota:base+val.ipi,
+      real:q?(base-credito)/q+fu:0,credUn:q?credito/q:0};
+  };
+  /* ---------- salvar: industrialização sem preço no item principal ---------- */
+  const _vo=validarOC;
+  validarOC=function(oc){
+    const sem=oc.itens.filter(ehInd);if(!sem.length)return _vo.apply(this,arguments);
+    const guarda=sem.map(it=>it.preco);sem.forEach(it=>{if(!(+it.preco>0))it.preco=1e-9;});
+    const f=_vo.apply(this,arguments);sem.forEach((it,k)=>{if(it.preco===1e-9)it.preco=guarda[k];});
+    sem.forEach(it=>{if(!comps(it).length&&!envsDe(it).some(e=>+e.preco>0)&&!f.includes('preço de '+it.nome))f.push('o que o fornecedor cobra em '+it.nome);});
+    return f;
+  };
+  const _so=salvarOC;
+  salvarOC=function(){try{if(ED&&ED.oc){const oc=ED.oc;oc.benef=oc.itens.some(it=>ehInd(it)||envsDe(it).length>0);}}catch(e){}return _so.apply(this,arguments);};
+  /* ---------- PDF: o fornecedor vê o que ele fatura ---------- */
+  const _fo=folhaOC;
+  folhaOC=function(o){
+    if(!(o.itens||[]).some(ehInd))return _fo.apply(this,arguments);
+    const o2=JSON.parse(JSON.stringify(o));const L=[];
+    o.itens.forEach(it=>{if(!ehInd(it)){L.push(JSON.parse(JSON.stringify(it)));return;}
+      const q=+it.qtd||0,es=envsDe(it).filter(e=>+e.preco>0);
+      const cs=comps(it);
+      if(cs.length)cs.forEach((c,k)=>{const x=k===0?it:c,qq=cpQ(it,c);
+        L.push({sku:c.sku,nome:c.nome,un:c.un||it.un,qtd:qq,modo:'un',preco:+x.preco||0,icms:+x.icms||0,ipi:+x.ipi||0,pis:+x.pis||0,cof:+x.cof||0,nomeForn:c.nomeForn||'',codForn:c.codForn||'',
+          envs:k===0?es.map(e=>({...e,fator:qq?r3_((+e.fator||1)*q)/qq:1})):[]});});
+      else es.forEach(e=>{const qq=r3_((+e.fator||1)*q);L.push({sku:e.sku,nome:(ehRotulo(e)?'Rotulagem · Rótulo '+String(e.nome).replace(/^(r[oó]tulos?|etiquetas?)\s*[-–:]?\s*/i,''):'Industrialização · '+e.nome),un:e.un||'un',qtd:qq,modo:'un',preco:+e.preco||0,icms:0,ipi:0,mo:true,envs:[]});});});
+    o2.itens=L;o2.benef=L.some(x=>(x.envs||[]).length||x.mo);
+    return _fo.call(this,o2);
+  };
+  /* ---------- ordens antigas (frasco + rotulagem na mesma linha) abrem no formato novo, se ainda não chegaram ---------- */
+  function converte(oc){
+    if(!oc||(oc.receb||[]).some(r=>!r.estornado)||!['ras','env'].includes(oc.sit||'ras'))return 0;let n=0;
+    (oc.itens||[]).forEach(it=>{if(ehInd(it))return;const v=window.c497Vira&&c497Vira(it);if(!v)return;const x=insumo(v.sku)||{};
+      it.compras=[{sku:it.sku,nome:it.nome,tiny:it.tiny,un:it.un,fator:1,nomeForn:it.nomeForn||'',codForn:it.codForn||''}];
+      Object.assign(it,{ind:true,sku:v.sku,nome:v.nome,tiny:v.tiny,un:unDoItem(x)||it.un,nomeForn:'',codForn:'',modo:'un',qtdCx:0,cx:0});
+      /* o material nosso sai do depósito do fornecedor */
+      const dF=(depBenef(oc,true)||{}).id;if(dF)envsDe(it).forEach(e=>{if(e.tipo!=='venda')e.dep=dF;});n++;});
+    return n;
+  }
+  const _pe=prepararEdicao;
+  prepararEdicao=function(id){const ja=ED&&(ED.oc.id===id||(id==='nova'&&ED.nova));const r=_pe.apply(this,arguments);
+    try{if(r&&!ja&&ED&&!ED.lock&&converte(ED.oc))toast('Esta ordem foi aberta no formato novo de industrialização: confira e salve.');}catch(e){}
+    if(r&&!ja){S.nv={aberto:true,ind:false,q:''};S.menu=null;S.ed=null;}return r;};
+  /* ---------- estoque do item (no ⋯ Editar) ---------- */
+  function estHTML(sku,tiny,dep){
+    let sal=null,res=0,ent=0,lst=[];
+    try{const s=N.saldos();const t=tiny||((insumo(sku)||{}).tiny)||('ERP-'+sku);sal=s[t]!=null?+s[t]:null;}catch(e){}
+    try{const r=N.reservado({envase:true,tanques:true})||{};res=+((r[sku]||{}).qtd)||0;}catch(e){}
+    try{DB.ocs.filter(o=>o.sit==='env').forEach(o=>(o.itens||[]).filter(i=>i.sku===sku).forEach(i=>{const f=Math.max(0,(+i.qtd||0)-recebidoDe(o,sku));if(f>0){ent+=f;lst.push({oc:o.num,q:f,d:o.prev});}}));}catch(e){}
+    const virt=(sal||0)+ent-res;let noF='';if(dep){const v=saldoEm(tiny,dep);if(v!=null)noF=`<span class="o5c">no ${esc(depNomeDe(dep))} <b>${nq(v)}</b></span>`;}
+    return `<div class="o5est"><span class="o5c ${sal<0?'neg':''}">estoque <b>${sal==null?'—':nq(sal)}</b></span><span class="o5c ${virt<0?'neg':''}">virtual <b>${nq(virt)}</b></span>
+      <span class="o5c ent">a entrar <b>${nq(ent)}</b><span class="o5tip">${lst.length?lst.map(x=>`<div><b>OC ${esc(x.oc)}</b><span>prev. ${x.d?br(x.d):'—'}</span><b>${nq(x.q)}</b></div>`).join(''):'<span>nada a caminho</span>'}</span></span>
+      ${res?`<span class="o5c">reservado <b>${nq(res)}</b></span>`:''}${noF}</div>`;
+  }
+  /* ---------- desenho do bloco de itens ---------- */
+  const crTxt=x=>[+x.icms?'ICMS':'',(+x.pis||0)+(+x.cof||0)?'PIS/COFINS':'',reforma()&&(+x.cbs||0)+(+x.ibs||0)?'CBS/IBS':''].filter(Boolean).join(' · ')||'sem crédito';
+  const inp=(attr,v,d,ph)=>`<input class="in3 o5i" ${attr} value="${d?(+v?nf(v,d):''):pz(v)}" placeholder="${ph||'0'}">`;
+  function linhaNormal(oc,it,i,L){
+    const c=contaItem(it,freteUnOC(oc)),ed=S.ed===i&&!L,x=insumo(it.sku)||{};const leg=envsDe(it);const vira=leg.length&&window.c497Vira?c497Vira(it):null;
+    const pc=(+it.pis||0)+(+it.cof||0);
+    const ed2=ed?`<div class="o5subs"><div class="o5g o5g6">
+        <label><span class="lb">Qtde</span>${inp(`data-o5="${i}|qtd"`,it.qtd)}</label><label><span class="lb">Preço</span>${inp(`data-o5="${i}|preco"`,it.preco,4)}</label>
+        <label><span class="lb">ICMS %</span>${inp(`data-o5="${i}|icms"`,it.icms)}</label><label><span class="lb">IPI %</span>${inp(`data-o5="${i}|ipi"`,it.ipi)}</label>
+        <label><span class="lb">PIS/COFINS %</span>${inp(`data-o5="${i}|pc"`,pc,0,'—')}</label>${reforma()?`<label><span class="lb">CBS %</span>${inp(`data-o5="${i}|cbs"`,it.cbs)}</label><label><span class="lb">IBS %</span>${inp(`data-o5="${i}|ibs"`,it.ibs)}</label>`:''}</div>
+        <div class="o5g o5g2"><label><span class="lb">Como o fornecedor chama</span><input class="in3 o5t" data-o5t="${i}|nomeForn" value="${esc(it.nomeForn||'')}"></label><label><span class="lb">Código no fornecedor</span><input class="in3 o5t" data-o5t="${i}|codForn" value="${esc(it.codForn||'')}"></label></div></div>
+      <div class="o5res"><span class="k">editando · os valores já recalculam</span><span style="flex:1"></span><button class="btn pri sm" data-o5ok="${i}">Pronto</button></div>`:'';
+    return `<div class="o5it ${leg.length?'ind':''}"><div class="o5h"><div class="o5n"><b>${esc(it.nome)}</b><small>${esc(it.sku)}${it.nomeForn?' · no fornecedor: '+esc(it.nomeForn):''} · compra${vira?` · <span class="o5vira sm">🔄 vira: ${esc(vira.nome)}</span>`:''}</small>${ed?estHTML(it.sku,it.tiny):''}</div>
+      <span class="n"><b>${nq(it.qtd)}</b> ${esc(it.un||'un')}</span><span class="n o5hd">R$ ${nf(it.preco,4)}<small>ICMS ${nq(it.icms)}% · IPI ${nq(it.ipi)}% · ${crTxt(it)}</small></span>
+      <span class="n o5tot">${nf(c.nota,2)}</span>${L?'<span></span>':`<button class="o5mn" data-o5m="${i}">⋯</button>`}</div>
+      ${leg.length?`<div class="o5subs">${leg.map(e=>`<div class="o5sb"><span class="o5tag ti">Industrialização</span><span><b>${esc(e.nome)}</b> <small>sai do depósito ${esc(depNomeDe(depDoSub(oc,e)))}</small></span><span class="n">${+e.preco?'R$ '+nf(e.preco,4):'—'}</span><span class="n k">${nq(r3_((+e.fator||1)*(+it.qtd||0)))} ${esc(e.un||'un')}</span></div>`).join('')}</div>`:''}
+      ${ed2}${menu(i)}</div>`;
+  }
+  function subEd(oc,it,i,j,s,tipo){const comEst=i!=='n';
+    const q=tipo==='c'?cpQ(it,s):r3_((+s.fator||1)*(+it.qtd||0));const x=tipo==='c'&&j===0?it:s;
+    const k=`${i}|${tipo}|${j}`;const pc=(+x.pis||0)+(+x.cof||0);const dep=tipo==='i'?depDoSub(oc,s):null;
+    return `<div class="o5sbe"><div class="o5n"><b>${esc(s.nome)}</b><small>${esc(s.sku)}${tipo==='i'?' · sai do depósito '+esc(depNomeDe(dep)):' · o fornecedor fatura'}</small>${comEst?estHTML(s.sku,s.tiny,dep):''}</div>
+      <label><span class="lb">Tipo</span><select class="o5sel t${tipo}" data-o5tp="${k}"><option value="c" ${tipo==='c'?'selected':''}>Compra</option><option value="i" ${tipo==='i'?'selected':''}>Industrialização</option></select></label>
+      <label><span class="lb">Qtde</span>${inp(`data-o5s="${k}|q"`,q)}</label><label><span class="lb">${tipo==='i'?'Mão de obra':'Preço'}</span>${inp(`data-o5s="${k}|preco"`,x.preco,4)}</label>
+      ${tipo==='c'?`<label><span class="lb">ICMS %</span>${inp(`data-o5s="${k}|icms"`,x.icms)}</label><label><span class="lb">IPI %</span>${inp(`data-o5s="${k}|ipi"`,x.ipi)}</label>`:'<span></span><span></span>'}
+      <label><span class="lb">PIS/COFINS %</span>${inp(`data-o5s="${k}|pc"`,pc,0,'—')}</label>
+      <button class="o5x" data-o5sx="${k}" title="tirar">✕</button></div>`;
+  }
+  function linhaInd(oc,it,i,L){
+    const c=contaItem(it,freteUnOC(oc)),ed=S.ed===i&&!L,q=+it.qtd||0,cs=comps(it),es=envsDe(it);
+    const ver=(s,tipo,j)=>{const x=tipo==='c'&&j===0?it:s;const qq=tipo==='c'?cpQ(it,s):r3_((+s.fator||1)*q);const b=qq*(+x.preco||0);
+      return `<div class="o5sb"><span class="o5tag t${tipo}">${tipo==='c'?'Compra':'Industrialização'}</span><span><b>${esc(s.nome)}</b> <small>${esc(s.sku)}${tipo==='i'?' · sai do depósito '+esc(depNomeDe(depDoSub(oc,s))):''}</small></span>
+        <span class="n">${+x.preco?'R$ '+nf(x.preco,4):'<span class="k">—</span>'}</span><span class="n k">${nq(qq)} ${esc(s.un||'un')}${tipo==='c'?` · ICMS ${nq(x.icms)}% · IPI ${nq(x.ipi)}%`:(+x.preco?' · mão de obra':'')}</span>
+        <span class="o5cr">${+x.preco||tipo==='c'?crTxt(x):'<span class="k">não é cobrado</span>'}</span><b class="n">${+x.preco?nf(b*(1+(tipo==='c'?(+x.ipi||0):0)/100),2):'—'}</b></div>`;};
+    const corpo=ed?cs.map((s,j)=>subEd(oc,it,i,j,s,'c')).join('')+es.map((s,j)=>subEd(oc,it,i,j,s,'i')).join('')+subNovo(oc,it,i)
+      :cs.map((s,j)=>ver(s,'c',j)).join('')+es.map((s,j)=>ver(s,'i',j)).join('');
+    return `<div class="o5it ind"><div class="o5h"><div class="o5n"><span class="o5vira">🔄 vira: ${esc(it.nome)}</span><small>${esc(it.sku)} · nosso item · entra no estoque</small>${ed?estHTML(it.sku,it.tiny):''}</div>
+      ${ed?`<label><span class="lb">Qtde do nosso item</span>${inp(`data-o5="${i}|qtdInd"`,it.qtd)}</label>`:`<span class="n"><b>${nq(it.qtd)}</b> ${esc(it.un||'un')}</span>`}
+      <span class="n o5hd"><span class="o5chv on"><span class="o5sw on"></span>Industrialização</span></span><span class="n o5tot">${nf(c.nota,2)}</span>${L?'<span></span>':`<button class="o5mn" data-o5m="${i}">⋯</button>`}</div>
+      <div class="o5subs">${corpo||'<div class="k" style="padding:8px 0">sem sub-itens</div>'}</div>
+      <div class="o5res"><span class="k">cada unidade do nosso item custa</span><span>sem créditos <b>R$ ${nf(q?c.nota/q:0,4)}</b></span><span>com créditos <b>R$ ${nf(q?(c.nota-c.credito)/q:0,4)}</b></span><span class="k">+ o material nosso</span>${ed?`<span style="flex:1"></span><button class="btn sm" data-o5ok="${i}" style="background:#6D28D9;color:#fff;border-color:#6D28D9">Pronto</button>`:''}</div>${menu(i)}</div>`;
+  }
+  const menu=i=>S.menu===i?`<div class="o5menu"><button data-o5ed="${i}">✎ Editar item</button><button class="del" data-o5rm="${i}">✕ Remover</button></div>`:'';
+  /* sub-item novo dentro do item (na linha nova e no editar) */
+  function listaSub(qq,ficha){const q=String(qq||'').toLowerCase();
+    return (N?N.insumos():[]).filter(x=>!temFicha(x)&&(!q||(x.sku+' '+x.nome).toLowerCase().includes(q))).sort((a,b)=>((ficha||[]).includes(b.sku)?1:0)-((ficha||[]).includes(a.sku)?1:0)).slice(0,40);}
+  function subNovo(oc,it,i){const st=it._sn;const fs=((insumo(it.sku)||{}).ficha||[]).map(f=>f.sku);
+    const ja=new Set([...comps(it).map(c=>c.sku),...envsDe(it).map(e=>e.sku)]);const falta=fs.filter(k=>!ja.has(k)&&insumo(k));
+    return `${st?`<div class="o5sbe" style="grid-template-columns:minmax(0,1fr) 28px"><div class="o5bus"><input data-o5sb="${i}" value="${esc(st.q||'')}" placeholder="Buscar o sub-item (frasco, rótulo, preforma…)" autocomplete="off">
+      <div class="o5lst">${listaSub(st.q,fs).map((x,k)=>`<div class="o ${k===0?'on':''}" data-o5spk="${i}|${esc(x.sku)}"><b>${esc(x.nome)}</b><small>${esc(x.sku)}${fs.includes(x.sku)?' · da ficha':''}</small></div>`).join('')||'<div class="o"><small>nada com esse nome</small></div>'}</div></div><button class="o5x" data-o5sbx="${i}">✕</button></div>`:''}
+      <button class="o5add" data-o5sa="${i}">＋ sub-item</button>${falta.length?`<span class="o5sug">da ficha: ${falta.map(k=>`<button data-o5sg="${i}|${esc(k)}">＋ ${esc((insumo(k)||{}).nome||k)}</button>`).join('')}</span>`:''}`;}
+  function poeSub(oc,it,sku,qtd){
+    const x=insumo(sku);if(!x)return;const rot=/r[oó]tulo|etiqueta|prefor/i.test(x.nome+' '+(x.tipo||''));const q=+it.qtd||+qtd||0;
+    if(!rot){const imp=impDe(sku);const c={sku:x.sku,nome:x.nome,tiny:x.tiny||('ERP-'+x.sku),un:unDoItem(x),fator:1,nomeForn:((vinculo(fid(),x.sku)||{}).nome)||''};
+      if(!comps(it).length){it.compras=[c];it.preco=precoDe(sku);it.icms=+imp.icms||0;it.ipi=+imp.ipi||0;it.pis=0;it.cof=0;}
+      else{c.preco=precoDe(sku);c.icms=+imp.icms||0;c.ipi=+imp.ipi||0;c.pis=0;c.cof=0;it.compras.push(c);}
+      try{if(fid()&&!vinculo(fid(),x.sku))garanteVinculo(fid(),x.sku,{sit:'a'});}catch(e){}}
+    else{const dep=(depBenef(oc,true)||{}).id||depPrinc();
+      (it.envs=it.envs||[]).push({sku:x.sku,nome:x.nome,tiny:x.tiny||('ERP-'+x.sku),un:unDoItem(x),tipo:x.tipo||'',fator:1,dep,preco:(()=>{try{return c490UltServ(x.sku,fid())||0;}catch(e){return 0;}})(),pis:0,cof:0});}
+  }
+  /* ---------- linha nova ---------- */
+  function linhaNovaHTML(oc){
+    const n=S.nv;if(!n||!n.aberto)return `<div class="o5mais"><button class="o5ab" id="o5C" ${oc.forn?'':'disabled'}>＋ Item de compra</button><button class="o5ab i" id="o5I" ${oc.forn?'':'disabled'}>＋ Item de industrialização</button>${oc.forn?'':'<span class="s2">escolha o fornecedor primeiro</span>'}</div>`;
+    const chave=`<label class="o5chv" id="o5Sw" title="ligue quando o fornecedor devolve pronto com material nosso"><span class="o5sw ${n.ind?'on':''}"></span>Industrialização</label>`;
+    if(!n.sku){const q=String(n.q||'').toLowerCase();const ja=new Set(oc.itens.map(i=>i.sku));
+      const l=(N?N.insumos():[]).filter(x=>(n.ind?temFicha(x):true)&&!ja.has(x.sku)&&(!q||(x.sku+' '+x.nome+' '+(x.tipo||'')+' '+(((vinculo(fid(),x.sku)||{}).nome)||'')).toLowerCase().includes(q))).slice(0,40);
+      return `<div class="o5nv ${n.ind?'ind':''}"><div class="o5nvr"><div class="o5bus" style="flex:1"><input id="o5B" value="${esc(n.q||'')}" placeholder="${!oc.forn?'escolha o fornecedor primeiro':n.ind?'Buscar o nosso item industrializado (frasco rotulado)…':'Pesquise pelo nome da MP, SKU ou nome no fornecedor'}" autocomplete="off" ${oc.forn?'':'disabled'}>
+        ${oc.forn?`<div class="o5lst"><div class="h">${n.ind?'Só itens cadastrados como industrialização (com ficha técnica)':'Itens'}</div>${l.map((x,k)=>`<div class="o ${k===0?'on':''}" data-o5pk="${esc(x.sku)}">${n.ind?'🔄 ':''}<b>${esc(x.nome)}</b><small>${esc(x.sku)}${x.tipo?' · '+esc(x.tipo):''}</small></div>`).join('')||'<div class="o"><small>nada com esse nome</small></div>'}</div>`:''}</div>${chave}<button class="o5x" id="o5X" title="cancelar">✕</button></div></div>`;}
+    const x=insumo(n.sku)||{};
+    if(!n.ind)return `<div class="o5nv"><div class="o5nvr"><div class="o5n" style="flex:1"><b>${esc(x.nome||n.sku)}</b><small>${esc(n.sku)}</small></div>${chave}<button class="o5x" id="o5X">✕</button></div>
+      <div class="o5g o5g6"><label><span class="lb">Qtde</span>${inp('data-o5n="qtd"',n.qtd)}</label><label><span class="lb">Preço</span>${inp('data-o5n="preco"',n.preco,4)}</label>
+        <label><span class="lb">ICMS %</span>${inp('data-o5n="icms"',n.icms)}</label><label><span class="lb">IPI %</span>${inp('data-o5n="ipi"',n.ipi)}</label><label><span class="lb">PIS/COFINS %</span>${inp('data-o5n="pc"',n.pc,0,'—')}</label><span></span></div>
+      <div class="o5nvf"><span class="k">PIS/COFINS: preencha só se a nota der crédito.</span><span style="flex:1"></span><button class="btn pri" id="o5Ok">Incluir item</button></div></div>`;
+    const it=n.it;
+    return `<div class="o5nv ind"><div class="o5nvr"><div class="o5n" style="flex:1"><span class="o5vira">🔄 vira: ${esc(x.nome||n.sku)}</span><small>${esc(n.sku)} · nosso item</small></div>
+       <label style="width:150px"><span class="lb">Qtde do nosso item</span>${inp('data-o5n="qtdInd"',it.qtd)}</label>${chave}<button class="o5x" id="o5X">✕</button></div>
+      <div class="o5subs">${comps(it).map((s,j)=>subEd(oc,it,'n',j,s,'c')).join('')}${envsDe(it).map((s,j)=>subEd(oc,it,'n',j,s,'i')).join('')}${subNovo(oc,it,'n')}</div>
+      <div class="o5nvf"><span class="k">Compra = o fornecedor fatura · Industrialização = material nosso, sai do depósito dele (mão de obra se ele cobrar).</span><span style="flex:1"></span><button class="btn" id="o5Ok" style="background:#6D28D9;color:#fff;border-color:#6D28D9">Incluir item</button></div></div>`;
+  }
+  function blocoHTML(oc,L){
+    const its=oc.itens.map((it,i)=>ehInd(it)?linhaInd(oc,it,i,L):linhaNormal(oc,it,i,L)).join('')||(L?'<div class="vazio">Nenhum item.</div>':'');
+    return `<div class="t"><span class="n">2</span>Itens</div><div class="o5bl">${its}${L?'':linhaNovaHTML(oc)}</div>${oc.itens.length?totaisOC(oc,contaOC(oc),L):''}`;
+  }
+  /* ---------- ações ---------- */
+  const itDe=(oc,i)=>i==='n'?S.nv.it:oc.itens[+i];
+  function incluir(oc){
+    const n=S.nv;if(!n||!n.sku)return;
+    if(!n.ind){const q=num(n.qtd);if(!(q>0))return foco('[data-o5n="qtd"]','Digite a quantidade.');
+      const x=insumo(n.sku);if(!x||!adicionarItem(oc,x))return;const it=oc.itens[oc.itens.length-1];
+      Object.assign(it,{qtd:q,preco:num(n.preco),icms:num(n.icms),ipi:num(n.ipi),pis:num(n.pc),cof:0,envs:[]});delete it.env;
+      if(it.modo==='cx'&&+it.cx>0){it.qtdCx=Math.ceil(q/it.cx);it.qtd=r3_(it.qtdCx*it.cx);}
+      DB.imp[it.sku]={...(DB.imp[it.sku]||{}),icms:it.icms,ipi:it.ipi};}
+    else{const it=n.it;if(!(+it.qtd>0))return foco('[data-o5n="qtdInd"]','Digite a quantidade do nosso item.');
+      if(!comps(it).length&&!envsDe(it).length)return toast('Inclua os sub-itens: o que é compra e o que é industrialização.',true);
+      if(oc.itens.some(i=>i.sku===it.sku))return toast('Este item já está na ordem.',true);
+      delete it._sn;oc.itens.push(it);if(!oc.pag.categoria)oc.pag.categoria=categoriaSugerida(oc);
+      comps(it).forEach((c,k)=>{const x=k===0?it:c;DB.imp[c.sku]={...(DB.imp[c.sku]||{}),icms:+x.icms||0,ipi:+x.ipi||0};});}
+    try{recalc();}catch(e){}
+    S.nv={aberto:true,ind:n.ind,q:''};S.foco='#o5B';toast('Item incluído. Já abri o próximo.');rr();
+  }
+  function foco(sel,msg){toast(msg,true);const x=document.querySelector(sel);if(x)x.focus();}
+  function escolhe(oc,sku){const n=S.nv;n.sku=sku;const x=insumo(sku)||{};
+    if(!n.ind){const imp=impDe(sku);Object.assign(n,{qtd:'',preco:precoDe(sku),icms:+imp.icms||0,ipi:+imp.ipi||0,pc:''});S.foco='[data-o5n="qtd"]';}
+    else{n.it={sku:x.sku,nome:x.nome,tiny:x.tiny||('ERP-'+x.sku),un:unDoItem(x),tipo:x.tipo||'',ind:true,qtd:0,qtdCx:0,cx:0,modo:'un',preco:0,icms:0,ipi:0,pis:0,cof:0,cbs:0,ibs:0,
+      cr:{...CRED_PADRAO},nomeForn:'',codForn:'',compras:[],envs:[]};S.foco='[data-o5n="qtdInd"]';}
+    rr();}
+  /* muda um campo de sub-item: k = i|c|j ou i|i|j */
+  function mudaSub(oc,k,campo,v){
+    const [i,tp,j]=k.split('|');const it=itDe(oc,i);if(!it)return;const q=+it.qtd||0;
+    if(tp==='c'){const s=comps(it)[+j];if(!s)return;const x=+j===0?it:s;
+      if(campo==='q'){s.fator=q?v/q:1;}else if(campo==='pc'){x.pis=v;x.cof=0;}else x[campo]=v;}
+    else{const e=envsDe(it)[+j];if(!e)return;if(campo==='q')e.fator=q?v/q:1;else if(campo==='pc'){e.pis=v;e.cof=0;}else e[campo]=v;}
+  }
+  function trocaTipo(oc,k,novo){
+    const [i,tp,j]=k.split('|');const it=itDe(oc,i);if(!it||tp===novo)return;
+    if(tp==='c'){const s=it.compras.splice(+j,1)[0];if(+j===0&&s){s.preco=it.preco;s.icms=it.icms;s.ipi=it.ipi;s.pis=it.pis;}
+      if(+j===0&&it.compras.length){const z=it.compras[0];it.preco=+z.preco||0;it.icms=+z.icms||0;it.ipi=+z.ipi||0;it.pis=+z.pis||0;it.cof=0;}
+      else if(+j===0){it.preco=0;it.icms=0;it.ipi=0;it.pis=0;it.cof=0;}
+      (it.envs=it.envs||[]).push({sku:s.sku,nome:s.nome,tiny:s.tiny,un:s.un,tipo:'',fator:s.fator||1,dep:(depBenef(oc,true)||{}).id||depPrinc(),preco:0,pis:0,cof:0});}
+    else{const e=it.envs.splice(+j,1)[0];const c={sku:e.sku,nome:e.nome,tiny:e.tiny,un:e.un,fator:e.fator||1};
+      if(!comps(it).length){it.compras=[c];it.preco=+e.preco||precoDe(e.sku);const imp=impDe(e.sku);it.icms=+imp.icms||0;it.ipi=+imp.ipi||0;it.pis=+e.pis||0;it.cof=0;}
+      else{c.preco=+e.preco||precoDe(e.sku);c.icms=0;c.ipi=0;c.pis=+e.pis||0;c.cof=0;it.compras.push(c);}}
+  }
+  function tiraSub(oc,k){const [i,tp,j]=k.split('|');const it=itDe(oc,i);if(!it)return;
+    if(tp==='c'){it.compras.splice(+j,1);if(+j===0){const z=it.compras[0];if(z){it.preco=+z.preco||0;it.icms=+z.icms||0;it.ipi=+z.ipi||0;it.pis=+z.pis||0;}else{it.preco=0;it.icms=0;it.ipi=0;it.pis=0;}it.cof=0;}}
+    else it.envs.splice(+j,1);}
+  function rr(){if(S.rrT)return;S.rrT=setTimeout(()=>{S.rrT=null;if(!ED||!ED.oc)return;const y=window.scrollY;telaOC(ED.nova?'nova':ED.oc.id);window.scrollTo(0,y);},0);}
+  function liga(oc,L){
+    const raiz=document.querySelector('.o5bl');if(!raiz)return;const Q=s=>raiz.querySelectorAll(s);
+    Q('[data-o5m]').forEach(b=>b.onclick=e=>{e.stopPropagation();S.menu=S.menu===+b.dataset.o5m?null:+b.dataset.o5m;rr();});
+    Q('[data-o5ed]').forEach(b=>b.onclick=()=>{S.ed=+b.dataset.o5ed;S.menu=null;rr();});
+    Q('[data-o5rm]').forEach(b=>b.onclick=()=>{const it=oc.itens[+b.dataset.o5rm];if(!confirm(`Tirar ${it?it.nome:'o item'} da ordem?`))return;oc.itens.splice(+b.dataset.o5rm,1);S.menu=null;S.ed=null;try{recalc();}catch(e){}rr();});
+    Q('[data-o5ok]').forEach(b=>b.onclick=()=>{S.ed=null;try{recalc();}catch(e){}rr();});
+    Q('input.o5i').forEach(x=>x.addEventListener('focus',()=>x.select()));
+    Q('[data-o5]').forEach(x=>x.onchange=()=>{const [i,k]=x.dataset.o5.split('|');const it=oc.itens[+i];const v=num(x.value);
+      if(k==='pc'){it.pis=v;it.cof=0;}else if(k==='qtdInd'){it.qtd=v;}else{it[k]=v;if(k==='qtd'&&it.modo==='cx'&&+it.cx>0){it.qtdCx=Math.ceil(v/it.cx);it.qtd=r3_(it.qtdCx*it.cx);}}
+      try{recalc();}catch(e){}S.foco=`[data-o5="${x.dataset.o5}"]`;rr();});
+    Q('[data-o5t]').forEach(x=>x.onchange=()=>{const [i,k]=x.dataset.o5t.split('|');oc.itens[+i][k]=x.value.trim();});
+    Q('[data-o5s]').forEach(x=>x.onchange=()=>{const p=x.dataset.o5s.split('|');mudaSub(oc,p.slice(0,3).join('|'),p[3],num(x.value));try{recalc();}catch(e){}S.foco=`[data-o5s="${x.dataset.o5s}"]`;rr();});
+    Q('[data-o5tp]').forEach(x=>x.onchange=()=>{trocaTipo(oc,x.dataset.o5tp,x.value);try{recalc();}catch(e){}rr();});
+    Q('[data-o5sx]').forEach(b=>b.onclick=()=>{tiraSub(oc,b.dataset.o5sx);try{recalc();}catch(e){}rr();});
+    Q('[data-o5sa]').forEach(b=>b.onclick=()=>{const it=itDe(oc,b.dataset.o5sa);it._sn={q:''};S.foco=`[data-o5sb="${b.dataset.o5sa}"]`;rr();});
+    Q('[data-o5sbx]').forEach(b=>b.onclick=()=>{const it=itDe(oc,b.dataset.o5sbx);delete it._sn;rr();});
+    Q('[data-o5sb]').forEach(x=>{x.oninput=()=>{const it=itDe(oc,x.dataset.o5sb);it._sn={q:x.value};const p=x.selectionStart;S.foco=`[data-o5sb="${x.dataset.o5sb}"]`;S.cur=p;rr();};
+      x.onkeydown=e=>{if(e.key==='Enter'){const o=raiz.querySelector(`[data-o5spk^="${x.dataset.o5sb}|"]`);if(o)o.onmousedown({preventDefault(){}});}if(e.key==='Escape'){const it=itDe(oc,x.dataset.o5sb);delete it._sn;rr();}};});
+    Q('[data-o5spk]').forEach(o=>o.onmousedown=e=>{e.preventDefault();const [i,sku]=o.dataset.o5spk.split('|');const it=itDe(oc,i);delete it._sn;poeSub(oc,it,sku);rr();});
+    Q('[data-o5sg]').forEach(o=>o.onclick=()=>{const [i,sku]=o.dataset.o5sg.split('|');poeSub(oc,itDe(oc,i),sku);rr();});
+    if($('o5C'))$('o5C').onclick=()=>{S.nv={aberto:true,ind:false,q:''};S.foco='#o5B';rr();};
+    if($('o5I'))$('o5I').onclick=()=>{S.nv={aberto:true,ind:true,q:''};S.foco='#o5B';rr();};
+    if($('o5X'))$('o5X').onclick=()=>{S.nv={aberto:false};rr();};
+    if($('o5Sw'))$('o5Sw').onclick=()=>{S.nv={aberto:true,ind:!S.nv.ind,q:''};S.foco='#o5B';rr();};
+    const b=$('o5B');if(b){b.oninput=()=>{S.nv.q=b.value;S.cur=b.selectionStart;S.foco='#o5B';rr();};
+      b.onkeydown=e=>{if(e.key==='Enter'){const o=raiz.querySelector('[data-o5pk]');if(o)o.onmousedown({preventDefault(){}});}if(e.key==='Escape'){S.nv={aberto:false};rr();}};}
+    Q('[data-o5pk]').forEach(o=>o.onmousedown=e=>{e.preventDefault();escolhe(oc,o.dataset.o5pk);});
+    Q('[data-o5n]').forEach(x=>{x.oninput=()=>{const k=x.dataset.o5n;if(k==='qtdInd'){const it=S.nv.it;const ant=+it.qtd||0;it.qtd=num(x.value);}else S.nv[k]=x.value;};
+      x.onchange=()=>{if(x.dataset.o5n==='qtdInd'){S.foco='[data-o5n="qtdInd"]';rr();}};
+      x.onkeydown=e=>{if(e.key==='Enter'){if(x.dataset.o5n==='qtdInd'){x.onchange();}else incluir(oc);}if(e.key==='Escape'){S.nv={aberto:false};rr();}};});
+    if($('o5Ok'))$('o5Ok').onclick=()=>{const x=document.querySelector('[data-o5n="qtdInd"]');if(x&&S.nv.it)S.nv.it.qtd=num(x.value);incluir(oc);};
+    if($('rDesc'))$('rDesc').onchange=e=>{oc.desconto=Math.max(0,num(e.target.value));try{recalc();}catch(x){}rr();};
+    if(S.foco){const x=document.querySelector(S.foco);if(x){x.focus();try{if(S.cur!=null&&x.setSelectionRange)x.setSelectionRange(S.cur,S.cur);else x.select&&x.select();}catch(e){}}S.foco=null;S.cur=null;}
+  }
+  document.addEventListener('click',e=>{if(S.menu!=null&&!e.target.closest('.o5menu')&&!e.target.closest('[data-o5m]')){S.menu=null;try{rr();}catch(x){}}});
+  /* ---------- liga o bloco novo na tela da ordem ---------- */
+  const _to=telaOC;
+  telaOC=function(id){
+    const r=_to.apply(this,arguments);
+    try{if(!ED||!ED.oc)return r;const oc=ED.oc,L=ED.lock;if(!S.nv)S.nv={aberto:true,ind:false,q:''};
+      const t=document.querySelector('.ocit');const bl=t&&t.closest('.bloco');if(!bl)return r;
+      bl.innerHTML=blocoHTML(oc,L);liga(oc,L);
+      /* a chave de industrialização agora é por item: a da ordem some */
+      const b1=document.querySelector('.ocv2 .bloco');if(b1)b1.querySelectorAll('label,div,span').forEach(el=>{if(el.id==='benC'||(el.children.length<4&&/^\s*Industrialização\s*$/.test(el.textContent)&&el.closest('.fl')&&!el.closest('.o5bl'))){const lb=el.closest('label')||el;if(lb.id!=='endC'&&!/Entregar/.test(lb.textContent))lb.style.display='none';}
+        if(/O item é o que volta pronto/.test(el.textContent)&&el.children.length===0)el.style.display='none';});
+      const h1=document.querySelector('.ed-top h1');if(h1)h1.textContent=h1.textContent.replace(' · industrialização','');
+    }catch(e){console.error('[oc500]',e);}
+    return r;
+  };
+  const s=document.createElement('style');s.textContent=`
+#benC,#benC+div.s2{display:none!important}
+.o5bl{padding:0 16px 12px}
+.o5it{border:1px solid var(--line);border-radius:12px;margin:10px 0;background:#fff;position:relative}
+.o5it.ind{border-color:#C4B5FD;box-shadow:0 0 0 3px #F5F3FF}
+.o5h{display:grid;grid-template-columns:minmax(0,1fr) 130px 170px 110px 34px;gap:12px;align-items:center;padding:11px 14px}
+.o5it.ind>.o5h{background:#FAF8FF;border-radius:12px 12px 0 0}
+.o5n b{font-size:14px}.o5n small{display:block;color:var(--ink3);font-size:11.5px;margin-top:2px}
+.o5hd small{display:block;color:var(--ink3);font-size:11px}.o5tot{font-weight:700;font-variant-numeric:tabular-nums}
+.o5mn{width:32px;height:32px;border-radius:8px;border:1px solid var(--line);background:#fff;cursor:pointer;font-weight:800;color:var(--ink2)}
+.o5menu{position:absolute;right:12px;top:46px;z-index:30;background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 14px 30px rgba(15,23,42,.14);padding:4px;min-width:170px}
+.o5menu button{display:block;width:100%;text-align:left;border:0;background:none;padding:8px 12px;border-radius:7px;cursor:pointer;font-size:13.5px}.o5menu button:hover{background:#F3F4F6}.o5menu .del{color:#B3261E}
+.o5subs{border-top:1px dashed #DDD6FE;padding:4px 14px 8px 28px}.o5it:not(.ind) .o5subs{border-top-color:var(--line)}
+.o5sb{display:grid;grid-template-columns:118px minmax(0,1fr) 100px 190px 110px 100px;gap:10px;align-items:center;padding:7px 0;border-bottom:1px solid #F3F1FA;font-size:13px}.o5sb:last-child{border-bottom:0}
+.o5sb small{color:var(--ink3);font-size:11.5px}.o5cr{font-size:11px;color:#15803D}
+.o5tag{font-size:11px;font-weight:700;border-radius:6px;padding:3px 8px;white-space:nowrap;justify-self:start}.o5tag.tc{background:#EFF6FF;color:#1D4ED8}.o5tag.ti{background:#F5F3FF;color:#6D28D9}
+.o5sbe{display:grid;grid-template-columns:minmax(0,1fr) 150px 92px 100px 70px 70px 96px 28px;gap:8px;align-items:end;padding:9px 0;border-bottom:1px solid #F1EEFA;font-size:13px}
+.o5sel{border:1px solid var(--line);border-radius:8px;height:34px;padding:0 8px;background:#fff;font-weight:600;width:100%;font:inherit;font-size:13px}.o5sel.tc{color:#1D4ED8;background:#EFF6FF;border-color:#BFDBFE}.o5sel.ti{color:#6D28D9;background:#F5F3FF;border-color:#DDD6FE}
+.o5i{width:100%!important;min-width:0!important;height:34px}.o5t{width:100%!important;text-align:left!important;justify-content:flex-start}
+.lb{display:block;font-size:11px;color:var(--ink3);margin-bottom:3px;font-weight:500}
+.o5x{border:0;background:none;color:var(--ink3);cursor:pointer;font-size:14px;padding:0 4px 9px}.o5x:hover{color:#B3261E}
+.o5res{display:flex;gap:16px;align-items:center;justify-content:flex-end;padding:8px 14px;background:#FAFAFB;border-top:1px solid #F1F1F3;font-size:12.5px;flex-wrap:wrap;border-radius:0 0 12px 12px}
+.o5vira{display:inline-flex;align-items:center;gap:6px;background:#ECFDF3;color:#15803D;border:1px solid #BBF7D0;border-radius:8px;padding:3px 9px;font-weight:700;font-size:13px}.o5vira.sm{font-size:11px;padding:1px 6px}
+.o5chv{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;font-weight:600;color:var(--ink2);cursor:pointer;white-space:nowrap;user-select:none}
+.o5sw{width:34px;height:19px;border-radius:10px;background:#D1D5DB;position:relative;flex:none}.o5sw:after{content:'';position:absolute;left:2px;top:2px;width:15px;height:15px;border-radius:50%;background:#fff;transition:.15s}.o5sw.on{background:#6D28D9}.o5sw.on:after{left:17px}
+.o5nv{border:1.5px solid #BFDBFE;border-radius:12px;padding:12px 14px;margin:10px 0;background:#FBFDFF}.o5nv.ind{border-color:#C4B5FD;background:#FDFCFF}
+.o5nvr{display:flex;align-items:center;gap:14px}.o5nvf{display:flex;align-items:center;gap:10px;margin-top:12px}
+.o5bus{position:relative}.o5bus input{width:100%;border:1px solid var(--line);border-radius:10px;padding:10px 12px;font:inherit;background:#fff}
+.o5lst{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:25;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 14px 30px rgba(15,23,42,.14);max-height:300px;overflow:auto;display:none}
+.o5bus:focus-within .o5lst{display:block}
+.o5lst .h{font-size:10.5px;text-transform:uppercase;letter-spacing:.6px;color:var(--ink3);padding:9px 14px 4px;font-weight:700}
+.o5lst .o{padding:8px 14px;font-size:13.5px;cursor:pointer;display:flex;gap:10px;align-items:baseline}.o5lst .o:hover,.o5lst .o.on{background:#EEF3FF}.o5lst .o small{color:var(--ink3)}
+.o5g{display:grid;gap:10px;margin-top:10px}.o5g6{grid-template-columns:repeat(6,minmax(0,110px))}.o5g2{grid-template-columns:repeat(2,minmax(0,260px))}
+.o5add{border:1.5px dashed #C4B5FD;background:#fff;color:#6D28D9;border-radius:9px;padding:6px 12px;font-weight:600;font-size:13px;cursor:pointer;margin-top:8px}
+.o5sug{display:inline-flex;gap:6px;align-items:center;flex-wrap:wrap;margin-left:10px;font-size:12px;color:var(--ink3)}.o5sug button{border:1px dashed #C4B5FD;background:#fff;color:#6D28D9;border-radius:999px;padding:3px 10px;font-size:12px;font-weight:600;cursor:pointer}
+.o5mais{display:flex;gap:10px;align-items:center;margin-top:10px}.o5ab{border:1.5px dashed var(--line);background:#fff;border-radius:10px;padding:9px 14px;font-weight:600;color:#1D4ED8;font-size:13.5px;cursor:pointer}.o5ab.i{color:#6D28D9;border-color:#C4B5FD}.o5ab:disabled{opacity:.5;cursor:default}
+.o5est{display:flex;gap:6px;flex-wrap:wrap;margin-top:5px}.o5c{display:inline-flex;align-items:baseline;gap:5px;background:#F6F7F9;border-radius:7px;padding:3px 8px;font-size:11.5px;color:var(--ink2);position:relative}
+.o5c b{color:var(--ink)}.o5c.neg b{color:#B3261E}.o5c.ent{cursor:help;background:#EEF3FF}.o5c.ent b{color:#1D4ED8}
+.o5tip{display:none;position:absolute;left:0;top:calc(100% + 6px);z-index:40;background:#0E1B33;color:#fff;border-radius:10px;padding:9px 12px;min-width:240px;box-shadow:0 14px 30px rgba(0,0,0,.25);font-size:12px}
+.o5c.ent:hover .o5tip{display:block}.o5tip div{display:flex;justify-content:space-between;gap:14px;padding:2px 0}.o5tip span{color:#9FB0C8}.o5tip b{color:#fff!important}
+@media(max-width:1000px){.o5h{grid-template-columns:1fr 110px 34px}.o5h .o5hd,.o5h .o5tot{display:none}.o5sbe{grid-template-columns:1fr 1fr 1fr}.o5sb{grid-template-columns:1fr 1fr}.o5g6{grid-template-columns:repeat(3,1fr)}}`;document.head.appendChild(s);
 })();
 
 </script>

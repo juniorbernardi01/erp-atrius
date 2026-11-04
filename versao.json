@@ -1,6 +1,6 @@
 {
- "v": "v499",
- "versao": "4.9.9",
+ "v": "v500",
+ "versao": "5.0.0",
  "data": "04/11/2026",
- "o_que_mudou": "Faixa do dólar (comercial e PTAX, com tendência) em Ordens de compra e Necessidade de compra"
+ "o_que_mudou": "Ordem de compra: item de industrialização com sub-itens de compra e industrialização; PIS/COFINS num campo só"
 }
