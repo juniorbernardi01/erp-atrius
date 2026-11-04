@@ -1321,7 +1321,7 @@ function escolherMarcadores(ocs,ancora){
 let ED=null; /* {oc, nova, orig, aberto:Set, pTab, lock} */
 function ocVazia(){
   const c=DB.cfg;
-  return {id:uid(),num:'',data:hojeY(),prev:'',comprador:usuario(),sit:'ras',forn:null,entrega:{outro:false},itens:[],
+  return {id:uid(),num:'',data:hojeY(),prev:hojeY(),comprador:usuario(),sit:'ras',forn:null,entrega:{outro:false},itens:[],
     frete:{tipo:'CIF',quem:'',transp:null,valor:0,forma:c.formaPadrao||'Boleto',cond:'30',parcelas:[],cte:'',cat:'Frete Compra'},
     pag:{cond:'28',forma:c.formaPadrao||'Boleto',categoria:'',parcelas:[]},obs:'',obsInt:'',marcadores:[],receb:[],hist:[],origem:'Manual'};
 }
@@ -2543,7 +2543,7 @@ function gavetaGerar(){
     if($('gF'))$('gF').onchange=e=>{forn=e.target.value;};if($('gF')&&!forn)forn=$('gF').value;
     if($('gNova'))$('gNova').onclick=()=>{const f=fornPorId(forn||($('gF')&&$('gF').value));if(!f)return toast('Escolha o fornecedor.',true);
       const itens=ks.map(k=>itemNovo(k,f,+NEC.sel[k],null)).filter(Boolean);NEC.sel={};gaveta(null);
-      novaOC({forn:{...f},prev:addDias(hojeY(),7),itens,origem:'Necessidade de compra · '+br(hojeY()),marcadores:[],
+      novaOC({forn:{...f},prev:hojeY(),itens,origem:'Necessidade de compra · '+br(hojeY()),marcadores:[],
         pag:{cond:f.prazo||'28',forma:DB.cfg.formaPadrao||'Boleto',categoria:'',parcelas:[]}});};
     if($('gBusca'))buscaLista($('gBusca'),q=>buscaFornecedores(q),f=>{f=fornDoContato(f);if(!f)return;forn=f.id;if(!lista.some(x=>x.f.id===f.id))lista.unshift({f,n:0,tot:ks.reduce((s,k)=>{const mp=melhorPreco(k,f.id)||ultimaCompra(k,f.id);return s+(mp?mp.preco*(+NEC.sel[k]):0);},0)});des();});
     if($('gEx'))$('gEx').onclick=()=>{modo='exist';des();};if($('gVolta'))$('gVolta').onclick=()=>{modo='';des();};
@@ -2694,7 +2694,7 @@ function telaMapa(id){
     ids.forEach(fid=>{const f=fornPorId(fid)||{id:fid,nome:(c.forns.find(x=>x.id===fid)||{}).nome};const fc=c.forns.find(x=>x.id===fid)||{};
       const itens=c.itens.filter(it=>c.escolha[it.sku]===fid).map(it=>itemNovo(it.sku,f,+it.qtd||0,cel(it,fc))).filter(Boolean);
       DB.seq=Math.max(DB.seq,...DB.ocs.map(x=>+x.num||0))+1;
-      const oc=Object.assign(ocVazia(),{num:String(DB.seq),prev:addDias(hojeY(),parseInt(fc.prazo)||7),origem:'Cotação '+c.num,forn:{...f},itens});
+      const oc=Object.assign(ocVazia(),{num:String(DB.seq),prev:hojeY(),origem:'Cotação '+c.num,forn:{...f},itens});
       oc.pag.cond=(fc.pag||f.prazo||'28').replace(/[^\dx+ ]+/gi,' ').trim()||'28';oc.pag.categoria=categoriaSugerida(oc);gerarParcelas(oc,oc.pag.cond,oc.pag.forma);
       hist(oc,'Criou a ordem','rascunho gerado da cotação '+c.num);DB.ocs.push(oc);nums.push(oc.num);});
     c.sit='concluida';c.ocs=nums;salvar();toast(`Ordens ${nums.join(', ')} criadas como rascunho.`);ir('ordens');};
@@ -4046,7 +4046,7 @@ ligaCalendarios=function(raiz){
 /* número: entrou no campo, o valor fica selecionado (digita por cima, sem apagar zero por zero) */
 (function(){const eh=t=>t&&t.tagName==='INPUT'&&!t.hasAttribute('data-cal')&&(t.type==='text'||t.type==='number'||!t.type)&&
   (t.matches('.in3,.in5,.vl,#addQ,#addP,#addIc,#addI,[data-it],[data-cq],[data-sp],[data-spi]'));
-  document.addEventListener('focusin',e=>{const t=e.target;if(!eh(t))return;t._sel=true;setTimeout(()=>{try{t.select();}catch(_){}},0);});
+  document.addEventListener('focusin',e=>{const t=e.target;if(!eh(t))return;t._sel=true;setTimeout(()=>{try{if(document.activeElement===t)t.select();}catch(_){}},0);});
   document.addEventListener('mouseup',e=>{const t=e.target;if(eh(t)&&t._sel){e.preventDefault();t._sel=false;try{t.select();}catch(_){}}},true);
 })();
 
@@ -4355,6 +4355,20 @@ ligaCalendarios=function(raiz){
   const temFicha=x=>!!(x&&Array.isArray(x.ficha)&&x.ficha.length);
   const precoDe=sku=>{const f=fid();const mp=melhorPreco(sku,f),uc=ultimaCompra(sku,f)||ultimaCompra(sku);return mp?mp.preco:(uc?uc.preco:0);};
   const impDe=sku=>(DB.imp&&DB.imp[sku])||{};
+  /* o que ficou da última compra do item: ICMS, IPI e PIS/COFINS repetem na próxima */
+  function mem(sku){const m=(DB.imp&&DB.imp[sku])||{};const r={};
+    if(r.icms==null||r.ipi==null||r.pc==null){const f=fid();const os=(DB.ocs||[]).filter(o=>o.sit!=='can'&&!(ED&&ED.oc&&(ED.oc===o||ED.oc.id===o.id))).sort((a,b)=>((b.forn&&b.forn.id===f)?1:0)-((a.forn&&a.forn.id===f)?1:0)||String(b.data).localeCompare(String(a.data)));
+      fora:for(const o of os)for(const it of (o.itens||[])){let x=null;if(it.sku===sku&&!ehInd(it))x=it;else if(ehInd(it)){const k=comps(it).findIndex(c=>c.sku===sku);if(k>=0)x=k===0?it:comps(it)[k];}
+        if(x&&!(+x.preco||+x.icms||+x.ipi))x=null;
+        if(x){if(r.icms==null)r.icms=+x.icms||0;if(r.ipi==null)r.ipi=+x.ipi||0;if(r.pc==null)r.pc=(+x.pis||0)+(+x.cof||0);break fora;}}}
+    if(r.icms==null){r.icms=m.icms;r.ipi=m.ipi;r.pc=m.pc;}
+    return {icms:+r.icms||0,ipi:+r.ipi||0,pc:+r.pc||0};}
+  const lembra=(sku,x)=>{try{DB.imp=DB.imp||{};DB.imp[sku]={...(DB.imp[sku]||{}),icms:+x.icms||0,ipi:+x.ipi||0,pc:(+x.pis||0)+(+x.cof||0)};}catch(e){}};
+  const poeMem=(x,sku,preco)=>{const m=mem(sku);x.icms=m.icms;x.ipi=m.ipi;x.pis=m.pc;x.cof=0;if(preco&&!(+x.preco))x.preco=precoDe(sku);};
+  /* rascunho que veio zerado (da Necessidade): já puxa preço e impostos da última compra */
+  function preenche(oc){if(!oc||oc.sit!=='ras')return;(oc.itens||[]).forEach(it=>{
+    if(!ehInd(it)){if(!+it.preco&&!+it.icms&&!+it.ipi&&!((+it.pis||0)+(+it.cof||0)))poeMem(it,it.sku,true);}
+    else comps(it).forEach((c,k)=>{const x=k===0?it:c;if(!+x.preco&&!+x.icms&&!+x.ipi)poeMem(x,c.sku,true);});});}
   /* ---------- contas do item industrializado ---------- */
   const _ci=contaItem;
   contaItem=function(it,fu){
@@ -4409,102 +4423,96 @@ ligaCalendarios=function(raiz){
   const _pe=prepararEdicao;
   prepararEdicao=function(id){const ja=ED&&(ED.oc.id===id||(id==='nova'&&ED.nova));const r=_pe.apply(this,arguments);
     try{if(r&&!ja&&ED&&!ED.lock&&converte(ED.oc))toast('Esta ordem foi aberta no formato novo de industrialização: confira e salve.');}catch(e){}
-    if(r&&!ja){S.nv={aberto:true,ind:false,q:''};S.menu=null;S.ed=null;}return r;};
+    if(r&&!ja){S.nv={aberto:true,ind:false,q:''};S.menu=null;S.ed=null;try{if(ED&&!ED.lock)preenche(ED.oc);}catch(e){}}return r;};
   /* ---------- estoque do item (no ⋯ Editar) ---------- */
-  function estHTML(sku,tiny,dep){
-    let sal=null,res=0,ent=0,lst=[];
-    try{const s=N.saldos();const t=tiny||((insumo(sku)||{}).tiny)||('ERP-'+sku);sal=s[t]!=null?+s[t]:null;}catch(e){}
-    try{const r=N.reservado({envase:true,tanques:true})||{};res=+((r[sku]||{}).qtd)||0;}catch(e){}
-    try{DB.ocs.filter(o=>o.sit==='env').forEach(o=>(o.itens||[]).filter(i=>i.sku===sku).forEach(i=>{const f=Math.max(0,(+i.qtd||0)-recebidoDe(o,sku));if(f>0){ent+=f;lst.push({oc:o.num,q:f,d:o.prev});}}));}catch(e){}
-    const virt=(sal||0)+ent-res;let noF='';if(dep){const v=saldoEm(tiny,dep);if(v!=null)noF=`<span class="o5c">no ${esc(depNomeDe(dep))} <b>${nq(v)}</b></span>`;}
-    return `<div class="o5est"><span class="o5c ${sal<0?'neg':''}">estoque <b>${sal==null?'—':nq(sal)}</b></span><span class="o5c ${virt<0?'neg':''}">virtual <b>${nq(virt)}</b></span>
-      <span class="o5c ent">a entrar <b>${nq(ent)}</b><span class="o5tip">${lst.length?lst.map(x=>`<div><b>OC ${esc(x.oc)}</b><span>prev. ${x.d?br(x.d):'—'}</span><b>${nq(x.q)}</b></div>`).join(''):'<span>nada a caminho</span>'}</span></span>
-      ${res?`<span class="o5c">reservado <b>${nq(res)}</b></span>`:''}${noF}</div>`;
+  /* últimas compras do item, de todos os fornecedores (gaveta do lado, como no Tiny) */
+  function ucItem(sku){const x=insumo(sku)||{nome:sku};let l=[];try{l=ultimasCompras(sku,null);}catch(e){}
+    gaveta(`<div class="gt"><h2>Últimas compras</h2><button class="btn sm" id="gX">fechar ✕</button></div><div class="gc">
+      <div style="font-weight:700;font-size:15px;margin:2px 0 14px">${esc(x.nome)}</div>
+      ${l.length?`<table class="o5ucT"><thead><tr><th class="n">Valor unitário</th><th class="n">Quantidade</th><th>Data</th><th>Fornecedor</th><th class="n">Número</th></tr></thead><tbody>
+        ${l.slice(0,10).map(c=>`<tr><td class="n">${nf(c.preco,4)}</td><td class="n">${nq(c.qtd)} ${esc(c.un||'')}</td><td>${br(c.data)}</td><td>${esc(c.forn)}</td><td class="n">${esc(c.num)}</td></tr>`).join('')}</tbody></table>
+        <div class="k" style="font-size:12px;margin-top:14px">* São exibidas apenas as 10 últimas compras.</div>`:'<div class="vazio">Nenhuma compra deste item ainda.</div>'}
+      <button class="btn sm" id="gX2" style="margin-top:18px">fechar</button></div>`);
+    $('gX').onclick=$('gX2').onclick=()=>gaveta(null);}
+  function infoHTML(it,saida){if(!it)return '';let sal=null;
+    try{const s=N.saldos();const tk=it.tiny||((insumo(it.sku)||{}).tiny)||('ERP-'+it.sku);sal=s[tk]!=null?+s[tk]:null;}catch(e){}
+    const mn=+((DB.minimos||{})[it.sku])||0,dep=(sal||0)+(+it.qtd||0),un=esc(it.un||'un');
+    return `<div class="o5inf"><b>Informações</b><div>Estoque atual: <span class="${sal<0?'neg':''}">${sal==null?'—':nq(sal)} ${un}</span></div><div>Estoque mínimo: ${nq(mn)} ${un}</div>${saida?'':`<div>Estoque depois da compra: <span class="${dep<0?'neg':''}">${nq(dep)} ${un}</span></div>`}
+      <button class="o5uc" data-o5uc="${esc(it.sku)}">últimas compras</button></div>`;}
+  function estHTML(sku,tiny){
+    let sal=null;try{const s=N.saldos();const t=tiny||((insumo(sku)||{}).tiny)||('ERP-'+sku);sal=s[t]!=null?+s[t]:null;}catch(e){}
+    return `<div class="o5est"><span class="o5c ${sal<0?'neg':''}">estoque <b>${sal==null?'—':nq(sal)}</b></span></div>`;
   }
   /* ---------- desenho do bloco de itens ---------- */
   const crTxt=x=>[+x.icms?'ICMS':'',(+x.pis||0)+(+x.cof||0)?'PIS/COFINS':'',reforma()&&(+x.cbs||0)+(+x.ibs||0)?'CBS/IBS':''].filter(Boolean).join(' · ')||'sem crédito';
   const inp=(attr,v,d,ph)=>`<input class="in3 o5i" ${attr} value="${d?(+v?nf(v,d):''):pz(v)}" placeholder="${ph||'0'}">`;
-  function linhaNormal(oc,it,i,L){
+  const tot=(q,x,c)=>q*(+x.preco||0)*(1+(c?(+x.ipi||0):0)/100);
+  const tc=T=>T?'<span></span>':'';
+  const F=(l,h,c)=>`<label class="o5f ${c||''}"><span class="lb">${l}</span>${h}</label>`;
+  function linhaNormal(oc,it,i,L,T){
     const c=contaItem(it,freteUnOC(oc)),ed=S.ed===i&&!L;const leg=envsDe(it);const vira=leg.length&&window.c497Vira?c497Vira(it):null;
     const pc=(+it.pis||0)+(+it.cof||0);
-    const ed2=ed?`<div class="o5subs"><div class="o5sbe o5sbn"><div class="o5n"><span class="o5tag tc">Compra</span></div>
-        <label><span class="lb">Qtde</span>${inp(`data-o5="${i}|qtd"`,it.qtd)}</label><label><span class="lb">Preço</span>${inp(`data-o5="${i}|preco"`,it.preco,4)}</label>
-        <label><span class="lb">ICMS %</span>${inp(`data-o5="${i}|icms"`,it.icms)}</label><label><span class="lb">IPI %</span>${inp(`data-o5="${i}|ipi"`,it.ipi)}</label>
-        <label><span class="lb">PIS/COFINS %</span>${inp(`data-o5="${i}|pc"`,pc,0,'—')}</label>${reforma()?`<label><span class="lb">CBS %</span>${inp(`data-o5="${i}|cbs"`,it.cbs)}</label><label><span class="lb">IBS %</span>${inp(`data-o5="${i}|ibs"`,it.ibs)}</label>`:''}</div>
-        <div class="o5sbe o5sbf"><div></div><label><span class="lb">Como o fornecedor chama</span><input class="in3 o5t" data-o5t="${i}|nomeForn" value="${esc(it.nomeForn||'')}"></label><label><span class="lb">Código no fornecedor</span><input class="in3 o5t" data-o5t="${i}|codForn" value="${esc(it.codForn||'')}"></label></div></div>
-      <div class="o5res"><span class="k">editando · os valores já recalculam</span><span style="flex:1"></span><button class="btn pri sm" data-o5ok="${i}">Pronto</button></div>`:'';
-    const chave=L?'<span></span>':`<span class="n o5hd"><label class="o5chv" data-o5ind="${i}" title="ligue se o fornecedor devolve este item pronto com material nosso (rótulo, preforma)"><span class="o5sw"></span>Industrialização</label></span>`;
-    return `<div class="o5it ${leg.length?'ind':''}"><div class="o5h"><div class="o5n"><b>${esc(it.nome)}</b><small>${esc(it.sku)} · compra · R$ ${nf(it.preco,4)} · ICMS ${nq(it.icms)}% · IPI ${nq(it.ipi)}% · ${crTxt(it)}${it.nomeForn?' · no fornecedor: '+esc(it.nomeForn):''}${vira?` · entra como ${esc(vira.nome)}`:''}</small>${ed?estHTML(it.sku,it.tiny):''}</div>
-      <span class="n"><b>${nq(it.qtd)}</b> ${esc(it.un||'un')}</span>${chave}
-      <span class="n o5tot">${nf(c.nota,2)}</span>${L?'<span></span>':`<button class="o5mn" data-o5m="${i}">⋯</button>`}</div>
-      ${leg.length?`<div class="o5subs">${leg.map(e=>`<div class="o5sb"><span class="o5tag ti">Industrialização</span><span><b>${esc(e.nome)}</b> <small>sai do depósito ${esc(depNomeDe(depDoSub(oc,e)))}</small></span><span class="n">${+e.preco?'R$ '+nf(e.preco,4):'—'}</span><span class="n k">${nq(r3_((+e.fator||1)*(+it.qtd||0)))} ${esc(e.un||'un')}</span></div>`).join('')}</div>`:''}
-      ${ed2}${menu(i)}</div>`;
+    const ed2=ed?`<div class="o5ex"><label><span class="lb">Como o fornecedor chama</span><input class="in3 o5t" data-o5t="${i}|nomeForn" value="${esc(it.nomeForn||'')}"></label><label><span class="lb">Código no fornecedor</span><input class="in3 o5t" data-o5t="${i}|codForn" value="${esc(it.codForn||'')}"></label>
+        ${reforma()?`<label><span class="lb">CBS %</span>${inp(`data-o5="${i}|cbs"`,it.cbs)}</label><label><span class="lb">IBS %</span>${inp(`data-o5="${i}|ibs"`,it.ibs)}</label>`:''}<button class="btn pri sm" data-o5ok="${i}">Pronto</button></div>`:'';
+    const leg2=leg.map(e=>`<div class="o5r o5rs"><div class="o5n"><b>${esc(e.nome)}</b><small>sai do depósito ${esc(depNomeDe(depDoSub(oc,e)))}</small></div>${T?'<span class="o5tg ti">Industrialização</span>':''}<span class="n">${nq(r3_((+e.fator||1)*(+it.qtd||0)))}</span><span class="n">${+e.preco?nf(e.preco,4):'—'}</span><span></span><span></span><span></span><span></span><span></span></div>`).join('');
+    const nm=`<div class="o5n"><b>${esc(it.nome)}</b><small>${esc(it.sku)}${it.nomeForn?' · no fornecedor: '+esc(it.nomeForn):''}${vira?` · entra como ${esc(vira.nome)}`:''}</small></div>`;
+    if(L)return `<div class="o5it"><div class="o5r">${nm}${tc(T)}${F('Qtde',`<span class="n">${nq(it.qtd)} ${esc(it.un||'un')}</span>`)}${F('Preço',`<span class="n">${nf(it.preco,4)}</span>`)}${F('ICMS %',`<span class="n">${nq(it.icms)}</span>`,'tx')}${F('IPI %',`<span class="n">${nq(it.ipi)}</span>`,'tx')}${F('PIS/COF %',`<span class="n">${pc?nq(pc):'—'}</span>`,'tx')}${F('Total',`<b class="n">${nf(c.nota,2)}</b>`,'tt')}<span></span></div>${leg2}</div>`;
+    return `<div class="o5it"><div class="o5r">${nm}${tc(T)}
+      ${F(`Qtde (${esc(it.un||'un')})`,inp(`data-o5="${i}|qtd"`,it.qtd))}${F('Preço',inp(`data-o5="${i}|preco"`,it.preco,4))}${F('ICMS %',inp(`data-o5="${i}|icms"`,it.icms),'tx')}${F('IPI %',inp(`data-o5="${i}|ipi"`,it.ipi),'tx')}${F('PIS/COF %',inp(`data-o5="${i}|pc"`,pc,0,'—'),'tx')}
+      ${F('Total',`<b class="n" data-o5itot="${i}">${nf(c.nota,2)}</b>`,'tt')}<button class="o5mn" data-o5m="${i}">⋯</button></div>${leg2}${ed2}${menu(i)}</div>`;
   }
-  function subEd(oc,it,i,j,s,tipo){const comEst=i!=='n';
+  function subEd(oc,it,i,j,s,tipo,L){
     const q=tipo==='c'?cpQ(it,s):r3_((+s.fator||1)*(+it.qtd||0));const x=tipo==='c'&&j===0?it:s;
     const k=`${i}|${tipo}|${j}`;const pc=(+x.pis||0)+(+x.cof||0);const dep=tipo==='i'?depDoSub(oc,s):null;
-    return `<div class="o5sbe"><div class="o5n"><b>${esc(s.nome)}</b><small>${esc(s.sku)}${tipo==='i'?' · sai do depósito '+esc(depNomeDe(dep)):' · o fornecedor fatura'}</small>${comEst?estHTML(s.sku,s.tiny,dep):''}</div>
-      <label><span class="lb">Tipo</span><select class="o5sel t${tipo}" data-o5tp="${k}"><option value="c" ${tipo==='c'?'selected':''}>Compra</option><option value="i" ${tipo==='i'?'selected':''}>Industrialização</option></select></label>
-      <label><span class="lb">Qtde</span><span class="o5q">${nq(q)} ${esc(s.un||'un')}</span></label><label><span class="lb">${tipo==='i'?'Mão de obra':'Preço'}</span>${inp(`data-o5s="${k}|preco"`,x.preco,4)}</label>
-      ${tipo==='c'?`<label><span class="lb">ICMS %</span>${inp(`data-o5s="${k}|icms"`,x.icms)}</label><label><span class="lb">IPI %</span>${inp(`data-o5s="${k}|ipi"`,x.ipi)}</label>`:'<span></span><span></span>'}
-      <label><span class="lb">PIS/COFINS %</span>${inp(`data-o5s="${k}|pc"`,pc,0,'—')}</label>
-      <span class="n o5stot"><span class="lb">Total</span><b>${nf(q*(+x.preco||0)*(1+(tipo==='c'?(+x.ipi||0):0)/100),2)}</b></span>
-      <button class="o5x" data-o5sx="${k}" title="tirar">✕</button></div>`;
+    const nm=`<div class="o5n"><b>${esc(s.nome)}</b><small>${esc(s.sku)}${tipo==='i'?' · sai do depósito '+esc(depNomeDe(dep)):''}</small></div>`;
+    if(L)return `<div class="o5r o5rs">${nm}${F('Tipo',`<span class="o5tg t${tipo}">${tipo==='c'?'Compra':'Industrialização'}</span>`)}${F('Qtde',`<span class="n">${nq(q)} ${esc(s.un||'un')}</span>`)}${F(tipo==='i'?'Mão de obra':'Preço',`<span class="n">${+x.preco?nf(x.preco,4):'—'}</span>`)}${tipo==='c'?`${F('ICMS %',`<span class="n">${nq(x.icms)}</span>`,'tx')}${F('IPI %',`<span class="n">${nq(x.ipi)}</span>`,'tx')}`:'<span></span><span></span>'}${F('PIS/COF %',`<span class="n">${pc?nq(pc):'—'}</span>`,'tx')}${F('Total',`<b class="n">${+x.preco?nf(tot(q,x,tipo==='c'),2):'—'}</b>`,'tt')}<span></span></div>`;
+    return `<div class="o5r o5rs">${nm}
+      ${F('Tipo',`<select class="o5sel t${tipo}" data-o5tp="${k}"><option value="c" ${tipo==='c'?'selected':''}>Compra</option><option value="i" ${tipo==='i'?'selected':''}>Industrialização</option></select>`)}
+      ${F(`Qtde (${esc(s.un||'un')})`,inp(`data-o5s="${k}|q"`,q))}${F(tipo==='i'?'Mão de obra':'Preço',inp(`data-o5s="${k}|preco"`,x.preco,4))}
+      ${tipo==='c'?`${F('ICMS %',inp(`data-o5s="${k}|icms"`,x.icms),'tx')}${F('IPI %',inp(`data-o5s="${k}|ipi"`,x.ipi),'tx')}`:'<span></span><span></span>'}
+      ${F('PIS/COF %',inp(`data-o5s="${k}|pc"`,pc,0,'—'),'tx')}
+      ${F('Total',`<b class="n" data-o5tq="${k}">${nf(tot(q,x,tipo==='c'),2)}</b>`,'tt')}
+      <button class="o5mn" data-o5sm="${k}">⋯</button>${S.menu==='s:'+k?`<div class="o5menu">${infoHTML({sku:s.sku,tiny:s.tiny,un:s.un,qtd:q},tipo==='i')}<button class="del" data-o5sx="${k}">✕ Remover</button></div>`:''}</div>`;
   }
   function linhaInd(oc,it,i,L){
-    const c=contaItem(it,freteUnOC(oc)),ed=S.ed===i&&!L,q=+it.qtd||0,cs=comps(it),es=envsDe(it);
-    const ver=(s,tipo,j)=>{const x=tipo==='c'&&j===0?it:s;const qq=tipo==='c'?cpQ(it,s):r3_((+s.fator||1)*q);const b=qq*(+x.preco||0);
-      return `<div class="o5sb"><span class="o5tag t${tipo}">${tipo==='c'?'Compra':'Industrialização'}</span><span><b>${esc(s.nome)}</b> <small>${esc(s.sku)}${tipo==='i'?' · sai do depósito '+esc(depNomeDe(depDoSub(oc,s))):''}</small></span>
-        <span class="n">${+x.preco?'R$ '+nf(x.preco,4):'<span class="k">—</span>'}</span><span class="n k">${nq(qq)} ${esc(s.un||'un')}${tipo==='c'?` · ICMS ${nq(x.icms)}% · IPI ${nq(x.ipi)}%`:(+x.preco?' · mão de obra':'')}</span>
-        <span class="o5cr">${+x.preco||tipo==='c'?crTxt(x):'<span class="k">não é cobrado</span>'}</span><b class="n">${+x.preco?nf(b*(1+(tipo==='c'?(+x.ipi||0):0)/100),2):'—'}</b></div>`;};
-    const corpo=ed?cs.map((s,j)=>subEd(oc,it,i,j,s,'c')).join('')+es.map((s,j)=>subEd(oc,it,i,j,s,'i')).join('')+subNovo(oc,it,i)
-      :cs.map((s,j)=>ver(s,'c',j)).join('')+es.map((s,j)=>ver(s,'i',j)).join('');
-    return `<div class="o5it ind"><div class="o5h"><div class="o5n"><b>${esc(it.nome)}</b><small>${esc(it.sku)} · nosso item · é o que entra no estoque · embaixo, o que o fornecedor usa para fazer</small>${ed?estHTML(it.sku,it.tiny):''}</div>
-      ${ed?`<label><span class="lb">Qtde do nosso item</span>${inp(`data-o5="${i}|qtdInd"`,it.qtd)}</label>`:`<span class="n"><b>${nq(it.qtd)}</b> ${esc(it.un||'un')}</span>`}
-      <span class="n o5hd">${L?'<span class="o5chv on"><span class="o5sw on"></span>Industrialização</span>':`<label class="o5chv" data-o5ind="${i}" title="desligar: volta a ser compra normal"><span class="o5sw on"></span>Industrialização</label>`}</span><span class="n o5tot">${nf(c.nota,2)}</span>${L?'<span></span>':`<button class="o5mn" data-o5m="${i}">⋯</button>`}</div>
-      <div class="o5subs">${corpo||'<div class="k" style="padding:8px 0">sem sub-itens</div>'}</div>
-      <div class="o5res"><span class="k">cada unidade do nosso item custa</span><span>sem créditos <b>R$ ${nf(q?c.nota/q:0,4)}</b></span><span>com créditos <b>R$ ${nf(q?(c.nota-c.credito)/q:0,4)}</b></span><span class="k">+ o material nosso</span>${ed?`<span style="flex:1"></span><button class="btn sm" data-o5ok="${i}" style="background:#6D28D9;color:#fff;border-color:#6D28D9">Pronto</button>`:''}</div>${menu(i)}</div>`;
+    const c=contaItem(it,freteUnOC(oc)),cs=comps(it),es=envsDe(it);
+    const subs=cs.map((s,j)=>subEd(oc,it,i,j,s,'c',L)).join('')+es.map((s,j)=>subEd(oc,it,i,j,s,'i',L)).join('');
+    return `<div class="o5it ind"><div class="o5r o5rp"><div class="o5n"><b>${esc(it.nome)}</b><small>${esc(it.sku)} · entra no estoque</small></div><span></span>
+      ${F('Qtde',`<span class="n"><b data-o5iq="${i}">${nq(it.qtd)}</b>&nbsp;${esc(it.un||'un')}</span>`,'tt')}<span></span><span></span><span></span><span></span>
+      ${F('Total do item',`<b class="n" data-o5itot="${i}">${nf(c.nota,2)}</b>`,'tt')}${L?'<span></span>':`<button class="o5mn" data-o5m="${i}">⋯</button>`}</div>
+      ${subs}${L?(subs?'':'<div class="o5rs k" style="padding:8px 14px 8px 34px">sem sub-itens</div>'):`<div class="o5rs o5sn">${subNovo(oc,it,i)}</div>`}${menu(i)}</div>`;
   }
-  const menu=i=>S.menu===i?`<div class="o5menu"><button data-o5ed="${i}">✎ Editar item</button><button class="del" data-o5rm="${i}">✕ Remover</button></div>`:'';
+  const menu=i=>S.menu===i?`<div class="o5menu">${infoHTML(ED&&ED.oc&&ED.oc.itens[i])}${ED&&ED.oc&&ehInd(ED.oc.itens[i])?'':`<button data-o5ed="${i}">✎ Editar item</button>`}<button class="del" data-o5rm="${i}">✕ Remover</button></div>`:'';
   /* sub-item novo dentro do item (na linha nova e no editar) */
   function listaSub(qq,ficha){const q=String(qq||'').toLowerCase();
     return (N?N.insumos():[]).filter(x=>!temFicha(x)&&(!q||(x.sku+' '+x.nome).toLowerCase().includes(q))).sort((a,b)=>((ficha||[]).includes(b.sku)?1:0)-((ficha||[]).includes(a.sku)?1:0)).slice(0,40);}
   function subNovo(oc,it,i){const st=it._sn;const fs=((insumo(it.sku)||{}).ficha||[]).map(f=>f.sku);
     const ja=new Set([...comps(it).map(c=>c.sku),...envsDe(it).map(e=>e.sku)]);const falta=fs.filter(k=>!ja.has(k)&&insumo(k));
-    return `${st?`<div class="o5sbe" style="grid-template-columns:minmax(0,1fr) 28px"><div class="o5bus"><input data-o5sb="${i}" value="${esc(st.q||'')}" placeholder="Buscar o sub-item (frasco, rótulo, preforma…)" autocomplete="off">
-      <div class="o5lst">${listaSub(st.q,fs).map((x,k)=>`<div class="o ${k===0?'on':''}" data-o5spk="${i}|${esc(x.sku)}"><b>${esc(x.nome)}</b><small>${esc(x.sku)}${fs.includes(x.sku)?' · da ficha':''}</small></div>`).join('')||'<div class="o"><small>nada com esse nome</small></div>'}</div></div><button class="o5x" data-o5sbx="${i}">✕</button></div>`:''}
-      <button class="o5add" data-o5sa="${i}">＋ sub-item</button>${falta.length?`<span class="o5sug">da ficha: ${falta.map(k=>`<button data-o5sg="${i}|${esc(k)}">＋ ${esc((insumo(k)||{}).nome||k)}</button>`).join('')}</span>`:''}`;}
+    return `${st?`<div class="o5sbx"><div class="o5bus"><input data-o5sb="${i}" value="${esc(st.q||'')}" placeholder="Buscar o sub-item (frasco, rótulo, preforma…)" autocomplete="off">
+      <div class="o5lst">${listaSub(st.q,[]).map((x,k)=>`<div class="o ${k===0?'on':''}" data-o5spk="${i}|${esc(x.sku)}"><b>${esc(x.nome)}</b><small>${esc(x.sku)}</small></div>`).join('')||'<div class="o"><small>nada com esse nome</small></div>'}</div></div><button class="o5x" data-o5sbx="${i}">✕</button></div>`:''}
+      <button class="o5add" data-o5sa="${i}">＋ sub-item</button>`;}
   function poeSub(oc,it,sku,qtd){
     const x=insumo(sku);if(!x)return;const rot=/r[oó]tulo|etiqueta|prefor/i.test(x.nome+' '+(x.tipo||''));const q=+it.qtd||+qtd||0;
     if(!rot){const imp=impDe(sku);const c={sku:x.sku,nome:x.nome,tiny:x.tiny||('ERP-'+x.sku),un:unDoItem(x),fator:1,nomeForn:((vinculo(fid(),x.sku)||{}).nome)||''};
-      if(!comps(it).length){it.compras=[c];it.preco=precoDe(sku);it.icms=+imp.icms||0;it.ipi=+imp.ipi||0;it.pis=0;it.cof=0;}
-      else{c.preco=precoDe(sku);c.icms=+imp.icms||0;c.ipi=+imp.ipi||0;c.pis=0;c.cof=0;it.compras.push(c);}
+      if(!comps(it).length){it.compras=[c];it.preco=precoDe(sku);poeMem(it,sku,false);}
+      else{c.preco=precoDe(sku);poeMem(c,sku,false);it.compras.push(c);}
       try{if(fid()&&!vinculo(fid(),x.sku))garanteVinculo(fid(),x.sku,{sit:'a'});}catch(e){}}
     else{const dep=(depBenef(oc,true)||{}).id||depPrinc();
-      (it.envs=it.envs||[]).push({sku:x.sku,nome:x.nome,tiny:x.tiny||('ERP-'+x.sku),un:unDoItem(x),tipo:x.tipo||'',fator:1,dep,preco:(()=>{try{return c490UltServ(x.sku,fid())||0;}catch(e){return 0;}})(),pis:0,cof:0});}
+      (it.envs=it.envs||[]).push({sku:x.sku,nome:x.nome,tiny:x.tiny||('ERP-'+x.sku),un:unDoItem(x),tipo:x.tipo||'',fator:1,dep,preco:(()=>{try{const f=fid();for(const o of (DB.ocs||[]).filter(o=>o.sit!=='can'&&o.forn&&o.forn.id===f).sort((a,b)=>String(b.data).localeCompare(String(a.data))))for(const i2 of (o.itens||[]))for(const e of envsDe(i2))if(e.sku===x.sku&&+e.preco>0)return +e.preco;}catch(e){}return 0;})(),pis:0,cof:0});}
   }
   /* ---------- linha nova ---------- */
   function linhaNovaHTML(oc){
-    const n=S.nv;if(!n||!n.aberto)return `<div class="o5mais"><button class="o5ab" id="o5C" ${oc.forn?'':'disabled'}>＋ Item de compra</button><button class="o5ab i" id="o5I" ${oc.forn?'':'disabled'}>＋ Item de industrialização</button>${oc.forn?'':'<span class="s2">escolha o fornecedor primeiro</span>'}</div>`;
-    const chave=`<label class="o5chv" id="o5Sw" title="ligue quando o fornecedor devolve pronto com material nosso"><span class="o5sw ${n.ind?'on':''}"></span>Industrialização</label>`;
-    if(!n.sku){const q=String(n.q||'').toLowerCase();const ja=new Set(oc.itens.map(i=>i.sku));
-      const l=(N?N.insumos():[]).filter(x=>(n.ind?temFicha(x):true)&&!ja.has(x.sku)&&(!q||(x.sku+' '+x.nome+' '+(x.tipo||'')+' '+(((vinculo(fid(),x.sku)||{}).nome)||'')).toLowerCase().includes(q))).slice(0,40);
-      return `<div class="o5nv ${n.ind?'ind':''}"><div class="o5nvr"><div class="o5bus" style="flex:1"><input id="o5B" value="${esc(n.q||'')}" placeholder="${!oc.forn?'escolha o fornecedor primeiro':n.ind?'Buscar o nosso item industrializado (frasco rotulado)…':'Pesquise pelo nome da MP, SKU ou nome no fornecedor'}" autocomplete="off" ${oc.forn?'':'disabled'}>
-        ${oc.forn?`<div class="o5lst"><div class="h">${n.ind?'Só itens cadastrados como industrialização (com ficha técnica)':'Itens'}</div>${l.map((x,k)=>`<div class="o ${k===0?'on':''}" data-o5pk="${esc(x.sku)}">${n.ind?'🔄 ':''}<b>${esc(x.nome)}</b><small>${esc(x.sku)}${x.tipo?' · '+esc(x.tipo):''}</small></div>`).join('')||'<div class="o"><small>nada com esse nome</small></div>'}</div>`:''}</div>${chave}<button class="o5x" id="o5X" title="cancelar">✕</button></div></div>`;}
-    const x=insumo(n.sku)||{};
-    if(!n.ind)return `<div class="o5nv"><div class="o5nvr"><div class="o5n" style="flex:1"><b>${esc(x.nome||n.sku)}</b><small>${esc(n.sku)}</small></div>${chave}<button class="o5x" id="o5X">✕</button></div>
-      <div class="o5g o5g6"><label><span class="lb">Qtde</span>${inp('data-o5n="qtd"',n.qtd)}</label><label><span class="lb">Preço</span>${inp('data-o5n="preco"',n.preco,4)}</label>
-        <label><span class="lb">ICMS %</span>${inp('data-o5n="icms"',n.icms)}</label><label><span class="lb">IPI %</span>${inp('data-o5n="ipi"',n.ipi)}</label><label><span class="lb">PIS/COFINS %</span>${inp('data-o5n="pc"',n.pc,0,'—')}</label><span></span></div>
-      <div class="o5nvf"><span class="k">PIS/COFINS: preencha só se a nota der crédito.</span><span style="flex:1"></span><button class="btn pri" id="o5Ok">Incluir item</button></div></div>`;
-    const it=n.it;
-    return `<div class="o5nv ind"><div class="o5nvr"><div class="o5n" style="flex:1"><b>${esc(x.nome||n.sku)}</b><small>${esc(n.sku)} · nosso item · é o que entra no estoque</small></div>
-       <label style="width:150px"><span class="lb">Qtde do nosso item</span>${inp('data-o5n="qtdInd"',it.qtd)}</label>${chave}<button class="o5x" id="o5X">✕</button></div>
-      <div class="o5subs">${comps(it).map((s,j)=>subEd(oc,it,'n',j,s,'c')).join('')}${envsDe(it).map((s,j)=>subEd(oc,it,'n',j,s,'i')).join('')}${subNovo(oc,it,'n')}</div>
-      <div class="o5nvf"><span class="k">Compra = o fornecedor fatura · Industrialização = material nosso, sai do depósito dele (mão de obra se ele cobrar).</span><span style="flex:1"></span><button class="btn" id="o5Ok" style="background:#6D28D9;color:#fff;border-color:#6D28D9">Incluir item</button></div></div>`;
+    const n=S.nv||{q:''};const q=String(n.q||'').toLowerCase();const ja=new Set(oc.itens.map(i=>i.sku));
+    const l=oc.forn?(N?N.insumos():[]).filter(x=>!ja.has(x.sku)&&(!q||(x.sku+' '+x.nome+' '+(x.tipo||'')+' '+(((vinculo(fid(),x.sku)||{}).nome)||'')).toLowerCase().includes(q))).slice(0,40):[];
+    const ls=oc.benef?l.sort((a,b)=>(temFicha(b)?1:0)-(temFicha(a)?1:0)):l;
+    return `<div class="o5nv"><div class="o5bus"><input id="o5B" value="${esc(n.q||'')}" placeholder="${oc.forn?'＋ adicionar item · pesquise pelo nome, SKU ou nome no fornecedor':'escolha o fornecedor primeiro'}" autocomplete="off" ${oc.forn?'':'disabled'}>
+      ${oc.forn?`<div class="o5lst">${ls.map((x,k)=>`<div class="o ${k===0?'on':''}" data-o5pk="${esc(x.sku)}"><b>${esc(x.nome)}</b><small>${esc(x.sku)}${x.tipo?' · '+esc(x.tipo):''}</small></div>`).join('')||'<div class="o"><small>nada com esse nome</small></div>'}</div>`:''}</div></div>`;
   }
   function blocoHTML(oc,L){
-    const its=oc.itens.map((it,i)=>ehInd(it)?linhaInd(oc,it,i,L):linhaNormal(oc,it,i,L)).join('')||(L?'<div class="vazio">Nenhum item.</div>':'');
-    return `<div class="t"><span class="n">2</span>Itens</div><div class="o5bl">${its}${L?'':linhaNovaHTML(oc)}</div>${oc.itens.length?totaisOC(oc,contaOC(oc),L):''}`;
+    const T=!!oc.benef||oc.itens.some(ehInd);
+    const its=oc.itens.map((it,i)=>ehInd(it)?linhaInd(oc,it,i,L):linhaNormal(oc,it,i,L,T)).join('')||(L?'<div class="vazio">Nenhum item.</div>':'');
+    const cab='';
+    return `<div class="t"><span class="n">2</span>Itens</div><div class="o5bl ${T?'cT':''}">${cab}${its}${L?'':linhaNovaHTML(oc)}</div><div class="o5tt">${oc.itens.length?totaisOC(oc,contaOC(oc),L):''}</div>`;
   }
   /* ---------- ações ---------- */
   const itDe=(oc,i)=>i==='n'?S.nv.it:oc.itens[+i];
@@ -4515,26 +4523,29 @@ ligaCalendarios=function(raiz){
       Object.assign(it,{qtd:q,preco:num(n.preco),icms:num(n.icms),ipi:num(n.ipi),pis:num(n.pc),cof:0,envs:[]});delete it.env;
       if(it.modo==='cx'&&+it.cx>0){it.qtdCx=Math.ceil(q/it.cx);it.qtd=r3_(it.qtdCx*it.cx);}
       DB.imp[it.sku]={...(DB.imp[it.sku]||{}),icms:it.icms,ipi:it.ipi};}
-    else{const it=n.it;if(!(+it.qtd>0))return foco('[data-o5n="qtdInd"]','Digite a quantidade do nosso item.');
-      if(!comps(it).length&&!envsDe(it).length)return toast('Inclua os sub-itens: o que é compra e o que é industrialização.',true);
+    else{const it=n.it;if(!comps(it).length&&!envsDe(it).length)return toast('Inclua os sub-itens.',true);
+      if(!(+it.qtd>0))return foco('[data-o5s^="n|"][data-o5s$="|q"]','Digite a quantidade nos sub-itens.');
       if(oc.itens.some(i=>i.sku===it.sku))return toast('Este item já está na ordem.',true);
       delete it._sn;oc.itens.push(it);if(!oc.pag.categoria)oc.pag.categoria=categoriaSugerida(oc);
       comps(it).forEach((c,k)=>{const x=k===0?it:c;DB.imp[c.sku]={...(DB.imp[c.sku]||{}),icms:+x.icms||0,ipi:+x.ipi||0};});}
     try{recalc();}catch(e){}
-    S.nv={aberto:true,ind:n.ind,q:''};S.foco='#o5B';toast('Item incluído. Já abri o próximo.');rr();
+    S.nv={aberto:true,ind:false,q:''};S.foco='#o5B';toast('Item incluído. Já abri o próximo.');rr();
   }
   function foco(sel,msg){toast(msg,true);const x=document.querySelector(sel);if(x)x.focus();}
-  function escolhe(oc,sku){const n=S.nv;n.sku=sku;const x=insumo(sku)||{};
-    if(!n.ind){const imp=impDe(sku);Object.assign(n,{qtd:'',preco:precoDe(sku),icms:+imp.icms||0,ipi:+imp.ipi||0,pc:''});S.foco='[data-o5n="qtd"]';}
-    else{n.it={sku:x.sku,nome:x.nome,tiny:x.tiny||('ERP-'+x.sku),un:unDoItem(x),tipo:x.tipo||'',ind:true,qtd:0,qtdCx:0,cx:0,modo:'un',preco:0,icms:0,ipi:0,pis:0,cof:0,cbs:0,ibs:0,
-      cr:{...CRED_PADRAO},nomeForn:'',codForn:'',compras:[],envs:[]};S.foco='[data-o5n="qtdInd"]';}
-    rr();}
+  function escolhe(oc,sku){const x=insumo(sku);if(!x)return;
+    if(oc.itens.some(i=>i.sku===sku))return toast('Este item já está na ordem.',true);
+    if(oc.benef&&temFicha(x)){const it={sku:x.sku,nome:x.nome,tiny:x.tiny||('ERP-'+x.sku),un:unDoItem(x),tipo:x.tipo||'',ind:true,qtd:0,qtdCx:0,cx:0,modo:'un',preco:0,icms:0,ipi:0,pis:0,cof:0,cbs:0,ibs:0,
+        cr:{...CRED_PADRAO},nomeForn:'',codForn:'',compras:[],envs:[],_sn:{q:''}};oc.itens.push(it);if(!oc.pag.categoria)oc.pag.categoria=categoriaSugerida(oc);
+      S.foco=`[data-o5sb="${oc.itens.length-1}"]`;}
+    else{if(!adicionarItem(oc,x))return;const it=oc.itens[oc.itens.length-1];poeMem(it,sku,false);if(!+it.preco)it.preco=precoDe(sku);it.envs=[];delete it.env;
+      S.foco=`[data-o5="${oc.itens.length-1}|qtd"]`;}
+    S.nv={aberto:true,q:''};rr();}
   /* muda um campo de sub-item: k = i|c|j ou i|i|j */
   function mudaSub(oc,k,campo,v){
     const [i,tp,j]=k.split('|');const it=itDe(oc,i);if(!it)return;const q=+it.qtd||0;
     if(tp==='c'){const s=comps(it)[+j];if(!s)return;const x=+j===0?it:s;
-      if(campo==='q'){s.fator=q?v/q:1;}else if(campo==='pc'){x.pis=v;x.cof=0;}else x[campo]=v;}
-    else{const e=envsDe(it)[+j];if(!e)return;if(campo==='q')e.fator=q?v/q:1;else if(campo==='pc'){e.pis=v;e.cof=0;}else e[campo]=v;}
+      if(campo==='q'){it.qtd=r3_(v/(+s.fator||1));}else if(campo==='pc'){x.pis=v;x.cof=0;}else x[campo]=v;if(/icms|ipi|pc/.test(campo))lembra(s.sku,x);}
+    else{const e=envsDe(it)[+j];if(!e)return;if(campo==='q')it.qtd=r3_(v/(+e.fator||1));else if(campo==='pc'){e.pis=v;e.cof=0;}else e[campo]=v;}
   }
   function trocaTipo(oc,k,novo){
     const [i,tp,j]=k.split('|');const it=itDe(oc,i);if(!it||tp===novo)return;
@@ -4549,9 +4560,29 @@ ligaCalendarios=function(raiz){
   function tiraSub(oc,k){const [i,tp,j]=k.split('|');const it=itDe(oc,i);if(!it)return;
     if(tp==='c'){it.compras.splice(+j,1);if(+j===0){const z=it.compras[0];if(z){it.preco=+z.preco||0;it.icms=+z.icms||0;it.ipi=+z.ipi||0;it.pis=+z.pis||0;}else{it.preco=0;it.icms=0;it.ipi=0;it.pis=0;}it.cof=0;}}
     else it.envs.splice(+j,1);}
-  function rr(){if(S.rrT)return;S.rrT=setTimeout(()=>{S.rrT=null;if(!ED||!ED.oc)return;const y=window.scrollY;telaOC(ED.nova?'nova':ED.oc.id);window.scrollTo(0,y);},0);}
+  /* redesenha sem perder o campo em que a pessoa está (Tab e clique vão direto para o próximo campo) */
+  const chaveEl=el=>{if(!el||el===document.body)return null;for(const k of ['data-o5','data-o5s','data-o5n','data-o5t','data-o5tp','data-o5sb']){const v=el.getAttribute&&el.getAttribute(k);if(v!=null)return `[${k}="${v}"]`;}return el.id?'#'+el.id:null;};
+  document.addEventListener('pointerdown',()=>{S.down=true;},true);
+  document.addEventListener('pointerup',()=>{S.down=false;if(S.pend){S.pend=false;setTimeout(rr,0);}},true);
+  function rr(){if(S.rrT)return;S.rrT=setTimeout(()=>{S.rrT=null;if(!ED||!ED.oc)return;if(S.down){S.pend=true;return;}
+    if(!S.foco){const k=chaveEl(document.activeElement);if(k&&document.activeElement.closest&&document.activeElement.closest('#app'))S.foco=k;}
+    const y=window.scrollY;telaOC(ED.nova?'nova':ED.oc.id);window.scrollTo(0,y);},0);}
+  function soft(oc){
+    const raiz=document.querySelector('.o5bl');if(!raiz)return rr();
+    const tmp=document.createElement('div');tmp.innerHTML=blocoHTML(oc,ED.lock);const nb=tmp.querySelector('.o5bl');const a=document.activeElement;
+    ['data-o5iq','data-o5itot','data-o5tq'].forEach(k=>raiz.querySelectorAll(`[${k}]`).forEach(el=>{const n=nb.querySelector(`[${k}="${el.getAttribute(k)}"]`);if(n&&el.textContent!==n.textContent)el.textContent=n.textContent;}));
+    raiz.querySelectorAll('input[data-o5s],input[data-o5]').forEach(el=>{if(el===a)return;const k=el.hasAttribute('data-o5s')?'data-o5s':'data-o5';const n=nb.querySelector(`[${k}="${el.getAttribute(k)}"]`);if(n&&el.value!==n.value)el.value=n.value;});
+    const tt=document.querySelector('.o5tt'),nt=tmp.querySelector('.o5tt');if(tt&&nt&&!tt.contains(a)){tt.innerHTML=nt.innerHTML;if($('rDesc'))$('rDesc').onchange=e=>{oc.desconto=Math.max(0,num(e.target.value));soft(oc);};}
+    try{if(!(oc.pag.parcelas||[]).some(p=>p.tiny&&p.tiny.id))gerarParcelas(oc,oc.pag.cond,oc.pag.forma);}catch(e){}
+    try{const b=document.querySelector('.rodape .esq b');if(b)b.textContent=rs(contaOC(oc).total);}catch(e){}
+    S.sujo=true;
+  }
+  /* saiu do bloco de itens: redesenha o resto (parcelas, resumo) sem tirar o foco de onde foi */
+  document.addEventListener('focusin',e=>{if(!S.sujo||!ED||!ED.oc)return;if(e.target.closest&&e.target.closest('.o5bl'))return;S.sujo=false;rr();});
   function liga(oc,L){
     const raiz=document.querySelector('.o5bl');if(!raiz)return;const Q=s=>raiz.querySelectorAll(s);
+    Q('[data-o5uc]').forEach(b=>b.onclick=e=>{e.stopPropagation();const sku=b.dataset.o5uc;S.menu=null;rr();setTimeout(()=>ucItem(sku),30);});
+    Q('[data-o5sm]').forEach(b=>b.onclick=e=>{e.stopPropagation();const k='s:'+b.dataset.o5sm;S.menu=S.menu===k?null:k;rr();});
     Q('[data-o5m]').forEach(b=>b.onclick=e=>{e.stopPropagation();S.menu=S.menu===+b.dataset.o5m?null:+b.dataset.o5m;rr();});
     Q('[data-o5ed]').forEach(b=>b.onclick=()=>{S.ed=+b.dataset.o5ed;S.menu=null;rr();});
     Q('[data-o5rm]').forEach(b=>b.onclick=()=>{const it=oc.itens[+b.dataset.o5rm];if(!confirm(`Tirar ${it?it.nome:'o item'} da ordem?`))return;oc.itens.splice(+b.dataset.o5rm,1);S.menu=null;S.ed=null;try{recalc();}catch(e){}rr();});
@@ -4559,25 +4590,24 @@ ligaCalendarios=function(raiz){
     Q('[data-o5ind]').forEach(b=>b.onclick=e=>{e.preventDefault();const i=+b.dataset.o5ind;const it=oc.itens[i];if(!it)return;
       if(!ehInd(it)){const x=insumo(it.sku);if(!temFicha(x))return toast(`${it.nome} não tem ficha técnica (frasco + rótulo). Cadastre a ficha no item para fazer industrialização.`,true);
         if(recebidoDe(oc,it.sku)>0)return toast('Este item já teve recebimento: não dá para trocar.',true);
-        Object.assign(it,{ind:true,compras:[],envs:[],preco:0,icms:0,ipi:0,pis:0,cof:0,cbs:0,ibs:0,modo:'un',qtdCx:0,cx:0,nomeForn:'',codForn:''});delete it.env;it._sn=null;S.ed=i;S.menu=null;
-        toast('Agora inclua os sub-itens: o frasco como Compra e o rótulo como Industrialização (os da ficha aparecem como atalho).');}
+        Object.assign(it,{ind:true,compras:[],envs:[],preco:0,icms:0,ipi:0,pis:0,cof:0,cbs:0,ibs:0,modo:'un',qtdCx:0,cx:0,nomeForn:'',codForn:''});delete it.env;it._sn=null;S.ed=i;S.menu=null;}
       else{if(!confirm(`Desligar a industrialização de ${it.nome}? Os sub-itens saem e ele volta a ser uma compra normal.`))return;
         const c0=comps(it)[0];Object.assign(it,{ind:false,envs:[]});delete it.compras;if(!c0){it.preco=0;}S.ed=i;}
       try{recalc();}catch(x){}rr();});
     Q('input.o5i').forEach(x=>x.addEventListener('focus',()=>x.select()));
     Q('[data-o5]').forEach(x=>x.onchange=()=>{const [i,k]=x.dataset.o5.split('|');const it=oc.itens[+i];const v=num(x.value);
       if(k==='pc'){it.pis=v;it.cof=0;}else if(k==='qtdInd'){it.qtd=v;}else{it[k]=v;if(k==='qtd'&&it.modo==='cx'&&+it.cx>0){it.qtdCx=Math.ceil(v/it.cx);it.qtd=r3_(it.qtdCx*it.cx);}}
-      try{recalc();}catch(e){}S.foco=`[data-o5="${x.dataset.o5}"]`;rr();});
+      if(/icms|ipi|pc/.test(k))lembra(it.sku,it);soft(oc);});
     Q('[data-o5t]').forEach(x=>x.onchange=()=>{const [i,k]=x.dataset.o5t.split('|');oc.itens[+i][k]=x.value.trim();});
-    Q('[data-o5s]').forEach(x=>x.onchange=()=>{const p=x.dataset.o5s.split('|');mudaSub(oc,p.slice(0,3).join('|'),p[3],num(x.value));try{recalc();}catch(e){}S.foco=`[data-o5s="${x.dataset.o5s}"]`;rr();});
+    Q('[data-o5s]').forEach(x=>x.onchange=()=>{const p=x.dataset.o5s.split('|');mudaSub(oc,p.slice(0,3).join('|'),p[3],num(x.value));soft(oc);});
     Q('[data-o5tp]').forEach(x=>x.onchange=()=>{trocaTipo(oc,x.dataset.o5tp,x.value);try{recalc();}catch(e){}rr();});
     Q('[data-o5sx]').forEach(b=>b.onclick=()=>{tiraSub(oc,b.dataset.o5sx);try{recalc();}catch(e){}rr();});
-    Q('[data-o5sa]').forEach(b=>b.onclick=()=>{const it=itDe(oc,b.dataset.o5sa);it._sn={q:''};S.foco=`[data-o5sb="${b.dataset.o5sa}"]`;rr();});
+    Q('[data-o5sa]').forEach(b=>b.onclick=()=>{const it=itDe(oc,b.dataset.o5sa);it._sn={q:''};if(b.dataset.o5sa!=='n')S.ed=+b.dataset.o5sa;S.foco=`[data-o5sb="${b.dataset.o5sa}"]`;rr();});
     Q('[data-o5sbx]').forEach(b=>b.onclick=()=>{const it=itDe(oc,b.dataset.o5sbx);delete it._sn;rr();});
     Q('[data-o5sb]').forEach(x=>{x.oninput=()=>{const it=itDe(oc,x.dataset.o5sb);it._sn={q:x.value};const p=x.selectionStart;S.foco=`[data-o5sb="${x.dataset.o5sb}"]`;S.cur=p;rr();};
       x.onkeydown=e=>{if(e.key==='Enter'){const o=raiz.querySelector(`[data-o5spk^="${x.dataset.o5sb}|"]`);if(o)o.onmousedown({preventDefault(){}});}if(e.key==='Escape'){const it=itDe(oc,x.dataset.o5sb);delete it._sn;rr();}};});
-    Q('[data-o5spk]').forEach(o=>o.onmousedown=e=>{e.preventDefault();const [i,sku]=o.dataset.o5spk.split('|');const it=itDe(oc,i);delete it._sn;poeSub(oc,it,sku);rr();});
-    Q('[data-o5sg]').forEach(o=>o.onclick=()=>{const [i,sku]=o.dataset.o5sg.split('|');poeSub(oc,itDe(oc,i),sku);rr();});
+    Q('[data-o5spk]').forEach(o=>o.onmousedown=e=>{e.preventDefault();const [i,sku]=o.dataset.o5spk.split('|');const it=itDe(oc,i);delete it._sn;poeSub(oc,it,sku);const ci=comps(it).findIndex(c=>c.sku===sku),ei=envsDe(it).findIndex(c=>c.sku===sku);S.foco=ci>=0?`[data-o5s="${i}|c|${ci}|q"]`:`[data-o5s="${i}|i|${ei}|q"]`;rr();});
+    Q('[data-o5sg]').forEach(o=>o.onclick=()=>{const [i,sku]=o.dataset.o5sg.split('|');poeSub(oc,itDe(oc,i),sku);if(i!=='n')S.ed=+i;rr();});
     if($('o5C'))$('o5C').onclick=()=>{S.nv={aberto:true,ind:false,q:''};S.foco='#o5B';rr();};
     if($('o5I'))$('o5I').onclick=()=>{S.nv={aberto:true,ind:true,q:''};S.foco='#o5B';rr();};
     if($('o5X'))$('o5X').onclick=()=>{S.nv={aberto:false};rr();};
@@ -4586,45 +4616,62 @@ ligaCalendarios=function(raiz){
       b.onkeydown=e=>{if(e.key==='Enter'){const o=raiz.querySelector('[data-o5pk]');if(o)o.onmousedown({preventDefault(){}});}if(e.key==='Escape'){S.nv={aberto:false};rr();}};}
     Q('[data-o5pk]').forEach(o=>o.onmousedown=e=>{e.preventDefault();escolhe(oc,o.dataset.o5pk);});
     Q('[data-o5n]').forEach(x=>{x.oninput=()=>{const k=x.dataset.o5n;if(k==='qtdInd'){const it=S.nv.it;const ant=+it.qtd||0;it.qtd=num(x.value);}else S.nv[k]=x.value;};
-      x.onchange=()=>{if(x.dataset.o5n==='qtdInd'){S.foco='[data-o5n="qtdInd"]';rr();}};
+      x.onchange=()=>{if(x.dataset.o5n==='qtdInd'){rr();}};
       x.onkeydown=e=>{if(e.key==='Enter'){if(x.dataset.o5n==='qtdInd'){x.onchange();}else incluir(oc);}if(e.key==='Escape'){S.nv={aberto:false};rr();}};});
     if($('o5Ok'))$('o5Ok').onclick=()=>{const x=document.querySelector('[data-o5n="qtdInd"]');if(x&&S.nv.it)S.nv.it.qtd=num(x.value);incluir(oc);};
     if($('rDesc'))$('rDesc').onchange=e=>{oc.desconto=Math.max(0,num(e.target.value));try{recalc();}catch(x){}rr();};
     if(S.foco){const x=document.querySelector(S.foco);if(x){x.focus();try{if(S.cur!=null&&x.setSelectionRange)x.setSelectionRange(S.cur,S.cur);else x.select&&x.select();}catch(e){}}S.foco=null;S.cur=null;}
   }
-  document.addEventListener('click',e=>{if(S.menu!=null&&!e.target.closest('.o5menu')&&!e.target.closest('[data-o5m]')){S.menu=null;try{rr();}catch(x){}}});
+  document.addEventListener('click',e=>{if(S.menu!=null&&!e.target.closest('.o5menu')&&!e.target.closest('[data-o5m]')&&!e.target.closest('[data-o5sm]')){S.menu=null;try{rr();}catch(x){}}});
   /* ---------- liga o bloco novo na tela da ordem ---------- */
+  /* com a industrialização da ordem ligada, o item nosso (com ficha) vira item de industrialização; desligada, volta a compra */
+  function sincroniza(oc){(oc.itens||[]).forEach(it=>{if(recebidoDe(oc,it.sku)>0)return;const x=insumo(it.sku);
+    if(oc.benef&&!ehInd(it)&&temFicha(x)&&!envsDe(it).length){Object.assign(it,{ind:true,compras:[],envs:[],preco:0,icms:0,ipi:0,pis:0,cof:0,modo:'un',qtdCx:0,cx:0});}
+    else if(!oc.benef&&ehInd(it)){const c0=comps(it)[0];Object.assign(it,{ind:false,envs:[]});delete it.compras;if(!c0)it.preco=0;}});}
+  /* o sub-item não entra mais sozinho pela ficha (o atalho da ficha fica embaixo do item) */
+  try{c490Ficha=function(){};}catch(e){}
+  try{const _tt=totaisOC;totaisOC=function(){return _tt.apply(this,arguments).replace('Produtos e serviços','Produtos');};
+    const _ro=resumoOC;resumoOC=function(){return _ro.apply(this,arguments).replace('Produtos e serviços','Produtos');};}catch(e){}
+  try{const _ac=abreCalendario;abreCalendario=function(inp){_ac.apply(this,arguments);const p=document.querySelector('.cal-pop');if(!p)return;let tr=0;
+    p.addEventListener('wheel',e=>{e.preventDefault();const n=Date.now();if(n-tr<140)return;tr=n;const b=p.querySelector(`[data-n="${e.deltaY<0?-1:1}"]`);if(b)b.click();},{passive:false});};}catch(e){}
+  const PRE=new WeakSet();
   const _to=telaOC;
   telaOC=function(id){
+    try{if(ED&&ED.oc&&!ED.lock&&(ED.oc.id===id||(id==='nova'&&ED.nova))){const oc=ED.oc;sincroniza(oc);
+      if(oc.itens.length&&!(oc.pag.parcelas||[]).some(p=>p.tiny&&p.tiny.id)&&Math.abs(somaParcelas(oc)-contaOC(oc).total)>=0.01)gerarParcelas(oc,oc.pag.cond,oc.pag.forma);}}catch(e){}
     const r=_to.apply(this,arguments);
     try{if(!ED||!ED.oc)return r;const oc=ED.oc,L=ED.lock;if(!S.nv)S.nv={aberto:true,ind:false,q:''};
       const t=document.querySelector('.ocit');const bl=t&&t.closest('.bloco');if(!bl)return r;
-      bl.innerHTML=blocoHTML(oc,L);liga(oc,L);
-      /* a chave de industrialização agora é por item: a da ordem some */
-      const b1=document.querySelector('.ocv2 .bloco');if(b1)b1.querySelectorAll('label,div,span').forEach(el=>{if(el.id==='benC'||(el.children.length<4&&/^\s*Industrialização\s*$/.test(el.textContent)&&el.closest('.fl')&&!el.closest('.o5bl'))){const lb=el.closest('label')||el;if(lb.id!=='endC'&&!/Entregar/.test(lb.textContent))lb.style.display='none';}
-        if(/O item é o que volta pronto/.test(el.textContent)&&el.children.length===0)el.style.display='none';});
+      if(!L){if(!PRE.has(oc)){PRE.add(oc);try{preenche(oc);}catch(e){}}sincroniza(oc);}bl.innerHTML=blocoHTML(oc,L);liga(oc,L);
+      const bc=$('benC');if(bc&&!L){bc.onclick=()=>{if(oc.benef&&oc.itens.some(it=>ehInd(it)&&(comps(it).length||envsDe(it).length))&&!confirm('Desligar a industrialização? Os sub-itens dos itens nossos saem e eles voltam a ser compra normal.'))return;
+          oc.benef=!oc.benef;sincroniza(oc);try{recalc();}catch(e){}rr();};
+        const h=bc.nextElementSibling;if(h&&h.classList.contains('s2'))h.remove();}
       const h1=document.querySelector('.ed-top h1');if(h1)h1.textContent=h1.textContent.replace(' · industrialização','');
     }catch(e){console.error('[oc500]',e);}
     return r;
   };
   const s=document.createElement('style');s.textContent=`
-#benC,#benC+div.s2{display:none!important}
 .o5bl{padding:0 16px 12px}
 .o5sbn{grid-template-columns:minmax(0,1fr) 100px 110px 80px 80px 110px auto!important}.o5sbf{grid-template-columns:minmax(0,1fr) 260px 200px!important;border-bottom:0!important}
 .o5it{border:1px solid var(--line);border-radius:12px;margin:10px 0;background:#fff;position:relative}
 .o5it.ind{border-color:#C4B5FD;box-shadow:0 0 0 3px #F5F3FF}
-.o5h{display:grid;grid-template-columns:minmax(0,1fr) 130px 170px 110px 34px;gap:12px;align-items:center;padding:11px 14px}
+.o5h{display:grid;grid-template-columns:minmax(0,1fr) 150px 120px 34px;gap:12px;align-items:center;padding:11px 14px}
 .o5it.ind>.o5h{background:#FAF8FF;border-radius:12px 12px 0 0}
 .o5n b{font-size:14px}.o5n small{display:block;color:var(--ink3);font-size:11.5px;margin-top:2px}
 .o5hd small{display:block;color:var(--ink3);font-size:11px}.o5tot{font-weight:700;font-variant-numeric:tabular-nums}
 .o5mn{width:32px;height:32px;border-radius:8px;border:1px solid var(--line);background:#fff;cursor:pointer;font-weight:800;color:var(--ink2)}
-.o5menu{position:absolute;right:12px;top:46px;z-index:30;background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 14px 30px rgba(15,23,42,.14);padding:4px;min-width:170px}
+.o5menu{position:absolute;right:12px;top:46px;z-index:30;background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 14px 30px rgba(15,23,42,.14);padding:4px;min-width:260px}
+.o5inf{background:#F6F5F1;border-radius:8px;padding:9px 12px 6px;margin-bottom:4px;font-size:12.5px;color:#4B5565;line-height:1.6;cursor:default;user-select:none}.o5inf>b{display:block;color:#0E1B33;font-size:13px;margin-bottom:2px}.o5inf .neg{color:#B3261E;font-weight:600}
+.o5menu .o5inf button.o5uc{display:inline;width:auto;padding:4px 0 2px;color:#1D4ED8;font-size:12.5px;background:none}.o5menu .o5inf button.o5uc:hover{background:none;text-decoration:underline}
+.o5ucT{width:100%;border-collapse:collapse;font-size:13.5px}.o5ucT th{font-size:12.5px;color:#4B5565;font-weight:500;text-align:left;padding:8px 6px;border-bottom:1px solid var(--line)}.o5ucT td{padding:12px 6px;border-bottom:1px solid #EFEDE8}.o5ucT .n{text-align:right;font-variant-numeric:tabular-nums}
 .o5menu button{display:block;width:100%;text-align:left;border:0;background:none;padding:8px 12px;border-radius:7px;cursor:pointer;font-size:13.5px}.o5menu button:hover{background:#F3F4F6}.o5menu .del{color:#B3261E}
 .o5subs{border-top:1px dashed #DDD6FE;padding:4px 14px 8px 28px}.o5it:not(.ind) .o5subs{border-top-color:var(--line)}
 .o5sb{display:grid;grid-template-columns:118px minmax(0,1fr) 100px 190px 110px 100px;gap:10px;align-items:center;padding:7px 0;border-bottom:1px solid #F3F1FA;font-size:13px}.o5sb:last-child{border-bottom:0}
 .o5sb small{color:var(--ink3);font-size:11.5px}.o5cr{font-size:11px;color:#15803D}
 .o5tag{font-size:11px;font-weight:700;border-radius:6px;padding:3px 8px;white-space:nowrap;justify-self:start}.o5tag.tc{background:#EFF6FF;color:#1D4ED8}.o5tag.ti{background:#F5F3FF;color:#6D28D9}
-.o5sbe{display:grid;grid-template-columns:minmax(0,1fr) 150px 90px 100px 66px 66px 92px 96px 24px;gap:8px;align-items:end;padding:9px 0;border-bottom:1px solid #F1EEFA;font-size:13px}
+.o5hn{display:grid;grid-template-columns:minmax(0,1fr) 90px 100px 66px 66px 92px 96px 34px;gap:8px;align-items:end;padding:11px 14px;font-size:13px}
+.o5sbe{position:relative}.o5sbe .o5menu{top:100%;right:0}.o5mn.sm{width:28px;height:28px;align-self:center}
+.o5sbe{display:grid;grid-template-columns:minmax(0,1fr) 150px 90px 100px 66px 66px 92px 96px 30px;gap:8px;align-items:end;padding:9px 0;border-bottom:1px solid #F1EEFA;font-size:13px}
 .o5sel{border:1px solid var(--line);border-radius:8px;height:34px;padding:0 8px;background:#fff;font-weight:600;width:100%;font:inherit;font-size:13px}.o5sel.tc{color:#1D4ED8;background:#EFF6FF;border-color:#BFDBFE}.o5sel.ti{color:#6D28D9;background:#F5F3FF;border-color:#DDD6FE}
 .o5i{width:100%!important;min-width:0!important;height:34px}.o5t{width:100%!important;text-align:left!important;justify-content:flex-start}
 .lb{display:block;font-size:11px;color:var(--ink3);margin-bottom:3px;font-weight:500}
@@ -4650,7 +4697,30 @@ ligaCalendarios=function(raiz){
 .o5c b{color:var(--ink)}.o5c.neg b{color:#B3261E}.o5c.ent{cursor:help;background:#EEF3FF}.o5c.ent b{color:#1D4ED8}
 .o5tip{display:none;position:absolute;left:0;top:calc(100% + 6px);z-index:40;background:#0E1B33;color:#fff;border-radius:10px;padding:9px 12px;min-width:240px;box-shadow:0 14px 30px rgba(0,0,0,.25);font-size:12px}
 .o5c.ent:hover .o5tip{display:block}.o5tip div{display:flex;justify-content:space-between;gap:14px;padding:2px 0}.o5tip span{color:#9FB0C8}.o5tip b{color:#fff!important}
-@media(max-width:1000px){.o5h{grid-template-columns:1fr 110px 34px}.o5h .o5hd,.o5h .o5tot{display:none}.o5sbe{grid-template-columns:1fr 1fr 1fr}.o5sb{grid-template-columns:1fr 1fr}.o5g6{grid-template-columns:repeat(3,1fr)}}`;document.head.appendChild(s);
+/*x*/@media(max-width:1000px){.o5h{grid-template-columns:1fr 100px 34px}.o5h .o5tot{display:none}.o5sbe{grid-template-columns:1fr 1fr 1fr}.o5sb{grid-template-columns:1fr 1fr}.o5g6{grid-template-columns:repeat(3,1fr)}}
+/* v5.0.0 · itens em linha, colunas certinhas */
+.o5r{display:grid;grid-template-columns:minmax(220px,1fr) 150px 150px 62px 62px 76px 130px 34px;gap:12px;align-items:center;padding:10px 14px;font-size:13px}
+.o5bl.cT .o5r{grid-template-columns:minmax(220px,1fr) 150px 150px 150px 62px 62px 76px 130px 34px}
+.o5r .n{text-align:right;font-variant-numeric:tabular-nums}.o5r b.n{font-size:14px}
+.o5cab{padding:14px 15px 0;font-size:11.5px;color:var(--ink3);font-weight:600;letter-spacing:.2px}
+.o5it{margin:8px 0}.o5rp{background:#FAF8FF;border-radius:12px 12px 0 0}
+.o5rs{border-top:1px dashed #ECE7FA;position:relative}.o5rs>.o5n{padding-left:22px;position:relative}.o5rs>.o5n:before{content:'';position:absolute;left:6px;top:4px;width:9px;height:12px;border-left:1.5px solid #D8CFF6;border-bottom:1.5px solid #D8CFF6;border-radius:0 0 0 4px}
+.o5rs .o5n b{font-size:13.5px;font-weight:600}.o5rs .o5menu{top:100%;right:8px}
+.o5sn{padding:8px 14px 10px 36px}.o5sbx{display:flex;gap:8px;align-items:center}.o5sbx .o5bus{flex:1}
+.o5tg{font-size:11.5px;font-weight:700;border-radius:6px;padding:4px 8px;justify-self:start}.o5tg.tc{background:#EFF6FF;color:#1D4ED8}.o5tg.ti{background:#F5F3FF;color:#6D28D9}
+.o5ex{display:flex;gap:12px;align-items:flex-end;padding:2px 14px 12px;flex-wrap:wrap}.o5ex label{width:240px}
+.o5r .o5i,.o5r input.in3{background:#fff!important;border-color:var(--line)!important}
+.o5r .o5i::placeholder{color:#B4BAC4}
+.o5f{display:flex;flex-direction:column;gap:3px;min-width:0}.o5f>.lb{font-size:11px;color:var(--ink3);font-weight:600;line-height:1.2;white-space:nowrap}.o5f.tx>.lb{color:#5E6878}.o5f.tt>.lb{text-align:right}
+.o5f>.n,.o5f>b.n{display:flex;align-items:center;justify-content:flex-end;height:34px}.o5f>.o5tg{align-self:flex-start;margin-top:6px}
+.o5r{align-items:end!important}.o5r>.o5n{align-self:center}.o5r>.o5mn{align-self:end;margin-bottom:1px}
+.o5r .o5i[data-o5$="|icms"],.o5r .o5i[data-o5$="|ipi"],.o5r .o5i[data-o5$="|pc"],.o5r .o5i[data-o5s$="|icms"],.o5r .o5i[data-o5s$="|ipi"],.o5r .o5i[data-o5s$="|pc"]{background:#EDF0F4!important;border-color:#DDE2E9!important;padding-left:6px!important;padding-right:8px!important}
+.o5r .o5i[data-o5$="|icms"]:focus,.o5r .o5i[data-o5$="|ipi"]:focus,.o5r .o5i[data-o5$="|pc"]:focus,.o5r .o5i[data-o5s$="|icms"]:focus,.o5r .o5i[data-o5s$="|ipi"]:focus,.o5r .o5i[data-o5s$="|pc"]:focus{background:#fff!important}
+.o5cab .tx{color:#5E6878}
+.o5nv{border:0!important;background:none!important;padding:0!important;margin:10px 0 2px!important}
+.o5nv .o5bus input{border:1.5px dashed #BFDBFE;background:#FBFDFF;padding:12px 14px}.o5nv .o5bus input:focus{border-style:solid;outline:0;border-color:#93C5FD;background:#fff}
+@media(max-width:1000px){.o5r,.o5bl.cT .o5r{grid-template-columns:1fr 1fr 1fr}.o5r>.o5n{grid-column:1/-1}.o5cab{display:none}}
+`;document.head.appendChild(s);
 })();
 
 </script>
