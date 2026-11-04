@@ -1,6 +1,6 @@
 {
- "v": "v496",
- "versao": "4.9.6",
- "data": "03/11/2026",
- "o_que_mudou": "Relatório de saldos do fim do mês (inventário com custo, por grupo, com ou sem créditos); acerto de MP só nos lotes novos e no 3607"
+ "v": "v498",
+ "versao": "4.9.8",
+ "data": "04/11/2026",
+ "o_que_mudou": "Acerto da matéria-prima do lote pelo razão do estoque"
 }

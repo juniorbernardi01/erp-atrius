@@ -1985,7 +1985,7 @@ function receberOC(o){
       <div class="fl"><label>Chegou em<span class="req">*</span></label><input class="inp dt-in" data-cal="1" id="rDt" value="${br(st.data)}"></div></div>
     <div class="rolx"><table class="rtab"><thead><tr><th>Item</th><th>Pedido</th><th>Chegou</th><th>Unidades na nota</th></tr></thead><tbody>
     ${st.linhas.map((l,i)=>{const it=l.it;const real=l.cx&&l.chegouCx>0?r3(l.chegou/l.chegouCx):0;const dif=l.cx&&l.chegouCx>0&&Math.abs(real-it.cx)>0.5;
-      return `<tr class="${l.chegou<l.falta-1e-6?'falta':''}"><td><b>${esc(it.nome)}</b><small>${esc(it.sku)}${l.extra?' · <b style="color:#1D4ED8">incluído no recebimento</b>':''}${l.lotes?' · controla lote':''}</small>${o.benef?envsDe(it).map((e,j)=>{const s=+(l.sais||[])[j]||0,dpj=depDoSub(o,e),tem=saldoEm(e.tiny,dpj);return `<small style="color:#1D4ED8">↳ sai <input class="in5" data-rs="${i}|${j}" value="${nq(s)}" style="width:70px"> ${esc(e.un||'un')} de ${esc(e.nome)} · depósito ${esc(depNomeDe(dpj))}${(l.saiMan||[])[j]?' <i>(ajustado)</i>':' ('+nq(e.fator||1)+' por '+esc(it.un)+')'}${tem!=null&&tem<s?` <b style="color:#B91C1C">· só tem ${nq(tem)}</b>`:''}</small>`;}).join(''):''}${l.chegou<l.falta-1e-6?`<small style="color:#B45309">faltou ${nq(r3(l.falta-l.chegou))} ${esc(it.un)}</small>`:''}</td>
+      return `<tr class="${l.chegou<l.falta-1e-6?'falta':''}"><td><b>${esc(it.nome)}</b><small>${esc(it.sku)}${o.benef&&window.c497Vira&&c497Vira(it)?' · entra no estoque como <b style="color:#15803D">'+esc(c497Vira(it).nome)+'</b>':''}${l.extra?' · <b style="color:#1D4ED8">incluído no recebimento</b>':''}${l.lotes?' · controla lote':''}</small>${o.benef?envsDe(it).map((e,j)=>{const s=+(l.sais||[])[j]||0,dpj=depDoSub(o,e),tem=saldoEm(e.tiny,dpj);return `<small style="color:#1D4ED8">↳ sai <input class="in5" data-rs="${i}|${j}" value="${nq(s)}" style="width:70px"> ${esc(e.un||'un')} de ${esc(e.nome)} · depósito ${esc(depNomeDe(dpj))}${(l.saiMan||[])[j]?' <i>(ajustado)</i>':' ('+nq(e.fator||1)+' por '+esc(it.un)+')'}${tem!=null&&tem<s?` <b style="color:#B91C1C">· só tem ${nq(tem)}</b>`:''}</small>`;}).join(''):''}${l.chegou<l.falta-1e-6?`<small style="color:#B45309">faltou ${nq(r3(l.falta-l.chegou))} ${esc(it.un)}</small>`:''}</td>
       <td>${l.cx?nf(Math.round(l.falta/it.cx))+' cx<small>≈ '+nq(l.falta)+' '+esc(it.un)+'</small>':nq(l.falta)+' '+esc(it.un)}</td>
       <td>${l.cx?`<input class="in5" data-rcx="${i}" value="${l.chegouCx}"> cx`:''}</td>
       <td><input class="in5" data-rq="${i}" value="${nq(l.chegou)}"> ${esc(it.un)}${dif?`<label class="ckl" data-rac="${i}" style="color:#B45309"><span class="ck ${l.atualizaCx?'on':''}"></span>caixa real ${nf(real)} un · atualizar no fornecedor</label>`:''}</td></tr>
@@ -4051,8 +4051,38 @@ ligaCalendarios=function(raiz){
 })();
 
 </script>
-<script data-v496="rel">
-/* v4.9.6 · Suprimentos › Relatórios › Saldos do fim do mês (inventário)
+<script data-v497="oc">
+/* v4.9.7 · ORDEM DE COMPRA COM FRASCO + ROTULAGEM VIRA FRASCO ROTULADO
+   Na ordem de industrialização, a linha do frasco (FRASCOS - 5L PEAD ROSA) com o sub-item de rotulagem (o nosso
+   rótulo, que sai do depósito do fornecedor) é o fornecedor entregando o frasco já rotulado. No recebimento, a
+   entrada no estoque vai para o FRASCO ROTULADO cuja ficha é esse frasco + esse rótulo — que é o item que a OP de
+   envase consome. A ordem e o PDF continuam como o fornecedor entende (frasco + rotulagem). */
+(function(){
+  const insT=()=>{try{return N&&N.custoBase?N.custoBase().ins:[];}catch(e){return [];}};
+  let CACHE=null,CEM=0;
+  const fichas=()=>{if(CACHE&&Date.now()-CEM<60000)return CACHE;CEM=Date.now();
+    const todos=(()=>{try{return N.insumos();}catch(e){return [];}})(),L=insT();
+    CACHE={ins:L,f:L.filter(i=>i.ficha&&i.ficha.length).map(i=>({i,set:i.ficha.map(f=>String(f.sku)).sort().join('|'),x:todos.find(y=>y.sku===i.sku)}))};return CACHE;};
+  window.c497Vira=function(it){
+    try{const ev=envsDe(it).filter(e=>e.tipo!=='venda'&&e.sku);if(!it||!it.sku||!ev.length)return null;
+      const C=fichas();const x=C.ins.find(i=>i.sku===it.sku);if(x&&x.ficha&&x.ficha.length)return null;      /* já é o frasco rotulado */
+      const alvo=[String(it.sku),...ev.map(e=>String(e.sku))].sort().join('|');
+      const f=C.f.find(y=>y.set===alvo);if(!f)return null;
+      const t=(f.x&&f.x.tiny)||('ERP-'+f.i.sku);return {sku:f.i.sku,nome:f.i.nome,tiny:t};}catch(e){return null;}
+  };
+  /* recebimento: entra o frasco rotulado no lugar do frasco */
+  try{const _le=lancarEntrada;lancarEntrada=async function(oc,r){
+    const troca=[];
+    try{(r.itens||[]).forEach(x=>{const it=(oc.itens||[]).find(i=>i.sku===x.sku)||x;const v=c497Vira({...it,envs:it.envs||x.envs});
+      if(v){troca.push(`${x.nome} → ${v.nome}`);x.tinyOrig=x.tiny;x.tiny=v.tiny;x.vira={sku:v.sku,nome:v.nome};}});}catch(e){}
+    const ok=await _le.apply(this,arguments);
+    if(troca.length)try{hist(oc,'Entrou como frasco rotulado',troca.join(' · '));}catch(e){}
+    return ok;};}catch(e){console.warn('[v497] recebimento',e);}
+})();
+
+</script>
+<script data-v497="rel">
+/* v4.9.6/v4.9.7 · Suprimentos › Relatórios › Saldos do fim do mês (inventário)
    O saldo de cada item no último dia do mês, de todos os grupos, com o custo unitário e o valor. O saldo do dia
    sai do saldo de hoje voltando os movimentos lançados depois daquele dia. Na primeira vez que o mês fechado é
    gerado, o ERP guarda uma foto (para o número não mudar depois); dá para refazer a foto com PIN de gestor.
@@ -4061,7 +4091,7 @@ ligaCalendarios=function(raiz){
    Item que se faz aqui (frasco rotulado, frasco soprado, produto acabado) = a soma dos componentes pela ficha,
    mais o serviço de industrialização quando tem. Sem compra no ERP: o custo do cadastro (fórmula). */
 (function(){
-  const S5={mes:'',cred:false,grupo:true,zero:false,neg:true,gerado:null};
+  const S5={mes:'',cred:0,base:'ult',grupo:true,zero:false,neg:true,gerado:null};   /* cred: 0 sem, 1 com, 2 os dois · base: ult (última compra) ou med (média do mês) */
   const fimMes=m=>{const [a,b]=m.split('-').map(Number);return m+'-'+String(new Date(a,b,0).getDate()).padStart(2,'0');};
   const mesesOp=()=>{const o=[];const d=new Date();d.setDate(1);for(let i=1;i<=18;i++){d.setMonth(d.getMonth()-1);const m=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');o.push(m);}
     const h=new Date(),mh=h.getFullYear()+'-'+String(h.getMonth()+1).padStart(2,'0');return [mh,...o];};
@@ -4080,24 +4110,32 @@ ligaCalendarios=function(raiz){
     return {sal:out,coberto:!(cheio&&maisVelho&&maisVelho.slice(0,10)>D),maisVelho};
   }
   /* ---------- custo unitário ---------- */
-  function custos(D,B,cred){
-    const ult={},mo={};
+  function custos(D,B,cred,base){
+    const ini=D.slice(0,8)+'01',L={},M={};   /* L: compras normais por item · M: industrialização (serviço) */
     (DB.ocs||[]).filter(o=>o&&o.sit!=='can'&&o.sit!=='ras'&&String(o.data||'')<=D).sort((a,b)=>String(a.data).localeCompare(String(b.data))).forEach(o=>{
       let t;try{t=contaOC(o);}catch(e){return;}const fr=+t.frete||0,prodT=t.produtos||0;
       (o.itens||[]).forEach(it=>{const q=+it.qtd||0;if(!(q>0)||!it.sku)return;let c;try{c=contaItem(it);}catch(e){return;}
-        const fu=prodT?fr*(c.base/prodT)/q:0;const bruto=(c.nota||0)/q+fu,liq=((c.nota||0)-(c.credito||0))/q+fu;
-        const r={v:cred?liq:bruto,o:`OC ${o.num} · ${brD(o.data)}`};if(it.mo)mo[it.sku]=r;else ult[it.sku]=r;});});
+        const fu=prodT?fr*(c.base/prodT)/q:0;const vira=window.c497Vira?c497Vira(it):null;
+        const x={b:(c.nota||0)/q+fu,l:((c.nota||0)-(c.credito||0))/q+fu,q,data:String(o.data||''),o:`OC ${o.num} · ${brD(o.data)}`,
+          envs:vira?envsDe(it).map(e=>({sku:e.sku,f:+e.fator||1})):[]};
+        const k=vira?vira.sku:it.sku;((it.mo?M:L)[k]=(it.mo?M:L)[k]||[]).push(x);});});
+    const pega=(ls)=>{if(!ls||!ls.length)return null;const ult=ls[ls.length-1];
+      if(base==='med'){const m=ls.filter(x=>x.data>=ini);if(m.length){const qt=m.reduce((s,x)=>s+x.q,0);
+        return {b:m.reduce((s,x)=>s+x.b*x.q,0)/qt,l:m.reduce((s,x)=>s+x.l*x.q,0)/qt,envs:ult.envs,o:`média de ${m.length} compra${m.length>1?'s':''} no mês`};}
+        return {...ult,o:ult.o+' · sem compra no mês'};}
+      return ult;};
     const porSku={};B.ins.forEach(i=>porSku[i.sku]=i);const porCod={};B.prod.forEach(p=>porCod[p.codigo]=p);
     const memo={};
-    function de(t,sku,prof){const k=t+'|'+sku;if(memo[k])return memo[k];if(prof>4)return {v:0,o:'sem custo'};let r;
+    function de(t,sku,prof){const k=t+'|'+sku;if(memo[k])return memo[k];if(prof>5)return {v:0,o:'sem custo'};let r;
       const mm=(DB.custoMan||{})[sku];if(mm&&+mm.v>0)return memo[k]={v:+mm.v,o:`informado por ${mm.quem||'—'} em ${brD(mm.em)}`};
-      if(t==='i'){const i=porSku[sku];
-        if(ult[sku])r={v:ult[sku].v,o:ult[sku].o};
-        else if(i&&i.ficha&&i.ficha.length){let v=0,ok=true;i.ficha.forEach(f=>{const c=de(f.t,f.sku,prof+1);if(!c.v)ok=false;v+=c.v*f.q;});
-          if(mo[sku])v+=mo[sku].v;r={v,o:'ficha técnica'+(mo[sku]?' + industrialização '+mo[sku].o:'')+(ok?'':' · componente sem custo')};}
+      if(t==='i'){const i=porSku[sku];const c=pega(L[sku]),s=pega(M[sku]);
+        if(c){let v=cred?c.l:c.b,ok=true;(c.envs||[]).forEach(e=>{const y=de('i',e.sku,prof+1);if(!y.v)ok=false;v+=y.v*e.f;});
+          r={v,o:c.o+(c.envs&&c.envs.length?' + rótulo nosso':'')+(ok?'':' · componente sem custo')};}
+        else if(i&&i.ficha&&i.ficha.length){let v=0,ok=true;i.ficha.forEach(f=>{const y=de(f.t,f.sku,prof+1);if(!y.v)ok=false;v+=y.v*f.q;});
+          if(s)v+=cred?s.l:s.b;r={v,o:'ficha técnica'+(s?' + industrialização '+s.o:'')+(ok?'':' · componente sem custo')};}
         else if(B.cad[sku])r={v:B.cad[sku],o:'cadastro'};
         else r={v:0,o:'sem custo'};}
-      else if(t==='p'){const p=porCod[sku];if(!p)r={v:0,o:'sem custo'};else{let v=0,ok=true;[...p.mp,...p.emb].forEach(x=>{const c=de(x.t,x.sku,prof+1);if(!c.v)ok=false;v+=c.v*x.q;});
+      else if(t==='p'){const p=porCod[sku];if(!p)r={v:0,o:'sem custo'};else{let v=0,ok=true;[...p.mp,...p.emb].forEach(x=>{const y=de(x.t,x.sku,prof+1);if(!y.v)ok=false;v+=y.v*x.q;});
         r={v,o:'fórmula + embalagem'+(ok?'':' · componente sem custo')};}}
       else r={v:0,o:'sem custo'};
       return memo[k]=r;}
@@ -4110,14 +4148,14 @@ ligaCalendarios=function(raiz){
     if(foto&&passado){sal=foto.itens;fonte=`foto guardada em ${brD(foto.em)} por ${foto.quem||'—'}`;}
     else{const r=saldosEm(D,B);sal=r.sal;coberto=r.coberto;mv=r.maisVelho;fonte=passado?'calculado agora pelos movimentos':'saldo até agora (o mês ainda não fechou)';
       if(passado&&coberto){DB.fechEst=DB.fechEst||{};DB.fechEst[S5.mes]={em:hojeS(),quem:(N.quem?N.quem():'')||'',itens:sal};try{salvar();}catch(e){}fonte='calculado pelos movimentos · foto guardada agora';}}
-    const custo=custos(D,B,S5.cred);const L=[];
+    const cS=custos(D,B,false,S5.base),cC=custos(D,B,true,S5.base);const L=[];const custo=(t,s)=>{const a=cS(t,s),b=cC(t,s);return {v:a.v,vc:b.v,o:a.o};};
     B.ins.forEach(i=>L.push({cod:i.sku,nome:i.nome,grupo:i.grupo||'Sem grupo',un:unDe({tipo:i.grupo+' '+i.tipo}),q:+(sal[i.key]||0),c:custo('i',i.sku),ativo:i.ativo}));
     B.prod.forEach(p=>L.push({cod:p.codigo,nome:p.nome,grupo:p.grupo||'Produtos acabados',un:p.un,q:+(sal[p.key]||0),c:custo('p',p.codigo),ativo:p.ativo}));
     let l=L.filter(x=>S5.zero||Math.abs(x.q)>1e-9).filter(x=>S5.neg||x.q>=0);
-    l.forEach(x=>{x.cu=x.c.v;x.tot=x.q*x.cu;});
+    l.forEach(x=>{x.cu=x.c.v;x.cuC=x.c.vc;x.tot=x.q*x.cu;x.totC=x.q*x.cuC;});
     const ord=B.ordem||[];const oi=g=>{const i=ord.indexOf(g);return i<0?999:i;};
     l.sort((a,b)=>S5.grupo?(oi(a.grupo)-oi(b.grupo)||a.grupo.localeCompare(b.grupo,'pt')||a.nome.localeCompare(b.nome,'pt')):a.nome.localeCompare(b.nome,'pt'));
-    S5.gerado={D,l,fonte,coberto,mv,cred:S5.cred,grupo:S5.grupo};
+    S5.gerado={D,l,fonte,coberto,mv,cred:S5.cred,base:S5.base,grupo:S5.grupo};
   }
   /* ---------- tela ---------- */
   window.telaSaldosMes=function(){
@@ -4128,36 +4166,43 @@ ligaCalendarios=function(raiz){
       <div class="q1top"><h1>Saldos do fim do mês</h1></div>
       <div class="q1f s5f">
         <div><label>Mês</label><select id="s5M">${op}</select></div>
-        <div><label>Custo</label>${seg('s5C',S5.cred?1:0,[[0,'Sem créditos'],[1,'Com créditos']])}</div>
+        <div><label>Custo de</label>${seg('s5B',S5.base,[['ult','Última compra'],['med','Média do mês']])}</div>
+        <div><label>Créditos</label>${seg('s5C',S5.cred,[[0,'Sem'],[1,'Com'],[2,'Os dois']])}</div>
         <div><label>Mostrar</label>${seg('s5G',S5.grupo?1:0,[[1,'Por grupo'],[0,'Lista única']])}</div>
         <div><label>Itens</label><label class="s5ck"><input type="checkbox" id="s5Z" ${S5.zero?'checked':''}> com saldo zero</label><label class="s5ck"><input type="checkbox" id="s5N" ${S5.neg?'checked':''}> com saldo negativo</label></div>
         <div class="q1g"><button id="s5Ok">Gerar</button></div></div>
       <div id="s5R"><div class="q1vz"><b>Escolha o mês e clique em Gerar</b>Todos os grupos, com o saldo do último dia do mês, o custo e o valor.</div></div>`;
     $('s5M').onchange=e=>{S5.mes=e.target.value;};
-    const ls=(id,f)=>$(id).querySelectorAll('b').forEach(b=>b.onclick=()=>{$(id).querySelectorAll('b').forEach(x=>x.classList.remove('on'));b.classList.add('on');f(b.dataset.v==='1');});
-    ls('s5C',v=>S5.cred=v);ls('s5G',v=>S5.grupo=v);$('s5Z').onchange=e=>S5.zero=e.target.checked;$('s5N').onchange=e=>S5.neg=e.target.checked;
+    const ls=(id,f)=>$(id).querySelectorAll('b').forEach(b=>b.onclick=()=>{$(id).querySelectorAll('b').forEach(x=>x.classList.remove('on'));b.classList.add('on');f(b.dataset.v);});
+    ls('s5C',v=>S5.cred=+v);ls('s5B',v=>S5.base=v);ls('s5G',v=>S5.grupo=v==='1');$('s5Z').onchange=e=>S5.zero=e.target.checked;$('s5N').onchange=e=>S5.neg=e.target.checked;
     $('s5Ok').onclick=()=>{try{montar();mostra();}catch(e){console.error(e);toast('Não consegui gerar: '+e.message,true);}};
     if(S5.gerado&&S5.gerado.D===fimMes(S5.mes))mostra();
   };
   function grupos(l){const g=new Map();l.forEach(x=>{if(!g.has(x.grupo))g.set(x.grupo,[]);g.get(x.grupo).push(x);});return [...g.entries()];}
+  /* colunas de custo e valor conforme a escolha: sem, com ou os dois */
+  const colsC=G=>G.cred===2?[['cu','Custo s/ créditos'],['tot','Valor s/ créditos'],['cuC','Custo c/ créditos'],['totC','Valor c/ créditos']]:G.cred===1?[['cuC','Custo unitário'],['totC','Valor R$']]:[['cu','Custo unitário'],['tot','Valor R$']];
+  const soma=(xs,k)=>xs.reduce((s,x)=>s+x[k],0);
   function mostra(){
-    const G=S5.gerado;if(!G)return;const l=G.l;const tot=l.reduce((s,x)=>s+x.tot,0),neg=l.filter(x=>x.q<0).length,sem=l.filter(x=>x.q>0&&!x.cu).length;
+    const G=S5.gerado;if(!G)return;const l=G.l;const C=colsC(G);const neg=l.filter(x=>x.q<0).length,sem=l.filter(x=>x.q>0&&!x.cu).length;
+    const cel=(x,k)=>/^cu/.test(k)?`<td class="n s5cu" data-cm="${esc(x.cod)}" title="clique para informar o custo">${x[k]?n2(x[k],x[k]<10?4:2):'<span style="color:#B45309">sem custo</span>'} <span class="k">✎</span></td>`:`<td class="n"><b>${n2(x[k])}</b></td>`;
     const lin=x=>`<tr><td class="k">${esc(x.cod)}</td><td><b>${esc(x.nome)}</b>${x.ativo?'':' <span class="k">· inativo</span>'}</td>${G.grupo?'':`<td class="k">${esc(x.grupo)}</td>`}<td>${esc(x.un)}</td>
-      <td class="n" style="${x.q<0?'color:#B91C1C;font-weight:700':''}">${nqx(x.q)}</td><td class="n s5cu" data-cm="${esc(x.cod)}" title="clique para informar o custo">${x.cu?n2(x.cu,x.cu<10?4:2):'<span style="color:#B45309">sem custo</span>'} <span class="k">✎</span></td><td class="n"><b>${n2(x.tot)}</b></td><td class="k" style="font-size:12px">${esc(x.c.o)}</td></tr>`;
-    const cab=`<tr><th>Código</th><th>Item</th>${G.grupo?'':'<th>Grupo</th>'}<th>Un</th><th class="n">Saldo em ${brD(G.D)}</th><th class="n">Custo unitário</th><th class="n">Valor R$</th><th>Origem do custo</th></tr>`;
-    const corpo=G.grupo?grupos(l).map(([g,xs])=>`<tr class="s5g"><td colspan="5"><b>${esc(g)}</b> <span class="k">· ${xs.length} itens</span></td><td></td><td class="n"><b>${n2(xs.reduce((s,x)=>s+x.tot,0))}</b></td><td></td></tr>${xs.map(lin).join('')}`).join(''):l.map(lin).join('');
+      <td class="n" style="${x.q<0?'color:#B91C1C;font-weight:700':''}">${nqx(x.q)}</td>${C.map(([k])=>cel(x,k)).join('')}<td class="k" style="font-size:12px">${esc(x.c.o)}</td></tr>`;
+    const nfix=G.grupo?4:5;
+    const sub=(rot,xs)=>`<tr class="s5g"><td colspan="${nfix}">${rot}</td>${C.map(([k])=>/^cu/.test(k)?'<td></td>':`<td class="n"><b>${n2(soma(xs,k))}</b></td>`).join('')}<td></td></tr>`;
+    const cab=`<tr><th>Código</th><th>Item</th>${G.grupo?'':'<th>Grupo</th>'}<th>Un</th><th class="n">Saldo em ${brD(G.D)}</th>${C.map(([,n])=>`<th class="n">${n}</th>`).join('')}<th>Origem do custo</th></tr>`;
+    const corpo=G.grupo?grupos(l).map(([g,xs])=>sub(`<b>${esc(g)}</b> <span class="k">· ${xs.length} itens</span>`,xs)+xs.map(lin).join('')).join(''):l.map(lin).join('');
+    const kv=(t,v,s,c)=>`<div class="p8kp ${c||''}"><span>${t}</span><b>${v}</b><small>${s}</small></div>`;
+    const bTxt=G.base==='med'?'média das compras do mês':'última compra';
     $('s5R').innerHTML=`${G.coberto?'':`<div class="aviso" style="margin-bottom:10px">⚠ <div>O histórico de movimentos guardado começa em ${brD(G.mv)}, depois de ${brD(G.D)}: o saldo desse dia não dá para refazer com certeza.</div></div>`}
-      <div class="p8k"><div class="p8kp"><span>Valor do estoque</span><b>R$ ${n2(tot)}</b><small>${G.cred?'com créditos':'sem créditos · custo original'}</small></div>
-        <div class="p8kp"><span>Itens</span><b>${l.length}</b><small>em ${brD(G.D)}</small></div>
-        <div class="p8kp ${sem?'vm':''}"><span>Sem custo</span><b>${sem}</b><small>com saldo e sem custo</small></div>
-        <div class="p8kp ${neg?'vm':''}"><span>Saldo negativo</span><b>${neg}</b><small>itens</small></div></div>
+      <div class="p8k">${G.cred!==1?kv('Valor sem créditos','R$ '+n2(soma(l,'tot')),'custo original · '+bTxt):''}${G.cred!==0?kv('Valor com créditos','R$ '+n2(soma(l,'totC')),'descontando os créditos · '+bTxt):''}
+        ${kv('Itens',l.length,'em '+brD(G.D))}${kv('Sem custo',sem,'com saldo e sem custo',sem?'vm':'')}${kv('Saldo negativo',neg,'itens',neg?'vm':'')}</div>
       <div class="s5bar"><span class="k">Saldo: ${esc(G.fonte)}</span><span style="flex:1"></span>
         ${(DB.fechEst||{})[S5.mes]?'<button class="btn" id="s5Re">Refazer a foto</button>':''}<button class="btn" id="s5X">⬇ Excel</button><button class="btn" id="s5P">PDF</button></div>
-      <div class="p8t"><table><thead>${cab}</thead><tbody>${corpo||'<tr><td colspan="8" class="k" style="padding:24px">Nenhum item com saldo.</td></tr>'}
-      <tr class="s5g"><td colspan="${G.grupo?5:6}"><b>TOTAL</b></td><td></td><td class="n"><b>${n2(tot)}</b></td><td></td></tr></tbody></table></div>`;
+      <div class="p8t"><table><thead>${cab}</thead><tbody>${corpo||`<tr><td colspan="${nfix+C.length+2}" class="k" style="padding:24px">Nenhum item com saldo.</td></tr>`}
+      ${sub('<b>TOTAL</b>',l)}</tbody></table></div>`;
     $('s5X').onclick=excel;$('s5P').onclick=pdf;
     document.querySelectorAll('#s5R [data-cm]').forEach(td=>td.onclick=()=>{const cod=td.dataset.cm;const x=G.l.find(y=>y.cod===cod);
-      const v=prompt(`Custo unitário de ${x?x.nome:cod} (R$ por ${x?x.un:'un'}).\nDeixe vazio para voltar ao custo automático.`,x&&x.cu?String(Math.round(x.cu*10000)/10000).replace('.',','):'');if(v==null)return;
+      const v=prompt(`Custo unitário de ${x?x.nome:cod} (R$ por ${x?x.un:'un'}).\nVale para com e sem créditos. Deixe vazio para voltar ao custo automático.`,x&&x.cu?String(Math.round(x.cu*10000)/10000).replace('.',','):'');if(v==null)return;
       DB.custoMan=DB.custoMan||{};const n=+String(v).replace(/\./g,'').replace(',','.');
       if(String(v).trim()===''||!(n>0))delete DB.custoMan[cod];else DB.custoMan[cod]={v:n,quem:(N.quem?N.quem():'')||'',em:hojeS()};
       salvar();montar();mostra();});
@@ -4165,23 +4210,26 @@ ligaCalendarios=function(raiz){
       if(!g)return toast('PIN ou senha de gestor não confere.',true);delete DB.fechEst[S5.mes];salvar();montar();mostra();toast('Foto refeita pelos movimentos.');};
   }
   const titulo=()=>`Saldos do estoque em ${brD(S5.gerado.D)}`;
-  function excel(){const G=S5.gerado;if(!window.XLSX)return toast('A planilha ainda está carregando, tente de novo.',true);
-    const rows=[];const add=x=>rows.push({'Grupo':x.grupo,'Código':x.cod,'Item':x.nome,'Un':x.un,['Saldo em '+brD(G.D)]:x.q,'Custo unitário':Math.round(x.cu*10000)/10000,'Valor R$':Math.round(x.tot*100)/100,'Origem do custo':x.c.o});
-    if(G.grupo)grupos(G.l).forEach(([g,xs])=>{xs.forEach(add);rows.push({'Grupo':g,'Item':'SUBTOTAL '+g,'Valor R$':Math.round(xs.reduce((s,x)=>s+x.tot,0)*100)/100});rows.push({});});else G.l.forEach(add);
-    rows.push({'Item':'TOTAL','Valor R$':Math.round(G.l.reduce((s,x)=>s+x.tot,0)*100)/100});
-    const wb=XLSX.utils.book_new(),ws=XLSX.utils.json_to_sheet(rows);ws['!cols']=[22,12,46,6,14,14,14,34].map(n=>({wch:n}));
-    XLSX.utils.book_append_sheet(wb,ws,'Saldos');XLSX.writeFile(wb,`${titulo().replace(/\//g,'-')} ${G.cred?'com':'sem'} creditos.xlsx`);toast('Planilha baixada.');}
-  function pdf(){const G=S5.gerado;const P=window.parent;
-    const lin=x=>`<tr><td>${esc(x.cod)}</td><td>${esc(x.nome)}</td>${G.grupo?'':`<td>${esc(x.grupo)}</td>`}<td>${esc(x.un)}</td><td class="n">${nqx(x.q)}</td><td class="n">${n2(x.cu,x.cu<10?4:2)}</td><td class="n">${n2(x.tot)}</td></tr>`;
-    const corpo=(G.grupo?grupos(G.l).map(([g,xs])=>`<tr><td colspan="${G.grupo?6:7}" style="background:#F3F4F6"><b>${esc(g)}</b></td></tr>${xs.map(lin).join('')}<tr><td colspan="5" class="n"><b>Subtotal ${esc(g)}</b></td><td class="n"><b>${n2(xs.reduce((s,x)=>s+x.tot,0))}</b></td></tr>`).join(''):G.l.map(lin).join(''))
-      +`<tr><td colspan="${G.grupo?5:6}" class="n"><b>TOTAL</b></td><td class="n"><b>${n2(G.l.reduce((s,x)=>s+x.tot,0))}</b></td></tr>`;
-    const sub=`${G.cred?'Custo com créditos':'Custo original, sem créditos'} · ${G.l.length} itens`;
-    try{P.csFolhaModal({titulo:titulo(),sub,arquivo:titulo().replace(/\//g,'-'),html:P.folha(titulo(),'',sub,
-      `<style>table{width:100%;border-collapse:collapse;font-size:9.5px}th{text-align:left;font-size:8.5px;text-transform:uppercase;color:#6B7280;border-bottom:1.5px solid #12151A;padding:3px 5px}td{padding:3px 5px;border-bottom:1px solid #E5E7EB}.n{text-align:right}</style>
-      <table><thead><tr><th>Código</th><th>Item</th>${G.grupo?'':'<th>Grupo</th>'}<th>Un</th><th class="n">Saldo</th><th class="n">Custo un.</th><th class="n">Valor R$</th></tr></thead><tbody>${corpo}</tbody></table>`)});}
+  const rotCred=G=>G.cred===2?'com e sem creditos':G.cred===1?'com creditos':'sem creditos';
+  function excel(){const G=S5.gerado;if(!window.XLSX)return toast('A planilha ainda está carregando, tente de novo.',true);const C=colsC(G);
+    const r4=v=>Math.round(v*10000)/10000,r2v=v=>Math.round(v*100)/100;
+    const rows=[];const add=x=>{const o={'Grupo':x.grupo,'Código':x.cod,'Item':x.nome,'Un':x.un,['Saldo em '+brD(G.D)]:x.q};C.forEach(([k,n])=>o[n]=/^cu/.test(k)?r4(x[k]):r2v(x[k]));o['Origem do custo']=x.c.o;rows.push(o);};
+    const subt=(rot,xs)=>{const o={'Item':rot};C.forEach(([k,n])=>{if(!/^cu/.test(k))o[n]=r2v(soma(xs,k));});rows.push(o);};
+    if(G.grupo)grupos(G.l).forEach(([g,xs])=>{xs.forEach(add);subt('SUBTOTAL '+g,xs);rows.push({});});else G.l.forEach(add);
+    subt('TOTAL',G.l);
+    const wb=XLSX.utils.book_new(),ws=XLSX.utils.json_to_sheet(rows);ws['!cols']=[22,12,46,6,14,...C.map(()=>16),36].map(n=>({wch:n}));
+    XLSX.utils.book_append_sheet(wb,ws,'Saldos');XLSX.writeFile(wb,`${titulo().replace(/\//g,'-')} ${rotCred(G)} ${G.base==='med'?'custo medio':'ultima compra'}.xlsx`);toast('Planilha baixada.');}
+  function pdf(){const G=S5.gerado;const P=window.parent;const C=colsC(G);
+    const lin=x=>`<tr><td>${esc(x.cod)}</td><td>${esc(x.nome)}</td>${G.grupo?'':`<td>${esc(x.grupo)}</td>`}<td>${esc(x.un)}</td><td class="n">${nqx(x.q)}</td>${C.map(([k])=>`<td class="n">${/^cu/.test(k)?n2(x[k],x[k]<10?4:2):n2(x[k])}</td>`).join('')}</tr>`;
+    const nfix=G.grupo?4:5;const sub=(rot,xs)=>`<tr><td colspan="${nfix}" class="n"><b>${rot}</b></td>${C.map(([k])=>/^cu/.test(k)?'<td></td>':`<td class="n"><b>${n2(soma(xs,k))}</b></td>`).join('')}</tr>`;
+    const corpo=(G.grupo?grupos(G.l).map(([g,xs])=>`<tr><td colspan="${nfix+C.length}" style="background:#F3F4F6"><b>${esc(g)}</b></td></tr>${xs.map(lin).join('')}${sub('Subtotal '+esc(g),xs)}`).join(''):G.l.map(lin).join(''))+sub('TOTAL',G.l);
+    const sub2=`${G.cred===2?'Custo sem e com créditos':G.cred===1?'Custo com créditos':'Custo original, sem créditos'} · ${G.base==='med'?'custo médio das compras do mês':'última compra'} · ${G.l.length} itens`;
+    try{P.csFolhaModal({titulo:titulo(),sub:sub2,arquivo:titulo().replace(/\//g,'-'),html:P.folha(titulo(),'',sub2,
+      `<style>table{width:100%;border-collapse:collapse;font-size:9px}th{text-align:left;font-size:8px;text-transform:uppercase;color:#6B7280;border-bottom:1.5px solid #12151A;padding:3px 4px}td{padding:3px 4px;border-bottom:1px solid #E5E7EB}.n{text-align:right}</style>
+      <table><thead><tr><th>Código</th><th>Item</th>${G.grupo?'':'<th>Grupo</th>'}<th>Un</th><th class="n">Saldo</th>${C.map(([,n])=>`<th class="n">${n}</th>`).join('')}</tr></thead><tbody>${corpo}</tbody></table>`)});}
     catch(e){toast('Não consegui montar a folha.',true);}}
   try{const s=document.createElement('style');s.textContent=`
-.s5f{grid-template-columns:minmax(0,1.2fr) minmax(0,1fr) minmax(0,1fr) minmax(0,1.3fr) minmax(0,.8fr)!important}
+.s5f{grid-template-columns:minmax(0,1.1fr) minmax(0,1.1fr) minmax(0,1fr) minmax(0,1fr) minmax(0,1.2fr) minmax(0,.7fr)!important}
 .s5seg{display:flex;background:#F1F2F4;border-radius:10px;padding:3px;height:40px;box-sizing:border-box}.s5seg b{flex:1;display:grid;place-items:center;border-radius:8px;font-size:13px;font-weight:600;color:var(--ink2);cursor:pointer}.s5seg b.on{background:#fff;color:var(--ink);box-shadow:0 1px 2px #0002}
 .s5ck{display:inline-flex!important;align-items:center;gap:6px;font-size:13px!important;color:var(--ink)!important;margin:0 12px 4px 0!important}
 .s5cu{cursor:pointer}.s5cu:hover{background:#EEF3FF}
