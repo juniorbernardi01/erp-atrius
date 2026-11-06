@@ -1108,7 +1108,7 @@ function formDep(d){
    transferência em azul. Inventário é um botão. Excluir inventário pede a senha de gestor e vai para "Excluídos".
    ===================================================================== */
 const EST=(()=>{let v={};try{v=JSON.parse(localStorage.getItem('erp.est489')||'{}');}catch(e){}
-  return {g:v.g||'todos',vista:v.vista||'saldos',dep:'',q:'',neg:false,tipo:'tudo',per:null,ord:v.ord||{k:'nome',d:1}};})();
+  return {g:v.g||'todos',vista:'saldos',/* v506 sem chave */dep:'',q:'',neg:false,tipo:'tudo',per:null,ord:v.ord||{k:'nome',d:1}};})();
 const estGuarda=()=>{try{localStorage.setItem('erp.est489',JSON.stringify({g:EST.g,vista:EST.vista,ord:EST.ord}));}catch(e){}};
 (function(){const s=document.createElement('style');s.textContent=`
 .e9{display:block}
@@ -1206,7 +1206,7 @@ function telaSaldos(){
 }
 function estBarra(){
   const deps=depsN();
-  return `<div class="e9bar"><div class="e9seg">${[['saldos','Saldos'],['mov','Movimentos']].map(([k,n])=>`<button data-ev="${k}" class="${EST.vista===k?'on':''}">${n}</button>`).join('')}</div>
+  return `<div class="e9bar">
     <input class="e9bus" id="eQ" placeholder="Buscar item por nome ou código" value="${esc(EST.q)}">
     <select class="e9sel" id="eDp"><option value="">Todos os depósitos</option>${deps.map(d=>`<option value="${esc(d.id)}" ${EST.dep===d.id?'selected':''}>${esc(d.princ?'DEPÓSITOS DA EMPRESA (do grupo)':d.nome)}</option>`).join('')}</select>
     ${EST.vista==='saldos'?colsBotao('eCols'):''}${EST.vista==='mov'?`<select class="e9sel" id="eTp">${[['tudo','Entradas e saídas'],['E','Só entradas'],['S','Só saídas'],['T','Transferências']].map(([k,n])=>`<option value="${k}" ${EST.tipo===k?'selected':''}>${n}</option>`).join('')}</select>${perBotao('ePer',EST.per)}`:''}
@@ -1221,7 +1221,7 @@ function estLigaBarra(re){
 }
 function estCorpo(todos){
   todos=todos||estItens();
-  if(EST.vista==='mov')return estMovs(todos);
+  EST.vista='saldos';
   const q=EST.q.toLowerCase();
   let l=todos.filter(i=>estNoGrupo(i,EST.g)&&(!q||(i.cod+' '+i.nome).toLowerCase().includes(q)));
   if(EST.dep){l=l.filter(i=>{const sd=i.id&&N.saldoDeps?N.saldoDeps(i.id):null;const v=sd&&sd.por[EST.dep];return v!=null&&Math.abs(+v)>1e-9;});}

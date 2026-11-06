@@ -1,6 +1,6 @@
 {
- "v": "v506",
- "versao": "5.0.6",
+ "v": "v508",
+ "versao": "5.0.8",
  "data": "06/11/2026",
- "o_que_mudou": "Estoque: só o número (sem cx/fd), embalagem do item junto do nome, filtro de transferências; Ver kits com todas as OPs de kit em aberto"
+ "o_que_mudou": "OP de kit: saldo do estoque sem lote (lançado à mão) também pode ser usado, como 'Sem lote'"
 }

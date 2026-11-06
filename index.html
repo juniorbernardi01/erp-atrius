@@ -5508,7 +5508,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v506';const VERSAO_DATA='06/11/2026';
+const VERSAO_APP='v508';const VERSAO_DATA='06/11/2026';
 /* número que aparece na tela: v438 → v4.3.8 (por dentro continua v438, que é o que as versões comparam) */
 const csRotVer=v=>{const d=String(v||'').replace(/\D/g,'');return d.length>=3?'v'+d.slice(0,-2)+'.'+d.slice(-2,-1)+'.'+d.slice(-1):String(v||'');};
 const VERSAO_ROTULO=csRotVer(VERSAO_APP)+' · '+VERSAO_DATA;
@@ -38784,6 +38784,7 @@ setTimeout(csCustos496,16000);setTimeout(csCustos496,38000);
     const exp=r3(tot-quar-forn);return {t,quar:r3(quar),exp,tot:r3(Math.max(0,quar+exp))};}
   /* o que outras OPs de kit ainda abertas já reservaram (as concluídas já tiraram do estoque) */
   function reservado(sku,menos){return KOPS.filter(k=>k!==menos&&k.status!=='cancelada'&&k.status!=='concluida').reduce((s,k)=>s+(k.lotes||[]).filter(l=>l.sku===sku).reduce((a,l)=>a+(+l.q||0),0),0);}
+  const SEMLOTE='SEMLOTE';
   /* lotes do produto, limitados ao estoque real: o estoque é dos lotes mais novos (o mais antigo sai primeiro) */
   function lotesDe(sku,menos){const p=prodOf(sku);const uc=(p&&+p.un_cx)||1;
     const ls=ORDENS.filter(o=>String(o.codigo)===String(sku)&&sit(o)==='concluida'&&!o.excluida&&o.status!=='cancelada'&&+o.caixas>0)
@@ -38791,6 +38792,9 @@ setTimeout(csCustos496,16000);setTimeout(csCustos496,38000);
       .sort((a,b)=>String(b.d).localeCompare(String(a.d))||b.lote.localeCompare(a.lote));
     let rest=Math.max(0,estK(sku).tot-reservado(sku,menos));
     ls.forEach(l=>{const q=Math.min(l.disp,rest);l.disp=r3(q);rest-=q;});
+    /* v508: saldo do estoque que não é de nenhuma OP de envase (lançamento manual): dá para usar, só não tem lote */
+    rest=r3(rest);   /* o que kit aberto reservou já saiu pelo reservado(); o que kit concluído usou já saiu do estoque */
+    if(rest>0)ls.push({opId:SEMLOTE,lote:'sem lote',op:'',d:'9999-12-31',prod:rest,disp:rest,sem:true});
     return ls.filter(l=>l.disp>0).sort((a,b)=>String(a.d).localeCompare(String(b.d))||a.lote.localeCompare(b.lote));}
   const comps=p=>(p.ficha||[]).filter(f=>f.comp==='Produto');
   const embs=p=>(p.ficha||[]).filter(f=>f.comp!=='Produto');
@@ -38813,7 +38817,7 @@ setTimeout(csCustos496,16000);setTimeout(csCustos496,38000);
   const usadoNo=(k,opId,sku)=>(k.lotes||[]).filter(l=>l.opId===opId&&l.sku===sku).reduce((a,l)=>a+(+l.q||0),0);
   /* lotes do produto: o mais antigo em cima; disponível já conta o que esta OP usa (na edição) */
   function lotesK(s,sku){const ls=lotesDe(sku,s.k);
-    if(s.k)(s.k.lotes||[]).filter(l=>l.sku===sku&&!ls.some(x=>x.opId===l.opId)).forEach(l=>{const o=ORDENS.find(x=>x.id===l.opId)||{};ls.push({opId:l.opId,lote:l.lote,op:num4(o.opNum),d:o.data||'',disp:r3(usadoNo(s.k,l.opId,sku))});});
+    if(s.k)(s.k.lotes||[]).filter(l=>l.sku===sku&&!ls.some(x=>x.opId===l.opId)).forEach(l=>{const o=ORDENS.find(x=>x.id===l.opId)||{};ls.push({opId:l.opId,lote:l.lote,op:num4(o.opNum),d:o.data||(l.opId===SEMLOTE?'9999-12-31':''),sem:l.opId===SEMLOTE,disp:r3(usadoNo(s.k,l.opId,sku))});});
     return ls.sort((a,b)=>String(a.d).localeCompare(String(b.d))||String(a.lote).localeCompare(String(b.lote)));}
   /* preenche do lote mais antigo para o mais novo */
   /* sugere: primeira linha = lote mais antigo; quantidades do mais antigo para o mais novo */
@@ -38844,11 +38848,11 @@ setTimeout(csCustos496,16000);setTimeout(csCustos496,38000);
       const pc=prodOf(c.sku);const nome=(pc&&pc.descricao)||c.nome||c.sku;const por=uc*(+c.qtd||1);
       const st=!prec&&!tem?'':tem===prec&&rows.length?`<span class="cskOk">✓ ${nf(tem)} de ${nf(prec)} un</span>`:tem<prec?`<span class="cskNo">faltam ${nf(r3(prec-tem))} un</span>`:`<span class="cskNo">${nf(r3(tem-prec))} un a mais</span>`;
       let acum=0;const linha=(r,idx)=>{const l=ls.find(x=>x.opId===r.opId);const exc=l&&+r.q>l.disp+1e-9;acum=r3(acum+(+r.q||0));const fal=r3(prec-acum);
-        return `<div class="cskLt on"><select class="cskSl" data-kls="${e_(c.sku)}|${idx}" ${dis}>${ls.filter(x=>x.opId===r.opId||!rows.some((y,j)=>j!==idx&&y.opId===x.opId)).map(x=>`<option value="${e_(x.opId)}" ${x.opId===r.opId?'selected':''}>${dCurto(x.d)} · Lote ${e_(x.lote)} — ${nf(x.disp)} un</option>`).join('')}</select>
+        return `<div class="cskLt on"><select class="cskSl" data-kls="${e_(c.sku)}|${idx}" ${dis}>${ls.filter(x=>x.opId===r.opId||!rows.some((y,j)=>j!==idx&&y.opId===x.opId)).map(x=>`<option value="${e_(x.opId)}" ${x.opId===r.opId?'selected':''}>${x.sem?'Sem lote · saldo do estoque':dCurto(x.d)+' · Lote '+e_(x.lote)} — ${nf(x.disp)} un</option>`).join('')}</select>
           <span class="cskCx">${l?`dá ${nf(Math.floor(l.disp/por))} cx`:''}</span><span class="cskLu">usar</span>
           <input type="number" min="0" step="1" class="cskLq ${exc?'erro':''}" data-klq="${e_(c.sku)}|${idx}" value="${+r.q||''}" placeholder="0" ${dis}><span class="cskUn">un</span>
           ${idx&&!fim?`<button type="button" class="cskRm" data-krm="${e_(c.sku)}|${idx}" title="tirar este lote">✕</button>`:'<span></span>'}
-          <div class="cskAc">soma <b>${nf(acum)}</b> de ${nf(prec)} un${fal>0?` · <span class="cskNo">faltam ${nf(fal)} un (${nf(Math.ceil(fal/por))} cx)</span>`:' · <span class="cskOk">fechou ✓</span>'}${l&&+r.q<l.disp-1e-9&&+r.q>0?` · sobram ${nf(r3(l.disp-r.q))} un no lote ${e_(l.lote)}`:''}</div></div>`;};
+          <div class="cskAc">soma <b>${nf(acum)}</b> de ${nf(prec)} un${fal>0?` · <span class="cskNo">faltam ${nf(fal)} un (${nf(Math.ceil(fal/por))} cx)</span>`:' · <span class="cskOk">fechou ✓</span>'}${l&&+r.q<l.disp-1e-9&&+r.q>0?` · sobram ${nf(r3(l.disp-r.q))} un ${l.sem?'sem lote':'no lote '+e_(l.lote)}`:''}</div></div>`;};
       const livres=ls.filter(l=>!rows.some(r=>r.opId===l.opId));
       return `<div class="cskP"><div class="cskPt"><b>${e_(nome)}</b><small>${e_(c.sku)}</small><span>precisa <b>${nf(prec)} un</b> · ${st}</span></div>${(()=>{const e=estK(c.sku);const rv=reservado(c.sku,s.k);return `<div class="cskEs">Estoque <b>${nf(e.tot)} un</b>${e.tot?` · quarentena ${nf(e.quar)} · expedição ${nf(Math.max(0,e.exp))}`:''}${rv?` · ${nf(rv)} un já reservadas em outra OP de kit`:''}</div>`;})()}
         ${ls.length?rows.map(linha).join('')+(!fim?`<div style="display:flex;align-items:center;gap:10px;margin-top:8px"><button type="button" class="btn sm ${tem<prec&&livres.length?'cskFalta':''}" data-kadd="${e_(c.sku)}" ${livres.length?'':'disabled'}>＋ outro lote${tem<prec&&livres.length?` · faltam ${nf(r3(prec-tem))} un`:''}</button>${livres.length?'':`<span class="hint" style="font-size:11.5px;color:var(--ink3)">${tem<prec?'não há mais lotes: diminua as caixas':'não há outro lote deste produto'}</span>`}</div>`:'')
@@ -39205,7 +39209,7 @@ tr.cskRow td{background:#FFFBF5}
 .stq.pausa{background:#FEF3C7;color:#A16207}.cskEsc{display:grid;grid-template-columns:1fr 1fr;gap:12px}.cskEsc button{text-align:left;border:1.5px solid var(--line);background:#fff;border-radius:12px;padding:18px 16px;cursor:pointer;display:flex;flex-direction:column;gap:6px;font:inherit}.cskEsc button:hover{border-color:#15803D;background:#F3FBF5}.cskEsc button.k:hover{border-color:#E9B872;background:#FFF8EC}.cskEsc b{font-size:16px}.cskEsc span{font-size:12.5px;color:var(--ink3);line-height:1.4}.cskEsc button.k b{color:#92400E}
 .cskN{font-style:normal;display:inline-grid;place-items:center;min-width:18px;height:18px;border-radius:999px;background:#EA580C;color:#fff;font:800 11.5px Inter,sans-serif;margin-left:4px;padding:0 4px}.cskBt{border-color:#E9B872!important;color:#92400E!important;background:#FFF8EC!important;margin-right:8px;font-weight:700}tr.cskNeta td{background:#FFFCF7}`;document.head.appendChild(st);
   setTimeout(function cad(){try{if(typeof PRONTO==='undefined'||!PRONTO)return setTimeout(cad,2000);cadastraKits();}catch(e){}},2500);
-  try{csNucleo.versao='v506';}catch(e){}
+  try{csNucleo.versao='v508';}catch(e){}
 })();
 
 </script>
