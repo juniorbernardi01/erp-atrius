@@ -1894,7 +1894,7 @@ function folhaOC(o){
   const e=empresa(),f=o.forn||{},t=contaOC(o);let logo='';try{logo=N.logo?N.logo():'';}catch(x){}
   const ent=o.entrega&&o.entrega.outro?o.entrega:null;
   const itens=o.itens.map((it,k)=>{const c=contaItem(it),envs=o.benef?envsDe(it):[],mo=o.benef&&it.mo;
-    const forn=[it.nomeForn?'Ref. forn.: '+esc(it.nomeForn):'',it.codForn?'<span style="white-space:nowrap">Cód. '+esc(it.codForn)+'</span>':'',it.modo==='cx'?nf(it.qtdCx)+' '+(+it.qtdCx===1?'caixa':'caixas')+' de '+nf(it.cx)+' un':''].filter(Boolean).join(' · ');
+    const forn=[it.nota?esc(it.nota):'',it.nomeForn?'Ref. forn.: '+esc(it.nomeForn):'',it.codForn?'<span style="white-space:nowrap">Cód. '+esc(it.codForn)+'</span>':'',it.modo==='cx'?nf(it.qtdCx)+' '+(+it.qtdCx===1?'caixa':'caixas')+' de '+nf(it.cx)+' un':''].filter(Boolean).join(' · ');
     const dpN=e=>{try{return depNomeDe(depDoSub(o,e));}catch(x){return '';}};
     return `<tr class="${envs.length?'pr':''}"><td class="c k">${k+1}</td><td><b>${esc(it.nome)}</b>${forn?`<small>${forn}</small>`:''}</td>
     <td class="c">${esc((it.un||'un').toUpperCase())}</td><td class="n">${nq(it.qtd)}</td><td class="n">${nf(it.preco,4)}</td><td class="n">${mo?'—':nq(it.icms)+'%'}</td><td class="n">${nq(it.ipi)}%</td><td class="n">${nf(o.benef?c.baseF:c.base,2)}</td></tr>`
@@ -4408,10 +4408,13 @@ ligaCalendarios=function(raiz){
     if(!(o.itens||[]).some(ehInd))return _fo.apply(this,arguments);
     const o2=JSON.parse(JSON.stringify(o));const L=[];
     o.itens.forEach(it=>{if(!ehInd(it)){L.push(JSON.parse(JSON.stringify(it)));return;}
-      const q=+it.qtd||0,es=envsDe(it).filter(e=>+e.preco>0);
+      /* v508: o fornecedor vê o item dele (ex.: frasco) e, embaixo, o rótulo nosso que ele aplica */
+      const q=+it.qtd||0;
+      const es=envsDe(it);   /* v508: o rótulo nosso aparece mesmo sem preço */
       const cs=comps(it);
       if(cs.length)cs.forEach((c,k)=>{const x=k===0?it:c,qq=cpQ(it,c);
-        L.push({sku:c.sku,nome:c.nome,un:c.un||it.un,qtd:qq,modo:'un',preco:+x.preco||0,icms:+x.icms||0,ipi:+x.ipi||0,pis:+x.pis||0,cof:+x.cof||0,nomeForn:c.nomeForn||'',codForn:c.codForn||'',
+        L.push({sku:c.sku,nome:c.nome,un:c.un||it.un,qtd:qq,modo:'un',preco:+x.preco||0,icms:+x.icms||0,ipi:+x.ipi||0,pis:+x.pis||0,cof:+x.cof||0,
+          nomeForn:'',codForn:'',   /* v510: na industrialização o PDF não mostra a referência do fornecedor */
           envs:k===0?es.map(e=>({...e,fator:qq?r3_((+e.fator||1)*q)/qq:1})):[]});});
       else es.forEach(e=>{const qq=r3_((+e.fator||1)*q);L.push({sku:e.sku,nome:(ehRotulo(e)?'Rotulagem · Rótulo '+String(e.nome).replace(/^(r[oó]tulos?|etiquetas?)\s*[-–:]?\s*/i,''):'Industrialização · '+e.nome),un:e.un||'un',qtd:qq,modo:'un',preco:+e.preco||0,icms:0,ipi:0,mo:true,envs:[]});});});
     o2.itens=L;o2.benef=L.some(x=>(x.envs||[]).length||x.mo);

@@ -1,6 +1,6 @@
 {
- "v": "v508",
- "versao": "5.0.8",
+ "v": "v510",
+ "versao": "5.1.0",
  "data": "06/11/2026",
- "o_que_mudou": "OP de kit: saldo do estoque sem lote (lançado à mão) também pode ser usado, como 'Sem lote'"
+ "o_que_mudou": "PDF da OC de industrialização: item do fornecedor e rótulo nosso, sem referência do fornecedor"
 }
