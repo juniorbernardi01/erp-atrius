@@ -5508,7 +5508,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v503';const VERSAO_DATA='06/11/2026';
+const VERSAO_APP='v505';const VERSAO_DATA='06/11/2026';
 /* número que aparece na tela: v438 → v4.3.8 (por dentro continua v438, que é o que as versões comparam) */
 const csRotVer=v=>{const d=String(v||'').replace(/\D/g,'');return d.length>=3?'v'+d.slice(0,-2)+'.'+d.slice(-2,-1)+'.'+d.slice(-1):String(v||'');};
 const VERSAO_ROTULO=csRotVer(VERSAO_APP)+' · '+VERSAO_DATA;
@@ -5731,7 +5731,7 @@ function colunaMaq(m,data,conf,estreita){
     +(_fila.length?`<div class="cs-sec cs-secp">Próximas na fila <b>(${_fila.length})</b></div>`
       +_fila.map(x=>cardFila(x.o,conf,estreita)).join(''):'')
     +(_fim.length?(()=>{const ab=(window.CS_FIM_AB||[]).includes(m+'|'+data);
-      return `<button class="cs-sec cs-fimtg${ab?' ab':''}" data-fimtg="${escAttr(m+'|'+data)}"><span class="sa">›</span>Concluídas hoje <b>(${_fim.length})</b><em>${ab?'guardar':'mostrar'}</em></button>`
+      return `<button class="cs-sec cs-fimtg${ab?' ab':''}" data-fimtg="${escAttr(m+'|'+data)}"><span class="sa">›</span>Concluídas <b>(${_fim.length})</b><em>${ab?'guardar':'mostrar'}</em></button>`
         +(ab?`<div class="cs-fimls">${_fim.map(x=>cardFila(x.o,conf,estreita)).join('')}</div>`:'');})():'');
 
   return `<div class="tqcol cs-maq est-${est}" style="width:306px">
@@ -27400,7 +27400,7 @@ try{const _cm65=colunaMaq;colunaMaq=function(m,data,conf,estreita){
     const fins=[...fim.map(x=>({t:isNaN(x.ate)?0:x.ate,h:()=>cs5CardFim(x.o,conf)})),...outros.map(x=>({t:x.ate,h:()=>cs5CardTurno(x,conf)}))].sort((a,b)=>a.t-b.t);
     const corpo=`<div class="cs-viva">${vez?cs5CardVez(vez.o,conf):''}${vez?'':(data===ymd(new Date())?'<div class="cs-vazio">Nenhuma OP na linha agora</div>':'')}</div>`
       +(fila.length?`<div class="cs5s fi">Próximas na fila (${fila.length})</div>`:'')+cs5FilaComMais(fila,vez,m,data,conf)
-      +(fins.length?`<button type="button" class="cs5s co" data-fimtg="${cs5esc(m+'|'+data)}">${ab?'▼':'▶'}&nbsp; Concluídas hoje (${fins.length})<em>${ab?'guardar':'mostrar'}</em></button>`
+      +(fins.length?`<button type="button" class="cs5s co" data-fimtg="${cs5esc(m+'|'+data)}">${ab?'▼':'▶'}&nbsp; Concluídas (${fins.length})<em>${ab?'guardar':'mostrar'}</em></button>`
         +(ab?`<div class="cs5ls">${fins.map(x=>x.h()).join('')}</div>`:''):'');
     return `<div class="tqcol cs-maq cs5col">
       <div class="tqh cs5h"><div class="n"><b>${cs5esc(m)}</b>${livreTot?`<button type="button" class="cs-livre" data-gd="${data}" data-gm="${cs5esc(m)}" data-gi="${livreIni}" title="Programar a partir das ${hhmm(livreIni)}">${hmm(livreTot)} livres<i>+</i></button>`:''}${estoura}</div>
@@ -39023,7 +39023,8 @@ setTimeout(csCustos496,16000);setTimeout(csCustos496,38000);
   /* ---------- faixa KITS no Envase e tanques (abre e fecha, como a dos tanques) ---------- */
   let KBAR_AB=false,KBAR_PG='';
   function kitsDoDia(){const d=ymd(S.ref||new Date());
-    return KOPS.filter(k=>k.status!=='cancelada'&&(k.data===d||((k.status==='aberta'||k.status==='producao'||k.status==='pausa')&&k.data<=d)||(k.status==='concluida'&&(k.fimDia||'')===d)))
+    /* v504: OP de kit em aberto aparece sempre, qualquer que seja a data dela; concluída aparece no dia em que fechou */
+    return KOPS.filter(k=>k.status!=='cancelada'&&(k.status==='aberta'||k.status==='producao'||k.status==='pausa'||(k.status==='concluida'&&((k.fimDia||k.data||'')===d))))
       .sort((a,b)=>({producao:0,pausa:1,aberta:2,concluida:3})[a.status]-({producao:0,pausa:1,aberta:2,concluida:3})[b.status]||a.num-b.num);}
   /* cartão no mesmo padrão dos cartões do envase */
   function naQuar(k){try{const p=prodOf(k.codigo);const t=p?tinyDe(p):'';return +((CS_EDEP.sal.quar||{})[t]||0);}catch(e){return 0;}}
@@ -39046,7 +39047,7 @@ setTimeout(csCustos496,16000);setTimeout(csCustos496,38000);
       <div class="t5"><span class="sp"></span><span class="sl ch" style="background:${C[0]};border-color:${C[0]}">${C[1]}</span><button type="button" class="cs-pts" data-kitmenu="${e_(k.id)}" title="Mais ações">&#8943;</button></div>
       <div class="c5" style="margin-top:-4px"><div class="d5" style="justify-content:space-between;width:100%">
         <div class="n5" style="color:#B45309">${e_(p.descricao||k.codigo)}</div>
-        <div class="k5"><span><i>OP Nº</i><b class="az">${num4(k.num)}</b></span><span><i>${k.status==='concluida'?'MONTADO':'QTD PREVISTA'}</i><b>${nf(qtd)} cx <small style="font-weight:500;color:var(--ink3)">· ${nf(qtd*uc)} pacotes</small></b></span>
+        <div class="k5"><span><i>OP Nº</i><b class="az">${num4(k.num)} <small style="font-weight:500;color:var(--ink3)">· ${e_(dCurto(k.data||''))}</small></b></span><span><i>${k.status==='concluida'?'MONTADO':'QTD PREVISTA'}</i><b>${nf(qtd)} cx <small style="font-weight:500;color:var(--ink3)">· ${nf(qtd*uc)} pacotes</small></b></span>
           <span class="cskLo"><i>LOTES</i>${lotesPorProd(k)}</span><span class="cskLo"><i>OPERADOR</i><b style="font-size:12px">${e_(k.operador||'—')}${k.iniHora?` <small style="font-weight:500;color:var(--ink3)">· início ${e_(k.iniHora)}${k.fimHora?' · fim '+e_(k.fimHora):''}</small>`:''}</b></span></div>
         ${b1||b2?`<div class="b5">${b1}${b2}</div>`:''}
       </div></div>
@@ -39204,7 +39205,7 @@ tr.cskRow td{background:#FFFBF5}
 .stq.pausa{background:#FEF3C7;color:#A16207}.cskEsc{display:grid;grid-template-columns:1fr 1fr;gap:12px}.cskEsc button{text-align:left;border:1.5px solid var(--line);background:#fff;border-radius:12px;padding:18px 16px;cursor:pointer;display:flex;flex-direction:column;gap:6px;font:inherit}.cskEsc button:hover{border-color:#15803D;background:#F3FBF5}.cskEsc button.k:hover{border-color:#E9B872;background:#FFF8EC}.cskEsc b{font-size:16px}.cskEsc span{font-size:12.5px;color:var(--ink3);line-height:1.4}.cskEsc button.k b{color:#92400E}
 .cskN{font-style:normal;display:inline-grid;place-items:center;min-width:18px;height:18px;border-radius:999px;background:#EA580C;color:#fff;font:800 11.5px Inter,sans-serif;margin-left:4px;padding:0 4px}.cskBt{border-color:#E9B872!important;color:#92400E!important;background:#FFF8EC!important;margin-right:8px;font-weight:700}tr.cskNeta td{background:#FFFCF7}`;document.head.appendChild(st);
   setTimeout(function cad(){try{if(typeof PRONTO==='undefined'||!PRONTO)return setTimeout(cad,2000);cadastraKits();}catch(e){}},2500);
-  try{csNucleo.versao='v503';}catch(e){}
+  try{csNucleo.versao='v505';}catch(e){}
 })();
 
 </script>
