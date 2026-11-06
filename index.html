@@ -5508,7 +5508,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v510';const VERSAO_DATA='06/11/2026';
+const VERSAO_APP='v511';const VERSAO_DATA='06/11/2026';
 /* número que aparece na tela: v438 → v4.3.8 (por dentro continua v438, que é o que as versões comparam) */
 const csRotVer=v=>{const d=String(v||'').replace(/\D/g,'');return d.length>=3?'v'+d.slice(0,-2)+'.'+d.slice(-2,-1)+'.'+d.slice(-1):String(v||'');};
 const VERSAO_ROTULO=csRotVer(VERSAO_APP)+' · '+VERSAO_DATA;
@@ -39056,13 +39056,28 @@ setTimeout(csCustos496,16000);setTimeout(csCustos496,38000);
         ${b1||b2?`<div class="b5">${b1}${b2}</div>`:''}
       </div></div>
       <div class="tr5">${tr}</div></div>`;}
+  let KFIM_AB=true;
+  /* concluída: o mesmo cartão cinza e menor das concluídas do envase */
+  function cartaoKitFim(k){const p=prodOf(k.codigo)||{};const uc=+p.un_cx||4;const f=+k.feitas||0,pv=+k.cx||0;
+    const pct=(a,b)=>b?(Math.round(a/b*1000)/10).toLocaleString('pt-BR')+'%':'—';
+    return `<div class="bat cs5 cs5c cskK cskF">
+      <div class="t5"><span class="ini">${e_(k.fimEm||'')}</span><span class="sp"></span><span class="sl ch" style="background:#15803D;border-color:#15803D">CONCLUÍDO</span><button type="button" class="cs-pts" data-kitmenu="${e_(k.id)}" title="Mais ações">&#8943;</button></div>
+      <div class="n5">${e_(p.descricao||k.codigo)}</div>
+      <div class="k5"><span><i>OP Nº</i><b class="az">${num4(k.num)}</b></span><span><i>MONTADO</i><b>${nf(f)} de ${nf(pv)} cx · ${pct(f,pv)}</b></span>
+        <span class="cskLo"><i>LOTES</i>${lotesPorProd(k)}</span><span class="cskLo"><i>OPERADOR</i><b style="font-size:12px">${e_(k.operador||'—')}${k.iniHora?` <small style="font-weight:500;color:var(--ink3)">· ${e_(k.iniHora)} → ${e_(k.fimHora||'')}</small>`:''}</b></span></div></div>`;}
   /* ---------- botão "Ver kits" no Envase e tanques: abre a janela com as OPs de kit ---------- */
   let VOLTA=false;
   function kitsModal(){VOLTA=true;try{M('modal').classList.add('cskWide');}catch(e){}
     const l=kitsDoDia();
     if(M('mAcao'))M('mAcao').innerHTML='';M('modal').classList.add('wide');
     M('mTit').textContent='Kits';M('mSub').hidden=false;M('mSub').innerHTML=`${dCurto(ymd(S.ref||new Date()))} · ${l.filter(k=>k.status!=='concluida').length} aberta(s) · ${l.filter(k=>k.status==='producao').length} montando`;
-    M('mB').innerHTML=l.length?`<div class="cskG">${l.map(cartaoKit).join('')}</div>`:'<div class="vazioc" style="padding:24px">Nenhuma OP de kit neste dia.</div>';
+    /* v511: abertas em cima; concluídas do dia embaixo da faixa verde, cinzas e menores, a mais nova por último */
+    const abertas=l.filter(k=>k.status!=='concluida'),fins=l.filter(k=>k.status==='concluida').sort((a,b)=>String(a.fimHora||'').localeCompare(String(b.fimHora||''))||a.num-b.num);
+    M('mB').innerHTML=!l.length?'<div class="vazioc" style="padding:24px">Nenhuma OP de kit neste dia.</div>'
+      :(abertas.length?`<div class="cskG">${abertas.map(cartaoKit).join('')}</div>`:'<div class="vazioc" style="padding:14px">Nenhuma OP de kit em aberto.</div>')
+      +(fins.length?`<button type="button" class="cskCo" id="kmCo">${KFIM_AB?'▼':'▶'}&nbsp; Concluídas (${fins.length})<em>${KFIM_AB?'guardar':'mostrar'}</em></button>`
+        +(KFIM_AB?`<div class="cskG cskGf">${fins.map(cartaoKitFim).join('')}</div>`:''):'');
+    if(M('kmCo'))M('kmCo').onclick=()=>{KFIM_AB=!KFIM_AB;kitsModal();};
     M('mF').innerHTML=`<div style="flex:1"></div><button class="btn" id="kmX">Fechar</button>`;
     M('kmX').onclick=()=>{VOLTA=false;fecharModal();};
     M('mB').querySelectorAll('[data-kb]').forEach(b=>b.onclick=ev=>{ev.stopPropagation();const [a,id]=b.dataset.kb.split('|');const k=KOPS.find(x=>x.id===id);if(!k)return;if(a==='fim')concluirKit(k);else passoKit(k,a);});
@@ -39199,6 +39214,8 @@ tr.cskRow td{background:#FFFBF5}
 #csKitBar [data-knova]{border-color:#E9B872;color:#92400E;background:#FFF8EC;font-weight:700}
 #csKitBar .tbm{border-top:1px solid #F1D9B5;padding:12px;background:var(--paper,#fff);max-height:52vh;overflow:auto}
 #modal.cskWide{width:min(1280px,96vw)!important;max-width:min(1280px,96vw)!important}#modal.cskWide #mB{max-height:70vh;overflow:auto}
+.cskCo{display:flex;align-items:center;gap:8px;width:100%;margin:16px 0 10px;border:0;border-left:4px solid #15803D;border-radius:6px;background:#ECFDF3;color:#15803D;padding:8px 12px;font:700 11.5px Inter,sans-serif;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;text-align:left}.cskCo em{margin-left:auto;font-style:normal;font-weight:600;text-transform:none;letter-spacing:0;opacity:.8}
+.cskGf .cskF{background:#ECECEE!important;border-color:#DADADF!important;padding-top:8px;padding-bottom:10px}.cskGf .cskF .n5{font-size:15px!important;color:#52525B!important;margin:2px 0 6px}.cskGf .cskF .k5>span{background:#F6F6F7!important;border-color:#DCDCE1!important}.cskGf .cskF .ini{font-size:11px;color:#71717A;font-weight:600}
 .cskG{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-items:start}@media(min-width:1500px){.cskG{grid-template-columns:repeat(3,minmax(0,1fr))}}@media(max-width:700px){.cskG{grid-template-columns:1fr}}.cskK .k5{grid-template-columns:repeat(2,1fr)}.cskK .k5 .cskLo{grid-column:1/-1}.cskInfo{font-size:12px;color:var(--ink2);margin-top:6px}
 .cskC{border:1px solid var(--line,#E6E3DC);border-radius:12px;padding:12px 14px;background:#fff;display:flex;flex-direction:column;gap:6px}
 .cskC.producao{border-color:#86EFAC;box-shadow:0 0 0 2px rgba(22,163,74,.15)}.cskC.pausada{border-color:#FDE68A;background:#FFFDF2}.cskC.concluida{opacity:.85}
@@ -39209,7 +39226,7 @@ tr.cskRow td{background:#FFFBF5}
 .stq.pausa{background:#FEF3C7;color:#A16207}.cskEsc{display:grid;grid-template-columns:1fr 1fr;gap:12px}.cskEsc button{text-align:left;border:1.5px solid var(--line);background:#fff;border-radius:12px;padding:18px 16px;cursor:pointer;display:flex;flex-direction:column;gap:6px;font:inherit}.cskEsc button:hover{border-color:#15803D;background:#F3FBF5}.cskEsc button.k:hover{border-color:#E9B872;background:#FFF8EC}.cskEsc b{font-size:16px}.cskEsc span{font-size:12.5px;color:var(--ink3);line-height:1.4}.cskEsc button.k b{color:#92400E}
 .cskN{font-style:normal;display:inline-grid;place-items:center;min-width:18px;height:18px;border-radius:999px;background:#EA580C;color:#fff;font:800 11.5px Inter,sans-serif;margin-left:4px;padding:0 4px}.cskBt{border-color:#E9B872!important;color:#92400E!important;background:#FFF8EC!important;margin-right:8px;font-weight:700}tr.cskNeta td{background:#FFFCF7}`;document.head.appendChild(st);
   setTimeout(function cad(){try{if(typeof PRONTO==='undefined'||!PRONTO)return setTimeout(cad,2000);cadastraKits();}catch(e){}},2500);
-  try{csNucleo.versao='v510';}catch(e){}
+  try{csNucleo.versao='v511';}catch(e){}
 })();
 
 </script>
