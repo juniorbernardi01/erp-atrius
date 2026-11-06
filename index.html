@@ -5508,7 +5508,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v502';const VERSAO_DATA='06/11/2026';
+const VERSAO_APP='v503';const VERSAO_DATA='06/11/2026';
 /* número que aparece na tela: v438 → v4.3.8 (por dentro continua v438, que é o que as versões comparam) */
 const csRotVer=v=>{const d=String(v||'').replace(/\D/g,'');return d.length>=3?'v'+d.slice(0,-2)+'.'+d.slice(-2,-1)+'.'+d.slice(-1):String(v||'');};
 const VERSAO_ROTULO=csRotVer(VERSAO_APP)+' · '+VERSAO_DATA;
@@ -22999,7 +22999,7 @@ try{const _enf=enfileirar;enfileirar=function(x){const it=_enf(x);if(it&&!it.dev
 try{const _edf=enviarDaFila;enviarDaFila=async function(ch){
   const a=naFila(ch),era=a&&a.estado;const it=await _edf(ch);
   try{if(it&&it.estado==='enviado'&&era!=='enviado'&&!it.saldoAplicado){
-    (it.movs||[]).forEach(m=>{const k=String(m.id);if(ESTOQUE[k]!==undefined)ESTOQUE[k]=+ESTOQUE[k]+(m.tipo==='E'?1:-1)*(+m.qtd||0);});
+    (it.movs||[]).forEach(m=>{const k=String(m.id);ESTOQUE[k]=(+ESTOQUE[k]||0)+(m.tipo==='E'?1:-1)*(+m.qtd||0);});/* v503: item novo (sem saldo ainda) também conta */
     it.saldoAplicado=true;agendarSalvar();}}catch(e){}
   return it;};}catch(e){}
 
@@ -38739,7 +38739,7 @@ setTimeout(csCustos496,16000);setTimeout(csCustos496,38000);
 })();
 
 </script>
-<script data-v502="kit">
+<script data-v503="kit">
 /* v5.0.2 · OP DE KIT (montagem dos kits do Uruguai)
    O kit junta produtos que já foram envasados e estão no estoque (ex.: UY AMACIANTE AZUL 2L + UY LAVA ROUPAS PREMIUM 2L),
    um de cada num pacote (saco + etiqueta), 4 pacotes por caixa.
@@ -38777,10 +38777,21 @@ setTimeout(csCustos496,16000);setTimeout(csCustos496,38000);
     if(typeof CS_MIGRA!=='undefined')CS_MIGRA.push('kit502');if(n)agendarSalvar();}catch(e){console.warn('[kit502] cadastro',e);}}
   /* ---------- lotes disponíveis de um produto ---------- */
   function usado(opId,sku,menos){return KOPS.filter(k=>k.status!=='cancelada'&&k!==menos).reduce((s,k)=>s+(k.lotes||[]).filter(l=>l.opId===opId&&l.sku===sku).reduce((a,l)=>a+(+l.q||0),0),0);}
+  /* v503: o que há de verdade no estoque do produto — quarentena + expedição (fora o que está em fornecedor) */
+  function estK(sku){const p=prodOf(sku);const t=p?String(tinyDe(p)||''):'';if(!t)return {t,quar:0,exp:0,tot:0};
+    const tot=+ESTOQUE[t]||0;let quar=0,forn=0;
+    try{quar=+((CS_EDEP.sal.quar||{})[t]||0);CS_EDEP.deps.forEach(d=>{if(!d.princ&&d.id!=='quar')forn+=+((CS_EDEP.sal[d.id]||{})[t]||0);});}catch(e){}
+    const exp=r3(tot-quar-forn);return {t,quar:r3(quar),exp,tot:r3(Math.max(0,quar+exp))};}
+  /* o que outras OPs de kit ainda abertas já reservaram (as concluídas já tiraram do estoque) */
+  function reservado(sku,menos){return KOPS.filter(k=>k!==menos&&k.status!=='cancelada'&&k.status!=='concluida').reduce((s,k)=>s+(k.lotes||[]).filter(l=>l.sku===sku).reduce((a,l)=>a+(+l.q||0),0),0);}
+  /* lotes do produto, limitados ao estoque real: o estoque é dos lotes mais novos (o mais antigo sai primeiro) */
   function lotesDe(sku,menos){const p=prodOf(sku);const uc=(p&&+p.un_cx)||1;
-    return ORDENS.filter(o=>String(o.codigo)===String(sku)&&sit(o)==='concluida'&&!o.excluida&&o.status!=='cancelada'&&+o.caixas>0)
-      .map(o=>{const prod=(+o.caixas||0)*uc;const u=usado(o.id,sku,menos);return {opId:o.id,lote:String(o.lote||''),op:num4(o.opNum),d:o.data,prod,disp:r3(prod-u)};})
-      .filter(l=>l.disp>0).sort((a,b)=>String(a.d).localeCompare(String(b.d))||a.lote.localeCompare(b.lote));}
+    const ls=ORDENS.filter(o=>String(o.codigo)===String(sku)&&sit(o)==='concluida'&&!o.excluida&&o.status!=='cancelada'&&+o.caixas>0)
+      .map(o=>{const prod=(+o.caixas||0)*uc;const u=usado(o.id,sku,menos);return {opId:o.id,lote:String(o.lote||''),op:num4(o.opNum),d:o.data,prod,disp:r3(Math.max(0,prod-u))};})
+      .sort((a,b)=>String(b.d).localeCompare(String(a.d))||b.lote.localeCompare(a.lote));
+    let rest=Math.max(0,estK(sku).tot-reservado(sku,menos));
+    ls.forEach(l=>{const q=Math.min(l.disp,rest);l.disp=r3(q);rest-=q;});
+    return ls.filter(l=>l.disp>0).sort((a,b)=>String(a.d).localeCompare(String(b.d))||a.lote.localeCompare(b.lote));}
   const comps=p=>(p.ficha||[]).filter(f=>f.comp==='Produto');
   const embs=p=>(p.ficha||[]).filter(f=>f.comp!=='Produto');
   const salItem=sku=>{const i=insP(sku)||prodOf(sku);const t=i?tinyDe(i):'';return t&&ESTOQUE[t]!=null?+ESTOQUE[t]:0;};
@@ -38801,7 +38812,7 @@ setTimeout(csCustos496,16000);setTimeout(csCustos496,38000);
     if(k)(k.lotes||[]).forEach(l=>{(s.rows[l.sku]=s.rows[l.sku]||[]).push({opId:l.opId,q:+l.q||0,man:true});});return s;}
   const usadoNo=(k,opId,sku)=>(k.lotes||[]).filter(l=>l.opId===opId&&l.sku===sku).reduce((a,l)=>a+(+l.q||0),0);
   /* lotes do produto: o mais antigo em cima; disponível já conta o que esta OP usa (na edição) */
-  function lotesK(s,sku){const ls=lotesDe(sku,s.k).map(l=>({...l,disp:r3(l.disp+(s.k?usadoNo(s.k,l.opId,sku):0))}));
+  function lotesK(s,sku){const ls=lotesDe(sku,s.k);
     if(s.k)(s.k.lotes||[]).filter(l=>l.sku===sku&&!ls.some(x=>x.opId===l.opId)).forEach(l=>{const o=ORDENS.find(x=>x.id===l.opId)||{};ls.push({opId:l.opId,lote:l.lote,op:num4(o.opNum),d:o.data||'',disp:r3(usadoNo(s.k,l.opId,sku))});});
     return ls.sort((a,b)=>String(a.d).localeCompare(String(b.d))||String(a.lote).localeCompare(String(b.lote)));}
   /* preenche do lote mais antigo para o mais novo */
@@ -38831,7 +38842,7 @@ setTimeout(csCustos496,16000);setTimeout(csCustos496,38000);
     const blocoLotes=!p?'<div class="alert">Nenhum kit cadastrado.</div>':comps(p).map(c=>{const prec=cx*uc*(+c.qtd||1);const ls=lotesK(s,c.sku);const rows=s.rows[c.sku]||[];
       const tem=r3(rows.reduce((a,r)=>a+(+r.q||0),0));if(Math.abs(tem-prec)>1e-6||!rows.length)falta=true;
       const pc=prodOf(c.sku);const nome=(pc&&pc.descricao)||c.nome||c.sku;const por=uc*(+c.qtd||1);
-      const st=tem===prec&&rows.length?`<span class="cskOk">✓ ${nf(tem)} de ${nf(prec)} un</span>`:tem<prec?`<span class="cskNo">faltam ${nf(r3(prec-tem))} un</span>`:`<span class="cskNo">${nf(r3(tem-prec))} un a mais</span>`;
+      const st=!prec&&!tem?'':tem===prec&&rows.length?`<span class="cskOk">✓ ${nf(tem)} de ${nf(prec)} un</span>`:tem<prec?`<span class="cskNo">faltam ${nf(r3(prec-tem))} un</span>`:`<span class="cskNo">${nf(r3(tem-prec))} un a mais</span>`;
       let acum=0;const linha=(r,idx)=>{const l=ls.find(x=>x.opId===r.opId);const exc=l&&+r.q>l.disp+1e-9;acum=r3(acum+(+r.q||0));const fal=r3(prec-acum);
         return `<div class="cskLt on"><select class="cskSl" data-kls="${e_(c.sku)}|${idx}" ${dis}>${ls.filter(x=>x.opId===r.opId||!rows.some((y,j)=>j!==idx&&y.opId===x.opId)).map(x=>`<option value="${e_(x.opId)}" ${x.opId===r.opId?'selected':''}>${dCurto(x.d)} · Lote ${e_(x.lote)} — ${nf(x.disp)} un</option>`).join('')}</select>
           <span class="cskCx">${l?`dá ${nf(Math.floor(l.disp/por))} cx`:''}</span><span class="cskLu">usar</span>
@@ -38839,9 +38850,9 @@ setTimeout(csCustos496,16000);setTimeout(csCustos496,38000);
           ${idx&&!fim?`<button type="button" class="cskRm" data-krm="${e_(c.sku)}|${idx}" title="tirar este lote">✕</button>`:'<span></span>'}
           <div class="cskAc">soma <b>${nf(acum)}</b> de ${nf(prec)} un${fal>0?` · <span class="cskNo">faltam ${nf(fal)} un (${nf(Math.ceil(fal/por))} cx)</span>`:' · <span class="cskOk">fechou ✓</span>'}${l&&+r.q<l.disp-1e-9&&+r.q>0?` · sobram ${nf(r3(l.disp-r.q))} un no lote ${e_(l.lote)}`:''}</div></div>`;};
       const livres=ls.filter(l=>!rows.some(r=>r.opId===l.opId));
-      return `<div class="cskP"><div class="cskPt"><b>${e_(nome)}</b><small>${e_(c.sku)}</small><span>precisa <b>${nf(prec)} un</b> · ${st}</span></div>
+      return `<div class="cskP"><div class="cskPt"><b>${e_(nome)}</b><small>${e_(c.sku)}</small><span>precisa <b>${nf(prec)} un</b> · ${st}</span></div>${(()=>{const e=estK(c.sku);const rv=reservado(c.sku,s.k);return `<div class="cskEs">Estoque <b>${nf(e.tot)} un</b>${e.tot?` · quarentena ${nf(e.quar)} · expedição ${nf(Math.max(0,e.exp))}`:''}${rv?` · ${nf(rv)} un já reservadas em outra OP de kit`:''}</div>`;})()}
         ${ls.length?rows.map(linha).join('')+(!fim?`<div style="display:flex;align-items:center;gap:10px;margin-top:8px"><button type="button" class="btn sm ${tem<prec&&livres.length?'cskFalta':''}" data-kadd="${e_(c.sku)}" ${livres.length?'':'disabled'}>＋ outro lote${tem<prec&&livres.length?` · faltam ${nf(r3(prec-tem))} un`:''}</button>${livres.length?'':`<span class="hint" style="font-size:11.5px;color:var(--ink3)">${tem<prec?'não há mais lotes: diminua as caixas':'não há outro lote deste produto'}</span>`}</div>`:'')
-          :'<div class="hint cskNo">Nenhum lote deste produto disponível. Faça primeiro a OP de envase dele (o envase vai para a quarentena e o kit pega de lá).</div>'}</div>`;}).join('');
+          :'<div class="hint cskNo">Sem estoque deste produto na quarentena nem na expedição.</div>'}</div>`;}).join('');
     const blocoEmb=!p?'':`<table class="tb cskE"><thead><tr><th>Item</th><th class="n">Por caixa</th><th class="n">Precisa</th><th class="n">Estoque</th><th></th></tr></thead><tbody>${embs(p).map(f=>{const i=insP(f.sku);const pr=r3(cx*uc*(+f.qtd||0));const sl=salItem(f.sku);const fl=pr>sl+1e-9;
       return `<tr><td><b>${e_((i&&i.nome)||f.nome)}</b> <small style="color:var(--ink3)">${e_(f.sku)}</small></td><td class="n">${nq3(r3(uc*(+f.qtd||0)))}</td><td class="n">${nq3(pr)}</td><td class="n">${nf(sl)}</td><td class="n ${fl?'cskNo':'cskOk'}" style="font-weight:600">${fl?'falta '+nf(r3(pr-sl)):'tem'}</td></tr>`;}).join('')}</tbody></table>`;
     const ops=(typeof OPERADORES!=='undefined'?OPERADORES:[]).filter(x=>x.ativo!==false&&/kit/i.test(String(x.funcao||x.papel||'')));
@@ -38929,9 +38940,10 @@ setTimeout(csCustos496,16000);setTimeout(csCustos496,38000);
       const quem=quemPorCredencial((M('kcPin').value||'').trim());if(!quem){M('kcPinD').innerHTML='<b style="color:var(--danger)">PIN ou senha não encontrados.</b>';return;}
       /* o que sai de cada lote: na ordem escolhida */
       const usa=[];comps(p).forEach(c=>{let rest=f*uc*(+c.qtd||1)+(qs[c.sku]||0);const ls=(k.lotes||[]).filter(l=>l.sku===c.sku);
-        ls.forEach((l,i)=>{if(rest<=0)return;const d=i===ls.length-1?rest:Math.min(rest,(lotesDe(c.sku,k).find(x=>x.opId===l.opId)||{disp:0}).disp+l.q);const q=r3(Math.min(rest,d));if(q>0){usa.push({...l,q});rest-=q;}});});
+        ls.forEach((l,i)=>{if(rest<=0)return;const d=i===ls.length-1?rest:Math.min(rest,(lotesDe(c.sku,k).find(x=>x.opId===l.opId)||{disp:0}).disp);const q=r3(Math.min(rest,d));if(q>0){usa.push({...l,q});rest-=q;}});});
       const movs=[];const tk=tinyDe(p);if(tk){if(ESTOQUE[tk]==null)ESTOQUE[tk]=0;movs.push({id:tk,tipo:'E',qtd:f});}
-      comps(p).forEach(c=>{const pc=prodOf(c.sku);const t=pc?tinyDe(pc):'';const q=usa.filter(x=>x.sku===c.sku).reduce((a,x)=>a+x.q,0);if(t&&q){if(ESTOQUE[t]==null)ESTOQUE[t]=0;movs.push({id:t,tipo:'S',qtd:r3(q)});}});
+      comps(p).forEach(c=>{const pc=prodOf(c.sku);const t=pc?tinyDe(pc):'';const q=usa.filter(x=>x.sku===c.sku).reduce((a,x)=>a+x.q,0);if(t&&q){if(ESTOQUE[t]==null)ESTOQUE[t]=0;const qq=Math.min(r3(q),Math.max(0,estK(c.sku).quar));/* sai primeiro da quarentena; o resto da expedição */
+        if(qq>0)movs.push({id:t,tipo:'S',qtd:r3(qq)});if(r3(q-qq)>0)movs.push({id:t,tipo:'S',qtd:r3(q-qq)});}});
       embs(p).forEach(e=>{const i=insP(e.sku);const t=i?tinyDe(i):'';const q=r3(f*uc*(+e.qtd||0));if(t&&q){if(ESTOQUE[t]==null)ESTOQUE[t]=0;movs.push({id:t,tipo:'S',qtd:q});}});
       const chave=`kit|${k.id}|emb`;
       enfileirar({chave,origem:`OP ${num4(k.num)}`,rotulo:'Montagem de kit',movs,obs:`OP ${num4(k.num)} · kit · lotes ${(k.lotes||[]).map(l=>l.lote).join(' + ')}`});
@@ -39167,6 +39179,7 @@ setTimeout(csCustos496,16000);setTimeout(csCustos496,38000);
 .cskLu{font-size:12px;color:var(--ink3);text-align:right}.cskLq{height:34px!important;text-align:right;padding:0 8px!important}.cskLq.erro{border-color:#DC2626!important;background:#FEF2F2!important}.cskUn{font-size:12px;color:var(--ink3)}
 .cskRk{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:12px 0}.cskRk div{background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 12px}.cskRk span{display:block;font-size:11px;color:var(--ink3);text-transform:uppercase;letter-spacing:.5px;font-weight:600}.cskRk b{font-size:20px}
 .cskSl{height:36px;border:1px solid var(--line);border-radius:8px;padding:0 10px;font:500 13.5px Inter,system-ui;background:#fff;min-width:0}.cskRm{border:0;background:none;color:var(--ink3);cursor:pointer;font-size:14px}.cskRm:hover{color:#B3261E}
+.cskEs{font-size:12px;color:var(--ink2);margin:-2px 0 8px}.cskEs b{color:var(--ink)}
 .cskAc{grid-column:1/-1;font-size:12px;color:var(--ink2);margin-top:-2px}.cskFalta{border-color:#FDBA74!important;background:#FFF7ED!important;color:#9A3412!important;font-weight:700}
 .cskQb{display:grid;grid-template-columns:minmax(0,1.4fr) 120px minmax(0,1.2fr);gap:12px;align-items:end;border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:8px}.cskQb.on{border-color:#FCA5A5;background:#FEF2F2}.cskQc{display:flex;gap:10px;align-items:center;cursor:pointer;align-self:center}.cskQc input{width:18px;height:18px;accent-color:#DC2626}
 .cskOk{color:#15803D}.cskNo{color:#B3261E}
@@ -39191,7 +39204,7 @@ tr.cskRow td{background:#FFFBF5}
 .stq.pausa{background:#FEF3C7;color:#A16207}.cskEsc{display:grid;grid-template-columns:1fr 1fr;gap:12px}.cskEsc button{text-align:left;border:1.5px solid var(--line);background:#fff;border-radius:12px;padding:18px 16px;cursor:pointer;display:flex;flex-direction:column;gap:6px;font:inherit}.cskEsc button:hover{border-color:#15803D;background:#F3FBF5}.cskEsc button.k:hover{border-color:#E9B872;background:#FFF8EC}.cskEsc b{font-size:16px}.cskEsc span{font-size:12.5px;color:var(--ink3);line-height:1.4}.cskEsc button.k b{color:#92400E}
 .cskN{font-style:normal;display:inline-grid;place-items:center;min-width:18px;height:18px;border-radius:999px;background:#EA580C;color:#fff;font:800 11.5px Inter,sans-serif;margin-left:4px;padding:0 4px}.cskBt{border-color:#E9B872!important;color:#92400E!important;background:#FFF8EC!important;margin-right:8px;font-weight:700}tr.cskNeta td{background:#FFFCF7}`;document.head.appendChild(st);
   setTimeout(function cad(){try{if(typeof PRONTO==='undefined'||!PRONTO)return setTimeout(cad,2000);cadastraKits();}catch(e){}},2500);
-  try{csNucleo.versao='v502';}catch(e){}
+  try{csNucleo.versao='v503';}catch(e){}
 })();
 
 </script>

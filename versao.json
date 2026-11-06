@@ -1,6 +1,6 @@
 {
- "v": "v502",
- "versao": "5.0.2",
+ "v": "v503",
+ "versao": "5.0.3",
  "data": "06/11/2026",
- "o_que_mudou": "OP de kit: montagem dos kits do Uruguai com escolha dos lotes, fora da fila das máquinas"
+ "o_que_mudou": "OP de kit busca o estoque real do produto (quarentena + expedição); entrada de produto novo passa a somar no saldo"
 }
