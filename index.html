@@ -39208,5 +39208,62 @@ tr.cskRow td{background:#FFFBF5}
 })();
 
 </script>
+<script data-v503="uy">
+/* v5.0.3 · CORREÇÃO ÚNICA DAS OPs 0308 (lote 394) E 0317 (lote 836) — pedido do Junior em 06/11
+   O envase do Uruguai é em UNIDADE, mas foi lançado em caixas de 6: 311 e 315 viram 1.866 e 1.890 un.
+   Só mexe nestas duas OPs e no que elas lançaram no estoque:
+   - OP: realizado, parcial do turno de 03/11 (226 → 1.356), textos do histórico; quebra e rendimento saem da conta;
+   - razão: entrada do acabado na QUARENTENA, saída do frasco rotulado e da tampa (mesma data e hora);
+   - as transferências de 05/11 07:32 (quarentena → expedição) desses dois itens são removidas: fica tudo na quarentena.
+   Roda uma vez só (CS_MIGRA 'uy503'), no computador do master. */
+(function(){
+  const F=6;
+  const ALVO=[
+    {id:'3CC9D6EF',num:308,lote:'394',cx:311,item:'ERP-UY803',
+     txt:{'Turno fechado':'03/11 15:29–17:30 · 1.356 un · restam 544 un','Continua no próximo dia':'03/11 → 04/11 às 07:00 · 544 un',
+          'OP concluída':'07:07–08:04 · 57 min · 1.866 un','Quebra confirmada':'34 un · 68 L · 1,8% do lote',
+          'Rendimento':'previsto 1.900 un · produzido 1.866 · 98,2% de rendimento · quebra 34 un (1,8%)','Estoque lançado no ERP':'3 movimentos · ao concluir · entrada 1.866 un'}},
+    {id:'421D0701',num:317,lote:'836',cx:315,item:'ERP-UY614',
+     txt:{'OP concluída':'08:04–10:26 · 142 min · 1.890 un','Quebra confirmada':'10 un · 20 L · 0,5% do lote',
+          'Rendimento':'previsto 1.900 un · produzido 1.890 · 99,5% de rendimento · quebra 10 un (0,5%)','Estoque lançado no ERP':'3 movimentos · ao concluir · entrada 1.890 un'}}];
+  function roda(){try{
+    if(typeof CS_MIGRA==='undefined'||CS_MIGRA.includes('uy503'))return;
+    if(!(typeof csEhMaster==='function'&&csEhMaster()))return;
+    if(typeof csChaoFabrica==='function'&&csChaoFabrica())return;
+    if(!ORDENS.length||!CS_ELOG.length||!PRODUTOS.length)return;
+    CS_MIGRA.push('uy503');   /* marca antes: nunca roda duas vezes */
+    const feito=[];
+    ALVO.forEach(a=>{
+      const o=ORDENS.find(x=>x.id===a.id);
+      if(!o||+o.opNum!==a.num||String(o.lote)!==a.lote||+o.caixas!==a.cx){feito.push(`OP ${a.num}: não mexi (já estava diferente)`);return;}
+      const un=a.cx*F,dif=un-a.cx;
+      /* 1) a OP */
+      o.caixas=un;
+      if(+o.parciais)o.parciais=+o.parciais*F;
+      (o.turnos||[]).forEach(t=>{if(+t.caixas)t.caixas=+t.caixas*F;});
+      if(o.tinyEnviado){o.tinyEnviado.caixas=un;o.tinyEnviado.unid='un';}
+      (o.log||[]).forEach(l=>{if(a.txt[l.e])l.m=a.txt[l.e];});
+      /* 2) o razão desta OP: entrada do acabado e saída das embalagens, mesma data e hora */
+      const ch=`op|${a.id}|emb`;
+      CS_ELOG.filter(x=>x.chave===ch&&!x.rm&&+x.qtd===a.cx).forEach(x=>{
+        x.qtd=un;const d=(x.tipo==='E'?1:-1)*dif;
+        if(x.dif!=null)x.dif=+x.dif+d;
+        csEAplica(String(x.id),x.dep||null,d);});
+      try{const it=naFila(ch);if(it)(it.movs||[]).forEach(m=>{if(+m.qtd===a.cx)m.qtd=un;});}catch(e){}
+      /* 3) as transferências de 05/11 (quarentena → expedição) deste item saem: volta tudo para a quarentena */
+      const rm={em:(typeof csEAgora==='function'?csEAgora():`${ymd(new Date())} ${relogio()}`),quem:'Correção v5.0.3',mot:'Quantidade da OP era em unidades (×6) · fica na quarentena'};
+      CS_ELOG.filter(x=>String(x.id)===a.item&&x.tr&&!x.rm&&String(x.origem)==='Transferência').forEach(x=>{const e=csEEfeito(x);csEAplica(String(x.id),e.dep,-e.delta);x.rm=rm;});
+      /* o total do item não pode ficar abaixo do que está na quarentena (a entrada antiga não somou no total) */
+      const q=+((CS_EDEP.sal.quar||{})[a.item]||0);if((+ESTOQUE[a.item]||0)<q)ESTOQUE[a.item]=q;
+      o.log=o.log||[];
+      o.log.push({d:ymd(new Date()),t:relogio(),e:'Correção de quantidade',m:`lançado em caixas, era unidade (×6): ${a.cx} → ${un.toLocaleString('pt-BR')} un · estoque corrigido na quarentena`,op:'Correção v5.0.3'});
+      feito.push(`OP ${a.num}: ${a.cx} → ${un} un`);});
+    agendarSalvar();
+    console.info('[uy503]',feito);try{toast('Correção das OPs 0308 e 0317 feita: '+feito.join(' · '));}catch(e){}
+  }catch(e){console.warn('[uy503]',e);}}
+  setTimeout(roda,10000);setTimeout(roda,32000);
+})();
+
+</script>
 </body>
 </html>

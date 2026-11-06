@@ -2164,17 +2164,21 @@ function confirmaDupla(tit,corpo,entendi,botao,acao){
   let passo=1,marcou=false;
   const des=()=>{modal(passo===1?`<h3 class="vm">${tit}</h3>${corpo}<label class="chk2" id="dcE"><span class="ck ${marcou?'on':''}"></span>${entendi}</label>
     <div class="bt"><button class="btn" id="dcN">Cancelar</button><button class="btn del" id="dcS" ${marcou?'':'disabled'}>Continuar</button></div>`
-    :`<h3 class="vm">Confirmar?</h3><p>Última confirmação. Isto muda o Olist (Tiny).</p><div class="bt"><button class="btn" id="dcV">Voltar</button><button class="btn del" id="dcF">${botao}</button></div>`);
+    :`<h3 class="vm">Confirmar?</h3><p>Última confirmação.</p><div class="bt"><button class="btn" id="dcV">Voltar</button><button class="btn del" id="dcF">${botao}</button></div>`);
     if(passo===1){$('dcE').onclick=()=>{marcou=!marcou;des();};$('dcN').onclick=()=>modal(null);$('dcS').onclick=()=>{if(marcou){passo=2;des();}};}
     else{$('dcV').onclick=()=>{passo=1;des();};$('dcF').onclick=async()=>{$('dcF').disabled=true;await acao();};}};
   des();
 }
+function confirmaSimples(tit,corpo,botao,acao){
+  modal(`<h3 class="vm">${tit}</h3>${corpo}<div class="bt"><button class="btn" id="dcN">Cancelar</button><button class="btn del" id="dcF">${botao}</button></div>`);
+  $('dcN').onclick=()=>modal(null);$('dcF').onclick=async()=>{$('dcF').disabled=true;await acao();};
+}
 function estornarEstoque(o,depois){
   if(integ(o).cont)return toast('Esta ordem tem contas lançadas: estorne as contas antes do estoque.',true);
   const rs_=(o.receb||[]).filter(r=>!r.estornado&&r.tiny&&r.tiny.ok);const q=rs_.reduce((s,r)=>s+r.itens.reduce((a,x)=>a+x.qtd,0),0);
-  confirmaDupla(`Estornar o estoque da OC ${esc(o.num)}`,`<p>Isto <b>tira do estoque</b> a entrada que o recebimento lançou. O ERP lança uma saída igual, com a OC na observação.</p>
-    <div class="lst"><div><span>${rs_.length} recebimento(s) · ${nq(q)} un</span><b>saem do estoque no Olist</b></div><div><span>NF ${esc(o.nf||'—')}</span><b>fica ligada à ordem</b></div><div><span>Situação</span><b>volta para Enviada ao fornecedor</b></div></div>`,
-    'Entendi que o estoque vai ser alterado no Olist','Estornar estoque no Olist',async()=>{
+  confirmaSimples(`Estornar o estoque da OC ${esc(o.num)}`,`<p>Isto <b>tira do estoque</b> a entrada que o recebimento lançou. O ERP lança uma saída igual, com a OC na observação.</p>
+    <div class="lst"><div><span>${rs_.length} recebimento(s) · ${nq(q)} un</span><b>saem do estoque</b></div><div><span>NF ${esc(o.nf||'—')}</span><b>fica ligada à ordem</b></div><div><span>Situação</span><b>volta para Enviada ao fornecedor</b></div></div><p style="margin-top:12px"><b>Tem certeza que quer estornar o estoque?</b></p>`,
+    'Sim, estornar o estoque',async()=>{
       let err=0;for(const r of rs_){const movs=r.itens.filter(x=>x.tiny).map(x=>({id:x.tiny,tipo:'S',qtd:x.qtd}));r.itens.forEach(x=>envsReceb(x).forEach(e=>{if(e.tiny&&e.qtd>0)movs.push(e.dep?{id:e.tiny,tipo:'E',qtd:e.qtd,dep:e.dep}:{id:e.tiny,tipo:'E',qtd:e.qtd});}));
         try{const x=await tiny({acao:'movimentar',movimentos:movs,obs:`Estorno da OC ${o.num}${r.nf?' · NF '+r.nf:''}`});if(x&&(x.falhas||[]).length)err++;else{r.estornado=true;r.estornoEm=agora();}}catch(e){err++;}}
       DB.lotes=DB.lotes.filter(l=>!rs_.some(r=>r.estornado&&r.id===l.receb));
@@ -2214,10 +2218,10 @@ function reabrirOC(o){
   des();
 }
 function cancelarOC(o){
-  modal(`<h3>Cancelar a ordem ${esc(o.num)}?</h3><div class="fl"><label>Motivo<span class="req">*</span></label><input class="inp" id="cnM"></div>
+  modal(`<h3>Cancelar a ordem ${esc(o.num)}?</h3><p>Tem certeza? A ordem fica como Cancelada e sai das ordens em aberto.</p>
     <div class="bt"><button class="btn" id="cnN">Voltar</button><button class="btn del" id="cnS">Cancelar ordem</button></div>`);
   $('cnN').onclick=()=>modal(null);
-  $('cnS').onclick=()=>{const m=$('cnM').value.trim();if(!m)return toast('Diga o motivo.',true);o.sit='can';hist(o,'Cancelou a ordem',m);salvar();modal(null);render();};
+  $('cnS').onclick=()=>{if(!['ras','env'].includes(o.sit))return toast('Só dá para cancelar ordem em aberto ou enviada.',true);o.sit='can';hist(o,'Cancelou a ordem','');salvar();modal(null);render();};
 }
 function clonarOC(o){
   let n=1;const datas=[addDias(hojeY(),Math.max(1,Math.round((new Date((o.prev||o.data)+'T12:00')-new Date(o.data+'T12:00'))/864e5)))];let inter=30;
@@ -2338,6 +2342,8 @@ function necLinhas(){
 const necFmt=v=>v==null?'—':nq(Math.round(v*100)/100);
 function necUnid(){const u=necCfg().nVer;return u==='dia'?['por dia',1]:u==='mes'?['por mês',30.4]:['por semana',7];}
 /* cores como no BI: vermelho abaixo do mínimo, laranja até 1,5× o mínimo, verde acima; sem mínimo, pela cobertura (7 e 14 dias) */
+const necF=()=>NEC.fm||(NEC.so?'prec':'todos');
+function necPassa(l){const f=necF();if(f==='todos')return true;if(f==='min')return !!l.minSit;if(f==='abaixo')return l.minSit==='abaixo';return l.sug>0||l.virt<0||!!l.minSit;}
 function corCob(l){if(l.cobre==null)return 'cz';if(l.cobre<=0||(l.fis||0)<=0)return 'vm';
   if(l.min>0){if(l.virt<l.min)return 'vm';if(l.virt<l.min*1.5)return 'lj';return 'vd';}
   return l.cobre<7?'vm':l.cobre<14?'lj':'vd';}
@@ -2347,7 +2353,7 @@ async function telaNecessidade(){
   const L=necLinhas();const [ur,uf]=necUnid();
   const tags=[...new Set(L.map(l=>l.x.tipo))].filter(Boolean).sort();const q=NEC.q.toLowerCase();
   if(NEC.tagsF==null)NEC.tagsF=NEC.tags.slice();
-  let vis=L.filter(l=>(!NEC.tags.length||NEC.tags.includes(l.x.tipo||''))&&(!q||(l.k+' '+l.x.nome).toLowerCase().includes(q))&&(!NEC.so||l.sug>0||l.virt<0||!!l.minSit));
+  let vis=L.filter(l=>(!NEC.tags.length||NEC.tags.includes(l.x.tipo||''))&&(!q||(l.k+' '+l.x.nome).toLowerCase().includes(q))&&necPassa(l));
   /* ordenar pelo título clicado (segundo clique inverte); sem clique, pela ordem do cadastro */
   if(NEC.ord){const K={item:l=>l.x.nome,pedidos:l=>l.ped,ops:l=>l.res,entradas:l=>l.entradas,consumo:l=>l.dia,fis:l=>l.fis==null?-1e18:l.fis,virt:l=>l.virt,min:l=>l.min,cob:l=>l.cobre==null?1e18:l.cobre,sug:l=>l.sug,comprar:l=>+NEC.sel[l.k]||0}[NEC.ord.k];
     if(K)vis=vis.slice().sort((a,b)=>{const x=K(a),y=K(b);return (typeof x==='string'?x.localeCompare(y):(x-y))*NEC.ord.d;});}
@@ -2383,7 +2389,7 @@ async function telaNecessidade(){
     <div class="card"><span>Já em compra</span><b>${rs(valEm)}</b><small>${DB.ocs.filter(o=>o.sit==='env').length} ordens enviadas</small></div>
     <div class="card"><span>Marcado para comprar</span><b>${rs(valMarc)}</b><small>${marc.length} ${marc.length===1?'item':'itens'} · pelo último preço</small></div></div>
   <div class="nfil4"><div class="busca">⌕<input id="nq" placeholder="Buscar item" value="${esc(NEC.q)}"></div>
-    <button class="chip ${NEC.so?'on':''}" id="nSo">Precisa comprar</button>
+    <select class="chip nSel ${necF()!=='todos'?'on':''}" id="nSo">${[['prec','Precisa comprar'],['min','Abaixo e perto do mínimo'],['abaixo','Só abaixo do mínimo'],['todos','Todos os itens']].map(([v,t])=>`<option value="${v}" ${necF()===v?'selected':''}>${t}</option>`).join('')}</select>
     ${NEC.oculta?`<span class="res" title="${esc(resumo)}">${esc(resumo)}</span>`:'<span style="flex:1"></span>'}
     <span class="mud-t" id="nMud" ${mudou?'':'hidden'}>filtros alterados · clique em Gerar</span><button class="btn" id="nVerF">${NEC.oculta?'Exibir filtros':'Ocultar filtros'}</button><button class="btn" id="nLimpaF">Limpar filtros</button><button class="btn pri ${mudou?'mud':''}" id="nGerar">Gerar</button>
     <div class="pop-w"><button class="chip" id="nCols">Colunas ▾</button>
@@ -2433,9 +2439,9 @@ function ligaNec(L){
   $('nGerar').onclick=()=>{const precisaLer=JSON.stringify([c.nCampo,c.nSits])!==JSON.stringify([f.nCampo,f.nSits]);NEC_FK.forEach(k=>c[k]=JSON.parse(JSON.stringify(f[k])));c.nVirt=f.nVirt||'es';NEC.tags=NEC.tagsF.slice();salvar();
     if(precisaLer||!NDADOS.abertos)NDADOS.abertos=null;NEC.oculta=true;re();};
   $('nVerF').onclick=()=>{NEC.oculta=!NEC.oculta;re();};
-  $('nLimpaF').onclick=()=>{Object.assign(f,necPadrao());NEC.q='';NEC.tagsF=[];NEC.so=true;NEC.oculta=false;$('nGerar').onclick();NEC.oculta=false;re();};
+  $('nLimpaF').onclick=()=>{Object.assign(f,necPadrao());NEC.q='';NEC.tagsF=[];NEC.so=true;NEC.fm='prec';NEC.oculta=false;$('nGerar').onclick();NEC.oculta=false;re();};
   $('nq').oninput=e=>{NEC.q=e.target.value;clearTimeout(window._tn);window._tn=setTimeout(()=>{re();const i=$('nq');i.focus();i.setSelectionRange(i.value.length,i.value.length);},250);};
-  $('nSo').onclick=()=>{NEC.so=!NEC.so;re();};if($('nTodos'))$('nTodos').onclick=()=>{NEC.so=false;re();};
+  $('nSo').onchange=e=>{NEC.fm=e.target.value;NEC.so=NEC.fm!=='todos';re();};if($('nTodos'))$('nTodos').onclick=()=>{NEC.fm='todos';NEC.so=false;re();};
   $('nCols').onclick=ev=>{ev.stopPropagation();$('popCols').hidden=!$('popCols').hidden;$('popGrp').hidden=true;$('popSai').hidden=true;};$('popCols').onclick=ev=>ev.stopPropagation();
   necArrasta();
   document.querySelectorAll('.ntb2 th[data-so]').forEach(th=>th.onclick=()=>{const k=th.dataset.so;NEC.ord=NEC.ord&&NEC.ord.k===k?{k,d:-NEC.ord.d}:{k,d:k==='item'?1:-1};re();});
@@ -3161,7 +3167,7 @@ try{const _nl452=necLinhas;necLinhas=function(){
   return _nl452.apply(this,arguments).map(l=>{
     const s=Math.max(0,l.dia*cr*cob-(l.fis||0));
     l.sug=s>0?(l.un==='kg'?Math.ceil(s*10)/10:Math.ceil(s)):0;
-    l.minSit=l.min>0&&l.fis!=null?((l.fis<l.min)?'abaixo':(l.fis<=l.min*mg)?'perto':''):'';
+    l.minSit=l.min>0&&l.fis!=null?((l.fis<=l.min)?'abaixo':(l.fis<=l.min*mg)?'perto':''):'';
     return l;});};}catch(e){}
 corCob=function(l){
   if(l.fis==null)return 'cz';
@@ -3170,11 +3176,13 @@ corCob=function(l){
   if(l.cobre==null)return 'cz';if(l.cobre<=0||(l.fis||0)<=0)return 'vm';
   return l.cobre<7?'vm':l.cobre<14?'lj':'vd';};
 try{NEC_TIP.sug='Consumo médio por dia × (1 + crescimento %) × dias a cobrir − estoque físico. O mínimo não entra na conta: ele é o sinal na cobertura.';
-  NEC_TIP.min='Estoque mínimo do item. É o sinal: físico abaixo dele fica vermelho; até a margem acima (padrão 10%) fica laranja.';
+  NEC_TIP.min='Estoque mínimo do item. É o sinal: físico igual ou abaixo dele fica vermelho; até a margem acima (padrão 10%) fica laranja.';
   NEC_TIP.cob='Físico ÷ consumo médio por dia. A cor segue o mínimo (vermelho abaixo, laranja perto); entrada prevista não deixa verde até chegar.';}catch(e){}
 document.head.insertAdjacentHTML('beforeend',`<style>
 .ntb td .mnt{display:block;font-size:10.5px;font-weight:600;margin-top:3px;white-space:nowrap}
 .ntb td .mnt.vm{color:#B3261E}.ntb td .mnt.lj{color:#C2410C}.ntb td .mnt.ep{color:#64748B;font-weight:500}
+.ntb td .cob.vd{background:transparent;color:var(--ink2);font-weight:500}.ntb td .cob.vd::before{display:none}
+.nSel{font:inherit;font-size:12.5px;cursor:pointer;padding-right:28px;appearance:none;-webkit-appearance:none;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%2364748B' fill='none' stroke-width='1.5'/%3E%3C/svg%3E") no-repeat right 11px center}.nSel.on{border-color:var(--navy);color:var(--navy);font-weight:600;background:#EEF2F8 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%2364748B' fill='none' stroke-width='1.5'/%3E%3C/svg%3E") no-repeat right 11px center}.nSel option{background:#fff;color:var(--ink)}
 .ntb td .cob::before{content:'';display:inline-block;width:7px;height:7px;border-radius:50%;background:currentColor;margin-right:5px;vertical-align:1px}
 .mgx{display:inline-flex;align-items:center;gap:6px;margin-left:8px}.mgx input{width:52px;height:26px;text-align:right;border:1px solid var(--line);border-radius:6px;padding:0 6px;font:inherit}
 .est5 .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:6px 0 14px}
@@ -3190,7 +3198,6 @@ try{const _tn452=telaNecessidade;telaNecessidade=async function(){
   try{const L=necLinhas();const byK=new Map(L.map(l=>[l.k,l]));
     document.querySelectorAll('.ntb2 tr[data-nl]').forEach(tr=>{const l=byK.get(tr.dataset.nl);if(!l)return;const sp=tr.querySelector('.cob');if(!sp)return;
       const td=sp.parentNode;let h='';
-      if(l.minSit==='abaixo')h+=`<span class="mnt vm">abaixo do mínimo</span>`;else if(l.minSit==='perto')h+=`<span class="mnt lj">perto do mínimo · aproveite</span>`;
       if(l.entradas>0&&(l.minSit||corCob(l)!=='vd'))h+=`<span class="mnt ep">entrada prevista ${necFmt(l.entradas)}</span>`;
       if(h)td.insertAdjacentHTML('beforeend',h);});
     /* o card de cobertura curta vira o do mínimo */
