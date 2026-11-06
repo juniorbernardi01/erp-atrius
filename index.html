@@ -5508,7 +5508,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v501';const VERSAO_DATA='04/11/2026';
+const VERSAO_APP='v502';const VERSAO_DATA='06/11/2026';
 /* número que aparece na tela: v438 → v4.3.8 (por dentro continua v438, que é o que as versões comparam) */
 const csRotVer=v=>{const d=String(v||'').replace(/\D/g,'');return d.length>=3?'v'+d.slice(0,-2)+'.'+d.slice(-2,-1)+'.'+d.slice(-1):String(v||'');};
 const VERSAO_ROTULO=csRotVer(VERSAO_APP)+' · '+VERSAO_DATA;
@@ -38736,6 +38736,462 @@ setTimeout(csCustos496,16000);setTimeout(csCustos496,38000);
   window.addEventListener('storage',ev=>{try{if(ev.key===SUPA_SESSAO&&ev.newValue&&document.getElementById('tvRecon')){SESSAO=JSON.parse(ev.newValue);guarda();location.reload();}}catch(e){}});
   /* a tela de login já estava aberta quando este bloco carregou */
   setTimeout(()=>{try{const l=document.getElementById('login');if(l&&!l.hidden)telaLogin('');}catch(e){}},500);
+})();
+
+</script>
+<script data-v502="kit">
+/* v5.0.2 · OP DE KIT (montagem dos kits do Uruguai)
+   O kit junta produtos que já foram envasados e estão no estoque (ex.: UY AMACIANTE AZUL 2L + UY LAVA ROUPAS PREMIUM 2L),
+   um de cada num pacote (saco + etiqueta), 4 pacotes por caixa.
+   · Abre no mesmo "+ Nova OP" (Ordens de produção e Envase e tanques): no alto, Envase | Kit.
+   · Não entra na fila das máquinas: fica só na lista das Ordens de produção, com o marcador KIT.
+   · Escolhe o lote de cada produto num dropdown (lote · unidades disponíveis · quantas caixas dá); dá para juntar dois lotes.
+   · A OP de envase de cada lote ganha no histórico "Vinculado ao kit"; na lista, o kit aparece embaixo dela (mãe → filha → kit).
+   · Concluir: entra o kit na Quarentena (como o envase), saem os produtos dos lotes escolhidos e as embalagens.
+   Gravação: estado.kitOps = [{id,num,kit:true,codigo,data,operador,cx,lotes:[{sku,opId,lote,q}],status,log,...}]. */
+(function(){
+  const KOPS=window.CS_KIT_OPS=[];
+  const KP=()=>PRODUTOS.filter(p=>p.kit||(Array.isArray(p.ficha)&&p.ficha.some(f=>f.comp==='Produto')));
+  const ehKitProd=p=>!!(p&&(p.kit||(Array.isArray(p.ficha)&&p.ficha.some(f=>f.comp==='Produto'))));
+  const insP=sku=>(typeof INSUMOS!=='undefined'?INSUMOS:[]).find(i=>i.sku===sku);
+  const r3=v=>Math.round((+v||0)*1000)/1000;
+  const num4=n=>String(n||'').padStart(4,'0');
+  const hoje=()=>ymd(new Date());
+  const nq3=v=>(+v||0).toLocaleString('pt-BR',{maximumFractionDigits:+v<1?3:0});
+  const e_=s=>escAttr(String(s==null?'':s));
+  /* ---------- gravação junto do estado ---------- */
+  try{const _ea=estadoAtual;estadoAtual=function(){const s=_ea.apply(this,arguments);
+    if(typeof s!=='string'||s[s.length-1]!=='}')return s;return s.slice(0,-1)+',"kitOps":'+JSON.stringify(KOPS)+'}';};}catch(e){}
+  try{const _ap=aplicarEstado;aplicarEstado=function(txt){const r=_ap.apply(this,arguments);
+    try{const d=JSON.parse(txt);KOPS.length=0;(Array.isArray(d.kitOps)?d.kitOps:[]).forEach(k=>KOPS.push(k));}catch(e){}return r;};}catch(e){}
+  /* ---------- cadastro dos kits (uma vez) ---------- */
+  const FICHA=sku=>[{comp:'Produto',sku,nome:(prodOf(sku)||{}).descricao||sku,qtd:1},{comp:'Produto',sku:'UY614',nome:'UY LAVA ROUPAS PREMIUM 2L',qtd:1},
+    {comp:'Saco',sku:'CX0010',nome:'SACO KIT UY - EMB PLAST. 29X40X0,06 VIRGEM',qtd:1},{comp:'Etiqueta',sku:'ROT-1252',nome:'ETIQUETA PROMO URUGUAI',qtd:1},
+    {comp:'Caixa',sku:'CX013',nome:'CAIXA KIT UY 11',qtd:0.25},{comp:'Fita',sku:'CX-144',nome:'FITA ADESIVA ACRÍLICA INC 48 X 1200',qtd:0.000208}];
+  function cadastraKits(){try{
+    if(typeof CS_MIGRA!=='undefined'&&CS_MIGRA.includes('kit502'))return;
+    let n=0;[['UY01','KIT ROUPAS 2L - AZUL / PREMIUM - C/ 4UN','700445998','UY803'],['UY02','KIT ROUPAS 2L - ROXO / PREMIUM - C/ 4UN','700446106','UY804']].forEach(([c,d,t,am])=>{
+      if(PRODUTOS.some(p=>String(p.codigo)===c))return;
+      PRODUTOS.push({codigo:c,descricao:d,tanque:'',litragem:2,un_cx:4,grupo:'Kits',cgrupo:'pa',ativo:true,tiny:t,kit:true,obtem:{p:true},ficha:FICHA(am)});n++;});
+    if(!FUNCOES.some(f=>/kit/i.test(f))){FUNCOES.push('Operador de kit');n++;}
+    if(typeof CS_MIGRA!=='undefined')CS_MIGRA.push('kit502');if(n)agendarSalvar();}catch(e){console.warn('[kit502] cadastro',e);}}
+  /* ---------- lotes disponíveis de um produto ---------- */
+  function usado(opId,sku,menos){return KOPS.filter(k=>k.status!=='cancelada'&&k!==menos).reduce((s,k)=>s+(k.lotes||[]).filter(l=>l.opId===opId&&l.sku===sku).reduce((a,l)=>a+(+l.q||0),0),0);}
+  function lotesDe(sku,menos){const p=prodOf(sku);const uc=(p&&+p.un_cx)||1;
+    return ORDENS.filter(o=>String(o.codigo)===String(sku)&&sit(o)==='concluida'&&!o.excluida&&o.status!=='cancelada'&&+o.caixas>0)
+      .map(o=>{const prod=(+o.caixas||0)*uc;const u=usado(o.id,sku,menos);return {opId:o.id,lote:String(o.lote||''),op:num4(o.opNum),d:o.data,prod,disp:r3(prod-u)};})
+      .filter(l=>l.disp>0).sort((a,b)=>String(a.d).localeCompare(String(b.d))||a.lote.localeCompare(b.lote));}
+  const comps=p=>(p.ficha||[]).filter(f=>f.comp==='Produto');
+  const embs=p=>(p.ficha||[]).filter(f=>f.comp!=='Produto');
+  const salItem=sku=>{const i=insP(sku)||prodOf(sku);const t=i?tinyDe(i):'';return t&&ESTOQUE[t]!=null?+ESTOQUE[t]:0;};
+  /* ---------- tela: Envase | Kit no alto da Nova OP ---------- */
+  let KS=null;   /* estado do formulário de kit */
+  function seg(on){return `<div class="adabas cskTipo" style="margin:0 0 14px"><button class="adaba ${on==='env'?'on':''}" data-ktp="env">Envase</button><button class="adaba ${on==='kit'?'on':''}" data-ktp="kit">Kit</button></div>`;}
+  function poeSeg(){try{const b=M('mB');if(!b||b.querySelector('.cskTipo'))return;b.insertAdjacentHTML('afterbegin',seg('env'));
+    b.querySelector('[data-ktp="kit"]').onclick=()=>kitModal(null);}catch(e){}}
+  try{const _fm=fecharModal;fecharModal=function(){try{M('modal').classList.remove('cskWide');}catch(e){}return _fm.apply(this,arguments);};}catch(e){}
+  try{const _ao=abrirOrdem;abrirOrdem=function(o,pre){try{M('modal').classList.remove('cskWide');}catch(e){}if(o&&o.kit)return kitModal(o);KS=null;const r=_ao.apply(this,arguments);tiraKitsEnvase();try{if(!o&&!(pre&&pre.saldoId)){M('mSub').hidden=false;M('mSub').innerHTML=`Nº da OP <b>${num4(PROX_OP)}</b>`;}}catch(e){}return r;};}catch(e){}
+  /* o kit não é produto de envase: sai da lista de produtos da OP de envase */
+  function tiraKitsEnvase(){try{const cods=new Set(KP().map(p=>String(p.codigo)));const limpa=()=>{
+      const s=M('fPr');if(s)s.querySelectorAll('option').forEach(op=>{if(cods.has(op.value)&&op.value!==s.dataset.cskAtual)op.remove();});
+      const d=M('fSkuList');if(d)d.querySelectorAll('option').forEach(op=>{if([...cods].some(c=>String(op.value).startsWith(c+' ')||op.value===c))op.remove();});};
+    limpa();const s=M('fPr');if(s&&!s._cskOb){s._cskOb=new MutationObserver(()=>{s._cskOb.disconnect();limpa();s._cskOb.observe(s,{childList:true,subtree:true});});s._cskOb.observe(s,{childList:true,subtree:true});}}catch(e){}}
+  function novoKS(k){const p=k?prodOf(k.codigo):KP()[0];
+    const s={k,codigo:p?p.codigo:'',cx:k?k.cx:null,auto:!k,data:k?k.data:hoje(),operador:k?k.operador||'':'',rows:{},man:{}};
+    if(k)(k.lotes||[]).forEach(l=>{(s.rows[l.sku]=s.rows[l.sku]||[]).push({opId:l.opId,q:+l.q||0,man:true});});return s;}
+  const usadoNo=(k,opId,sku)=>(k.lotes||[]).filter(l=>l.opId===opId&&l.sku===sku).reduce((a,l)=>a+(+l.q||0),0);
+  /* lotes do produto: o mais antigo em cima; disponível já conta o que esta OP usa (na edição) */
+  function lotesK(s,sku){const ls=lotesDe(sku,s.k).map(l=>({...l,disp:r3(l.disp+(s.k?usadoNo(s.k,l.opId,sku):0))}));
+    if(s.k)(s.k.lotes||[]).filter(l=>l.sku===sku&&!ls.some(x=>x.opId===l.opId)).forEach(l=>{const o=ORDENS.find(x=>x.id===l.opId)||{};ls.push({opId:l.opId,lote:l.lote,op:num4(o.opNum),d:o.data||'',disp:r3(usadoNo(s.k,l.opId,sku))});});
+    return ls.sort((a,b)=>String(a.d).localeCompare(String(b.d))||String(a.lote).localeCompare(String(b.lote)));}
+  /* preenche do lote mais antigo para o mais novo */
+  /* sugere: primeira linha = lote mais antigo; quantidades do mais antigo para o mais novo */
+  function autoUsa(s,p,sku,prec){const ls=lotesK(s,sku);let rows=s.rows[sku];
+    if(!rows||!rows.length){rows=ls.length?[{opId:ls[0].opId,q:0}]:[];}
+    let rest=prec;rows.forEach(r=>{const l=ls.find(x=>x.opId===r.opId);const d=l?l.disp:0;const q=r.man?Math.max(0,Math.min(+r.q||0,d)):Math.max(0,Math.min(d,rest));r.q=r3(q);rest-=q;});
+    s.rows[sku]=rows;}
+  function plano(s){const p=prodOf(s.codigo);if(!p)return [];const out=[];
+    comps(p).forEach(c=>{const ls=lotesK(s,c.sku);(s.rows[c.sku]||[]).forEach(r=>{const l=ls.find(x=>x.opId===r.opId);if(l&&+r.q>0)out.push({sku:c.sku,opId:l.opId,lote:l.lote,q:r3(+r.q)});});});return out;}
+  function maxCx(s){const p=prodOf(s.codigo);if(!p)return 0;const uc=+p.un_cx||1;
+    const v=comps(p).map(c=>Math.floor(lotesK(s,c.sku).reduce((a,l)=>a+l.disp,0)/(uc*(+c.qtd||1))));return v.length?Math.min(...v):0;}
+  function kitModal(k){
+    if(!KS||KS.k!==k)KS=novoKS(k);const s=KS;
+    try{M('modal').classList.remove('cskWide');}catch(e){}
+    const kits=KP();const p=prodOf(s.codigo);const fim=k&&!['aberta'].includes(k.status);const dis=fim?'disabled':'';
+    const uc=p?(+p.un_cx||1):4;const mx=p?maxCx(s):0;
+    if(p&&!fim)comps(p).forEach(c=>{if(!s.rows[c.sku]||!s.rows[c.sku].length){const ls=lotesK(s,c.sku);s.rows[c.sku]=ls.length?[{opId:ls[0].opId,q:0}]:[];}});
+    /* caixas sugeridas: o que dá com os lotes escolhidos */
+    if(s.auto&&p){const v=comps(p).map(c=>{const ls=lotesK(s,c.sku);return Math.floor((s.rows[c.sku]||[]).reduce((a,r)=>{const l=ls.find(x=>x.opId===r.opId);return a+(l?l.disp:0);},0)/(uc*(+c.qtd||1)));});s.cx=v.length?Math.min(...v):0;}
+    const cx=+s.cx||0;
+    if(p&&!fim)comps(p).forEach(c=>autoUsa(s,p,c.sku,cx*uc*(+c.qtd||1)));
+    if(M('mAcao'))M('mAcao').innerHTML='';M('modal').classList.add('wide');
+    M('mTit').textContent=k?`OP ${num4(k.num)} · kit`:'Nova OP de kit';
+    M('mSub').hidden=false;M('mSub').innerHTML=`Nº da OP <b>${k?num4(k.num):num4(PROX_OP)}</b>${k?` · ${selo(k)}`:''}`;
+    let falta=false;
+    const blocoLotes=!p?'<div class="alert">Nenhum kit cadastrado.</div>':comps(p).map(c=>{const prec=cx*uc*(+c.qtd||1);const ls=lotesK(s,c.sku);const rows=s.rows[c.sku]||[];
+      const tem=r3(rows.reduce((a,r)=>a+(+r.q||0),0));if(Math.abs(tem-prec)>1e-6||!rows.length)falta=true;
+      const pc=prodOf(c.sku);const nome=(pc&&pc.descricao)||c.nome||c.sku;const por=uc*(+c.qtd||1);
+      const st=tem===prec&&rows.length?`<span class="cskOk">✓ ${nf(tem)} de ${nf(prec)} un</span>`:tem<prec?`<span class="cskNo">faltam ${nf(r3(prec-tem))} un</span>`:`<span class="cskNo">${nf(r3(tem-prec))} un a mais</span>`;
+      let acum=0;const linha=(r,idx)=>{const l=ls.find(x=>x.opId===r.opId);const exc=l&&+r.q>l.disp+1e-9;acum=r3(acum+(+r.q||0));const fal=r3(prec-acum);
+        return `<div class="cskLt on"><select class="cskSl" data-kls="${e_(c.sku)}|${idx}" ${dis}>${ls.filter(x=>x.opId===r.opId||!rows.some((y,j)=>j!==idx&&y.opId===x.opId)).map(x=>`<option value="${e_(x.opId)}" ${x.opId===r.opId?'selected':''}>${dCurto(x.d)} · Lote ${e_(x.lote)} — ${nf(x.disp)} un</option>`).join('')}</select>
+          <span class="cskCx">${l?`dá ${nf(Math.floor(l.disp/por))} cx`:''}</span><span class="cskLu">usar</span>
+          <input type="number" min="0" step="1" class="cskLq ${exc?'erro':''}" data-klq="${e_(c.sku)}|${idx}" value="${+r.q||''}" placeholder="0" ${dis}><span class="cskUn">un</span>
+          ${idx&&!fim?`<button type="button" class="cskRm" data-krm="${e_(c.sku)}|${idx}" title="tirar este lote">✕</button>`:'<span></span>'}
+          <div class="cskAc">soma <b>${nf(acum)}</b> de ${nf(prec)} un${fal>0?` · <span class="cskNo">faltam ${nf(fal)} un (${nf(Math.ceil(fal/por))} cx)</span>`:' · <span class="cskOk">fechou ✓</span>'}${l&&+r.q<l.disp-1e-9&&+r.q>0?` · sobram ${nf(r3(l.disp-r.q))} un no lote ${e_(l.lote)}`:''}</div></div>`;};
+      const livres=ls.filter(l=>!rows.some(r=>r.opId===l.opId));
+      return `<div class="cskP"><div class="cskPt"><b>${e_(nome)}</b><small>${e_(c.sku)}</small><span>precisa <b>${nf(prec)} un</b> · ${st}</span></div>
+        ${ls.length?rows.map(linha).join('')+(!fim?`<div style="display:flex;align-items:center;gap:10px;margin-top:8px"><button type="button" class="btn sm ${tem<prec&&livres.length?'cskFalta':''}" data-kadd="${e_(c.sku)}" ${livres.length?'':'disabled'}>＋ outro lote${tem<prec&&livres.length?` · faltam ${nf(r3(prec-tem))} un`:''}</button>${livres.length?'':`<span class="hint" style="font-size:11.5px;color:var(--ink3)">${tem<prec?'não há mais lotes: diminua as caixas':'não há outro lote deste produto'}</span>`}</div>`:'')
+          :'<div class="hint cskNo">Nenhum lote deste produto disponível. Faça primeiro a OP de envase dele (o envase vai para a quarentena e o kit pega de lá).</div>'}</div>`;}).join('');
+    const blocoEmb=!p?'':`<table class="tb cskE"><thead><tr><th>Item</th><th class="n">Por caixa</th><th class="n">Precisa</th><th class="n">Estoque</th><th></th></tr></thead><tbody>${embs(p).map(f=>{const i=insP(f.sku);const pr=r3(cx*uc*(+f.qtd||0));const sl=salItem(f.sku);const fl=pr>sl+1e-9;
+      return `<tr><td><b>${e_((i&&i.nome)||f.nome)}</b> <small style="color:var(--ink3)">${e_(f.sku)}</small></td><td class="n">${nq3(r3(uc*(+f.qtd||0)))}</td><td class="n">${nq3(pr)}</td><td class="n">${nf(sl)}</td><td class="n ${fl?'cskNo':'cskOk'}" style="font-weight:600">${fl?'falta '+nf(r3(pr-sl)):'tem'}</td></tr>`;}).join('')}</tbody></table>`;
+    const ops=(typeof OPERADORES!=='undefined'?OPERADORES:[]).filter(x=>x.ativo!==false&&/kit/i.test(String(x.funcao||x.papel||'')));
+    M('mB').innerHTML=`
+      ${k&&k.status==='concluida'?`<div class="alert ok">Concluída${k.fimEm?' em '+e_(k.fimEm):''} · <b>${nf(k.feitas)} caixas</b> montadas de ${nf(k.cx)}.</div>`:''}
+      <div class="g4">
+        <div class="fld" style="grid-column:span 2"><label>Kit <b>*</b></label><select id="kKit" ${k?'disabled':''}>${kits.map(x=>`<option value="${e_(x.codigo)}" ${x.codigo===s.codigo?'selected':''}>${e_(x.codigo)} · ${e_(x.descricao)}</option>`).join('')}</select></div>
+        <div class="fld"><label>Caixas <b>*</b></label><input type="number" id="kCx" min="1" step="1" value="${cx||''}" ${dis}><div class="hint" style="font-size:11.5px;color:var(--ink3);margin-top:4px">vai ${nf(cx*uc)} pacotes · dá até ${nf(mx)} cx</div></div>
+        <div class="fld"><label>Data <b>*</b></label><input type="date" id="kDt" value="${e_(s.data)}" ${dis}></div>
+      </div>
+      <div class="g4"><div class="fld" style="grid-column:span 2"><label>Operador</label><select id="kOp" ${dis}><option value="">${ops.length?'Selecione…':'nenhum operador de kit cadastrado'}</option>${ops.map(x=>`<option value="${e_(x.nome)}" ${x.nome===s.operador?'selected':''}>${e_(x.nome)}</option>`).join('')}</select></div></div>
+      ${ops.length?'':'<div class="hint" style="font-size:11.5px;color:#B45309;margin:-6px 0 10px">Nenhum operador de kit: cadastre em Configurações › Pessoas e permissões › Operadores, com a função <b>Operador de kit</b>.</div>'}
+      <div class="st2" style="margin-top:0">Lotes dos produtos <span style="text-transform:none;letter-spacing:0;font-weight:500;color:var(--ink3)">· cada pacote leva ${p?comps(p).map(c=>'1 '+e_(((prodOf(c.sku)||{}).descricao||c.sku).replace(/^UY\s+/i,'').replace(/\s*\d+L\b.*$/i,'').toLowerCase())).join(' + '):''}</span></div>${blocoLotes}
+      <div class="st2">Embalagens</div>${blocoEmb}`;
+    M('mF').innerHTML=`<div style="flex:1"></div><button class="btn" id="kX">Fechar</button>${k?'<button class="btn" id="kPdf">PDF da OP</button>':''}${fim?'':`<button class="btn pri" id="kOk" ${falta||!cx?'disabled':''}>${k?'Salvar':'Lançar OP'}</button>`}`;
+    const rd=()=>kitModal(k);
+    if(M('kKit'))M('kKit').onchange=e=>{s.codigo=e.target.value;s.rows={};s.man={};s.auto=true;rd();};
+    if(M('kCx'))M('kCx').onchange=e=>{s.cx=Math.max(0,Math.floor(+e.target.value||0));s.auto=false;Object.values(s.rows).forEach(rs=>rs.forEach(r=>r.man=false));rd();};
+    if(M('kDt'))M('kDt').onchange=e=>{s.data=e.target.value;};
+    if(M('kOp'))M('kOp').onchange=e=>{s.operador=e.target.value;};
+    M('mB').querySelectorAll('[data-klq]').forEach(x=>x.onchange=()=>{const [sk,i]=x.dataset.klq.split('|');const r=s.rows[sk][+i];if(x.value===''){r.man=false;}else{r.q=Math.max(0,+x.value||0);r.man=true;}s.auto=false;rd();});
+    M('mB').querySelectorAll('[data-kls]').forEach(x=>x.onchange=()=>{const [sk,i]=x.dataset.kls.split('|');const r=s.rows[sk][+i];r.opId=x.value;r.man=false;rd();});
+    M('mB').querySelectorAll('[data-kadd]').forEach(x=>x.onclick=()=>{const sk=x.dataset.kadd;const ls=lotesK(s,sk);const rows=s.rows[sk]=s.rows[sk]||[];const l=ls.find(y=>!rows.some(r=>r.opId===y.opId));if(!l)return;rows.push({opId:l.opId,q:0});rd();});
+    M('mB').querySelectorAll('[data-krm]').forEach(x=>x.onclick=()=>{const [sk,i]=x.dataset.krm.split('|');s.rows[sk].splice(+i,1);rd();});
+    
+    M('kX').onclick=()=>{KS=null;if(VOLTA)kitsModal();else fecharModal();};
+    if(M('kPdf'))M('kPdf').onclick=()=>imprimirKit(k);
+    if(M('kOk'))M('kOk').onclick=()=>salvaKit(s);
+    try{if(!M('mask').classList.contains('on'))abrirMask();}catch(e){}
+  }
+  function salvaKit(s){
+    const p=prodOf(s.codigo);if(!p)return toast('Escolha o kit.',true);
+    const cx=+s.cx||0;if(!(cx>0))return toast('Digite as caixas.',true);
+    const pl=plano(s);const uc=+p.un_cx||1;
+    for(const c of comps(p)){const tem=r3(pl.filter(x=>x.sku===c.sku).reduce((a,x)=>a+x.q,0)),prec=cx*uc*(+c.qtd||1);
+      if(Math.abs(tem-prec)>1e-6)return toast(`${(prodOf(c.sku)||{}).descricao||c.sku}: os lotes somam ${nf(tem)} un e precisa ${nf(prec)}.`,true);
+      for(const r of (s.rows[c.sku]||[])){const l=lotesK(s,c.sku).find(x=>x.opId===r.opId);if(l&&+r.q>l.disp+1e-9)return toast(`Lote ${l.lote} só tem ${nf(l.disp)} un.`,true);}}
+    const faltaE=embs(p).filter(f=>r3(cx*uc*(+f.qtd||0))>salItem(f.sku)+1e-9);
+    let k=s.k;const nova=!k;
+    const antes=k?JSON.parse(JSON.stringify(k.lotes||[])):[];
+    if(nova){k={id:uid(),num:novoNumeroOP(),kit:true,codigo:p.codigo,status:'aberta',log:[],criado:`${hoje()} ${relogio()}`,marcadores:['KIT']};KOPS.push(k);}
+    Object.assign(k,{data:s.data||hoje(),cx,operador:s.operador||'',lotes:pl});
+    const txt=pl.map(x=>`${x.sku} lote ${x.lote}: ${nf(x.q)} un`).join(' · ');
+    registrar(k,nova?'OP lançada':'OP editada',null,`${nf(cx)} cx · ${txt}${s.operador?' · operador '+s.operador:''}`);
+    /* o vínculo fica no histórico da OP de cada lote */
+    const ops=new Set([...pl.map(x=>x.opId),...antes.map(x=>x.opId)]);
+    ops.forEach(id=>{const o=ORDENS.find(x=>x.id===id);if(!o)return;const q=pl.filter(x=>x.opId===id).reduce((a,x)=>a+x.q,0),q0=antes.filter(x=>x.opId===id).reduce((a,x)=>a+x.q,0);
+      if(q===q0&&!nova)return;
+      registrar(o,q?'Vinculado ao kit':'Desvinculado do kit',null,`OP ${num4(k.num)} · ${p.descricao} · ${q?nf(q)+' un do lote '+(o.lote||'')+' vão para o kit':'saiu do kit'}`);});
+    agendarSalvar();KS=null;if(VOLTA)kitsModal();else fecharModal();
+    toast(`OP ${num4(k.num)} de kit ${nova?'lançada':'salva'}.${faltaE.length?' Atenção: falta '+faltaE.map(f=>(insP(f.sku)||{}).nome||f.sku).join(', ')+' no estoque.':''}`,!!faltaE.length);
+    try{if(S.page==='ordens')gradeOrdens();else render();}catch(e){}
+  }
+  /* ---------- concluir: lança o estoque ---------- */
+  function concluirKit(k){try{M('modal').classList.remove('cskWide');}catch(e){}
+    const p=prodOf(k.codigo);if(!p)return;const uc=+p.un_cx||1;
+    if(M('mAcao'))M('mAcao').innerHTML='';M('modal').classList.add('wide');
+    M('mTit').textContent=`Concluir OP ${num4(k.num)} · kit`;M('mSub').hidden=true;
+    const mq=(typeof MOTIVOS!=='undefined'?MOTIVOS:[]).filter(m=>m.ativo!==false&&(m.etapas||[]).some(e=>e==='quebra'||e==='interrupcao'));
+    const st={f:k.cx,sel:{},q:{},m:{}};
+    const des=()=>{const f=st.f;const dif=Math.max(0,k.cx-f);
+      M('mB').innerHTML=`<div class="g4">
+          <div class="fld"><label>Caixas previstas</label><div class="cxbox" style="justify-content:flex-end;font-weight:700">${nf(k.cx)} cx</div></div>
+          <div class="fld"><label>Caixas realizadas <b>*</b></label><input type="number" id="kcF" min="0" max="${k.cx}" step="1" value="${f}"></div>
+          <div class="fld" style="grid-column:span 2"><label>PIN de quem montou <b>*</b></label><input id="kcPin" placeholder="••••" autocomplete="off" value="${e_(st.pin||'')}"><div class="hint" id="kcPinD" style="font-size:11.5px;color:var(--ink3);margin-top:4px">${e_(k.operador?'operador da OP: '+k.operador:'')}</div></div></div>
+        ${dif?`<div class="st2" style="margin-top:4px">Faltaram ${nf(dif)} caixas · o que faltou?</div>
+          <div class="hint" style="font-size:12px;color:var(--ink3);margin:-4px 0 8px">Marque o produto que faltou ou estragou, quantas unidades e o motivo. O que não for marcado volta para o lote.</div>
+          ${comps(p).map(c=>{const pc=prodOf(c.sku);const on=!!st.sel[c.sku];const q=st.q[c.sku]!=null?st.q[c.sku]:dif*uc*(+c.qtd||1);
+            return `<div class="cskQb ${on?'on':''}"><label class="cskQc"><input type="checkbox" data-kqs="${e_(c.sku)}" ${on?'checked':''}><b>${e_((pc&&pc.descricao)||c.sku)}</b></label>
+              ${on?`<div class="fld" style="margin:0"><label>Unidades</label><input type="number" min="1" step="1" data-kqq="${e_(c.sku)}" value="${q}"></div>
+                <div class="fld" style="margin:0"><label>Motivo <b>*</b></label><select data-kqm="${e_(c.sku)}"><option value="">Selecione…</option>${mq.map(m=>`<option value="${e_(m.nome)}" ${st.m[c.sku]===m.nome?'selected':''}>${e_(m.nome)}</option>`).join('')}</select></div>`:''}</div>`;}).join('')}`:''}`;
+      M('kcF').onchange=e=>{st.f=Math.max(0,Math.min(k.cx,Math.floor(+e.target.value||0)));st.pin=M('kcPin').value;des();};
+      M('kcPin').oninput=e=>{st.pin=e.target.value;};
+      M('mB').querySelectorAll('[data-kqs]').forEach(x=>x.onchange=()=>{st.sel[x.dataset.kqs]=x.checked;st.pin=M('kcPin').value;des();});
+      M('mB').querySelectorAll('[data-kqq]').forEach(x=>x.onchange=()=>{st.q[x.dataset.kqq]=Math.max(0,+x.value||0);});
+      M('mB').querySelectorAll('[data-kqm]').forEach(x=>x.onchange=()=>{st.m[x.dataset.kqm]=x.value;});};
+    des();
+    const mov=()=>{const f=st.f;const dif=Math.max(0,k.cx-f);const qs={},mots={};
+      if(dif)comps(p).forEach(c=>{if(st.sel[c.sku]){qs[c.sku]=+(st.q[c.sku]!=null?st.q[c.sku]:dif*uc*(+c.qtd||1))||0;mots[c.sku]=st.m[c.sku]||'';}});return {f,qs,mots};};
+    M('mF').innerHTML=`<div style="flex:1"></div><button class="btn" id="kcX">Cancelar</button><button class="btn pri" id="kcOk">Concluir e lançar estoque</button>`;
+    M('kcX').onclick=()=>{if(VOLTA)kitsModal();else fecharModal();};
+    M('kcOk').onclick=async()=>{const {f,qs,mots}=mov();if(!(f>0))return toast('Digite as caixas realizadas.',true);
+      if(f<k.cx){const sel=Object.keys(qs);if(!sel.length)return toast('Faltaram caixas: marque o produto que faltou e o motivo.',true);
+        for(const s2 of sel){if(!(qs[s2]>0))return toast('Digite as unidades do que faltou.',true);if(!mots[s2])return toast('Escolha o motivo de cada produto marcado.',true);}}
+      const quem=quemPorCredencial((M('kcPin').value||'').trim());if(!quem){M('kcPinD').innerHTML='<b style="color:var(--danger)">PIN ou senha não encontrados.</b>';return;}
+      /* o que sai de cada lote: na ordem escolhida */
+      const usa=[];comps(p).forEach(c=>{let rest=f*uc*(+c.qtd||1)+(qs[c.sku]||0);const ls=(k.lotes||[]).filter(l=>l.sku===c.sku);
+        ls.forEach((l,i)=>{if(rest<=0)return;const d=i===ls.length-1?rest:Math.min(rest,(lotesDe(c.sku,k).find(x=>x.opId===l.opId)||{disp:0}).disp+l.q);const q=r3(Math.min(rest,d));if(q>0){usa.push({...l,q});rest-=q;}});});
+      const movs=[];const tk=tinyDe(p);if(tk){if(ESTOQUE[tk]==null)ESTOQUE[tk]=0;movs.push({id:tk,tipo:'E',qtd:f});}
+      comps(p).forEach(c=>{const pc=prodOf(c.sku);const t=pc?tinyDe(pc):'';const q=usa.filter(x=>x.sku===c.sku).reduce((a,x)=>a+x.q,0);if(t&&q){if(ESTOQUE[t]==null)ESTOQUE[t]=0;movs.push({id:t,tipo:'S',qtd:r3(q)});}});
+      embs(p).forEach(e=>{const i=insP(e.sku);const t=i?tinyDe(i):'';const q=r3(f*uc*(+e.qtd||0));if(t&&q){if(ESTOQUE[t]==null)ESTOQUE[t]=0;movs.push({id:t,tipo:'S',qtd:q});}});
+      const chave=`kit|${k.id}|emb`;
+      enfileirar({chave,origem:`OP ${num4(k.num)}`,rotulo:'Montagem de kit',movs,obs:`OP ${num4(k.num)} · kit · lotes ${(k.lotes||[]).map(l=>l.lote).join(' + ')}`});
+      const it=await enviarDaFila(chave);
+      if(k.status==='pausa'){const pz=(k.pausas||[]).find(x=>!x.ate);if(pz)pz.ate=relogio();}
+      Object.assign(k,{status:'concluida',quemConcluiu:quem.nome,fimHora:relogio(),feitas:f,quebras:qs,motivos:mots,usados:usa,fimEm:`${dCurto(hoje())} ${relogio()}`,fimDia:hoje(),estoque:it&&it.estado==='enviado'?{em:`${hoje()} ${relogio()}`,itens:movs.length}:null});
+      registrar(k,'OP concluída',quem,`${nf(f)} de ${nf(k.cx)} cx${Object.values(qs).some(Boolean)?' · faltou '+Object.entries(qs).filter(([,v])=>v).map(([s,v])=>((prodOf(s)||{}).descricao||s)+' '+nf(v)+' un ('+(mots[s]||'')+')').join(', '):''}`);
+      registrar(k,'Estoque lançado no ERP',null,`${movs.length} movimentos · entrada ${nf(f)} cx na quarentena`);
+      new Set(usa.map(x=>x.opId)).forEach(id=>{const o=ORDENS.find(x=>x.id===id);if(o)registrar(o,'Kit concluído',null,`OP ${num4(k.num)} · usou ${nf(usa.filter(x=>x.opId===id).reduce((a,x)=>a+x.q,0))} un do lote ${o.lote||''}`);});
+      agendarSalvar();if(VOLTA)kitsModal();else fecharModal();toast(`OP ${num4(k.num)} concluída · estoque lançado.`);try{gradeOrdens();}catch(e){}try{csKitBar();}catch(e){}};
+    try{if(!M('mask').classList.contains('on'))abrirMask();}catch(e){}
+  }
+  function cancelarKit(k){
+    if(!confirm(`Cancelar a OP ${num4(k.num)} de kit? Os lotes voltam a ficar livres.`))return;
+    k.status='cancelada';registrar(k,'OP cancelada',null,'');
+    new Set((k.lotes||[]).map(l=>l.opId)).forEach(id=>{const o=ORDENS.find(x=>x.id===id);if(o)registrar(o,'Desvinculado do kit',null,`OP ${num4(k.num)} cancelada`);});
+    agendarSalvar();gradeOrdens();toast('OP de kit cancelada.');}
+  function estornarKit(k){
+    const it=naFila(`kit|${k.id}|emb`);if(!it||it.estado!=='enviado')return toast('Nada lançado para estornar.',true);
+    if(!confirm(`Estornar o estoque da OP ${num4(k.num)}? O kit sai da quarentena e os produtos e embalagens voltam.`))return;
+    const ch=`kit|${k.id}|estorno`;enfileirar({chave:ch,origem:`OP ${num4(k.num)}`,rotulo:'Estorno de kit',movs:it.movs.map(m=>({id:m.id,tipo:m.tipo==='E'?'S':'E',qtd:m.qtd})),obs:`ESTORNO OP ${num4(k.num)} · kit`});
+    enviarDaFila(ch).then(()=>{k.status='aberta';k.estoque=null;registrar(k,'Estoque estornado',null,'a OP voltou a ficar aberta');agendarSalvar();gradeOrdens();toast('Estorno lançado. A OP voltou a ficar aberta.');});}
+  /* ---------- PDF: mesmo padrão das OPs ---------- */
+  function imprimirKit(k){
+    const p=prodOf(k.codigo);if(!p)return;const uc=+p.un_cx||1;
+    const nome=String(p.descricao).replace(/\s*[-–]\s*C\/\s*\d+\s*UN$/i,'').toUpperCase();
+    const linhasP=(k.lotes||[]).map((l,i,a)=>{const pc=prodOf(l.sku);const seg=a.slice(0,i).some(x=>x.sku===l.sku);
+      return `<tr><td class="forte" style="font-size:15px">${escP(l.lote)}</td><td>${escP((pc&&pc.descricao)||l.sku)}${seg?' <span class="selo">completa com este lote</span>':''}</td><td>${escP(l.sku)}</td><td class="n forte">${nf(l.q)}</td><td class="c und">un</td><td class="c">${quadroG()}</td></tr>`;}).join('');
+    const linhasE=embs(p).map(f=>{const i=insP(f.sku);const q=r3(k.cx*uc*(+f.qtd||0));
+      return `<tr><td>${escP(f.comp)}</td><td>${escP((i&&i.nome)||f.nome)}</td><td>${escP(f.sku)}</td><td class="n forte">${nq3(q)}</td><td class="c und">${escP(i?unDoItem(i):'un')}</td><td class="c">${quadroG()}</td></tr>`;}).join('');
+    const corpo=`${cabecalhoOP(num4(k.num),nome,`CX C/ ${uc} KITS`,`SKU ${k.codigo}`,k.data,'')}
+      <div class="campos c2">${campo('Caixas',nf(k.cx)+' cx',true)}${campo('Pacotes',nf(k.cx*uc)+' · 1 de cada produto por pacote')}</div>
+      <h2>Produtos a separar</h2>
+      <table><thead><tr><th style="width:70px">Lote</th><th>Produto</th><th style="width:90px">SKU</th><th class="n" style="width:60px">Total</th><th class="c" style="width:32px">Und</th><th class="c" style="width:56px">Separado</th></tr></thead><tbody>${linhasP}</tbody></table>
+      <h2>Embalagens a separar</h2>
+      <table><thead><tr><th style="width:62px">Componente</th><th>Item</th><th style="width:96px">SKU</th><th class="n" style="width:52px">Total</th><th class="c" style="width:32px">Und</th><th class="c" style="width:56px">Separado</th></tr></thead><tbody>${linhasE}</tbody></table>
+      <h2>Apontamento</h2>
+      <div class="apo a4"><div class="b"><div class="k">Início</div></div><div class="b"><div class="k">Fim</div></div><div class="b"><div class="k">Pausas</div></div><div class="b"><div class="k">Data</div></div></div>
+      <div class="apo" style="grid-template-columns:1fr"><div class="b"><div class="k">Operador</div>${k.operador?`<div class="pre">${escP(k.operador)}</div>`:''}</div></div>
+      <div class="qtd"><div><div class="k">Quantidade prevista</div><div class="v">${nf(k.cx)} cx <small>· ${nf(k.cx*uc)} kits</small></div></div><div><div class="k">Caixas montadas</div></div><div><div class="k">Quebra</div></div></div>
+      ${linhaLivre('Problemas — o que atrasou, o que quebrou, o que faltou',3)}
+      ${linhaLivre('Observações',2)}
+      ${assinar2('Operador','Gestor ou supervisor')}
+      ${rodapeOP(`OP ${num4(k.num)} · kit · lotes ${(k.lotes||[]).map(l=>l.lote).join(' + ')} · ${nome}`)}`;
+    csFolhaModal({titulo:'OP de kit',sub:`${p.descricao} · ${nf(k.cx)} cx`,arquivo:`OP ${num4(k.num)} - kit`,html:folha('Ordem de produção — Kit',num4(k.num),`lotes ${(k.lotes||[]).map(l=>l.lote).join(' + ')}`,corpo)});
+  }
+  /* histórico completo: o do kit e, de cada lote usado, o do tanque e do envase (o mesmo histórico da OP) */
+  function historicoKit(k){try{M('modal').classList.remove('cskWide');}catch(e){}
+    const p=prodOf(k.codigo)||{};const rows=[];
+    (k.log||[]).forEach(l=>rows.push({...l,onde:`Kit · OP ${num4(k.num)}`,c:'k'}));
+    const vistos=new Set();
+    (k.lotes||[]).forEach(l=>{if(vistos.has(l.opId))return;vistos.add(l.opId);const o=ORDENS.find(x=>x.id===l.opId);if(!o)return;
+      const nm=((prodOf(o.codigo)||{}).descricao||o.codigo);
+      (o.log||[]).forEach(x=>rows.push({...x,onde:`${/tanque|lote liberado|preparo|limpeza|enchimento|análise|analise|formula/i.test(String(x.e)+' '+String(x.m||''))?'Tanque':'Envase'} · lote ${o.lote||''}`,sub:nm,c:'e'}));});
+    rows.sort((a,b)=>String(b.d||'').localeCompare(String(a.d||''))||String(b.t||'').localeCompare(String(a.t||'')));
+    if(M('mAcao'))M('mAcao').innerHTML='';M('modal').classList.add('wide');M('mTit').textContent=`Histórico · OP ${num4(k.num)} · kit`;M('mSub').hidden=false;
+    M('mSub').innerHTML=`${e_(p.descricao||k.codigo)} · lotes ${(k.lotes||[]).map(l=>e_(l.lote)).join(' + ')} · do tanque ao kit`;
+    M('mB').innerHTML=`<div class="rolx" style="max-height:62vh"><table class="tb"><thead><tr><th>Quando</th><th>Onde</th><th>O quê</th><th>Detalhe</th><th>Quem</th></tr></thead><tbody>${rows.map(l=>`<tr${l.c==='k'?' style="background:#FFFBF5"':''}><td class="m" style="white-space:nowrap">${dCurto(l.d)} ${e_(l.t)}</td><td style="white-space:nowrap"><b style="color:${l.c==='k'?'#B45309':'var(--ink2)'}">${e_(l.onde)}</b>${l.sub?`<br><small style="color:var(--ink3)">${e_(l.sub)}</small>`:''}</td><td><b>${e_(l.e)}</b></td><td>${e_(l.m||'')}</td><td>${e_(l.op||'')}</td></tr>`).join('')}</tbody></table></div>`;
+    M('mF').innerHTML='<div style="flex:1"></div><button class="btn" id="khX">Fechar</button>';M('khX').onclick=()=>{if(VOLTA)kitsModal();else fecharModal();};abrirMask();}
+  /* ---------- iniciar / pausar / retomar, com PIN ---------- */
+  function passoKit(k,a){try{M('modal').classList.remove('cskWide');}catch(e){}
+    const tit={ini:'Iniciar',pau:'Pausar',ret:'Retomar'}[a];
+    if(M('mAcao'))M('mAcao').innerHTML='';M('modal').classList.remove('wide');M('mTit').textContent=`${tit} · OP ${num4(k.num)} · kit`;M('mSub').hidden=true;
+    M('mB').innerHTML=`<div class="alert blue">${e_((prodOf(k.codigo)||{}).descricao||k.codigo)} · ${nf(k.cx)} cx · lotes ${(k.lotes||[]).map(l=>e_(l.lote)).join(' + ')}</div>
+      ${a==='pau'?`<div class="fld"><label>Motivo da pausa <b>*</b></label><select id="kpM"><option value="">Selecione…</option>${(()=>{const l=(typeof MOTIVOS!=='undefined'?MOTIVOS:[]).filter(m=>m.ativo!==false&&(m.etapas||[]).includes('interrupcao')).map(m=>m.nome);return (l.length?l:['Falta de embalagem','Falta de produto','Intervalo']).map(x=>`<option>${e_(x)}</option>`).join('');})()}</select></div>`:''}
+      <div class="fld"><label>PIN de quem está fazendo <b>*</b></label><input id="kpP" placeholder="••••" autocomplete="off"><div class="hint" id="kpD" style="font-size:12px;color:var(--ink3);margin-top:6px">PIN do operador de kit.</div></div>`;
+    M('mF').innerHTML=`<div style="flex:1"></div><button class="btn" id="kpX">Voltar</button><button class="btn pri" id="kpOk">${tit}</button>`;
+    M('kpX').onclick=()=>{if(VOLTA)kitsModal();else fecharModal();};
+    M('kpOk').onclick=()=>{const q=quemPorCredencial((M('kpP').value||'').trim());if(!q){M('kpD').innerHTML='<b style="color:var(--danger)">PIN ou senha não encontrados.</b>';return;}
+      const h=relogio();
+      if(a==='ini'){k.status='producao';k.iniHora=h;k.iniDia=hoje();if(!k.operador)k.operador=q.nome;registrar(k,'Montagem iniciada',q,h);}
+      else if(a==='pau'){const mv=M('kpM').value;if(!mv)return toast('Escolha o motivo.',true);k.status='pausa';(k.pausas=k.pausas||[]).push({de:h,motivo:mv,quem:q.nome});registrar(k,'Pausa',q,mv);}
+      else{k.status='producao';const pz=(k.pausas||[]).find(x=>!x.ate);if(pz)pz.ate=h;registrar(k,'Retomada',q,h);}
+      agendarSalvar();if(VOLTA)kitsModal();else fecharModal();try{csKitBar();}catch(e){}try{if(S.page==='ordens')gradeOrdens();}catch(e){}};
+    try{if(!M('mask').classList.contains('on'))abrirMask();}catch(e){}
+    setTimeout(()=>{try{(M('kpM')||M('kpP')).focus();}catch(e){}},50);}
+  /* ---------- faixa KITS no Envase e tanques (abre e fecha, como a dos tanques) ---------- */
+  let KBAR_AB=false,KBAR_PG='';
+  function kitsDoDia(){const d=ymd(S.ref||new Date());
+    return KOPS.filter(k=>k.status!=='cancelada'&&(k.data===d||((k.status==='aberta'||k.status==='producao'||k.status==='pausa')&&k.data<=d)||(k.status==='concluida'&&(k.fimDia||'')===d)))
+      .sort((a,b)=>({producao:0,pausa:1,aberta:2,concluida:3})[a.status]-({producao:0,pausa:1,aberta:2,concluida:3})[b.status]||a.num-b.num);}
+  /* cartão no mesmo padrão dos cartões do envase */
+  function naQuar(k){try{const p=prodOf(k.codigo);const t=p?tinyDe(p):'';return +((CS_EDEP.sal.quar||{})[t]||0);}catch(e){return 0;}}
+  const curto=sku=>(((prodOf(sku)||{}).descricao||sku).replace(/^UY\s+/i,'').replace(/\s*\d+L\b.*$/i,''));
+  function lotesPorProd(k){const g={};(k.lotes||[]).forEach(l=>{(g[l.sku]=g[l.sku]||[]).push(l.lote);});
+    return Object.entries(g).map(([s,ls])=>`<b class="az" style="display:block;font-size:12.5px"><span style="color:var(--ink2);font-weight:600">${e_(curto(s))}</span> · ${ls.map(e_).join(' + ')}</b>`).join('');}
+  function cartaoKit(k){const p=prodOf(k.codigo)||{};const uc=+p.un_cx||4;
+    const C={aberta:['#64748B','PENDENTE · NÃO INICIADA'],producao:['#16A34A','MONTANDO'],pausa:['#D97706','PAUSADO'+(((k.pausas||[]).find(x=>!x.ate)||{}).motivo?' · '+String(((k.pausas||[]).find(x=>!x.ate)||{}).motivo).toUpperCase():'')],concluida:['#15803D','CONCLUÍDO']}[k.status]||['#64748B',String(k.status).toUpperCase()];
+    const pz=k.status==='pausa'?(k.pausas||[]).find(x=>!x.ate):null;
+    const qtd=k.status==='concluida'?k.feitas:k.cx;
+    const b1=k.status==='aberta'?`<button type="button" class="pr" data-kb="ini|${e_(k.id)}">▶ Iniciar montagem</button>`
+      :k.status==='concluida'?'':`<button type="button" class="pr fim" data-kb="fim|${e_(k.id)}">▶ Concluir montagem</button>`;
+    const b2=k.status==='producao'?`<button type="button" class="pa" data-kb="pau|${e_(k.id)}">PAUSAR</button>`:k.status==='pausa'?`<button type="button" class="pa" data-kb="ret|${e_(k.id)}">RETOMAR</button>`:k.status==='aberta'?`<button type="button" class="pa" data-kb="fim|${e_(k.id)}">CONCLUIR</button>`:'';
+    const lib=k.status==='concluida'&&naQuar(k)<=0;
+    const et=(cls,bo,n,s)=>`<div class="e ${cls}"><span class="bo">${bo}</span><b>${n}</b><i>${s}</i></div>`;
+    const ag='<i style="width:5px;height:5px;border-radius:9px;background:#fff;display:block"></i>';
+    const tr=k.status==='concluida'?et('ok','✓','Fechamento','concluído')+'<div class="se"></div>'+(lib?et('ok','✓','Quarentena','liberado')+'<div class="se"></div>'+et('ok','✓','Estoque','liberado'):et('ag',ag,'Quarentena','contagem')+'<div class="se"></div>'+et('pend','','Estoque','liberado'))
+      :et(k.status==='aberta'?'pend':'ag',k.status==='aberta'?'':ag,'Fechamento',k.status==='aberta'?'de kit':k.status==='pausa'?'pausado':'agora')+'<div class="se"></div>'+et('pend','','Quarentena','contagem')+'<div class="se"></div>'+et('pend','','Estoque','liberado');
+    return `<div class="bat cs5 ${k.status==='concluida'?'cs5c':'cs5v'} cskK" style="--c5:${C[0]}">
+      <div class="t5"><span class="sp"></span><span class="sl ch" style="background:${C[0]};border-color:${C[0]}">${C[1]}</span><button type="button" class="cs-pts" data-kitmenu="${e_(k.id)}" title="Mais ações">&#8943;</button></div>
+      <div class="c5" style="margin-top:-4px"><div class="d5" style="justify-content:space-between;width:100%">
+        <div class="n5" style="color:#B45309">${e_(p.descricao||k.codigo)}</div>
+        <div class="k5"><span><i>OP Nº</i><b class="az">${num4(k.num)}</b></span><span><i>${k.status==='concluida'?'MONTADO':'QTD PREVISTA'}</i><b>${nf(qtd)} cx <small style="font-weight:500;color:var(--ink3)">· ${nf(qtd*uc)} pacotes</small></b></span>
+          <span class="cskLo"><i>LOTES</i>${lotesPorProd(k)}</span><span class="cskLo"><i>OPERADOR</i><b style="font-size:12px">${e_(k.operador||'—')}${k.iniHora?` <small style="font-weight:500;color:var(--ink3)">· início ${e_(k.iniHora)}${k.fimHora?' · fim '+e_(k.fimHora):''}</small>`:''}</b></span></div>
+        ${b1||b2?`<div class="b5">${b1}${b2}</div>`:''}
+      </div></div>
+      <div class="tr5">${tr}</div></div>`;}
+  /* ---------- botão "Ver kits" no Envase e tanques: abre a janela com as OPs de kit ---------- */
+  let VOLTA=false;
+  function kitsModal(){VOLTA=true;try{M('modal').classList.add('cskWide');}catch(e){}
+    const l=kitsDoDia();
+    if(M('mAcao'))M('mAcao').innerHTML='';M('modal').classList.add('wide');
+    M('mTit').textContent='Kits';M('mSub').hidden=false;M('mSub').innerHTML=`${dCurto(ymd(S.ref||new Date()))} · ${l.filter(k=>k.status!=='concluida').length} aberta(s) · ${l.filter(k=>k.status==='producao').length} montando`;
+    M('mB').innerHTML=l.length?`<div class="cskG">${l.map(cartaoKit).join('')}</div>`:'<div class="vazioc" style="padding:24px">Nenhuma OP de kit neste dia.</div>';
+    M('mF').innerHTML=`<div style="flex:1"></div><button class="btn" id="kmX">Fechar</button>`;
+    M('kmX').onclick=()=>{VOLTA=false;fecharModal();};
+    M('mB').querySelectorAll('[data-kb]').forEach(b=>b.onclick=ev=>{ev.stopPropagation();const [a,id]=b.dataset.kb.split('|');const k=KOPS.find(x=>x.id===id);if(!k)return;if(a==='fim')concluirKit(k);else passoKit(k,a);});
+    M('mB').querySelectorAll('[data-kitmenu]').forEach(b=>b.onclick=ev=>{ev.stopPropagation();const k=KOPS.find(x=>x.id===b.dataset.kitmenu);if(k)menuKit(k,b);});
+    try{if(!M('mask').classList.contains('on'))abrirMask();}catch(e){}}
+  function csKitBar(){try{
+    let b=document.getElementById('csKitBt');const nv=M('nova');
+    if(S.page!=='envase'||!nv){if(b)b.remove();return;}
+    const n=kitsDoDia().filter(k=>k.status!=='concluida').length;
+    if(!b){b=document.createElement('button');b.id='csKitBt';b.type='button';b.className='btn cskBt';b.onclick=()=>kitsModal();}
+    if(b.nextElementSibling!==nv)nv.parentNode.insertBefore(b,nv);
+    b.innerHTML=`Ver kits${n?` <i class="cskN">${n}</i>`:''}`;
+    if(VOLTA&&M('mask')&&M('mask').classList.contains('on')&&M('mTit').textContent==='Kits')kitsModal();
+  }catch(e){console.warn('[kit502] botão',e);}}
+  /* ---------- + Nova OP: primeiro escolhe Envase ou Kit ---------- */
+  function escolheTipo(){try{M('modal').classList.remove('cskWide');}catch(e){}
+    if(M('mAcao'))M('mAcao').innerHTML='';M('modal').classList.remove('wide');M('mTit').textContent='Nova OP';M('mSub').hidden=false;M('mSub').innerHTML=`Nº da OP <b>${num4(PROX_OP)}</b>`;
+    M('mB').innerHTML=`<div class="cskEsc"><button type="button" data-esc="env"><b>OP de envase</b><span>tanque e envase na máquina · formulação, análise e embalagem</span></button>
+      <button type="button" data-esc="kit" class="k"><b>OP de kit</b><span>junta produtos que já estão no estoque, no saco e na caixa · sem máquina</span></button></div>`;
+    M('mF').innerHTML='<div style="flex:1"></div><button class="btn" id="escX">Fechar</button>';M('escX').onclick=fecharModal;
+    M('mB').querySelector('[data-esc="env"]').onclick=()=>{KS=null;abrirOrdem(null);};
+    M('mB').querySelector('[data-esc="kit"]').onclick=()=>{VOLTA=false;KS=null;kitModal(null);};
+    try{if(!M('mask').classList.contains('on'))abrirMask();}catch(e){}}
+  document.addEventListener('click',ev=>{const b=ev.target&&ev.target.closest&&ev.target.closest('#nova,#odNova');if(!b||b.disabled)return;
+    ev.preventDefault();ev.stopImmediatePropagation();escolheTipo();},true);
+  /* ---------- Relatórios › OPs de kit: rastreio dos lotes (unidades de cada lote em cada kit) ---------- */
+  const RK={per:null,q:''};
+  function linhasRel(){if(!RK.per)RK.per=perNovo('mes');const f=perFaixa(RK.per);const q=RK.q.trim().toLowerCase();const out=[];
+    KOPS.filter(k=>k.status!=='cancelada'&&(!f.de||!f.ate||(k.data>=f.de&&k.data<=f.ate))).sort((a,b)=>String(b.data).localeCompare(String(a.data))||b.num-a.num).forEach(k=>{const p=prodOf(k.codigo)||{};
+      const ls=(k.status==='concluida'&&k.usados&&k.usados.length?k.usados:k.lotes)||[];
+      ls.forEach(l=>{const o=ORDENS.find(x=>x.id===l.opId)||{};const pc=prodOf(l.sku)||{};
+        const r={k,data:k.data,op:num4(k.num),kit:p.descricao||k.codigo,sku:k.codigo,cx:k.status==='concluida'?k.feitas:k.cx,sit:k.status,lote:l.lote,prod:pc.descricao||l.sku,psku:l.sku,un:l.q,env:o.opNum?num4(o.opNum):'',envData:o.data||'',tq:o.tanque||'',oper:k.operador||''};
+        if(q&&![r.op,r.kit,r.sku,r.lote,r.prod,r.psku,r.oper].join(' ').toLowerCase().includes(q))return;out.push(r);});});
+    return out;}
+  const SIT={aberta:'Programada',producao:'Em produção',pausa:'Pausada',concluida:'Concluída'};
+  function relKits(){const g=M('repgrid');if(!g)return;const l=linhasRel();const per=perRotulo(RK.per);
+    const tot=new Set(l.map(r=>r.k.id)).size,un=l.reduce((a,r)=>a+(+r.un||0),0),cx=[...new Set(l.map(r=>r.k))].reduce((a,k)=>a+(+(k.status==='concluida'?k.feitas:k.cx)||0),0);
+    g.innerHTML=`<div class="c9"><div class="c9mig"><a data-kh="1">PCP</a> › <a data-kh="1">Relatórios</a> › OPs de kit</div>
+      <div class="c9top"><h1>OPs de kit · rastreio dos lotes</h1><span style="flex:1"></span><button class="btn" id="rkPdf">PDF</button></div>
+      <div class="c9f"><button class="c9fb az" id="rkPer">${e_(per)}</button><label class="c9fb" style="font-weight:500"><input id="rkQ" style="border:0;outline:0;background:transparent;width:240px;font-size:13.5px;color:var(--ink)" placeholder="Lote, OP, produto ou operador" value="${e_(RK.q)}"></label></div>
+      <div class="cskRk"><div><span>OPs de kit</span><b>${nf(tot)}</b></div><div><span>Caixas</span><b>${nf(cx)}</b></div><div><span>Unidades usadas</span><b>${nf(un)}</b></div><div><span>Lotes</span><b>${nf(new Set(l.map(r=>r.psku+'|'+r.lote)).size)}</b></div></div>
+      ${l.length?`<div class="rolx"><table class="tb"><thead><tr><th>Data</th><th>OP kit</th><th>Kit</th><th class="n">Caixas</th><th>Situação</th><th>Lote</th><th>Produto</th><th class="n">Unidades</th><th>OP de envase</th><th>Operador</th></tr></thead><tbody>
+        ${l.map(r=>`<tr><td class="m">${dCurto(r.data)}</td><td class="m"><b>${r.op}</b></td><td>${e_(r.kit)}<br><small style="color:var(--ink3)">${e_(r.sku)}</small></td><td class="n">${nf(r.cx)}</td><td>${SIT[r.sit]||r.sit}</td><td class="m"><b>${e_(r.lote)}</b></td><td>${e_(r.prod)}<br><small style="color:var(--ink3)">${e_(r.psku)}</small></td><td class="n"><b>${nf(r.un)}</b></td><td class="m">${r.env?`${r.env} · ${dCurto(r.envData)}${r.tq?' · '+e_(r.tq):''}`:'—'}</td><td>${e_(r.oper)}</td></tr>`).join('')}</tbody></table></div>`
+        :'<div class="c9vz" style="padding:30px;text-align:center;color:var(--ink3)">Nenhuma OP de kit no período.</div>'}</div>`;
+    g.querySelectorAll('[data-kh]').forEach(a=>a.onclick=()=>{ABA_REP='hub';gradeRelatorio();});
+    M('rkPer').onclick=()=>abrirPeriodo(M('rkPer'),RK.per,{},x=>{RK.per=x;relKits();});
+    const qi=M('rkQ');qi.oninput=()=>{RK.q=qi.value;clearTimeout(relKits.t);relKits.t=setTimeout(()=>{relKits();const n=M('rkQ');n.focus();n.setSelectionRange(n.value.length,n.value.length);},200);};
+    M('rkPdf').onclick=()=>{const corpo=`<style>table{width:100%;border-collapse:collapse;font-size:10.5px}th{text-align:left;font-size:9px;text-transform:uppercase;color:#6B7280;border-bottom:1.5px solid #12151A;padding:5px 6px}td{padding:5px 6px;border-bottom:1px solid #E5E7EB;vertical-align:top}.n{text-align:right}</style>
+      <p style="font-size:11px;margin:0 0 8px">${e_(per)}${RK.q?' · busca: '+e_(RK.q):''} · ${nf(tot)} OPs de kit · ${nf(cx)} caixas · ${nf(un)} unidades</p>
+      <table><thead><tr><th>Data</th><th>OP kit</th><th>Kit</th><th class="n">Cx</th><th>Lote</th><th>Produto</th><th class="n">Unid.</th><th>OP envase</th><th>Operador</th></tr></thead><tbody>${l.map(r=>`<tr><td>${dCurto(r.data)}</td><td><b>${r.op}</b></td><td>${escP(r.kit)}</td><td class="n">${nf(r.cx)}</td><td><b>${escP(r.lote)}</b></td><td>${escP(r.prod)}</td><td class="n"><b>${nf(r.un)}</b></td><td>${r.env?r.env+' · '+dCurto(r.envData):'—'}</td><td>${escP(r.oper)}</td></tr>`).join('')}</tbody></table>`;
+      csFolhaModal({titulo:'OPs de kit · rastreio dos lotes',sub:per,arquivo:'OPs de kit '+String(per).replace(/\//g,'-'),html:folha('OPs de kit · rastreio dos lotes','',per,corpo)});};}
+  try{const _grk=gradeRelatorio;gradeRelatorio=function(){
+    if(typeof ABA_REP!=='undefined'&&ABA_REP==='kits'){try{const w=M('repwrap');if(w)w.classList.add('c9on');}catch(e){}return relKits();}
+    const r=_grk.apply(this,arguments);
+    try{if(!ABA_REP||ABA_REP==='hub'){const gr=document.querySelector('#repgrid .c9gr');if(gr&&!gr.querySelector('[data-c9kit]')){
+      gr.insertAdjacentHTML('beforeend',`<button class="c9rc" data-c9kit="1"><span class="c9ico" style="color:#B45309"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8l9-5 9 5v8l-9 5-9-5z"/><path d="M3 8l9 5 9-5M12 13v8"/></svg></span><b>OPs de kit</b><small>Lotes e unidades de cada produto em cada kit · rastreio</small></button>`);
+      gr.querySelector('[data-c9kit]').onclick=()=>{ABA_REP='kits';try{marcarRota();}catch(e){}gradeRelatorio();};}}}catch(e){}
+    return r;};}catch(e){}
+  window.csKitBar=csKitBar;window.csKitImprimir=k=>imprimirKit(k);
+  try{const _rdk=render;render=function(){const r=_rdk.apply(this,arguments);csKitBar();return r;};}catch(e){}
+  try{const _tb=csTqBar;csTqBar=function(){const r=_tb.apply(this,arguments);csKitBar();return r;};}catch(e){}
+  /* ---------- lista das Ordens de produção ---------- */
+  const situ=k=>k.status==='concluida'?'concluida':k.status==='cancelada'?'cancelada':(k.status==='producao'||k.status==='pausa')?'producao':'programada';
+  const selo=k=>`<span class="od2sel ${situ(k)==='cancelada'?'pendente':situ(k)}">${k.status==='pausa'?'Pausada':({programada:'Programada',producao:'Em produção',concluida:'Concluída',cancelada:'Cancelada'})[situ(k)]}</span>`;
+  const mk=()=>'<span class="od2mk" style="--c:#B45309"><i></i>KIT</span>';
+  let KAB=null;
+  function linhaKit(k){const p=prodOf(k.codigo)||{};const uc=+p.un_cx||4;const ab=KAB===k.id;
+    return `<tr class="od2mae cskRow ${ab?'ab':''}" data-kitrow="${e_(k.id)}"><td></td><td><button class="od2dots" data-kitmenu="${e_(k.id)}">&#8943;</button></td>
+      <td class="m"><b>${num4(k.num)}</b></td><td class="m">${dCurto(k.data)}</td>
+      <td><b>${e_(p.descricao||k.codigo)}</b><small>kit · ${nf(k.cx)} cx · ${nf(k.cx*uc)} pacotes${k.operador?' · '+e_(k.operador):''}</small></td>
+      <td class="m">${(k.lotes||[]).map(l=>e_(l.lote)).join(' + ')}</td><td>—</td><td>—</td><td>${selo(k)}</td>
+      <td><span class="od2ig">${k.status==='concluida'?(k.estoque?'<span class="od2ok">estoque lançado</span>':'<span class="od2no">estoque a lançar</span>'):''}</span></td><td>${mk()}</td></tr>
+      ${ab?`<tr class="od2xp"><td></td><td colspan="10"><div class="od2xc">${(k.lotes||[]).map(l=>{const pc=prodOf(l.sku);const o=ORDENS.find(x=>x.id===l.opId);return `<div><span>Lote ${e_(l.lote)}</span><b>${e_((pc&&pc.descricao)||l.sku)} · ${nf(l.q)} un${o?' · OP de envase de '+dCurto(o.data):''}</b></div>`;}).join('')}
+        ${k.status==='concluida'?`<div><span>Montado</span><b>${nf(k.feitas)} cx${k.quebras&&Object.values(k.quebras).some(Boolean)?' · quebra '+Object.entries(k.quebras).filter(([,v])=>v).map(([s,v])=>s+' '+nf(v)+' un').join(', '):''}</b></div>`:''}</div></td></tr>`:''}`;}
+  function linhaNeta(k,l){const p=prodOf(k.codigo)||{};
+    return `<tr class="od2fi cskNeta" data-kitrow="${e_(k.id)}"><td></td><td><button class="od2dots" data-kitmenu="${e_(k.id)}">&#8943;</button></td><td class="m"><span class="od2ar" style="padding-left:14px">↳↳</span></td><td class="m">${dCurto(k.data)}</td>
+      <td><b>${e_(p.descricao||k.codigo)}</b><small>kit OP ${num4(k.num)} · usou ${nf(l.q)} un deste lote</small></td><td class="m">${(k.lotes||[]).map(x=>e_(x.lote)).join(' + ')}</td><td>—</td><td>—</td><td>${selo(k)}</td><td></td><td>${mk()}</td></tr>`;}
+  function filtraKits(){const q=String(typeof OD_BUSCA!=='undefined'?OD_BUSCA:'').trim().toLowerCase();const aba=typeof OD_ABA!=='undefined'?OD_ABA:'todas';
+    let fx=null;try{fx=perFaixa(OD2.p);}catch(e){}
+    return KOPS.filter(k=>{const s=situ(k);if(s==='cancelada'&&aba!=='todas')return false;
+      if(aba!=='todas'&&aba!==s&&!(aba==='programada'&&s==='programada'))return false;
+      if(fx&&fx.de&&fx.ate&&(k.data<fx.de||k.data>fx.ate)&&s!=='programada')return false;
+      if(q){const p=prodOf(k.codigo)||{};const t=[num4(k.num),k.codigo,p.descricao,...(k.lotes||[]).map(l=>l.lote),'kit'].join(' ').toLowerCase();if(!t.includes(q))return false;}
+      return true;}).sort((a,b)=>String(b.data).localeCompare(String(a.data))||b.num-a.num);}
+  function menuKit(k,botao){
+    const old=document.getElementById('od2m');if(old){const mesmo=old.dataset.id===k.id;old.remove();if(mesmo)return;}
+    const m=document.createElement('div');m.className='od2m';m.id='od2m';m.dataset.id=k.id;
+    const ab=k.status!=='concluida'&&k.status!=='cancelada';
+    const it=[['Abrir OP','abrir'],'sep',['&#9113; PDF da OP','pdf'],['&#9776; Histórico','hist'],...(ab?['sep',...(k.status==='aberta'?[['&#9654; Iniciar','ini']]:k.status==='producao'?[['&#10074;&#10074; Pausar','pau']]:[['&#9654; Retomar','ret']]),['&#10003; Concluir e lançar estoque','concluir'],...(k.status==='aberta'?[['Cancelar OP','cancelar']]:[])]:[]),...(k.status==='concluida'?['sep',['&#8617; Estornar estoque','estornar']]:[])];
+    m.innerHTML=`<div class="mh">OP ${num4(k.num)} · kit</div>`+it.map(i=>i==='sep'?'<div class="sep"></div>':`<button data-kia="${i[1]}">${i[0]}</button>`).join('');
+    document.body.appendChild(m);const r=botao.getBoundingClientRect();m.style.left=r.left+'px';m.style.top=(r.bottom+4)+'px';
+    if(r.bottom+m.offsetHeight>window.innerHeight)m.style.top=Math.max(8,r.top-m.offsetHeight-4)+'px';
+    m.onclick=ev=>ev.stopPropagation();
+    m.querySelectorAll('[data-kia]').forEach(b=>b.onclick=()=>{const a=b.dataset.kia;m.remove();
+      if(a==='abrir'){KS=null;kitModal(k);}else if(a==='pdf')imprimirKit(k);else if(a==='hist')historicoKit(k);
+      else if(a==='concluir')concluirKit(k);else if(a==='cancelar')cancelarKit(k);else if(a==='ini'||a==='pau'||a==='ret')passoKit(k,a);else if(a==='estornar')estornarKit(k);});
+  }
+  try{const _go=gradeOrdens;gradeOrdens=function(){const r=_go.apply(this,arguments);
+    try{if(typeof OD_ABA!=='undefined'&&OD_ABA==='excluidas')return r;const el=M('odgrid');if(!el)return r;
+      const ks=filtraKits();let tb=el.querySelector('table.od2t tbody');
+      if(!tb&&ks.length){const v=el.querySelector('.vazioc');if(v)v.outerHTML=`<div class="od2rol"><table class="od2t"><thead><tr><th style="width:30px"></th><th style="width:34px"></th><th>Nº OP</th><th>Data</th><th>Produto</th><th>Lote</th><th>Máquina</th><th>Tanque</th><th>Situação</th><th>Integração</th><th>Marcadores</th></tr></thead><tbody></tbody></table></div>`;tb=el.querySelector('table.od2t tbody');}
+      if(!tb)return r;
+      tb.insertAdjacentHTML('afterbegin',ks.map(linhaKit).join(''));
+      /* netas: embaixo da OP de envase de cada lote */
+      KOPS.filter(k=>k.status!=='cancelada').forEach(k=>(k.lotes||[]).forEach(l=>{const tr=tb.querySelector(`tr[data-odrow="${CSS.escape(l.opId)}"]`);if(!tr)return;
+        let ap=tr;if(ap.nextElementSibling&&ap.nextElementSibling.classList.contains('od2xp'))ap=ap.nextElementSibling;ap.insertAdjacentHTML('afterend',linhaNeta(k,l));}));
+      tb.querySelectorAll('[data-kitrow]').forEach(tr=>tr.onclick=ev=>{if(ev.target.closest('[data-kitmenu]'))return;ev.stopPropagation();const id=tr.dataset.kitrow;if(tr.classList.contains('cskNeta')){KAB=id;}else KAB=KAB===id?null:id;gradeOrdens();});
+      tb.querySelectorAll('[data-kitmenu]').forEach(b=>b.onclick=ev=>{ev.stopPropagation();const k=KOPS.find(x=>x.id===b.dataset.kitmenu);if(k)menuKit(k,b);});
+    }catch(e){console.warn('[kit502] lista',e);}
+    return r;};}catch(e){}
+  /* estilo */
+  const st=document.createElement('style');st.textContent=`
+.cskP{border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin:0 0 10px}
+.cskPt{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}.cskPt small{color:var(--ink3)}.cskPt span{margin-left:auto;font-size:12.5px;color:var(--ink2)}
+.cskL{display:flex!important;flex-direction:row!important;gap:8px;align-items:center}.cskL select{flex:1}
+.cskUsa{min-width:110px;text-align:right;font-size:12.5px;color:var(--ink2)}.cskLt{display:grid;grid-template-columns:minmax(0,1fr) auto 36px 96px 22px 26px;gap:10px;align-items:center;border:1px solid #EDEBE6;border-radius:9px;padding:7px 10px;margin-top:8px}
+.cskLt.on{border-color:#F3C98B;background:#FFFBF5}.cskLd{font:600 12.5px ui-monospace,Consolas,monospace;color:var(--ink2)}.cskLn{font-size:13.5px}.cskLn b{font-size:14.5px}
+.cskCx{background:#FFEDD5;color:#9A3412;border-radius:999px;padding:3px 10px;font-size:12px;font-weight:700;white-space:nowrap}
+.cskLu{font-size:12px;color:var(--ink3);text-align:right}.cskLq{height:34px!important;text-align:right;padding:0 8px!important}.cskLq.erro{border-color:#DC2626!important;background:#FEF2F2!important}.cskUn{font-size:12px;color:var(--ink3)}
+.cskRk{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:12px 0}.cskRk div{background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 12px}.cskRk span{display:block;font-size:11px;color:var(--ink3);text-transform:uppercase;letter-spacing:.5px;font-weight:600}.cskRk b{font-size:20px}
+.cskSl{height:36px;border:1px solid var(--line);border-radius:8px;padding:0 10px;font:500 13.5px Inter,system-ui;background:#fff;min-width:0}.cskRm{border:0;background:none;color:var(--ink3);cursor:pointer;font-size:14px}.cskRm:hover{color:#B3261E}
+.cskAc{grid-column:1/-1;font-size:12px;color:var(--ink2);margin-top:-2px}.cskFalta{border-color:#FDBA74!important;background:#FFF7ED!important;color:#9A3412!important;font-weight:700}
+.cskQb{display:grid;grid-template-columns:minmax(0,1.4fr) 120px minmax(0,1.2fr);gap:12px;align-items:end;border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:8px}.cskQb.on{border-color:#FCA5A5;background:#FEF2F2}.cskQc{display:flex;gap:10px;align-items:center;cursor:pointer;align-self:center}.cskQc input{width:18px;height:18px;accent-color:#DC2626}
+.cskOk{color:#15803D}.cskNo{color:#B3261E}
+.cskE td,.cskE th{font-size:12.5px}.cskE .n{text-align:right}
+tr.cskRow td{background:#FFFBF5}
+#csKitBar{border:1px solid #F1D9B5;border-radius:12px;background:#FFF8EE;overflow:hidden;margin-top:10px}
+#csKitBar .tbh{display:flex;align-items:center;gap:10px;padding:7px 8px 7px 14px;cursor:pointer;user-select:none}
+#csKitBar .tbh b{font-size:14px;font-weight:700;color:var(--ink)}#csKitBar .tbh .sp{flex:1}
+#csKitBar .cskSel{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:5px 12px 5px 10px;font:700 12.5px Inter,system-ui,sans-serif;background:#FFEDD5;border:1px solid #FDBA74;color:#9A3412}
+#csKitBar .cskSel.v{background:transparent;border-color:transparent;color:var(--ink3);font-weight:500}
+#csKitBar .cskSel i{font-style:normal;min-width:18px;height:18px;border-radius:999px;display:inline-grid;place-items:center;font:800 12px Inter,sans-serif;color:#fff;background:#16A34A;padding:0 3px}
+#csKitBar [data-knova]{border-color:#E9B872;color:#92400E;background:#FFF8EC;font-weight:700}
+#csKitBar .tbm{border-top:1px solid #F1D9B5;padding:12px;background:var(--paper,#fff);max-height:52vh;overflow:auto}
+#modal.cskWide{width:min(1280px,96vw)!important;max-width:min(1280px,96vw)!important}#modal.cskWide #mB{max-height:70vh;overflow:auto}
+.cskG{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-items:start}@media(min-width:1500px){.cskG{grid-template-columns:repeat(3,minmax(0,1fr))}}@media(max-width:700px){.cskG{grid-template-columns:1fr}}.cskK .k5{grid-template-columns:repeat(2,1fr)}.cskK .k5 .cskLo{grid-column:1/-1}.cskInfo{font-size:12px;color:var(--ink2);margin-top:6px}
+.cskC{border:1px solid var(--line,#E6E3DC);border-radius:12px;padding:12px 14px;background:#fff;display:flex;flex-direction:column;gap:6px}
+.cskC.producao{border-color:#86EFAC;box-shadow:0 0 0 2px rgba(22,163,74,.15)}.cskC.pausada{border-color:#FDE68A;background:#FFFDF2}.cskC.concluida{opacity:.85}
+.cskCh{display:flex;align-items:center;gap:8px}.cskCh b{font:800 15px ui-monospace,Consolas,monospace}.cskCm{margin-left:auto;border:1px solid var(--line);background:#fff;border-radius:8px;width:30px;height:28px;cursor:pointer;font-weight:800;color:var(--ink2)}
+.cskCn{font-weight:700;font-size:13.5px;line-height:1.3}.cskCq{font-size:13px}.cskCq b{font-size:16px}
+.cskCl{display:flex;flex-wrap:wrap;gap:6px}.cskCl span{background:#F3F4F6;border-radius:6px;padding:2px 8px;font-size:12px}
+.cskCo{font-size:12px;color:var(--ink2)}.cskCb{display:flex;gap:8px;margin-top:4px}.cskPau{border-color:#FCD34D!important;color:#A16207!important}
+.stq.pausa{background:#FEF3C7;color:#A16207}.cskEsc{display:grid;grid-template-columns:1fr 1fr;gap:12px}.cskEsc button{text-align:left;border:1.5px solid var(--line);background:#fff;border-radius:12px;padding:18px 16px;cursor:pointer;display:flex;flex-direction:column;gap:6px;font:inherit}.cskEsc button:hover{border-color:#15803D;background:#F3FBF5}.cskEsc button.k:hover{border-color:#E9B872;background:#FFF8EC}.cskEsc b{font-size:16px}.cskEsc span{font-size:12.5px;color:var(--ink3);line-height:1.4}.cskEsc button.k b{color:#92400E}
+.cskN{font-style:normal;display:inline-grid;place-items:center;min-width:18px;height:18px;border-radius:999px;background:#EA580C;color:#fff;font:800 11.5px Inter,sans-serif;margin-left:4px;padding:0 4px}.cskBt{border-color:#E9B872!important;color:#92400E!important;background:#FFF8EC!important;margin-right:8px;font-weight:700}tr.cskNeta td{background:#FFFCF7}`;document.head.appendChild(st);
+  setTimeout(function cad(){try{if(typeof PRONTO==='undefined'||!PRONTO)return setTimeout(cad,2000);cadastraKits();}catch(e){}},2500);
+  try{csNucleo.versao='v502';}catch(e){}
 })();
 
 </script>

@@ -1,6 +1,6 @@
 {
- "v": "v501",
- "versao": "5.0.1",
- "data": "04/11/2026",
- "o_que_mudou": "A TV não vai mais para o login; ordem de compra com item de industrialização (sub-itens de compra e industrialização), itens em linha e impostos que repetem da última compra"
+ "v": "v502",
+ "versao": "5.0.2",
+ "data": "06/11/2026",
+ "o_que_mudou": "OP de kit: montagem dos kits do Uruguai com escolha dos lotes, fora da fila das máquinas"
 }
