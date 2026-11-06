@@ -1,6 +1,6 @@
 {
- "v": "v505",
- "versao": "5.0.5",
+ "v": "v506",
+ "versao": "5.0.6",
  "data": "06/11/2026",
- "o_que_mudou": "Ver kits mostra as OPs de kit em aberto de qualquer data; correção das OPs 0308/0317; kit com estoque real; OC sem motivo; necessidade com filtro"
+ "o_que_mudou": "Estoque: só o número (sem cx/fd), embalagem do item junto do nome, filtro de transferências; Ver kits com todas as OPs de kit em aberto"
 }
