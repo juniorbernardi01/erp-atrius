@@ -5508,7 +5508,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v511';const VERSAO_DATA='06/11/2026';
+const VERSAO_APP='v513';const VERSAO_DATA='06/11/2026';
 /* número que aparece na tela: v438 → v4.3.8 (por dentro continua v438, que é o que as versões comparam) */
 const csRotVer=v=>{const d=String(v||'').replace(/\D/g,'');return d.length>=3?'v'+d.slice(0,-2)+'.'+d.slice(-2,-1)+'.'+d.slice(-1):String(v||'');};
 const VERSAO_ROTULO=csRotVer(VERSAO_APP)+' · '+VERSAO_DATA;
@@ -39226,7 +39226,7 @@ tr.cskRow td{background:#FFFBF5}
 .stq.pausa{background:#FEF3C7;color:#A16207}.cskEsc{display:grid;grid-template-columns:1fr 1fr;gap:12px}.cskEsc button{text-align:left;border:1.5px solid var(--line);background:#fff;border-radius:12px;padding:18px 16px;cursor:pointer;display:flex;flex-direction:column;gap:6px;font:inherit}.cskEsc button:hover{border-color:#15803D;background:#F3FBF5}.cskEsc button.k:hover{border-color:#E9B872;background:#FFF8EC}.cskEsc b{font-size:16px}.cskEsc span{font-size:12.5px;color:var(--ink3);line-height:1.4}.cskEsc button.k b{color:#92400E}
 .cskN{font-style:normal;display:inline-grid;place-items:center;min-width:18px;height:18px;border-radius:999px;background:#EA580C;color:#fff;font:800 11.5px Inter,sans-serif;margin-left:4px;padding:0 4px}.cskBt{border-color:#E9B872!important;color:#92400E!important;background:#FFF8EC!important;margin-right:8px;font-weight:700}tr.cskNeta td{background:#FFFCF7}`;document.head.appendChild(st);
   setTimeout(function cad(){try{if(typeof PRONTO==='undefined'||!PRONTO)return setTimeout(cad,2000);cadastraKits();}catch(e){}},2500);
-  try{csNucleo.versao='v511';}catch(e){}
+  try{csNucleo.versao='v513';}catch(e){}
 })();
 
 </script>
@@ -39284,6 +39284,118 @@ tr.cskRow td{background:#FFFBF5}
     console.info('[uy503]',feito);try{toast('Correção das OPs 0308 e 0317 feita: '+feito.join(' · '));}catch(e){}
   }catch(e){console.warn('[uy503]',e);}}
   setTimeout(roda,10000);setTimeout(roda,32000);
+})();
+
+</script>
+<script data-v512="periodo">
+/* v5.1.2 · PERÍODO NOVO (todas as páginas) — pedido do Junior em 06/11
+   - abas em cima (Dia · Mês · Intervalo · Previstos · Sem filtro), no lugar do menu do lado;
+   - data digitada só com números: 01012026 vira 01/01/2026 enquanto digita (não volta mais para hoje);
+   - sem os atalhos "últimos 7 dias / 30 dias / este mês / mês passado";
+   - o calendário passa de mês rolando a roda do mouse;
+   - Mês: ‹ Novembro/2026 › com flechas; dá para digitar 01/2026 ou 012026. */
+(function(){
+  if(typeof abrirPeriodo!=='function'||window.__per512)return;window.__per512=1;
+  const MES=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  const p2=n=>String(n).padStart(2,'0');
+  const ymd=d=>d.getFullYear()+'-'+p2(d.getMonth()+1)+'-'+p2(d.getDate());
+  const hoje=()=>ymd(new Date());
+  const D=s=>{const [a,m,d]=String(s).split('-').map(Number);return new Date(a,(m||1)-1,d||1);};
+  const add=(s,n)=>{const d=D(s);d.setDate(d.getDate()+n);return ymd(d);};
+  const br=s=>s?String(s).split('-').reverse().join('/'):'';
+  /* máscara: só números → dd/mm/aaaa */
+  const mascDia=v=>{const d=String(v).replace(/\D/g,'').slice(0,8);return d.length>4?d.slice(0,2)+'/'+d.slice(2,4)+'/'+d.slice(4):d.length>2?d.slice(0,2)+'/'+d.slice(2):d;};
+  const leDia=v=>{let d=String(v).replace(/\D/g,'');if(d.length===6)d=d.slice(0,4)+'20'+d.slice(4);if(d.length!==8)return null;
+    const dd=+d.slice(0,2),mm=+d.slice(2,4),aa=+d.slice(4);const x=new Date(aa,mm-1,dd);
+    return x.getFullYear()===aa&&x.getMonth()===mm-1&&x.getDate()===dd?ymd(x):null;};
+  const mascMes=v=>{const d=String(v).replace(/\D/g,'').slice(0,6);return d.length>2?d.slice(0,2)+'/'+d.slice(2):d;};
+  const leMes=v=>{const d=String(v).replace(/\D/g,'');if(d.length!==6)return null;const mm=+d.slice(0,2),aa=+d.slice(2);return mm>=1&&mm<=12&&aa>1900?aa+'-'+p2(mm):null;};
+  const rot=p=>{try{return perRotulo(p);}catch(e){return '';}};
+  const faixa=p=>{try{return perFaixa(p);}catch(e){return {de:'',ate:''};}};
+  const novo=m=>{try{return perNovo(m);}catch(e){const h=hoje();return {m:m||'sem',dia:h,mes:h.slice(0,7),de:add(h,-29),ate:h,campo:''};}};
+
+  abrirPeriodo=function(botao,estado,opts,aplicar){
+    opts=opts||{};
+    const velho=document.getElementById('perPop');if(velho){const mesmo=velho._dono===botao;velho.remove();if(mesmo)return;}
+    const t=JSON.parse(JSON.stringify(estado||novo()));if(!t.campo&&opts.campos)t.campo=opts.campos[0][0];
+    if(t.m==='sem')t.m='dia';            /* abre já num modo de escolher; "Sem filtro" é uma aba */
+    let alvo='de',view=D(t.m==='int'||t.m==='prev'?t.de:t.dia);view.setDate(1);let foco=null;
+    const p=document.createElement('div');p.id='perPop';p.className='perpop p512';p._dono=botao;document.body.appendChild(p);
+    const modos=[['dia','Dia'],['mes','Mês'],['int','Intervalo'],...(opts.prev?[['prev','Previstos']]:[]),['sem','Sem filtro']];
+    const cal=()=>{const y=view.getFullYear(),m=view.getMonth(),ini=new Date(y,m,1).getDay(),n=new Date(y,m+1,0).getDate();const fx=t.m==='int'||t.m==='prev';const h=hoje();
+      const cls=s=>{let c=s===h?'hj ':'';if(!fx)return c+(s===t.dia?'on':'');const a=t.de<=t.ate?t.de:t.ate,b=t.de<=t.ate?t.ate:t.de;
+        if(s===a&&s===b)return c+'on';if(s===a)return c+'on ini';if(s===b)return c+'on fim';return c+(s>a&&s<b?'fx':'');};
+      let g='';for(let i=0;i<ini;i++)g+='<i></i>';for(let d=1;d<=n;d++){const s=y+'-'+p2(m+1)+'-'+p2(d);g+=`<button type="button" data-dd="${s}" class="${cls(s)}">${d}</button>`;}
+      return `<div class="pcal" id="pdCal"><div class="pch"><button data-nv="-1" type="button" title="mês anterior">‹</button><b>${MES[m]} ${y}</b><button data-nv="1" type="button" title="próximo mês">›</button></div>
+        <div class="pcg">${'DSTQQSS'.split('').map(x=>'<span>'+x+'</span>').join('')}${g}</div></div>`;};
+    const res=()=>{if(t.m==='sem')return 'mostra tudo, sem limitar por data';const f=faixa(t);if(!f.de)return '';
+      const dias=Math.round((D(f.ate)-D(f.de))/864e5)+1;return `<b>${rot(t)}</b>${dias>1?` · ${dias} dias`:''}`;};
+    const des=()=>{
+      let c='';
+      if(t.m==='dia')c=`<div class="pdf"><button data-dia="-1" type="button">‹</button><input id="pdDia" inputmode="numeric" value="${br(t.dia)}" placeholder="dd/mm/aaaa"><button data-dia="1" type="button">›</button></div>${cal()}`;
+      else if(t.m==='mes'){const [a,mm]=t.mes.split('-').map(Number);
+        c=`<div class="pdf pmz"><button data-mz="-1" type="button" title="mês anterior">‹</button><input id="pdMes" inputmode="numeric" value="${p2(mm)}/${a}" placeholder="mm/aaaa"><button data-mz="1" type="button" title="próximo mês">›</button></div>`;}
+      else if(t.m==='int'||t.m==='prev'){
+        c=`
+        <div class="pdois"><div><small>de</small><div class="pdf sm ${alvo==='de'?'at':''}" data-alvo="de"><input id="pdDe" inputmode="numeric" value="${br(t.de)}" placeholder="dd/mm/aaaa"></div></div>
+          <div><small>até</small><div class="pdf sm ${alvo==='ate'?'at':''}" data-alvo="ate"><input id="pdAte" inputmode="numeric" value="${br(t.ate)}" placeholder="dd/mm/aaaa"></div></div></div>${cal()}`;}
+      else c='<div class="pdica" style="margin:14px 0 18px;text-align:center">Mostra tudo, sem limitar por data.</div>';
+      p.innerHTML=`<div class="pab">${modos.map(([k,r])=>`<button type="button" data-md="${k}" class="${t.m===k?'on':''}">${r}</button>`).join('')}</div>
+        <div class="pcorpo">${c}${opts.campos&&t.m!=='sem'?`<div class="pcampo"><small>Data a considerar</small><select id="pdCampo">${opts.campos.filter(x=>t.m==='prev'?true:!x[2]).map(([v,r])=>`<option value="${v}" ${t.campo===v?'selected':''}>${r}</option>`).join('')}</select></div>`:''}
+        <div class="pbot" style="margin-top:10px"><button type="button" class="btn" id="pdLimpa">limpar</button><button type="button" class="btn pri" id="pdOk">aplicar</button></div></div>`;
+      p.querySelectorAll('[data-md]').forEach(b=>b.onclick=()=>{t.m=b.dataset.md;alvo='de';if(t.m==='prev'&&!(estado&&estado.m==='prev')){t.de=t.ate=hoje();}
+        view=D(t.m==='int'||t.m==='prev'?t.de:t.dia);view.setDate(1);foco=null;des();});
+      p.querySelectorAll('[data-nv]').forEach(b=>b.onclick=()=>{view.setMonth(view.getMonth()+(+b.dataset.nv));des();});
+      p.querySelectorAll('[data-dd]').forEach(b=>b.onclick=()=>{const s=b.dataset.dd;if(t.m==='dia'){t.dia=s;}else if(alvo==='de'){t.de=s;if(t.ate<s)t.ate=s;alvo='ate';}else{if(s<t.de){t.ate=t.de;t.de=s;}else t.ate=s;alvo='de';}foco=null;des();});
+      p.querySelectorAll('[data-dia]').forEach(b=>b.onclick=()=>{t.dia=add(t.dia,+b.dataset.dia);view=D(t.dia);view.setDate(1);des();});
+      p.querySelectorAll('[data-mz]').forEach(b=>b.onclick=()=>{const [a,mm]=t.mes.split('-').map(Number);const x=new Date(a,mm-1+(+b.dataset.mz),1);t.mes=x.getFullYear()+'-'+p2(x.getMonth()+1);des();});
+      p.querySelectorAll('[data-alvo]').forEach(b=>b.onclick=()=>{if(alvo!==b.dataset.alvo){alvo=b.dataset.alvo;foco=alvo==='de'?'#pdDe':'#pdAte';des();}});
+      /* digitação: a máscara põe as barras; com a data completa já vale (sem voltar para hoje) */
+      const dig=(id,f,prox)=>{const i=p.querySelector(id);if(!i)return;
+        i.onfocus=()=>{if(id==='#pdDe'&&alvo!=='de'){alvo='de';p.querySelector('[data-alvo="de"]').classList.add('at');p.querySelector('[data-alvo="ate"]').classList.remove('at');}
+          if(id==='#pdAte'&&alvo!=='ate'){alvo='ate';p.querySelector('[data-alvo="ate"]').classList.add('at');p.querySelector('[data-alvo="de"]').classList.remove('at');}
+          i._fresh=true;};
+        i.onkeydown=ev=>{if(i._fresh&&/^\d$/.test(ev.key)&&i.selectionStart===i.selectionEnd){i.value='';}if(ev.key.length===1||ev.key==='Backspace')i._fresh=false;};
+        i.oninput=()=>{const v=mascDia(i.value);i.value=v;const s=leDia(v);if(s&&v.length===10){f(s);view=D(s);view.setDate(1);foco=prox||id;p._ultFoco=id;des();}};
+        i.onblur=()=>{if(!leDia(i.value))setTimeout(()=>{if(document.body.contains(i))i.value=br(id==='#pdDia'?t.dia:id==='#pdDe'?t.de:t.ate);},120);};};
+      dig('#pdDia',v=>t.dia=v);
+      dig('#pdDe',v=>{t.de=v;if(t.ate<v)t.ate=v;alvo='ate';},'#pdAte');
+      dig('#pdAte',v=>{if(v<t.de){t.ate=t.de;t.de=v;}else t.ate=v;},'#pdAte');
+      const im=p.querySelector('#pdMes');if(im){im.onfocus=()=>{im._fresh=true;};im.onkeydown=ev=>{if(im._fresh&&/^\d$/.test(ev.key)&&im.selectionStart===im.selectionEnd)im.value='';if(ev.key.length===1||ev.key==='Backspace')im._fresh=false;};
+        im.oninput=()=>{const v=mascMes(im.value);im.value=v;const s=leMes(v);if(s&&v.length===7){t.mes=s;foco='#pdMes';p._ultFoco='#pdMes';des();}};
+        im.onblur=()=>{if(!leMes(im.value))setTimeout(()=>{if(document.body.contains(im)){const [a,mm]=t.mes.split('-');im.value=mm+'/'+a;}},120);};}
+      /* roda do mouse no calendário: troca o mês */
+      const cg=p.querySelector('#pdCal');if(cg)cg.addEventListener('wheel',ev=>{ev.preventDefault();const now=Date.now();if(p._wh&&now-p._wh<140)return;p._wh=now;
+        view.setMonth(view.getMonth()+(ev.deltaY>0?1:-1));des();},{passive:false});
+      const pm=p.querySelector('.pmz');if(pm)pm.addEventListener('wheel',ev=>{ev.preventDefault();const now=Date.now();if(p._wh&&now-p._wh<140)return;p._wh=now;
+        const [a,mm]=t.mes.split('-').map(Number);const x=new Date(a,mm-1+(ev.deltaY>0?1:-1),1);t.mes=x.getFullYear()+'-'+p2(x.getMonth()+1);des();},{passive:false});
+      const cs=p.querySelector('#pdCampo');if(cs)cs.onchange=()=>{t.campo=cs.value;};
+      p.querySelector('#pdLimpa').onclick=()=>{p.remove();aplicar(Object.assign(novo('sem'),{campo:t.campo}));};
+      p.querySelector('#pdOk').onclick=()=>{p.remove();if(t.m!=='prev'&&opts.campos&&opts.campos.some(x=>x[0]===t.campo&&x[2]))t.campo=opts.campos[0][0];aplicar(t);};
+      posiciona();
+      if(foco){const i=p.querySelector(foco);if(i){i.focus();i._fresh=foco!==p._ultFoco;const L=i.value.length;try{i.setSelectionRange(L,L);}catch(e){}}foco=null;}
+    };
+    const posiciona=()=>{const r=botao.getBoundingClientRect();const w=p.offsetWidth,h=p.offsetHeight;
+      let l=r.left;if(l+w>innerWidth-8)l=Math.max(8,innerWidth-w-8);let tp=r.bottom+6;if(tp+h>innerHeight-8)tp=Math.max(8,innerHeight-h-8);
+      p.style.left=l+'px';p.style.top=tp+'px';};
+    p.onclick=ev=>ev.stopPropagation();
+    p.onkeydown=ev=>{if(ev.key==='Escape')p.remove();if(ev.key==='Enter'&&ev.target.tagName!=='SELECT'){ev.preventDefault();p.querySelector('#pdOk').click();}};
+    des();
+    const f0=p.querySelector('#pdDia,#pdMes,#pdDe');if(f0)setTimeout(()=>{try{f0.focus();}catch(e){}},30);
+  };
+  document.head.insertAdjacentHTML('beforeend',`<style>
+.perpop.p512{display:block;width:380px}
+.p512 .pab{display:flex;gap:2px;padding:6px;background:#F3F4F6;border-bottom:1px solid #EFEEE9}
+.p512 .pab button{flex:1;border:0;border-radius:8px;padding:7px 4px;background:none;font:inherit;font-size:12.5px;color:#545C69;cursor:pointer;white-space:nowrap}
+.p512 .pab button:hover{background:#E9ECF1}.p512 .pab button.on{background:#fff;color:#1D6FE8;font-weight:600;box-shadow:0 1px 3px rgba(20,24,33,.1)}
+.p512 .pdois{display:grid;grid-template-columns:1fr 1fr;gap:8px}.p512 .pdois small{font-size:11px;color:#8B93A1}
+.p512 .pdica.pr{text-align:center;font-size:10.5px;color:#A0A6B1;margin-top:4px}
+.p512 .pmz{height:46px;margin-top:4px}.p512 .pmz input{font-size:18px;font-weight:700;letter-spacing:.02em}
+.p512 .pmn{text-align:center;font-size:14px;color:#1A1D23;font-weight:600;margin:2px 0 6px}
+.p512 .pcal{user-select:none}
+.p512 .pdf input,.p512 .pdf input:focus,.p512 .pdf input:focus-visible{border:0!important;box-shadow:none!important;outline:none!important;background:transparent!important;border-radius:0!important;padding:0!important;height:auto!important}
+.p512 .pdf:focus-within{border-color:#1D6FE8;box-shadow:0 0 0 3px #EAF1FC}
+</style>`);
 })();
 
 </script>
