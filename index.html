@@ -5508,7 +5508,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v516';const VERSAO_DATA='09/11/2026';
+const VERSAO_APP='v517';const VERSAO_DATA='09/11/2026';
 /* número que aparece na tela: v438 → v4.3.8 (por dentro continua v438, que é o que as versões comparam) */
 const csRotVer=v=>{const d=String(v||'').replace(/\D/g,'');return d.length>=3?'v'+d.slice(0,-2)+'.'+d.slice(-2,-1)+'.'+d.slice(-1):String(v||'');};
 const VERSAO_ROTULO=csRotVer(VERSAO_APP)+' · '+VERSAO_DATA;
@@ -39239,7 +39239,7 @@ tr.cskRow td{background:#FFFBF5}
 .stq.pausa{background:#FEF3C7;color:#A16207}.cskEsc{display:grid;grid-template-columns:1fr 1fr;gap:12px}.cskEsc button{text-align:left;border:1.5px solid var(--line);background:#fff;border-radius:12px;padding:18px 16px;cursor:pointer;display:flex;flex-direction:column;gap:6px;font:inherit}.cskEsc button:hover{border-color:#15803D;background:#F3FBF5}.cskEsc button.k:hover{border-color:#E9B872;background:#FFF8EC}.cskEsc b{font-size:16px}.cskEsc span{font-size:12.5px;color:var(--ink3);line-height:1.4}.cskEsc button.k b{color:#92400E}
 .cskN{font-style:normal;display:inline-grid;place-items:center;min-width:18px;height:18px;border-radius:999px;background:#EA580C;color:#fff;font:800 11.5px Inter,sans-serif;margin-left:4px;padding:0 4px}.cskBt{border-color:#E9B872!important;color:#92400E!important;background:#FFF8EC!important;margin-right:8px;font-weight:700}tr.cskNeta td{background:#FFFCF7}`;document.head.appendChild(st);
   setTimeout(function cad(){try{if(typeof PRONTO==='undefined'||!PRONTO)return setTimeout(cad,2000);cadastraKits();}catch(e){}},2500);
-  try{csNucleo.versao='v516';}catch(e){}
+  try{csNucleo.versao='v517';}catch(e){}
 })();
 
 </script>
@@ -39477,43 +39477,40 @@ tr.cskRow td{background:#FFFBF5}
 })();
 
 </script>
-<script data-v516="mp">
-/* v5.1.6 · CORREÇÃO ÚNICA: matéria-prima devolvida por engano na virada do dia (pedido do Junior em 09/11)
-   Quando a operadora fechava o turno e a OP continuava no outro dia, o ERP achava que o lote tinha sumido e devolvia
-   ao estoque toda a matéria-prima baixada na liberação. No dia seguinte nada baixava de novo (a liberação acompanhou o lote).
-   Aconteceu em 10 lotes de 04/11 a 09/11. Aqui baixa de novo exatamente o que foi devolvido, lote por lote, pelo mesmo
-   caminho de sempre (razão do ERP e Tiny). Só baixa o que ainda falta: se o lote já tem a baixa, não mexe.
-   Roda uma vez só (CS_MIGRA 'mp516'), no computador do master. */
+<script data-v517="mp">
+/* v5.1.7 · LIMPEZA: tira do razão a devolução errada da virada do dia E a correção da v5.1.6 (pedido do Junior em 09/11)
+   As duas se anulam (entrou X pela devolução, saiu X pela correção): marcadas como removidas, o saldo não muda e o
+   histórico do item fica só com a baixa original do lote. Elas aparecem apenas em Estoque › Excluídos, com o motivo.
+   Só remove o par quando as quantidades batem item por item; senão não mexe naquele lote e avisa.
+   As linhas "Matéria-prima devolvida" e "Correção da matéria-prima" saem do histórico das OPs desses lotes.
+   Roda uma vez só (CS_MIGRA 'mp517'), no computador do master. */
 (function(){
-  /* o texto diz "lote nº" de propósito: a conta do lote novo procura "lote 3611" na observação e contaria a baixa duas vezes */
   const ALVO=[{"ch": "lote|2026-11-04|TQ 4|LAVA ROUPAS GLICERINA|0|ajmw2kmbhd", "lote": "275", "op": "0DF8E148", "movs": [["660677465", 190], ["668451978", 7.6], ["691306394", 3.8], ["700007110", 190], ["ERP-CO001", 0.141]]}, {"ch": "lote|2026-11-04|TQ 2|DESINFETANTE LAVANDA|0|ajmw2kn3eo", "lote": "1591", "op": "AC7C6124", "movs": [["454405939", 19], ["454644868", 5.067], ["454760462", 3.8], ["659128578", 0.038]]}, {"ch": "lote|2026-11-04|TQ 3|DESINFETANTE LAVANDA|1|ajmw2kodx0", "lote": "1590", "op": "4537C553", "movs": [["454405939", 19], ["454644868", 5.067], ["454760462", 3.8], ["659128578", 0.038]]}, {"ch": "lote|2026-11-05|TQ 6|ÁGUA SANITÁRIA|0|ajmw400569", "lote": "3610", "op": "DB44CB9C", "movs": [["454348415", 1200], ["454401512", 10.75]]}, {"ch": "lote|2026-11-05|TQ 4|LIMPADOR PERFUMADO EUFORIA|0|ajmw402js0", "lote": "113", "op": "5CC6B47F", "movs": [["454356458", 0.019], ["454404757", 0.152], ["454405939", 19], ["454644868", 30.4], ["454962630", 5.7]]}, {"ch": "lote|2026-11-05|TQ 7|ÁGUA SANITÁRIA|0|ajmw404os0", "lote": "3611", "op": "A921F5C0", "movs": [["454348415", 1200], ["454401512", 10.75]]}, {"ch": "lote|2026-11-06|TQ 6|ÁGUA SANITÁRIA|1|ajmw5c4rb0", "lote": "3613", "op": "A372AED7", "movs": [["454348415", 1200], ["454401512", 10.75]]}, {"ch": "lote|2026-11-06|TQ 1|LAVA LOUÇAS NEUTRO|0|ajmw5cjmqm", "lote": "1788", "op": "B42E0D5D", "movs": [["454356458", 0.152], ["660677465", 174.8], ["700007110", 174.8]]}, {"ch": "lote|2026-11-09|TQ 3|LAVA ROUPAS PREMIUM|0|ajmw9pstot", "lote": "842", "op": "E68598B5", "movs": [["454404757", 0.173], ["660677465", 180], ["700007110", 180], ["ERP-FR008", 3.6]]}, {"ch": "lote|2026-11-09|TQ 1|LAVA LOUÇAS MAÇÃ|0|ajmw9pty8p", "lote": "619", "op": "9F10B455", "movs": [["454356814", 0.152], ["454844950", 1.08], ["660677465", 165.6], ["700007110", 165.6]]}];
   function roda(){try{
-    if(typeof CS_MIGRA==='undefined'||CS_MIGRA.includes('mp516'))return;
+    if(typeof CS_MIGRA==='undefined'||CS_MIGRA.includes('mp517'))return;
     if(!(typeof csEhMaster==='function'&&csEhMaster()))return;
     if(typeof csChaoFabrica==='function'&&csChaoFabrica())return;
-    if(!ORDENS.length||!CS_ELOG.length||typeof window.csMPJa498!=='function')return;
-    if(typeof temNuvem==='function'&&!temNuvem())return;
-    CS_MIGRA.push('mp516');   /* marca antes: nunca roda duas vezes */
+    if(!ORDENS.length||!CS_ELOG.length)return;
+    CS_MIGRA.push('mp517');if(!CS_MIGRA.includes('mp516'))CS_MIGRA.push('mp516');   /* marca antes: nunca roda duas vezes */
+    const rm={em:(typeof csEAgora==='function'?csEAgora():ymd(new Date())+' '+relogio()),quem:'Correção v5.1.7',
+      mot:'Devolução indevida na virada do dia (OP continuou no outro dia) e a correção dela: uma anula a outra, o saldo não muda'};
     const feito=[];
     ALVO.forEach(a=>{try{
-      const dev=naFila(a.ch);
-      if(!dev||dev.estado!=='enviado'){feito.push('lote '+a.lote+': a devolução não está aqui, não mexi');return;}
-      const base=a.ch.split('|').slice(1,5).join('|'),pl='lote|'+base+'|';
-      const ja=window.csMPJa498({chave:base,produto:base.split('|')[2],lote:''},base).m||{};
-      const movs=a.movs.map(([id,q])=>({id,tipo:'S',qtd:Math.round((q-Math.max(0,+ja[id]||0))*1000)/1000})).filter(m=>m.qtd>=0.001);
-      if(!movs.length){feito.push('lote '+a.lote+': já estava baixado');return;}
-      const ch=pl+'cor516';if(naFila(ch)){feito.push('lote '+a.lote+': correção já existe');return;}
-      const p=base.split('|');
-      enfileirar({chave:ch,origem:'Lote '+p[2],rotulo:'Correção · matéria-prima devolvida por engano na virada do dia',movs,
-        obs:'PREPARO '+p[1]+' · '+p[2]+' · lote nº '+a.lote+' · correção: a matéria-prima tinha voltado ao estoque quando a OP passou para o outro dia'});
-      enviarDaFila(ch).catch(()=>{});
+      const base=a.ch.split('|').slice(1,5).join('|'),chC='lote|'+base+'|cor516';
+      const dev=CS_ELOG.filter(x=>x.chave===a.ch&&!x.rm),cor=CS_ELOG.filter(x=>x.chave===chC&&!x.rm);
+      if(!dev.length&&!cor.length){feito.push('lote '+a.lote+': nada a limpar');return;}
+      const soma=L=>{const m={};L.forEach(x=>{const k=String(x.id);m[k]=Math.round(((m[k]||0)+(x.dif!=null?-(+x.dif):(x.tipo==='S'?1:-1)*(+x.qtd||0)))*1000)/1000;});return m;};
+      const sd=soma(dev),sc=soma(cor),ids=new Set([...Object.keys(sd),...Object.keys(sc)]);
+      const bate=[...ids].every(k=>Math.abs((sd[k]||0)+(sc[k]||0))<0.002);
+      if(!dev.length||!cor.length||!bate){feito.push('lote '+a.lote+': não mexi (a devolução e a correção não batem)');return;}
+      [...dev,...cor].forEach(x=>{x.rm={...rm};});
       const o=ORDENS.find(x=>x.id===a.op);
-      if(o){o.log=o.log||[];o.log.push({d:ymd(new Date()),t:relogio(),e:'Correção da matéria-prima',m:'baixada de novo: tinha voltado ao estoque na virada do dia · lote '+base,op:'Correção v5.1.6'});}
-      feito.push('lote '+a.lote+': '+movs.length+' item(ns)');
+      if(o&&o.log)o.log=o.log.filter(l=>!(l.e==='Matéria-prima devolvida: a OP saiu do lote'&&String(l.m||'').includes(base))&&!(l.e==='Correção da matéria-prima'&&l.op==='Correção v5.1.6'));
+      feito.push('lote '+a.lote+': limpo');
     }catch(e){feito.push('lote '+a.lote+': erro '+e.message);}});
     agendarSalvar();
-    console.info('[mp516]',feito);try{toast('Correção da matéria-prima feita: '+feito.join(' · '));}catch(e){}
-  }catch(e){console.warn('[mp516]',e);}}
+    console.info('[mp517]',feito);try{toast('Razão limpo: '+feito.join(' · '));}catch(e){}
+  }catch(e){console.warn('[mp517]',e);}}
   setTimeout(roda,12000);setTimeout(roda,35000);
 })();
 

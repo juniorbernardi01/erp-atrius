@@ -1327,6 +1327,7 @@ function ocVazia(){
 }
 function novaOC(dados){
   const oc=Object.assign(ocVazia(),dados||{});
+  LST.sit='ras';   /* v517: a ordem nova nasce rascunho; a lista volta nessa aba */
   ED={oc,nova:true,orig:null,aberto:new Set(),pTab:false,lock:false};
   if(!oc.pag.categoria)oc.pag.categoria=categoriaSugerida(oc);
   if(oc.itens.length&&!oc.pag.parcelas.length)gerarParcelas(oc,oc.pag.cond);
