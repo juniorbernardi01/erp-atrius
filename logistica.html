@@ -3296,27 +3296,31 @@ function filtra(L,o){
   return L.filter(d=>{
     if(o.cam==='ter'){if(tipoCam(d)!=='terceiro')return false;}else if(o.cam&&d.caminhao_id!==o.cam)return false;
     if(o.grupo&&!(d.devolucao_itens||[]).some(i=>i.grupo_nome===o.grupo))return false;
+    if(d.status==='excluida'&&!o.exc)return false;
     if(o.sit==='abertas'&&d.status!=='aberta')return false;if(o.sit==='conf'&&d.status!=='conferida')return false;
     if(q&&!semAc([n4(d.numero),d.numero,d.nota_nossa,d.nota_cliente,d.cliente_nome,d.colaborador_nome,d.caminhao_nome,...(d.devolucao_itens||[]).map(i=>i.produto_nome+' '+(i.lote||''))].join(' ')).includes(q))return false;
     return true;});
 }
 function totais(L){const t=u=>L.reduce((s,d)=>s+(d.devolucao_itens||[]).filter(i=>i.unidade===u).reduce((a,i)=>a+(+i.quantidade||0),0),0);
   return `<div><b>${nf(L.length)}</b><span>devoluções</span></div><div><b>${nq(t('UN'))}</b><span>unidades</span></div><div><b>${nq(t('CX'))}</b><span>caixas</span></div><div><b>${nq(t('FD'))}</b><span>fardos</span></div>`;}
+const stTag=d=>d.status==='excluida'?'<span class="lgst ex">Excluída</span>':d.status==='conferida'?'<span class="lgst ok">Conferida</span>':'<span class="lgst ab">A conferir</span>';
 const COLS=[['numero','Nº'],['data','Data'],['nota_nossa','Nossa nota'],['cliente_nome','Cliente'],['nota_cliente','Nota do cliente'],['caminhao_nome','Caminhão'],['colaborador_nome','Quem enviou'],['ni','Itens','n'],['nf','Fotos','n'],['status','Situação']];
 function desenhaLista(){
   const l=$('lista'),a=$('abas');if(!l)return;
   if(LG.erro){a.innerHTML='';l.innerHTML=`<div class="aviso">⚠ <div>${esc(LG.erro)}</div></div>`;$('tot').innerHTML='';return;}
   if(!LG.dados){l.innerHTML='<div class="vazio">Carregando…</div>';return;}
-  const base=filtra(LG.dados,{q:LG.q,cam:LG.cam,grupo:LG.grupo});
+  const tudo=filtra(LG.dados,{q:LG.q,cam:LG.cam,grupo:LG.grupo,exc:true});
+  const base=tudo.filter(d=>d.status!=='excluida'),nx=tudo.length-base.length;
+  if(LG.aba==='exc'&&!nx)LG.aba='abertas';
   const ab=base.filter(d=>d.status==='aberta').length,cf=base.length-ab;
-  a.innerHTML=[['abertas','A conferir',ab,'#D97706'],['conf','Conferidas',cf,'#15803D'],['todas','Todas',base.length,'#1A1D23']].map(([k,n,c,cor])=>`<button data-aba="${k}" class="${LG.aba===k?'on':''}" style="--cor:${cor}">${n}<b>${nf(c)}</b></button>`).join('');
+  a.innerHTML=[['abertas','A conferir',ab,'#D97706'],['conf','Conferidas',cf,'#15803D'],['todas','Todas',base.length,'#1A1D23'],...(nx?[['exc','Excluídas',nx,'#8B93A1']]:[])].map(([k,n,c,cor])=>`<button data-aba="${k}" class="${LG.aba===k?'on':''}" style="--cor:${cor}">${n}<b>${nf(c)}</b></button>`).join('');
   a.querySelectorAll('[data-aba]').forEach(b=>b.onclick=()=>{LG.aba=b.dataset.aba;desenhaLista();});
-  const L=base.filter(d=>LG.aba==='todas'||(LG.aba==='abertas'?d.status==='aberta':d.status==='conferida')).map(d=>({...d,ni:(d.devolucao_itens||[]).length,nf:(d.devolucao_fotos||[]).length}));
+  const L=(LG.aba==='exc'?tudo.filter(d=>d.status==='excluida'):base.filter(d=>LG.aba==='todas'||(LG.aba==='abertas'?d.status==='aberta':d.status==='conferida'))).map(d=>({...d,ni:(d.devolucao_itens||[]).length,nf:(d.devolucao_fotos||[]).length}));
   const {k,d:dir}=LG.ord;L.sort((x,y)=>{const A=x[k],B=y[k];return (typeof A==='number'&&typeof B==='number'?A-B:String(A||'').localeCompare(String(B||''),'pt-BR',{numeric:true}))*dir;});
   l.innerHTML=L.length?`<div class="rolx"><table class="tv" id="tabD"><thead><tr><th style="width:34px"></th>${COLS.map(([c,r,n])=>`<th class="so2 ${LG.ord.k===c?(LG.ord.d>0?'asc':'desc'):''}" data-o="${c}" style="${n?'text-align:right':''}">${r}</th>`).join('')}</tr></thead><tbody>
     ${L.map(d=>`<tr data-id="${d.id}"><td><button type="button" class="dots" data-m="${d.id}" title="Ações">⋯</button></td><td class="m"><b>${n4(d.numero)}</b></td><td class="m">${br(d.data)}</td><td class="m"><b>${esc(d.nota_nossa)}</b></td>
       <td class="cl">${esc(d.cliente_nome||'')}</td><td class="m">${esc(d.nota_cliente||'')}</td><td>${tipoCam(d)==='terceiro'?`<span class="lgter">${esc(d.caminhao_nome||'')}</span>`:esc(d.caminhao_nome||'')}</td><td>${esc(d.colaborador_nome)}</td>
-      <td class="n">${d.ni}</td><td class="n">${d.nf||''}</td><td>${d.status==='conferida'?'<span class="lgst ok">Conferida</span>':'<span class="lgst ab">A conferir</span>'}</td></tr>`).join('')}</tbody></table></div>`
+      <td class="n">${d.ni}</td><td class="n">${d.nf||''}</td><td>${stTag(d)}</td></tr>`).join('')}</tbody></table></div>`
     :`<div class="vazio">${LG.dados.length?'Nenhuma devolução com esses filtros.':'Nenhuma devolução no período.'}</div>`;
   l.querySelectorAll('[data-o]').forEach(h=>h.onclick=()=>{const c=h.dataset.o;LG.ord={k:c,d:LG.ord.k===c?-LG.ord.d:(c==='numero'||c==='data'?-1:1)};desenhaLista();});
   l.querySelectorAll('tbody tr').forEach(r=>r.onclick=ev=>{if(ev.target.closest('.dots'))return;abre(r.dataset.id);});
@@ -3328,7 +3332,8 @@ function menu(botao,id){
   const d=LG.dados.find(x=>x.id===id);const m=document.createElement('div');m.id='m3d';m.className='m3';m.dataset.id=id;
   const it=[['Abrir',()=>abre(id)],['Exportar PDF',()=>exportar(d)]];
   if(d.status==='aberta'&&pode('log.dev.conferir'))it.push('-',['Marcar como conferida',()=>conferir(d)]);
-  m.innerHTML=`<div class="mh">Devolução ${n4(d.numero)}</div>`+it.map((x,n)=>x==='-'?'<div class="sep"></div>':`<button data-n="${n}">${x[0]}</button>`).join('');
+  if(d.status!=='excluida'&&pode('log.dev','excluir'))it.push('-',['Excluir',()=>excluir(d),'del']);
+  m.innerHTML=`<div class="mh">Devolução ${n4(d.numero)}</div>`+it.map((x,n)=>x==='-'?'<div class="sep"></div>':`<button data-n="${n}" ${x[2]?'class="'+x[2]+'"':''}>${x[0]}</button>`).join('');
   document.body.appendChild(m);const r=botao.getBoundingClientRect();m.style.left=r.left+'px';m.style.top=(r.bottom+4)+'px';
   if(r.bottom+m.offsetHeight>innerHeight)m.style.top=Math.max(8,r.top-m.offsetHeight-4)+'px';
   m.onclick=ev=>ev.stopPropagation();m.querySelectorAll('[data-n]').forEach(b=>b.onclick=()=>{m.remove();it[+b.dataset.n][1]();});
@@ -3342,11 +3347,12 @@ async function abre(id){
   const d=LG.dados.find(x=>x.id===id);if(!d)return;const c=camDe(d);
   const its=d.devolucao_itens||[],fts=d.devolucao_fotos||[];
   const atraso=d.enviado_em&&d.criado_em?Math.round((new Date(d.criado_em)-new Date(d.enviado_em))/60000):0;
-  const conf=pode('log.dev.conferir');
+  const exc=d.status==='excluida';const conf=!exc&&pode('log.dev.conferir');
   gaveta(`<div class="gt"><h2>Devolução</h2><button class="btn sm" id="gX" style="margin-left:auto">Fechar ✕</button></div><div class="gc">
     <div class="lgTopo"><div><span>Devolução</span><b>Nº ${n4(d.numero)}</b></div><div><span>Nossa nota</span><b>${esc(d.nota_nossa)}</b></div>
       <div class="lgSel"><span class="lgCam ${c&&c.tipo==='terceiro'?'ter':''}">Caminhão ${esc(d.caminhao_nome||'')}${c&&c.placa?`<small>${esc(c.placa)}</small>`:''}</span>
-      ${d.status==='conferida'?`<span class="lgst ok">Conferida · ${esc(d.conferida_por||'')} ${d.conferida_em?new Date(d.conferida_em).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):''}</span>`:'<span class="lgst ab">A conferir</span>'}</div></div>
+      ${exc?'<span class="lgst ex">Excluída</span>':d.status==='conferida'?`<span class="lgst ok">Conferida · ${esc(d.conferida_por||'')} ${d.conferida_em?new Date(d.conferida_em).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):''}</span>`:'<span class="lgst ab">A conferir</span>'}</div></div>
+    ${exc?`<div class="lgExc"><b>Excluída por ${esc(d.excluida_por||'')}${d.exclusao_gestor&&d.exclusao_gestor!==d.excluida_por?' · autorizado por '+esc(d.exclusao_gestor):''}</b> · ${d.excluida_em?new Date(d.excluida_em).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):''}<span>Motivo: ${esc(d.exclusao_motivo||'')}</span></div>`:''}
     <div class="kv3 lgkv"><div><span>Data</span><b>${br(d.data)} · ${new Date(d.criado_em).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}</b>${atraso>15?`<small>chegou ${atraso>=60?Math.floor(atraso/60)+'h'+String(atraso%60).padStart(2,'0'):atraso+' min'} depois de enviada</small>`:''}</div>
       <div><span>Quem enviou</span><b>${esc(d.colaborador_nome)}</b></div>
       <div><span>Cliente</span><b>${esc(d.cliente_nome||'Não informado')}</b>${d.nf_id?`<small>achado pela nota ${esc(d.nota_nossa)}</small>`:''}</div><div><span>Nº da nota do cliente</span><b>${esc(d.nota_cliente||'—')}</b></div></div>
@@ -3357,10 +3363,10 @@ async function abre(id){
         ${conf?`<td><button class="btn sm lk" data-cm="${i.id}">corrigir motivo</button></td>`:''}</tr>`).join('')}</tbody></table></div>
     <div class="lgh">Observação</div><div class="lgobs">${esc(d.observacao||'Sem observação.')}</div>
     <div class="lgh">Fotos da avaria</div><div class="lgFotos" id="gFt">${fts.length?fts.map(f=>`<button class="lgFt" data-ft="${esc(f.caminho)}"><span>…</span></button>`).join(''):'<div class="lgobs">Sem fotos.</div>'}</div>
-    ${(d.historico||[]).length?`<div class="lgh">Histórico</div><div class="lgHist">${d.historico.map(h=>`<div><b>${esc(h.acao)}</b> · ${esc(h.quem||'')} · ${h.em?new Date(h.em).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):''}${h.det?`<small>${esc(h.det)}</small>`:''}</div>`).join('')}</div>`:''}
-    <div class="lgBts">${d.status==='aberta'&&conf?'<button class="btn pri" id="gConf">✓ Marcar como conferida</button>':''}<button class="btn" id="gPdf">⤓ Exportar PDF</button></div></div>`);
+    ${(d.historico||[]).length?`<div class="lgh">Histórico</div><div class="lgHist">${d.historico.map(h=>`<div><b>${esc(h.acao)}</b> · ${esc(h.quem||'')} · ${h.em?new Date(h.em).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):''}${h.gestor&&h.gestor!==h.quem?' · autorizado por '+esc(h.gestor):''}${h.det?`<small>${esc(h.det)}</small>`:''}</div>`).join('')}</div>`:''}
+    <div class="lgBts">${d.status==='aberta'&&conf?'<button class="btn pri" id="gConf">✓ Marcar como conferida</button>':''}<button class="btn" id="gPdf">⤓ Exportar PDF</button>${!exc&&pode('log.dev','excluir')?'<button class="btn del" id="gExc" style="margin-left:auto">Excluir</button>':''}</div></div>`);
   $('gX').onclick=()=>gaveta(null);$('gPdf').onclick=()=>exportar(d);
-  if($('gConf'))$('gConf').onclick=()=>conferir(d);
+  if($('gConf'))$('gConf').onclick=()=>conferir(d);if($('gExc'))$('gExc').onclick=()=>excluir(d);
   document.querySelectorAll('[data-cm]').forEach(b=>b.onclick=()=>corrigir(d,its.find(i=>i.id===b.dataset.cm)));
   for(const b of document.querySelectorAll('[data-ft]')){const u=await urlFoto(b.dataset.ft);if(!document.body.contains(b))return;
     b.innerHTML=u?`<img src="${u}" alt="Foto da avaria">`:'<span>sem acesso</span>';b.onclick=()=>{if(u)ampliar(u);};}
@@ -3378,18 +3384,44 @@ function corrigir(d,i){
   abreMod(`<h3>Corrigir motivo</h3><div class="k" style="margin:-4px 0 12px;color:var(--ink3)">${esc(i.produto_nome)} · ${nq(i.quantidade)} ${esc(i.unidade)}<br>Estava: <b>${esc(i.grupo_nome)} › ${esc(i.motivo_nome)}</b>${i.motivo_outro?': '+esc(i.motivo_outro):''}</div>
     <label>Motivo certo</label><select class="inp" id="cmM">${LG.grupos.map(g=>`<optgroup label="${esc(g.nome)}">${(g.dev_motivos||[]).filter(m=>m.ativo||m.id===i.motivo_id).map(m=>`<option value="${m.id}" ${m.id===i.motivo_id?'selected':''}>${esc(m.nome)}</option>`).join('')}</optgroup>`).join('')}</select>
     <div id="cmO" style="margin-top:10px"></div>
+    ${campoGestor()}
     <div class="lgmb"><button class="btn" id="mX">Cancelar</button><button class="btn pri" id="mOk">Corrigir</button></div>`);
   const pinta=()=>{const m=mot.find(x=>x.id===$('cmM').value);$('cmO').innerHTML=m&&m.outro?`<label>Qual motivo</label><input class="inp" id="cmT" value="${esc(i.motivo_outro||'')}">`:'';};pinta();
   $('cmM').onchange=pinta;$('mX').onclick=fechaMod;
   $('mOk').onclick=async()=>{const m=mot.find(x=>x.id===$('cmM').value);const outro=m.outro?($('cmT').value||'').trim():null;
     if(m.outro&&!outro)return toast('Escreva qual é o outro motivo.',true);
     if(m.id===i.motivo_id&&(outro||null)===(i.motivo_outro||null))return fechaMod();
+    const g=await confereGestor();if(!g)return;
     try{await sb(`devolucao_itens?id=eq.${i.id}`,{method:'PATCH',body:{motivo_id:m.id,grupo_nome:m.g.nome,motivo_nome:m.nome,motivo_outro:outro}});
-      const h=[...(d.historico||[]),{em:new Date().toISOString(),quem:usuario(),acao:'Corrigiu o motivo',det:`${i.produto_nome}: ${i.grupo_nome} › ${i.motivo_nome} → ${m.g.nome} › ${m.nome}${outro?': '+outro:''}`}];
+      const h=[...(d.historico||[]),{em:new Date().toISOString(),quem:usuario(),gestor:g,acao:'Corrigiu o motivo',det:`${i.produto_nome}: ${i.grupo_nome} › ${i.motivo_nome} → ${m.g.nome} › ${m.nome}${outro?': '+outro:''}`}];
       await sb(`devolucoes?id=eq.${d.id}`,{method:'PATCH',body:{historico:h}});d.historico=h;
       Object.assign(i,{motivo_id:m.id,grupo_nome:m.g.nome,motivo_nome:m.nome,motivo_outro:outro});
       fechaMod();toast('Motivo corrigido.');desenhaLista();abre(d.id);
     }catch(e){toast('Não consegui corrigir: '+e.message,true);}};
+}
+/* ---------- senha do gestor: PIN de gestor ou a senha da conta logada, se ela for de gestor (o mesmo do estoque) ---------- */
+function campoGestor(){return `<div style="margin-top:12px"><label>PIN do gestor ou a senha da sua conta <u style="text-decoration:none;color:var(--danger)">*</u></label><input class="inp" id="gsP" type="password" autocomplete="new-password" style="width:220px"></div>`;}
+async function confereGestor(){
+  const v=($('gsP')&&$('gsP').value||'').trim();if(!v){toast('Digite o PIN ou a senha do gestor.',true);return null;}
+  if(!N.gestor){toast('Atualize o ERP (Ctrl+Shift+R) para conferir a senha do gestor.',true);return null;}
+  const b=$('mOk');if(b)b.disabled=true;let g=null;try{g=await N.gestor(v);}catch(e){}if(b)b.disabled=false;
+  if(!g){toast('PIN ou senha de gestor não confere.',true);$('gsP').select();return null;}
+  return g.nome||usuario();
+}
+/* ---------- excluir: sai da lista e do relatório, mas fica registrado em "Excluídas" ---------- */
+function excluir(d){
+  abreMod(`<h3>Excluir devolução ${n4(d.numero)}</h3><div class="k" style="margin:-4px 0 12px;color:var(--ink3)">Nota ${esc(d.nota_nossa)} · ${esc(d.cliente_nome||'')} · ${esc(d.colaborador_nome||'')}<br>Ela sai da lista e do relatório e fica guardada em "Excluídas", com quem excluiu e o motivo.</div>
+    <label>Motivo da exclusão <u style="text-decoration:none;color:var(--danger)">*</u></label><input class="inp" id="exM" placeholder="Ex.: lançamento de teste, enviada em duplicidade">
+    ${campoGestor()}
+    <div class="lgmb"><button class="btn" id="mX">Cancelar</button><button class="btn pri lgdel" id="mOk">Excluir</button></div>`);
+  $('mX').onclick=fechaMod;setTimeout(()=>$('exM')&&$('exM').focus(),50);
+  $('mOk').onclick=async()=>{const mo=($('exM').value||'').trim();if(!mo)return toast('Escreva o motivo da exclusão.',true);
+    const g=await confereGestor();if(!g)return;const em=new Date().toISOString();
+    const h=[...(d.historico||[]),{em,quem:usuario(),gestor:g,acao:'Excluiu',det:mo}];
+    try{const r=await sb(`devolucoes?id=eq.${d.id}`,{method:'PATCH',body:{status:'excluida',excluida_por:usuario(),excluida_em:em,exclusao_motivo:mo,exclusao_gestor:g,historico:h},prefer:'return=representation'});
+      if(!r||!r[0])throw new Error('o banco não confirmou');Object.assign(d,r[0]);
+      fechaMod();gaveta(null);toast(`Devolução ${n4(d.numero)} excluída.`);desenhaLista();if(LG.rel.dados){const x=LG.rel.dados.find(y=>y.id===d.id);if(x)Object.assign(x,r[0]);}
+    }catch(e){toast(/excluid|check|column|23514|PGRST204/i.test(e.message)?'Falta rodar o supabase-v5.1.5-devolucoes-excluir.sql no Supabase.':'Não consegui excluir: '+e.message,true);}};
 }
 /* folha no modal padrão do ERP (Salvar PDF e Imprimir) */
 async function exportar(d){
@@ -3570,6 +3602,7 @@ document.head.insertAdjacentHTML('beforeend',`<style>
 .lgtot{left:0}
 .tv tbody tr{cursor:pointer}.lgit tbody tr{cursor:default}
 .lgst{display:inline-flex;align-items:center;font-size:11.5px;font-weight:600;padding:3px 10px;border-radius:999px;white-space:nowrap}
+.lgst.ex{background:#F1F1EE;color:#6B7280;text-decoration:line-through}.lgExc{background:#F6F6F3;border:1px solid var(--line);border-radius:10px;padding:9px 12px;font-size:12.5px;color:var(--ink2);margin-bottom:12px}.lgExc span{display:block;margin-top:3px}.btn.lgdel{background:var(--danger);border-color:var(--danger)}.m3 button.del{color:var(--danger)}
 .lgst.ab{background:#FFF4E0;color:#B45309}.lgst.ok{background:#E8F5EC;color:#15803D}.lgst.pr{background:#EAF2FE;color:#1B4F9C}.lgst.ter{background:#FFF1E5;color:#C2410C}
 .lgter{color:#C2410C}
 .gaveta{width:min(880px,96vw)}

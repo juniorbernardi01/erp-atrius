@@ -1,6 +1,6 @@
 {
- "v": "v514",
- "versao": "5.1.4",
+ "v": "v516",
+ "versao": "5.1.6",
  "data": "09/11/2026",
- "o_que_mudou": "Logística › Devoluções: formulário do caminhão (devolucao.html), lista com conferência, relatório, motivos e caminhões com QR Code; aba Entregas em Pessoas e permissões"
+ "o_que_mudou": "Matéria-prima: OP que continua no outro dia não devolve mais a baixa do lote; correção única dos 10 lotes devolvidos por engano. Devoluções: excluir e corrigir motivo com a senha do gestor"
 }

@@ -1150,7 +1150,7 @@ async function reenviar(oc){
    Tudo o que se faz com uma ordem fica nos três pontinhos da linha, como no
    Tiny. A tela de editar fica só com o que se preenche.
    ===================================================================== */
-const LST={sit:'todas',q:'',per:{m:'sem',dia:hojeY(),mes:hojeY().slice(0,7),de:addDias(hojeY(),-30),ate:hojeY()},pop:false,
+const LST={sit:'ras',q:'',per:{m:'sem',dia:hojeY(),mes:hojeY().slice(0,7),de:addDias(hojeY(),-30),ate:hojeY()},pop:false,
   fil:{mk:[],comp:''},fpop:false,sort:{k:'auto',dir:1},sel:new Set(),menu:null};
 function filtraPer(o){const p=LST.per;
   if(p.m==='dia')return o.data===p.dia;if(p.m==='mes')return (o.data||'').slice(0,7)===p.mes;
@@ -1200,7 +1200,7 @@ function telaOrdens(){
         <h4>Comprador</h4><select id="fComp" style="width:100%"><option value="">todos</option>${comps.map(c=>`<option ${LST.fil.comp===c?'selected':''}>${esc(c)}</option>`).join('')}</select>
         <div style="display:flex;gap:8px;margin-top:12px"><button class="btn" id="fLimpa">Limpar</button><button class="btn pri" id="fOk">Filtrar</button></div></div></div>
   </div>
-  <div class="sts">${[['todas','Todas','#1A1D23'],['ras','Rascunho'],['env','Enviada ao fornecedor'],['rec','Recebida · a conferir'],['con','Concluída'],['can','Cancelada']].map(([k,r,c])=>
+  <div class="sts">${[['ras','Rascunho'],['env','Enviada ao fornecedor'],['rec','Recebida · a conferir'],['con','Concluída'],['todas','Todas','#1A1D23'],['can','Cancelada']].map(([k,r,c])=>
     `<button data-sit="${k}" class="${LST.sit===k?'on':''}" style="--cor:${c||COR[k]}">${r}<b>${nf(cont(k))}</b></button>`).join('')}<span style="flex:1"></span>${colsBotao('bCols')}</div>
   <div class="bl"><span class="cont">${nsel?nsel+(nsel>1?' ordens marcadas':' ordem marcada'):'Marque as ordens para imprimir, salvar ou pôr marcadores em várias de uma vez'}</span><span style="flex:1"></span>
     <button class="btn ${nsel?'':'des'}" id="bLImp">⎙ Imprimir</button><button class="btn ${nsel?'':'des'}" id="bLPdf">⤓ Salvar PDF</button><button class="btn ${nsel?'':'des'}" id="bLMk">🏷 Marcadores</button></div>
