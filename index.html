@@ -5508,7 +5508,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v513';const VERSAO_DATA='06/11/2026';
+const VERSAO_APP='v514';const VERSAO_DATA='09/11/2026';
 /* número que aparece na tela: v438 → v4.3.8 (por dentro continua v438, que é o que as versões comparam) */
 const csRotVer=v=>{const d=String(v||'').replace(/\D/g,'');return d.length>=3?'v'+d.slice(0,-2)+'.'+d.slice(-2,-1)+'.'+d.slice(-1):String(v||'');};
 const VERSAO_ROTULO=csRotVer(VERSAO_APP)+' · '+VERSAO_DATA;
@@ -18426,7 +18426,7 @@ const FIN_COB_PAGINAS=[
    ===================================================================== */
 let MODULOS_ERP={financeiro:{estado:'ativo',arquivo:'financeiro.html'},
   compras:{estado:'ativo',arquivo:'compras.html'},estoque:{estado:'ativo',arquivo:'estoque.html'},
-  transportadores:{estado:'ativo',arquivo:'transportadores.html'},vendas:{estado:'ativo',arquivo:'vendas.html'},representante:{estado:'ativo',arquivo:'representante.html'},cadastros:{estado:'ativo',arquivo:'cadastros.html'},tempos:{estado:'ativo',arquivo:'tempos.html'}};
+  transportadores:{estado:'ativo',arquivo:'transportadores.html'},vendas:{estado:'ativo',arquivo:'vendas.html'},logistica:{estado:'ativo',arquivo:'logistica.html'},representante:{estado:'ativo',arquivo:'representante.html'},cadastros:{estado:'ativo',arquivo:'cadastros.html'},tempos:{estado:'ativo',arquivo:'tempos.html'}};
 /* na versão de teste o Financeiro nasce publicado e aponta para o arquivo
    de teste dele, para as 10 páginas darem para testar desde já */
 const MODULOS_TESTE=false;
@@ -18475,6 +18475,10 @@ const PERM_MODS=[
     {k:'vendas.necprod',n:'Necessidade de produção',acoes:true},
     {k:'vendas.perf',n:'Performance de vendas (metas, ranking, relatórios)',acoes:true},
     {k:'vendas.cfg',n:'Configurações de vendas (estoque reservado)',acoes:true}]},
+  {id:'logistica',nome:'Logística',itens:[
+    {k:'log.dev',n:'Devoluções',acoes:true,extra:[{k:'log.dev.conferir',n:'Conferir devolução e corrigir o motivo'}]},
+    {k:'log.rel',n:'Relatórios de devoluções'},
+    {k:'log.cfg',n:'Configurações de logística (motivos e caminhões)',acoes:true}]},
   {id:'compras',nome:'Compras',itens:[
     {k:'compras.oc',n:'Ordens de compra',acoes:true,
       extra:[{k:'compras.oc.receber',n:'Receber mercadoria e estornar estoque'},{k:'compras.oc.receber.extra',n:'Incluir no recebimento item que veio na nota'},
@@ -19786,6 +19790,7 @@ const CS_MOD=[
    {n:'Compras',mod:'compras',fin:'config',perm:'compras.cfg',ic:'car'},
    {n:'Estoques',mod:'estoque',fin:'depositos',perm:'estoque.cfg',ic:'est'},
    {n:'Vendas',mod:'vendas',fin:'config',perm:'vendas.cfg',ic:'loj'},
+   {n:'Logística',mod:'logistica',fin:'config',perm:'log.cfg',ic:'log'},
    {n:'Financeiro · Contas a receber',mod:'cadastros',fin:'motivos',perm:'cad.bancos',ic:'cob'},
    {n:'Dados e versão',page:'admin',aba:'dados',ic:'dad'}]},
 /* Financeiro é um título: abre embaixo dele, no próprio menu, os
@@ -19813,7 +19818,9 @@ const CS_MOD=[
    {n:'Evolução de vendas',mod:'vendas',fin:'evolucao',perm:'vendas.perf',ic:'loj'},
    {n:'Pedidos de venda',mod:'vendas',fin:'pedidos',perm:'vendas.ped',ic:'loj'},
    {n:'Relatórios',mod:'vendas',fin:'relatorios',perm:'vendas.perf',ic:'loj'}]},
- {id:'logistica',nome:'Logística',ic:'log',fase:'fase 13'}
+ {id:'logistica',nome:'Logística',ic:'log',pgs:[
+   {n:'Devoluções',mod:'logistica',fin:'devolucoes',perm:'log.dev',ic:'log'},
+   {n:'Relatórios · Devoluções',mod:'logistica',fin:'relatorios',perm:'log.rel',ic:'rel'}]}
 ];
 (function(){try{const by=id=>CS_MOD.find(m=>m.id===id);const e=by('estoque'),c=by('compras');if(!e||!c)return;
   const sup={id:'suprimentos',nome:'Suprimentos',ic:'sup',pgs:[
@@ -23615,7 +23622,7 @@ try{csNucleo.movimentosDe=function(id){
 /* ---------- CONFIGURAÇÕES NO JEITO DO TINY ----------
    Uma página só: busca no topo, abas por assunto e cada configuração numa
    linha com a sua explicação. Clicar abre a mesma tela de antes. */
-const CS_CFG_ABAS=[['geral','Geral'],['producao','Produção'],['cadastros','Cadastros'],['suprimentos','Suprimentos'],['vendas','Vendas'],['financas','Finanças'],['integracoes','Integrações']];
+const CS_CFG_ABAS=[['geral','Geral'],['producao','Produção'],['cadastros','Cadastros'],['suprimentos','Suprimentos'],['vendas','Vendas'],['logistica','Logística'],['financas','Finanças'],['integracoes','Integrações']];
 const CS_CFG_INFO={
   'Calendário':['producao','Dias de trabalho, sábados e feriados liberados, jornada de cada máquina no dia','sábado feriado folga jornada horário'],
   'Máquinas e tanques':['producao','Máquinas de envase, tanques, capacidade, jornada e intervalo de almoço','almoço pausa capacidade maq tq'],
@@ -23632,6 +23639,7 @@ const CS_CFG_INFO={
   'Estoques':['suprimentos','Depósitos onde o estoque fica guardado, inclusive no fornecedor','deposito depósito fornecedor saldo transferência'],
   'Vendas':['vendas','Estoque reservado: a reserva dos pedidos conta pela data prevista ou pela data do pedido','reserva reservado pedido'],
   'Financeiro · Gestão de cobranças':['financas','Motivos das cobranças: os que aparecem ao excluir um cliente do relatório ou pausar a cobrança','motivo cobrança exclusão pausa relatório'],
+  'Logística':['logistica','Motivos de devolução e caminhões: o link e o QR Code do formulário de devoluções de cada caminhão','devolução avaria caminhão qr code motorista frete terceiro'],
   'Carga do Tiny':['vendas','Trazer o histórico de pedidos de venda do Tiny para o ERP','pedidos histórico importar'],
   'Integração Tiny':['integracoes','Token da API do Tiny e teste da conexão','token api'],
   'Integração WhatsApp':['integracoes','Número, token e modelo de mensagem da cobrança pelo WhatsApp','meta whatsapp cobrança modelo'],
@@ -33302,7 +33310,7 @@ try{csNucleo.versao='v470';}catch(e){}
     return r;};}catch(e){}
 
   /* ---------- 4) Dados e versão ---------- */
-  const NOMES_MOD={financeiro:'Financeiro',compras:'Compras',estoque:'Estoque',transportadores:'Logística',vendas:'Vendas',cadastros:'Cadastros',representante:'Representante',tempos:'Tempos'};
+  const NOMES_MOD={logistica:'Logística',financeiro:'Financeiro',compras:'Compras',estoque:'Estoque',transportadores:'Logística',vendas:'Vendas',cadastros:'Cadastros',representante:'Representante',tempos:'Tempos'};
   let VER_TODOS=false,LISTA=null,STATUS=null;
   const dtBR=d=>d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'});
   const hm=d=>d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}).replace(':','h');
@@ -38385,7 +38393,8 @@ const VC={};
 async function painel(campo,de,ate){const k=campo+'|'+de+'|'+ate;const x=VC[k];if(x&&Date.now()-x.em<5*60000)return x.p;
   const p=chamarTiny({acao:'painel_vendas',de,ate,campo});VC[k]={em:Date.now(),p};p.catch(()=>{delete VC[k];});return p;}
 async function prazo(de,ate){const k='prz|'+de+'|'+ate;const x=VC[k];if(x&&Date.now()-x.em<5*60000)return x.p;
-  const p=chamarTiny({acao:'painel_prazo',de,ate});VC[k]={em:Date.now(),p};p.catch(()=>{delete VC[k];});return p;}
+  /* v514: o prazo de entrega sai direto do banco (função vendas_prazo do supabase-devolucoes.sql) */
+  const p=(async()=>{const ir=()=>fetch(`${SUPA.url}/rest/v1/rpc/vendas_prazo`,{method:'POST',headers:cabecalhos(),body:JSON.stringify({p_de:de,p_ate:ate})});let r=await ir();if(r.status===401&&await renovarSessao())r=await ir();if(!r.ok){let m='vendas_prazo '+r.status;try{const j=await r.json();m='vendas_prazo: '+(j.message||m);}catch(e){}throw new Error(m);}return await r.json();})();VC[k]={em:Date.now(),p};p.catch(()=>{delete VC[k];});return p;}
 function teste(campo){const t=hmVendasTeste();if(campo==='pedido'){t.r.dias.forEach(x=>x.total*=1.12);t.a.dias.forEach(x=>x.total*=1.08);}return t;}
 hmDadosVen=async function(){
   const o=op(),h=new Date(),hj=ymd(h),ini=hj.slice(0,8)+'01';
@@ -38398,7 +38407,7 @@ hmDadosVen=async function(){
   const F=await par('faturamento');
   const [P,S,Z]=await Promise.all([usa('ven')?par('pedido').catch(e=>({erro:e.message})):null,
     o.top==='sem'?painel('faturamento',sem,hj).catch(e=>({erro:e.message})):null,
-    prazo(pzDe,hj).catch(e=>({erro:/vendas_prazo|could not find|desconhecid|ação|acao/i.test(e.message)?'Falta rodar o supabase-v4.9.3-1-prazo-entrega.sql e publicar a função do Tiny nova.':e.message}))]);
+    prazo(pzDe,hj).catch(e=>({erro:/vendas_prazo|could not find|desconhecid|ação|acao/i.test(e.message)?'Falta rodar o supabase-devolucoes.sql (v5.1.4) no Supabase: ele cria a conta do prazo de entrega.':e.message}))]);
   return {F,P,S:S||F.r,Z};
 };
 /* ---------------- os cards ---------------- */
@@ -39226,7 +39235,7 @@ tr.cskRow td{background:#FFFBF5}
 .stq.pausa{background:#FEF3C7;color:#A16207}.cskEsc{display:grid;grid-template-columns:1fr 1fr;gap:12px}.cskEsc button{text-align:left;border:1.5px solid var(--line);background:#fff;border-radius:12px;padding:18px 16px;cursor:pointer;display:flex;flex-direction:column;gap:6px;font:inherit}.cskEsc button:hover{border-color:#15803D;background:#F3FBF5}.cskEsc button.k:hover{border-color:#E9B872;background:#FFF8EC}.cskEsc b{font-size:16px}.cskEsc span{font-size:12.5px;color:var(--ink3);line-height:1.4}.cskEsc button.k b{color:#92400E}
 .cskN{font-style:normal;display:inline-grid;place-items:center;min-width:18px;height:18px;border-radius:999px;background:#EA580C;color:#fff;font:800 11.5px Inter,sans-serif;margin-left:4px;padding:0 4px}.cskBt{border-color:#E9B872!important;color:#92400E!important;background:#FFF8EC!important;margin-right:8px;font-weight:700}tr.cskNeta td{background:#FFFCF7}`;document.head.appendChild(st);
   setTimeout(function cad(){try{if(typeof PRONTO==='undefined'||!PRONTO)return setTimeout(cad,2000);cadastraKits();}catch(e){}},2500);
-  try{csNucleo.versao='v513';}catch(e){}
+  try{csNucleo.versao='v514';}catch(e){}
 })();
 
 </script>
@@ -39396,6 +39405,71 @@ tr.cskRow td{background:#FFFBF5}
 .p512 .pdf input,.p512 .pdf input:focus,.p512 .pdf input:focus-visible{border:0!important;box-shadow:none!important;outline:none!important;background:transparent!important;border-radius:0!important;padding:0!important;height:auto!important}
 .p512 .pdf:focus-within{border-color:#1D6FE8;box-shadow:0 0 0 3px #EAF1FC}
 </style>`);
+})();
+
+</script>
+<script data-v514="logistica">
+/* ===== v5.1.4 · LOGÍSTICA › DEVOLUÇÕES (núcleo) =====
+   - N.sb(caminho,{method,body,prefer}): fala com as tabelas novas do Supabase com o login de quem usa;
+   - N.sbFoto(caminho): link assinado (1 hora) para ver a foto da devolução;
+   - Pessoas e permissões ganha a aba Entregas: quem aparece na lista do formulário do caminhão. */
+(function(){
+  if(window.CS_V514)return;window.CS_V514=1;
+  async function sb(caminho,op){
+    op=op||{};
+    const ir=()=>fetch(`${SUPA.url}/rest/v1/${caminho}`,{method:op.method||'GET',headers:cabecalhos(op.prefer?{'Prefer':op.prefer}:{}),body:op.body!=null?JSON.stringify(op.body):undefined});
+    let r=await ir();if(r.status===401&&await renovarSessao())r=await ir();
+    if(!r.ok){let m='erro '+r.status;try{const j=await r.json();m=(j.message||m)+(j.code?' ('+j.code+')':'');}catch(e){}throw new Error(m);}
+    const t=await r.text();return t?JSON.parse(t):null;
+  }
+  async function sbFoto(caminho){
+    const ir=()=>fetch(`${SUPA.url}/storage/v1/object/sign/devolucoes/${caminho.split('/').map(encodeURIComponent).join('/')}`,{method:'POST',headers:cabecalhos(),body:JSON.stringify({expiresIn:3600})});
+    let r=await ir();if(r.status===401&&await renovarSessao())r=await ir();
+    if(!r.ok)throw new Error('foto '+r.status);
+    const j=await r.json();const u=j.signedURL||j.signedUrl||'';return u?(/^https?:/.test(u)?u:`${SUPA.url}/storage/v1${u.startsWith('/')?'':'/'}${u}`):'';
+  }
+  try{csNucleo.sb=sb;csNucleo.sbFoto=sbFoto;}catch(e){}
+
+  /* ---------- Pessoas e permissões › Entregas ---------- */
+  try{
+    if(!CS_PES_ABAS.some(a=>a[0]==='ent'))CS_PES_ABAS.push(['ent','Entregas']);
+    const _ul=csUsuLista;
+    csUsuLista=function(){
+      if(CS_PES_ABA!=='ent')return _ul.apply(this,arguments);
+      pintaEntregas();
+    };
+  }catch(e){console.warn('[v514] entregas',e);}
+  let ENT=null,FUNC=null;
+  async function pintaEntregas(){
+    const el=M('acgrid');if(!el)return;
+    if(!temNuvem()){el.innerHTML='<div class="vazioc">Entregas precisa do banco online.</div>';return;}
+    el.innerHTML='<div class="vazioc">carregando…</div>';
+    try{ENT=await sb('dev_entregadores?select=*&order=nome.asc');}
+    catch(e){el.innerHTML=`<div class="alert">${/dev_entregadores|42P01|PGRST/i.test(e.message)?'Falta rodar o <b>supabase-devolucoes.sql</b> no Supabase.':escP(e.message)}</div>`;return;}
+    if(!FUNC){try{const c=await csNucleo.ler('cadastros');FUNC=((c&&c.funcionarios)||[]).filter(f=>f.ativo!==false).map(f=>({id:f.id,nome:f.nome}));}catch(e){FUNC=[];}}
+    desenha();
+  }
+  function desenha(){
+    const el=M('acgrid');if(!el||CS_PES_ABA!=='ent')return;
+    const q=CS_USU_BUSCA.trim().toLowerCase();
+    const l=ENT.filter(x=>!q||String(x.nome).toLowerCase().includes(q)).sort((a,b)=>(b.ativo-a.ativo)||String(a.nome).localeCompare(b.nome));
+    el.innerHTML=`<p class="adp" style="margin-top:0">Quem faz entregas: motoristas e ajudantes. Os nomes ativos aparecem na lista <b>Quem está enviando</b> do formulário de devoluções do caminhão (o link e o QR Code de cada caminhão ficam em Configurações › Logística). Não entram no sistema e não precisam de e-mail nem senha. Motorista de terceiro não precisa estar aqui: ele digita o nome dele no formulário.</p>
+      <div class="cs-usutopo"><div class="cs-usubusca"><input id="usBusca" placeholder="Pesquise por nome…" value="${escP(CS_USU_BUSCA)}" autocomplete="off"></div>
+        <div class="enNovo"><input id="enNome" list="enFunc" placeholder="Nome (dos Funcionários ou digitado)" autocomplete="off"><datalist id="enFunc">${(FUNC||[]).filter(f=>!ENT.some(x=>String(x.nome).toLowerCase()===String(f.nome).toLowerCase())).map(f=>`<option value="${escP(f.nome)}">`).join('')}</datalist>
+        <button class="btn pri sm" id="enAdd">+ Incluir em Entregas</button></div></div>
+      <div class="cs-usugrid">${l.map(x=>`<div class="cs-usucard${x.ativo?'':' off'}"><div class="av" style="background:${csUsuCor(x.nome)}">${escP(csUsuInicial(x))}</div>
+        <div class="tx"><b>${escP(x.nome)}</b><i>${x.funcionario_id?'do cadastro de Funcionários':'digitado'}</i><span class="bds"><span class="bd bd-operador">Entregas</span>${x.ativo?'':'<span class="bd bd-off">inativo</span>'}</span></div>
+        <button class="ger" data-enat="${x.id}">${x.ativo?'inativar':'reativar'}</button></div>`).join('')||`<div class="vazioc">${q?'Ninguém com esse nome.':'Ninguém em Entregas ainda. Inclua os motoristas e ajudantes.'}</div>`}</div>`;
+    const b=M('usBusca');b.oninput=()=>{CS_USU_BUSCA=b.value;const p=b.selectionStart;desenha();const n=M('usBusca');n.focus();try{n.setSelectionRange(p,p);}catch(e){}};
+    const add=async()=>{const nome=(M('enNome').value||'').trim().replace(/\s+/g,' ');if(!nome)return toast('Escreva o nome.',true);
+      if(ENT.some(x=>String(x.nome).toLowerCase()===nome.toLowerCase()))return toast('Essa pessoa já está em Entregas.',true);
+      const f=(FUNC||[]).find(x=>String(x.nome).toLowerCase()===nome.toLowerCase());
+      try{await sb('dev_entregadores',{method:'POST',body:{nome:f?f.nome:nome.toUpperCase(),funcionario_id:f?f.id:null}});toast('Incluído em Entregas.');pintaEntregas();}catch(e){toast(e.message,true);}};
+    M('enAdd').onclick=add;M('enNome').onkeydown=e=>{if(e.key==='Enter')add();};
+    el.querySelectorAll('[data-enat]').forEach(x=>x.onclick=async()=>{const p=ENT.find(y=>y.id===x.dataset.enat);
+      try{await sb(`dev_entregadores?id=eq.${p.id}`,{method:'PATCH',body:{ativo:!p.ativo}});pintaEntregas();}catch(e){toast(e.message,true);}});
+  }
+  try{const st=document.createElement('style');st.textContent=`.enNovo{display:flex;gap:8px;align-items:center}.enNovo input{height:34px;border:1px solid var(--line,#E4E4E7);border-radius:8px;padding:0 10px;font:inherit;font-size:13px;min-width:280px}`;document.head.appendChild(st);}catch(e){}
 })();
 
 </script>
