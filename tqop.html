@@ -694,8 +694,9 @@ function pedirPin(titulo,ok){const m=$('mPin');$('tela').appendChild(m);let v=''
     <div class="kp">${['1','2','3','4','5','6','7','8','9','C','0','⌫'].map(k=>`<div data-k="${k}">${k}</div>`).join('')}</div></div>`;
     m.querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>tecla(b.dataset.k));};
   const tecla=k=>{if(k==='x'){m.classList.remove('on');return;}if(k==='C')v='';else if(k==='⌫')v=v.slice(0,-1);else if(v.length<4)v+=k;
-    if(v.length===4){const r=N.tqPin(v);if(r&&r.ok){const pin=v;m.classList.remove('on');ok(pin,r.nome);return;}
-      msg=(r&&r.erro)||'PIN não encontrado, tente de novo';erro=true;v='';}
+    if(v.length===4){const pin=v;const fim=r=>{if(r&&r.ok){m.classList.remove('on');ok(pin,r.nome);return;}msg=(r&&r.erro)||'PIN não encontrado, tente de novo';erro=true;v='';pinta();};
+      /* v518: o PIN que o tablet não conhece vai ao servidor; a resposta chega depois */
+      const r=N.tqPin(pin);if(r&&typeof r.then==='function'){msg='Conferindo o PIN…';erro=false;pinta();r.then(fim,()=>fim(null));return;}fim(r);return;}
     else erro=false;
     pinta();};
   pinta();m.classList.add('on');}
@@ -965,9 +966,10 @@ function trava(sair){OPER='';const m=$('trava');let v='',msg='',erro=false;
     m.querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>tecla(b.dataset.k));
     if(!ok)setTimeout(()=>{if(m.classList.contains('on')&&!m.querySelector('.kp'))pinta();},700);};
   const tecla=k=>{if(k==='C')v='';else if(k==='⌫')v=v.slice(0,-1);else if(v.length<4)v+=k;
-    if(v.length===4&&sair){const r=N.tqSair?N.tqSair(v):{erro:'Atualize o sistema.'};if(r&&r.ok)return;msg=(r&&r.erro)||'Só o master solta o aparelho';erro=true;v='';pinta();return;}
-    if(v.length===4){const r=N.tqPin(v);if(r&&r.ok){OPER=r.nome||'';m.classList.remove('on');document.body.classList.remove('travado');atualiza();toast('Olá, '+(OPER.split(' ')[0]||'')+'!');return;}
-      msg=(r&&r.erro)||'PIN não encontrado, tente de novo';erro=true;v='';}
+    const ag=(r,fim)=>{if(r&&typeof r.then==='function'){msg='Conferindo o PIN…';erro=false;pinta();r.then(fim,()=>fim(null));}else fim(r);};   /* v518: resposta do servidor chega depois */
+    if(v.length===4&&sair){ag(N.tqSair?N.tqSair(v):{erro:'Atualize o sistema.'},r=>{if(r&&r.ok)return;msg=(r&&r.erro)||'Só o master solta o aparelho';erro=true;v='';pinta();});return;}
+    if(v.length===4){ag(N.tqPin(v),r=>{if(r&&r.ok){OPER=r.nome||'';m.classList.remove('on');document.body.classList.remove('travado');atualiza();toast('Olá, '+(OPER.split(' ')[0]||'')+'!');return;}
+      msg=(r&&r.erro)||'PIN não encontrado, tente de novo';erro=true;v='';pinta();});return;}
     else erro=false;pinta();};
   document.body.classList.add('travado');m.classList.add('on');pinta();
 }
