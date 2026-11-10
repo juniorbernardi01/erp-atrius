@@ -3983,7 +3983,7 @@ body.cs-semjanela #mask{visibility:hidden!important}
     <div class="fld"><label>E-mail</label>
       <input type="email" id="lgMail" name="email" autocomplete="username" placeholder="nome@atrius.com.br"></div>
     <div class="fld"><label>Senha</label>
-      <input type="password" id="lgSenha" name="password" autocomplete="current-password"></div>
+      <div class="secreto"><input type="password" id="lgSenha" name="password" autocomplete="current-password"><button type="button" class="olho" data-olho="lgSenha" title="Mostrar a senha" aria-label="Mostrar a senha">&#128065;</button></div></div>
     <label class="chk" style="margin:2px 0 12px"><input type="checkbox" id="lgLembrar" checked>
       <span>Guardar meu e-mail neste aparelho</span></label>
     <div class="lgerro" id="lgErro" hidden></div>
@@ -39537,6 +39537,15 @@ tr.cskRow td{background:#FFFBF5}
   if(_s)csNucleo.tqSair=pin=>{const r=csTqQuem(pin);if(r&&r.ok)return _s(pin);
     return srv(pin).then(d=>d&&d.q?_s(pin):{erro:(d&&d.motivo)||(r&&r.erro)||'PIN não encontrado'});};
 }catch(e){console.warn('[v518 pin]',e);}})();
+/* v5.1.8 · OLHINHO DA SENHA EM QUALQUER TELA (10/11, pedido do Junior: "aperto ali e não dá para visualizar")
+   O olho só era ligado dentro das janelas (mB, mF). Pessoas e permissões virou página e o botão ficou sem ação; o login
+   nem tinha o olho. Agora um só ouvinte cuida de todo botão data-olho que não tenha ação própria. */
+document.addEventListener('click',ev=>{try{
+  const b=ev.target.closest&&ev.target.closest('[data-olho]');if(!b||b.onclick)return;
+  const e=document.getElementById(b.dataset.olho);if(!e||e.tagName!=='INPUT')return;
+  ev.preventDefault();const esc=e.type!=='text';e.type=esc?'text':'password';
+  b.classList.toggle('on',esc);b.title=esc?'Esconder':'Mostrar';
+}catch(x){}});
 
 </script>
 <style>
