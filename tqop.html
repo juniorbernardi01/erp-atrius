@@ -228,7 +228,7 @@ details.hgbox>summary h3{margin:0}details.hgbox[open]>summary h3{margin-bottom:1
 .addr td{border-bottom:0!important;padding-top:10px!important}.addaj{display:inline-block;padding:8px 14px;border-radius:10px;border:1.5px dashed var(--line);font:700 13px var(--font);color:var(--baz);cursor:pointer}
 .fdica{font-size:12px;color:var(--ink3);padding:8px 0}.acao.ico{width:52px;padding:0!important;display:grid;place-items:center}.acao.mau{background:#DC2626}
 /* ajuste e liberação */
-.ckl.aj span{color:#F87171}.sub2.sim div{font-size:11px!important;color:var(--ink3)!important;border-style:dashed!important;height:30px}
+.ckl.aj span{color:#FB923C}.sub2.sim div{font-size:11px!important;color:var(--ink3)!important;border-style:dashed!important;height:30px}
 .pcard.libv{cursor:pointer;position:relative}.pcard.libv .tq{box-shadow:0 0 0 2px #F59E0B}.libtag{margin-top:6px;text-align:center;font:800 12px var(--font);color:#1F1300;background:#F59E0B;border-radius:8px;padding:6px}
 .mc.lib{width:820px}.libg{display:grid;grid-template-columns:1.2fr 1fr;gap:16px}.libg h4{margin:4px 0 8px;font:800 11px var(--font);letter-spacing:.07em;text-transform:uppercase;color:var(--ink3)}
 .libg label{display:block;font:700 12px var(--font);color:var(--ink2);margin-bottom:10px}.libg label .in{display:block;width:100%;margin-top:4px;font:600 15px var(--font)}.obsop{margin-top:10px;background:var(--line2);border-radius:10px;padding:10px;font-size:13px}.obsop b{display:block;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3);margin-bottom:3px}
@@ -409,7 +409,7 @@ body.kbon .drawer .lista{padding-bottom:330px}
    azul #1B4F9C aguardando · cinza #475569 preparando · verde #15803D produzindo · amarelo #CA8A04 pausado
    vermelho #DC2626 atrasado/problema · roxo #6D28D9 apontar. Botões: etapa #1D6FE8, concluir #15803D, apontar #6D28D9, pausar vermelho claro. */
 .st.agu,.mini.agu{background:#1B4F9C;color:#fff}.st.lim,.mini.lim{background:#0E7490;color:#fff}.st.set,.mini.set{background:#475569;color:#fff}.st.rod,.mini.rod{background:#15803D;color:#fff}
-.st.pau,.mini.pau{background:#CA8A04;color:#fff}.st.atr,.mini.atr{background:#DC2626;color:#fff}.st.apo,.mini.apo{background:#6D28D9;color:#fff}
+.st.pau,.mini.pau{background:#CA8A04;color:#fff}.st.atr,.mini.atr{background:#DC2626;color:#fff}.st.aju,.mini.aju{background:#EA580C;color:#fff}.st.apo,.mini.apo{background:#6D28D9;color:#fff}
 .st.liv,.mini.liv{background:var(--cinzabg);color:var(--ink3)}
 .st .t{color:inherit!important}
 .acao.go{background:#1D6FE8!important;color:#fff}.acao.fim{background:#15803D!important;color:#fff}.acao.apo{background:#6D28D9!important;color:#fff}
@@ -535,7 +535,7 @@ function toast(t){const e=$('toast');const av=TOAST_AV.test(String(t||''));e.tex
 /* cores universais = as do tablet do envase:
    agu azul (aguardando a próxima etapa) · set cinza (preparando o tanque: limpeza, enchimento) · rod verde (produzindo / envasando)
    pau amarelo (pausado) · atr vermelho (atrasado ou com problema) · apo roxo (o operador precisa apontar: análise) · liv (livre) */
-const ST={limpar:['lim','Liberado para limpeza'],limpando:['set','Limpando'],encher:['agu','Limpo · encher'],enchendo:['set','Enchendo'],cheio:['agu','Cheio · aguardando preparo'],atras:['atr','Atrasado · cheio'],prep:['rod','Preparando'],descansar:['agu','Análise enviada'],descanso:['rod','Em descanso'],analise:['apo','Fazer análise'],naolib:['agu','Aguardando liberação'],liberado:['agu','Aguardando envase'],envasando:['rod','Envasando'],livre:['liv','Livre'],saldo:['apo','Saldo de lote'],ajuste:['atr','Ajuste pedido pelo químico'],pausa:['pau','Pausado']};
+const ST={limpar:['lim','Liberado para limpeza'],limpando:['set','Limpando'],encher:['agu','Limpo · encher'],enchendo:['set','Enchendo'],cheio:['agu','Cheio · aguardando preparo'],atras:['atr','Atrasado · cheio'],prep:['rod','Preparando'],descansar:['agu','Análise enviada'],descanso:['rod','Em descanso'],analise:['apo','Fazer análise'],naolib:['agu','Aguardando liberação'],liberado:['agu','Aguardando envase'],envasando:['rod','Envasando'],livre:['liv','Livre'],saldo:['apo','Saldo de lote'],ajuste:['aju','Ajuste solicitado'],pausa:['pau','Pausado']};
 const NAO_COMECOU=['limpar','encher','livre'],PRODUZIDO=['descansar','descanso','analise','naolib','liberado','ajuste'];
 let DIA=null;            /* null = hoje; senão a data escolhida (próximo dia de produção etc.) */
 let D=null,T=[],AGORA=0;
@@ -953,7 +953,7 @@ function abrirAna(t){const l=lote(t);if(!l)return;const f=$('fAna');const enviad
       :`<input class="in" inputmode="decimal" data-e="${e.k}" value="${esc(R[e.k])}" ${enviada?'disabled':''} style="width:110px">`}</td><td>${s==='ok'?'<span class="pill ok">dentro</span>':s==='fora'?'<span class="pill mau">fora</span>':''}</td></tr>`;}).join('')||'<tr><td colspan="4" style="color:var(--ink3)">Este produto não tem ensaios cadastrados.</td></tr>'}</tbody></table></div></div>
   <div class="box"><h3>Ajustes feitos no lote</h3><div class="bb"><table class="t"><thead><tr><th>Hora</th><th>O que entrou</th><th>Quanto</th></tr></thead><tbody>${((l.extra||[]).map(a=>`<tr><td class="m">${esc(a.em||'')}</td><td>${esc(a.nome)}<small>${a.lote?'lote '+esc(a.lote):''}</small></td><td class="m">${nl(a.kg)} ${esc(a.un||'kg')}</td></tr>`).join(''))||'<tr><td colspan="3" style="color:var(--ink3)">nenhum ajuste</td></tr>'}</tbody></table>
     <div style="margin-top:10px"><span style="font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink3);font-weight:700">Observação para o químico</span><textarea class="in obs" id="aObs" ${enviada?'disabled':''} placeholder="se teve algo diferente" style="display:block;width:100%;min-height:70px;margin-top:6px">${esc(enviada?(l.tq.anaObs||''):obs)}</textarea></div></div></div></div>
-  <div class="ff"><span style="flex:1"></span><div class="acao ${enviada?'off':'apo'}" id="aE">${enviada?'Análise já enviada':l.reana?'ENVIAR REANÁLISE':'ENVIAR ANÁLISE PARA LIBERAÇÃO'}</div></div>`;
+  <div class="ff"><span style="flex:1"></span><div class="acao ${enviada?'off':'apo'}" id="aE">${enviada?'Análise já enviada':l.reana?'ENVIAR REANÁLISE':'ENVIAR ANÁLISE PARA APROVAÇÃO'}</div></div>`;
   f.classList.add('on');f.querySelector('#aX').onclick=()=>f.classList.remove('on');
   f.querySelectorAll('input[data-e]').forEach(i=>{i.oninput=()=>{R[i.dataset.e]=i.value;};i.onchange=()=>{const p=i.selectionStart;pinta();};});
   f.querySelectorAll('[data-q]').forEach(b=>b.onclick=()=>{if(enviada)return;const [k,v]=b.dataset.q.split('|');R[k]=v;pinta();});

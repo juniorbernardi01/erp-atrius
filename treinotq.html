@@ -5516,7 +5516,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v521';const VERSAO_DATA='11/11/2026';
+const VERSAO_APP='v522';const VERSAO_DATA='11/11/2026';
 /* número que aparece na tela: v438 → v4.3.8 (por dentro continua v438, que é o que as versões comparam) */
 const csRotVer=v=>{const d=String(v||'').replace(/\D/g,'');return d.length>=3?'v'+d.slice(0,-2)+'.'+d.slice(-2,-1)+'.'+d.slice(-1):String(v||'');};
 const VERSAO_ROTULO=csRotVer(VERSAO_APP)+' · '+VERSAO_DATA;
@@ -30835,7 +30835,7 @@ function csTqAcao(k,a,x,pin){
       novo.analise={...(at.analise||{}),resultados:res,em:relogio(),por:quem.nome};
       tq.anaEnv=C();tq.anaObs=x.obs||'';const era=!!tq.reana;tq.reana=false;tq.anaN=(+tq.anaN||0)+1;
       let fora=[];try{fora=ensaiosDe(b.produto).filter(([kk])=>confereEnsaio(b.produto,kk,res[kk])==='fora').map(([,r])=>r);}catch(e){}
-      L(era?'Enviou a reanálise':'Enviou a análise para liberação',
+      L(era?'Enviou a reanálise':'Enviou a análise para aprovação',
         (mud.length?mud.map(kk=>{const e=(ENSAIOS.find(z=>z[0]===kk)||[kk,kk])[1];return `${e}: ${res[kk]}`;}).join(' · '):'')+(fora.length?' · fora: '+fora.join(', '):'')+(x.obs?' · '+x.obs:''),true);
       msg=era?'Reanálise enviada':'Análise enviada';break;}
     case 'ajLanc':{
@@ -30927,7 +30927,7 @@ function csTqPedirAjuste(b){
   if(M('mAcao'))M('mAcao').innerHTML='';
   M('mTit').textContent='Pedir ajuste ao tanque';M('mSub').hidden=false;
   M('mSub').textContent=`${b.tanque} · ${b.produto}${b.lote?' · lote '+b.lote:''}`;
-  M('mB').innerHTML=`<div class="alert blue">O pedido aparece na hora no tablet dos tanques, em vermelho: <b>Ajuste pedido pelo químico</b>.
+  M('mB').innerHTML=`<div class="alert blue">O pedido aparece na hora no tablet dos tanques, em laranja: <b>Ajuste solicitado</b>.
     O operador lança o lote e o peso da MP, e refaz a análise.</div>
     <div class="fld"><label>Matéria-prima <b>*</b> <span class="k">(do cadastro)</span></label>
       <input class="inp" id="tqaMp" list="tqaLst" placeholder="digite para buscar"><datalist id="tqaLst">${ins.map(i=>`<option value="${escAttr(i.nome)}">${escAttr(i.sku)}</option>`).join('')}</datalist></div>
@@ -39252,7 +39252,7 @@ tr.cskRow td{background:#FFFBF5}
 .stq.pausa{background:#FEF3C7;color:#A16207}.cskEsc{display:grid;grid-template-columns:1fr 1fr;gap:12px}.cskEsc button{text-align:left;border:1.5px solid var(--line);background:#fff;border-radius:12px;padding:18px 16px;cursor:pointer;display:flex;flex-direction:column;gap:6px;font:inherit}.cskEsc button:hover{border-color:#15803D;background:#F3FBF5}.cskEsc button.k:hover{border-color:#E9B872;background:#FFF8EC}.cskEsc b{font-size:16px}.cskEsc span{font-size:12.5px;color:var(--ink3);line-height:1.4}.cskEsc button.k b{color:#92400E}
 .cskN{font-style:normal;display:inline-grid;place-items:center;min-width:18px;height:18px;border-radius:999px;background:#EA580C;color:#fff;font:800 11.5px Inter,sans-serif;margin-left:4px;padding:0 4px}.cskBt{border-color:#E9B872!important;color:#92400E!important;background:#FFF8EC!important;margin-right:8px;font-weight:700}tr.cskNeta td{background:#FFFCF7}`;document.head.appendChild(st);
   setTimeout(function cad(){try{if(typeof PRONTO==='undefined'||!PRONTO)return setTimeout(cad,2000);cadastraKits();}catch(e){}},2500);
-  try{csNucleo.versao='v521';}catch(e){}
+  try{csNucleo.versao='v522';}catch(e){}
 })();
 
 </script>
