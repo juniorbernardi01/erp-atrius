@@ -5510,7 +5510,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v522';const VERSAO_DATA='11/11/2026';
+const VERSAO_APP='v532';const VERSAO_DATA='11/11/2026';
 /* número que aparece na tela: v438 → v4.3.8 (por dentro continua v438, que é o que as versões comparam) */
 const csRotVer=v=>{const d=String(v||'').replace(/\D/g,'');return d.length>=3?'v'+d.slice(0,-2)+'.'+d.slice(-2,-1)+'.'+d.slice(-1):String(v||'');};
 const VERSAO_ROTULO=csRotVer(VERSAO_APP)+' · '+VERSAO_DATA;
@@ -18432,7 +18432,7 @@ const FIN_COB_PAGINAS=[
    ===================================================================== */
 let MODULOS_ERP={financeiro:{estado:'ativo',arquivo:'financeiro.html'},
   compras:{estado:'ativo',arquivo:'compras.html'},estoque:{estado:'ativo',arquivo:'estoque.html'},
-  transportadores:{estado:'ativo',arquivo:'transportadores.html'},vendas:{estado:'ativo',arquivo:'vendas.html'},logistica:{estado:'ativo',arquivo:'logistica.html'},representante:{estado:'ativo',arquivo:'representante.html'},cadastros:{estado:'ativo',arquivo:'cadastros.html'},tempos:{estado:'ativo',arquivo:'tempos.html'}};
+  transportadores:{estado:'ativo',arquivo:'transportadores.html'},vendas:{estado:'ativo',arquivo:'vendas.html'},logistica:{estado:'ativo',arquivo:'logistica.html'},limpeza:{estado:'ativo',arquivo:'limpeza.html'},representante:{estado:'ativo',arquivo:'representante.html'},cadastros:{estado:'ativo',arquivo:'cadastros.html'},tempos:{estado:'ativo',arquivo:'tempos.html'}};
 /* na versão de teste o Financeiro nasce publicado e aponta para o arquivo
    de teste dele, para as 10 páginas darem para testar desde já */
 const MODULOS_TESTE=false;
@@ -18468,7 +18468,10 @@ const PERM_MODS=[
     {k:'sopro',n:'Sopro',acoes:true},
     {k:'rotulagem',n:'Rotulagem',acoes:true},
     {k:'relatorio',n:'Relatórios',acoes:true},
-    {k:'oee',n:'OEE'}]},
+    {k:'oee',n:'OEE'},
+    {k:'pcp.limp',n:'Checklist semanal de limpeza (preencher os setores que são da pessoa)',acoes:true,extra:[{k:'pcp.limp.ciencia',n:'Conferir e dar ciência no checklist de limpeza'}]},
+    {k:'pcp.limp.rel',n:'Relatório Limpeza e conservação'},
+    {k:'pcp.limp.cfg',n:'Configurações do checklist de limpeza',acoes:true}]},
   {id:'estoque',nome:'Estoque',itens:[{k:'estoque.saldos',n:'Saldos'},
     {k:'estoque',n:'Movimentos (envio ao Tiny)',acoes:true},
     {k:'estoque.inv',n:'Inventário',acoes:true,
@@ -19760,6 +19763,7 @@ const CS_MOD=[
    {n:'Sopro',page:'sopro',ic:'sop'},
    {n:'Rotulagem',page:'rotulagem',ic:'rot'},
    {n:'Necessidade de produção',mod:'vendas',fin:'necprod',perm:'vendas.necprod',ic:'nec'},
+   {n:'Checklist semanal de limpeza',mod:'limpeza',fin:'lista',perm:'pcp.limp',ic:'qua'},
    {n:'Indicadores',page:'gestao',ic:'ind'},
    {n:'OEE',page:'oee',ic:'ind'},
    {n:'Relatórios',page:'relatorio',ic:'rel'}]},
@@ -19797,6 +19801,7 @@ const CS_MOD=[
    {n:'Estoques',mod:'estoque',fin:'depositos',perm:'estoque.cfg',ic:'est'},
    {n:'Vendas',mod:'vendas',fin:'config',perm:'vendas.cfg',ic:'loj'},
    {n:'Logística',mod:'logistica',fin:'config',perm:'log.cfg',ic:'log'},
+   {n:'Checklist semanal de limpeza',mod:'limpeza',fin:'config',perm:'pcp.limp.cfg',ic:'qua'},
    {n:'Financeiro · Contas a receber',mod:'cadastros',fin:'motivos',perm:'cad.bancos',ic:'cob'},
    {n:'Dados e versão',page:'admin',aba:'dados',ic:'dad'}]},
 /* Financeiro é um título: abre embaixo dele, no próprio menu, os
@@ -23645,6 +23650,7 @@ const CS_CFG_INFO={
   'Estoques':['suprimentos','Depósitos onde o estoque fica guardado, inclusive no fornecedor','deposito depósito fornecedor saldo transferência'],
   'Vendas':['vendas','Estoque reservado: a reserva dos pedidos conta pela data prevista ou pela data do pedido','reserva reservado pedido'],
   'Financeiro · Gestão de cobranças':['financas','Motivos das cobranças: os que aparecem ao excluir um cliente do relatório ou pausar a cobrança','motivo cobrança exclusão pausa relatório'],
+  'Checklist semanal de limpeza':['producao','Setores e itens do checklist, quem vistoria cada setor, tipos de problema, avisos por e-mail e guarda das fotos','limpeza vistoria checklist setor item tipo problema foto'],
   'Logística':['logistica','Motivos de devolução e caminhões: o link e o QR Code do formulário de devoluções de cada caminhão','devolução avaria caminhão qr code motorista frete terceiro'],
   'Carga do Tiny':['vendas','Trazer o histórico de pedidos de venda do Tiny para o ERP','pedidos histórico importar'],
   'Integração Tiny':['integracoes','Token da API do Tiny e teste da conexão','token api'],
@@ -33316,7 +33322,7 @@ try{csNucleo.versao='v470';}catch(e){}
     return r;};}catch(e){}
 
   /* ---------- 4) Dados e versão ---------- */
-  const NOMES_MOD={logistica:'Logística',financeiro:'Financeiro',compras:'Compras',estoque:'Estoque',transportadores:'Logística',vendas:'Vendas',cadastros:'Cadastros',representante:'Representante',tempos:'Tempos'};
+  const NOMES_MOD={limpeza:'Checklist de limpeza',logistica:'Logística',financeiro:'Financeiro',compras:'Compras',estoque:'Estoque',transportadores:'Logística',vendas:'Vendas',cadastros:'Cadastros',representante:'Representante',tempos:'Tempos'};
   let VER_TODOS=false,LISTA=null,STATUS=null;
   const dtBR=d=>d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'});
   const hm=d=>d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}).replace(':','h');
@@ -33692,7 +33698,7 @@ table.csmt{display:table!important;border-radius:0!important;padding:0!important
     ['Perdas e desvios',[['quebras','mot','Quebras','Litros perdidos por produto, máquina e operador, com os motivos'],
                  ['motivos','par','Motivos e problemas','Onde estamos perdendo: litros e tempo por motivo, do maior para o menor']]],
     ['Sopro e rotulagem',[['sopro','sop','Sopro','Frascos soprados, quebras e por hora'],['rotulagem','rot','Rotulagem','Frascos rotulados e por hora']]],
-    ['Qualidade e indicadores',[['cert','cert','Certificados','Certificados de análise dos lotes'],['oee','ind','OEE','Disponibilidade, desempenho e qualidade']]]];
+    ['Qualidade e indicadores',[['cert','cert','Certificados','Certificados de análise dos lotes'],['oee','ind','OEE','Disponibilidade, desempenho e qualidade'],['limpeza','cert','Limpeza e conservação','% conforme por semana, não conformes por tipo, setor e gravidade, reincidências']]]];
   const NOME={};CAT.forEach(([g,l])=>l.forEach(([k,,n])=>NOME[k]=n));
   let QH='';
   function hub(){
@@ -33705,6 +33711,7 @@ table.csmt{display:table!important;border-radius:0!important;padding:0!important
   }
   function abre(k){
     if(k==='oee'){try{csIr({page:'oee'});}catch(e){}return;}
+    if(k==='limpeza'){try{csIr({n:'Limpeza e conservação',mod:'limpeza',fin:'relatorio',perm:'pcp.limp.rel'});}catch(e){}return;}
     ABA_REP=k;try{marcarRota();}catch(e){}gradeRelatorio();try{M('repwrap').scrollTop=0;}catch(e){}
   }
   const cab=nome=>`<div class="c9mig"><a data-c9h="1">PCP</a> › <a data-c9h="1">Relatórios</a> › ${esc(nome)}</div>`;
@@ -39246,7 +39253,7 @@ tr.cskRow td{background:#FFFBF5}
 .stq.pausa{background:#FEF3C7;color:#A16207}.cskEsc{display:grid;grid-template-columns:1fr 1fr;gap:12px}.cskEsc button{text-align:left;border:1.5px solid var(--line);background:#fff;border-radius:12px;padding:18px 16px;cursor:pointer;display:flex;flex-direction:column;gap:6px;font:inherit}.cskEsc button:hover{border-color:#15803D;background:#F3FBF5}.cskEsc button.k:hover{border-color:#E9B872;background:#FFF8EC}.cskEsc b{font-size:16px}.cskEsc span{font-size:12.5px;color:var(--ink3);line-height:1.4}.cskEsc button.k b{color:#92400E}
 .cskN{font-style:normal;display:inline-grid;place-items:center;min-width:18px;height:18px;border-radius:999px;background:#EA580C;color:#fff;font:800 11.5px Inter,sans-serif;margin-left:4px;padding:0 4px}.cskBt{border-color:#E9B872!important;color:#92400E!important;background:#FFF8EC!important;margin-right:8px;font-weight:700}tr.cskNeta td{background:#FFFCF7}`;document.head.appendChild(st);
   setTimeout(function cad(){try{if(typeof PRONTO==='undefined'||!PRONTO)return setTimeout(cad,2000);cadastraKits();}catch(e){}},2500);
-  try{csNucleo.versao='v522';}catch(e){}
+  try{csNucleo.versao='v532';}catch(e){}
 })();
 
 </script>
@@ -39700,6 +39707,56 @@ function csMp519(simular){
     try{render();}catch(e){}
   }catch(e){console.warn('[mp519]',e);}}
   setTimeout(roda,14000);setTimeout(roda,40000);
+})();
+
+</script>
+<script data-v530="limpeza">
+/* ===== v5.3.0 · PCP › CHECKLIST SEMANAL DE LIMPEZA (núcleo) =====
+   O módulo limpeza.html fala com o banco pelo núcleo, com o login de quem usa:
+   - N.sbUp(bucket,caminho,blob,tipo): sobe a foto (já comprimida no aparelho) para o Storage;
+   - N.sbAssina(bucket,caminho): link assinado (1 hora) para ver a foto;
+   - N.sbTira(bucket,caminho): tira a foto do Storage (só enquanto a vistoria está aberta);
+   - N.quem(pin): de quem é o PIN (o mesmo PIN da fábrica, conferido aqui ou no servidor);
+   - N.pessoas(): os nomes de Pessoas e permissões, para escolher quem vistoria cada setor. */
+(function(){
+  if(window.CS_V530)return;window.CS_V530=1;
+  const pathEnc=c=>String(c).split('/').map(encodeURIComponent).join('/');
+  async function vai(f){let r=await f();if(r.status===401&&await renovarSessao())r=await f();return r;}
+  async function sbUp(bucket,caminho,blob,tipo){
+    const r=await vai(()=>fetch(`${SUPA.url}/storage/v1/object/${bucket}/${pathEnc(caminho)}`,{method:'POST',headers:cabecalhos({'Content-Type':tipo||'image/jpeg','x-upsert':'false'}),body:blob}));
+    if(!r.ok){let m='foto '+r.status;try{const j=await r.json();m=j.message||j.error||m;}catch(e){}throw new Error(m);}
+    return caminho;
+  }
+  async function sbAssina(bucket,caminho){
+    const r=await vai(()=>fetch(`${SUPA.url}/storage/v1/object/sign/${bucket}/${pathEnc(caminho)}`,{method:'POST',headers:cabecalhos(),body:JSON.stringify({expiresIn:3600})}));
+    if(!r.ok)throw new Error('foto '+r.status);
+    const j=await r.json();const u=j.signedURL||j.signedUrl||'';return u?(/^https?:/.test(u)?u:`${SUPA.url}/storage/v1${u.startsWith('/')?'':'/'}${u}`):'';
+  }
+  async function sbTira(bucket,caminho){
+    const r=await vai(()=>fetch(`${SUPA.url}/storage/v1/object/${bucket}/${pathEnc(caminho)}`,{method:'DELETE',headers:cabecalhos()}));
+    if(!r.ok&&r.status!==404)throw new Error('foto '+r.status);return true;
+  }
+  async function quem(pin){
+    const v=String(pin||'').trim();if(!v)return null;
+    try{const q=quemPorCredencial(v);if(q&&q.nome)return {nome:q.nome,email:q.email||''};}catch(e){}
+    try{if(typeof CS_PIN_CACHE!=='undefined'&&CS_PIN_CACHE[v])return {nome:CS_PIN_CACHE[v].nome,email:CS_PIN_CACHE[v].email||''};}catch(e){}
+    try{if(typeof csPinServidor==='function'&&typeof temNuvem==='function'&&temNuvem()){const d=await csPinServidor(v,false);if(d&&d.q&&d.q.nome)return {nome:d.q.nome,email:d.q.email||''};}}catch(e){}
+    return null;
+  }
+  const pessoas=()=>{try{return (typeof ACESSOS!=='undefined'?ACESSOS:[]).filter(a=>a.ativo!==false&&a.nome).map(a=>a.nome).sort((a,b)=>a.localeCompare(b,'pt-BR'));}catch(e){return [];}};
+  /* chama uma função do Supabase com o login de quem usa (o teste de e-mail das Configurações) */
+  async function fn(nome,corpo){
+    const r=await vai(()=>fetch(`${SUPA.url}/functions/v1/${nome}`,{method:'POST',headers:cabecalhos(),body:JSON.stringify(corpo||{})}));
+    let j=null;try{j=await r.json();}catch(e){}
+    if(!r.ok&&!(j&&j.erro))throw new Error('função '+r.status);return j;
+  }
+  /* para escolher quem recebe os avisos: nome, função e o e-mail do cadastro */
+  const contatos=()=>{try{return (typeof ACESSOS!=='undefined'?ACESSOS:[]).filter(a=>a.ativo!==false&&a.nome).map(a=>({nome:a.nome,funcao:a.funcao||'',email:a.email||''})).sort((a,b)=>a.nome.localeCompare(b.nome,'pt-BR'));}catch(e){return [];}};
+  try{Object.assign(csNucleo,{sbUp,sbAssina,sbTira,quem,pessoas,contatos,fn});}catch(e){}
+  /* o relatório do checklist abre pela moldura dos módulos: o menu marca PCP › Relatórios */
+  try{if(typeof csOnde==='function'){const _o=csOnde;csOnde=function(){
+    try{if(S.page==='financeiro'&&MOD_ATUAL==='limpeza'&&FIN_PAG==='relatorio'){const m=CS_MOD.find(x=>x.id==='pcp');const p=m&&(m.pgs||[]).find(x=>x.page==='relatorio');if(m&&p)return {m,p};}}catch(e){}
+    return _o.apply(this,arguments);};}}catch(e){}
 })();
 
 </script>
