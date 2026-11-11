@@ -1155,29 +1155,33 @@ const avisoErro=m=>`<div class="aviso">⚠ <div>${esc(m)}</div></div>`;
    ===================================================================== */
 async function telaLista(){
   $('app').innerHTML=`<div class="lp"><div class="migalha">PCP › Checklist semanal de limpeza</div>
-  <div class="topo"><h1>Checklist semanal de limpeza</h1><button class="btn" id="bAtu">⟳ Atualizar</button></div>
-  <div class="barra"><div class="busca">⌕<input id="q" placeholder="Nº, semana ou responsável" value="${esc(LP.q)}"></div>${perBotao('bPer',LP.per)}</div>
+  <div class="topo"><h1>Checklist semanal de limpeza</h1><button class="btn" id="bAtu">⟳ Atualizar</button><button class="btn pri" id="bSemana" hidden>Abrir o checklist da semana</button></div>
+  <div class="barra"><div class="busca">⌕<input id="q" placeholder="Nº, data ou responsável" value="${esc(LP.q)}"></div>${perBotao('bPer',LP.per)}</div>
   <div id="lista"><div class="vazio">Carregando…</div></div>
-  <div class="leg">A vistoria da semana nasce sozinha. Clicou na linha, abre: em andamento, cada um preenche os setores que são dele; fechada, abre a ciência. Atrasada: não fechada até ${['domingo','segunda','terça','quarta','quinta','sexta','sábado'][regra('nao_realizada','dia',5)%7]} ${esc(regra('nao_realizada','hora','17:30'))}, ou sem ciência até ${['domingo','segunda','terça','quarta','quinta','sexta','sábado'][regra('cobranca','dia',1)%7]} ${esc(regra('cobranca','hora','12:00'))}. Indicadores e gráficos ficam em PCP › Relatórios › Limpeza e conservação.</div></div>`;
+  <div class="leg">A vistoria da semana nasce sozinha. Clicou na linha, abre: em andamento, quem tem acesso preenche; fechada, abre a ciência. Atrasada: não fechada até ${['domingo','segunda','terça','quarta','quinta','sexta','sábado'][regra('nao_realizada','dia',5)%7]} ${esc(regra('nao_realizada','hora','17:30'))}, ou sem ciência até ${['domingo','segunda','terça','quarta','quinta','sexta','sábado'][regra('cobranca','dia',1)%7]} ${esc(regra('cobranca','hora','12:00'))}. Indicadores e gráficos ficam em PCP › Relatórios › Limpeza e conservação.</div></div>`;
   $('q').oninput=e=>{LP.q=e.target.value;desenhaLista();};
   $('bPer').onclick=ev=>{ev.stopPropagation();abrirPeriodo(ev.currentTarget,LP.per,{},st=>{LP.per=st;telaLista();});};
   $('bAtu').onclick=()=>{LP.vists=null;LP.base=null;telaLista();};
   try{await carregaBase();await garanteSemana();LP.vists=await carregaVists();LP.erro='';}catch(e){LP.erro=e.message;}
   desenhaLista();
+  const at=(LP.vists||[]).find(x=>x.semana===segDe(hojeY()));const b=$('bSemana');
+  if(b&&at){b.hidden=false;b.textContent=at.situacao==='andamento'?(pode('pcp.limp','editar')?'Fazer o checklist da semana':'Ver o checklist da semana'):at.situacao==='fechada'&&pode('pcp.limp.ciencia')?'Conferir e dar ciência':'Ver o checklist da semana';b.onclick=()=>ir('lista',at.numero);}
 }
 function desenhaLista(){
   const l=$('lista');if(!l)return;
   if(LP.erro){l.innerHTML=avisoErro(LP.erro);return;}
   const f=perFaixa(LP.per),q=semAc(LP.q),hoje=segDe(hojeY());
   const L=(LP.vists||[]).filter(x=>(x.semana===hoje)||((!f.de||x.semana>=segDe(f.de))&&(!f.ate||x.semana<=f.ate)))
-    .filter(x=>!q||semAc([n4(x.numero),x.numero,br(x.semana),...x.sets.map(s=>s.responsavel)].join(' ')).includes(q));
+    .filter(x=>!q||semAc([n4(x.numero),x.numero,br(x.semana),x.fechada_em?new Date(x.fechada_em).toLocaleDateString('pt-BR'):'',x.fechada_por,x.iniciada_por,...x.sets.map(s=>s.responsavel)].join(' ')).includes(q));
   if(!L.length){l.innerHTML='<div class="vazio">Nenhuma vistoria no período.</div>';return;}
-  l.innerHTML=`<div class="rolx"><table class="tv"><thead><tr><th>Nº</th><th>Semana</th><th>Responsável</th><th>Iniciado em</th><th>Fechado em</th><th style="text-align:right">Itens</th><th style="text-align:right">Não conformes</th><th>Situação</th><th>Ciência</th></tr></thead><tbody>
+  /* decisão de 11/11: só o essencial. Data = o dia em que foi feita (fechada); responsável = quem fez */
+  const dia=iso=>iso?new Date(iso).toLocaleDateString('pt-BR'):'';
+  l.innerHTML=`<div class="rolx"><table class="tv"><thead><tr><th>Nº</th><th>Data</th><th>Responsável</th><th style="text-align:right">Itens</th><th style="text-align:right">Não conformes</th><th>Situação</th><th>Ciência</th></tr></thead><tbody>
   ${L.map(x=>{const st=situacao(x),rn=respNome(x.sets),nr=x.resp.filter(r=>r.resposta).length,nc=x.resp.filter(r=>r.resposta==='nao_conforme').length;
-    return `<tr data-n="${x.numero}"><td class="m"><b>${n4(x.numero)}</b></td><td>${br(x.semana)} a ${br(addDias(x.semana,6)).slice(0,5)}${x.semana===hoje?'<span class="s">semana atual</span>':''}</td>
-    <td>${esc(pri(rn[0]||''))}${rn.length>1?`<span class="s">${rn.slice(1).map(n=>esc(x.sets.filter(s=>s.responsavel===n).map(s=>s.setor_nome).join(', '))+': '+esc(pri(n))).join(' · ')}</span>`:''}</td>
-    <td class="m">${dh(x.iniciada_em)}</td><td class="m">${dh(x.fechada_em)}</td><td class="n">${nr}/${x.resp.length}</td><td class="n">${nc||''}</td>
-    <td><span class="pill ${PILL[st[0]]}">${st[1]}</span></td><td>${x.ciencia_em?esc(pri(x.ciencia_por))+' · '+dh(x.ciencia_em):''}</td></tr>`;}).join('')}</tbody></table></div>`;
+    const quem=x.fechada_por||x.iniciada_por||rn[0]||'';
+    return `<tr data-n="${x.numero}"><td class="m"><b>${n4(x.numero)}</b></td><td>${x.fechada_em?dia(x.fechada_em):'<span style="color:var(--ink3)">semana de '+br(x.semana).slice(0,5)+'</span>'}</td>
+    <td>${esc(pri(quem))}</td><td class="n">${nr}/${x.resp.length}</td><td class="n">${nc||''}</td>
+    <td><span class="pill ${PILL[st[0]]}">${st[1]}</span></td><td>${x.ciencia_em?esc(pri(x.ciencia_por))+' · '+dia(x.ciencia_em):''}</td></tr>`;}).join('')}</tbody></table></div>`;
   l.querySelectorAll('tr[data-n]').forEach(r=>r.onclick=()=>ir('lista',r.dataset.n));
 }
 
@@ -1188,24 +1192,26 @@ async function telaVist(numero){
   $('app').innerHTML='<div class="lp"><div class="vazio">Carregando…</div></div>';
   try{await carregaBase();const V=await carregaVist(numero);if(!V){$('app').innerHTML='<div class="lp">'+avisoErro('Vistoria '+n4(numero)+' não encontrada.')+'</div>';return;}
     LP.V=V;LP.errSet='';
-    const meu=V.sets.findIndex(s=>mesmo(s.responsavel,eu())&&!s.concluido_em);
-    LP.cur=V.v.situacao!=='andamento'?-1:(meu>=0?meu:(V.sets.every(s=>s.concluido_em)?V.sets.length:0));
+    const prox=V.sets.findIndex(s=>!s.concluido_em);
+    LP.cur=V.v.situacao!=='andamento'?-1:(prox>=0?prox:V.sets.length);
   }catch(e){$('app').innerHTML='<div class="lp">'+avisoErro(e.message)+'</div>';return;}
   desenhaVist();
 }
 const V_=()=>LP.V;
 const principal=()=>respNome(V_().sets)[0]||'';
+const v_fechou=()=>V_().v.fechada_por||principal();
 const respDe=s=>V_().resp.filter(r=>r.setor_id===s.setor_id);
-const podeSetor=s=>V_().v.situacao==='andamento'&&!s.concluido_em&&mesmo(s.responsavel,eu())&&pode('pcp.limp','editar');
+/* decisão de 11/11: quem tem acesso ao checklist preenche qualquer setor; o responsável do setor é a referência (e quem recebe os avisos) */
+const podeSetor=s=>V_().v.situacao==='andamento'&&!s.concluido_em&&pode('pcp.limp','editar');
 const tipoDe=id=>(LP.base.tipos||[]).find(t=>t.id===id);
 const ncOk=r=>r.resposta==='conforme'||(r.resposta==='nao_conforme'&&r.tipo_id&&r.gravidade&&String(r.observacao||'').trim()&&(!(tipoDe(r.tipo_id)||{}).fixo||String(r.tipo_outro||'').trim()));
 function cabVist(){const V=V_(),v=V.v,nc=V.resp.filter(r=>r.resposta==='nao_conforme').length,nr=V.resp.filter(r=>r.resposta).length,rn=respNome(V.sets);
   return `<div class="migalha"><a data-volta="1">PCP › Checklist semanal de limpeza</a> › Nº ${n4(v.numero)}</div>
   <div class="topo"><h1>Checklist semanal de limpeza${v.situacao!=='andamento'?' · Nº '+n4(v.numero):''}</h1><div class="dir">Nº ${n4(v.numero)} · Semana de ${br(v.semana)} · ${esc(rn.map((n,i)=>i?V.sets.filter(s=>s.responsavel===n).map(s=>s.setor_nome).join(', ')+': '+pri(n):pri(n)).join(' · '))}<br>${nr} de ${V.resp.length} itens · ${nc} não conformes</div></div>`;}
 function cartoes(){const V=V_();
-  return `<div class="setores">${V.sets.map((s,i)=>{const R=respDe(s),n=R.filter(r=>r.resposta).length,f=!!s.concluido_em,meu=mesmo(s.responsavel,eu());
-    const cls=i===LP.cur?'on':f?'feito':(!meu?'outro':'');
-    const c=f?'Concluído'+(!mesmo(s.responsavel,principal())?' · '+pri(s.concluido_por):''):(!meu&&i!==LP.cur?'com '+pri(s.responsavel):n+' de '+R.length);
+  return `<div class="setores">${V.sets.map((s,i)=>{const R=respDe(s),n=R.filter(r=>r.resposta).length,f=!!s.concluido_em;
+    const cls=i===LP.cur?'on':f?'feito':'';
+    const c=f?'Concluído · '+pri(s.concluido_por):n+' de '+R.length+(!mesmo(s.responsavel,principal())?' · '+pri(s.responsavel):'');
     return `<button class="${cls}" data-set="${i}"><span class="b">${f?'&#10003;':i+1}</span><span class="n">${esc(s.setor_nome)}</span><span class="c">${esc(c)}</span>${f?'':`<span class="p"><i style="width:${R.length?Math.round(n/R.length*100):0}%"></i></span>`}</button>`;}).join('')}</div>
   <div class="prog"><i style="width:${Math.round(V.resp.filter(r=>r.resposta).length/Math.max(1,V.resp.length)*100)}%"></i></div>`;}
 function desenhaVist(){
@@ -1217,16 +1223,15 @@ function desenhaVist(){
   $('app').innerHTML=`<div class="lp">${cabVist()}${cartoes()}${corpo}</div>`;
   ligaVist();
 }
-function proximoMeu(de){const S=V_().sets;for(let k=1;k<=S.length;k++){const i=(de+k)%S.length;if(mesmo(S[i].responsavel,eu())&&!S[i].concluido_em)return i;}return -1;}
+function proximoMeu(de){const S=V_().sets;for(let k=1;k<=S.length;k++){const i=(de+k)%S.length;if(!S[i].concluido_em)return i;}return -1;}
 function botaoProx(){const p=proximoMeu(LP.cur),S=V_().sets;
   return p>=0&&p!==LP.cur?`<button class="btn blue gr" data-ir="${p}">Ir para ${esc(S[p].setor_nome)}</button>`:(S.every(s=>s.concluido_em)?`<button class="btn blue gr" data-ir="${S.length}">Ver o resumo</button>`:'');}
 function paginaSetor(s){
   const R=respDe(s),n=R.filter(r=>r.resposta).length,nc=R.filter(r=>r.resposta==='nao_conforme').length,ed=podeSetor(s);
-  const faixa=`<div class="sethead"><span class="num">${LP.cur+1}</span><div><h2>${esc(s.setor_nome)}</h2><small>${R.length} itens · vistoriado por ${esc(pri(s.responsavel))}${s.concluido_em?' · concluído às '+hm(s.concluido_em)+' por '+esc(pri(s.concluido_por)):''}</small></div><div class="st"><b>${n}/${R.length}</b>respondidos${nc?' · '+nc+' NC':''}</div></div>`;
-  if(!ed&&!s.concluido_em&&!mesmo(s.responsavel,eu()))return faixa+`<div class="lpav"><b>${esc(s.setor_nome)} é vistoriado por ${esc(s.responsavel)}.</b><br>A pessoa abre esta mesma vistoria no aparelho dela, preenche e conclui o setor${!mesmo(s.responsavel,principal())?' com o PIN':''}. Aqui aparece concluído assim que for assinado. O fechamento só libera com todos os setores concluídos.</div><div class="rodape"><span class="esq"></span>${botaoProx()}</div>`;
+  const faixa=`<div class="sethead"><span class="num">${LP.cur+1}</span><div><h2>${esc(s.setor_nome)}</h2><small>${R.length} itens · responsável: ${esc(pri(s.responsavel))}${s.concluido_em?' · concluído às '+hm(s.concluido_em)+' por '+esc(pri(s.concluido_por)):''}</small></div><div class="st"><b>${n}/${R.length}</b>respondidos${nc?' · '+nc+' NC':''}</div></div>`;
   const ult=!R.length?'':R.map(r=>itemHtml(r,ed)).join('');
-  const pe=ed?`<div class="rodape"><span class="${LP.errSet?'erro':'esq'}" id="pEsq">${esc(LP.errSet||n+' de '+R.length+' respondidos')}</span><button class="btn blue gr" id="bConc">${!mesmo(s.responsavel,principal())?'Concluir setor com meu PIN':(proximoMeu(LP.cur)<0&&V_().sets.every((x,i)=>i===LP.cur||x.concluido_em)?'Concluir e ver o resumo':'Concluir setor e avançar')}</button></div>`
-    :`<div class="rodape"><span class="esq">${s.concluido_em?'Setor concluído por '+esc(pri(s.concluido_por))+' às '+hm(s.concluido_em)+'.':'Só '+esc(pri(s.responsavel))+' preenche este setor.'}</span>${s.concluido_em&&mesmo(s.responsavel,eu())&&pode('pcp.limp','editar')?'<button class="btn gr" id="bReab">Reabrir o setor</button>':''}${botaoProx()}</div>`;
+  const pe=ed?`<div class="rodape"><span class="${LP.errSet?'erro':'esq'}" id="pEsq">${esc(LP.errSet||n+' de '+R.length+' respondidos')}</span><button class="btn blue gr" id="bConc">${V_().sets.every((x,i)=>i===LP.cur||x.concluido_em)?'Concluir e ver o resumo':'Concluir setor e avançar'}</button></div>`
+    :`<div class="rodape"><span class="esq">${s.concluido_em?'Setor concluído por '+esc(pri(s.concluido_por))+' às '+hm(s.concluido_em)+'.':'Sem permissão para preencher: peça em Pessoas e permissões › PCP.'}</span>${s.concluido_em&&V_().v.situacao==='andamento'&&pode('pcp.limp','editar')?'<button class="btn gr" id="bReab">Reabrir o setor</button>':''}${botaoProx()}</div>`;
   return faixa+ult+pe;
 }
 function itemHtml(r,ed){
@@ -1283,31 +1288,30 @@ async function concluirSetor(){
   const fim=async nome=>{try{const x=await sb(`vistoria_setores?vistoria_id=eq.${s.vistoria_id}&setor_id=eq.${s.setor_id}`,{method:'PATCH',body:{concluido_em:agoraIso(),concluido_por:nome},prefer:'return=representation'});
       if(x&&x[0])Object.assign(s,x[0]);const p=proximoMeu(LP.cur);LP.cur=p>=0?p:V_().sets.length;LP.errSet='';desenhaVist();topo();}
     catch(e){toast(e.message,true);}};
-  if(!mesmo(s.responsavel,principal()))return pedePin('Concluir '+s.setor_nome,`O setor fica assinado por você. ${esc(pri(principal()))} vê como concluído no aparelho dela.`,fim);
   fim(eu());
 }
 async function reabrirSetor(){const s=V_().sets[LP.cur];
   try{const x=await sb(`vistoria_setores?vistoria_id=eq.${s.vistoria_id}&setor_id=eq.${s.setor_id}`,{method:'PATCH',body:{concluido_em:null,concluido_por:null},prefer:'return=representation'});if(x&&x[0])Object.assign(s,x[0]);desenhaVist();}
   catch(e){toast(e.message,true);}}
 function espera(){const S=V_().sets,falta=S.filter(s=>!s.concluido_em).map(s=>s.setor_nome+' ('+pri(s.responsavel)+')');
-  return `<div class="lpav"><b>Os seus setores estão concluídos.</b><br>Falta: ${esc(falta.join(', '))}. ${mesmo(principal(),eu())?'O resumo e o fechamento liberam quando todos concluírem.':esc(pri(principal()))+' fecha a vistoria quando todos concluírem.'}</div>`;}
+  return `<div class="lpav"><b>Falta concluir:</b> ${esc(falta.join(', '))}. O resumo e o fechamento liberam quando todos os setores estiverem concluídos.</div>`;}
 const ncsDe=V=>V.resp.filter(r=>r.resposta==='nao_conforme');
 const pcConf=V=>Math.round((V.resp.length-ncsDe(V).length)/Math.max(1,V.resp.length)*100);
 function quebraTipos(L){if(!L.length)return '';const t={};L.forEach(x=>{const k=x.tipo_nome||'—';t[k]=(t[k]||0)+1;});
   return `<div class="tipos">${Object.entries(t).sort((a,b)=>b[1]-a[1]).map(([n,v])=>`<div><b>${Math.round(v/L.length*100)}%</b>${esc(n)}<small>${v} de ${L.length}</small></div>`).join('')}</div>`;}
 function porSetor(V){return `<div class="cards sets">${V.sets.map((s,i)=>{const R=respDe(s),n=R.filter(r=>r.resposta==='nao_conforme').length;return `<div class="card ${n?'a':'g'}"><span>${i+1}. ${esc(s.setor_nome)}</span><b>${n?n+' NC':'100%'}</b><small>${Math.round((R.length-n)/Math.max(1,R.length)*100)}% conforme</small></div>`;}).join('')}</div>`;}
 const fotosHtml=r=>r.fotos.length?`<div class="fotos">${r.fotos.map(f=>`<img class="ft" data-ft="${esc(f.caminho)}" alt="Foto">`).join('')}</div>`:'<span style="color:var(--ink3)">sem foto</span>';
-function resumo(){const V=V_(),L=ncsDe(V),pc=pcConf(V),alta=L.filter(x=>x.gravidade==='alta').length,ehP=mesmo(principal(),eu())&&pode('pcp.limp','editar');
+function resumo(){const V=V_(),L=ncsDe(V),pc=pcConf(V),alta=L.filter(x=>x.gravidade==='alta').length,ehP=pode('pcp.limp','editar');
   return `<div class="sethead" style="background:${pc>=90?'var(--ok)':'var(--amb)'}"><div><h2>Resumo da vistoria</h2><small>confira antes de fechar · depois de fechada não muda mais</small></div><div class="st"><b>${pc}%</b>conforme</div></div>
    <div class="cards"><div class="card"><span>Itens vistoriados</span><b>${V.resp.length}</b></div><div class="card ${L.length?'a':'g'}"><span>Não conformes</span><b>${L.length}</b></div><div class="card ${alta?'r':''}"><span>Gravidade alta</span><b>${alta}</b></div><div class="card"><span>Reincidentes</span><b>${L.filter(x=>x.reincidente_de).length}</b></div></div>
    ${porSetor(V)}
    <div class="caixa"><h3>Não conformidades da semana<span class="dir">por tipo de problema</span></h3><div class="cp">${L.length?quebraTipos(L)+tabNC(L,false):'<div class="vazio" style="color:var(--ok);font-weight:600">Nenhuma não conformidade nesta semana.</div>'}</div></div>
    ${ehP?`<div class="caixa"><h3>Fechar a vistoria</h3><div class="cp"><div class="leg">Depois de fechada, a vistoria não pode ser alterada.${ligada('realizada')?' O aviso de vistoria realizada sai por e-mail na hora.':''}</div><button class="btn pri gr" id="bFechar">Fechar vistoria com meu PIN</button></div></div>`
-     :`<div class="lpav">Quem fecha a vistoria é ${esc(principal())}, com o PIN.</div>`}`;}
+     :`<div class="lpav">Para fechar a vistoria é preciso ter a permissão de preencher o checklist.</div>`}`;}
 function tabNC(L,cienc){const V=V_(),sets=Object.fromEntries(V.sets.map(s=>[s.setor_id,s]));
   return `<div class="rolx"><table class="tv lpt"><thead><tr><th>Setor</th><th>Item</th><th>Tipo</th><th>Observação</th><th>Gravidade</th><th>Fotos</th>${cienc?'<th style="min-width:170px">Conferência</th>':''}</tr></thead><tbody>
-  ${L.map(r=>{const s=sets[r.setor_id]||{},outro=!mesmo(s.responsavel,principal());
-    return `<tr data-r="${r.id}"><td>${esc(r.setor_nome)}${outro?`<span class="tag n">${esc(pri(s.responsavel))}</span>`:''}</td><td>${esc(r.item_nome)}${r.reincidente_de?'<span class="tag">Reincidente</span>':''}</td><td>${esc(r.tipo_nome||'')}${r.tipo_outro?'<span class="gmud">'+esc(r.tipo_outro)+'</span>':''}</td><td>${esc(r.observacao||'')}</td>
+  ${L.map(r=>{const s=sets[r.setor_id]||{},outro=s.concluido_por&&!mesmo(s.concluido_por,v_fechou());
+    return `<tr data-r="${r.id}"><td>${esc(r.setor_nome)}${outro?`<span class="tag n">${esc(pri(s.concluido_por))}</span>`:''}</td><td>${esc(r.item_nome)}${r.reincidente_de?'<span class="tag">Reincidente</span>':''}</td><td>${esc(r.tipo_nome||'')}${r.tipo_outro?'<span class="gmud">'+esc(r.tipo_outro)+'</span>':''}</td><td>${esc(r.observacao||'')}</td>
     <td>${cienc?gravCiencia(r,s):`<span class="pill ${gCls(r.gravidade)}">${gRot(r.gravidade)}</span>`}</td><td>${fotosHtml(r)}</td>${cienc?`<td>${confCiencia(r,s)}</td>`:''}</tr>`;}).join('')}</tbody></table></div>`;}
 
 /* ---------- fotos: comprimidas no aparelho (~1.280 px) e guardadas no Storage, nunca no banco ---------- */
@@ -1356,13 +1360,14 @@ function fecharVist(){const v=V_().v;
    CIÊNCIA (vistoria fechada)
    ===================================================================== */
 const ehCiencia=()=>V_().v.situacao==='fechada'&&pode('pcp.limp.ciencia');
-const autoItem=s=>mesmo(s.responsavel,eu());
+/* o não conforme que a própria pessoa vistoriou entra direto: ninguém confere o próprio trabalho */
+const autoItem=s=>mesmo(s.concluido_por,eu());
 function gravCiencia(r,s){
   const g=ehCiencia()&&!autoItem(s)?`<div class="seg mini">${GRAV.map(([k,n])=>`<button data-cg="${k}" class="${r.gravidade===k?'on':''}">${n}</button>`).join('')}</div>`:`<span class="pill ${gCls(r.gravidade)}">${gRot(r.gravidade)}</span>`;
-  return g+(r.gravidade_orig&&r.gravidade_orig!==r.gravidade?`<span class="gmud">${esc(pri(s.responsavel))} marcou <s>${gRot(r.gravidade_orig)}</s> · mudado por ${esc(pri(r.gravidade_por))}</span>`:'');}
+  return g+(r.gravidade_orig&&r.gravidade_orig!==r.gravidade?`<span class="gmud">${esc(pri(s.concluido_por||s.responsavel))} marcou <s>${gRot(r.gravidade_orig)}</s> · mudado por ${esc(pri(r.gravidade_por))}</span>`:'');}
 function confCiencia(r,s){
   const vc=V_().v.situacao;
-  if(vc==='fechada'&&ehCiencia()&&autoItem(s))return `<span class="tag n" style="margin-left:0">${esc(pri(s.responsavel))} vistoriou</span><span class="gmud">entra direto, sem conferência</span>`;
+  if(vc==='fechada'&&ehCiencia()&&autoItem(s))return `<span class="tag n" style="margin-left:0">Você vistoriou</span><span class="gmud">entra direto, sem conferência</span>`;
   if(ehCiencia()){const loc=r._conf||r.confere;
     return `<div class="conf"><button class="s ${loc==='sim'?'on':''}" data-cf="sim">Confere</button><button class="n ${loc==='nao'?'on':''}" data-cf="nao">Não confere</button></div>${loc==='nao'?`<input data-just="1" value="${esc(r.justificativa_confere||'')}" placeholder="Justificativa *" style="margin-top:6px;width:100%;height:32px;font-size:12.5px">`:''}`;}
   if(r.confere==='sim')return `<span class="pill p-ok">Confere</span>${r.conferido_por?'<span class="gmud">'+esc(pri(r.conferido_por))+'</span>':''}`;
