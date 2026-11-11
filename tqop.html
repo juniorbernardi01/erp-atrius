@@ -100,6 +100,7 @@ table.t{width:100%;border-collapse:collapse;font-size:14px}.t th{font:600 10.5px
 .modo li small{display:block;color:var(--ink3);font-size:12px}
 .full .ff{display:flex;gap:8px;padding:10px 12px 12px;border-top:1px solid var(--line);background:var(--card);flex:none}.full .ff .acao{height:50px;padding:0 22px}
 .toast{position:absolute;left:50%;bottom:18px;transform:translateX(-50%);background:#111827;color:#fff;padding:10px 16px;border-radius:10px;font-size:13px;display:none}
+.toast.av{background:#FACC15!important;color:#1A1D23!important;font-weight:800;font-size:17px;padding:16px 24px;border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.35);max-width:86vw;text-align:center;z-index:99}
 .leg{font-size:13px;color:var(--ink2);line-height:1.6;max-width:1280px;margin:0 auto}
 @keyframes pisca{0%,100%{background:#F97316;color:#fff}50%{background:#FFEDD5;color:#C2410C}}.tiles .pisca{animation:pisca 1s steps(1,end) infinite}.tiles .pisca span,.tiles .pisca b{color:inherit}@media (prefers-reduced-motion:reduce){.tiles .pisca{animation:none;background:#F97316;color:#fff}}
 /* v10 */
@@ -527,7 +528,9 @@ const dur=m=>{m=Math.max(0,Math.round(+m||0));return Math.floor(m/60)+':'+p2(m%6
 const min=h=>{const x=/^(\d{1,2}):(\d{2})/.exec(String(h||''));return x?(+x[1])*60+(+x[2]):null;};
 const ymd=d=>`${d.getFullYear()}-${p2(d.getMonth()+1)}-${p2(d.getDate())}`;
 const amanha=()=>{const d=new Date();d.setDate(d.getDate()+1);return ymd(d);};
-function toast(t){const e=$('toast');e.textContent=t;e.style.display='block';clearTimeout(e._t);e._t=setTimeout(()=>e.style.display='none',2600);}
+/* v521: aviso que impede a ação (separe, marque, digite…) sai em amarelo, maior e por mais tempo, para chamar atenção */
+const TOAST_AV=/^(Separe|Marque|Digite|Escolha|Escreva|Precisa|Os passos|Sem lote|Preencha|Lance|Saldo|A análise|Toque|Termine|Conclua|Antes|Falta|Não |Esse lote|Atualize|Só )/i;
+function toast(t){const e=$('toast');const av=TOAST_AV.test(String(t||''));e.textContent=t;e.classList.toggle('av',av);e.style.display='block';clearTimeout(e._t);e._t=setTimeout(()=>e.style.display='none',av?5000:2600);}
 
 /* cores universais = as do tablet do envase:
    agu azul (aguardando a próxima etapa) · set cinza (preparando o tanque: limpeza, enchimento) · rod verde (produzindo / envasando)
@@ -695,7 +698,11 @@ function exec(t,a,pin,x){const l=lote(t);if(!l)return;
 
 /* ---------- PIN ---------- */
 function pedirPin(titulo,ok){const m=$('mPin');$('tela').appendChild(m);let v='';let msg='Digite o seu PIN',erro=false;
-  const pinta=()=>{m.innerHTML=`<div class="mc pin"><div class="mh"><span><b>Digite seu PIN</b><small>${esc(titulo)}</small></span><span class="x" data-k="x">×</span></div>
+  const pinta=()=>{m.classList.toggle('sem',m.classList.contains('on'));   /* v521: a cada tecla não roda de novo a animação (piscava) */
+    /* v521: com o teclado já na tela, só acende as bolinhas e troca a mensagem (redesenhar tudo piscava no tablet) */
+    {const dd=m.querySelector('.mc.pin .dots');if(dd&&m.classList.contains('on')&&m.dataset.t===titulo){dd.innerHTML=[0,1,2,3].map(i=>`<i class="${i<v.length?'on':''}"></i>`).join('');const g=m.querySelector('.msg');if(g){g.className='msg '+(erro?'erro':'');g.textContent=msg;}return;}}
+    m.dataset.t=titulo;
+    m.innerHTML=`<div class="mc pin"><div class="mh"><span><b>Digite seu PIN</b><small>${esc(titulo)}</small></span><span class="x" data-k="x">×</span></div>
     <div class="dots">${[0,1,2,3].map(i=>`<i class="${i<v.length?'on':''}"></i>`).join('')}</div><div class="msg ${erro?'erro':''}">${esc(msg)}</div>
     <div class="kp">${['1','2','3','4','5','6','7','8','9','C','0','⌫'].map(k=>`<div data-k="${k}">${k}</div>`).join('')}</div></div>`;
     m.querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>tecla(b.dataset.k));};
@@ -735,6 +742,7 @@ function histTanque(t){const a=[];[...t.fila,...t.feitos].forEach(x=>(x.log||[])
 
 /* ---------- modal genérico e escolha de motivo ---------- */
 function modal(html){const cont=$('tela');let m=cont.querySelector(':scope > .modal.gen');if(!m){m=document.createElement('div');m.className='modal gen';cont.appendChild(m);}
+  m.classList.toggle('sem',m.classList.contains('on'));   /* v521: já aberta (redesenho ao escolher): sem a animação de entrada, não pisca */
   m.innerHTML=html;m.classList.add('on');m.onclick=e=>{if(e.target===m||e.target.closest('[data-fechar]'))m.classList.remove('on');};return m;}
 function chipsMotivo(grupos,st,pref){
   return `<div class="chips big">${grupos.map(g=>`<span class="${st.grupo===g.nome?'on':''}" data-${pref}g="${esc(g.nome)}">${esc(g.nome)}</span>`).join('')}<span class="${st.grupo==='Outro'?'on':''}" data-${pref}g="Outro">Outro</span></div>
@@ -965,6 +973,9 @@ try{if(N&&N.tqLogo)$('logo').src=N.tqLogo();}catch(e){}
 function trava(sair){OPER='';const m=$('trava');let v='',msg='',erro=false;
   const pronto=()=>{try{return !!(N&&N.tqDados&&N.tqDados().pronto);}catch(e){return false;}};
   const pinta=()=>{const ok=pronto();let lg='';try{lg=(N&&N.tqLogo&&N.tqLogo())||'';}catch(e){}
+    /* v521: teclado já na tela: só as bolinhas e a mensagem mudam (redesenhar tudo piscava no tablet) */
+    {const dd=m.querySelector('.trc .dots');if(ok&&dd&&m.querySelector('.kp')&&m.dataset.sair===String(!!sair)){dd.innerHTML=[0,1,2,3].map(i=>`<i class="${i<v.length?'on':''}"></i>`).join('');const g=m.querySelector('.trc .msg');if(g){g.className='msg '+(erro?'erro':'');g.innerHTML=esc(msg)||'&nbsp;';}return;}}
+    m.dataset.sair=String(!!sair);
     m.innerHTML=`<div class="trc">${lg?`<img src="${esc(lg)}" alt="Atrius" class="tlg">`:''}<h1>${sair?'Sair da tela dos tanques':'Tanques'}</h1><p>${sair?'PIN do master para soltar este aparelho':ok?'Digite o seu PIN para abrir':'Carregando a programação…'}</p>
       ${ok?`<div class="dots">${[0,1,2,3].map(i=>`<i class="${i<v.length?'on':''}"></i>`).join('')}</div><div class="msg ${erro?'erro':''}">${esc(msg)||'&nbsp;'}</div>
       <div class="kp">${['1','2','3','4','5','6','7','8','9','C','0','⌫'].map(k=>`<div data-k="${k}">${k}</div>`).join('')}</div>`:'<div class="tload"><i></i></div>'}</div>`;
