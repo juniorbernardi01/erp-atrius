@@ -97,6 +97,8 @@ tr.clic{cursor:pointer}tr.clic:hover td{background:#F8FAFE}
 .sec>h3{font-size:13.5px;font-weight:600;padding:13px 18px;border-bottom:1px solid var(--line2);display:flex;gap:8px;align-items:center}
 .sec>h3 .dir{margin-left:auto;display:flex;gap:6px}
 .sec>.cp{padding:14px 18px}
+.msd{position:relative;display:inline-block}.msd>summary{list-style:none;cursor:pointer;border:1px solid var(--line);border-radius:8px;padding:7px 10px;background:#fff;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:230px}.msd>summary::-webkit-details-marker{display:none}.msd>summary::after{content:' ▾';color:var(--ink3)}.msd[open]>summary{border-color:#1B4F9C}.msdp{position:absolute;z-index:30;top:calc(100% + 4px);left:0;min-width:240px;background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.14);padding:6px;display:flex;flex-direction:column;gap:2px}.msdp label{display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:7px;font-size:13px;cursor:pointer}.msdp label:hover{background:#F2F5FA}
+.colbt{display:flex;flex-direction:column;gap:8px;margin-top:6px}.colbt .btn{width:100%;justify-content:center}.mpg{margin:.4em 0 1em;color:var(--ink3)}
 .rodape{position:sticky;bottom:0;background:rgba(246,245,241,.95);backdrop-filter:blur(4px);border-top:1px solid var(--line);padding:12px 0;display:flex;gap:8px;justify-content:flex-end;margin-top:6px;z-index:5;flex-wrap:wrap}
 .rodape .esq{margin-right:auto;font-size:12px;color:var(--ink3);align-self:center}
 .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-bottom:14px}
@@ -813,7 +815,7 @@ const PAGINA_INICIAL='ordens';
 /* situações da ordem, na ordem em que ela anda. "rec" é a mercadoria que já
    chegou e espera o adm conferir a nota; parcial também cai aqui, porque o
    que faltou vira uma ordem de saldo separada */
-const SIT={ras:'Rascunho',env:'Enviada ao fornecedor',rec:'Recebida · a conferir',con:'Concluída',can:'Cancelada'};
+const SIT={ras:'Em aberto',env:'Enviada ao fornecedor',rec:'Recebida · a conferir',con:'Concluída',can:'Cancelada'};
 const COR={ras:'#8B93A1',env:'#1D6FE8',rec:'#D97706',con:'#16A34A',can:'#B3261E'};
 /* formas de pagamento com os nomes do Tiny, para a conta chegar igual lá */
 const FORMAS=['Boleto','Cheque','Cartão de crédito','Cartão de débito','Dinheiro','Pix'];
@@ -1200,11 +1202,11 @@ function telaOrdens(){
         <h4>Comprador</h4><select id="fComp" style="width:100%"><option value="">todos</option>${comps.map(c=>`<option ${LST.fil.comp===c?'selected':''}>${esc(c)}</option>`).join('')}</select>
         <div style="display:flex;gap:8px;margin-top:12px"><button class="btn" id="fLimpa">Limpar</button><button class="btn pri" id="fOk">Filtrar</button></div></div></div>
   </div>
-  <div class="sts">${[['ras','Rascunho'],['env','Enviada ao fornecedor'],['rec','Recebida · a conferir'],['con','Concluída'],['todas','Todas','#1A1D23'],['can','Cancelada']].map(([k,r,c])=>
+  <div class="sts">${[['ras','Em aberto'],['env','Enviada ao fornecedor'],['rec','Recebida · a conferir'],['con','Concluída'],['todas','Todas','#1A1D23'],['can','Cancelada']].map(([k,r,c])=>
     `<button data-sit="${k}" class="${LST.sit===k?'on':''}" style="--cor:${c||COR[k]}">${r}<b>${nf(cont(k))}</b></button>`).join('')}<span style="flex:1"></span>${colsBotao('bCols')}</div>
-  <div class="bl"><span class="cont">${nsel?nsel+(nsel>1?' ordens marcadas':' ordem marcada'):'Marque as ordens para imprimir, salvar ou pôr marcadores em várias de uma vez'}</span><span style="flex:1"></span>
-    <button class="btn ${nsel?'':'des'}" id="bLImp">⎙ Imprimir</button><button class="btn ${nsel?'':'des'}" id="bLPdf">⤓ Salvar PDF</button><button class="btn ${nsel?'':'des'}" id="bLMk">🏷 Marcadores</button></div>
-  <div class="lo">${lista.length?`<div class="h"><span></span><span></span>${col('num','Nº OC')}${col('data','Data')}${col('prev','Previsão')}${col('forn','Fornecedor')}${col('tot','Total','justify-content:flex-end')}${col('sit','Situação')}<span>Marcadores</span>${col('nf','NF')}<span>Integração</span></div>
+  <div class="bl"><span class="cont" id="blCont">${nsel?nsel+(nsel>1?' ordens marcadas':' ordem marcada'):'Marque as ordens para imprimir, salvar, enviar ou pôr marcadores em várias de uma vez'}</span><span style="flex:1"></span>
+    <button class="btn ${nsel?'':'des'}" id="bLImp">⎙ Imprimir</button><button class="btn ${nsel?'':'des'}" id="bLPdf">⤓ Salvar PDF</button><button class="btn ${nsel?'':'des'}" id="bLEnv">✈ Marcar como enviada</button><button class="btn ${nsel?'':'des'}" id="bLMk">🏷 Marcadores</button></div>
+  <div class="lo">${lista.length?`<div class="h"><span></span><span class="ck ckA" data-ckall="1" title="Selecionar ou limpar todas desta lista"></span>${col('num','Nº OC')}${col('data','Data')}${col('prev','Previsão')}${col('forn','Fornecedor')}${col('tot','Total','justify-content:flex-end')}${col('sit','Situação')}<span>Marcadores</span>${col('nf','NF')}<span>Integração</span></div>
     ${lista.map(o=>{const t=contaOC(o);const atr=o.sit==='env'&&o.prev&&o.prev<hojeY();
       return `<div class="r ${LST.sel.has(o.id)?'sel':''}" data-oc="${o.id}"><span class="mw"><button class="dots" data-menu="${o.id}">${IC_PTS}</button></span>
       <span class="ck ${LST.sel.has(o.id)?'on':''}" data-ck="${o.id}"></span><span class="num">${esc(o.num)}</span><span class="dt">${br(o.data)}</span>
@@ -1240,13 +1242,25 @@ function ligaLista(lista){
   document.querySelectorAll('[data-sit]').forEach(b=>b.onclick=()=>{LST.sit=b.dataset.sit;re();});
   document.querySelectorAll('[data-sort]').forEach(h=>h.onclick=()=>{const k=h.dataset.sort;LST.sort=LST.sort.k===k?{k,dir:-LST.sort.dir}:{k,dir:['forn'].includes(k)?1:-1};re();});
   document.querySelectorAll('.lo .r').forEach(r=>r.onclick=ev=>{if(ev.target.closest('.mw,.ck,.itg i.er,.mact'))return;abrirOC(r.dataset.oc);});
-  document.querySelectorAll('[data-ck]').forEach(c=>c.onclick=ev=>{ev.stopPropagation();const id=c.dataset.ck;LST.sel.has(id)?LST.sel.delete(id):LST.sel.add(id);re();});
+  const idsVis=()=>lista.map(o=>o.id);
+  function atualizaSel(){
+    const ids=idsVis();const nsel=ids.filter(id=>LST.sel.has(id)).length;
+    document.querySelectorAll('.lo .r').forEach(r=>{const on=LST.sel.has(r.dataset.oc);r.classList.toggle('sel',on);const ck=r.querySelector('.ck');if(ck)ck.classList.toggle('on',on);});
+    const all=ids.length&&ids.every(id=>LST.sel.has(id));const ha=document.querySelector('.lo .h .ckA');if(ha)ha.classList.toggle('on',!!all);
+    const cont=$('blCont');if(cont)cont.textContent=nsel?nsel+(nsel>1?' ordens marcadas':' ordem marcada'):'Marque as ordens para imprimir, salvar, enviar ou pôr marcadores em várias de uma vez';
+    ['bLImp','bLPdf','bLEnv','bLMk'].forEach(k=>{const b=$(k);if(b)b.classList.toggle('des',!nsel);});
+    const rf=document.querySelector('.rodfix');if(rf){const tot=DB.ocs.filter(o=>LST.sel.has(o.id)).reduce((s,o)=>s+contaOC(o).total,0);let sl=rf.querySelector('.sel');
+      if(nsel){const html=`<b>${nf(tot,2)}</b><span>selecionadas (R$)</span>`;if(sl)sl.innerHTML=html;else{sl=document.createElement('div');sl.className='sel';sl.innerHTML=html;rf.insertBefore(sl,rf.firstChild);}}else if(sl)sl.remove();}
+  }
+  document.querySelectorAll('[data-ck]').forEach(c=>c.onclick=ev=>{ev.stopPropagation();const id=c.dataset.ck;LST.sel.has(id)?LST.sel.delete(id):LST.sel.add(id);atualizaSel();});
+  {const ha=document.querySelector('.lo .h .ckA');if(ha)ha.onclick=ev=>{ev.stopPropagation();const ids=idsVis();const all=ids.length&&ids.every(id=>LST.sel.has(id));if(all)ids.forEach(id=>LST.sel.delete(id));else ids.forEach(id=>LST.sel.add(id));atualizaSel();};}
   document.querySelectorAll('[data-menu]').forEach(b=>b.onclick=ev=>{ev.stopPropagation();abreMenu(b.dataset.menu,b);});
   document.querySelectorAll('[data-reenv]').forEach(i=>i.onclick=ev=>{ev.stopPropagation();janelaReenviar([DB.ocs.find(o=>o.id===i.dataset.reenv)]);});
   if($('bPend'))$('bPend').onclick=()=>janelaReenviar(ocsComFalha());
   const selOCs=()=>DB.ocs.filter(o=>LST.sel.has(o.id));
-  $('bLImp').onclick=()=>{const l=selOCs();if(l.length)imprimirOCs(l);};
-  $('bLPdf').onclick=()=>{const l=selOCs();if(l.length)salvarPDFs(l);};
+  $('bLImp').onclick=()=>{const l=selOCs();if(l.length)escolheSaida(l,'imprimir');};
+  $('bLPdf').onclick=()=>{const l=selOCs();if(l.length)escolheSaida(l,'pdf');};
+  if($('bLEnv'))$('bLEnv').onclick=()=>{const l=selOCs();if(l.length)marcarEnviadas(l);};
   $('bLMk').onclick=ev=>{ev.stopPropagation();const l=selOCs();if(l.length)escolherMarcadores(l,ev.currentTarget);};
   /* período e filtros */
   $('bPer').onclick=ev=>{ev.stopPropagation();LST.fpop=false;$('fpop').hidden=true;abrirPeriodo(ev.currentTarget,LST.per,{prev:true},st=>{LST.per=st;re();});};
@@ -1962,6 +1976,46 @@ async function salvarPDFs(l){
     box.remove();salvar();toast(`${l.length} PDFs salvos, cada um com o nome da sua ordem.`);
   }catch(e){toast('Não consegui gerar os arquivos separados; abrindo a impressão com todas.',true);imprimirOCs(l);}
 }
+/* v534: várias ordens — escolher PDF/impressão juntas ou separadas, e marcar enviadas em conjunto */
+function escolheSaida(l,modo){
+  if(l.length<2){modo==='pdf'?salvarPDFs(l):imprimirOCs(l);return;}
+  const tit=modo==='pdf'?'Salvar PDF':'Imprimir';
+  modal(`<h3>${tit} · ${l.length} ordens</h3><p class="mpg">Como tu quer ${modo==='pdf'?'os arquivos':'a impressão'}?</p>
+   <div class="colbt"><button class="btn pri" id="esJ">${modo==='pdf'?'Todas juntas, num PDF só':'Todas juntas, num documento só'}</button>
+   <button class="btn" id="esS">${modo==='pdf'?'Cada uma num arquivo':'Uma de cada vez'}</button>
+   <button class="btn lk" id="esC">Cancelar</button></div>`);
+  $('esC').onclick=()=>modal(null);
+  $('esJ').onclick=()=>{modal(null);modo==='pdf'?salvarPDFjunto(l):imprimirOCs(l);};
+  $('esS').onclick=()=>{modal(null);modo==='pdf'?salvarPDFs(l):imprimirSeparado(l);};
+}
+async function salvarPDFjunto(l){
+  try{await carregaScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
+    await carregaScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+    const {jsPDF}=window.jspdf;const box=document.createElement('div');box.className='pdf-fora';document.body.appendChild(box);
+    const pdf=new jsPDF({unit:'mm',format:'a4'});
+    for(let i=0;i<l.length;i++){box.innerHTML=folhaOC(l[i]);const cv=await window.html2canvas(box.firstElementChild,{scale:2,backgroundColor:'#fff'});
+      if(i)pdf.addPage();pdf.addImage(cv.toDataURL('image/jpeg',0.92),'JPEG',0,0,210,297);
+      const x=DB.ocs.find(y=>y.id===l[i].id);if(x)hist(x,'Salvou o PDF (em conjunto)');}
+    box.remove();pdf.save('Ordens de compra ('+l.length+').pdf');salvar();toast(`PDF único com ${l.length} ordens salvo.`);
+  }catch(e){toast('Não consegui gerar o PDF único; abrindo a impressão com todas.',true);imprimirOCs(l);}
+}
+function imprimirSeparado(l){
+  let d=$('imp');if(!d){d=document.createElement('div');d.id='imp';document.body.appendChild(d);}
+  const t=document.title;document.body.classList.add('imprimindo');
+  (async()=>{for(const o of l){d.innerHTML=folhaOC(o);document.title=nomeArquivo(o);
+     await new Promise(r=>setTimeout(r,60));try{window.print();}catch(e){}
+     const x=DB.ocs.find(y=>y.id===o.id);if(x)hist(x,'Imprimiu ou salvou o PDF');await new Promise(r=>setTimeout(r,350));}
+   document.body.classList.remove('imprimindo');document.title=t;salvar();})();
+}
+function marcarEnviadas(l){
+  const alvo=l.filter(o=>o.sit==='ras');
+  if(!alvo.length)return toast('Marque ordens que ainda estão em aberto.',true);
+  modal(`<h3>Marcar como enviada</h3><p class="mpg">${alvo.length} ordem${alvo.length>1?'s':''} em aberto ${alvo.length>1?'vão':'vai'} para <b>Enviada ao fornecedor</b> de uma vez.${l.length>alvo.length?`<br><small>As ${l.length-alvo.length} que já não estão em aberto ficam como estão.</small>`:''}</p>
+   <div class="colbt"><button class="btn pri" id="meOk">Marcar como enviada</button><button class="btn lk" id="meC">Cancelar</button></div>`);
+  $('meC').onclick=()=>modal(null);
+  $('meOk').onclick=()=>{alvo.forEach(o=>{const x=DB.ocs.find(y=>y.id===o.id);if(x&&x.sit==='ras'){x.sit='env';hist(x,'Mudou a situação para '+SIT.env+' (em conjunto)');}});
+    LST.sel.clear();salvar();modal(null);toast(`${alvo.length} ordem${alvo.length>1?'s marcadas':' marcada'} como enviada.`);render();};
+}
 
 /* =====================================================================
    RECEBER MERCADORIA (quem recebe) · lança só o estoque
@@ -2227,7 +2281,7 @@ function cancelarOC(o){
 function clonarOC(o){
   let n=1;const datas=[addDias(hojeY(),Math.max(1,Math.round((new Date((o.prev||o.data)+'T12:00')-new Date(o.data+'T12:00'))/864e5)))];let inter=30;
   const des=()=>{while(datas.length<n)datas.push(addDias(datas[datas.length-1],inter));datas.length=n;
-    modal(`<h3>Clonar a ordem ${esc(o.num)}</h3><p>Copia fornecedor, itens, preços, frete, pagamento, observações e marcadores. Cada cópia ganha número novo, emissão de hoje e nasce como rascunho.</p>
+    modal(`<h3>Clonar a ordem ${esc(o.num)}</h3><p>Copia fornecedor, itens, preços, frete, pagamento, observações e marcadores. Cada cópia ganha número novo, emissão de hoje e nasce em aberto.</p>
     <div class="g4" style="grid-template-columns:1fr 1fr;margin:12px 0"><div class="fl"><label>Quantas cópias</label><div class="v"><button id="clM" class="btn ic sm">−</button><b style="margin:0 12px">${n}</b><button id="clP" class="btn ic sm">＋</button></div></div>
       ${n>1?`<div class="fl"><label>Sugerir entregas a cada · dias</label><input class="inp" id="clI" value="${inter}"></div>`:''}</div>
     <div class="lst">${datas.map((d,i)=>`<div><span>${n>1?'Cópia '+(i+1):'A cópia'}</span><span>entrega <input class="in5 l dt-in" data-cal="1" data-cd="${i}" value="${br(d)}"></span></div>`).join('')}</div>
@@ -2242,7 +2296,7 @@ function clonarOC(o){
       c.itens.forEach(it=>{if(it.qtdPedida){it.qtd=it.qtdPedida;delete it.qtdPedida;}delete it.precoOC;if(it.modo==='cx')it.qtdCx=Math.round(it.qtd/it.cx);});
       c.frete.parcelas=[];c.frete.cte='';gerarParcelas(c,c.pag.cond,c.pag.forma);if(freteTerceiro(c)&&c.frete.valor)gerarParcelasFrete(c);
       hist(c,'Criou a ordem','clonada da '+o.num);DB.ocs.push(c);nums.push(c.num);});
-      hist(o,'Foi clonada',nums.join(', '));salvar();modal(null);toast(`Ordem${nums.length>1?'s':''} ${nums.join(', ')} criada${nums.length>1?'s':''} como rascunho.`);render();};};
+      hist(o,'Foi clonada',nums.join(', '));salvar();modal(null);toast(`Ordem${nums.length>1?'s':''} ${nums.join(', ')} criada${nums.length>1?'s':''} em aberto.`);render();};};
   des();
 }
 function historicoOC(o){
@@ -2536,7 +2590,7 @@ function gavetaGerar(){
       corpo=`<div class="busca" style="margin-bottom:8px">⌕<input id="gq" placeholder="Nº da ordem, fornecedor ou item" value="${esc(NEC.qoc||'')}"></div>
       <label class="chk2"><input type="checkbox" id="gSoF" ${soF?'checked':''}> só do fornecedor escolhido</label>
       <div class="lsoc">${ocs.map(o=>`<button class="lin2" data-inc="${o.id}"><b>${esc(o.num)}</b> · ${esc(o.forn?o.forn.nome:'sem fornecedor')} <span class="k">${SIT[o.sit]} · ${(o.itens||[]).length} itens · ${rs(contaOC(o).total)}${o.prev?' · previsão '+br(o.prev):''}</span></button>`).join('')||'<div class="vazio">Nenhuma ordem aberta com esse filtro.</div>'}</div>
-      <div class="leg">Aparecem as ordens em rascunho ou enviadas, de todos os fornecedores se tirar o filtro. Se o item já estiver na ordem, a quantidade soma.</div>`;}
+      <div class="leg">Aparecem as ordens em aberto ou enviadas, de todos os fornecedores se tirar o filtro. Se o item já estiver na ordem, a quantidade soma.</div>`;}
     else corpo=`<div class="k" style="margin-bottom:8px">De quem comprar · homologados dos itens marcados, com o último preço</div>
       <div class="fr2">${lista.map(x=>`<label class="${x.f.id===forn?'on':''}"><input type="radio" name="gf" value="${x.f.id}" ${x.f.id===forn?'checked':''} hidden><span class="rd"></span><span><b>${esc(x.f.nome)}</b><small>${x.n?`homologado em ${x.n} de ${ks.length} ${ks.length>1?'itens':'item'}`:'escolhido na busca · ainda não homologado'}</small></span><b>${x.tot?rs(x.tot):'—'}</b></label>`).join('')||'<div class="aviso">Nenhum fornecedor homologado para estes itens. Escolha qualquer um:</div>'}
       ${!lista.length?(DB.fornecedores.length?`<select id="gF" style="width:100%">${DB.fornecedores.map(f=>`<option value="${f.id}">${esc(f.nome)}</option>`).join('')}</select>`:'<div class="k">Nenhum fornecedor cadastrado em Compras ainda.</div>'):''}</div>
@@ -2619,7 +2673,7 @@ function telaCotacoes(){
         <td><span class="pill ${c.sit==='concluida'?'p-con':c.sit==='respondida'?'p-par':'p-env'}">${c.sit==='concluida'?'Concluída':c.sit==='respondida'?'Respondida':'Aguardando preços'}</span></td></tr>`).join('')}</tbody></table>`
       :'<div class="vazio">Nenhuma cotação ainda. Monte a primeira com os itens e os fornecedores que você quer comparar.</div>'}</div>
       <div class="leg">Uma cotação junta vários itens e vários fornecedores. Você registra os preços que cada um mandou e escolhe, item a
-      item, de quem comprar. <b>Gerar ordens</b> cria um rascunho de ordem para cada fornecedor escolhido.</div>`;
+      item, de quem comprar. <b>Gerar ordens</b> cria uma ordem em aberto para cada fornecedor escolhido.</div>`;
     $('bNovaCot').onclick=()=>{DB.cotSeq++;const c={id:uid(),num:'COT-'+String(DB.cotSeq).padStart(4,'0'),nome:'Nova cotação',data:hojeY(),
       itens:[],forns:[],precos:{},escolha:{},sit:'aguardando',validade:addDias(hojeY(),DB.cfg.valid)};DB.cotacoes.push(c);salvar();ir('cotacoes',c.id);};
     document.querySelectorAll('[data-cot]').forEach(r=>r.onclick=()=>ir('cotacoes',r.dataset.cot));
@@ -2696,15 +2750,15 @@ function telaMapa(id){
       try{navigator.clipboard.writeText(t);toast('Texto copiado. Cole no e-mail ou no WhatsApp.');}catch(e){toast('Selecione o texto e copie.',true);}});};
   $('bGerarOC').onclick=()=>{
     const ids=Object.keys(por);if(!ids.length)return;
-    if(!confirm(`Gerar ${ids.length} rascunho(s) de ordem de compra, um por fornecedor escolhido?`))return;
+    if(!confirm(`Gerar ${ids.length} ordem(ns) de compra em aberto, um por fornecedor escolhido?`))return;
     const nums=[];
     ids.forEach(fid=>{const f=fornPorId(fid)||{id:fid,nome:(c.forns.find(x=>x.id===fid)||{}).nome};const fc=c.forns.find(x=>x.id===fid)||{};
       const itens=c.itens.filter(it=>c.escolha[it.sku]===fid).map(it=>itemNovo(it.sku,f,+it.qtd||0,cel(it,fc))).filter(Boolean);
       DB.seq=Math.max(DB.seq,...DB.ocs.map(x=>+x.num||0))+1;
       const oc=Object.assign(ocVazia(),{num:String(DB.seq),prev:hojeY(),origem:'Cotação '+c.num,forn:{...f},itens});
       oc.pag.cond=(fc.pag||f.prazo||'28').replace(/[^\dx+ ]+/gi,' ').trim()||'28';oc.pag.categoria=categoriaSugerida(oc);gerarParcelas(oc,oc.pag.cond,oc.pag.forma);
-      hist(oc,'Criou a ordem','rascunho gerado da cotação '+c.num);DB.ocs.push(oc);nums.push(oc.num);});
-    c.sit='concluida';c.ocs=nums;salvar();toast(`Ordens ${nums.join(', ')} criadas como rascunho.`);ir('ordens');};
+      hist(oc,'Criou a ordem','em aberto, gerada da cotação '+c.num);DB.ocs.push(oc);nums.push(oc.num);});
+    c.sit='concluida';c.ocs=nums;salvar();toast(`Ordens ${nums.join(', ')} criadas em aberto.`);ir('ordens');};
 }
 function telaPrecos(){
   const skus=[...new Set([...DB.precos.map(p=>p.sku),...DB.cotacoes.flatMap(c=>c.itens.map(i=>i.sku))])].filter(k=>precosDe(k).length);
@@ -3286,7 +3340,7 @@ async function estoqueItemGaveta(it,oc){
    (tudo / já chegou / a caminho), data da ordem ou da chegada, agrupar por fornecedor ou por item, ordenar por
    maior valor / maior quantidade / mais ordens / nome. Clicar na linha abre as ordens daquele item.
    Quantidade comprada = o que ficou na ordem (depois de uma entrega parcial, a ordem fica com o que chegou e o resto
-   vai para a ordem de saldo, então nada conta duas vezes). Rascunho e cancelada não entram. */
+   vai para a ordem de saldo, então nada conta duas vezes). Em aberto e cancelada não entram. */
 document.head.insertAdjacentHTML('beforeend',`<style>
 .r5f{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px 12px;margin-bottom:12px}
 .r5f label{display:block;font-size:11.5px;color:var(--ink3);margin-bottom:5px}
@@ -3436,7 +3490,7 @@ function telaRelatorios(){
     <div class="card"><small>A caminho</small><b class="r5cam">R$ ${nf(S.vCam,2)}</b><span>ainda não chegou</span></div>
   </div>
   <div class="caixa" style="overflow:auto">${l.length?corpo:'<div class="vazio">Nenhuma compra nesse filtro e período.</div>'}</div>
-  <div class="leg" style="margin-top:10px">Clique na linha para ver as ordens. Quantidade comprada é o que ficou em cada ordem: numa entrega parcial, a ordem fica com o que chegou e o resto vai para a ordem de saldo — nada conta duas vezes. Rascunho e cancelada não entram.</div>`;
+  <div class="leg" style="margin-top:10px">Clique na linha para ver as ordens. Quantidade comprada é o que ficou em cada ordem: numa entrega parcial, a ordem fica com o que chegou e o resto vai para a ordem de saldo — nada conta duas vezes. Em aberto e cancelada não entram.</div>`;
   ligaCalendarios($('app'));
   const re=()=>telaRelatorios();
   $('rDe').onchange=e=>{RL5.de=deBR(e.target.value)||RL5.de;re();};
@@ -3607,18 +3661,23 @@ function rl5Imprimir(l,fNome,perTxt,grupo){
     return [...m.entries()].sort((a,b)=>String(a[1]).localeCompare(String(b[1]),'pt'));}
   function itemOps(forn){const m=new Map();(DB.ocs||[]).forEach(o=>{if(!o||(forn&&fornDe(o)!==forn))return;(o.itens||[]).forEach(i=>{const k=i.sku||i.nome;if(k&&!m.has(k))m.set(k,[k,i.nome||i.sku,i.sku&&i.nome?i.sku:'']);});});
     return [...m.values()].sort((a,b)=>String(a[1]).localeCompare(String(b[1]),'pt'));}
-  const SIT_OPS=[['todas','Todas'],['aberto','Em aberto (rascunho e enviada)'],['ras','Rascunho'],['env','Enviada ao fornecedor'],['rec','Recebida · a conferir'],['con','Concluída'],['can','Cancelada']];
+  const SIT_OPS=[['todas','Todas'],['aberto','Em aberto + enviada'],['ras','Em aberto'],['env','Enviada ao fornecedor'],['rec','Recebida · a conferir'],['con','Concluída'],['can','Cancelada']];
+  /* v534: filtro de situação com caixinhas (escolhe várias de uma vez) */
+  const SITF=[['ras','Em aberto'],['env','Enviada ao fornecedor'],['rec','Recebida · a conferir'],['con','Concluída'],['can','Cancelada']];
+  const sitLab=sels=>sels.length===0?'nenhuma situação':sels.length===SITF.length?'todas as situações':SITF.filter(([k])=>sels.includes(k)).map(([,r])=>r).join(', ');
+  const msSitHtml=(id,sels)=>`<details class="msd" id="${id}"><summary title="${esc(sitLab(sels))}">${esc(sitLab(sels))}</summary><div class="msdp">${SITF.map(([k,r])=>`<label><input type="checkbox" data-ms="${k}" ${sels.includes(k)?'checked':''}>${esc(r)}</label>`).join('')}</div></details>`;
+  function msSitLiga(id,sels,aoMudar){const d=$(id);if(!d)return;d.querySelectorAll('[data-ms]').forEach(cb=>cb.onchange=()=>{const k=cb.dataset.ms,i=sels.indexOf(k);if(cb.checked){if(i<0)sels.push(k);}else if(i>=0)sels.splice(i,1);const s=d.querySelector('summary');if(s){s.textContent=sitLab(sels);s.title=sitLab(sels);}aoMudar&&aoMudar();});}
   const sitPassa=(o,s)=>s==='todas'?o.sit!=='can':s==='aberto'?(o.sit==='ras'||o.sit==='env'):o.sit===s;
   const BASE_OPS=[['emissao','Data de emissão'],['prevista','Data prevista de entrega'],['chegada','Data de chegada']];
   /* trocar um filtro não muda a tela: o Gerar fica marcado até clicar */
   const mudou=()=>{const b=$('q1Gerar');if(b)b.classList.add('mud');};
 
   /* ---------- Compras do período ---------- */
-  const CP={d:{per:null,base:'emissao',sit:'todas',forn:'',sku:'',grupo:'forn',ord:'valor'},g:null,aberto:new Set()};
+  const CP={d:{per:null,base:'emissao',sits:['ras','env','rec','con'],forn:'',sku:'',grupo:'forn',ord:'valor'},g:null,aberto:new Set()};
   function cpLinhas(G){
     const f=perFaixa(G.per),out=[];
     (DB.ocs||[]).forEach(o=>{
-      if(!o||!sitPassa(o,G.sit))return;if(G.forn&&fornDe(o)!==G.forn)return;
+      if(!o||!(G.sits||[]).includes(o.sit))return;if(G.forn&&fornDe(o)!==G.forn)return;
       const rb=(o.receb||[]).filter(r=>!r.estornado&&r.data).map(r=>r.data).sort();
       const chegou=o.sit==='rec'||o.sit==='con';
       const dChe=chegou?(rb[rb.length-1]||o.dataReceb||o.data):'';
@@ -3641,7 +3700,7 @@ function rl5Imprimir(l,fNome,perTxt,grupo){
       <div class="q1f">
         <div><label>Período</label>${perBotao('q1Per',D.per)}</div>
         <div><label>Contar pela data</label>${selHtml('q1Base',BASE_OPS,D.base)}</div>
-        <div><label>Situação</label>${selHtml('q1Sit',SIT_OPS,D.sit)}</div>
+        <div><label>Situação</label>${msSitHtml('q1Sit',D.sits)}</div>
         <div><label>Fornecedor</label>${cbHtml('q1F',fo,D.forn,'Todos os fornecedores')}</div>
         <div><label>Item</label>${cbHtml('q1I',io,D.sku,'Todos os itens')}</div>
         <div><label>Mostrar</label>${selHtml('q1M',[['forn','Por fornecedor'],['item','Por item']],D.grupo)}</div>
@@ -3650,7 +3709,7 @@ function rl5Imprimir(l,fNome,perTxt,grupo){
       </div><div id="q1Res">${CP.g?'':vazioGerar()}</div>`;
     $('q1Per').onclick=()=>abrirPeriodo($('q1Per'),D.per,{},p=>{D.per=p;$('q1Per').outerHTML=perBotao('q1Per',p);telaComprasLigaPer();mudou();});
     telaComprasLigaPer();
-    $('q1Base').onchange=e=>{D.base=e.target.value;mudou();};$('q1Sit').onchange=e=>{D.sit=e.target.value;mudou();};
+    $('q1Base').onchange=e=>{D.base=e.target.value;mudou();};msSitLiga('q1Sit',D.sits,mudou);
     $('q1M').onchange=e=>{D.grupo=e.target.value;mudou();};$('q1O').onchange=e=>{D.ord=e.target.value;mudou();};
     cbLiga('q1F',fo,D.forn,'Todos os fornecedores',v=>{D.forn=v;D.sku='';const io2=itemOps(v);$('q1IW').outerHTML=cbHtml('q1I',io2,'','Todos os itens');cbLiga('q1I',io2,'','Todos os itens',x=>{D.sku=x;mudou();});mudou();});
     cbLiga('q1I',io,D.sku,'Todos os itens',v=>{D.sku=v;mudou();});
@@ -3665,7 +3724,7 @@ function rl5Imprimir(l,fNome,perTxt,grupo){
   function cpMostra(){
     const G=CP.g;const {l,fNome,perTxt,grupo}=cpRes();RL5.ord=G.ord;
     const S=rl5Soma(l),totV=S.v+S.ipi;
-    const sitTxt=x=>x.chegou?`<span class="r5ok">chegou ${br(x.dChe)}</span>${x.nfs?' · NF '+esc(x.nfs):''}`:x.sit==='ras'?'<span>rascunho</span>':x.sit==='can'?'<span>cancelada</span>':`<span class="${x.o.prev&&x.o.prev<hojeY()?'r5atr':'r5cam'}">${x.o.prev&&x.o.prev<hojeY()?'atrasada':'a caminho'}${x.o.prev?' · prev. '+br(x.o.prev):''}</span>`;
+    const sitTxt=x=>x.chegou?`<span class="r5ok">chegou ${br(x.dChe)}</span>${x.nfs?' · NF '+esc(x.nfs):''}`:x.sit==='ras'?'<span>em aberto</span>':x.sit==='can'?'<span>cancelada</span>':`<span class="${x.o.prev&&x.o.prev<hojeY()?'r5atr':'r5cam'}">${x.o.prev&&x.o.prev<hojeY()?'atrasada':'a caminho'}${x.o.prev?' · prev. '+br(x.o.prev):''}</span>`;
     const subLinhas=ls=>ls.sort((a,b)=>String(b.data).localeCompare(String(a.data))||(+b.num-+a.num)).map(x=>`<tr class="sub">
       <td>${br(x.data)} · <a data-r5oc="${esc(x.id)}">OC ${esc(x.num)}</a>${!G.forn?' · '+esc(x.fNome):''}${x.saldo?' <span class="pill p-par">saldo</span>':''}</td>
       <td class="n">${rl5Q(x.q)} ${esc(x.un)}</td><td class="n">${rl5P(x.preco)}</td><td class="n">—</td><td class="n">${nf(x.v,2)}</td><td class="n">${nf(x.v+x.ipi,2)}</td><td>${sitTxt(x)}</td></tr>`).join('');
@@ -3706,16 +3765,17 @@ function rl5Imprimir(l,fNome,perTxt,grupo){
   }
 
   /* ---------- Ordens a receber ---------- */
-  const AR={d:{per:null,base:'prevista',forn:''},g:null};
+  const AR={d:{per:null,base:'prevista',forn:'',sits:['ras','env']},g:null};
   function telaAReceber(){
-    const D=AR.d;if(!D.per)D.per=perNovo('sem');const fo=fornOps().filter(f=>(DB.ocs||[]).some(o=>o&&o.sit==='env'&&fornDe(o)===f[0]));
+    const D=AR.d;if(!D.per)D.per=perNovo('sem');const fo=fornOps().filter(f=>(DB.ocs||[]).some(o=>o&&(D.sits||[]).includes(o.sit)&&fornDe(o)===f[0]));
     $('app').innerHTML=`${cab('Ordens a receber')}<div class="q1top"><h1>Ordens a receber</h1><span style="flex:1"></span><button class="btn" id="p8Pdf">${sv('imp')} Imprimir / PDF</button></div>
       <div class="q1f"><div><label>Período</label>${perBotao('q1Per',D.per)}</div>
         <div><label>Contar pela data</label>${selHtml('q1Base',BASE_OPS.slice(0,2),D.base)}</div>
+        <div><label>Situação</label>${msSitHtml('q1Sit',D.sits)}</div>
         <div><label>Fornecedor</label>${cbHtml('q1F',fo,D.forn,'Todos os fornecedores')}</div>
         <div class="q1g" style="grid-column:auto"><button id="q1Gerar">Gerar</button></div></div><div id="q1Res">${AR.g?'':vazioGerar()}</div>`;
     const lp=()=>{const b=$('q1Per');b.onclick=()=>abrirPeriodo(b,D.per,{},p=>{D.per=p;b.outerHTML=perBotao('q1Per',p);lp();mudou();});};lp();
-    $('q1Base').onchange=e=>{D.base=e.target.value;mudou();};
+    $('q1Base').onchange=e=>{D.base=e.target.value;mudou();};msSitLiga('q1Sit',D.sits,mudou);
     cbLiga('q1F',fo,D.forn,'Todos os fornecedores',v=>{D.forn=v;mudou();});
     $('q1Gerar').onclick=()=>{AR.g=JSON.parse(JSON.stringify(D));$('q1Gerar').classList.remove('mud');arMostra();};
     $('p8Pdf').onclick=()=>{if(!AR.g)return toast('Clique em Gerar primeiro.',true);const {L,sub}=arDados();
@@ -3723,7 +3783,7 @@ function rl5Imprimir(l,fNome,perTxt,grupo){
     if(AR.g)arMostra();
   }
   function arDados(){const G=AR.g,f=perFaixa(G.per),h=hojeS();
-    const L=(DB.ocs||[]).filter(o=>{if(!o||o.sit!=='env')return false;if(G.forn&&fornDe(o)!==G.forn)return false;const d=G.base==='emissao'?o.data:(o.prev||'');return !f.de||(d&&d>=f.de&&d<=f.ate);})
+    const L=(DB.ocs||[]).filter(o=>{if(!o||!(G.sits||[]).includes(o.sit))return false;if(G.forn&&fornDe(o)!==G.forn)return false;const d=G.base==='emissao'?o.data:(o.prev||'');return !f.de||(d&&d>=f.de&&d<=f.ate);})
       .map(o=>({o,num:o.num,forn:(o.forn&&o.forn.nome)||'?',data:o.data,prev:o.prev||'',atraso:o.prev&&o.prev<h?Math.round((new Date(h+'T12:00')-new Date(o.prev+'T12:00'))/864e5):0,itens:(o.itens||[]).length,valor:totOC(o)}))
       .sort((a,b)=>(a.prev||'9').localeCompare(b.prev||'9'));
     const pr=perRotulo(G.per);return {L,sub:pr==='Período'?'até '+brD(h):pr};}
