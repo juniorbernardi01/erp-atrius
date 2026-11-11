@@ -5510,7 +5510,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v519';const VERSAO_DATA='11/11/2026';
+const VERSAO_APP='v520';const VERSAO_DATA='11/11/2026';
 /* número que aparece na tela: v438 → v4.3.8 (por dentro continua v438, que é o que as versões comparam) */
 const csRotVer=v=>{const d=String(v||'').replace(/\D/g,'');return d.length>=3?'v'+d.slice(0,-2)+'.'+d.slice(-2,-1)+'.'+d.slice(-1):String(v||'');};
 const VERSAO_ROTULO=csRotVer(VERSAO_APP)+' · '+VERSAO_DATA;
@@ -31279,7 +31279,7 @@ try{const _ta408=csTqAcao;csTqAcao=function(k,a,x,pin){
     const at=APONTA[k];if(at){const z=x.atraso,q=csTqQuem(pin);const nome=q&&q.ok?q.nome:'';
       const b=csTqAchar(k);
       at.tq={...(at.tq||{}),atrasos:[...((at.tq||{}).atrasos||[]),{etapa:z.etapa,tipo:z.tipo,min:+z.min||0,grupo:z.grupo||'',mot:z.mot||'',obs:z.obs||'',quem:nome,d:ymd(new Date()),h:relogio()}]};
-      const txt=`${z.etapa} · ${z.tipo==='início'?'começou':'passou do tempo'} +${csTqDur(+z.min||0)} · ${z.grupo&&z.grupo!=='Outro'?z.grupo+' | ':''}${z.mot||''}${z.obs?' · '+z.obs:''}`;
+      const txt=`${z.etapa} · ${z.tipo==='início'?'começou':z.tipo==='pronto'?'não ficou pronto no horário':'passou do tempo'} +${csTqDur(+z.min||0)} · ${z.grupo&&z.grupo!=='Outro'?z.grupo+' | ':''}${z.mot||''}${z.obs?' · '+z.obs:''}`;
       at.log=[...(at.log||[]),{t:relogio(),d:ymd(new Date()),e:'Atraso',op:nome,m:txt,w:b?b.tanque:''}];
       if(b)b.ordens.forEach(o=>registrar(o,'Atraso no tanque',q&&q.ok?q.q:null,`${b.tanque} · ${txt}`));
       agendarSalvar();}}}catch(e){}
@@ -39246,7 +39246,7 @@ tr.cskRow td{background:#FFFBF5}
 .stq.pausa{background:#FEF3C7;color:#A16207}.cskEsc{display:grid;grid-template-columns:1fr 1fr;gap:12px}.cskEsc button{text-align:left;border:1.5px solid var(--line);background:#fff;border-radius:12px;padding:18px 16px;cursor:pointer;display:flex;flex-direction:column;gap:6px;font:inherit}.cskEsc button:hover{border-color:#15803D;background:#F3FBF5}.cskEsc button.k:hover{border-color:#E9B872;background:#FFF8EC}.cskEsc b{font-size:16px}.cskEsc span{font-size:12.5px;color:var(--ink3);line-height:1.4}.cskEsc button.k b{color:#92400E}
 .cskN{font-style:normal;display:inline-grid;place-items:center;min-width:18px;height:18px;border-radius:999px;background:#EA580C;color:#fff;font:800 11.5px Inter,sans-serif;margin-left:4px;padding:0 4px}.cskBt{border-color:#E9B872!important;color:#92400E!important;background:#FFF8EC!important;margin-right:8px;font-weight:700}tr.cskNeta td{background:#FFFCF7}`;document.head.appendChild(st);
   setTimeout(function cad(){try{if(typeof PRONTO==='undefined'||!PRONTO)return setTimeout(cad,2000);cadastraKits();}catch(e){}},2500);
-  try{csNucleo.versao='v519';}catch(e){}
+  try{csNucleo.versao='v520';}catch(e){}
 })();
 
 </script>

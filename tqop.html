@@ -85,6 +85,10 @@ body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.35 var(--font)}
 .full{position:absolute;inset:0;background:var(--bg);display:none;flex-direction:column}.full.on{display:flex}
 .full .fh{background:var(--navy);color:#fff;display:flex;align-items:center;gap:12px;padding:0 18px;height:62px;flex:none}.full .fh b{font-size:19px}.full .fh small{color:#C9D4EA;font-size:13px}.full .fh .x{margin-left:auto;width:36px;height:36px;border-radius:50%;background:#2B3A57;display:grid;place-items:center;font-size:18px;cursor:pointer}
 .full .fb{flex:1;display:grid;grid-template-columns:1.35fr 1fr;gap:12px;padding:12px;min-height:0}
+*{-webkit-tap-highlight-color:transparent}.kp div,.acao,.kbr button,[data-a],[data-k]{touch-action:manipulation;-webkit-user-select:none;user-select:none}
+.tq.late{border:3px solid #DC2626!important;box-shadow:0 0 0 4px rgba(220,38,38,.28)!important}.tq.late .cab{background:#DC2626!important;color:#fff!important}.tq.late .cab b{color:#fff!important}
+.lateb{margin-left:8px;background:#fff;color:#B91C1C;font:900 13px var(--font);padding:3px 9px;border-radius:999px;letter-spacing:.02em}
+.tq.late .tiles .atr{background:#FEE2E2!important;border-color:#F87171!important}.tq.late .tiles .atr span,.tq.late .tiles .atr b{color:#B91C1C!important}
 .box{background:var(--card);border:1px solid var(--line);border-radius:14px;display:flex;flex-direction:column;min-height:0;overflow:hidden}
 .box h3{margin:0;padding:10px 14px;font:800 12px var(--font);letter-spacing:.07em;text-transform:uppercase;color:var(--ink3);border-bottom:1px solid var(--line);display:flex;gap:10px;align-items:center}.box h3 span{margin-left:auto;font-weight:600;text-transform:none;letter-spacing:0;color:var(--ink2)}
 .box .bb{padding:6px 14px;overflow:auto;flex:1}
@@ -596,7 +600,8 @@ function cartao(t){const l=lote(t);const s=statusDe(t);const [cor,rot]=ST[s]||['
   const ck=s==='ajuste'&&ajp.length?`<div class="ckl aj" data-a="form"><i class="ic pend"></i><span>+ ${nl(ajp[0].kg)} ${esc(ajp[0].un||'kg')} ${esc(ajp[0].nome)} · ${esc(ajp[0].por||'')}</span></div>`
     :l&&ANTES.includes(s)&&!l.de&&tot?`<div class="ckl ${fOk?'ok':'pend'}" data-a="form">${fOk?'<i class="ic ok">✓</i>':'<i class="ic pend"></i>'}<span>${fOk?'Matérias-primas separadas':'Separar matérias-primas'}${s==='prep'&&passos?' · passo '+Math.min(l.passo+1,passos)+' de '+passos:''}</span><em>${feit}/${tot}</em></div>`:'';
   const prox=t.fila[1];
-  return `<div class="tq c6${t.pul?' pul':''}${ehAmanha()?' amh':''}" data-t="${esc(t.id)}"><div class="cab"><b>${esc(t.id)}</b>${t.pul?'<span class="tag">descanso</span>':''}<span class="pts" data-a="menu">⋮</span></div>
+  const lateMin=atr&&ANTES.includes(s)?Math.max(0,(l.data<D.hoje?AGORA+1440:AGORA)-l.prontoMin):0;   /* v520: alerta vermelho enquanto não ficou pronto */
+  return `<div class="tq c6${t.pul?' pul':''}${ehAmanha()?' amh':''}${lateMin?' late':''}" data-t="${esc(t.id)}"><div class="cab"><b>${esc(t.id)}</b>${lateMin?`<span class="lateb">ATRASADO +${dur(lateMin)}</span>`:''}${t.pul?'<span class="tag">descanso</span>':''}<span class="pts" data-a="menu">⋮</span></div>
     <div class="st ${cor}"><span>${esc(rotulo)}</span>${l&&l.adiant?`<span class="adt2" title="tanque livre hoje · pode adiantar">${esc(l.adiantRot||'Amanhã')}</span>`:`<span class="t">${tempo}</span>`}</div>
     
     ${l?`<div class="prod">${esc(l.p)}<small>${l.saldo?`saldo de lote${l.lote?' · lote '+esc(l.lote):''}${l.mot?' · '+esc(l.mot):''}`:`${l.lote?'lote '+esc(l.lote):''}`}${l.de?' · veio do '+esc(l.de):''}${l.data!==(DIA||D.hoje)?' · de '+l.data.slice(8,10)+'/'+l.data.slice(5,7):''}</small></div>
@@ -659,26 +664,25 @@ const pausasDa=(l,st)=>((l.tq&&l.tq.pausas)||[]).filter(p=>p.etapa===st).reduce(
 const pausasProgDa=(l,st)=>((l.tq&&l.tq.pausas)||[]).filter(p=>p.etapa===st&&(p.grupo==='Parada programada'||/fim de turno/i.test(p.mot||''))).reduce((s,p)=>s+(+p.min||0),0);
 function atrasoInicio(l,pk){const p=l.plan&&l.plan[pk];const pm=p&&min(p.de);if(pm==null||!D||l.data>D.hoje)return 0;
   const dias=Math.round((new Date(D.hoje+'T12:00:00')-new Date(l.data+'T12:00:00'))/864e5);return AGORA+dias*1440-pm;}
-function atrasoDe(l,a,s){const tol=TOL();if(ehAmanha()||l.adiant)return null;
-  const ini={limpIni:['limp','Limpeza'],enchIni:['ench','Enchimento'],prepIni:['fab','Preparo']}[a];
-  if(ini){/* começou logo depois da etapa anterior: o atraso veio de lá (já foi perguntado); só pergunta se ficou parado esperando */
-    if((s==='encher'||s==='cheio')&&l.desde!=null&&l.desde<=tol)return null;
-    const m=atrasoInicio(l,ini[0]);return m>tol?{tipo:'ini',etapa:ini[1],prog:l.plan[ini[0]].de,min:m}:null;}
-  const fim={limpFim:['limp','Limpeza','limpando'],enchFim:['ench','Enchimento','enchendo']}[a];
-  if(fim){const p=l.plan[fim[0]];if(!p||!p.min||l.desde==null)return null;const real=Math.max(0,l.desde-pausasDa(l,fim[2]));
-    return real-p.min>tol?{tipo:'dur',etapa:fim[1],prev:p.min,real,min:real-p.min}:null;}
-  return null;}
+/* v520 (11/11, regra do Junior): atraso do tanque é NÃO FICAR PRONTO até o "pronto até". Começar a limpeza mais tarde
+   ou uma etapa levar mais que o padrão não é atraso se o tanque fica pronto no horário (o tempo de cada etapa continua medido).
+   Passou do "pronto até" e o preparo ainda não terminou: a primeira ação depois disso pede o motivo, uma vez por lote. */
+function atrasoPronto(l){const tol=TOL();if(!l||ehAmanha()||l.adiant||l.prontoMin==null||!D)return null;
+  if(((l.tq&&l.tq.atrasos)||[]).some(z=>z.tipo==='pronto'))return null;
+  const dias=Math.round((new Date(D.hoje+'T12:00:00')-new Date(l.data+'T12:00:00'))/864e5);const m=AGORA+dias*1440-l.prontoMin;
+  return m>tol?{tipo:'pronto',etapa:'Tanque',prog:l.pronto,min:m}:null;}
+function atrasoDe(l,a,s){if(!['limpIni','limpNao','limpFim','enchIni','enchFim','prepIni'].includes(a))return null;return atrasoPronto(l);}
 const gruposAtraso=()=>{const g=motivosDe('liberacao');return g.length?g:motivosDe('pausa');};
 function perguntaAtraso(t,q,ok){const l=lote(t);const st={grupo:'',mot:'',obs:''};const G=gruposAtraso();
-  const pinta=()=>{const m=modal(`<div class="mc prob"><div class="mh"><span><b>${q.tipo==='ini'?esc(q.etapa)+' começando atrasado':esc(q.etapa)+' passou do tempo'} · ${esc(t.id)}</b><small>${esc(l.p)}${l.lote?' · lote '+esc(l.lote):''} · o motivo vai para o relatório de atrasos</small></span><span class="x" data-fechar>×</span></div>
-    <div class="fres">${q.tipo==='ini'?`<div><span>Programado</span><b>${esc(q.prog)}</b></div><div><span>Agora</span><b>${hm(AGORA)}</b></div>`:`<div><span>Previsto</span><b>${dur(q.prev)}</b></div><div class="mau"><span>Levou</span><b>${dur(q.real)}</b></div>`}<div class="mau"><span>Atraso</span><b>+${dur(q.min)}</b></div></div>
+  const pinta=()=>{const m=modal(`<div class="mc prob"><div class="mh"><span><b>${q.tipo==='pronto'?'Tanque não ficou pronto até '+esc(q.prog):q.tipo==='ini'?esc(q.etapa)+' começando atrasado':esc(q.etapa)+' passou do tempo'} · ${esc(t.id)}</b><small>${esc(l.p)}${l.lote?' · lote '+esc(l.lote):''} · o motivo vai para o relatório de atrasos</small></span><span class="x" data-fechar>×</span></div>
+    <div class="fres">${q.tipo==='ini'||q.tipo==='pronto'?`<div><span>${q.tipo==='pronto'?'Pronto até':'Programado'}</span><b>${esc(q.prog)}</b></div><div><span>Agora</span><b>${hm(AGORA)}</b></div>`:`<div><span>Previsto</span><b>${dur(q.prev)}</b></div><div class="mau"><span>Levou</span><b>${dur(q.real)}</b></div>`}<div class="mau"><span>Atraso</span><b>+${dur(q.min)}</b></div></div>
     <h4>Por que atrasou? <b class="obr">obrigatório</b></h4>${chipsMotivo(G,st,'a')}
     <h4>Observação ${st.mot==='Outro'?'<b class="obr">obrigatória</b>':'(se precisar)'}</h4><textarea class="in obs" id="atObs" placeholder="escreva aqui">${esc(st.obs)}</textarea>
     <div class="libb"><span style="flex:1"></span><div class="acao ${st.mot?'':'off'}" id="atOk">Continuar</div></div></div>`);
     ligaMotivo(m,st,'a',pinta);
     const o=m.querySelector('#atObs');o.oninput=()=>st.obs=o.value;
     m.querySelector('#atOk').onclick=()=>{if(!st.mot)return toast('Escolha o motivo do atraso.');if(st.mot==='Outro'&&!st.obs.trim())return toast('Escreva o motivo.');
-      m.classList.remove('on');ok({etapa:q.etapa,tipo:q.tipo==='ini'?'início':'tempo',min:q.min,grupo:st.grupo,mot:st.mot,obs:st.obs});};};
+      m.classList.remove('on');ok({etapa:q.etapa,tipo:q.tipo==='ini'?'início':q.tipo==='pronto'?'pronto':'tempo',min:q.min,grupo:st.grupo,mot:st.mot,obs:st.obs});};};
   pinta();}
 function exec(t,a,pin,x){const l=lote(t);if(!l)return;
   const r=N.tqAcao(l.k,a,x||{},pin);
@@ -741,17 +745,17 @@ function ligaMotivo(m,st,pref,repinta){
 const motivosDe=et=>{try{return (N.tqMotivos&&N.tqMotivos(et))||[];}catch(e){return [];}};
 
 /* ---------- fechamento do preparo: atraso e ajuste pedem motivo ---------- */
-function fecharPreparo(t,ok){const l=lote(t);const real=Math.max(0,(l.desde||0)-pausasProgDa(l,'prep')),atr=l.prev?real-l.prev:0,falta=l.prev?Math.max(0,(l.desde||0)-pausasDa(l,'prep'))-l.prev:0;   /* v519 */const G=gruposAtraso();const tol=TOL();
+function fecharPreparo(t,ok){const l=lote(t);const real=Math.max(0,(l.desde||0)-pausasProgDa(l,'prep')),atr=l.prev?real-l.prev:0,falta=l.prev?Math.max(0,(l.desde||0)-pausasDa(l,'prep'))-l.prev:0;   /* v519 */const G=gruposAtraso();const tol=TOL();const qp=atrasoPronto(l);   /* v520: pede motivo só se passou do pronto até */
   const ajs=(l.extra||[]).length;const st={grupo:'',mot:'',obs:''};
   const pinta=()=>{const m=modal(`<div class="mc prob"><div class="mh"><span><b>Concluir preparo · ${esc(t.id)}</b><small>${esc(l.p)} · lote ${esc(l.lote||'—')}</small></span><span class="x" data-fechar>×</span></div>
-    <div class="fres"><div><span>Previsto</span><b>${l.prev?dur(l.prev):'—'}</b></div><div class="${atr>0?'mau':''}"><span>Real</span><b>${dur(real)}</b></div><div class="${atr>0?'mau':''}"><span>${atr>0?'Atraso':'Folga'}</span><b>${atr>0?'+'+dur(atr):dur(-atr)}</b></div><div class="${ajs?'amb':''}"><span>MP de ajuste</span><b>${ajs}</b></div></div>
-    ${falta>tol?`<h4>Por que atrasou? <b class="obr">obrigatório</b></h4>${chipsMotivo(G,st,'a')}`:''}
+    <div class="fres"><div><span>Previsto</span><b>${l.prev?dur(l.prev):'—'}</b></div><div class="${atr>0?'mau':''}"><span>Real</span><b>${dur(real)}</b></div><div class="${atr>0?'mau':''}"><span>${atr>0?'Acima do padrão':'Folga'}</span><b>${atr>0?'+'+dur(atr):dur(-atr)}</b></div><div class="${ajs?'amb':''}"><span>MP de ajuste</span><b>${ajs}</b></div></div>
+    ${qp?`<h4>Passou do pronto até ${esc(qp.prog)} (+${dur(qp.min)}). Por que atrasou? <b class="obr">obrigatório</b></h4>${chipsMotivo(G,st,'a')}`:''}
     <h4>Observação ${st.mot==='Outro'?'<b class="obr">obrigatória</b>':'(se teve algo diferente)'}</h4><textarea class="in obs" id="cObs" placeholder="escreva aqui">${esc(st.obs)}</textarea>
     <div class="libb"><span style="flex:1"></span><div class="acao" id="cOk">Concluir preparo</div></div></div>`);
     ligaMotivo(m,st,'a',pinta);
     const o=m.querySelector('#cObs');o.oninput=()=>st.obs=o.value;
-    m.querySelector('#cOk').onclick=()=>{if(falta>tol&&!st.mot)return toast('Escolha o motivo do atraso.');if(st.mot==='Outro'&&!st.obs.trim())return toast('Escreva a observação.');
-      m.classList.remove('on');ok(st.obs,atr>tol&&st.mot?{etapa:'Preparo',tipo:'tempo',min:atr,grupo:st.grupo,mot:st.mot,obs:st.obs}:null);};};
+    m.querySelector('#cOk').onclick=()=>{if(qp&&!st.mot)return toast('Escolha o motivo do atraso.');if(st.mot==='Outro'&&!st.obs.trim())return toast('Escreva a observação.');
+      m.classList.remove('on');ok(st.obs,qp&&st.mot?{etapa:'Tanque',tipo:'pronto',min:qp.min,grupo:st.grupo,mot:st.mot,obs:st.obs}:null);};};
   pinta();}
 
 /* ---------- pausa ---------- */
@@ -911,7 +915,7 @@ function abrirForm(t,aba){const l=lote(t);if(!l)return toast('Sem lote neste tan
       /* v419: o peso não é mais preenchido sozinho: o operador digita o que separou de verdade */
       const foco=c2=>{const e=$('fForm').querySelector(`input[data-i="${i}"][data-c="${c2}"]`);if(e){e.classList.add('falta');e.focus();setTimeout(()=>e.classList.remove('falta'),1600);}};
       if(!v.lote&&D&&D.rastro){toast('Digite o lote da '+nomes[i]+' antes do ✓.');return foco('lote');}
-      if(!String(v.kg||'').trim()){toast('Digite o peso que você separou de '+nomes[i]+' antes do ✓.');return foco('kg');}}
+      if(!String(v.kg||'').trim()){const mm=(l.mp||[])[i];v.kg=mm?nl(mm.kg):'';}}   /* v520: ✓ sem peso digitado = separou o previsto */
     v.ok=!v.ok;
     const kb=!!KB.on;abrirForm(t,aba);
     if(kb){const nx=[...$('fForm').querySelectorAll('input[data-i]')].find(e=>!e.disabled&&!e.value);if(nx)nx.focus();}});
@@ -987,7 +991,7 @@ $('menuTop').onclick=()=>abrirGeral();
 const KB={el:null,sel:null};
 /* v415: um teclado só para todos os campos (o peso e o lote usam o mesmo) */
 /* v417: 11 colunas — Ç ao lado do L, ? e os acentos (´ ~ ^ juntam com a próxima vogal: ´ + A = Á) */
-const KB_TXT=[['1','2','3','4','5','6','7','8','9','0','?'],['Q','W','E','R','T','Y','U','I','O','P','´'],['A','S','D','F','G','H','J','K','L','Ç','~'],['Z','X','C','V','B','N','M',',','.','-','^'],['⌫','ESPAÇO','▾','OK']];
+const KB_TXT=[['1','2','3','4','5','6','7','8','9','0','?'],['Q','W','E','R','T','Y','U','I','O','P','´'],['A','S','D','F','G','H','J','K','L','Ç','~'],['Z','X','C','V','B','N','M',',','.','-','^'],['ESPAÇO','▾','⌫','OK']];
 const KB_ACENTO={'´':{A:'Á',E:'É',I:'Í',O:'Ó',U:'Ú'},'~':{A:'Ã',O:'Õ',N:'Ñ'},'^':{A:'Â',E:'Ê',O:'Ô'}};
 const KB_NUM=[['7','8','9'],['4','5','6'],['1','2','3'],[',','0','⌫'],['OK']];
 function kbMarca(){document.querySelectorAll('input:not([type=checkbox]):not([type=radio]):not([type=hidden]),textarea').forEach(i=>{
