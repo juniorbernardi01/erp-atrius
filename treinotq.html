@@ -39825,6 +39825,7 @@ function trEnvasar(){const h=ymd(new Date());let n=0;
 
 /* ---------- tela do instrutor ---------- */
 function trInicio(){
+  try{document.documentElement.classList.remove('cs-tqboot');}catch(e){}
   let d=document.getElementById('trIni');if(!d){d=document.createElement('div');d.id='trIni';document.body.appendChild(d);}
   const T=csTqDia(ymd(new Date()));
   const ST={limpar:'para limpar',limpando:'limpando',encher:'limpo · encher',enchendo:'enchendo',cheio:'cheio',atras:'atrasado · cheio',prep:'preparando',
@@ -39849,6 +39850,7 @@ function trInicio(){
 }
 /* PIN do gestor para sair do tablet e voltar ao instrutor */
 function trPinGestor(ok){
+  try{document.documentElement.classList.remove('cs-tqboot');}catch(e){}   /* a abertura do tablet esconde tudo que não é a tela dos tanques; o PIN do instrutor precisa aparecer */
   let d=document.getElementById('trPin');if(!d){d=document.createElement('div');d.id='trPin';document.body.appendChild(d);}
   let v='',msg='PIN de um gestor';
   const pinta=()=>{d.className='on';d.innerHTML=`<div class="cx"><h2>Tela do instrutor</h2><p class="${/não/.test(msg)?'er':''}">${esc(msg)}</p>
