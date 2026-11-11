@@ -1,6 +1,6 @@
 {
- "v": "v518",
- "versao": "5.1.8",
- "data": "10/11/2026",
- "o_que_mudou": "Tablet dos tanques: o PIN do master e dos gestores abre (conferido no servidor, como nas máquinas). Limpeza do razão: some a devolução errada da virada do dia e a correção dela (o saldo não muda). Ordens de compra abrem em Rascunho; Todas antes de Canceladas. OP que continua no outro dia não devolve mais a matéria-prima. Devoluções: excluir e corrigir motivo com a senha do gestor"
+ "v": "v519",
+ "versao": "5.1.9",
+ "data": "11/11/2026",
+ "o_que_mudou": "Regra única de tempo: parada programada (refeição, DSS, treinamento) é medida e não conta como atraso; pausa de máquina, material, pessoas e tanque conta; motivo só pelo que nenhuma pausa explica; dados antigos corrigidos. Tablet dos tanques: o PIN do master e dos gestores abre (conferido no servidor, como nas máquinas). Limpeza do razão: some a devolução errada da virada do dia e a correção dela (o saldo não muda). Ordens de compra abrem em Rascunho; Todas antes de Canceladas. OP que continua no outro dia não devolve mais a matéria-prima. Devoluções: excluir e corrigir motivo com a senha do gestor"
 }

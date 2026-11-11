@@ -655,6 +655,8 @@ function acao(id,a){const t=T.find(x=>x.id===id);if(!t)return;const s=statusDe(t
 /* ---------- atraso: tolerância das Configurações (Motivos › Atraso a partir de) ---------- */
 const TOL=()=>{try{return N.tolAtraso?+N.tolAtraso():10;}catch(e){return 10;}};
 const pausasDa=(l,st)=>((l.tq&&l.tq.pausas)||[]).filter(p=>p.etapa===st).reduce((s,p)=>s+(+p.min||0),0);
+/* v519: parada programada (refeição, DSS…) sai do tempo real; as outras pausas contam como atraso, mas já têm motivo */
+const pausasProgDa=(l,st)=>((l.tq&&l.tq.pausas)||[]).filter(p=>p.etapa===st&&(p.grupo==='Parada programada'||/fim de turno/i.test(p.mot||''))).reduce((s,p)=>s+(+p.min||0),0);
 function atrasoInicio(l,pk){const p=l.plan&&l.plan[pk];const pm=p&&min(p.de);if(pm==null||!D||l.data>D.hoje)return 0;
   const dias=Math.round((new Date(D.hoje+'T12:00:00')-new Date(l.data+'T12:00:00'))/864e5);return AGORA+dias*1440-pm;}
 function atrasoDe(l,a,s){const tol=TOL();if(ehAmanha()||l.adiant)return null;
@@ -739,16 +741,16 @@ function ligaMotivo(m,st,pref,repinta){
 const motivosDe=et=>{try{return (N.tqMotivos&&N.tqMotivos(et))||[];}catch(e){return [];}};
 
 /* ---------- fechamento do preparo: atraso e ajuste pedem motivo ---------- */
-function fecharPreparo(t,ok){const l=lote(t);const real=Math.max(0,(l.desde||0)-pausasDa(l,'prep')),atr=l.prev?real-l.prev:0;const G=gruposAtraso();const tol=TOL();
+function fecharPreparo(t,ok){const l=lote(t);const real=Math.max(0,(l.desde||0)-pausasProgDa(l,'prep')),atr=l.prev?real-l.prev:0,falta=l.prev?Math.max(0,(l.desde||0)-pausasDa(l,'prep'))-l.prev:0;   /* v519 */const G=gruposAtraso();const tol=TOL();
   const ajs=(l.extra||[]).length;const st={grupo:'',mot:'',obs:''};
   const pinta=()=>{const m=modal(`<div class="mc prob"><div class="mh"><span><b>Concluir preparo · ${esc(t.id)}</b><small>${esc(l.p)} · lote ${esc(l.lote||'—')}</small></span><span class="x" data-fechar>×</span></div>
     <div class="fres"><div><span>Previsto</span><b>${l.prev?dur(l.prev):'—'}</b></div><div class="${atr>0?'mau':''}"><span>Real</span><b>${dur(real)}</b></div><div class="${atr>0?'mau':''}"><span>${atr>0?'Atraso':'Folga'}</span><b>${atr>0?'+'+dur(atr):dur(-atr)}</b></div><div class="${ajs?'amb':''}"><span>MP de ajuste</span><b>${ajs}</b></div></div>
-    ${atr>tol?`<h4>Por que atrasou? <b class="obr">obrigatório</b></h4>${chipsMotivo(G,st,'a')}`:''}
+    ${falta>tol?`<h4>Por que atrasou? <b class="obr">obrigatório</b></h4>${chipsMotivo(G,st,'a')}`:''}
     <h4>Observação ${st.mot==='Outro'?'<b class="obr">obrigatória</b>':'(se teve algo diferente)'}</h4><textarea class="in obs" id="cObs" placeholder="escreva aqui">${esc(st.obs)}</textarea>
     <div class="libb"><span style="flex:1"></span><div class="acao" id="cOk">Concluir preparo</div></div></div>`);
     ligaMotivo(m,st,'a',pinta);
     const o=m.querySelector('#cObs');o.oninput=()=>st.obs=o.value;
-    m.querySelector('#cOk').onclick=()=>{if(atr>tol&&!st.mot)return toast('Escolha o motivo do atraso.');if(st.mot==='Outro'&&!st.obs.trim())return toast('Escreva a observação.');
+    m.querySelector('#cOk').onclick=()=>{if(falta>tol&&!st.mot)return toast('Escolha o motivo do atraso.');if(st.mot==='Outro'&&!st.obs.trim())return toast('Escreva a observação.');
       m.classList.remove('on');ok(st.obs,atr>tol&&st.mot?{etapa:'Preparo',tipo:'tempo',min:atr,grupo:st.grupo,mot:st.mot,obs:st.obs}:null);};};
   pinta();}
 

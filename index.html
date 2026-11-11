@@ -5172,7 +5172,9 @@ const quebraL=o=>{const f=litrosFeitos(o);return f==null?null:o.litros-f;};
 const somaL=(l,f)=>l.reduce((s,o)=>s+(f(o)||0),0);
 const ativa=o=>o.status!=='cancelada';
 /* tempo de produção realizado, em minutos */
-const tempoReal=o=>(o.iniReal&&o.fimReal)?Math.max(0,hm(o.fimReal)-hm(o.iniReal)):null;
+/* v519: tempo real da OP = setup real + envase real (sai só a parada programada); antes era o relógio bruto, com o almoço dentro */
+const tempoReal=o=>{if(!(o.iniReal&&o.fimReal))return null;try{const s=(+o.setup&&o.envIni)?setupReal(o):0,e=envaseReal(o);if(e!=null&&s!=null)return s+e;}catch(x){}
+  return Math.max(0,hm(o.fimReal)-hm(o.iniReal)-(typeof csParado==='function'?csParado(o,o.iniReal,o.fimReal):0));};
 const desvio=o=>{const t=tempoReal(o);return t==null?null:t-total(o);};
 const ST={programada:'Programada',preparacao:'Preparação',producao:'Produção',
   finalizado:'Envase finalizado',concluida:'Concluída',
@@ -5508,7 +5510,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v518';const VERSAO_DATA='10/11/2026';
+const VERSAO_APP='v519';const VERSAO_DATA='11/11/2026';
 /* número que aparece na tela: v438 → v4.3.8 (por dentro continua v438, que é o que as versões comparam) */
 const csRotVer=v=>{const d=String(v||'').replace(/\D/g,'');return d.length>=3?'v'+d.slice(0,-2)+'.'+d.slice(-2,-1)+'.'+d.slice(-1):String(v||'');};
 const VERSAO_ROTULO=csRotVer(VERSAO_APP)+' · '+VERSAO_DATA;
@@ -12712,8 +12714,11 @@ function finalizarEnvase(o){
   const upd=()=>{
     const ei=M('nEnvI').value,f=M('nFim').value;
     const sf=(M('nSetF')&&M('nSetF').value)||ei,i=(M('nIni')&&M('nIni').value)||ei;
-    const t=(i&&f)?Math.max(0,hm(f)-hm(i)):null,dur=total(o);
-    const ts=(i&&sf)?Math.max(0,hm(sf)-hm(i)):null,te=(ei&&f)?Math.max(0,hm(f)-hm(ei)):null;
+    /* v519: tempo mostrado = real (sai só a parada programada); o que pede motivo desconta também as pausas que já têm motivo */
+    const pzP=(a,b)=>(typeof csPzProg==='function'?csPzProg(o,a,b):0),pzA=(a,b)=>(typeof csPzEntre==='function'?csPzEntre(o,a,b):0);
+    const t=(i&&f)?Math.max(0,hm(f)-hm(i)-pzP(hm(i),hm(f))):null,dur=total(o);
+    const tN=(i&&f)?Math.max(0,hm(f)-hm(i)-pzA(hm(i),hm(f))):null;
+    const ts=(i&&sf)?Math.max(0,hm(sf)-hm(i)-pzP(hm(i),hm(sf))):null,te=(ei&&f)?Math.max(0,hm(f)-hm(ei)-pzP(hm(ei),hm(f))):null;
     const delta=f?hm(f)-fimPrev(o):0;
     let h='';
     if(o.setup&&ts!=null)h+=`Setup <b>${ts} min</b> · previsto ${o.setup} min${badge(ts-o.setup)}.<br>`;
@@ -12729,13 +12734,14 @@ function finalizarEnvase(o){
        é a linha indo bem, e quem está lá merece ouvir isso. */
     const tol=typeof TOL_ATRASO!=='undefined'?TOL_ATRASO
              :(typeof TOLERANCIA!=='undefined'?TOLERANCIA:10);
-    const atraso=Math.max(f?delta:0,(t!=null)?t-dur:0);
+    const atraso=(tN!=null)?tN-dur:0;   /* v519: pede motivo só pelo que nenhuma pausa explica; o fim da agenda não entra */
+    if(t!=null&&tN!=null&&t>tN&&M('nCalc'))M('nCalc').insertAdjacentHTML('beforeend',`<br>Inclui <b>${t-tN} min</b> em pausas com motivo (já explicadas).`);
     const atrasou=atraso>tol;
     if(M('nOco'))M('nOco').hidden=!atrasou;
     if(M('nOcoT'))M('nOcoT').innerHTML=
-      `O envase atrasou <b>${hmm(atraso)}</b>. Quais os motivos? <b>*</b>`;
+      `O envase passou <b>${hmm(atraso)}</b> do previsto, fora as pausas já explicadas. Quais os motivos? <b>*</b>`;
     if(M('nBoa')){
-      const ganho=Math.max(0,-(f?delta:0));
+      const ganho=Math.max(0,(t!=null)?dur-t:0);
       M('nBoa').hidden=atrasou||ganho<=tol;
       if(!M('nBoa').hidden)
         M('nBoa').innerHTML=`<b>Parabéns!</b>
@@ -12803,7 +12809,7 @@ function finalizarEnvase(o){
       if(lista.some(x=>!x.s)&&!obs){
         toast('Escolha o que aconteceu dentro do grupo, ou escreva na observação.',true);return;}
       o.motivos=lista;o.motivosEnvase=lista;
-      o.atrasoMin=Math.max(0,delta);
+      try{const pz=(typeof csPzEntre==='function'?csPzEntre(o,hm(i),hm(f)):0);o.atrasoMin=Math.max(0,hm(f)-hm(i)-pz-total(o));}catch(e){o.atrasoMin=Math.max(0,delta);}   /* v518 */
       const txt=lista.map(x=>x.s?`${x.g} · ${x.s}`:x.g).join(' | ');
       o.motivoFim=txt;
       obs=txt+(obs?` · ${obs}`:'');
@@ -17522,7 +17528,7 @@ function dadosDoDia(data){
   const perdaL=feitas.reduce((s,o)=>s+Math.max(0,caixasPrev(o)-o.caixas)*litrosCx(o),0);
   const prevL=ops.reduce((s,o)=>s+o.litros,0);
   const feitoL=feitas.reduce((s,o)=>s+csCxDia(o)*litrosCx(o),0);
-  const atrasadas=ops.filter(o=>o.fimReal&&hm(o.fimReal)>fimEsperado(o)).length;
+  const atrasadas=ops.filter(o=>typeof csOpAtrasada==='function'?csOpAtrasada(o):(o.fimReal&&hm(o.fimReal)>fimEsperado(o))).length;   /* v519: mesma conta do selo da OP */
   const ocs=OCORRENCIAS.filter(o=>o.data===data);
   const porMaq={};
   MAQUINAS.forEach(m=>{
@@ -17563,7 +17569,7 @@ function relDia(){
     </tr></thead><tbody>
     ${d.ops.length?d.ops.map(o=>{
       const perda=o.caixas!=null?Math.max(0,caixasPrev(o)-o.caixas):null;
-      const atras=o.fimReal&&hm(o.fimReal)>fimEsperado(o);
+      const atras=typeof csOpAtrasada==='function'?csOpAtrasada(o):(o.fimReal&&hm(o.fimReal)>fimEsperado(o));   /* v519 */
       return `<tr class="${atras?'w':''}">
         <td>${o.maq||'—'}</td>
         <td><b>${nomeCurto(o.codigo)}</b></td>
@@ -17648,7 +17654,7 @@ function imprimirRelDia(data){
   <th>Planejado</th><th>Realizado</th><th>Situação</th></tr></thead><tbody>
 ${d.ops.map(o=>{
   const perda=o.caixas!=null?Math.max(0,caixasPrev(o)-o.caixas):null;
-  const atras=o.fimReal&&hm(o.fimReal)>fimEsperado(o);
+  const atras=typeof csOpAtrasada==='function'?csOpAtrasada(o):(o.fimReal&&hm(o.fimReal)>fimEsperado(o));   /* v519 */
   return `<tr class="${atras?'at':''}">
     <td>${e(o.maq||'—')}</td><td>${e(nomeCurto(o.codigo))}</td>
     <td class="mono">${e(o.lote||'—')}</td><td class="mono">${e(o.tanque||'—')}</td>
@@ -17748,8 +17754,8 @@ function relEnvase(){
   /* o relatório mede o atraso de cada OP contra o tempo dela, não contra a
      agenda: senão uma quebra de máquina de manhã marca como atrasadas todas
      as OPs do dia, que rodaram dentro do previsto */
-  const atrasoFim=comFim.reduce((s,o)=>s+Math.max(0,hm(o.fimReal)-fimEsperado(o)),0);
-  const comAtraso=comFim.filter(o=>hm(o.fimReal)>fimEsperado(o)).length;
+  const atrasoFim=comFim.reduce((s,o)=>s+Math.max(0,typeof csAtrasoOP==='function'?(csAtrasoOP(o)||0):hm(o.fimReal)-fimEsperado(o)),0);   /* v519 */
+  const comAtraso=comFim.filter(o=>typeof csOpAtrasada==='function'?csOpAtrasada(o):hm(o.fimReal)>fimEsperado(o)).length;
 
   /* os dias do período, para o bloco de tempo parado */
   const pr=diasDoPeriodo();
@@ -17776,7 +17782,7 @@ function relEnvase(){
         <div class="s">real contra previsto</div></div>
       <div class="kpi"><div class="k">Atraso de fim</div>
         <div class="v ${atrasoFim>0?'ruim':''}">${atrasoFim>0?'+':''}${atrasoFim} min</div>
-        <div class="s">${comAtraso} OP terminaram depois</div></div>
+        <div class="s">${comAtraso} OP${comAtraso===1?'':'s'} com atraso</div></div>
       <div class="kpi"><div class="k">Volume projetado</div><div class="v">${nf(volPrevFeitas)} L</div>
         <div class="s">tanque nas OPs concluídas</div></div>
       <div class="kpi"><div class="k">Volume produzido</div><div class="v ok">${nf(volFeito)} L</div>
@@ -17827,7 +17833,7 @@ function relEnvase(){
           <td class="n">${d!=null?`<span class="pill ${d>15?'mau':d>0?'med':'ok'}">${d>0?'+':''}${d}</span>`:'—'}</td>
           <td class="n">${o.iniReal?(()=>{const x=hm(o.iniReal)-o.inicio;
             return `<span class="pill ${x>15?'mau':x>0?'med':'ok'}">${x>0?'+':''}${x}</span>`;})():'—'}</td>
-          <td class="n">${o.fimReal?(()=>{const x=hm(o.fimReal)-fimEsperado(o);
+          <td class="n">${o.fimReal?(()=>{const x=typeof csAtrasoOP==='function'?(csAtrasoOP(o)||0):hm(o.fimReal)-fimEsperado(o);
             return `<span class="pill ${x>15?'mau':x>0?'med':'ok'}">${x>0?'+':''}${x}</span>`;})():'—'}</td>
           <td class="n">${nf(o.litros)} L<div class="sub2">${nf(cp)} cx de ${fmtLit(prodOf(o.codigo).litragem)}</div></td>
           <td class="n">${vf!=null?`${nf(vf)} L<div class="sub2">${nf(o.caixas)} ${und(o)}</div>`:'—'}</td>
@@ -24070,7 +24076,7 @@ document.addEventListener('click',ev=>{
   const tit=a==='retomar'?'Retomar a linha':a==='fin'?'Concluir envase':(b.textContent||'').trim().toLowerCase().replace(/^./,c=>c.toUpperCase());
   /* fim do setup (Iniciar envase) acima do previsto: pede o motivo aqui */
   let mot=null;
-  try{if(a==='etapa'&&at&&etapaAtual(at)==='envase'&&at.iniReal&&!at.envIni){const dur=hm(relogio())-hm(at.iniReal);
+  try{if(a==='etapa'&&at&&etapaAtual(at)==='envase'&&at.iniReal&&!at.envIni){const dur=hm(relogio())-hm(at.iniReal)-(typeof csPzEntre==='function'?csPzEntre(at,hm(at.iniReal),hm(relogio())):0);   /* v519: pausa no setup (almoço) não é atraso; a de máquina já tem motivo */
     if(dur-(+at.setup||0)>TOLERANCIA)mot={titulo:`Setup levou ${hmm(dur)} (previsto ${at.setup} min)`,
       grupos:gruposDe('setup')};}}catch(e){}
   csPinTela(tit,`${CS_OPMAQ||''}${at?` · OP ${rotuloOP(at)} · lote ${at.lote||''}`:''}`,(q,pin,esc)=>{
@@ -24443,10 +24449,10 @@ relMotivos=function(){
     <div class="kpis">
       <div class="kpi"><div class="k">OPs com motivo</div><div class="v">${r.tot}</div><div class="s">de ${ops.length} OPs no período</div></div>
       <div class="kpi"><div class="k">Setup · Envase · Pausa · Quebra</div><div class="v" style="font-size:20px">${r.nOps.setup||0} · ${r.nOps.envase||0} · ${r.nOps.pausa||0} · ${r.nOps.quebra||0}</div><div class="s">OPs com motivo em cada etapa</div></div>
-      <div class="kpi"><div class="k">Tempo perdido</div><div class="v">${hmm(Math.round(r.custoTot.min))}</div><div class="s">setup e envase acima da meta e pausas</div></div>
+      <div class="kpi"><div class="k">Tempo perdido</div><div class="v">${hmm(Math.round(r.custoTot.min))}</div><div class="s">atraso de setup e envase e pausas de máquina, material, pessoas e tanque · fora: ${hmm(Math.round(((()=>{try{return csMedeMotivos(ops,'programada').custoTot.min;}catch(e){return 0;}})())))} de parada programada</div></div>
       <div class="kpi"><div class="k">Litros perdidos</div><div class="v">${nf(Math.round(r.custoTot.l))} L</div><div class="s">quebra com motivo</div></div>
       <div class="kpi"><div class="k">Problema nº 1</div><div class="v" style="font-size:17px">${top?escAttr(top.s):'—'}</div><div class="s">${top?`${escAttr(top.g)} · ${top.ops} OP${top.ops>1?'s':''}`:''}</div></div></div>
-    <div class="csmf">${[['todos','Todas as etapas'],['setup','Setup'],['envase','Envase'],['pausa','Pausa'],['quebra','Quebra'],['saldo','Saldo de lote']].map(([k,n])=>`<button class="${CS_MOT_ET===k?'on':''}" data-cmet="${k}">${n}</button>`).join('')}
+    <div class="csmf">${[['todos','Todas as etapas'],['setup','Setup'],['envase','Envase'],['pausa','Pausa'],['programada','Parada programada'],['quebra','Quebra'],['saldo','Saldo de lote']].map(([k,n])=>`<button class="${CS_MOT_ET===k?'on':''}" data-cmet="${k}">${n}</button>`).join('')}
       <span style="flex:1"></span><button class="${CS_MOT_SUB?'':'on'}" data-cmsub="0">Por grupo</button><button class="${CS_MOT_SUB?'on':''}" data-cmsub="1">Por subgrupo</button></div>
     ${csTabelaMotivos(r,CS_MOT_SUB)}
     <p class="adp" style="margin-top:10px">% das OPs da etapa: em quantas das OPs que tiveram problema naquela etapa o motivo apareceu (uma OP pode ter mais de um motivo, então a coluna soma mais de 100%). % do total e Acumulado: o peso de cada motivo entre todos os registrados — os primeiros, até uns 80%, são os que mais valem atacar. Principal: quantas vezes foi o motivo principal. Custo: minutos acima da meta (setup e envase) ou litros de quebra, divididos entre os motivos da OP.</p>`;
@@ -28923,15 +28929,15 @@ function csProblemasOP(o){
   const un=und(o);
   const quem=o.operador||'';
   /* setup */
-  try{const ds=Math.max(0,dvSetup(o)||0);
+  try{const ds=typeof csDsFalta==='function'?csDsFalta(o):Math.max(0,dvSetup(o)||0);   /* v519: o motivo pesa o que nenhuma pausa explica */
     const m=o.setupMotivo;
     if(m&&(m.principal||(m.itens||[]).length)){const it=m.itens&&m.itens.length?m.itens:[{g:m.grupo,s:m.principal},...(m.secundarios||[]).map(s=>({g:(csGrupoDaSub(s)||{}).nome,s}))];
       it.forEach((x,i)=>S.push({g:x.g||'(sem grupo)',s:x.s||'',custo:i===0&&ds?`+${cs5min(ds)}`:'',quando:(fimSetup(o)||o.envIni)?`${dCurto(o.data)} ${fimSetup(o)||o.envIni}`:dCurto(o.data),quem}));}
     else{const le=(typeof csMotivosOP==='function'?csMotivosOP(o):[]).filter(x=>x.et==='setup');le.forEach((x,i)=>S.push({g:x.g,s:x.s,custo:i===0&&ds?`+${cs5min(ds)}`:'',quando:dCurto(o.data),quem}));}
   }catch(e){}
   /* envase: pausas e motivos do fim */
-  try{(o.pausasOp||[]).forEach(p=>E.push({g:p.g||'Pausa',s:p.s||p.obs||'',custo:`pausa ${cs5min(+p.min||0)}`,quando:`${dCurto(p.dia||o.data)} ${p.desde||''}${p.ate?' → '+p.ate:''}`,quem:p.quem||quem,pausa:true}));
-    const de=Math.max(0,(+o.atrasoMin||0)||(dvEnvase(o)||0));
+  try{(o.pausasOp||[]).forEach(p=>((o.envIni&&p.desde&&hm(p.desde)<hm(o.envIni))?S:E).push({g:p.g||'Pausa',s:p.s||p.obs||'',custo:(typeof csEhProg==='function'&&csEhProg(p))?`descontado ${cs5min(+p.min||0)}`:`pausa ${cs5min(+p.min||0)}`,quando:`${dCurto(p.dia||o.data)} ${p.desde||''}${p.ate?' → '+p.ate:''}`,quem:p.quem||quem,pausa:true}));
+    const de=typeof csDeFalta==='function'?csDeFalta(o):Math.max(0,(+o.atrasoMin||0)||(dvEnvase(o)||0));   /* v519 */
     const norm_=s=>String(s||'').trim().toLowerCase();const jaP=new Set(E.filter(x=>x.pausa).map(x=>norm_(x.g)+'|'+norm_(x.s)));
     const le=(typeof csMotivosOP==='function'?csMotivosOP(o):[]).filter(x=>x.et==='envase').filter(x=>!jaP.has(norm_(x.g)+'|'+norm_(x.s)));
     le.forEach((x,i)=>E.push({g:x.g,s:x.s,custo:i===0&&de?`+${cs5min(de)}`:'',quando:o.fimReal?`${dCurto(o.data)} ${o.fimReal}`:dCurto(o.data),quem}));
@@ -28946,7 +28952,7 @@ function csProblemasOP(o){
 function csProblemasHTML(o,print){
   const {S,E,Q}=csProblemasOP(o);const un=und(o);
   let ds=0,de=0,pausas=0,qcx=0,ql=0;
-  try{ds=Math.round(dvSetup(o)||0);}catch(e){}try{de=Math.round((+o.atrasoMin||0)||(dvEnvase(o)||0));}catch(e){}
+  try{ds=Math.round(dvSetup(o)||0);}catch(e){}try{de=Math.round(dvEnvase(o)||0);}catch(e){}   /* v519: o real (sai só a parada programada) */
   try{pausas=(o.pausasOp||[]).reduce((s,p)=>s+(+p.min||0),0);}catch(e){}
   try{if(o.caixas!=null){qcx=Math.max(0,caixasPrev(o)-o.caixas);ql=Math.max(0,quebraL(o)||0);}}catch(e){}
   const pct=(()=>{try{const p=caixasPrev(o);return p?(qcx/p*100).toFixed(1).replace('.',','):'0';}catch(e){return '0';}})();
@@ -28966,9 +28972,9 @@ function csProblemasHTML(o,print){
     <div class="pbtit"><b>PROBLEMAS RELATADOS NO LOTE</b><span>motivos marcados nos tablets e no apontamento</span></div>
     <table class="rt8 pb8"><thead><tr><th>Etapa</th><th>Motivo</th><th>Tempo</th></tr></thead><tbody>
       ${bloco('SETUP',temSetup?sinal(ds):'—',temSetup?cor(ds):'',S,'dentro do previsto · nenhum motivo')}
-      ${bloco('ENVASE',(o.fimReal?sinal(de):'em andamento')+((o.pausasOp||[]).length?` · ${(o.pausasOp||[]).length} pausa${(o.pausasOp||[]).length>1?'s':''}`:''),o.fimReal?cor(de):'',E,'dentro do previsto · nenhum motivo')}
+      ${bloco('ENVASE',(o.fimReal?sinal(de):'em andamento')+(()=>{const n=(o.pausasOp||[]).filter(p=>!(o.envIni&&p.desde&&hm(p.desde)<hm(o.envIni))).length;return n?` · ${n} pausa${n>1?'s':''}`:'';})(),o.fimReal?cor(de):'',E,'dentro do previsto · nenhum motivo')}
       ${bloco('QUEBRA',concl?(qcx?`${nf(qcx)} ${un} · ${pct}%`:'0'):'—',qcx?'mais':'ok',Q,'sem quebra')}
-      <tr class="tot"><td class="n">Total</td><td>atraso ${pausas?`<span class="sub">(${cs5min(pausas)} em pausas, já contadas)</span>`:''}${prox?` · <span class="sub">${prox}</span>`:''}</td><td class="dv ${cor(ds+de)}">${sinal(ds+de)}</td></tr>
+      <tr class="tot"><td class="n">Total</td><td>atraso ${(()=>{try{const r=csPausasResumo(o),l=[r.txtN,r.txtP].filter(Boolean);return l.length?`<span class="sub">(${l.join(' · ')})</span>`:'';}catch(e){return '';}})()}${prox?` · <span class="sub">${prox}</span>`:''}</td><td class="dv ${cor(ds+de)}">${sinal(ds+de)}</td></tr>
     </tbody></table>
   </div>`;
 }
@@ -30137,7 +30143,7 @@ csRelTempos=function(o){
 csProblemasHTML=function(o,print){
   const {S,E,Q}=csProblemasOP(o);const un=und(o);
   let ds=0,de=0,pausas=0,qcx=0,ql=0;
-  try{ds=Math.round(dvSetup(o)||0);}catch(e){}try{de=Math.round((+o.atrasoMin||0)||(dvEnvase(o)||0));}catch(e){}
+  try{ds=Math.round(dvSetup(o)||0);}catch(e){}try{de=Math.round(dvEnvase(o)||0);}catch(e){}   /* v519: o real (sai só a parada programada) */
   try{pausas=(o.pausasOp||[]).reduce((s,p)=>s+(+p.min||0),0);}catch(e){}
   try{if(o.caixas!=null){qcx=Math.max(0,caixasPrev(o)-o.caixas);ql=Math.max(0,quebraL(o)||0);}}catch(e){}
   const pct=(()=>{try{const p=caixasPrev(o);return p?(qcx/p*100).toFixed(1).replace('.',','):'0';}catch(e){return '0';}})();
@@ -30151,10 +30157,10 @@ csProblemasHTML=function(o,print){
     <div class="pbtit"><b>PROBLEMAS RELATADOS NO LOTE</b><span>motivo | submotivo — tempo</span></div>
     <div class="pbg">
       ${col('SETUP','#475569','#EEF2F7',S,o.iniReal||fimSetup(o)?sinal(ds):'—','dentro do previsto · nenhum motivo')}
-      ${col('ENVASE','#B45309','#FFF7E6',E,(o.fimReal?sinal(de):'em andamento')+((o.pausasOp||[]).length?` · ${(o.pausasOp||[]).length} pausa${(o.pausasOp||[]).length>1?'s':''}`:''),'dentro do previsto · nenhum motivo')}
+      ${col('ENVASE','#B45309','#FFF7E6',E,(o.fimReal?sinal(de):'em andamento')+(()=>{const n=(o.pausasOp||[]).filter(p=>!(o.envIni&&p.desde&&hm(p.desde)<hm(o.envIni))).length;return n?` · ${n} pausa${n>1?'s':''}`:'';})(),'dentro do previsto · nenhum motivo')}
       ${col('QUEBRA','#DC2626','#FEF2F2',Q,concl?(qcx?`${nf(qcx)} ${un} · ${pct}%`:'0'):'—','sem quebra')}
     </div>
-    <div class="pbrod"><span>Total de atraso: <b style="color:${ds+de>0?'#DC2626':'#15803D'}">${sinal(ds+de)}</b>${pausas?` <small>(${cs5min(pausas)} em pausas, já contadas)</small>`:''}</span><span>Quebra: <b style="color:${qcx?'#DC2626':'#15803D'}">${concl?`${nf(qcx)} ${un} (${nf(Math.round(ql))} L)`:'—'}</b></span>${prox?`<span>${prox}</span>`:''}</div>
+    <div class="pbrod"><span>Total de atraso: <b style="color:${ds+de>0?'#DC2626':'#15803D'}">${sinal(ds+de)}</b>${(()=>{try{const r=csPausasResumo(o),l=[r.txtN,r.txtP].filter(Boolean);return l.length?` <small>(${l.join(' · ')})</small>`:'';}catch(e){return '';}})()}</span><span>Quebra: <b style="color:${qcx?'#DC2626':'#15803D'}">${concl?`${nf(qcx)} ${un} (${nf(Math.round(ql))} L)`:'—'}</b></span>${prox?`<span>${prox}</span>`:''}</div>
   </div>`;
 };
 (function(){try{const s=document.createElement('style');s.textContent=`
@@ -39025,14 +39031,15 @@ setTimeout(csCustos496,16000);setTimeout(csCustos496,38000);
     const tit={ini:'Iniciar',pau:'Pausar',ret:'Retomar'}[a];
     if(M('mAcao'))M('mAcao').innerHTML='';M('modal').classList.remove('wide');M('mTit').textContent=`${tit} · OP ${num4(k.num)} · kit`;M('mSub').hidden=true;
     M('mB').innerHTML=`<div class="alert blue">${e_((prodOf(k.codigo)||{}).descricao||k.codigo)} · ${nf(k.cx)} cx · lotes ${(k.lotes||[]).map(l=>e_(l.lote)).join(' + ')}</div>
-      ${a==='pau'?`<div class="fld"><label>Motivo da pausa <b>*</b></label><select id="kpM"><option value="">Selecione…</option>${(()=>{const l=(typeof MOTIVOS!=='undefined'?MOTIVOS:[]).filter(m=>m.ativo!==false&&(m.etapas||[]).includes('interrupcao')).map(m=>m.nome);return (l.length?l:['Falta de embalagem','Falta de produto','Intervalo']).map(x=>`<option>${e_(x)}</option>`).join('');})()}</select></div>`:''}
+      ${a==='pau'?`<div class="fld"><label>Motivo da pausa <b>*</b></label><select id="kpM"><option value="">Selecione…</option>${(()=>{/* v519: os mesmos grupos da pausa do envase (parada programada fica medida, fora do atraso) */try{const G=gruposDe('pausa');if(G.length)return G.map(g=>`<optgroup label="${e_(g.nome)}">${(g.sub||[]).map(s=>`<option value="${e_(g.nome+' · '+s)}">${e_(s)}</option>`).join('')}</optgroup>`).join('');}catch(e){}
+        const l=(typeof MOTIVOS!=='undefined'?MOTIVOS:[]).filter(m=>m.ativo!==false&&(m.etapas||[]).includes('interrupcao')).map(m=>m.nome);return (l.length?l:['Falta de embalagem','Falta de produto','Intervalo']).map(x=>`<option>${e_(x)}</option>`).join('');})()}</select></div>`:''}
       <div class="fld"><label>PIN de quem está fazendo <b>*</b></label><input id="kpP" placeholder="••••" autocomplete="off"><div class="hint" id="kpD" style="font-size:12px;color:var(--ink3);margin-top:6px">PIN do operador de kit.</div></div>`;
     M('mF').innerHTML=`<div style="flex:1"></div><button class="btn" id="kpX">Voltar</button><button class="btn pri" id="kpOk">${tit}</button>`;
     M('kpX').onclick=()=>{if(VOLTA)kitsModal();else fecharModal();};
     M('kpOk').onclick=()=>{const q=quemPorCredencial((M('kpP').value||'').trim());if(!q){M('kpD').innerHTML='<b style="color:var(--danger)">PIN ou senha não encontrados.</b>';return;}
       const h=relogio();
       if(a==='ini'){k.status='producao';k.iniHora=h;k.iniDia=hoje();if(!k.operador)k.operador=q.nome;registrar(k,'Montagem iniciada',q,h);}
-      else if(a==='pau'){const mv=M('kpM').value;if(!mv)return toast('Escolha o motivo.',true);k.status='pausa';(k.pausas=k.pausas||[]).push({de:h,motivo:mv,quem:q.nome});registrar(k,'Pausa',q,mv);}
+      else if(a==='pau'){const mv=M('kpM').value;if(!mv)return toast('Escolha o motivo.',true);k.status='pausa';(k.pausas=k.pausas||[]).push({de:h,motivo:mv,g:String(mv).split(' · ')[0],s:String(mv).split(' · ').slice(1).join(' · '),quem:q.nome});registrar(k,'Pausa',q,mv);}
       else{k.status='producao';const pz=(k.pausas||[]).find(x=>!x.ate);if(pz)pz.ate=h;registrar(k,'Retomada',q,h);}
       agendarSalvar();if(VOLTA)kitsModal();else fecharModal();try{csKitBar();}catch(e){}try{if(S.page==='ordens')gradeOrdens();}catch(e){}};
     try{if(!M('mask').classList.contains('on'))abrirMask();}catch(e){}
@@ -39239,7 +39246,7 @@ tr.cskRow td{background:#FFFBF5}
 .stq.pausa{background:#FEF3C7;color:#A16207}.cskEsc{display:grid;grid-template-columns:1fr 1fr;gap:12px}.cskEsc button{text-align:left;border:1.5px solid var(--line);background:#fff;border-radius:12px;padding:18px 16px;cursor:pointer;display:flex;flex-direction:column;gap:6px;font:inherit}.cskEsc button:hover{border-color:#15803D;background:#F3FBF5}.cskEsc button.k:hover{border-color:#E9B872;background:#FFF8EC}.cskEsc b{font-size:16px}.cskEsc span{font-size:12.5px;color:var(--ink3);line-height:1.4}.cskEsc button.k b{color:#92400E}
 .cskN{font-style:normal;display:inline-grid;place-items:center;min-width:18px;height:18px;border-radius:999px;background:#EA580C;color:#fff;font:800 11.5px Inter,sans-serif;margin-left:4px;padding:0 4px}.cskBt{border-color:#E9B872!important;color:#92400E!important;background:#FFF8EC!important;margin-right:8px;font-weight:700}tr.cskNeta td{background:#FFFCF7}`;document.head.appendChild(st);
   setTimeout(function cad(){try{if(typeof PRONTO==='undefined'||!PRONTO)return setTimeout(cad,2000);cadastraKits();}catch(e){}},2500);
-  try{csNucleo.versao='v518';}catch(e){}
+  try{csNucleo.versao='v519';}catch(e){}
 })();
 
 </script>
@@ -39540,6 +39547,160 @@ document.addEventListener('click',ev=>{try{
   ev.preventDefault();const esc=e.type!=='text';e.type=esc?'text':'password';
   b.classList.toggle('on',esc);b.title=esc?'Esconder':'Mostrar';
 }catch(x){}});
+/* v5.1.8 · ENVASE PAUSADO NO ALMOÇO NÃO É ATRASO (10/11: a Carina teve que justificar 1h16 num envase 35 min abaixo do previsto)
+   A janela de finalizar media do início do setup até o fim com a pausa dentro, e ainda comparava o fim com a agenda.
+   Agora mede como o relatório da OP: tempo real menos o tempo parado (pausas da OP e paradas da jornada), contra o previsto.
+   csPzEntre(o,a,b): minutos parados entre a e b (intervalos juntados, sem contar duas vezes). */
+function csPzEntre(o,a,b){try{
+  if(!(b>a))return 0;let L=[];
+  try{if(typeof csIntervalosParados==='function')L=(csIntervalosParados(o)||[]).map(x=>[+x[0],+x[1]]);}catch(e){}
+  if(!L.length)L=(o.pausasOp||[]).filter(p=>p.desde&&p.ate).map(p=>[hm(p.desde),hm(p.ate)]);
+  L=L.filter(([x,y])=>y>x).map(([x,y])=>[Math.max(x,a),Math.min(y,b)]).filter(([x,y])=>y>x).sort((p,q)=>p[0]-q[0]);
+  let s=0,ca=null,cb=null;L.forEach(([x,y])=>{if(ca===null){ca=x;cb=y;}else if(x<=cb)cb=Math.max(cb,y);else{s+=cb-ca;ca=x;cb=y;}});
+  if(ca!==null)s+=cb-ca;return s;}catch(e){return 0;}}
+
+</script>
+<script data-v519="regra">
+/* =====================================================================
+   v5.1.9 · REGRA ÚNICA DE TEMPO, PAUSA E ATRASO (10/11, decisão do Junior)
+   "Os nossos dados precisam ser verdadeiros": cada número tem que dizer de onde vem.
+
+   TEMPO REAL de uma etapa = relógio (fim − início) − PARADA PROGRAMADA dentro dela.
+     Parada programada = grupo "Parada programada" (refeição, DSS, treinamento, reunião…), o fim de turno
+     e as paradas da jornada da máquina. Não depende do operador nem da máquina: não é atraso, mas é medida.
+   ATRASO = tempo real − previsto. Pausa de máquina, material, pessoas ou tanque CONTA no atraso.
+   O QUE FALTA EXPLICAR = atraso − pausas que já têm motivo. Só isso pede motivo: a mesma coisa não se
+     pergunta duas vezes. É também o "custo" do motivo de setup/envase nos relatórios (a pausa já entra
+     com os minutos dela, então não soma de novo).
+   Valem para: card e selo da OP, relatório da OP, relatório do dia, relatório de envase, Relatórios › Motivos,
+   painel, janela de finalizar envase, conferência do setup no tablet e tanques.
+   ===================================================================== */
+const CS_PP='Parada programada';
+function csEhProg(p){try{if(!p)return false;if(p.prog===true)return true;
+  const g=String(p.g||p.grupo||'').trim(),s=String(p.s||p.mot||p.motivo||'').trim();
+  if(g===CS_PP)return true;if(/fim de turno/i.test(s))return true;
+  if(!g&&s){const pp=(typeof GRUPOS_MOTIVO!=='undefined'?GRUPOS_MOTIVO:[]).find(x=>x.nome===CS_PP);
+    if(pp&&(pp.sub||[]).some(x=>x===s||String(s).split(' · ').pop()===x))return true;
+    if(String(s).split(' · ')[0]===CS_PP)return true;}
+  return false;}catch(e){return false;}}
+/* intervalos [a,b] (min do dia) parados; prog=true só os programados, false só os outros, null todos */
+function csIntervalos519(o,prog){const l=[];
+  /* almoço cadastrado na máquina (Configurações › Máquinas): vale só quando a OP não tem a refeição lançada.
+     Lançada, vale o horário real (quem almoça às 06:27 não perde de novo 11:30–13:00, e a máquina que rodou no almoço não ganha 1h30) */
+  const temRef=(o.pausasOp||[]).some(p=>csEhProg(p)&&/refei|almo|caf|janta|lanche/i.test(String(p.s||'')));
+  if(prog!==false&&!temRef){try{((PAUSAS&&PAUSAS[o.maq])||[]).forEach(p=>{const a=hm(p.de),b=hm(p.ate);if(b>a)l.push([a,b]);});}catch(e){}}
+  (o.pausasOp||[]).forEach(p=>{if(!p.desde||!p.ate)return;const e=csEhProg(p);if(prog===true&&!e)return;if(prog===false&&e)return;
+    let a=hm(p.desde),b=hm(p.ate);if(b<a)b+=1440;if(b>a)l.push([a,b]);});
+  try{if(o.csPausa&&o.csPausa.desde){const e=csEhProg({g:(o.csPausa.itens&&o.csPausa.itens[0]&&o.csPausa.itens[0].g)||String(o.csPausa.motivo||'').split(' · ')[0],s:String(o.csPausa.motivo||'').split(' · ').slice(1).join(' · ')});
+    if(!(prog===true&&!e)&&!(prog===false&&e)){const a=hm(o.csPausa.desde),n=new Date(),b=n.getHours()*60+n.getMinutes();if(b>a)l.push([a,b]);}}}catch(e){}
+  l.sort((x,y)=>x[0]-y[0]);const u=[];l.forEach(x=>{const z=u[u.length-1];if(z&&x[0]<=z[1])z[1]=Math.max(z[1],x[1]);else u.push(x.slice());});
+  return u;}
+/* minutos parados entre a e b (números) */
+function csMin519(o,a,b,prog){try{if(a==null||b==null||isNaN(a)||isNaN(b))return 0;if(b<a)b+=1440;
+  return csIntervalos519(o,prog).reduce((s,[x,y])=>s+Math.max(0,Math.min(b,y)-Math.max(a,x)),0);}catch(e){return 0;}}
+const csPzProg=(o,a,b)=>csMin519(o,a,b,true);     /* parada programada: sai do tempo real */
+const csPzNP=(o,a,b)=>csMin519(o,a,b,false);      /* pausa com motivo (máquina, material…): é atraso, já explicado */
+/* o tempo real das etapas (setupReal, envaseReal, card, relatórios) desconta SÓ a parada programada */
+csParado=function(o,ini,fim){if(!ini||!fim)return 0;let a=hm(ini),b=hm(fim);if(isNaN(a)||isNaN(b))return 0;return csMin519(o,a,b,true);};
+/* janela de finalizar e conferência do tablet: o que pede motivo desconta TODA pausa (a pausa já tem o motivo dela) */
+csPzEntre=function(o,a,b){return csMin519(o,a,b,null);};
+/* o que falta explicar em cada etapa (custo do motivo de setup/envase nos relatórios) */
+function csDsFalta(o){try{const d=dvSetup(o);if(d==null)return 0;return Math.max(0,d-csPzNP(o,hm(o.iniReal),hm(fimSetup(o))));}catch(e){return 0;}}
+function csDeFalta(o){try{const d=dvEnvase(o);if(d==null)return 0;return Math.max(0,d-csPzNP(o,hm(iniEnvase(o)),hm(o.fimReal)));}catch(e){return 0;}}
+/* ATRASO DA OP: a mesma conta do selo do card (setup real + envase real − previsto) */
+function csAtrasoOP(o){try{if(!o||!o.fimReal)return null;let cont=false;try{cont=(typeof csTurnosAntes==='function'&&csTurnosAntes(o).length)>0;}catch(e){}
+  const temSetup=!!(+o.setup)&&!cont;const sDur=temSetup?+o.setup:0;const eDur=Math.max(0,total(o)-sDur);
+  const s=temSetup?(setupReal(o)||0):0,e=envaseReal(o);if(e==null)return null;return Math.round(s+e-(sDur+eDur));}catch(e){return null;}}
+const csOpAtrasada=o=>{const a=csAtrasoOP(o);const tol=typeof TOL_ATRASO!=='undefined'?+TOL_ATRASO:(+TOLERANCIA||10);return a!=null&&a>tol;};
+/* setup no tablet (Iniciar envase / janela do horário): pede motivo só pelo que não foi explicado por pausa */
+csSetupAtraso=function(o,hora){try{if(!o||!o.iniReal)return null;const fim=hm(hora||relogio()),ini=hm(o.iniReal);let d=fim-ini;if(d<0)d+=1440;
+  return d-csMin519(o,ini,fim,null)-(+o.setup||0);}catch(e){return null;}};
+/* motivos: a parada programada vira etapa própria (medida, mas fora do tempo perdido); setup e envase pesam só o que falta explicar */
+try{CS_ET_NOME.programada='Parada programada';}catch(e){}
+try{const _mo519=csMotivosOP;csMotivosOP=function(o){const l=_mo519(o);
+  const ds=csDsFalta(o),de=csDeFalta(o);
+  const nS=l.filter(x=>x.et==='setup').length,nE=l.filter(x=>x.et==='envase').length;
+  return l.map(x=>{
+    if(x.et==='pausa'&&csEhProg({g:x.g,s:x.s}))return {...x,et:'programada'};
+    if(x.et==='setup')return {...x,custo:nS?ds/nS:0};
+    if(x.et==='envase')return {...x,custo:nE?de/nE:0};
+    return x;});};}catch(e){}
+/* textos do relatório da OP: o que foi descontado e o que entrou como pausa */
+function csPausasResumo(o){const P={},N={};let tp=0,tn=0;
+  (o.pausasOp||[]).forEach(p=>{const m=+p.min||0;if(!m)return;const k=p.s||p.g||'Pausa';if(csEhProg(p)){P[k]=(P[k]||0)+m;tp+=m;}else{N[k]=(N[k]||0)+m;tn+=m;}});
+  const lista=O=>Object.entries(O).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`${escAttr(k)} ${cs5min(v)}`).join(' · ');
+  return {tp,tn,txtP:tp?`descontado da OP: <b>${cs5min(tp)}</b> de parada programada (${lista(P)})`:'',txtN:tn?`inclui <b>${cs5min(tn)}</b> em pausas (${lista(N)})`:''};}
+
+/* =====================================================================
+   v5.1.9 · CORREÇÃO ÚNICA DOS DADOS (mp519) · roda uma vez, no computador do master
+   1. Motivos: "Refeição" vira "Refeição (café, almoço e janta)"; "Tanque atrasado" passa a valer na pausa,
+      com "Produto muito viscoso, demora para descer".
+   2. Pausas lançadas em "Outro" que são refeição, fim de turno ou produto viscoso vão para o grupo certo
+      (o texto original fica guardado em orig e no histórico da OP).
+   3. Motivo que o operador foi obrigado a dar sem ter atraso (o almoço contava como atraso): sai da OP,
+      guardado em motivosAntes, com registro no histórico. Motivo pedido pelo tablet quando o envase passou
+      do tempo de verdade fica.
+   4. atrasoMin passa a ser o que falta explicar (mesma conta da janela de finalizar).
+   ===================================================================== */
+const CS_REF='Refeição (café, almoço e janta)',CS_VISC='Produto muito viscoso, demora para descer';
+function csMp519(simular){
+  const rel={pausas:[],motivosEnv:[],motivosSet:[],atraso:[],grupos:[]};
+  const tol=typeof TOL_ATRASO!=='undefined'?+TOL_ATRASO:10;const hoje=ymd(new Date()),hr=relogio();
+  /* 1. cadastro de motivos */
+  const pp=GRUPOS_MOTIVO.find(g=>g.nome===CS_PP),ta=GRUPOS_MOTIVO.find(g=>g.nome==='Tanque atrasado');
+  if(pp){const i=(pp.sub||[]).indexOf('Refeição');if(i>=0){if(!simular)pp.sub[i]=CS_REF;rel.grupos.push('Refeição → '+CS_REF);}
+    else if(!(pp.sub||[]).includes(CS_REF)){if(!simular)pp.sub=[CS_REF,...(pp.sub||[])];rel.grupos.push('incluído '+CS_REF);}}
+  if(ta){if(!(ta.etapas||[]).includes('pausa')){if(!simular)ta.etapas=[...(ta.etapas||[]),'pausa'];rel.grupos.push('Tanque atrasado vale na pausa');}
+    if(!(ta.sub||[]).includes(CS_VISC)){if(!simular)ta.sub=[...(ta.sub||[]),CS_VISC];rel.grupos.push('incluído '+CS_VISC);}}
+  /* 2. pausas */
+  const novo=(g,s)=>{const t=String(s||'').trim();
+    if(g===CS_PP&&t==='Refeição')return [CS_PP,CS_REF];
+    if(g==='Outro'){if(/^(almo[cç]o|caf[eé]|janta|lanche|refei[cç][aã]o)$/i.test(t))return [CS_PP,CS_REF];
+      if(/fim de turno/i.test(t))return [CS_PP,'Fim de turno'];
+      if(/visc/i.test(t))return ['Tanque atrasado',CS_VISC];}
+    return null;};
+  ORDENS.forEach(o=>{
+    (o.pausasOp||[]).forEach(p=>{const n=novo(p.g,p.s);if(!n)return;
+      rel.pausas.push({lote:o.lote,data:o.data,de:`${p.g} · ${p.s}`,para:`${n[0]} · ${n[1]}`,min:+p.min||0});
+      if(simular)return;p.orig=p.orig||{g:p.g,s:p.s};p.g=n[0];p.s=n[1];
+      if(Array.isArray(p.itens))p.itens=p.itens.map(x=>{const m=novo(x.g,x.s);return m?{...x,g:m[0],s:m[1]}:x;});
+      o.log=o.log||[];o.log.push({d:hoje,t:hr,e:'Motivo da pausa corrigido',op:'Correção v5.1.9',m:`${p.orig.g} · ${p.orig.s} → ${n[0]} · ${n[1]} (${p.desde||''}–${p.ate||''})`});});
+    if(o.csPausa&&o.csPausa.motivo){const [g,...r]=String(o.csPausa.motivo).split(' · ');const n=novo(g,r.join(' · '));if(n&&!simular){o.csPausa.motivo=n[0]+' · '+n[1];if(o.csPausa.itens)o.csPausa.itens=o.csPausa.itens.map(x=>{const m=novo(x.g,x.s);return m?{...x,g:m[0],s:m[1]}:x;});}}
+  });
+  /* 3 e 4. motivos obrigados sem atraso e o atraso gravado */
+  ORDENS.forEach(o=>{if(!o.fimReal||!o.iniReal)return;
+    const dur=total(o);let t=hm(o.fimReal)-hm(o.iniReal);if(t<0)return;
+    const falta=Math.round(t-csMin519(o,hm(o.iniReal),hm(o.fimReal),null)-dur);   /* = janela de finalizar */
+    const pre=(o.log||[]).some(l=>l.e==='Motivo do envase acima do previsto');
+    const temEnv=(o.motivosEnvase&&o.motivosEnvase.length)||(Array.isArray(o.motivos)&&o.motivos.length)||o.motivoFim;
+    const temPz=(o.pausasOp||[]).some(p=>p.desde&&hm(p.desde)>=hm(o.iniReal)&&hm(p.desde)<hm(o.fimReal));
+    if(temEnv&&!pre&&temPz&&(t-dur)>tol&&falta<=tol){   /* foi a pausa que fez pedir: sem ela não havia atraso */rel.motivosEnv.push({lote:o.lote,data:o.data,falta,motivo:o.motivoFim||((o.motivosEnvase||o.motivos||[]).map(x=>x.g+' · '+x.s).join(' | '))});
+      if(!simular){o.motivosAntes={envase:o.motivosEnvase||o.motivos||null,motivoFim:o.motivoFim||null,em:hoje+' '+hr};
+        delete o.motivosEnvase;if(Array.isArray(o.motivos))delete o.motivos;delete o.motivoFim;
+        o.log=o.log||[];o.log.push({d:hoje,t:hr,e:'Motivo do envase retirado',op:'Correção v5.1.9',m:`não houve atraso (${falta} min sem pausas): o almoço contava como atraso e obrigou o motivo`});}}
+    if(o.setupMotivo&&o.envIni){let s=hm(o.envIni)-hm(o.iniReal);
+      if(s>=0){const fs=Math.round(s-csMin519(o,hm(o.iniReal),hm(o.envIni),null)-(+o.setup||0));
+        if(fs<=tol&&(s-(+o.setup||0))>tol){rel.motivosSet.push({lote:o.lote,data:o.data,falta:fs,motivo:o.setupMotivo.principal||''});
+          if(!simular){o.motivosAntes={...(o.motivosAntes||{}),setup:o.setupMotivo,em:hoje+' '+hr};delete o.setupMotivo;
+            o.log=o.log||[];o.log.push({d:hoje,t:hr,e:'Motivo do setup retirado',op:'Correção v5.1.9',m:`não houve atraso (${fs} min sem pausas): a pausa contava como atraso e obrigou o motivo`});}}}}
+    const am=Math.max(0,falta);if(o.atrasoMin!=null&&(+o.atrasoMin||0)!==am){rel.atraso.push({lote:o.lote,data:o.data,de:+o.atrasoMin||0,para:am});if(!simular)o.atrasoMin=am;}
+  });
+  return rel;}
+(function(){
+  function roda(){try{
+    if(typeof CS_MIGRA==='undefined'||CS_MIGRA.includes('mp519'))return;
+    if(!(typeof csEhMaster==='function'&&csEhMaster()))return;
+    if(typeof csChaoFabrica==='function'&&csChaoFabrica())return;
+    if(!ORDENS.length||!GRUPOS_MOTIVO.length)return;
+    if(typeof temNuvem==='function'&&!temNuvem())return;
+    CS_MIGRA.push('mp519');
+    const r=csMp519(false);agendarSalvar();
+    console.info('[mp519]',r);
+    try{toast(`Correção dos tempos feita: ${r.pausas.length} pausa(s) no grupo certo · ${r.motivosEnv.length+r.motivosSet.length} motivo(s) sem atraso retirados · ${r.atraso.length} atraso(s) recalculados.`);}catch(e){}
+    try{render();}catch(e){}
+  }catch(e){console.warn('[mp519]',e);}}
+  setTimeout(roda,14000);setTimeout(roda,40000);
+})();
 
 </script>
 </body>
