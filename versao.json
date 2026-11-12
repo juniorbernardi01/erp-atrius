@@ -1,6 +1,6 @@
 {
- "v": "v544",
- "versao": "5.4.0",
+ "v": "v545",
+ "versao": "5.4.1",
  "data": "12/11/2026",
- "o_que_mudou": "Três mudanças: (1) 'químico/química' saiu das telas e virou 'Qualidade' / 'Liberar lote' / 'Aguardando liberação' (no sistema e no tablet dos tanques). (2) Removidas as páginas de treino e a tela do treinador. (3) Compras: a tarja do dólar agora fica fixa no topo em toda a página — lista de ordens, dentro de uma ordem (nova ou editando) e necessidade de compra — pra fazer os cálculos sem ela sumir. Também saiu o botão 'Tela da TV' da tela Envase e Tanques (o acesso à TV está em Configurações › PCP e no link tv.html)."
+ "o_que_mudou": "Nova permissão 'Telas e tablets' em Pessoas e permissões › PCP: com ela tu liberas pessoa a pessoa (ex.: a Mariane) o acesso a Configurações › PCP, pra abrir o Visualizar das telas dos tablets e operar os tanques com o PIN, sem precisar ser master. Também leva a v5.4.0: 'químico/química' virou 'Qualidade', páginas de treino removidas, tarja do dólar fixa no topo em toda a página das compras e botão 'Tela da TV' fora do Envase e Tanques."
 }
