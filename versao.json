@@ -1,6 +1,6 @@
 {
- "v": "v540",
- "versao": "5.3.10",
- "data": "11/11/2026",
- "o_que_mudou": "Ajuste: o botão 'Tablet dos tanques' foi para a esquerda, do lado do título Tanques, longe do Recolher. (Mantém tudo da v5.3.9: a Mari abre o tablet pelo PCP e opera com o PIN dela; cartões são só acompanhamento com a etapa real e o selo piscante da análise.)"
+ "v": "v541",
+ "versao": "5.3.11",
+ "data": "12/11/2026",
+ "o_que_mudou": "Tanques no PCP: o cartão mostra a etapa real de cada tanque, igual ao botão do tablet do operador. 'Programado' virou 'Iniciar limpeza', 'Limpo · encher' virou 'Iniciar enchimento' e 'Cheio · aguardando preparo' virou 'Iniciar preparo'; tanque com tudo concluído mostra 'Livre'. A análise para liberar agora pisca em vermelho na faixa dos Tanques mesmo recolhida, para a Mari não perder o pedido."
 }

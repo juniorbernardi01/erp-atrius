@@ -5510,7 +5510,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v540';const VERSAO_DATA='11/11/2026';
+const VERSAO_APP='v541';const VERSAO_DATA='12/11/2026';
 /* número que aparece na tela: v438 → v4.3.8 (por dentro continua v438, que é o que as versões comparam) */
 const csRotVer=v=>{const d=String(v||'').replace(/\D/g,'');return d.length>=3?'v'+d.slice(0,-2)+'.'+d.slice(-2,-1)+'.'+d.slice(-1):String(v||'');};
 const VERSAO_ROTULO=csRotVer(VERSAO_APP)+' · '+VERSAO_DATA;
@@ -30292,20 +30292,22 @@ try{csNucleo.versao='v436';}catch(e){}
   function cs8Sit(b){
     const fi=fabIniDe(b),ff=fabFimDe(b);
     if(b.status==='concluido')return {c:'cz',t:'Envase concluído',x:''};
-    /* v537: mesma etapa que aparece no tablet dos operadores */
+    /* v541: o cartão mostra a PRÓXIMA ETAPA REAL (o mesmo passo do botão do tablet do operador),
+       não o estado parado — "Iniciar limpeza/enchimento/preparo" em vez de "Programado/Limpo·encher/Cheio" */
     try{const s=csTqSt(b);if(s){
       if(s.pausa)return {c:'amb',t:'Em pausa',x:(s.pausa.motivo||s.pausa.grupo||s.pausa.sub||'')};
-      if(s.st==='descansar')return {c:'az',t:'Análise enviada · iniciar descanso',x:''};
+      if(s.st==='descansar')return {c:'az',t:'Iniciar descanso',x:''};
       if(s.st==='descanso')return {c:'ok',t:'Em descanso'+(s.lib?' · liberado':''),x:s.descFalta?'faltam '+durMin(s.descFalta):''};
       if(s.st==='naolib')return {c:'anl',t:'Análise solicitada · liberar',x:'',piscar:true};
       if(s.st==='ajuste')return {c:'amb',t:'Ajuste solicitado',x:'',piscar:true};
       if(s.st==='analise')return {c:'az',t:'Fazer análise',x:''};
       if(s.st==='prep')return {c:'ok',t:'Preparando',x:(s.desde!=null?durMin(s.desde):'')};
-      if(s.st==='atras')return {c:'amb',t:'Atrasado · cheio',x:(s.desde!=null?durMin(s.desde):'')};
-      if(s.st==='cheio')return {c:'cz2',t:'Cheio · aguardando preparo',x:''};
+      if(s.st==='atras')return {c:'amb',t:'Atrasado · iniciar preparo',x:(s.desde!=null?durMin(s.desde):'')};
+      if(s.st==='cheio')return {c:'az',t:'Iniciar preparo',x:''};
       if(s.st==='enchendo')return {c:'ok',t:'Enchendo',x:''};
-      if(s.st==='encher')return {c:'cz2',t:'Limpo · encher',x:''};
+      if(s.st==='encher')return {c:'az',t:'Iniciar enchimento',x:''};
       if(s.st==='limpando')return {c:'ok',t:'Limpando',x:''};
+      if(s.st==='limpar')return {c:'az',t:'Iniciar limpeza',x:''};
     }}catch(e){}
     if(b.status==='liberado'){
       const env=(b.ordens||[]).find(o=>['preparacao','producao'].includes(sit(o)));
@@ -30314,7 +30316,7 @@ try{csNucleo.versao='v436';}catch(e){}
     }
     if(ff)return {c:'amb',t:'Tanque não liberado',x:ff.hora||''};
     if(fi){const i=minDe(fi.hora);return {c:'ok',t:'Preparando',x:(ehHoje(b.data)&&i!=null)?durMin(agoraMin()-i):(fi.hora||'')};}
-    return {c:'cz2',t:'Programado',x:''};
+    return {c:'az',t:'Iniciar limpeza',x:''};
   }
   /* estrela do concluído: no prazo quando liberou até a hora em que o envase precisava */
   function cs8Prazo(b){
@@ -30373,6 +30375,8 @@ try{csNucleo.versao='v436';}catch(e){}
         const fila=tqb.querySelectorAll('.cs8-fila').length,conc=tqb.querySelectorAll('.cs8-conc').length;
         if(!tqb.querySelector('.cs8'))return;
         tqb.classList.add('cs8b');
+        /* v541: tanque com todos os lotes do dia concluídos mostra "Livre", em vez de ficar em branco */
+        if(!tqb.querySelector('.cs8-cur')&&!fila&&conc)tqb.insertAdjacentHTML('afterbegin',`<div class="cs8-livre">Livre · dia concluído</div>`);
         if(fila)tqb.insertAdjacentHTML('beforeend',`<div class="cs8-fh">Fila <span>${fila} lote${fila>1?'s':''}</span></div>`);
         if(conc){const k=col.dataset.tq;
           tqb.insertAdjacentHTML('beforeend',`<div class="cs8-faixa" data-cs8ab="${k}">${CS8_AB.has(k)?'▾':'▸'} ✓ ${conc} concluído${conc>1?'s':''} hoje</div>`);
@@ -30385,6 +30389,8 @@ try{csNucleo.versao='v436';}catch(e){}
   setInterval(()=>{try{if(S.page==='tanques'&&!document.querySelector('.modal.on,#modal.on')&&!document.body.classList.contains('arrastando'))render();}catch(e){}},60000);
   const s=document.createElement('style');s.textContent=`
 #tqgrid .tqb.cs8b{display:flex;flex-direction:column;gap:8px}
+#tqgrid .cs8-livre{order:0;border:1px dashed var(--line,#DDE3EC);color:var(--ink3,#64748B);font:800 12px system-ui,sans-serif;border-radius:10px;padding:11px 12px;display:flex;align-items:center;gap:8px}
+#tqgrid .cs8-livre::before{content:"";width:9px;height:9px;border-radius:50%;background:#94A3B8;flex:none}
 #tqgrid .bat.cs8{position:relative;opacity:1!important;filter:none!important;border-radius:12px!important;border:1px solid var(--line,#DDE3EC)!important;background:var(--surface,#fff)!important;box-shadow:none}
 #tqgrid .bat.cs8 .cs-pts{position:absolute!important;top:8px;right:8px;z-index:2}
 #tqgrid .bat.cs8-cur{order:1;padding:10px 12px 12px!important}
@@ -31383,7 +31389,9 @@ function csTqBarCss(){
 /* selo no mesmo padrão dos demais (o "precisa de ajuste" do topo) */
 #csTqBar .tbs{display:inline-flex;align-items:center;gap:7px;border-radius:999px;padding:6px 13px 6px 10px;font:700 13px Inter,system-ui,sans-serif;white-space:nowrap;cursor:pointer;border:1px solid}
 #csTqBar .tbs i{font-style:normal;min-width:18px;height:18px;border-radius:999px;display:inline-grid;place-items:center;font:800 12px Inter,sans-serif;color:#fff;padding:0 3px;box-sizing:border-box}
-#csTqBar .tbs.ana{background:#FFEDD5;border-color:#FDBA74;color:#C2410C}#csTqBar .tbs.ana i{background:#EA580C}#csTqBar .tbs.ana:hover{background:#FED7AA}
+/* v541: a análise para liberar pisca em vermelho mesmo com a faixa recolhida, para a Mari não perder o pedido */
+#csTqBar .tbs.ana{background:#DC2626;border-color:#DC2626;color:#fff;animation:csTbAnaPisca 1s steps(1,end) infinite}#csTqBar .tbs.ana i{background:#fff;color:#DC2626}#csTqBar .tbs.ana:hover{filter:brightness(1.06)}
+@keyframes csTbAnaPisca{0%,100%{background:#DC2626;border-color:#DC2626;color:#fff}50%{background:#7F1D1D;border-color:#7F1D1D;color:#FECACA}}
 #csTqBar .tbs.aj{background:#FEE2E2;border-color:#FCA5A5;color:#B91C1C}#csTqBar .tbs.aj i{background:#DC2626}#csTqBar .tbs.aj:hover{background:#FECACA}
 #csTqBar .tbm{background:#F6F7F9}
 body.cs-envtq #csAjSelo{display:none!important}
