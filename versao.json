@@ -1,6 +1,6 @@
 {
- "v": "v535",
- "versao": "5.3.5",
+ "v": "v536",
+ "versao": "5.3.6",
  "data": "11/11/2026",
- "o_que_mudou": "Correção urgente: a tela dos tanques em modo quiosque (#optq), usada no treino e nos tablets, ficava piscando e voltando para o início por um conflito de endereço; agora fica estável. Inclui também as melhorias da v5.3.4 nas ordens de compra."
+ "o_que_mudou": "Treino dos tanques: tela do treinador por endereço próprio (treinotq.html#treinador), para abrir no computador e liberar como químico, pedir ajuste e recomeçar, sem os 5 toques no logo; atualiza sozinha conforme os operadores mexem no tablet na mesma máquina. Mantém a correção do piscar (v5.3.5) e as melhorias das ordens de compra (v5.3.4)."
 }
