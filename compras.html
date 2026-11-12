@@ -4371,7 +4371,8 @@ ligaCalendarios=function(raiz){
     el.querySelectorAll('[data-fxp]').forEach(x=>x.onclick=()=>{FX.per=x.dataset.fxp;guarda();pinta();vai(FX.per);});}
   function vai(per){carrega(per).then(()=>{FX.erro='';pinta();}).catch(e=>{FX.erro=e.message;pinta();});}
   function poe(){
-    try{const {pag,arg}=lerHash();if(!((pag==='ordens'&&!arg)||pag==='necessidade'))return;
+    /* v5.4.0: a tarja do dólar fica em toda a página das compras — lista, dentro da ordem (nova/editar) e necessidade — pra fazer os cálculos sem ela sumir */
+    try{const {pag,arg}=lerHash();if(!(pag==='ordens'||pag==='necessidade'))return;void arg;
       const app=document.getElementById('app');if(!app||document.getElementById('fx499'))return;
       const h=app.querySelector('h1');if(!h)return;let topo=h.closest('.topo,.ed-top,.q1top,.p8top')||h.parentElement;
       FX.aberta=false;FX.per='1d';const el=document.createElement('div');el.id='fx499';topo.insertAdjacentElement('afterend',el);pinta();
@@ -4382,7 +4383,7 @@ ligaCalendarios=function(raiz){
   const ini=()=>{const app=document.getElementById('app');if(!app)return setTimeout(ini,300);ob.observe(app,{childList:true});poe();};ini();
   setInterval(()=>{if(document.visibilityState!=='visible'||!document.getElementById('fx499'))return;delete FX.dados['1d'];delete FX.dados[FX.per];vai('1d');if(FX.per!=='1d')vai(FX.per);},5*60000);
   const s=document.createElement('style');s.textContent=`
-.fx499{background:#0B1424;color:#E8EDF5;border-radius:10px;overflow:hidden;margin:0 0 14px}
+.fx499{background:#0B1424;color:#E8EDF5;border-radius:10px;overflow:hidden;margin:0 0 14px;position:sticky;top:0;z-index:15}
 .fx499l{display:flex;align-items:center;height:44px;padding:0 6px 0 14px;font-size:12.5px;white-space:nowrap;overflow-x:auto;scrollbar-width:none}
 .fx499l>span{padding:0 16px;border-right:1px solid #1E2A3E;display:flex;align-items:baseline;gap:7px}.fx499l>span:first-child{padding-left:0}
 .fxlb{font-size:10.5px;letter-spacing:.7px;text-transform:uppercase;color:#8EA0BA;font-weight:600}

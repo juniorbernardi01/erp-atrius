@@ -582,11 +582,11 @@ function cartao(t){const l=lote(t);const s=statusDe(t);const [cor,rot]=ST[s]||['
     encher:`<div class="acao go" data-a="enchIni">Iniciar enchimento</div>`,enchendo:`<div class="acao go" data-a="enchFim">Concluir enchimento</div>`,
     cheio:`<div class="acao go" data-a="prepIni">Iniciar preparo</div>`,atras:`<div class="acao go" data-a="prepIni">Iniciar preparo</div>`,
     prep:`<div class="acao fim" data-a="prepFim">Concluir preparo</div>`,
-    descansar:`<div class="acao go" data-a="descIni">Iniciar descanso<small style="color:#DCE7F7">${l?dur(l.desc||0):''} de descanso · ${l&&l.libQ?'químico já liberou ✓':'o químico libera junto'}</small></div>`,
-    descanso:`<div class="acao off cdesc"><b>${dur(l&&l.descFalta!=null?l.descFalta:0)}</b><span>Descansando · pronto às ${descAte}<small>${l&&l.libQ?'químico já liberou ✓':'esperando a liberação do químico'}</small></span></div>`,
+    descansar:`<div class="acao go" data-a="descIni">Iniciar descanso<small style="color:#DCE7F7">${l?dur(l.desc||0):''} de descanso · ${l&&l.libQ?'lote liberado ✓':'a liberação vem junto'}</small></div>`,
+    descanso:`<div class="acao off cdesc"><b>${dur(l&&l.descFalta!=null?l.descFalta:0)}</b><span>Descansando · pronto às ${descAte}<small>${l&&l.libQ?'lote liberado ✓':'aguardando a liberação'}</small></span></div>`,
     analise:`<div class="acao apo" data-a="ana">${l&&l.reana?'Refazer análise':'Preencher análise'}</div>`,
     ajuste:`<div class="acao go" data-a="form">Lançar ajuste</div>`,
-    naolib:`<div class="aviso2">Esperando a liberação do químico</div>`,
+    naolib:`<div class="aviso2">Aguardando liberação do lote</div>`,
     liberado:`<div class="aviso2">Pronto · esperando a máquina começar o envase</div>`,
     envasando:`<div class="aviso2">Ao concluir o envase, o próximo lote aparece aqui</div>`,
     livre:`<div class="aviso2">Nenhum lote na fila</div>`,
@@ -952,7 +952,7 @@ function abrirAna(t){const l=lote(t);if(!l)return;const f=$('fAna');const enviad
     ${(l.ens||[]).map(e=>{const s=situ(e);return `<tr><td>${esc(e.rot)}</td><td>${esc(e.esp)}</td><td>${e.quali?`<span class="pill ${R[e.k]==='ok'?'ok':'cz'} ${enviada?'':'tq'}" data-q="${e.k}|ok">Conforme</span> &nbsp;<span class="pill ${R[e.k]==='fora'?'mau':'cz'} ${enviada?'':'tq'}" data-q="${e.k}|fora">Não conforme</span>`
       :`<input class="in" inputmode="decimal" data-e="${e.k}" value="${esc(R[e.k])}" ${enviada?'disabled':''} style="width:110px">`}</td><td>${s==='ok'?'<span class="pill ok">dentro</span>':s==='fora'?'<span class="pill mau">fora</span>':''}</td></tr>`;}).join('')||'<tr><td colspan="4" style="color:var(--ink3)">Este produto não tem ensaios cadastrados.</td></tr>'}</tbody></table></div></div>
   <div class="box"><h3>Ajustes feitos no lote</h3><div class="bb"><table class="t"><thead><tr><th>Hora</th><th>O que entrou</th><th>Quanto</th></tr></thead><tbody>${((l.extra||[]).map(a=>`<tr><td class="m">${esc(a.em||'')}</td><td>${esc(a.nome)}<small>${a.lote?'lote '+esc(a.lote):''}</small></td><td class="m">${nl(a.kg)} ${esc(a.un||'kg')}</td></tr>`).join(''))||'<tr><td colspan="3" style="color:var(--ink3)">nenhum ajuste</td></tr>'}</tbody></table>
-    <div style="margin-top:10px"><span style="font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink3);font-weight:700">Observação para o químico</span><textarea class="in obs" id="aObs" ${enviada?'disabled':''} placeholder="se teve algo diferente" style="display:block;width:100%;min-height:70px;margin-top:6px">${esc(enviada?(l.tq.anaObs||''):obs)}</textarea></div></div></div></div>
+    <div style="margin-top:10px"><span style="font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink3);font-weight:700">Observação para a Qualidade</span><textarea class="in obs" id="aObs" ${enviada?'disabled':''} placeholder="se teve algo diferente" style="display:block;width:100%;min-height:70px;margin-top:6px">${esc(enviada?(l.tq.anaObs||''):obs)}</textarea></div></div></div></div>
   <div class="ff"><span style="flex:1"></span><div class="acao ${enviada?'off':'apo'}" id="aE">${enviada?'Análise já enviada':l.reana?'ENVIAR REANÁLISE':'ENVIAR ANÁLISE PARA APROVAÇÃO'}</div></div>`;
   f.classList.add('on');f.querySelector('#aX').onclick=()=>f.classList.remove('on');
   f.querySelectorAll('input[data-e]').forEach(i=>{i.oninput=()=>{R[i.dataset.e]=i.value;};i.onchange=()=>{const p=i.selectionStart;pinta();};});

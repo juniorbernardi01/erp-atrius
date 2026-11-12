@@ -3913,7 +3913,6 @@ body.cs-semjanela #mask{visibility:hidden!important}
   <span class="usu" id="quem"><b></b></span>
   <span class="chip" id="salvo" title="Os dados ficam salvos neste navegador">—</span>
   <button class="btn sm" id="calAbre" title="Calendário de produção">&#128197;</button>
-  <button class="btn sm" id="tv" title="Abrir a fila em tela cheia, para a TV">Tela da TV</button>
   <button class="btn sm" id="telaOp" title="Abrir a tela do operador de uma máquina">Tela do operador</button>
   <input type="file" id="arq" accept="application/json,.json" hidden>
   <button class="btn sm" id="novoSaldo">+ Saldo de lote</button>
@@ -5510,7 +5509,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v543';const VERSAO_DATA='12/11/2026';
+const VERSAO_APP='v544';const VERSAO_DATA='12/11/2026';
 /* número que aparece na tela: v438 → v4.3.8 (por dentro continua v438, que é o que as versões comparam) */
 const csRotVer=v=>{const d=String(v||'').replace(/\D/g,'');return d.length>=3?'v'+d.slice(0,-2)+'.'+d.slice(-2,-1)+'.'+d.slice(-1):String(v||'');};
 const VERSAO_ROTULO=csRotVer(VERSAO_APP)+' · '+VERSAO_DATA;
@@ -13949,7 +13948,7 @@ function modalTroca(b,nomeSai,escolha){
       <div class="secreto"><input id="trPin" type="password" placeholder="Senha de quem autoriza"
         autocomplete="off"><button type="button" class="olho" data-olho="trPin">&#128065;</button></div>
       <div class="hint" id="trQuem" style="font-size:11.5px;color:var(--ink3);margin-top:4px">
-        Trocar insumo muda o produto — só gestor ou química.</div></div>
+        Trocar insumo muda o produto — só gestor ou Qualidade.</div></div>
     <div class="alert">A fórmula cadastrada do <b>${escAttr(b.produto)}</b> não muda.
       A troca vale só para o lote ${b.lote||'—'}, sai na OP impressa e fica no
       histórico do lote.</div>`;
@@ -13968,14 +13967,14 @@ function modalTroca(b,nomeSai,escolha){
       :`Disponível: <b>${nfSaldo(disponivel(ins.tiny,RES_CACHE))}</b>.`;
     const n=contaTroca(escolha);
     if(n>=3)t+=`<br><span class="w">Esta troca já aconteceu ${n} vezes.
-      Se virou regra, vale a química revisar a fórmula em vez de trocar lote a lote.</span>`;
+      Se virou regra, vale a Qualidade revisar a fórmula em vez de trocar lote a lote.</span>`;
     M('trCalc').innerHTML=t;
   };
   M('trKg').addEventListener('input',upd);
   M('trPin').addEventListener('input',()=>{
     const q=autorizadorEdicao(cv('trPin').trim());
     M('trQuem').innerHTML=q?`<b>${q.nome}</b> · ${ROTULO_NIVEL(q.nivel)}`
-      :'Trocar insumo muda o produto — só gestor ou química.';});
+      :'Trocar insumo muda o produto — só gestor ou Qualidade.';});
   upd();
 
   M('trVolta').onclick=()=>modalTroca(b,nomeSai);
@@ -14158,7 +14157,7 @@ function modalTrocaEmb(o,nomeSai,escolha){
       <div class="secreto"><input id="tePin" type="password" placeholder="Senha de quem autoriza"
         autocomplete="off"><button type="button" class="olho" data-olho="tePin">&#128065;</button></div>
       <div class="hint" id="teQuem" style="font-size:11.5px;color:var(--ink3);margin-top:4px">
-        Trocar embalagem muda o que sai rotulado — só gestor ou química.</div></div>
+        Trocar embalagem muda o que sai rotulado — só gestor ou Qualidade.</div></div>
     <div class="alert">A fórmula de embalagem de <b>${escAttr(fmtLit(p.litragem))} de
       ${escAttr(p.tanque)}</b> não muda. A troca vale só para esta OP, entra na separação
       e na reserva de estoque, sai na OP impressa e fica no histórico.</div>`;
@@ -14182,7 +14181,7 @@ function modalTrocaEmb(o,nomeSai,escolha){
   M('tePin').addEventListener('input',()=>{
     const q=autorizadorEdicao(cv('tePin').trim());
     M('teQuem').innerHTML=q?`<b>${q.nome}</b> · ${ROTULO_NIVEL(q.nivel)}`
-      :'Trocar embalagem muda o que sai rotulado — só gestor ou química.';});
+      :'Trocar embalagem muda o que sai rotulado — só gestor ou Qualidade.';});
   upd();
 
   M('teVolta').onclick=()=>modalTrocaEmb(o,nomeSai);
@@ -19281,7 +19280,7 @@ M('nova').onclick=()=>abrirOrdem(null);
 /* a janela da TV fica guardada: clicar de novo traz ela para a frente em
    vez de tentar abrir outra, que o navegador costuma bloquear */
 let JANELA_TV=null;
-M('tv').onclick=()=>{
+if(M('tv'))M('tv').onclick=()=>{
   const de=(S.page==='tanques')?'tanques':'envase';
   /* O "?t=" existe para forçar uma carga de verdade. Trocar só o "#" não
      recarrega nada, e o modo TV é decidido uma vez, quando a página
@@ -30955,7 +30954,7 @@ function csTqAcao(k,a,x,pin){
       (x.itens||[]).forEach(v=>{const p=pend[v.i];if(!p||p.lanc)return;
         const kg=+String(v.kg||'').replace(',','.')||+p.kg||0;
         p.lanc={...C(),lote:v.lote||'',kg};
-        ext.push({nome:p.nome,kg,un:p.un||'kg',motivo:'Ajuste pedido por '+(p.por||'químico')+(p.obs?': '+p.obs:''),
+        ext.push({nome:p.nome,kg,un:p.un||'kg',motivo:'Ajuste pedido por '+(p.por||'Qualidade')+(p.obs?': '+p.obs:''),
           quem:quem.nome,em:relogio(),dia:ymd(new Date()),lote:v.lote||''});
         L('Lançou MP de ajuste',`${p.nome} · ${String(kg).replace('.',',')} ${p.un||'kg'} · lote ${v.lote||'—'}`,true);});
       tq.ajPed=pend;novo.mpExtra=ext;
@@ -30964,7 +30963,7 @@ function csTqAcao(k,a,x,pin){
     case 'ajPed':{
       const l=[...(tq.ajPed||[])];l.push({nome:x.nome,sku:x.sku||'',kg:+String(x.kg||'').replace(',','.')||0,un:x.un||'kg',obs:x.obs||'',por:quem.nome,em:C()});
       tq.ajPed=l;tq.anaEnv=null;
-      L('Químico pediu ajuste',`+ ${String(x.kg||'').replace('.',',')} ${x.un||'kg'} de ${x.nome}${x.obs?' · '+x.obs:''}`,true);
+      L('Ajuste solicitado',`+ ${String(x.kg||'').replace('.',',')} ${x.un||'kg'} de ${x.nome}${x.obs?' · '+x.obs:''}`,true);
       msg='Pedido de ajuste enviado ao '+b.tanque;break;}
     case 'mpExtra':{
       const ext=[...(at.mpExtra||[])];
@@ -30983,7 +30982,7 @@ function csTqAcao(k,a,x,pin){
     case 'prob':
       tq.probs=[...(tq.probs||[]),{h:relogio(),d:ymd(new Date()),grupo:x.grupo||'',mot:x.mot||'',min:+x.min||0,obs:x.obs||'',quem:quem.nome,etapa:s.st}];
       L('Registrou problema',`${x.grupo||''} | ${x.mot||''} · ${(+x.min>0)?'parou '+x.min+' min':(+x.min===-1?'ainda parado':'não parou')}${x.obs?' · '+x.obs:''}`,true);
-      msg='Problema registrado · PCP e químico avisados';break;
+      msg='Problema registrado · PCP e Qualidade avisados';break;
     case 'pulmao':{
       const P=recursosDe('tanque').find(r=>r.pul&&r.ativo!==false);if(!P)return {erro:'Não há pulmão cadastrado.'};
       if(!CS_TQ_PRODUZIDO.includes(s.st)&&s.st!=='prep')return {erro:'Só dá para mandar ao pulmão o lote com o preparo concluído.'};
@@ -31058,8 +31057,8 @@ function csTqPedirAjuste(b){
         const at=APONTA[b.chave]||{},tq={...(at.tq||{})};
         const l=[...(tq.ajPed||[])];l.push({nome:i.nome,sku:i.sku,kg:+kg.replace(',','.'),un:'kg',obs,por:q.nome,em:csTqCarimbo(q)});
         tq.ajPed=l;tq.anaEnv=null;
-        APONTA[b.chave]={...at,tq,log:[...(at.log||[]),{t:relogio(),d:ymd(new Date()),e:'Químico pediu ajuste',op:q.nome,m:`+ ${kg} kg de ${i.nome}${obs?' · '+obs:''}`,w:b.tanque}]};
-        b.ordens.forEach(o=>registrar(o,'Químico pediu ajuste',q,`${b.tanque} · + ${kg} kg de ${i.nome}`));
+        APONTA[b.chave]={...at,tq,log:[...(at.log||[]),{t:relogio(),d:ymd(new Date()),e:'Ajuste solicitado',op:q.nome,m:`+ ${kg} kg de ${i.nome}${obs?' · '+obs:''}`,w:b.tanque}]};
+        b.ordens.forEach(o=>registrar(o,'Ajuste solicitado',q,`${b.tanque} · + ${kg} kg de ${i.nome}`));
         agendarSalvar();fecharModal();render();toast('Pedido de ajuste enviado ao '+b.tanque+'.');});
   };
   abrirMask();

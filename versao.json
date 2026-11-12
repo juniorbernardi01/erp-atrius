@@ -1,6 +1,6 @@
 {
- "v": "v543",
- "versao": "5.3.13",
+ "v": "v544",
+ "versao": "5.4.0",
  "data": "12/11/2026",
- "o_que_mudou": "Correção: o atraso de setup não conta mais a parada programada (refeição etc.). No card do PCP, uma OP pausada na refeição mostrava o setup atrasando sem parar (ex.: MAQ 2 do eucalipto, +1h20 durante o almoço); agora o relógio do setup desconta a refeição, igual já fazia no envase. Pausa de material/máquina continua contando como perda, conforme a regra. Mesma correção no painel da TV. Também leva a v5.3.12: Configurações › PCP refeita (Visualizar que fecha sem travar o computador, links de tablet na gaveta só pra copiar, TV com link próprio tv.html que não trava) e saída do botão 'Tablet dos tanques' da tela Envase e Tanques."
+ "o_que_mudou": "Três mudanças: (1) 'químico/química' saiu das telas e virou 'Qualidade' / 'Liberar lote' / 'Aguardando liberação' (no sistema e no tablet dos tanques). (2) Removidas as páginas de treino e a tela do treinador. (3) Compras: a tarja do dólar agora fica fixa no topo em toda a página — lista de ordens, dentro de uma ordem (nova ou editando) e necessidade de compra — pra fazer os cálculos sem ela sumir. Também saiu o botão 'Tela da TV' da tela Envase e Tanques (o acesso à TV está em Configurações › PCP e no link tv.html)."
 }
