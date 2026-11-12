@@ -19641,7 +19641,7 @@ function aplicarRota(r){
 }
 /* chamado no fim de cada render: só empurra quando o endereço mudou */
 function marcarRota(){
-  try{if(document.body.classList.contains('cs-operon')||/^#op[123]$/.test(location.hash))return;}catch(e){}
+  try{if(document.body.classList.contains('cs-operon')||/^#op/.test(location.hash)||(typeof csQuiosque==='function'&&csQuiosque()))return;}catch(e){}
   try{if(!MODO_TV&&!/^#op/.test(location.hash))sessionStorage.setItem('treinotq.rota',rotaAtual());}catch(e){}
   if(MODO_TV||VOLTANDO)return;
   try{
