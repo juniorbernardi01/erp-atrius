@@ -1,6 +1,6 @@
 {
- "v": "v537",
- "versao": "5.3.7",
+ "v": "v538",
+ "versao": "5.3.8",
  "data": "11/11/2026",
- "o_que_mudou": "Tela Envase e Tanques: cada tanque mostra a etapa real do tablet dos operadores (limpando, enchendo, cheio, preparando, em pausa, fazer análise, em descanso, ajuste). Quando o operador envia a análise pelo tablet, o tanque pisca em vermelho com Análise solicitada · liberar, para o químico ver na hora. Lembrete: o estoque continua baixando na liberação do tanque."
+ "o_que_mudou": "Tela Envase e Tanques: a Mari e gestores agora operam o tanque direto no cartão (iniciar/concluir limpeza, enchimento, preparo, pausar/retomar), com PIN de gestor, para acertar o sistema com o que já está no chão. Botão Voltar desfaz uma ação por vez até o começo da limpeza (trava depois da liberação do lote); tudo fica no histórico com quem fez. Operador segue só pra frente no tablet."
 }

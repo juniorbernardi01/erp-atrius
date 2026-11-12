@@ -5510,7 +5510,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v537';const VERSAO_DATA='11/11/2026';
+const VERSAO_APP='v538';const VERSAO_DATA='11/11/2026';
 /* número que aparece na tela: v438 → v4.3.8 (por dentro continua v438, que é o que as versões comparam) */
 const csRotVer=v=>{const d=String(v||'').replace(/\D/g,'');return d.length>=3?'v'+d.slice(0,-2)+'.'+d.slice(-2,-1)+'.'+d.slice(-1):String(v||'');};
 const VERSAO_ROTULO=csRotVer(VERSAO_APP)+' · '+VERSAO_DATA;
@@ -30357,7 +30357,7 @@ try{csNucleo.versao='v436';}catch(e){}
       <div class="cs8-ti"><div><span>Volume (L)</span><b>${nf(b.volume)}</b></div>
         <div class="cs8-dest${pisca?' cs8-pisca':''}"><span>${env?'Envase até':'Pronto até'}</span><b>${env?ate:pronto}</b></div>
         <div><span>${env?'Máquina':'Vai para'}</span><b>${maqs}</b></div></div>
-      ${aviso}</div>`;
+      ${aviso}${window.csTqBotoesPCP?window.csTqBotoesPCP(b,s):''}</div>`;
   };
   /* depois de cada desenho: título da fila e a faixa verde dos concluídos, ordenados na coluna */
   const _render=render;
@@ -30424,6 +30424,85 @@ try{csNucleo.versao='v436';}catch(e){}
 body.escuro #tqgrid .cs8-ti>div,html.escuro #tqgrid .cs8-ti>div{background:rgba(148,163,184,.14)}
 `;document.head.appendChild(s);
 }catch(e){console.warn('v398 tanques',e);}})();
+</script>
+<script>
+/* ===== v538 · PCP: Mari e gestores operam o tanque pelo cartão (como o envase) ===== */
+(function(){try{
+  const ROT={limpIni:'Iniciar limpeza',limpFim:'Concluir limpeza',enchIni:'Iniciar enchimento',enchFim:'Concluir enchimento',prepIni:'Iniciar preparo',prepFim:'Concluir preparo',descIni:'Iniciar descanso',pausar:'Pausar',retomar:'Retomar'};
+  const FWD={limpar:'limpIni',limpando:'limpFim',encher:'enchIni',enchendo:'enchFim',cheio:'prepIni',atras:'prepIni',prep:'prepFim',descansar:'descIni'};
+  const ehGestorQ=q=>!!(q&&['master','gestor'].includes(q.nivel));
+  function podeGestor(){try{const a=(typeof MEU_ACESSO!=='undefined'&&MEU_ACESSO)||null;if(!a)return false;return !!a.master||['master','gestor'].includes(a.nivel)||(typeof RANKN==='function'&&RANKN((a.perm||{}).telaop)>=2);}catch(e){return false;}}
+  window.csTqPodeGestor=podeGestor;
+  function hoje(){try{return ymd(new Date());}catch(e){return '';}}
+  /* qual é o último passo que dá para voltar (sem passar da liberação) */
+  function ultimoPasso(b){const at=APONTA[b.chave]||{},tq=at.tq||{};
+    if((tq.ajPed||[]).length)return {k:'ajPed',rot:'pedido de ajuste'};
+    if(tq.anaEnv)return {k:'anaEnv',rot:'envio da análise'};
+    if(at.fabFim)return {k:'fabFim',rot:'conclusão do preparo'};
+    if(at.fabIni)return {k:'fabIni',rot:'início do preparo'};
+    if(tq.enchFim)return {k:'enchFim',rot:'conclusão do enchimento'};
+    if(tq.enchIni)return {k:'enchIni',rot:'início do enchimento'};
+    if(tq.limpFim||tq.limpNao)return {k:'limpFim',rot:'conclusão da limpeza'};
+    if(tq.limpIni)return {k:'limpIni',rot:'início da limpeza'};
+    return null;}
+  window.csTqBotoesPCP=function(b,s){
+    try{if(!podeGestor())return '';
+      if(b.data!==hoje())return '';
+      const at=APONTA[b.chave]||{};if(at.liberadoEm||b.status==='liberado')return '';
+      const st=s&&s.st,out=[];const f=FWD[st];
+      if(f)out.push(`<button class="tqpb go" data-tqpcp="${f}" data-tqk="${b.chave}">${ROT[f]}</button>`);
+      if(s&&s.pausa)out.push(`<button class="tqpb" data-tqpcp="retomar" data-tqk="${b.chave}">▶ Retomar</button>`);
+      else if(['limpando','enchendo','prep'].includes(st))out.push(`<button class="tqpb pz" data-tqpcp="pausar" data-tqk="${b.chave}">⏸ Pausar</button>`);
+      if(ultimoPasso(b))out.push(`<button class="tqpb volta" data-tqpcp="voltar" data-tqk="${b.chave}">↩ Voltar</button>`);
+      return out.length?`<div class="tqpcp">${out.join('')}</div>`:'';
+    }catch(e){return '';}};
+  /* modal com PIN de gestor, no mesmo padrão do "Desfazer o último passo" do envase */
+  function pinGestor(tit,txt,cb){
+    try{if(M('mAcao'))M('mAcao').innerHTML='';}catch(e){}
+    M('modal').classList.remove('wide');M('mTit').textContent=tit;M('mSub').hidden=true;M('mB').innerHTML='';
+    M('mF').innerHTML='<div style="flex:1"></div><button class="btn" id="csTqC">Fechar</button>';
+    try{abrirMask();}catch(e){}
+    if(!document.body.dataset.cstqpcp){document.body.dataset.cstqpcp='1';
+      document.addEventListener('click',ev=>{if(ev.target&&ev.target.id==='csTqC')fecharModal();});}
+    pedirPin(tit,txt,quem=>{const pin=(M('pnIn')&&M('pnIn').value.trim())||'';cb(quem,pin);},ehGestorQ);
+  }
+  /* voltar um passo (espelho do csDesfazer do envase, mas para o tanque) */
+  function desfazer(b){
+    const at0=APONTA[b.chave]||{};
+    if(at0.liberadoEm||b.status==='liberado')return toast('Não dá para voltar depois da liberação do lote.',true);
+    const u=ultimoPasso(b);if(!u)return toast('Este tanque não tem passo para voltar.',true);
+    pinGestor('Voltar um passo',`Vai cair o <b>${u.rot}</b> do <b>${b.tanque}</b>. O tanque volta para o passo anterior e o histórico guarda quem voltou. Só gestor ou master assina.`,
+      quem=>{const at=APONTA[b.chave]||{},tq={...(at.tq||{})},novo={...at};
+        if(u.k==='ajPed'){const l=[...(tq.ajPed||[])];l.pop();tq.ajPed=l;}
+        else if(u.k==='anaEnv'){tq.anaEnv=null;}
+        else if(u.k==='fabFim'){delete novo.fabFim;}
+        else if(u.k==='fabIni'){delete novo.fabIni;tq.passo=0;}
+        else if(u.k==='enchFim'){tq.enchFim=null;}
+        else if(u.k==='enchIni'){tq.enchIni=null;}
+        else if(u.k==='limpFim'){tq.limpFim=null;tq.limpNao=null;}
+        else if(u.k==='limpIni'){tq.limpIni=null;}
+        const log=[...(at.log||[]),{t:relogio(),d:ymd(new Date()),e:'Passo desfeito',op:quem.nome,m:u.rot,w:b.tanque}];
+        APONTA[b.chave]={...novo,tq,log};
+        agendarSalvar();fecharModal();try{render();}catch(e){}toast(u.rot+' desfeito por '+quem.nome);});
+  }
+  window.csTqAcaoPCP=function(k,a){
+    const b=(typeof csTqAchar==='function')&&csTqAchar(k);if(!b)return toast('Lote não encontrado.',true);
+    if(a==='voltar')return desfazer(b);
+    const nome=ROT[a]||a,aa=(a==='pausar')?'pausa':a;
+    pinGestor(nome+' · '+b.tanque,`<b>${b.tanque} · ${b.produto}</b>: ${nome}. Assina gestor ou master; fica no histórico do lote.`,
+      (quem,pin)=>{const r=csTqAcao(k,aa,{},pin);if(r&&r.erro){toast(r.erro,true);return;}fecharModal();toast((r&&r.msg)||nome);});
+  };
+  document.addEventListener('click',ev=>{const bt=ev.target&&ev.target.closest&&ev.target.closest('[data-tqpcp]');if(!bt)return;
+    ev.preventDefault();ev.stopPropagation();csTqAcaoPCP(bt.dataset.tqk,bt.dataset.tqpcp);},true);
+  const st=document.createElement('style');st.textContent=`
+#tqgrid .tqpcp{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;padding-top:10px;border-top:1px dashed #E2E8F0}
+#tqgrid .tqpb{flex:1 1 auto;min-width:92px;border:0;border-radius:9px;padding:9px 10px;font:800 12px system-ui,sans-serif;cursor:pointer;background:#0F766E;color:#fff}
+#tqgrid .tqpb.go{background:#1D6FE8}
+#tqgrid .tqpb.pz{background:#F59E0B;color:#1F1300;flex:0 0 auto}
+#tqgrid .tqpb.volta{background:#fff;color:#B91C1C;border:1.5px solid #FCA5A5;flex:0 0 auto}
+#tqgrid .tqpb:active{transform:translateY(1px)}`;
+  document.head.appendChild(st);
+}catch(e){console.warn('v538 pcp tanque',e);}})();
 </script>
 <script>
 /* v400 · separa o saldo dos itens do ERP que caíram na mesma chave (ex.: "001").
@@ -39265,7 +39344,7 @@ tr.cskRow td{background:#FFFBF5}
 .stq.pausa{background:#FEF3C7;color:#A16207}.cskEsc{display:grid;grid-template-columns:1fr 1fr;gap:12px}.cskEsc button{text-align:left;border:1.5px solid var(--line);background:#fff;border-radius:12px;padding:18px 16px;cursor:pointer;display:flex;flex-direction:column;gap:6px;font:inherit}.cskEsc button:hover{border-color:#15803D;background:#F3FBF5}.cskEsc button.k:hover{border-color:#E9B872;background:#FFF8EC}.cskEsc b{font-size:16px}.cskEsc span{font-size:12.5px;color:var(--ink3);line-height:1.4}.cskEsc button.k b{color:#92400E}
 .cskN{font-style:normal;display:inline-grid;place-items:center;min-width:18px;height:18px;border-radius:999px;background:#EA580C;color:#fff;font:800 11.5px Inter,sans-serif;margin-left:4px;padding:0 4px}.cskBt{border-color:#E9B872!important;color:#92400E!important;background:#FFF8EC!important;margin-right:8px;font-weight:700}tr.cskNeta td{background:#FFFCF7}`;document.head.appendChild(st);
   setTimeout(function cad(){try{if(typeof PRONTO==='undefined'||!PRONTO)return setTimeout(cad,2000);cadastraKits();}catch(e){}},2500);
-  try{csNucleo.versao='v537';}catch(e){}
+  try{csNucleo.versao='v536';}catch(e){}
 })();
 
 </script>
