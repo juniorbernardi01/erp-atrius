@@ -1,6 +1,6 @@
 {
- "v": "v538",
- "versao": "5.3.8",
+ "v": "v539",
+ "versao": "5.3.9",
  "data": "11/11/2026",
- "o_que_mudou": "Tela Envase e Tanques: a Mari e gestores agora operam o tanque direto no cartão (iniciar/concluir limpeza, enchimento, preparo, pausar/retomar), com PIN de gestor, para acertar o sistema com o que já está no chão. Botão Voltar desfaz uma ação por vez até o começo da limpeza (trava depois da liberação do lote); tudo fica no histórico com quem fez. Operador segue só pra frente no tablet."
+ "o_que_mudou": "Tela Envase e Tanques: botão 'Tablet dos tanques' no cabeçalho dos Tanques (só para gestores). A Mari abre o tablet do operador dentro do PCP e faz o processo do jeito que está no tablet, com o PIN dela, e tudo fica no histórico. Os cartões do PCP voltam a ser só acompanhamento (com a etapa real e o selo piscante da análise). Substitui os botões soltos da v5.3.8."
 }

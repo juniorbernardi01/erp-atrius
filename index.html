@@ -5510,7 +5510,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v538';const VERSAO_DATA='11/11/2026';
+const VERSAO_APP='v539';const VERSAO_DATA='11/11/2026';
 /* número que aparece na tela: v438 → v4.3.8 (por dentro continua v438, que é o que as versões comparam) */
 const csRotVer=v=>{const d=String(v||'').replace(/\D/g,'');return d.length>=3?'v'+d.slice(0,-2)+'.'+d.slice(-2,-1)+'.'+d.slice(-1):String(v||'');};
 const VERSAO_ROTULO=csRotVer(VERSAO_APP)+' · '+VERSAO_DATA;
@@ -30357,7 +30357,7 @@ try{csNucleo.versao='v436';}catch(e){}
       <div class="cs8-ti"><div><span>Volume (L)</span><b>${nf(b.volume)}</b></div>
         <div class="cs8-dest${pisca?' cs8-pisca':''}"><span>${env?'Envase até':'Pronto até'}</span><b>${env?ate:pronto}</b></div>
         <div><span>${env?'Máquina':'Vai para'}</span><b>${maqs}</b></div></div>
-      ${aviso}${window.csTqBotoesPCP?window.csTqBotoesPCP(b,s):''}</div>`;
+      ${aviso}</div>`;
   };
   /* depois de cada desenho: título da fila e a faixa verde dos concluídos, ordenados na coluna */
   const _render=render;
@@ -30426,83 +30426,27 @@ body.escuro #tqgrid .cs8-ti>div,html.escuro #tqgrid .cs8-ti>div{background:rgba(
 }catch(e){console.warn('v398 tanques',e);}})();
 </script>
 <script>
-/* ===== v538 · PCP: Mari e gestores operam o tanque pelo cartão (como o envase) ===== */
+/* ===== v539 · PCP: botão para a Mari/gestores abrirem o tablet dos tanques e operar com o PIN ===== */
 (function(){try{
-  const ROT={limpIni:'Iniciar limpeza',limpFim:'Concluir limpeza',enchIni:'Iniciar enchimento',enchFim:'Concluir enchimento',prepIni:'Iniciar preparo',prepFim:'Concluir preparo',descIni:'Iniciar descanso',pausar:'Pausar',retomar:'Retomar'};
-  const FWD={limpar:'limpIni',limpando:'limpFim',encher:'enchIni',enchendo:'enchFim',cheio:'prepIni',atras:'prepIni',prep:'prepFim',descansar:'descIni'};
-  const ehGestorQ=q=>!!(q&&['master','gestor'].includes(q.nivel));
   function podeGestor(){try{const a=(typeof MEU_ACESSO!=='undefined'&&MEU_ACESSO)||null;if(!a)return false;return !!a.master||['master','gestor'].includes(a.nivel)||(typeof RANKN==='function'&&RANKN((a.perm||{}).telaop)>=2);}catch(e){return false;}}
   window.csTqPodeGestor=podeGestor;
-  function hoje(){try{return ymd(new Date());}catch(e){return '';}}
-  /* qual é o último passo que dá para voltar (sem passar da liberação) */
-  function ultimoPasso(b){const at=APONTA[b.chave]||{},tq=at.tq||{};
-    if((tq.ajPed||[]).length)return {k:'ajPed',rot:'pedido de ajuste'};
-    if(tq.anaEnv)return {k:'anaEnv',rot:'envio da análise'};
-    if(at.fabFim)return {k:'fabFim',rot:'conclusão do preparo'};
-    if(at.fabIni)return {k:'fabIni',rot:'início do preparo'};
-    if(tq.enchFim)return {k:'enchFim',rot:'conclusão do enchimento'};
-    if(tq.enchIni)return {k:'enchIni',rot:'início do enchimento'};
-    if(tq.limpFim||tq.limpNao)return {k:'limpFim',rot:'conclusão da limpeza'};
-    if(tq.limpIni)return {k:'limpIni',rot:'início da limpeza'};
-    return null;}
-  window.csTqBotoesPCP=function(b,s){
-    try{if(!podeGestor())return '';
-      if(b.data!==hoje())return '';
-      const at=APONTA[b.chave]||{};if(at.liberadoEm||b.status==='liberado')return '';
-      const st=s&&s.st,out=[];const f=FWD[st];
-      if(f)out.push(`<button class="tqpb go" data-tqpcp="${f}" data-tqk="${b.chave}">${ROT[f]}</button>`);
-      if(s&&s.pausa)out.push(`<button class="tqpb" data-tqpcp="retomar" data-tqk="${b.chave}">▶ Retomar</button>`);
-      else if(['limpando','enchendo','prep'].includes(st))out.push(`<button class="tqpb pz" data-tqpcp="pausar" data-tqk="${b.chave}">⏸ Pausar</button>`);
-      if(ultimoPasso(b))out.push(`<button class="tqpb volta" data-tqpcp="voltar" data-tqk="${b.chave}">↩ Voltar</button>`);
-      return out.length?`<div class="tqpcp">${out.join('')}</div>`:'';
-    }catch(e){return '';}};
-  /* modal com PIN de gestor, no mesmo padrão do "Desfazer o último passo" do envase */
-  function pinGestor(tit,txt,cb){
-    try{if(M('mAcao'))M('mAcao').innerHTML='';}catch(e){}
-    M('modal').classList.remove('wide');M('mTit').textContent=tit;M('mSub').hidden=true;M('mB').innerHTML='';
-    M('mF').innerHTML='<div style="flex:1"></div><button class="btn" id="csTqC">Fechar</button>';
-    try{abrirMask();}catch(e){}
-    if(!document.body.dataset.cstqpcp){document.body.dataset.cstqpcp='1';
-      document.addEventListener('click',ev=>{if(ev.target&&ev.target.id==='csTqC')fecharModal();});}
-    pedirPin(tit,txt,quem=>{const pin=(M('pnIn')&&M('pnIn').value.trim())||'';cb(quem,pin);},ehGestorQ);
-  }
-  /* voltar um passo (espelho do csDesfazer do envase, mas para o tanque) */
-  function desfazer(b){
-    const at0=APONTA[b.chave]||{};
-    if(at0.liberadoEm||b.status==='liberado')return toast('Não dá para voltar depois da liberação do lote.',true);
-    const u=ultimoPasso(b);if(!u)return toast('Este tanque não tem passo para voltar.',true);
-    pinGestor('Voltar um passo',`Vai cair o <b>${u.rot}</b> do <b>${b.tanque}</b>. O tanque volta para o passo anterior e o histórico guarda quem voltou. Só gestor ou master assina.`,
-      quem=>{const at=APONTA[b.chave]||{},tq={...(at.tq||{})},novo={...at};
-        if(u.k==='ajPed'){const l=[...(tq.ajPed||[])];l.pop();tq.ajPed=l;}
-        else if(u.k==='anaEnv'){tq.anaEnv=null;}
-        else if(u.k==='fabFim'){delete novo.fabFim;}
-        else if(u.k==='fabIni'){delete novo.fabIni;tq.passo=0;}
-        else if(u.k==='enchFim'){tq.enchFim=null;}
-        else if(u.k==='enchIni'){tq.enchIni=null;}
-        else if(u.k==='limpFim'){tq.limpFim=null;tq.limpNao=null;}
-        else if(u.k==='limpIni'){tq.limpIni=null;}
-        const log=[...(at.log||[]),{t:relogio(),d:ymd(new Date()),e:'Passo desfeito',op:quem.nome,m:u.rot,w:b.tanque}];
-        APONTA[b.chave]={...novo,tq,log};
-        agendarSalvar();fecharModal();try{render();}catch(e){}toast(u.rot+' desfeito por '+quem.nome);});
-  }
-  window.csTqAcaoPCP=function(k,a){
-    const b=(typeof csTqAchar==='function')&&csTqAchar(k);if(!b)return toast('Lote não encontrado.',true);
-    if(a==='voltar')return desfazer(b);
-    const nome=ROT[a]||a,aa=(a==='pausar')?'pausa':a;
-    pinGestor(nome+' · '+b.tanque,`<b>${b.tanque} · ${b.produto}</b>: ${nome}. Assina gestor ou master; fica no histórico do lote.`,
-      (quem,pin)=>{const r=csTqAcao(k,aa,{},pin);if(r&&r.erro){toast(r.erro,true);return;}fecharModal();toast((r&&r.msg)||nome);});
+  window.csTqAbrirSup=function(){
+    let ov=document.getElementById('csTqSup');if(ov){ov.remove();try{render();}catch(e){}return;}
+    ov=document.createElement('div');ov.id='csTqSup';
+    const v=(typeof VERSAO_APP!=='undefined')?VERSAO_APP:'';
+    ov.innerHTML=`<div class="csTqSupBar"><div><b>Tablet dos tanques</b><span>voc\u00ea opera com o seu PIN \u00b7 tudo fica no hist\u00f3rico do lote</span></div><button type="button" id="csTqSupX">\u2715 Fechar</button></div><iframe id="csTqSupFr" title="Tablet dos tanques" src="tqop.html?v=${encodeURIComponent(v)}"></iframe>`;
+    document.body.appendChild(ov);
+    document.getElementById('csTqSupX').onclick=()=>{ov.remove();try{render();}catch(e){}};
   };
-  document.addEventListener('click',ev=>{const bt=ev.target&&ev.target.closest&&ev.target.closest('[data-tqpcp]');if(!bt)return;
-    ev.preventDefault();ev.stopPropagation();csTqAcaoPCP(bt.dataset.tqk,bt.dataset.tqpcp);},true);
   const st=document.createElement('style');st.textContent=`
-#tqgrid .tqpcp{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;padding-top:10px;border-top:1px dashed #E2E8F0}
-#tqgrid .tqpb{flex:1 1 auto;min-width:92px;border:0;border-radius:9px;padding:9px 10px;font:800 12px system-ui,sans-serif;cursor:pointer;background:#0F766E;color:#fff}
-#tqgrid .tqpb.go{background:#1D6FE8}
-#tqgrid .tqpb.pz{background:#F59E0B;color:#1F1300;flex:0 0 auto}
-#tqgrid .tqpb.volta{background:#fff;color:#B91C1C;border:1.5px solid #FCA5A5;flex:0 0 auto}
-#tqgrid .tqpb:active{transform:translateY(1px)}`;
+#csTqSup{position:fixed;inset:0;z-index:2147482000;background:#0E1B33;display:flex;flex-direction:column}
+#csTqSup .csTqSupBar{flex:none;display:flex;align-items:center;gap:12px;padding:10px 16px;background:#0E1B33;color:#fff;border-bottom:1px solid #22304d}
+#csTqSup .csTqSupBar b{font:800 15px system-ui,sans-serif;display:block}
+#csTqSup .csTqSupBar span{font:600 12px system-ui,sans-serif;color:#9fb0cc}
+#csTqSup .csTqSupBar button{margin-left:auto;background:#1D6FE8;color:#fff;border:0;border-radius:10px;padding:10px 16px;font:800 14px system-ui,sans-serif;cursor:pointer}
+#csTqSup iframe{flex:1;width:100%;border:0;background:#0E1B33}`;
   document.head.appendChild(st);
-}catch(e){console.warn('v538 pcp tanque',e);}})();
+}catch(e){console.warn('v539 tablet sup',e);}})();
 </script>
 <script>
 /* v400 · separa o saldo dos itens do ERP que caíram na mesma chave (ex.: "001").
@@ -31479,10 +31423,11 @@ function csTqBar(){
     bar.innerHTML=`<div class="tbh" role="button" tabindex="0" aria-expanded="${CS_TQBAR_AB}"><b>Tanques</b>
       ${av.ana.length?`<span class="tbs ana" title="${escAttr(av.ana.map(b=>b.tanque+' · '+b.produto).join('\n'))}"><i>${av.ana.length}</i>${av.ana.length===1?escAttr(av.ana[0].tanque)+' enviou a análise · liberar':'análises para liberar · '+escAttr(nome(av.ana))}</span>`:''}
       ${av.aj.length?`<span class="tbs aj" title="${escAttr(av.aj.map(b=>b.tanque+' · '+b.produto).join('\n'))}"><i>${av.aj.length}</i>${av.aj.length===1?escAttr(av.aj[0].tanque)+' precisa de ajuste':'precisam de ajuste · '+escAttr(nome(av.aj))}</span>`:''}
-      <span class="sp"></span><button type="button" class="btn sm tbb">${CS_TQBAR_AB?'Recolher':'Expandir'}<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button></div>
+      <span class="sp"></span>${window.csTqPodeGestor&&window.csTqPodeGestor()?'<button type="button" class="btn sm" id="csTqTab" style="margin-right:6px">Tablet dos tanques</button>':''}<button type="button" class="btn sm tbb">${CS_TQBAR_AB?'Recolher':'Expandir'}<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button></div>
       <div class="tbm"></div>`;
     const tg=()=>{CS_TQBAR_AB=!CS_TQBAR_AB;csTqBar();};
     const h=bar.querySelector('.tbh');h.onclick=tg;
+    const _tb=bar.querySelector('#csTqTab');if(_tb)_tb.onclick=ev=>{ev.stopPropagation();try{csTqAbrirSup();}catch(e){}};
     /* tocar no selo abre o tanque: análise → ficha do lote para liberar; ajuste → a ficha na aba do certificado */
     bar.querySelectorAll('.tbs').forEach(s=>s.onclick=ev=>{ev.stopPropagation();const aj=s.classList.contains('aj');const l=aj?av.aj:av.ana;
       if(!CS_TQBAR_AB){CS_TQBAR_AB=true;csTqBar();}
