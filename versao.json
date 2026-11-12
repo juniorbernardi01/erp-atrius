@@ -1,6 +1,6 @@
 {
- "v": "v534",
- "versao": "5.3.4",
+ "v": "v535",
+ "versao": "5.3.5",
  "data": "11/11/2026",
- "o_que_mudou": "Ordens de compra: selecionar todas de uma vez pelo cabeçalho; marcar uma ordem não pisca mais a tela; com várias marcadas, Salvar PDF e Imprimir perguntam se é cada uma num arquivo ou todas juntas; botão Marcar como enviada em conjunto. Relatórios de compras (período e ordens a receber): filtro de situação com caixinhas (escolhe várias); o relatório a receber passa a mostrar também as ordens em aberto, com fornecedor e previsão. A situação Rascunho passa a se chamar Em aberto."
+ "o_que_mudou": "Correção urgente: a tela dos tanques em modo quiosque (#optq), usada no treino e nos tablets, ficava piscando e voltando para o início por um conflito de endereço; agora fica estável. Inclui também as melhorias da v5.3.4 nas ordens de compra."
 }
