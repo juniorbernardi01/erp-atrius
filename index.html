@@ -5510,7 +5510,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v539';const VERSAO_DATA='11/11/2026';
+const VERSAO_APP='v540';const VERSAO_DATA='11/11/2026';
 /* número que aparece na tela: v438 → v4.3.8 (por dentro continua v438, que é o que as versões comparam) */
 const csRotVer=v=>{const d=String(v||'').replace(/\D/g,'');return d.length>=3?'v'+d.slice(0,-2)+'.'+d.slice(-2,-1)+'.'+d.slice(-1):String(v||'');};
 const VERSAO_ROTULO=csRotVer(VERSAO_APP)+' · '+VERSAO_DATA;
@@ -31420,10 +31420,10 @@ function csTqBar(){
     const av=csTqBarAvisos();
     const nome=l=>[...new Set(l.map(b=>b.tanque))].join(', ');
     bar.classList.toggle('ab',CS_TQBAR_AB);
-    bar.innerHTML=`<div class="tbh" role="button" tabindex="0" aria-expanded="${CS_TQBAR_AB}"><b>Tanques</b>
+    bar.innerHTML=`<div class="tbh" role="button" tabindex="0" aria-expanded="${CS_TQBAR_AB}"><b>Tanques</b>${window.csTqPodeGestor&&window.csTqPodeGestor()?'<button type="button" class="btn sm" id="csTqTab" style="margin-left:12px">Tablet dos tanques</button>':''}
       ${av.ana.length?`<span class="tbs ana" title="${escAttr(av.ana.map(b=>b.tanque+' · '+b.produto).join('\n'))}"><i>${av.ana.length}</i>${av.ana.length===1?escAttr(av.ana[0].tanque)+' enviou a análise · liberar':'análises para liberar · '+escAttr(nome(av.ana))}</span>`:''}
       ${av.aj.length?`<span class="tbs aj" title="${escAttr(av.aj.map(b=>b.tanque+' · '+b.produto).join('\n'))}"><i>${av.aj.length}</i>${av.aj.length===1?escAttr(av.aj[0].tanque)+' precisa de ajuste':'precisam de ajuste · '+escAttr(nome(av.aj))}</span>`:''}
-      <span class="sp"></span>${window.csTqPodeGestor&&window.csTqPodeGestor()?'<button type="button" class="btn sm" id="csTqTab" style="margin-right:6px">Tablet dos tanques</button>':''}<button type="button" class="btn sm tbb">${CS_TQBAR_AB?'Recolher':'Expandir'}<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button></div>
+      <span class="sp"></span><button type="button" class="btn sm tbb">${CS_TQBAR_AB?'Recolher':'Expandir'}<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button></div>
       <div class="tbm"></div>`;
     const tg=()=>{CS_TQBAR_AB=!CS_TQBAR_AB;csTqBar();};
     const h=bar.querySelector('.tbh');h.onclick=tg;

@@ -1,6 +1,6 @@
 {
- "v": "v539",
- "versao": "5.3.9",
+ "v": "v540",
+ "versao": "5.3.10",
  "data": "11/11/2026",
- "o_que_mudou": "Tela Envase e Tanques: botão 'Tablet dos tanques' no cabeçalho dos Tanques (só para gestores). A Mari abre o tablet do operador dentro do PCP e faz o processo do jeito que está no tablet, com o PIN dela, e tudo fica no histórico. Os cartões do PCP voltam a ser só acompanhamento (com a etapa real e o selo piscante da análise). Substitui os botões soltos da v5.3.8."
+ "o_que_mudou": "Ajuste: o botão 'Tablet dos tanques' foi para a esquerda, do lado do título Tanques, longe do Recolher. (Mantém tudo da v5.3.9: a Mari abre o tablet pelo PCP e opera com o PIN dela; cartões são só acompanhamento com a etapa real e o selo piscante da análise.)"
 }
