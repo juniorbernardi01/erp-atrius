@@ -1,6 +1,6 @@
 {
- "v": "v536",
- "versao": "5.3.6",
+ "v": "v537",
+ "versao": "5.3.7",
  "data": "11/11/2026",
- "o_que_mudou": "Treino dos tanques: tela do treinador por endereço próprio (treinotq.html#treinador), para abrir no computador e liberar como químico, pedir ajuste e recomeçar, sem os 5 toques no logo; atualiza sozinha conforme os operadores mexem no tablet na mesma máquina. Mantém a correção do piscar (v5.3.5) e as melhorias das ordens de compra (v5.3.4)."
+ "o_que_mudou": "Tela Envase e Tanques: cada tanque mostra a etapa real do tablet dos operadores (limpando, enchendo, cheio, preparando, em pausa, fazer análise, em descanso, ajuste). Quando o operador envia a análise pelo tablet, o tanque pisca em vermelho com Análise solicitada · liberar, para o químico ver na hora. Lembrete: o estoque continua baixando na liberação do tanque."
 }
