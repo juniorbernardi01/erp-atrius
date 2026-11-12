@@ -1,6 +1,6 @@
 {
- "v": "v541",
- "versao": "5.3.11",
+ "v": "v543",
+ "versao": "5.3.13",
  "data": "12/11/2026",
- "o_que_mudou": "Tanques no PCP: o cartão mostra a etapa real de cada tanque, igual ao botão do tablet do operador. 'Programado' virou 'Iniciar limpeza', 'Limpo · encher' virou 'Iniciar enchimento' e 'Cheio · aguardando preparo' virou 'Iniciar preparo'; tanque com tudo concluído mostra 'Livre'. A análise para liberar agora pisca em vermelho na faixa dos Tanques mesmo recolhida, para a Mari não perder o pedido."
+ "o_que_mudou": "Correção: o atraso de setup não conta mais a parada programada (refeição etc.). No card do PCP, uma OP pausada na refeição mostrava o setup atrasando sem parar (ex.: MAQ 2 do eucalipto, +1h20 durante o almoço); agora o relógio do setup desconta a refeição, igual já fazia no envase. Pausa de material/máquina continua contando como perda, conforme a regra. Mesma correção no painel da TV. Também leva a v5.3.12: Configurações › PCP refeita (Visualizar que fecha sem travar o computador, links de tablet na gaveta só pra copiar, TV com link próprio tv.html que não trava) e saída do botão 'Tablet dos tanques' da tela Envase e Tanques."
 }

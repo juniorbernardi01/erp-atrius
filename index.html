@@ -5510,7 +5510,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v541';const VERSAO_DATA='12/11/2026';
+const VERSAO_APP='v543';const VERSAO_DATA='12/11/2026';
 /* número que aparece na tela: v438 → v4.3.8 (por dentro continua v438, que é o que as versões comparam) */
 const csRotVer=v=>{const d=String(v||'').replace(/\D/g,'');return d.length>=3?'v'+d.slice(0,-2)+'.'+d.slice(-2,-1)+'.'+d.slice(-1):String(v||'');};
 const VERSAO_ROTULO=csRotVer(VERSAO_APP)+' · '+VERSAO_DATA;
@@ -15784,29 +15784,72 @@ try{if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serv
   if(!location.hash||location.hash==='#')location.hash='#op'+q;}catch(e){}})();
 
 /* ===== v272: Configurações › PCP · marcadores das OPs e a tela do operador ===== */
+/* v542 · estilo do modal Configurações do PCP (linhas de tela + gaveta de links). Injeta uma vez. */
+function cfgPcpCss(){
+  if(document.getElementById('cs-cfgpcp-css'))return;
+  const s=document.createElement('style');s.id='cs-cfgpcp-css';s.textContent=`
+.cs-telas{display:flex;flex-direction:column;gap:9px;margin-bottom:6px}
+.cs-telar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;border:1px solid var(--line,#E4E7EC);border-radius:11px;padding:11px 13px}
+.cs-telaic{width:38px;height:38px;border-radius:9px;display:grid;place-items:center;flex:none;color:#fff;font:800 17px system-ui,sans-serif}
+.cs-telaic.tq{background:#0E1B33}.cs-telaic.mq{background:#1B4F9C}
+.cs-telanm{flex:1;min-width:120px}
+.cs-telanm b{display:block;font-size:14.5px;line-height:1.15;color:var(--ink,#0F172A)}
+.cs-telanm small{font-size:11.5px;color:var(--ink3,#64748B)}
+.cs-telaver{white-space:nowrap}
+.cs-linkdr{margin-top:14px;border:1px solid var(--line,#E4E7EC);border-radius:11px;overflow:hidden}
+.cs-linkdr>summary{list-style:none;cursor:pointer;padding:12px 14px;display:flex;align-items:center;gap:9px;font:700 13px system-ui,sans-serif;color:var(--ink2,#475569)}
+.cs-linkdr>summary::-webkit-details-marker{display:none}
+.cs-linkdr>summary::before{content:"▸";color:var(--ink3,#64748B)}
+.cs-linkdr[open]>summary::before{content:"▾"}
+.cs-linkin{padding:2px 14px 14px}
+.cs-linkwarn{font-size:12px;color:#92400E;background:#FEF3C7;border-radius:8px;padding:8px 11px;margin:6px 0 10px;line-height:1.45}
+.cs-linkrow{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line,#E4E7EC);font-size:12.5px}
+.cs-linkrow:last-child{border-bottom:0}
+.cs-linkrow .n{font-weight:700;min-width:70px}
+.cs-linkrow .u{flex:1;font-family:'Inter',ui-monospace,monospace;color:var(--ink3,#64748B);font-size:11px;word-break:break-all;min-width:0}
+html.escuro .cs-linkwarn,body.escuro .cs-linkwarn{background:#3a2d0a;color:#fde68a}`;
+  document.head.appendChild(s);
+}
 function abrirCfgPCP(){
   if(M('mAcao'))M('mAcao').innerHTML='';M('modal').classList.add('wide');
   M('mTit').textContent='Configurações do PCP';M('mSub').hidden=true;
-  const des=()=>{M('mB').innerHTML=`<div class="st">Marcadores das OPs</div><div class="cfgmk" style="margin:8px 0 18px">${CAD_MK_OP.map((m,i)=>`<span><input type="color" value="${m.cor}" data-mkc="${i}">${escAttr(m.nome)}<em data-mkx="${i}">✕</em></span>`).join('')}
+  cfgPcpCss();
+  const base=location.origin+location.pathname.replace(/[^/]*$/,'');
+  const tm=q=>(CS_TABLETS.tema||{})[q]||(q==='tq'?'escuro':'claro');
+  const telas=[{q:'tq',nome:'Tanques',sub:'operador dos tanques',ic:'▦',cls:'tq'},
+    ...MAQUINAS.map((m,i)=>({q:String(i+1),nome:m,sub:'operador do envase',ic:String(i+1),cls:'mq'}))];
+  const linkDe=q=>q==='tq'?base+'tanques.html':base+'maq'+q+'.html';
+  const des=()=>{M('mB').innerHTML=`<div class="st">Marcadores das OPs</div><div class="cfgmk" style="margin:8px 0 22px">${CAD_MK_OP.map((m,i)=>`<span><input type="color" value="${m.cor}" data-mkc="${i}">${escAttr(m.nome)}<em data-mkx="${i}">✕</em></span>`).join('')}
       <input id="mkNovo" placeholder="novo marcador" style="width:170px;height:32px"><button class="btn sm" id="mkAdd">+ incluir</button></div>
-    <div class="st">Tela do operador</div><p class="adp">A tela que o operador vê na máquina. De dentro do ERP, só abre com a senha de quem tem a permissão <b>Abrir a tela do operador</b> (Pessoas e permissões, em Envase). Fica registrado quem abriu.</p>
-    <label class="chk" style="display:flex;gap:10px;align-items:flex-start;margin:4px 0 14px;cursor:pointer"><input type="checkbox" id="cfgTrava" ${CS_TRAVA_LINHA?'checked':''} style="margin-top:3px">
-      <span><b>Travar a máquina para os operadores da linha</b><br><span class="k" style="font-size:12.5px">Ligado: o tablet de cada máquina só aceita o PIN de quem tem aquela linha no cadastro (Configurações › Operadores › Linha em que trabalha) e de quem está como <b>Sem linha fixa</b>, para cobrir.
-      Desligado: qualquer operador cadastrado abre e assina em qualquer máquina. Nos dois casos, o histórico guarda quem digitou o PIN.</span></span></label>
-    <button class="btn pri" id="opAbrir">Abrir tela do operador</button>
-    ${csTabletsHTML()}
-    ${csQuiosque()?`<p class="adp" style="margin-top:10px">Este aparelho está preso ${csQuiosque()==='tq'?'nos <b>Tanques</b>':'na <b>MAQ '+escAttr(csQuiosque())+'</b>'}. <button class="btn sm" id="qDesl">Soltar este aparelho</button></p>`:''}`;
+    <div class="st">Telas e tablets</div>
+    <p class="adp" style="margin:0 0 12px">Toque em <b>Visualizar</b> para abrir a tela numa janela só de acompanhamento — fecha e volta pro sistema, sem prender o computador. Nos Tanques dá pra operar com o PIN.</p>
+    <div class="cs-telas">${telas.map(t=>`<div class="cs-telar">
+      <div class="cs-telaic ${t.cls}">${t.ic}</div>
+      <div class="cs-telanm"><b>${escAttr(t.nome)}</b><small>${t.sub}</small></div>
+      <span class="cs-tmseg">${['claro','escuro'].map(v=>`<button type="button" data-tbt="${t.q}|${v}" class="${tm(t.q)===v?'on':''}">${v==='claro'?'☀ Claro':'☾ Escuro'}</button>`).join('')}</span>
+      <button type="button" class="btn pri sm cs-telaver" data-visor="${t.q}">◱ Visualizar${t.q==='tq'?' / operar':''}</button></div>`).join('')}</div>
+    <details class="cs-linkdr"><summary>Links para configurar tablet / TV</summary>
+      <div class="cs-linkin">
+        <div class="cs-linkwarn">⚠ Abrir os links dos <b>tablets</b> marca o aparelho (fica preso na tela; pra sair, segurar o logo 3 s + PIN do master). Por isso aqui só dá pra copiar — use no aparelho que vai ficar ali. <b>A TV é a exceção: o link dela não trava</b>, pode abrir e favoritar.</div>
+        ${telas.map(t=>`<div class="cs-linkrow"><span class="n">${escAttr(t.nome)}</span><span class="u">${escAttr(linkDe(t.q))}</span><button class="btn sm" data-cplink="${escAttr(linkDe(t.q))}">Copiar</button></div>`).join('')}
+        <div class="cs-linkrow"><span class="n">TV</span><span class="u">${escAttr(base+'tv.html')}</span><button class="btn sm" data-cplink="${escAttr(base+'tv.html')}">Copiar</button> <button class="btn sm" data-tvabrir="1">Abrir</button></div>
+      </div></details>
+    ${csQuiosque()?`<p class="adp" style="margin-top:12px">Este aparelho está preso ${csQuiosque()==='tq'?'nos <b>Tanques</b>':'na <b>MAQ '+escAttr(csQuiosque())+'</b>'}. <button class="btn sm" id="qDesl">Soltar este aparelho</button></p>`:''}`;
     M('mB').querySelectorAll('[data-mkc]').forEach(c=>c.onchange=()=>{CAD_MK_OP[+c.dataset.mkc].cor=c.value;agendarSalvar();});
     M('mB').querySelectorAll('[data-mkx]').forEach(x=>x.onclick=()=>{if(!confirm('Tirar este marcador?'))return;CAD_MK_OP.splice(+x.dataset.mkx,1);agendarSalvar();des();});
     M('mkAdd').onclick=()=>{const n=M('mkNovo').value.trim();if(!n)return;if(CAD_MK_OP.some(m=>m.nome.toLowerCase()===n.toLowerCase()))return toast('Esse marcador já existe.',true);
       CAD_MK_OP.push({nome:n,cor:OD_MK_CORES[CAD_MK_OP.length%OD_MK_CORES.length]});agendarSalvar();des();};
-    M('cfgTrava').onchange=e=>{CS_TRAVA_LINHA=e.target.checked;agendarSalvar();toast(CS_TRAVA_LINHA?'Cada máquina aceita só os operadores da linha e os sem linha fixa.':'Qualquer operador abre qualquer máquina.');};
+    /* tema por tela: claro/escuro, vale na hora no aparelho sem mexer nele */
+    M('mB').querySelectorAll('[data-tbt]').forEach(b=>b.onclick=()=>{const [q,v]=b.dataset.tbt.split('|');
+      CS_TABLETS.tema={...(CS_TABLETS.tema||{}),[q]:v};agendarSalvar();
+      b.parentNode.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));
+      toast(`${q==='tq'?'Tanques':(MAQUINAS[+q-1]||'MAQ '+q)}: tema ${v}.`);});
+    /* Visualizar: abre a janela que fecha (não marca o aparelho) */
+    M('mB').querySelectorAll('[data-visor]').forEach(b=>b.onclick=()=>{const q=b.dataset.visor;fecharModal();
+      setTimeout(()=>{try{if(q==='tq')csTqAbrirSup();else csAbrirMaq(q);}catch(e){}},60);});
     M('mB').querySelectorAll('[data-cplink]').forEach(b=>b.onclick=()=>{try{navigator.clipboard.writeText(b.dataset.cplink);toast('Link copiado.');}catch(e){prompt('Copie o link:',b.dataset.cplink);}});
-    try{csTabletsLiga();}catch(e){}
-    if(M('qDesl'))M('qDesl').onclick=()=>{try{localStorage.removeItem('erp.quiosque');localStorage.removeItem('erp.maqTablet');}catch(e){}toast('Este aparelho não está mais preso na máquina.');des();};
-    M('opAbrir').onclick=()=>pedirGestor(quem=>{
-      try{(window.LOG_TELAOP=window.LOG_TELAOP||[]).push({em:new Date().toISOString(),por:quem});}catch(e){}
-      toast('Tela do operador aberta por '+quem+'.');fecharModal();setTimeout(()=>{const b=M('telaOp');if(b&&b.onclick)b.onclick();},50);});};
+    const tvb=M('mB').querySelector('[data-tvabrir]');if(tvb)tvb.onclick=()=>{try{const w=window.open(base+'tv.html','_blank','noopener');if(!w)toast('Libere abrir nova aba, ou copie o link da TV.',true);}catch(e){toast('Copie o link da TV.',true);}};
+    if(M('qDesl'))M('qDesl').onclick=()=>{try{localStorage.removeItem('erp.quiosque');localStorage.removeItem('erp.maqTablet');}catch(e){}toast('Este aparelho não está mais preso na máquina.');des();};};
   des();M('mF').innerHTML='<div style="flex:1"></div><button class="btn" id="cfpF">Fechar</button>';M('cfpF').onclick=()=>fecharModal();abrirMask();
 }
 
@@ -26162,9 +26205,12 @@ estadoMaquina=function(maq,data){
     const st=sit(viva),base={oc:viva,fila:resto(viva)};
     if(viva.csPausa)return {...base,sit:'pausada',rot:'Pausada',delta:viva.csPausa.motivo||'',desde:`${hj}T${viva.csPausa.desde}`};
     if(st==='finalizado')return {...base,sit:'apontar',rot:'A apontar',delta:'conte as caixas',desde:viva.fimReal?`${hj}T${viva.fimReal}`:''};
-    if(st==='preparacao'){const ini=hm(viva.iniReal),lim=ini+(+viva.setup||0)+tol;
-      return agora>lim?{...base,sit:'atrasada',rot:'Setup atrasado',delta:`+${hmm(agora-lim+tol)}`,desde:`${hj}T${viva.iniReal}`}
-        :{...base,sit:'setup',rot:'Em setup',delta:`faltam ${hmm(Math.max(0,ini+(+viva.setup||0)-agora))}`,desde:`${hj}T${viva.iniReal}`};}
+    if(st==='preparacao'){const ini=hm(viva.iniReal),sd=(+viva.setup||0),lim=ini+sd+tol;
+      /* v542: desconta a parada programada (refeição etc.) do atraso de setup também no painel */
+      let prog=0;try{prog=(typeof csParado==='function'?csParado(viva,viva.iniReal,relogio()):0)||0;}catch(e){}
+      const efet=agora-prog;
+      return efet>lim?{...base,sit:'atrasada',rot:'Setup atrasado',delta:`+${hmm(efet-ini-sd)}`,desde:`${hj}T${viva.iniReal}`}
+        :{...base,sit:'setup',rot:'Em setup',delta:`faltam ${hmm(Math.max(0,ini+sd-efet))}`,desde:`${hj}T${viva.iniReal}`};}
     const fim=fimEsperado(viva),e=(typeof iniEnvase==='function'&&iniEnvase(viva))||viva.envIni;
     return agora>fim?{...base,sit:'atrasada',rot:'Envase atrasado',delta:`+${hmm(agora-fim)}`,desde:e?`${hj}T${e}`:''}
       :{...base,sit:'producao',rot:'Envasando',delta:`faltam ${hmm(fim-agora)}`,desde:e?`${hj}T${e}`:''};
@@ -27285,7 +27331,7 @@ function cs5Tempos(o){
     if(!o.iniReal){const f=fimSetup(o);if(f)r.b=f;}
     if(o.iniReal){const f=fimSetup(o);
       if(f){r.b=f;try{r.d=dvSetup(o);}catch(e){}}
-      else if(st==='preparacao'){r.b='agora';if(hoje){const x=ag-hm(o.iniReal)-sDur;if(x>0)r.d=x;}}}
+      else if(st==='preparacao'){r.b='agora';if(hoje){let par=0;try{par=csParado(o,o.iniReal,relogio())||0;}catch(e){}const x=ag-hm(o.iniReal)-par-sDur;if(x>0)r.d=x;}}}
     L.push({n:'Setup',p:{a:cs5hm(o.inicio),b:cs5hm(o.inicio+sDur),d:cs5dur(sDur)},r});
   }else L.push({n:'Setup',p:{a:'—',b:'—',d:''},r:{a:'—',b:'—',d:null},vz:true});
   /* envase */
@@ -30455,6 +30501,31 @@ body.escuro #tqgrid .cs8-ti>div,html.escuro #tqgrid .cs8-ti>div{background:rgba(
 }catch(e){console.warn('v539 tablet sup',e);}})();
 </script>
 <script>
+/* ===== v542 · visor genérico: abre qualquer tela (máquina) numa janela que fecha, sem marcar o aparelho.
+   Os tanques seguem no csTqAbrirSup (tela leve tqop.html). As máquinas abrem a própria tela do operador
+   pelo endereço #opN — que NÃO marca o aparelho (só os maqN.html marcam). O acesso fica no modal do PCP. ===== */
+(function(){try{
+  function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+  window.csAbrirVisor=function(src,titulo,sub){
+    let ov=document.getElementById('csVisor');if(ov)ov.remove();
+    ov=document.createElement('div');ov.id='csVisor';
+    ov.innerHTML='<div class="csVisorBar"><div><b>'+esc(titulo||'Tela')+'</b>'+(sub?'<span>'+esc(sub)+'</span>':'')+'</div><button type="button" id="csVisorX">✕ Fechar</button></div><iframe id="csVisorFr" title="'+esc(titulo||'Tela')+'" src="'+esc(src)+'"></iframe>';
+    document.body.appendChild(ov);
+    document.getElementById('csVisorX').onclick=function(){ov.remove();try{render();}catch(e){}};
+  };
+  /* máquina n: a própria tela do operador, pelo endereço #opN (acompanhamento; ações pedem o PIN) */
+  window.csAbrirMaq=function(n){try{var base=location.href.split('#')[0].split('?')[0];
+    csAbrirVisor(base+'?t='+Date.now()+'#op'+n,(typeof MAQUINAS!=='undefined'&&MAQUINAS[+n-1])||('MAQ '+n),'tela do operador · acompanhamento (ações pedem o PIN)');}catch(e){}};
+  var st=document.createElement('style');st.textContent='#csVisor{position:fixed;inset:0;z-index:2147482000;background:#0E1B33;display:flex;flex-direction:column}'+
+    '#csVisor .csVisorBar{flex:none;display:flex;align-items:center;gap:12px;padding:10px 16px;background:#0E1B33;color:#fff;border-bottom:1px solid #22304d}'+
+    '#csVisor .csVisorBar b{font:800 15px system-ui,sans-serif;display:block}'+
+    '#csVisor .csVisorBar span{font:600 12px system-ui,sans-serif;color:#9fb0cc}'+
+    '#csVisor .csVisorBar button{margin-left:auto;background:#1D6FE8;color:#fff;border:0;border-radius:10px;padding:10px 16px;font:800 14px system-ui,sans-serif;cursor:pointer}'+
+    '#csVisor iframe{flex:1;width:100%;border:0;background:#0E1B33}';
+  document.head.appendChild(st);
+}catch(e){console.warn('v542 visor',e);}})();
+</script>
+<script>
 /* v400 · separa o saldo dos itens do ERP que caíram na mesma chave (ex.: "001").
    Chave só de dígitos usada por UM item ERP: o saldo e o histórico passam para ERP-<SKU> (soma, não perde nada).
    Usada por MAIS de um: não dá para saber de quem é cada parte — fica de fora e o item precisa de inventário. */
@@ -31428,14 +31499,13 @@ function csTqBar(){
     const av=csTqBarAvisos();
     const nome=l=>[...new Set(l.map(b=>b.tanque))].join(', ');
     bar.classList.toggle('ab',CS_TQBAR_AB);
-    bar.innerHTML=`<div class="tbh" role="button" tabindex="0" aria-expanded="${CS_TQBAR_AB}"><b>Tanques</b>${window.csTqPodeGestor&&window.csTqPodeGestor()?'<button type="button" class="btn sm" id="csTqTab" style="margin-left:12px">Tablet dos tanques</button>':''}
+    bar.innerHTML=`<div class="tbh" role="button" tabindex="0" aria-expanded="${CS_TQBAR_AB}"><b>Tanques</b>
       ${av.ana.length?`<span class="tbs ana" title="${escAttr(av.ana.map(b=>b.tanque+' · '+b.produto).join('\n'))}"><i>${av.ana.length}</i>${av.ana.length===1?escAttr(av.ana[0].tanque)+' enviou a análise · liberar':'análises para liberar · '+escAttr(nome(av.ana))}</span>`:''}
       ${av.aj.length?`<span class="tbs aj" title="${escAttr(av.aj.map(b=>b.tanque+' · '+b.produto).join('\n'))}"><i>${av.aj.length}</i>${av.aj.length===1?escAttr(av.aj[0].tanque)+' precisa de ajuste':'precisam de ajuste · '+escAttr(nome(av.aj))}</span>`:''}
       <span class="sp"></span><button type="button" class="btn sm tbb">${CS_TQBAR_AB?'Recolher':'Expandir'}<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button></div>
       <div class="tbm"></div>`;
     const tg=()=>{CS_TQBAR_AB=!CS_TQBAR_AB;csTqBar();};
     const h=bar.querySelector('.tbh');h.onclick=tg;
-    const _tb=bar.querySelector('#csTqTab');if(_tb)_tb.onclick=ev=>{ev.stopPropagation();try{csTqAbrirSup();}catch(e){}};
     /* tocar no selo abre o tanque: análise → ficha do lote para liberar; ajuste → a ficha na aba do certificado */
     bar.querySelectorAll('.tbs').forEach(s=>s.onclick=ev=>{ev.stopPropagation();const aj=s.classList.contains('aj');const l=aj?av.aj:av.ana;
       if(!CS_TQBAR_AB){CS_TQBAR_AB=true;csTqBar();}
