@@ -5508,7 +5508,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v550';const VERSAO_DATA='13/11/2026';
+const VERSAO_APP='v551';const VERSAO_DATA='13/11/2026';
 /* número que aparece na tela: v438 → v4.3.8 (por dentro continua v438, que é o que as versões comparam) */
 const csRotVer=v=>{const d=String(v||'').replace(/\D/g,'');return d.length>=3?'v'+d.slice(0,-2)+'.'+d.slice(-2,-1)+'.'+d.slice(-1):String(v||'');};
 const VERSAO_ROTULO=csRotVer(VERSAO_APP)+' · '+VERSAO_DATA;
@@ -39919,12 +39919,18 @@ function csMp519(simular){
 .pcx-sw button{border:0;background:var(--surface,#fff);padding:9px 20px;font:800 13.5px system-ui;color:var(--ink3,#64748B);cursor:pointer}
 .pcx-sw button.on{background:var(--navy,#0E1B33);color:#fff}
 /* painel Frascos a rotular */
-.pcx-rotwrap{display:grid;grid-template-columns:260px 1fr;gap:14px;align-items:start}
-@media(max-width:860px){.pcx-rotwrap{grid-template-columns:1fr}}
+.pcx-rotwrap{display:grid;grid-template-columns:1fr 300px;gap:14px;align-items:start}
+@media(max-width:960px){.pcx-rotwrap{grid-template-columns:1fr}}
 .pcx-rotmain{min-width:0}
 .pcx-lateral{background:var(--surface,#fff);border:1px solid var(--line,#DDE3EC);border-radius:14px;overflow:hidden}
-.pcx-lh{display:flex;align-items:baseline;justify-content:space-between;gap:8px;padding:12px 14px;background:var(--navy,#0E1B33);color:#fff}.pcx-lh b{font-size:14px}.pcx-lh span{font-size:11px;color:#9fb0cc}
-.pcx-lb{padding:6px 0}
+/* anexo: fica num cinza pra parecer colado na página, não uma coluna igual */
+.pcx-anexo{background:var(--wash,#F1F5F9);border:1px solid var(--line,#DDE3EC)}
+.pcx-anexo .pcx-lh{background:transparent;color:var(--ink,#0F172A);border-bottom:1px solid var(--line,#DDE3EC);padding:12px 14px}
+.pcx-anexo .pcx-lh b{font-size:13px;letter-spacing:.2px}
+.pcx-anexo .pcx-nova.sm{background:var(--navy,#0E1B33);color:#fff;border:0;border-radius:8px;padding:6px 10px;font:700 11px system-ui;cursor:pointer}
+.pcx-lh{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 14px;background:var(--navy,#0E1B33);color:#fff}.pcx-lh b{font-size:14px}.pcx-lh span{font-size:11px;color:#9fb0cc}
+.pcx-lsub{font:600 11px system-ui;color:var(--ink3,#64748B);padding:8px 14px 2px}
+.pcx-lb{padding:4px 0}
 .pcx-lat-it{display:flex;justify-content:space-between;gap:8px;padding:9px 14px;border-bottom:1px solid var(--line,#DDE3EC);font-size:12.5px}
 .pcx-lat-it .n{color:var(--ink,#0F172A)}.pcx-lat-it .q{font-family:ui-monospace,monospace;font-weight:700}.pcx-lat-it .q.zero{color:var(--anl,#DC2626)}
 .pcx-lnote{font-size:11px;color:var(--ink3,#64748B);padding:8px 14px 12px;margin:0}
@@ -40041,8 +40047,10 @@ function csMp519(simular){
 .pcx-sr-top{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:12px}
 .pcx-sr-tit{font:800 20px system-ui;margin:0}
 .pcx-head-r{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.pcx-datesel{display:flex;align-items:center;gap:8px;border:1px solid var(--line,#DDE3EC);border-radius:10px;padding:4px 10px}
+.pcx-datesel{display:flex;align-items:center;gap:4px;border:1px solid var(--line,#DDE3EC);border-radius:10px;padding:3px 6px}
 .pcx-datesel b{font:700 13px system-ui}
+.pcx-datetext{font:700 13px system-ui;color:var(--ink,#0F172A);background:none;border:0;cursor:pointer;padding:3px 6px;border-radius:7px}
+.pcx-datetext:hover{background:var(--wash,#F1F5F9)}
 .pcx-tabs{display:flex;gap:2px;border-bottom:1px solid var(--line,#DDE3EC);margin-bottom:16px}
 .pcx-tabbtn{border:0;background:none;padding:11px 20px;font:800 14px system-ui;color:var(--ink3,#64748B);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px}
 .pcx-tabbtn.on{color:var(--ink,#0F172A);border-bottom-color:#1D4ED8}
@@ -40096,7 +40104,8 @@ button.pcx-lat-it{width:100%;text-align:left;background:none;font:inherit;align-
 .pcx-ped.dragging{opacity:.5}
 .pcx-ped .seq{width:22px;height:22px;flex:none;border-radius:999px;background:var(--navy,#0E1B33);color:#fff;font:800 11px ui-monospace,monospace;display:grid;place-items:center}
 .pcx-ped .mid{flex:1;min-width:0}
-.pcx-ped .mid .n{font:700 12.5px system-ui;color:var(--ink,#0F172A);line-height:1.2}
+.pcx-ped .mid .op{font:800 10px ui-monospace,monospace;color:var(--navy,#0E1B33);text-transform:uppercase;letter-spacing:.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pcx-ped .mid .n{font:700 12.5px system-ui;color:var(--ink,#0F172A);line-height:1.2;margin-top:1px}
 .pcx-ped .mid .pz{font:600 10.5px system-ui;color:#B45309;margin-top:2px}
 .pcx-ped .qq{flex:none;text-align:right;font:800 15px ui-monospace,monospace;color:var(--anl,#DC2626);line-height:1}
 .pcx-ped .qq small{display:block;font:600 8.5px system-ui;color:var(--ink3,#64748B)}
@@ -40105,7 +40114,6 @@ button.pcx-lat-it{width:100%;text-align:left;background:none;font:inherit;align-
 .pcx-col.drop{outline:2px dashed #1D4ED8;outline-offset:-4px}
 
 .pcx-selbar[hidden]{display:none}
-
 </style>
 <script>
 /* =====================================================================
@@ -40280,20 +40288,19 @@ function cardRotuloN(o, vez){
    GRADE (páginas)
    ====================================================================== */
 function headerSR(tab){
-  var lbl = tab==='sopro'?'Nova OP de sopro':'Nova OP de rotulagem';
-  var juntar = tab==='rotulagem'?'<button class="pcx-ghost" data-ac="juntar">⊕ Juntar lotes iguais</button>':'';
   var dataTxt = esc((function(){try{return dLongo(dataRef());}catch(e){return dataRef();}})());
+  // Nova OP fica em cima nos dois (padrão do Envase). Juntar não fica aqui:
+  // ele aparece só no anexo quando há mais de um pedido selecionado.
+  var lbl = tab==='sopro'?'Nova OP de sopro':'Nova OP de rotulagem';
   return '<div class="pcx-sr-head">'+
     '<div class="pcx-sr-l">'+
       '<div class="pcx-sw">'+
         '<button class="'+(tab==='sopro'?'on':'')+'" data-tab="sopro">Sopro</button>'+
         '<button class="'+(tab==='rotulagem'?'on':'')+'" data-tab="rotulagem">Rotulagem</button>'+
       '</div>'+
-      '<div class="pcx-datesel"><button class="pcx-nav" data-ac="dia-prev">‹</button><b>'+dataTxt+'</b><button class="pcx-nav" data-ac="dia-next">›</button></div>'+
+      '<div class="pcx-datesel"><button class="pcx-nav" data-ac="dia-prev">‹</button><button class="pcx-datetext" data-ac="cal">'+dataTxt+' ▾</button><button class="pcx-nav" data-ac="dia-next">›</button></div>'+
     '</div>'+
-    '<div class="pcx-head-r">'+juntar+
-      '<button class="pcx-nova" data-ac="nova" data-origem="'+tab+'">＋ '+lbl+'</button>'+
-    '</div></div>';
+    '<div class="pcx-head-r"><button class="pcx-nova" data-ac="nova" data-origem="'+tab+'">＋ '+lbl+'</button></div></div>';
 }
 function coluna(titulo, cad, ops){
   var abertos = ops.filter(function(o){return o.status!=='concluida';})
@@ -40358,49 +40365,42 @@ function metaPanelSopro(){
 }
 
 function dCurtoSafe(d){ try{ return dCurto(d); }catch(e){ return d||''; } }
-function prazoEnvasePorFRR(){
-  var pz={};
+function pedidosEnvaseOPs(data){
+  var out=[];
   try{
     (typeof ORDENS!=='undefined'?ORDENS:[]).forEach(function(o){
-      var st; try{ st=sit(o); }catch(e){ st=''; } if(['concluida','cancelada','finalizado'].indexOf(st)>=0) return;
+      var st; try{ st=sit(o); }catch(e){ st=''; } if(['cancelada','finalizado'].indexOf(st)>=0) return;
+      if(data && o.data!==data) return;
       var ng=true; try{ ng=naGrade(o); }catch(e){} if(!ng) return;
-      var cons; try{ cons=consumoDaOP(o, caixasPrev(o)); }catch(e){ cons=[]; }
-      (cons||[]).forEach(function(c){ var it=porSku(c.sku); if(!it||grupoDe(it)!=='frrot') return;
-        var key=(o.data||'9999-99-99')+'T'+('000'+(o.inicio||0)).slice(-4);
-        if(!pz[c.sku]||key<pz[c.sku].key) pz[c.sku]={key:key,data:o.data,ini:o.inicio||0};
+      var cx; try{ cx=caixasPrev(o); }catch(e){ cx=0; }
+      var cons; try{ cons=consumoDaOP(o, cx); }catch(e){ cons=[]; }
+      (cons||[]).forEach(function(c){
+        var it=porSku(c.sku); if(!it||grupoDe(it)!=='frrot') return;
+        var q=Math.round(c.qtd||0); if(q<=0) return;
+        var op; try{ op=rotuloOP(o); }catch(e){ op=o.id; }
+        var prod=''; try{ var pp=prodOf(o.codigo); prod=pp?(pp.nome||''):''; }catch(e){}
+        out.push({ op:op, prod:prod, sku:c.sku, nome:it.nome, qtd:q, prazoData:o.data, prazoIni:(o.inicio||0) });
       });
     });
   }catch(e){}
-  return pz;
-}
-function demandaEnvaseFRR(){
-  var res={}; try{ res=csNucleo.reservado({envase:true,tanques:false})||{}; }catch(e){}
-  var pz=prazoEnvasePorFRR(), out=[];
-  rotulados().forEach(function(it){
-    var need=(res[it.sku]&&res[it.sku].qtd)||0;
-    var interno=saldoPCP(it.sku), tiny=0;
-    try{ if(it.tiny!=null&&typeof ESTOQUE!=='undefined'&&ESTOQUE[it.tiny]!=null) tiny=+ESTOQUE[it.tiny]; }catch(e){}
-    var saldo=interno+tiny;
-    var falta=Math.max(0, Math.round(need-Math.max(0,saldo)));
-    if(saldo<0) falta=Math.max(falta, Math.round(-saldo));
-    if(falta>0){ var p=pz[it.sku]||null; out.push({sku:it.sku,nome:it.nome,falta:falta,prazoData:p&&p.data,prazoIni:p&&p.ini,prazoKey:p?p.key:'9999'}); }
-  });
-  out.sort(function(a,b){ var c=(a.prazoKey||'9999').localeCompare(b.prazoKey||'9999'); return c||(b.falta-a.falta); });
+  out.sort(function(a,b){ return (a.prazoIni||0)-(b.prazoIni||0); });
   return out;
 }
 function lateralDemanda(origem){
-  var itens=demandaEnvaseFRR();
+  var data=dataRef();
+  var itens=pedidosEnvaseOPs(data);
   var linhas=itens.length? itens.map(function(d,i){
-    var prazo = d.prazoData ? ('pronto até '+esc(dCurtoSafe(d.prazoData))+(d.prazoIni?' '+hhmm(d.prazoIni):'')) : 'sem prazo definido';
-    return '<div class="pcx-ped" draggable="true" data-pedido="'+esc(d.sku)+'" data-falta="'+d.falta+'">'+
+    var prazo = d.prazoData ? ('pronto até '+esc(dCurtoSafe(d.prazoData))+(d.prazoIni?' '+hhmm(d.prazoIni):'')) : 'sem horário';
+    return '<div class="pcx-ped" draggable="true" data-pedido="'+esc(d.sku)+'" data-falta="'+d.qtd+'">'+
       '<div class="seq">'+(i+1)+'</div>'+
-      '<div class="mid"><div class="n">'+esc(nomeCurtoSku(d.sku))+'</div><div class="pz">'+prazo+'</div></div>'+
-      '<div class="qq">'+nfx(d.falta)+'<small>frascos</small></div></div>';
-  }).join('') : '<div class="pcx-vazio">Sem pedido do envase no momento.</div>';
+      '<div class="mid"><div class="op">OP '+esc(d.op)+(d.prod?' · '+esc(d.prod):'')+'</div><div class="n">'+esc(nomeCurtoSku(d.sku))+'</div><div class="pz">'+prazo+'</div></div>'+
+      '<div class="qq">'+nfx(d.qtd)+'<small>frascos</small></div></div>';
+  }).join('') : '<div class="pcx-vazio">Nenhum pedido do envase para '+esc(dCurtoSafe(data))+'.</div>';
   var selbar='<div class="pcx-selbar" id="pcpSelBar" hidden><span id="pcpSelN">0 selecionadas</span><button type="button" class="pcx-nova sm" data-ac="juntarsel">⊕ Juntar e criar OP</button></div>';
-  return '<div class="pcx-lh"><b>Pedidos do envase</b><span>'+itens.length+' na fila</span></div>'+
+  return '<div class="pcx-lh"><b>Pedidos do envase</b><span>'+itens.length+' '+(itens.length===1?'ordem':'ordens')+'</span></div>'+
+    '<div class="pcx-lsub">previstas para '+esc(dCurtoSafe(data))+'</div>'+
     '<div class="pcx-lb" id="pcpPedLista">'+linhas+'</div>'+selbar+
-    '<p class="pcx-lnote">Clique pra selecionar e juntar · arraste pra cima da máquina pra aproveitar</p>';
+    '<p class="pcx-lnote">Clique pra selecionar (2+ abre o juntar) · arraste pra cima da máquina pra aproveitar</p>';
 }
 /* ações dos pedidos: criar/juntar/arrastar */
 function criarOProtulagem(sku, qtd, maq, registro){
@@ -40416,10 +40416,9 @@ function criarOProtulagem(sku, qtd, maq, registro){
   logar(o,'OP criada do pedido', o.num+' · '+nfx(qtd)+' un');
   PCP.ops.push(o); return o;
 }
-function soltarPedidoNaMaq(sku, maq){
+function soltarPedidoNaMaq(sku, qtd, maq){
   if(!podeEd()){ avisa('Sem permissão.',true); return; }
-  var d=demandaEnvaseFRR().filter(function(x){return x.sku===sku;})[0];
-  var qtd=d?d.falta:0; if(qtd<=0){ avisa('Esse pedido já está coberto.'); return; }
+  qtd=Math.round(+qtd||0); if(qtd<=0){ avisa('Pedido sem quantidade.'); return; }
   var alvo=PCP.ops.filter(function(o){return o.origem==='rotulagem'&&o.maq===maq&&o.itemSku===sku&&o.status!=='concluida';})[0];
   if(alvo){
     alvo.qtdPrev+=qtd; alvo.qtd=alvo.qtdPrev;
@@ -40433,7 +40432,8 @@ function soltarPedidoNaMaq(sku, maq){
 }
 function atualizaSelBar(w){
   var sel=w.querySelectorAll('.pcx-ped.sel'), bar=w.querySelector('#pcpSelBar'); if(!bar)return;
-  if(sel.length){ bar.hidden=false; var n=w.querySelector('#pcpSelN'); if(n)n.textContent=sel.length+' selecionada'+(sel.length>1?'s':''); }
+  // o botão de juntar só aparece quando há mais de uma ordem selecionada
+  if(sel.length>1){ bar.hidden=false; var n=w.querySelector('#pcpSelN'); if(n)n.textContent=sel.length+' selecionadas'; }
   else bar.hidden=true;
 }
 function juntarSelecionados(w){
@@ -40454,7 +40454,7 @@ function renderSR(host, tab){
     return coluna({nome:m.nome||m.id,id:m.id,o:tab}, +m.cad||0, ops.filter(function(o){return o.maq===m.id;}));
   }).join('') +'</div>';
   var corpo = tab==='rotulagem'
-    ? '<div class="pcx-rotwrap"><aside class="pcx-lateral">'+lateralDemanda(tab)+'</aside><div class="pcx-rotmain">'+cols+'</div></div>'
+    ? '<div class="pcx-rotwrap"><div class="pcx-rotmain">'+cols+'</div><aside class="pcx-lateral pcx-anexo">'+lateralDemanda(tab)+'</aside></div>'
     : metaPanelSopro() + cols;
   host.innerHTML = '<div class="pcx-page">'+ headerSR(tab) + corpo + '</div>';
   // injeta o ⋮ em cada bloco (um só lugar)
@@ -40465,26 +40465,11 @@ function renderSR(host, tab){
     c.appendChild(kb);
   });
 }
-function gradeSoproN(){ if(MM('spsem')) MM('spsem').innerHTML=''; renderSR(MM('spgrid'),'sopro'); ligarEventos('spwrap'); lateralSoproN(); }
-function gradeRotulagemN(){ renderSR(MM('rtgrid'),'rotulagem'); ligarEventos('rtwrap'); lateralRotulagemN(); }
-function lateralSoproN(){
-  if(MM('sT')) MM('sT').textContent='Estoque soprado';
-  if(MM('sD')) MM('sD').textContent='Saldo interno do PCP (não vai ao Tiny)';
-  var fr = frascosSopro();
-  if(MM('sB')) MM('sB').innerHTML = fr.length? fr.map(function(i){
-    var s=saldoPCP(i.sku);
-    return '<div class="pcx-side"><div class="n">'+esc(i.nome)+'</div><div class="q '+(s<0?'neg':'')+'">'+nfx(s)+' un</div></div>';
-  }).join('') : '<div class="pcx-vazio">Sem frascos sopráveis no cadastro.</div>';
-}
-function lateralRotulagemN(){
-  if(MM('sT')) MM('sT').textContent='Estoque rotulado';
-  if(MM('sD')) MM('sD').textContent='Saldo interno do PCP (não vai ao Tiny)';
-  var fr = rotulados();
-  if(MM('sB')) MM('sB').innerHTML = fr.length? fr.slice(0,40).map(function(i){
-    var s=saldoPCP(i.sku);
-    return '<div class="pcx-side"><div class="n">'+esc(i.nome)+'</div><div class="q '+(s<0?'neg':'')+'">'+nfx(s)+' un</div></div>';
-  }).join('') : '<div class="pcx-vazio">Sem frascos rotulados no cadastro.</div>';
-}
+function gradeSoproN(){ if(MM('spsem')) MM('spsem').innerHTML=''; esconderSide(); renderSR(MM('spgrid'),'sopro'); ligarEventos('spwrap'); }
+function gradeRotulagemN(){ esconderSide(); renderSR(MM('rtgrid'),'rotulagem'); ligarEventos('rtwrap'); }
+/* o estoque não aparece mais num painel lateral: some pela meta (sopro) e
+   pelos pedidos do envase (rotulagem). Aqui só escondemos a aside do app. */
+function esconderSide(){ try{ var s=MM('side'); if(s) s.style.display='none'; }catch(e){} }
 
 /* ---------- eventos (delegação) ---------- */
 function ligarEventos(wrapId){
@@ -40498,6 +40483,7 @@ function ligarEventos(wrapId){
       if(ac==='juntar'){ juntarLotes(); return; }
       if(ac==='juntarsel'){ juntarSelecionados(w); return; }
       if(ac==='dia-prev'||ac==='dia-next'){ moverDia(ac==='dia-next'?1:-1); return; }
+      if(ac==='cal'){ try{ var cb=MM('calAbre'); if(cb){ cb.click(); } else { moverDia(0); } }catch(e){} return; }
       var o=opPorId(id); if(!o)return;
       if(ac==='iniciar') acIniciar(o);
       else if(ac==='concluir') acConcluir(o);
@@ -40508,14 +40494,14 @@ function ligarEventos(wrapId){
   // pedidos do envase: clique seleciona; arraste pra máquina aproveita
   w.querySelectorAll('.pcx-ped').forEach(function(el){
     el.onclick=function(){ el.classList.toggle('sel'); atualizaSelBar(w); };
-    el.addEventListener('dragstart',function(ev){ try{ ev.dataTransfer.setData('text/plain', el.getAttribute('data-pedido')); ev.dataTransfer.effectAllowed='copy'; el.classList.add('dragging'); }catch(e){} });
+    el.addEventListener('dragstart',function(ev){ try{ ev.dataTransfer.setData('text/plain', el.getAttribute('data-pedido')+'|'+(el.getAttribute('data-falta')||0)); ev.dataTransfer.effectAllowed='copy'; el.classList.add('dragging'); }catch(e){} });
     el.addEventListener('dragend',function(){ el.classList.remove('dragging'); });
   });
   atualizaSelBar(w);
   w.querySelectorAll('.pcx-col[data-orig="rotulagem"]').forEach(function(col){
     col.addEventListener('dragover',function(ev){ ev.preventDefault(); col.classList.add('drop'); });
     col.addEventListener('dragleave',function(){ col.classList.remove('drop'); });
-    col.addEventListener('drop',function(ev){ ev.preventDefault(); col.classList.remove('drop'); var sku=''; try{ sku=ev.dataTransfer.getData('text/plain'); }catch(e){} if(sku) soltarPedidoNaMaq(sku, col.getAttribute('data-maqdrop')); });
+    col.addEventListener('drop',function(ev){ ev.preventDefault(); col.classList.remove('drop'); var raw=''; try{ raw=ev.dataTransfer.getData('text/plain'); }catch(e){} if(!raw)return; var p=raw.split('|'); var sku=p[0], q=+p[1]||0; if(sku) soltarPedidoNaMaq(sku, q, col.getAttribute('data-maqdrop')); });
   });
   // seletor de período da meta
   var per=w.querySelector('.pcx-metaper');
@@ -40905,9 +40891,7 @@ function ligarTablet(){
    OVERRIDES (ligam o modelo novo às páginas)
    ====================================================================== */
 try{ gradeSopro = gradeSoproN; }catch(e){ window.gradeSopro=gradeSoproN; }
-try{ lateralSopro = lateralSoproN; }catch(e){ window.lateralSopro=lateralSoproN; }
 try{ gradeRotulagem = gradeRotulagemN; }catch(e){ window.gradeRotulagem=gradeRotulagemN; }
-try{ lateralRotulagem = lateralRotulagemN; }catch(e){ window.lateralRotulagem=lateralRotulagemN; }
 
 /* lista geral de ordens: injeta a seção SR depois que a página renderiza */
 try{ var _go=gradeOrdens; gradeOrdens=function(){ var r=_go.apply(this,arguments); try{ injetarOrdensSR(); }catch(e){} return r; }; }catch(e){}
@@ -40969,6 +40953,7 @@ function injetarTabletsSR(){
 }
 try{ if(typeof abrirCfgPCP==='function'){ var _cfgpcp=abrirCfgPCP; abrirCfgPCP=function(){ var r=_cfgpcp.apply(this,arguments); try{ injetarTabletsSR(); }catch(e){} return r; }; } }catch(e){}
 
+
 /* cabeçalho do app: nas páginas de Sopro e Rotulagem esconde o título e a
    data do topo (o seletor e a data ficam no conteúdo), evitando duplicar. */
 try{
@@ -40977,9 +40962,13 @@ try{
     var r=_rendSR.apply(this,arguments);
     try{
       var sr=(S.page==='sopro'||S.page==='rotulagem');
+      // nessas páginas o cabeçalho é o nosso (seletor Sopro|Rotulagem + data +
+      // Nova OP, no conteúdo). Escondemos o título antigo do topo, a barra do
+      // dia do sistema (csPgBar, com "Rotulagem ‹›") e a aside de estoque.
+      // Tudo volta ao normal nas demais páginas.
       var oe=MM('ondeest'); if(oe) oe.style.display=sr?'none':'';
-      var per=MM('per'); if(per) per.style.display=sr?'none':'';
-      var nav=document.querySelector('header .nav'); if(nav) nav.style.display=sr?'none':'';
+      var sd=MM('side'); if(sd) sd.style.display=sr?'none':'';
+      var pb=MM('csPgBar'); if(pb) pb.hidden=sr?true:pb.hidden;
     }catch(e){}
     return r;
   };
@@ -40989,7 +40978,6 @@ try{
 try{ window.__PCP={ PCP:PCP, mergeLotes:mergeLotes, abrirTablet:abrirTablet, novaOP:novaOP, injetarOrdensSR:injetarOrdensSR, saldoPCP:saldoPCP, checarHashTablet:checarHashTablet }; }catch(e){}
 
 })();
-
 </script>
 </body>
 </html>

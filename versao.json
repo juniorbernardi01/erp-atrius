@@ -1,6 +1,6 @@
 {
- "v": "v550",
- "versao": "5.5.0",
+ "v": "v551",
+ "versao": "5.5.1",
  "data": "13/11/2026",
- "o_que_mudou": "Novo módulo PCP Sopro e Rotulagem (página única com seletor Sopro|Rotulagem). OP própria SP/ROT, cards e modal Relatório no padrão do Envase (vez/fila, tempos, trilha, 3 pontinhos com Histórico/Editar/PDF/Excluir). Estoque só no ERP (sem Tiny). Meta de sopro automática pelo consumo do envase (período selecionável) com ajuste manual em Configurações > Sopro. Laterais de pedido: envase pede rotulado -> rotulagem; rotulagem pede soprado -> sopro, clicável para abrir a OP. Necessidade de compra passa a contar preforma e rotulo das OPs abertas. Juntar lotes na rotulagem. Tablets de sopro e rotulagem com atalhos (sopro.html/rotulagem.html) e links em Configuracoes > PCP. Nenhuma outra pagina alterada."
+ "o_que_mudou": "Sopro e Rotulagem: tirado o titulo de cima (so o seletor Sopro|Rotulagem ao lado da data, que agora abre o calendario do Envase). Pedidos do envase na rotulagem passam a listar ordem por ordem (numero da OP, produto e quantidade de frascos), filtrados pelo dia selecionado, num anexo cinza a direita com o botao Nova OP junto. Clica pra selecionar e juntar, ou arrasta pra maquina aproveitando a quantidade daquela ordem. Sem painel lateral de estoque. Estoque so no ERP (sem Tiny). Nenhuma outra pagina alterada."
 }
