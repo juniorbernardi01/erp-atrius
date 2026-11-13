@@ -3925,8 +3925,7 @@ body.cs-semjanela #mask{visibility:hidden!important}
   <div class="mlista">
     <button data-p="inicio"><b>Início</b><i>painel da operação</i></button>
     <button data-p="envase"><b>Envase e Tanques</b><i>programação, lotes e tanques</i></button>
-    <button data-p="sopro"><b>Sopro</b><i>frascos PET</i></button>
-    <button data-p="rotulagem"><b>Rotulagem</b><i>fila das rotuladoras</i></button>
+    <button data-p="sopro"><b>Sopro e Rotulagem</b><i>frascos PET e rotuladoras</i></button>
     <button data-p="ordens"><b>Ordens</b><i>buscar lote, OP e documentos</i></button>
     <button data-p="estoque"><b>Estoque</b><i>saldos e movimentos do Tiny</i></button>
     <button data-p="gestao"><b>Gestão Industrial</b><i>meta, paradas e causas</i></button>
@@ -5578,7 +5577,7 @@ function topo(conf){
      pessoa achava que o calendário é que não tinha pegado. Agora elas levam
      para o envase do dia escolhido. Só nas Configurações continuam paradas. */
   M('prev').disabled=M('next').disabled=(S.page==='admin');
-  const nomes={envase:'Envase',tanques:'Tanques',sopro:'Sopro',relatorio:'Relatórios',admin:'Configurações'};
+  const nomes={envase:'Envase',tanques:'Tanques',sopro:'Sopro e Rotulagem',rotulagem:'Sopro e Rotulagem',relatorio:'Relatórios',admin:'Configurações'};
   try{M('ondeest').textContent=nomes[S.page]||'';}catch(e){}
   if(env&&S.view!=='dia'){
     const dias=diasHorizonte(S.ref,+S.view);
@@ -19803,8 +19802,7 @@ const CS_MOD=[
  {id:'pcp',nome:'PCP',ic:'pcp',pgs:[
    {n:'Ordens de produção',page:'ordens',ic:'op'},
    {n:'Envase e tanques',page:'envase',ic:'tq'},
-   {n:'Sopro',page:'sopro',ic:'sop'},
-   {n:'Rotulagem',page:'rotulagem',ic:'rot'},
+   {n:'Sopro e Rotulagem',page:'sopro',ic:'sop'},
    {n:'Necessidade de produção',mod:'vendas',fin:'necprod',perm:'vendas.necprod',ic:'nec'},
    {n:'Checklist semanal de limpeza',mod:'limpeza',fin:'lista',perm:'pcp.limp',ic:'qua'},
    {n:'Indicadores',page:'gestao',ic:'ind'},
@@ -39880,6 +39878,10 @@ function csMp519(simular){
 
 
 
+
+
+
+
 <!--PCP_SOPRO_ROTULAGEM-->
 <style id="pcpSrCss">
 /* PCP Sopro/Rotulagem — estilos isolados (prefixo pcx-) */
@@ -39888,18 +39890,44 @@ function csMp519(simular){
 .pcx-nav{border:1px solid var(--line,#DDE3EC);background:var(--surface,#fff);color:var(--ink,#0F172A);border-radius:8px;width:30px;height:30px;cursor:pointer;font-size:16px}
 .pcx-nova{border:0;background:#16A34A;color:#fff;border-radius:10px;padding:10px 16px;font:800 14px system-ui;cursor:pointer}
 .pcx-meta{background:var(--surface,#fff);border:1px solid var(--line,#DDE3EC);border-radius:14px;overflow:hidden;margin-bottom:16px}
-.pcx-meta>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--wash,#F1F5F9)}
+.pcx-meta>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:14px;padding:12px 16px;background:var(--wash,#F1F5F9)}
+.pcx-meta[open]>summary{border-bottom:1px solid var(--line,#DDE3EC)}
 .pcx-meta>summary::-webkit-details-marker{display:none}
-.pcx-meta .mt{font:800 14px system-ui}
+.pcx-meta .mt{font:800 14px system-ui;white-space:nowrap}.pcx-meta .mpct{font:800 13px ui-monospace,monospace;color:#1D4ED8}
+.minibars{display:flex;gap:10px;margin-left:6px;flex:1;overflow-x:auto;scrollbar-width:none}
+.minibars::-webkit-scrollbar{display:none}
+.mb{display:flex;flex-direction:column;gap:3px;min-width:84px}.mb span{font-size:10px;color:var(--ink3,#64748B);white-space:nowrap}
+.mb .bar{height:6px;border-radius:3px;background:var(--surface,#fff);overflow:hidden}.mb .bar i{display:block;height:100%;border-radius:3px}
+.mb.ok .bar i{background:#16A34A}.mb.lo .bar i{background:#F59E0B}.mb.cr .bar i{background:#DC2626}
 .pcx-mpanel{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;padding:14px 16px}
-@media(max-width:760px){.pcx-mpanel{grid-template-columns:1fr 1fr}}
-.pcx-metac{border:1px solid var(--line,#DDE3EC);border-radius:12px;padding:12px}
-.pcx-metac .h{display:flex;justify-content:space-between;align-items:baseline}.pcx-metac .h b{font-size:14px}.pcx-metac .h span{font-size:11px;color:var(--ink3,#64748B)}
-.pcx-metac .barw{height:7px;background:var(--wash,#F1F5F9);border-radius:999px;margin:9px 0 6px;overflow:hidden}.pcx-metac .barw i{display:block;height:100%;background:#16A34A;border-radius:999px}
-.pcx-metac .ft{display:flex;justify-content:space-between;font-size:11px;color:var(--ink3,#64748B)}
-.pcx-maqs{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:760px){.pcx-mpanel{grid-template-columns:1fr 1fr}}@media(max-width:500px){.pcx-mpanel{grid-template-columns:1fr}}
+.pcx-metac{border:1px solid var(--line,#DDE3EC);border-radius:11px;padding:12px}
+.pcx-metac .h{display:flex;justify-content:space-between;align-items:baseline}.pcx-metac b{font-size:14px}.pcx-metac .meta-n{font-size:11px;color:var(--ink3,#64748B)}
+.pcx-metac .big{font:800 19px ui-monospace,monospace;margin:6px 0 2px}.pcx-metac .big small{font-size:12px;color:var(--ink3,#64748B);font-weight:600}
+.pcx-metac .barw{height:8px;border-radius:4px;background:var(--wash,#F1F5F9);overflow:hidden;margin:8px 0 5px}.pcx-metac .barw i{display:block;height:100%;border-radius:4px}
+.pcx-metac.ok .barw i{background:#16A34A}.pcx-metac.lo .barw i{background:#F59E0B}.pcx-metac.cr .barw i{background:#DC2626}
+.pcx-metac .ft{display:flex;justify-content:space-between;font-size:11.5px}
+.pcx-metac .at{color:#16A34A;font-weight:700}.pcx-metac.cr .at{color:#DC2626}.pcx-metac.lo .at{color:#B45309}.pcx-metac .fa{color:var(--ink3,#64748B)}
+.pcx-metac .cob{display:flex;align-items:center;gap:7px;margin-top:9px;padding-top:9px;border-top:1px dashed var(--line,#DDE3EC);font-size:11.5px}
+.pcx-metac .cob b{font-size:11.5px;color:var(--ink3,#64748B)}.pcx-metac .cob .spark{height:22px;flex:1;display:block}
+/* seletor segmentado (igual Envase) */
+.pcx-sr-head{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin:2px 0 16px}
+.pcx-sw{display:flex;border:1px solid var(--line,#DDE3EC);border-radius:9px;overflow:hidden}
+.pcx-sw button{border:0;background:var(--surface,#fff);padding:9px 20px;font:800 13.5px system-ui;color:var(--ink3,#64748B);cursor:pointer}
+.pcx-sw button.on{background:var(--navy,#0E1B33);color:#fff}
+/* painel Frascos a rotular */
+.pcx-rotwrap{display:grid;grid-template-columns:260px 1fr;gap:14px;align-items:start}
+@media(max-width:860px){.pcx-rotwrap{grid-template-columns:1fr}}
+.pcx-rotmain{min-width:0}
+.pcx-lateral{background:var(--surface,#fff);border:1px solid var(--line,#DDE3EC);border-radius:14px;overflow:hidden}
+.pcx-lh{display:flex;align-items:baseline;justify-content:space-between;gap:8px;padding:12px 14px;background:var(--navy,#0E1B33);color:#fff}.pcx-lh b{font-size:14px}.pcx-lh span{font-size:11px;color:#9fb0cc}
+.pcx-lb{padding:6px 0}
+.pcx-lat-it{display:flex;justify-content:space-between;gap:8px;padding:9px 14px;border-bottom:1px solid var(--line,#DDE3EC);font-size:12.5px}
+.pcx-lat-it .n{color:var(--ink,#0F172A)}.pcx-lat-it .q{font-family:ui-monospace,monospace;font-weight:700}.pcx-lat-it .q.zero{color:var(--anl,#DC2626)}
+.pcx-lnote{font-size:11px;color:var(--ink3,#64748B);padding:8px 14px 12px;margin:0}
+.pcx-maqs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
 @media(max-width:720px){.pcx-maqs{grid-template-columns:1fr}}
-.pcx-col{background:var(--surface,#fff);border:1px solid var(--line,#DDE3EC);border-radius:14px;overflow:hidden;display:flex;flex-direction:column}
+.pcx-col{background:var(--surface,#fff);border:1px solid var(--line,#DDE3EC);border-radius:14px;overflow:hidden;display:flex;flex-direction:column;min-width:0}
 .pcx-colh{background:var(--navy,#0E1B33);color:#fff;padding:11px 15px}
 .pcx-colh .r1{display:flex;align-items:baseline;gap:10px}.pcx-colh b{font-size:17px}
 .pcx-colh i{display:block;color:#9fb0cc;font-size:11.5px;font-style:normal;margin-top:3px}
@@ -40003,8 +40031,8 @@ function csMp519(simular){
 .pcx-thistov .pcx-he{border-color:#243049}.pcx-thistov .pcx-he .t{color:#93a1bb}
 
 /* --- página unificada Sopro e Rotulagem --- */
-#spwrap,#rtwrap{display:block;width:100%}
-#spgrid,#rtgrid{display:block;width:100%}
+#spwrap,#rtwrap{display:block;width:100%;min-width:0}
+#spgrid,#rtgrid{display:block;width:100%;min-width:0;overflow:visible}
 .pcx-page{width:100%;padding:4px 2px 40px}
 .pcx-sr-head{margin-bottom:4px}
 .pcx-sr-top{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:12px}
@@ -40025,6 +40053,25 @@ function csMp519(simular){
 .pcx-cardmenu button{text-align:left;border:0;background:none;padding:10px 12px;font:600 13px system-ui;color:var(--ink,#0F172A);cursor:pointer;border-radius:7px}
 .pcx-cardmenu button:hover{background:var(--wash,#F1F5F9)}
 .pcx-cardmenu button.del{color:#B91C1C}
+
+/* --- modal Relatório da OP (padrão Envase) --- */
+.pcx-rel-sec{margin-bottom:16px}
+.pcx-rel-sec h4{font:800 11px system-ui;letter-spacing:.05em;text-transform:uppercase;color:var(--ink3,#64748B);margin:0 0 8px}
+.pcx-rel-fic{border:1px solid var(--line,#DDE3EC);background:var(--wash,#F1F5F9);border-radius:10px;padding:11px 13px;font-size:13px;line-height:1.5}
+.pcx-rel-tab{border:1px solid var(--line,#DDE3EC);border-radius:10px;overflow:hidden}
+.pcx-rel-tab .hh{display:grid;grid-template-columns:120px 1fr 1fr}.pcx-rel-tab .hh span{padding:7px 12px;font:800 9px system-ui;text-transform:uppercase;letter-spacing:.03em;color:var(--ink3,#64748B)}
+.pcx-rel-tab .hh span:nth-child(2){background:#EEF1F6}.pcx-rel-tab .hh span:nth-child(3){background:#FDEEE0;color:#9A3412}
+.pcx-rel-tab .rw{display:grid;grid-template-columns:120px 1fr 1fr;border-top:1px solid var(--line,#DDE3EC)}
+.pcx-rel-tab .rw span{padding:9px 12px;font-size:12.5px}.pcx-rel-tab .rw span:first-child{font:800 11px system-ui;text-transform:uppercase;color:var(--ink3,#64748B)}
+.pcx-rel-tab .rw .mono{font-family:ui-monospace,monospace}.pcx-rel-tab .rw span:nth-child(2){background:#F7F9FC}.pcx-rel-tab .rw span:nth-child(3){background:#FFF9F3}
+.pcx-rel-q{display:flex;gap:10px;flex-wrap:wrap}
+.pcx-rel-q>div{flex:1;min-width:120px;border:1px solid var(--line,#DDE3EC);border-radius:10px;padding:10px 12px}
+.pcx-rel-q span{display:block;font:700 9px system-ui;text-transform:uppercase;color:var(--ink3,#64748B)}.pcx-rel-q b{font:800 16px ui-monospace,monospace}
+.pcx-rel-hist{border:1px solid var(--line,#DDE3EC);border-radius:10px;overflow:auto;max-height:260px}
+.pcx-rel-hist table{width:100%;border-collapse:collapse;font-size:12.5px}
+.pcx-rel-hist th{text-align:left;font:800 9px system-ui;text-transform:uppercase;letter-spacing:.03em;color:var(--ink3,#64748B);padding:8px 12px;background:var(--wash,#F1F5F9);position:sticky;top:0}
+.pcx-rel-hist td{padding:8px 12px;border-top:1px solid var(--line,#DDE3EC);vertical-align:top}
+.pcx-rel-hist td.mono{font-family:ui-monospace,monospace;color:var(--ink3,#64748B);white-space:nowrap}
 
 </style>
 <script>
@@ -40144,70 +40191,56 @@ function etapas(a,b,c){
     '<div class="pcx-et"><span class="d now"></span><small><b>'+b[0]+'</b>'+b[1]+'</small></div><div class="pcx-eln"></div>'+
     '<div class="pcx-et"><span class="d"></span><small><b>'+c[0]+'</b>'+c[1]+'</small></div></div>';
 }
-function cardSoproN(o){
-  var sop=sopradoras(), cad=maqCad(o.maq,sop)||1;
-  var ini=o.iniReal?hm(o.iniReal):(o.iniPrev||0);
-  var foot, rows=[], bt='';
-  if(o.status==='concluida'){
-    var pct=o.qtdPrev?Math.round(o.boas/o.qtdPrev*1000)/10:0;
-    var qpct=o.qtdPrev?Math.round((o.quebra||0)/o.qtdPrev*1000)/10:0;
-    rows=[['Sopro', hhmm(o.iniPrev)+' → '+hhmm(o.fimPrev), (o.iniReal||'--:--')+' → '+(o.fimReal||'--:--')]];
-    return '<div class="pcx-card conc" data-op="'+o.id+'">'+
-      (o.criadoData&&o.criadoData!==o.data?'<div class="pcx-comecou">OP começou em '+esc(o.criadoData)+'</div>':'')+
-      '<div class="pcx-top"><div class="pcx-ph">🧴</div><div class="pcx-nome">'+esc(o.titulo)+'</div><div class="pcx-seals">'+selos(o)+'<span class="pcx-sl cz mono">'+esc(o.num)+'</span></div></div>'+
-      boxes([['Qtd prevista', nfx(o.qtdPrev)+' un', 1],['Qtd realizada', nfx(o.boas)+' <span class="pct">'+String(pct).replace('.',',')+'%</span>', 1],['Qtd quebra', (o.quebra||0)+' <span class="pct">'+String(qpct).replace('.',',')+'%</span>', 1]])+
-      temposBloco(rows,['OP '+esc(o.num),''],'')+'</div>';
-  }
-  if(o.status==='produzindo'){
-    rows=[['Sopro', hhmm(o.iniPrev)+' → '+hhmm(o.fimPrev), (o.iniReal||agora())+' → agora']];
-    foot=['Previsto '+hhmm(o.fimPrev-o.iniPrev).replace(/^0/,''),'Em produção'];
-    bt='<div class="pcx-btns"><button class="pcx-b go" data-ac="concluir" data-op="'+o.id+'">▶ Concluir sopro</button><button class="pcx-b pausar" data-ac="pausar" data-op="'+o.id+'">PAUSAR</button></div>';
-  } else if(o.status==='pausada'){
-    rows=[['Sopro', hhmm(o.iniPrev)+' → '+hhmm(o.fimPrev), (o.iniReal||'--:--')+' → pausada']];
-    foot=['Pausada'+(o.pausaMotivo?' · '+esc(o.pausaMotivo):''),''];
-    bt='<div class="pcx-btns"><button class="pcx-b ret" data-ac="retomar" data-op="'+o.id+'">▶ Retomar</button></div>';
-  } else {
-    return '<div class="pcx-card" data-op="'+o.id+'">'+
-      '<div class="pcx-top"><div class="pcx-ph">🧴</div><div class="pcx-nome">'+esc(o.titulo)+'</div><div class="pcx-seals">'+selos(o)+'</div></div>'+
-      boxes([['OP Nº', esc(o.num), 1],['Preforma', esc(nomeCurtoSku(o.preformaSku)), 0],['Qtd prevista', nfx(o.qtdPrev)+' un', 1]])+
-      '<div class="pcx-prev"><span class="k">Previsto</span><span class="v">'+hhmm(o.iniPrev)+' → '+hhmm(o.fimPrev)+'</span></div>'+
-      '<div class="pcx-btns"><button class="pcx-b go" data-ac="iniciar" data-op="'+o.id+'">▶ Iniciar sopro</button></div></div>';
-  }
-  return '<div class="pcx-card cur" data-op="'+o.id+'">'+
-    '<div class="pcx-top"><div class="pcx-ph">🧴</div><div class="pcx-nome">'+esc(o.titulo)+'</div><div class="pcx-seals">'+selos(o)+'</div></div>'+
-    boxes([['OP Nº', esc(o.num), 1],['Preforma', esc(nomeCurtoSku(o.preformaSku)), 0],['Qtd prevista', nfx(o.qtdPrev)+' un', 1]])+
-    bt + temposBloco(rows,foot[0]!==undefined?foot:['',''],'') +
-    etapas(['Preforma','consumida'],['Sopro', o.status==='pausada'?'pausado':'agora'],['Estoque','soprado'])+'</div>';
-}
 function nomeCurtoSku(sku){ var n=nomeSku(sku); return n.replace(/^PREFORMAS?\s*-\s*/i,'').replace(/^ROTULO\s*-\s*/i,'').replace(/^FRASCOS?\s*-\s*/i,''); }
+function topo(o, extra){ return '<div class="pcx-top"><div class="pcx-ph">🧴</div><div class="pcx-nome">'+esc(o.titulo)+'</div><div class="pcx-seals">'+selos(o)+(extra||'')+'</div></div>'; }
+function botoesSopro(o){
+  if(o.status==='produzindo') return '<div class="pcx-btns"><button class="pcx-b go" data-ac="concluir" data-op="'+o.id+'">▶ Concluir sopro</button><button class="pcx-b pausar" data-ac="pausar" data-op="'+o.id+'">PAUSAR</button></div>';
+  if(o.status==='pausada') return '<div class="pcx-btns"><button class="pcx-b ret" data-ac="retomar" data-op="'+o.id+'">▶ Retomar</button></div>';
+  return '<div class="pcx-btns"><button class="pcx-b go" data-ac="iniciar" data-op="'+o.id+'">▶ Iniciar sopro</button></div>';
+}
+function botoesRot(o){
+  if(o.status==='produzindo') return '<div class="pcx-btns"><button class="pcx-b go" data-ac="concluir" data-op="'+o.id+'">▶ Concluir rotulagem</button><button class="pcx-b pausar" data-ac="pausar" data-op="'+o.id+'">PAUSAR</button></div>';
+  if(o.status==='pausada') return '<div class="pcx-btns"><button class="pcx-b ret" data-ac="retomar" data-op="'+o.id+'">▶ Retomar</button></div>';
+  return '<div class="pcx-btns"><button class="pcx-b go" data-ac="iniciar" data-op="'+o.id+'">▶ Iniciar rotulagem</button></div>';
+}
+function linhaReal(o){ return o.status==='produzindo'?(o.iniReal||agora())+' → agora':o.status==='pausada'?(o.iniReal||'--:--')+' → pausada':'—'; }
 
-function cardRotuloN(o){
-  var rot=rotuladoras();
+function cardSoproN(o, vez){
   if(o.status==='concluida'){
-    var pct=o.qtdPrev?Math.round(o.boas/o.qtdPrev*1000)/10:0;
-    var qr=o.qtdPrev?Math.round((o.quebraRotulo||0)/o.qtdPrev*1000)/10:0;
-    var qf=o.qtdPrev?Math.round((o.quebraFrasco||0)/o.qtdPrev*1000)/10:0;
+    var pct=o.qtdPrev?Math.round(o.boas/o.qtdPrev*1000)/10:0, qpct=o.qtdPrev?Math.round((o.quebra||0)/o.qtdPrev*1000)/10:0;
     return '<div class="pcx-card conc" data-op="'+o.id+'">'+
       (o.criadoData&&o.criadoData!==o.data?'<div class="pcx-comecou">OP '+esc(o.num)+' · começou em '+esc(o.criadoData)+'</div>':'')+
-      '<div class="pcx-top"><div class="pcx-ph">🧴</div><div class="pcx-nome">'+esc(o.titulo)+'</div><div class="pcx-seals">'+selos(o)+'</div></div>'+
+      topo(o,'<span class="pcx-sl cz mono">'+esc(o.num)+'</span>')+
+      boxes([['Qtd prevista', nfx(o.qtdPrev)+' un', 1],['Qtd realizada', nfx(o.boas)+' <span class="pct">'+String(pct).replace('.',',')+'%</span>', 1],['Qtd quebra', (o.quebra||0)+' <span class="pct">'+String(qpct).replace('.',',')+'%</span>', 1]])+
+      temposBloco([['Sopro', hhmm(o.iniPrev)+' → '+hhmm(o.fimPrev), (o.iniReal||'--:--')+' → '+(o.fimReal||'--:--')]],['OP '+esc(o.num),''],'')+'</div>';
+  }
+  var bx = boxes([['OP Nº', esc(o.num), 1],['Preforma', esc(nomeCurtoSku(o.preformaSku)), 0],['Qtd prevista', nfx(o.qtdPrev)+' un', 1]]);
+  if(!vez){
+    return '<div class="pcx-card" data-op="'+o.id+'">'+topo(o)+bx+
+      '<div class="pcx-prev"><span class="k">Previsto</span><span class="v">'+hhmm(o.iniPrev)+' → '+hhmm(o.fimPrev)+'</span></div></div>';
+  }
+  return '<div class="pcx-card cur" data-op="'+o.id+'">'+topo(o)+bx+botoesSopro(o)+
+    temposBloco([['Sopro', hhmm(o.iniPrev)+' → '+hhmm(o.fimPrev), linhaReal(o)]], o.status==='programada'?['Ainda não começou',''] : ['Previsto '+hhmm(o.fimPrev-o.iniPrev), o.status==='pausada'?'Pausada':'Em produção'],'')+
+    etapas(['Preforma', o.status==='programada'?'a consumir':'consumida'],['Sopro', o.status==='pausada'?'pausado':o.status==='programada'?'aguardando':'agora'],['Estoque','soprado'])+'</div>';
+}
+
+function cardRotuloN(o, vez){
+  if(o.status==='concluida'){
+    var pct=o.qtdPrev?Math.round(o.boas/o.qtdPrev*1000)/10:0, qr=o.qtdPrev?Math.round((o.quebraRotulo||0)/o.qtdPrev*1000)/10:0, qf=o.qtdPrev?Math.round((o.quebraFrasco||0)/o.qtdPrev*1000)/10:0;
+    return '<div class="pcx-card conc" data-op="'+o.id+'">'+
+      (o.criadoData&&o.criadoData!==o.data?'<div class="pcx-comecou">OP '+esc(o.num)+' · começou em '+esc(o.criadoData)+'</div>':'')+
+      topo(o)+
       boxes([['Qtd prevista', nfx(o.qtdPrev)+' un', 1],['Qtd realizada', nfx(o.boas)+' <span class="pct">'+String(pct).replace('.',',')+'%</span>', 1],['Quebra rótulo', (o.quebraRotulo||0)+' <span class="pct">'+String(qr).replace('.',',')+'%</span>', 1],['Quebra frasco', (o.quebraFrasco||0)+' <span class="pct">'+String(qf).replace('.',',')+'%</span>', 1]])+
       temposBloco([['Rotulagem', hhmm(o.iniPrev)+' → '+hhmm(o.fimPrev), (o.iniReal||'--:--')+' → '+(o.fimReal||'--:--')]],['Rótulo '+esc(nomeCurtoSku(o.rotuloSku)),''],'')+'</div>';
   }
-  var body = boxes([['OP Nº', esc(o.num), 1],['Frasco soprado', esc(nomeCurtoSku(o.frascoSku))+' '+(saldoPCP(o.frascoSku)>0?'✓':''), 0],['Rótulo', esc(nomeCurtoSku(o.rotuloSku)), 0],['Qtd prevista', nfx(o.qtdPrev)+' un', 1]]);
-  if(o.status==='programada'){
-    return '<div class="pcx-card" data-op="'+o.id+'">'+
-      '<div class="pcx-top"><div class="pcx-ph">🧴</div><div class="pcx-nome">'+esc(o.titulo)+'</div><div class="pcx-seals">'+selos(o)+'</div></div>'+
-      body+'<div class="pcx-prev"><span class="k">Previsto</span><span class="v">'+hhmm(o.iniPrev)+' → '+hhmm(o.fimPrev)+'</span></div>'+
-      '<div class="pcx-btns"><button class="pcx-b go" data-ac="iniciar" data-op="'+o.id+'">▶ Iniciar rotulagem</button></div></div>';
+  var bx = boxes([['OP Nº', esc(o.num), 1],['Frasco soprado', esc(nomeCurtoSku(o.frascoSku))+(saldoPCP(o.frascoSku)>0?' ✓':''), 0],['Rótulo', esc(nomeCurtoSku(o.rotuloSku)), 0],['Qtd prevista', nfx(o.qtdPrev)+' un', 1]]);
+  if(!vez){
+    return '<div class="pcx-card" data-op="'+o.id+'">'+topo(o)+bx+
+      '<div class="pcx-prev"><span class="k">Previsto</span><span class="v">'+hhmm(o.iniPrev)+' → '+hhmm(o.fimPrev)+'</span></div></div>';
   }
-  var bt = o.status==='pausada'
-    ? '<div class="pcx-btns"><button class="pcx-b ret" data-ac="retomar" data-op="'+o.id+'">▶ Retomar</button></div>'
-    : '<div class="pcx-btns"><button class="pcx-b go" data-ac="concluir" data-op="'+o.id+'">▶ Concluir rotulagem</button><button class="pcx-b pausar" data-ac="pausar" data-op="'+o.id+'">PAUSAR</button></div>';
-  var rows=[['Rotulagem', hhmm(o.iniPrev)+' → '+hhmm(o.fimPrev), (o.iniReal||agora())+(o.status==='pausada'?' → pausada':' → agora')]];
-  return '<div class="pcx-card cur" data-op="'+o.id+'">'+
-    '<div class="pcx-top"><div class="pcx-ph">🧴</div><div class="pcx-nome">'+esc(o.titulo)+'</div><div class="pcx-seals">'+selos(o)+'</div></div>'+
-    body + bt + temposBloco(rows,['Previsto',''],'') +
-    etapas(['Soprado','consumido'],['Rotulagem', o.status==='pausada'?'pausada':'agora'],['Estoque','rotulado'])+'</div>';
+  return '<div class="pcx-card cur" data-op="'+o.id+'">'+topo(o)+bx+botoesRot(o)+
+    temposBloco([['Rotulagem', hhmm(o.iniPrev)+' → '+hhmm(o.fimPrev), linhaReal(o)]], o.status==='programada'?['Ainda não começou',''] : ['Previsto '+hhmm(o.fimPrev-o.iniPrev), o.status==='pausada'?'Pausada':'Em produção'],'')+
+    etapas(['Soprado', o.status==='programada'?'a consumir':'consumido'],['Rotulagem', o.status==='pausada'?'pausada':o.status==='programada'?'aguardando':'agora'],['Estoque','rotulado'])+'</div>';
 }
 
 /* ======================================================================
@@ -40216,49 +40249,68 @@ function cardRotuloN(o){
 function headerSR(tab){
   var lbl = tab==='sopro'?'Nova OP de sopro':'Nova OP de rotulagem';
   var juntar = tab==='rotulagem'?'<button class="pcx-ghost" data-ac="juntar">⊕ Juntar lotes iguais</button>':'';
-  var dataTxt = esc((function(){try{return dLongo(dataRef());}catch(e){return dataRef();}})());
   return '<div class="pcx-sr-head">'+
-    '<div class="pcx-sr-top">'+
-      '<h2 class="pcx-sr-tit">Sopro e Rotulagem</h2>'+
-      '<div class="pcx-head-r">'+
-        '<div class="pcx-datesel"><button class="pcx-nav" data-ac="dia-prev">‹</button><b>'+dataTxt+'</b><button class="pcx-nav" data-ac="dia-next">›</button></div>'+
-        juntar+
-        '<button class="pcx-ghost" data-ac="tablet" data-origem="'+tab+'">📱 Abrir no tablet</button>'+
-        '<button class="pcx-nova" data-ac="nova" data-origem="'+tab+'">＋ '+lbl+'</button>'+
-      '</div>'+
+    '<div class="pcx-sw">'+
+      '<button class="'+(tab==='sopro'?'on':'')+'" data-tab="sopro">Sopro</button>'+
+      '<button class="'+(tab==='rotulagem'?'on':'')+'" data-tab="rotulagem">Rotulagem</button>'+
     '</div>'+
-    '<div class="pcx-tabs">'+
-      '<button class="pcx-tabbtn '+(tab==='sopro'?'on':'')+'" data-tab="sopro">Sopro</button>'+
-      '<button class="pcx-tabbtn '+(tab==='rotulagem'?'on':'')+'" data-tab="rotulagem">Rotulagem</button>'+
+    '<div class="pcx-head-r">'+juntar+
+      '<button class="pcx-nova" data-ac="nova" data-origem="'+tab+'">＋ '+lbl+'</button>'+
     '</div></div>';
 }
 function coluna(titulo, cad, ops){
-  var cur = ops.filter(function(o){return o.status==='produzindo'||o.status==='pausada';});
-  var prog = ops.filter(function(o){return o.status==='programada';});
+  var abertos = ops.filter(function(o){return o.status!=='concluida';})
+    .sort(function(a,b){return (a.iniPrev||0)-(b.iniPrev||0);});
+  var vez = abertos.filter(function(o){return o.status==='produzindo'||o.status==='pausada';})[0] || abertos[0];
+  var fila = abertos.filter(function(o){return o!==vez;});
   var conc = ops.filter(function(o){return o.status==='concluida';});
-  var ocup = ops.filter(function(o){return o.status!=='concluida';}).reduce(function(s,o){return s+(o.qtdPrev||0);},0);
   var cardf = titulo.o==='sopro'?cardSoproN:cardRotuloN;
   var h = '<div class="pcx-col"><div class="pcx-colh"><div class="r1"><b>'+esc(titulo.nome)+'</b></div>'+
-    '<i>'+ops.filter(function(o){return o.status!=='concluida';}).length+' OP(s) · '+(cad?nfx(cad)+' un/h':'')+'</i></div><div class="pcx-colb">';
-  if(cur.length) h += cur.map(cardf).join('');
-  else h += '<div class="pcx-vazio">Sem OP em produção.</div>';
-  if(prog.length){ h += '<div class="pcx-fila">▸ Próximas na fila ('+prog.length+')</div>' + prog.map(cardf).join(''); }
-  if(conc.length){ h += '<div class="pcx-conc">▾ Concluídas ('+conc.length+')</div>' + conc.map(cardf).join(''); }
+    '<i>'+abertos.length+' OP(s) · '+(cad?nfx(cad)+' un/h':'')+'</i></div><div class="pcx-colb">';
+  h += vez ? cardf(vez,true) : '<div class="pcx-vazio">Nenhuma OP na máquina agora.</div>';
+  if(fila.length){ h += '<div class="pcx-fila">▸ Próximas na fila ('+fila.length+')</div>' + fila.map(function(o){return cardf(o,false);}).join(''); }
+  if(conc.length){ h += '<div class="pcx-conc">▾ Concluídas ('+conc.length+')</div>' + conc.map(function(o){return cardf(o,false);}).join(''); }
   h += '</div></div>';
   return h;
 }
 
+function sparkPts(pct){ return '0,18 30,'+(18-Math.round(pct/100*4))+' 60,'+(18-Math.round(pct/100*7))+' 90,'+(18-Math.round(pct/100*10)); }
 function metaPanelSopro(){
   var fr = (typeof FRASCOS!=='undefined'?FRASCOS:[]);
-  var cards = fr.map(function(f){
+  if(!fr.length) return '';
+  var ini7=(function(){var d=new Date();d.setDate(d.getDate()-6);return hojeYMD()&&ymd(d);})();
+  var prodSku={};
+  PCP.ops.forEach(function(o){ if(o.origem==='sopro'&&o.status==='concluida'&&(!ini7||o.data>=ini7)){ prodSku[o.frascoSku]=(prodSku[o.frascoSku]||0)+(o.boas||0); } });
+  function prodDe(f){ var total=0, id=(f.id||'').toLowerCase(); Object.keys(prodSku).forEach(function(sku){ var nm=(nomeSku(sku)||'').toLowerCase(); if(id&&nm.indexOf(id)>=0) total+=prodSku[sku]; }); return total; }
+  var mb='', panel='', somaMeta=0, somaProd=0;
+  fr.forEach(function(f){
     var meta=0; try{ meta=metaSemanal(f); }catch(e){ meta=Math.round((+f.consumo||0)/(52/12)*(1+(+f.seg||0)/100)); }
-    var pct = meta?Math.min(100,Math.round(0/meta*100)):0;
-    return '<div class="pcx-metac"><div class="h"><b>'+esc(f.id)+'</b><span>meta '+nfx(meta)+'/sem</span></div>'+
-      '<div class="barw"><i style="width:'+pct+'%"></i></div><div class="ft"><span>'+pct+'% produzido</span><span>meta semanal por consumo</span></div></div>';
-  }).join('');
-  return '<details class="pcx-meta" open><summary><span class="mt">Meta de sopro da semana</span></summary><div class="pcx-mpanel">'+cards+'</div></details>';
+    var prod=prodDe(f), pct=meta?Math.min(100,Math.round(prod/meta*100)):0;
+    somaMeta+=meta; somaProd+=prod;
+    var cls=pct<40?'cr':pct<75?'lo':'ok', cor=cls==='cr'?'#DC2626':cls==='lo'?'#F59E0B':'#16A34A';
+    mb+='<div class="mb '+cls+'"><span>'+esc(f.id)+' · '+pct+'%</span><div class="bar"><i style="width:'+pct+'%"></i></div></div>';
+    panel+='<div class="pcx-metac '+cls+'"><div class="h"><b>'+esc(f.id)+'</b><span class="meta-n">meta '+nfx(meta)+'/sem</span></div>'+
+      '<div class="big">'+nfx(prod)+' <small>/ '+nfx(meta)+'</small></div>'+
+      '<div class="barw"><i style="width:'+pct+'%"></i></div>'+
+      '<div class="ft"><span class="at">'+pct+'% produzido</span><span class="fa">faltam '+nfx(Math.max(0,meta-prod))+'</span></div>'+
+      '<div class="cob '+cls+'"><svg class="spark" viewBox="0 0 90 22" preserveAspectRatio="none"><polyline points="'+sparkPts(pct)+'" fill="none" stroke="'+cor+'" stroke-width="2"/></svg><b>meta semanal por consumo</b></div></div>';
+  });
+  var totPct=somaMeta?Math.min(100,Math.round(somaProd/somaMeta*100)):0;
+  return '<details class="pcx-meta"><summary><span class="mt">Meta de sopro da semana</span><span class="mpct">'+totPct+'%</span>'+
+    '<div class="minibars">'+mb+'</div></summary><div class="pcx-mpanel">'+panel+'</div></details>';
 }
 
+function frascosARotular(){
+  var fr = frascosSopro();
+  var disp = fr.filter(function(i){ return saldoPCP(i.sku)>0; });
+  var base = disp.length?disp:fr;
+  var linhas = base.map(function(i){ var s=saldoPCP(i.sku);
+    return '<div class="pcx-lat-it"><div class="n">'+esc(nomeCurtoSku(i.sku))+'</div><div class="q '+(s<=0?'zero':'')+'">'+nfx(s)+' un</div></div>';
+  }).join('');
+  return '<div class="pcx-lh"><b>Frascos a rotular</b><span>'+disp.length+' em estoque</span></div>'+
+    '<div class="pcx-lb">'+(linhas||'<div class="pcx-vazio">Sem frasco soprado em estoque.</div>')+'</div>'+
+    '<p class="pcx-lnote">Saldo interno do PCP · a rotulagem consome daqui.</p>';
+}
 function renderSR(host, tab){
   if(!host) return;
   var data=dataRef();
@@ -40267,7 +40319,10 @@ function renderSR(host, tab){
   var cols = '<div class="pcx-maqs">'+ maqs.map(function(m){
     return coluna({nome:m.nome||m.id,o:tab}, +m.cad||0, ops.filter(function(o){return o.maq===m.id;}));
   }).join('') +'</div>';
-  host.innerHTML = '<div class="pcx-page">'+ headerSR(tab) + (tab==='sopro'?metaPanelSopro():'') + cols + '</div>';
+  var corpo = tab==='rotulagem'
+    ? '<div class="pcx-rotwrap"><aside class="pcx-lateral">'+frascosARotular()+'</aside><div class="pcx-rotmain">'+cols+'</div></div>'
+    : metaPanelSopro() + cols;
+  host.innerHTML = '<div class="pcx-page">'+ headerSR(tab) + corpo + '</div>';
   // injeta o ⋮ em cada bloco (um só lugar)
   host.querySelectorAll('.pcx-card[data-op]').forEach(function(c){
     if(c.querySelector('.pcx-kb')) return;
@@ -40513,12 +40568,26 @@ function abrirOP(o){
   MM('mTit').textContent=o.num+' · '+o.titulo;
   MM('mSub').hidden=false; MM('mSub').textContent=(isRot?'Rotulagem':'Sopro')+' · '+maqNome(o.maq,isRot?rotuladoras():sopradoras())+' · '+nfx(o.qtdPrev)+' un';
   MM('modal').classList.remove('wide');
-  var hist=(o.log||[]).slice().reverse().map(function(l){ return '<div class="pcx-he"><span class="t">'+esc(l.t||'')+'</span><span>'+esc(l.e)+(l.m?' · '+esc(l.m):'')+(l.por?' ('+esc(l.por)+')':'')+'</span></div>'; }).join('')||'<div class="pcx-vazio">Sem histórico ainda.</div>';
-  MM('mB').innerHTML =
-    '<div class="pcx-calc"><div class="k">Consumo da ficha</div><div class="s">'+
-      (isRot? ('Frasco: '+esc(nomeSku(o.frascoSku))+' · Rótulo: '+esc(nomeSku(o.rotuloSku))) : ('Preforma: '+esc(nomeSku(o.preformaSku))))+'</div></div>'+
-    '<h4 style="margin:12px 0 6px">Histórico</h4><div class="pcx-hist">'+hist+'</div>';
-  MM('mF').innerHTML='<div class="mfdir" style="margin-left:auto;display:flex;gap:8px"><button class="btn sm" id="oPDF">OP em PDF</button><button class="btn" id="oFechar">Fechar</button></div>';
+  MM('mTit').textContent='Relatório da OP '+o.num;
+  var etapaNome=isRot?'Rotulagem':'Sopro';
+  var prevTxt=hhmm(o.iniPrev)+' → '+hhmm(o.fimPrev)+' · '+hhmm(Math.max(0,(o.fimPrev||0)-(o.iniPrev||0)));
+  var realTxt=o.iniReal?(esc(o.iniReal)+' → '+esc(o.fimReal||(o.status==='produzindo'?'agora':o.status==='pausada'?'pausada':'—'))):'—';
+  var consumo='<div class="pcx-rel-sec"><h4>Consumo da ficha</h4><div class="pcx-rel-fic">'+
+    (isRot? 'Frasco soprado: <b>'+esc(nomeSku(o.frascoSku))+'</b> · Rótulo: <b>'+esc(nomeSku(o.rotuloSku))+'</b>' : 'Preforma: <b>'+esc(nomeSku(o.preformaSku))+'</b> → gera <b>'+esc(nomeSku(o.frascoSku))+'</b>')+'</div></div>';
+  var pxr='<div class="pcx-rel-sec"><h4>Previsto × Realizado</h4><div class="pcx-rel-tab">'+
+    '<div class="hh"><span></span><span>Previsto</span><span>Realizado</span></div>'+
+    '<div class="rw"><span>'+etapaNome+'</span><span class="mono">'+prevTxt+'</span><span class="mono">'+realTxt+'</span></div></div></div>';
+  var quebra='';
+  if(o.status==='concluida'){
+    quebra='<div class="pcx-rel-sec"><h4>Produção</h4><div class="pcx-rel-q">'+
+      '<div><span>Realizada</span><b>'+nfx(o.boas)+' un</b></div>'+
+      (isRot? '<div><span>Quebra rótulo</span><b>'+(o.quebraRotulo||0)+' un</b></div><div><span>Quebra frasco</span><b>'+(o.quebraFrasco||0)+' un</b></div>'
+            : '<div><span>Quebra</span><b>'+(o.quebra||0)+' un</b></div>')+'</div></div>';
+  }
+  var linhas=(o.log||[]).slice().reverse().map(function(l){ return '<tr><td class="mono">'+esc(l.d||'')+'</td><td class="mono">'+esc(l.t||'')+'</td><td>'+esc(l.por||'—')+'</td><td><b>'+esc(l.e)+'</b></td><td>'+esc(l.m||'')+'</td></tr>'; }).join('')||'<tr><td colspan="5" style="color:var(--ink3,#64748B);padding:10px 12px">Sem histórico ainda.</td></tr>';
+  var hist='<div class="pcx-rel-sec"><h4>Histórico</h4><div class="pcx-rel-hist"><table><thead><tr><th>Data</th><th>Hora</th><th>Quem</th><th>Registro</th><th>Detalhe</th></tr></thead><tbody>'+linhas+'</tbody></table></div></div>';
+  MM('mB').innerHTML = consumo + pxr + quebra + hist;
+  MM('mF').innerHTML='<div class="mfdir" style="margin-left:auto;display:flex;gap:8px"><button class="btn sm" id="oPDF">PDF da OP</button><button class="btn" id="oFechar">Fechar</button></div>';
   MM('oFechar').onclick=fecharModal;
   MM('oPDF').onclick=function(){ try{ pdfOP(o); }catch(e){ avisa('Não consegui gerar o PDF.',true); } };
   abrirMask();
@@ -40731,6 +40800,24 @@ function checarHashTablet(){
 }
 try{ window.addEventListener('hashchange', checarHashTablet); }catch(e){}
 try{ if(document.readyState!=='loading') setTimeout(checarHashTablet,300); else window.addEventListener('load',function(){ setTimeout(checarHashTablet,300); }); }catch(e){}
+
+/* Configurações › PCP: acrescenta os links dos tablets de Sopro e Rotulagem
+   (mesmo formato do link da TV) — para os gestores abrirem/copiarem. */
+function injetarTabletsSR(){
+  var mb=MM('mB'); if(!mb) return;
+  var base=(location.origin+location.pathname).replace(/[^/]*$/,'');
+  var tvb=mb.querySelector('[data-tvabrir]'); var anchor=tvb?tvb.closest('.cs-linkrow'):null;
+  if(!anchor||mb.querySelector('[data-srabrir]')) return;
+  [['Tablet Sopro','sopro.html'],['Tablet Rotulagem','rotulagem.html']].forEach(function(t){
+    var url=base+t[1];
+    var row=document.createElement('div'); row.className='cs-linkrow';
+    row.innerHTML='<span class="n">'+esc(t[0])+'</span><span class="u">'+esc(url)+'</span><button class="btn sm" data-srcopy="'+esc(url)+'">Copiar</button> <button class="btn sm" data-srabrir="'+esc(url)+'">Abrir</button>';
+    anchor.parentNode.insertBefore(row, anchor.nextSibling);
+    row.querySelector('[data-srcopy]').onclick=function(){ try{ navigator.clipboard.writeText(url); avisa('Link copiado.'); }catch(e){ avisa('Copie: '+url); } };
+    row.querySelector('[data-srabrir]').onclick=function(){ try{ var w=window.open(url,'_blank','noopener'); if(!w)avisa('Libere abrir nova aba, ou copie o link.',true); }catch(e){} };
+  });
+}
+try{ if(typeof abrirCfgPCP==='function'){ var _cfgpcp=abrirCfgPCP; abrirCfgPCP=function(){ var r=_cfgpcp.apply(this,arguments); try{ injetarTabletsSR(); }catch(e){} return r; }; } }catch(e){}
 
 /* hook de inspeção/teste (não altera comportamento) */
 try{ window.__PCP={ PCP:PCP, mergeLotes:mergeLotes, abrirTablet:abrirTablet, novaOP:novaOP, injetarOrdensSR:injetarOrdensSR, saldoPCP:saldoPCP, checarHashTablet:checarHashTablet }; }catch(e){}
