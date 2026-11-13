@@ -4671,7 +4671,7 @@ const JORNADA={
 /* ===== usuários e permissões por tela ===== */
 /* módulos guardados até o envase e os tanques estarem redondos.
    Para reativar, basta esvaziar esta lista. */
-const MODULOS_OFF=['sopro','rotulagem'];
+const MODULOS_OFF=[];
 const moduloLigado=t=>!MODULOS_OFF.includes(t);
 
 const TELAS=[['inicio','Início'],['envase','Envase'],['tanques','Tanques'],['sopro','Sopro'],['rotulagem','Rotulagem'],
@@ -5509,7 +5509,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v545';const VERSAO_DATA='12/11/2026';
+const VERSAO_APP='v550';const VERSAO_DATA='13/11/2026';
 /* número que aparece na tela: v438 → v4.3.8 (por dentro continua v438, que é o que as versões comparam) */
 const csRotVer=v=>{const d=String(v||'').replace(/\D/g,'');return d.length>=3?'v'+d.slice(0,-2)+'.'+d.slice(-2,-1)+'.'+d.slice(-1):String(v||'');};
 const VERSAO_ROTULO=csRotVer(VERSAO_APP)+' · '+VERSAO_DATA;
@@ -39871,6 +39871,793 @@ function csMp519(simular){
   try{if(typeof csOnde==='function'){const _o=csOnde;csOnde=function(){
     try{if(S.page==='financeiro'&&MOD_ATUAL==='limpeza'&&FIN_PAG==='relatorio'){const m=CS_MOD.find(x=>x.id==='pcp');const p=m&&(m.pgs||[]).find(x=>x.page==='relatorio');if(m&&p)return {m,p};}}catch(e){}
     return _o.apply(this,arguments);};}}catch(e){}
+})();
+
+</script>
+
+
+
+
+<!--PCP_SOPRO_ROTULAGEM-->
+<style id="pcpSrCss">
+/* PCP Sopro/Rotulagem — estilos isolados (prefixo pcx-) */
+.pcx-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:0 0 12px}
+.pcx-bar-l{display:flex;align-items:center;gap:10px;font-size:15px}
+.pcx-nav{border:1px solid var(--line,#DDE3EC);background:var(--surface,#fff);color:var(--ink,#0F172A);border-radius:8px;width:30px;height:30px;cursor:pointer;font-size:16px}
+.pcx-nova{border:0;background:#16A34A;color:#fff;border-radius:10px;padding:10px 16px;font:800 14px system-ui;cursor:pointer}
+.pcx-meta{background:var(--surface,#fff);border:1px solid var(--line,#DDE3EC);border-radius:14px;overflow:hidden;margin-bottom:16px}
+.pcx-meta>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--wash,#F1F5F9)}
+.pcx-meta>summary::-webkit-details-marker{display:none}
+.pcx-meta .mt{font:800 14px system-ui}
+.pcx-mpanel{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;padding:14px 16px}
+@media(max-width:760px){.pcx-mpanel{grid-template-columns:1fr 1fr}}
+.pcx-metac{border:1px solid var(--line,#DDE3EC);border-radius:12px;padding:12px}
+.pcx-metac .h{display:flex;justify-content:space-between;align-items:baseline}.pcx-metac .h b{font-size:14px}.pcx-metac .h span{font-size:11px;color:var(--ink3,#64748B)}
+.pcx-metac .barw{height:7px;background:var(--wash,#F1F5F9);border-radius:999px;margin:9px 0 6px;overflow:hidden}.pcx-metac .barw i{display:block;height:100%;background:#16A34A;border-radius:999px}
+.pcx-metac .ft{display:flex;justify-content:space-between;font-size:11px;color:var(--ink3,#64748B)}
+.pcx-maqs{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:720px){.pcx-maqs{grid-template-columns:1fr}}
+.pcx-col{background:var(--surface,#fff);border:1px solid var(--line,#DDE3EC);border-radius:14px;overflow:hidden;display:flex;flex-direction:column}
+.pcx-colh{background:var(--navy,#0E1B33);color:#fff;padding:11px 15px}
+.pcx-colh .r1{display:flex;align-items:baseline;gap:10px}.pcx-colh b{font-size:17px}
+.pcx-colh i{display:block;color:#9fb0cc;font-size:11.5px;font-style:normal;margin-top:3px}
+.pcx-colb{padding:13px;display:flex;flex-direction:column}
+.pcx-vazio{color:var(--ink3,#64748B);font-size:12.5px;padding:14px;text-align:center}
+.pcx-card{border:1px solid var(--line,#DDE3EC);border-radius:12px;background:var(--surface,#fff);padding:12px;margin-bottom:11px}
+.pcx-card.cur{border-color:#1D4ED8;box-shadow:0 0 0 1px #1D4ED8}
+.pcx-card.conc{opacity:.92}
+.pcx-top{display:flex;align-items:flex-start;gap:11px}
+.pcx-ph{width:46px;height:56px;border-radius:8px;background:var(--wash,#F1F5F9);border:1px solid var(--line,#DDE3EC);display:grid;place-items:center;font-size:24px;flex:none}
+.pcx-nome{font:800 15.5px system-ui;flex:1 1 55%;min-width:120px;line-height:1.2;margin-top:2px}
+.pcx-seals{display:flex;align-items:center;gap:7px;flex-wrap:wrap;justify-content:flex-end;max-width:160px}
+.pcx-sl{font:800 9px system-ui;letter-spacing:.03em;text-transform:uppercase;padding:3px 9px;border-radius:999px;border:1px solid;white-space:nowrap;background:transparent}
+.pcx-sl.ok{color:#15803D;border-color:#86EFAC}.pcx-sl.cz{color:#64748B;border-color:#CBD5E1}.pcx-sl.amb{color:#B45309;border-color:#FCD34D}.pcx-sl.red{color:#B91C1C;border-color:#FCA5A5}
+.pcx-sl.mono{font-family:ui-monospace,monospace}
+.pcx-boxes{display:grid;gap:8px;margin-top:11px}
+.pcx-boxes.c3{grid-template-columns:1fr 1fr 1fr}.pcx-boxes.c4{grid-template-columns:repeat(4,1fr)}
+@media(max-width:560px){.pcx-boxes.c3,.pcx-boxes.c4{grid-template-columns:1fr 1fr}}
+.pcx-bx{border:1px solid var(--line,#DDE3EC);border-radius:8px;padding:6px 10px;min-width:0}
+.pcx-bx span{display:block;font:700 8px system-ui;letter-spacing:.04em;text-transform:uppercase;color:var(--ink3,#64748B)}
+.pcx-bx b{display:block;font:700 13px system-ui;color:var(--ink,#0F172A);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pcx-bx b.mono{font-family:ui-monospace,monospace}.pcx-bx b .pct{color:var(--ink3,#64748B);font-weight:600;font-size:11px}
+.pcx-prev{border:1px solid #FED7AA;background:#FFF7ED;border-radius:8px;padding:7px 11px;margin-top:9px;display:flex;align-items:center;gap:8px}
+.pcx-prev .k{font:700 9px system-ui;text-transform:uppercase;color:#B45309}.pcx-prev .v{font:800 13px ui-monospace,monospace;color:#B45309;margin-left:auto}
+.pcx-btns{display:flex;gap:8px;margin-top:11px}
+.pcx-b{border:0;border-radius:8px;padding:13px;font:800 14px system-ui;cursor:pointer}
+.pcx-b.go,.pcx-b.ret{flex:1;background:#1D4ED8;color:#fff}.pcx-b.pausar{background:#FEE2E2;color:#B91C1C;padding:13px 22px}
+.pcx-tempos{margin-top:11px;border:1px solid var(--line,#DDE3EC);border-radius:8px;overflow:hidden}
+.pcx-tr{display:grid;grid-template-columns:72px 1fr 1fr}
+.pcx-th span{padding:5px 9px;font:800 9px system-ui;text-transform:uppercase;letter-spacing:.03em;text-align:center}
+.pcx-th .l{text-align:left;color:var(--ink3,#64748B)}.pcx-th .pp{background:#EEF1F6;color:#475569}.pcx-th .pr{background:#FDEEE0;color:#9A3412}
+.pcx-tr.row{border-top:1px solid var(--line,#DDE3EC)}
+.pcx-tr.row>span{padding:7px 9px;font:700 11px ui-monospace,monospace}
+.pcx-tr.row .lab{font:800 10px system-ui;color:var(--ink3,#64748B);text-transform:uppercase}
+.pcx-tr.row .pcol{background:#F7F9FC}.pcx-tr.row .rcol{background:#FFF9F3}
+.pcx-tot{display:flex;justify-content:space-between;padding:5px 10px;border-top:1px solid var(--line,#DDE3EC);font-size:10.5px;color:var(--ink3,#64748B);background:var(--wash,#F1F5F9)}
+.pcx-etapas{display:flex;align-items:center;margin-top:11px;gap:2px}
+.pcx-et{display:flex;flex-direction:column;align-items:center;gap:4px;flex:none;width:72px;text-align:center}
+.pcx-et .d{width:22px;height:22px;border-radius:999px;border:2px solid var(--line,#DDE3EC);display:grid;place-items:center;font-size:11px;color:#fff;background:var(--surface,#fff)}
+.pcx-et .d.on{background:#16A34A;border-color:#16A34A}.pcx-et .d.now{background:#1D4ED8;border-color:#1D4ED8}
+.pcx-et small{font-size:9px;color:var(--ink3,#64748B);line-height:1.15}.pcx-et small b{display:block;color:var(--ink,#0F172A);font-size:10px}
+.pcx-eln{height:2px;flex:1;background:var(--line,#DDE3EC)}.pcx-eln.on{background:#16A34A}
+.pcx-fila,.pcx-conc{display:flex;justify-content:space-between;align-items:center;border:1px solid var(--line,#DDE3EC);background:var(--wash,#F1F5F9);border-radius:8px;padding:7px 11px;margin:3px 0 11px;font:800 10px system-ui;text-transform:uppercase;letter-spacing:.03em;color:var(--ink3,#64748B);cursor:default}
+.pcx-comecou{font:700 11px system-ui;color:#B45309;margin:0 0 8px}
+.pcx-side{display:flex;justify-content:space-between;gap:8px;padding:8px 10px;border-bottom:1px solid var(--line,#DDE3EC);font-size:12px}
+.pcx-side .n{color:var(--ink,#0F172A)}.pcx-side .q{font-family:ui-monospace,monospace;font-weight:700}.pcx-side .q.neg{color:var(--anl,#DC2626)}
+.pcx-calc{background:#EFF5FE;border:1px solid #BBD4F7;border-radius:10px;padding:11px 13px;margin-top:10px;font-size:12.5px}
+.pcx-calc .k{font:700 10px system-ui;text-transform:uppercase;color:#1D4ED8}.pcx-calc .v{font:800 20px ui-monospace,monospace;color:#1D4ED8}.pcx-calc .s{font-size:11px;color:var(--ink3,#64748B);margin-top:3px}
+.pcx-cons{background:var(--wash,#F1F5F9);border:1px dashed var(--line,#DDE3EC);border-radius:10px;padding:10px 12px;display:flex;gap:11px;align-items:center;margin-top:8px}
+.pcx-cons.mau{display:block;color:#B91C1C;background:#FEF2F2;border-color:#FCA5A5}
+.pcx-cons .ic{width:34px;height:34px;border-radius:8px;background:var(--surface,#fff);border:1px solid var(--line,#DDE3EC);display:grid;place-items:center;font-size:16px;flex:none}
+.pcx-cons .t small{display:block;font:700 9px system-ui;text-transform:uppercase;color:var(--ink3,#64748B)}.pcx-cons .t b{font-size:13.5px}.pcx-cons .t span{font-size:11px;color:var(--ink3,#64748B)}
+.pcx-hist{max-height:260px;overflow:auto}
+.pcx-he{display:flex;gap:10px;padding:6px 0;border-bottom:1px solid var(--line,#DDE3EC);font-size:12px}.pcx-he .t{font-family:ui-monospace,monospace;color:var(--ink3,#64748B);flex:none;width:44px}
+
+/* --- barra: botões extras --- */
+.pcx-bar-r{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.pcx-ghost{border:1px solid var(--line,#DDE3EC);background:var(--surface,#fff);color:var(--ink,#0F172A);border-radius:10px;padding:9px 13px;font:700 13px system-ui;cursor:pointer}
+/* --- lista geral: seção Sopro e Rotulagem --- */
+.odsr{border:1px solid var(--line,#DDE3EC);border-radius:12px;margin:12px 0 16px;overflow:hidden;background:var(--surface,#fff)}
+.odsr-h{display:flex;align-items:center;gap:12px;padding:11px 14px;background:var(--wash,#F1F5F9);border-bottom:1px solid var(--line,#DDE3EC)}
+.odsr-h h3{margin:0;font:800 14px system-ui}.odsr-h h3 small{color:var(--ink3,#64748B);font-weight:600}
+.odsr-h input{margin-left:auto;border:1px solid var(--line,#DDE3EC);border-radius:8px;padding:7px 11px;font-size:13px;min-width:240px;background:var(--surface,#fff);color:var(--ink,#0F172A)}
+.odsr-rol{overflow:auto}.odsr-t{width:100%;border-collapse:collapse;font-size:13px}
+.odsr-t th{text-align:left;font:800 10px system-ui;text-transform:uppercase;letter-spacing:.03em;color:var(--ink3,#64748B);padding:8px 12px;border-bottom:1px solid var(--line,#DDE3EC)}
+.odsr-t td{padding:9px 12px;border-bottom:1px solid var(--line,#DDE3EC)}.odsr-t td.m{font-family:ui-monospace,monospace}
+.odsr-t tr:hover{background:var(--wash,#F1F5F9)}
+.odsr-tag{display:inline-block;font:800 9px system-ui;text-transform:uppercase;letter-spacing:.03em;padding:3px 9px;border-radius:999px;color:#fff}
+.odsr-tag.sp{background:#1D4ED8}.odsr-tag.rt{background:#7C3AED}
+/* --- tablet overlay --- */
+.pcx-tab{position:fixed;inset:0;z-index:9999;background:#0b1120;color:#e8edf6;display:flex;flex-direction:column;font-family:Inter,system-ui,sans-serif}
+.pcx-tbar{display:flex;align-items:center;gap:14px;padding:14px 20px;background:#0E1B33;color:#fff}
+.pcx-tbar>b{font-size:17px}.pcx-tsair{margin-left:auto;background:rgba(255,255,255,.12);color:#fff;border:0;border-radius:8px;padding:9px 15px;font:700 13px system-ui;cursor:pointer}
+.pcx-tdate{display:flex;align-items:center;gap:12px;margin:0 auto}.pcx-tdate button{background:rgba(255,255,255,.12);color:#fff;border:0;border-radius:8px;width:34px;height:34px;font-size:18px;cursor:pointer}.pcx-tdate span{font:700 14px system-ui}
+.pcx-pin{flex:1;display:grid;place-items:center}
+.pcx-pin .box{background:#111a2e;border:1px solid #243049;border-radius:16px;padding:26px;width:300px;text-align:center}
+.pcx-pin .tt{font:800 15px system-ui;margin-bottom:14px}
+.pcx-pin input{width:100%;text-align:center;font:800 26px ui-monospace,monospace;letter-spacing:.3em;padding:12px;border-radius:10px;border:1px solid #243049;background:#0b1120;color:#fff;margin-bottom:14px}
+.pcx-pin .kp{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:14px}
+.pcx-pin .kp button{padding:16px;font:800 20px system-ui;border:1px solid #243049;background:#0b1120;color:#fff;border-radius:10px;cursor:pointer}
+.pcx-tenter{width:100%;background:#16A34A;color:#fff;border:0;border-radius:10px;padding:14px;font:800 16px system-ui;cursor:pointer}
+.pcx-pin .hint{font-size:11.5px;color:#93a1bb;margin-top:12px}
+.pcx-tgrid{flex:1;display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:16px;overflow:auto}
+@media(max-width:720px){.pcx-tgrid{grid-template-columns:1fr}}
+.pcx-tmc{background:#111a2e;border:1px solid #243049;border-radius:14px;display:flex;flex-direction:column;overflow:hidden}
+.pcx-tmh{display:flex;align-items:center;gap:10px;padding:12px 16px;background:#0E1B33}.pcx-tmh b{font-size:16px}.pcx-tmh span{color:#9fb0cc;font-size:12px}.pcx-tdots{margin-left:auto;background:rgba(255,255,255,.12);color:#fff;border:0;border-radius:8px;width:34px;height:34px;font-size:18px;cursor:pointer}
+.pcx-tmb{padding:14px}
+.pcx-tvazio,.pcx-tfila{color:#93a1bb;font-size:13px;padding:10px 0}
+.pcx-tfila{border-top:1px dashed #243049;margin-top:12px}
+.pcx-tcard .pcx-tnome{font:800 18px system-ui;line-height:1.2}
+.pcx-tseals{display:flex;gap:8px;align-items:center;margin:8px 0 12px}
+.pcx-tcons{display:flex;gap:16px;background:#0b1120;border-radius:10px;padding:10px 12px;margin-bottom:12px}
+.pcx-tcons small{display:block;font:700 9px system-ui;text-transform:uppercase;color:#93a1bb}.pcx-tcons b{font-size:13px}
+.pcx-tbig{width:100%;border:0;border-radius:12px;padding:18px;font:800 19px system-ui;color:#fff;cursor:pointer}.pcx-tbig.fim{background:#16A34A}.pcx-tbig.ret{background:#1D4ED8}
+.pcx-tsub{display:flex;gap:8px;margin-top:9px}.pcx-tsub button{flex:1;background:#0b1120;border:1px solid #243049;color:#e8edf6;border-radius:10px;padding:12px;font:700 13px system-ui;cursor:pointer}
+.pcx-tqt{display:flex;gap:10px;margin-top:11px}.pcx-tqt>div{flex:1;background:#0b1120;border-radius:9px;padding:8px 10px;text-align:center}.pcx-tqt span{display:block;font:700 8.5px system-ui;text-transform:uppercase;color:#93a1bb}.pcx-tqt b{font:800 16px ui-monospace,monospace}
+.pcx-thistov{position:absolute;inset:0;background:rgba(0,0,0,.55);display:grid;place-items:center}
+.pcx-thistov .box{background:#111a2e;border:1px solid #243049;border-radius:14px;width:min(560px,92%);max-height:80%;display:flex;flex-direction:column;overflow:hidden}
+.pcx-thistov .hh{display:flex;align-items:center;padding:13px 16px;background:#0E1B33}.pcx-thistov .hh b{flex:1}.pcx-thistov .hh button{background:rgba(255,255,255,.12);color:#fff;border:0;border-radius:8px;width:32px;height:32px;cursor:pointer}
+.pcx-thistov .bd{padding:12px 16px;overflow:auto}
+.pcx-thistov .pcx-he{border-color:#243049}.pcx-thistov .pcx-he .t{color:#93a1bb}
+
+</style>
+<script>
+/* =====================================================================
+   PCP · SOPRO E ROTULAGEM  (módulo aditivo, isolado)
+   - Modelo independente por estoque: OP própria SP/ROT, produz pra
+     estoque interno; o envase puxa do soprado.
+   - Livro de estoque SÓ no ERP (PCP.mov). NUNCA escreve em ESTOQUE
+     (Tiny) nem envia movimento ao Tiny.
+   - Redefine as funções do esqueleto antigo (envase-driven) pelo
+     modelo novo. Bloco isolado: se algo falhar aqui, o resto do
+     sistema segue intacto.
+   ===================================================================== */
+(function(){
+'use strict';
+if(window.__PCP_SR__)return; window.__PCP_SR__=true;
+
+/* ---------- estado interno ---------- */
+var PCP = window.PCP = { ops:[], mov:[], seqSP:0, seqROT:0 };
+var p4 = function(n){ n=String(n); while(n.length<4)n='0'+n; return n; };
+
+/* ---------- persistência (aditiva; nunca toca Tiny/ESTOQUE) ---------- */
+try{
+  var _ea = estadoAtual;
+  estadoAtual = function(){
+    var s = _ea.apply(this, arguments);
+    try{ var o = JSON.parse(s); o.pcp = PCP; return JSON.stringify(o); }
+    catch(e){ return s; }
+  };
+}catch(e){}
+try{
+  var _ap = aplicarEstado;
+  aplicarEstado = function(txt){
+    var r = _ap.apply(this, arguments);
+    try{ var d = JSON.parse(txt);
+      if(d && d.pcp){ PCP.ops=d.pcp.ops||[]; PCP.mov=d.pcp.mov||[];
+        PCP.seqSP=+d.pcp.seqSP||0; PCP.seqROT=+d.pcp.seqROT||0; } }
+    catch(e){}
+    return r;
+  };
+}catch(e){}
+
+/* ---------- utilidades ---------- */
+function MM(id){ return document.getElementById(id); }
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+function nfx(n){ try{ return nf(n); }catch(e){ return String(Math.round(n||0)); } }
+function hojeYMD(){ try{ return ymd(new Date()); }catch(e){ var d=new Date(); return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2); } }
+function dataRef(){ try{ return ymd(S.refTq||new Date()); }catch(e){ return hojeYMD(); } }
+function agora(){ try{ return relogio(); }catch(e){ var d=new Date(); return ('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2); } }
+function salvar(){ try{ agendarSalvar(); }catch(e){} }
+function avisa(m,bad){ try{ toast(m,bad); }catch(e){} }
+function podeEd(){ try{ return !MODO_TV && (typeof podeEditar==='function'?podeEditar('sopro'):true); }catch(e){ return true; } }
+
+/* ---------- resolver de itens (código ou ERP-SKU) ---------- */
+function ins(){ return (typeof INSUMOS!=='undefined'&&INSUMOS)?INSUMOS:[]; }
+function porSku(sku){ var a=ins(); for(var i=0;i<a.length;i++) if(a[i].sku===sku) return a[i]; return null; }
+function codDe(it){ if(!it)return ''; return it.tiny || ('ERP-'+it.sku); }
+function grupoDe(it){
+  if(!it)return '';
+  if(it.cgrupo)return it.cgrupo;
+  var t=it.tipo||'';
+  if(t==='Frascos rotulados')return 'frrot';
+  if(t==='Preformas')return 'preformas';
+  if(t==='Rotulos')return 'rotulos';
+  if(t==='Embalagens')return 'frascos';
+  return '';
+}
+function doGrupo(g){ return ins().filter(function(i){ return i.ativo!==false && grupoDe(i)===g; }); }
+function fichaDe(it){ return (it&&it.ficha)||[]; }
+function compSku(it, res){ var f=fichaDe(it); for(var i=0;i<f.length;i++){ for(var j=0;j<res.length;j++){ if(res[j].test(f[i].comp||'')) return f[i].sku; } } return null; }
+function nomeSku(sku){ var i=porSku(sku); return i?i.nome:(sku||'—'); }
+
+/* frascos PET que o sopro produz: grupo 'frascos' com ficha de preforma */
+function frascosSopro(){ return doGrupo('frascos').filter(function(i){ return compSku(i,[/preforma/i]); }); }
+function preformaDoFrasco(sku){ var i=porSku(sku); return i?compSku(i,[/preforma/i]):null; }
+/* frascos rotulados que a rotulagem produz: grupo 'frrot' (ficha = frasco + rótulo) */
+function rotulados(){ return doGrupo('frrot'); }
+function frascoDoRotulado(sku){ var i=porSku(sku); return i?compSku(i,[/frasco/i]):null; }
+function rotuloDoRotulado(sku){ var i=porSku(sku); return i?compSku(i,[/r[óo]tulo/i]):null; }
+function tipoRotulo(sku){ var i=porSku(sku); var m=(i&&i.mat)||''; return /bopp/i.test(m)?'BOPP':/ades/i.test(m)?'Adesiva':''; }
+
+/* máquinas do cadastro (recursos) com fallback nas constantes */
+function sopradoras(){ try{ var r=recursosDe('sopro').filter(function(x){return x.ativo!==false;}); if(r.length)return r; }catch(e){} return (typeof SOPRADORAS!=='undefined'?SOPRADORAS:[]).map(function(m){return {id:m.id,nome:m.nome,cad:m.cad};}); }
+function rotuladoras(){ try{ var r=recursosDe('rotulo').filter(function(x){return x.ativo!==false;}); if(r.length)return r; }catch(e){} return [{id:'ROT BOPP',nome:'Rotuladora BOPP',cad:1200},{id:'ROT ADESIVA',nome:'Rotuladora Adesiva',cad:900}]; }
+function maqNome(id,lista){ for(var i=0;i<lista.length;i++) if(lista[i].id===id) return lista[i].nome||lista[i].id; return id||'—'; }
+function maqCad(id,lista){ for(var i=0;i<lista.length;i++) if(lista[i].id===id) return +lista[i].cad||0; return 0; }
+
+/* ---------- livro interno (nunca mexe no Tiny) ---------- */
+function saldoPCP(sku){ var s=0; for(var i=0;i<PCP.mov.length;i++){ var m=PCP.mov[i]; if(m.sku===sku) s += (m.tipo==='E'?1:-1)*(+m.qtd||0); } return s; }
+function lanca(sku,tipo,qtd,num){ if(!sku||!qtd)return; PCP.mov.push({sku:sku,cod:codDe(porSku(sku)),tipo:tipo,qtd:+qtd,op:num,em:new Date().toISOString()}); }
+function estornaOP(num){ PCP.mov = PCP.mov.filter(function(m){ return m.op!==num; }); }
+
+/* ---------- OPs ---------- */
+function opsDe(origem, data){ return PCP.ops.filter(function(o){ return o.origem===origem && (!data || o.data===data); }); }
+function opPorId(id){ for(var i=0;i<PCP.ops.length;i++) if(PCP.ops[i].id===id) return PCP.ops[i]; return null; }
+function logar(o,ev,det){ o.log=o.log||[]; o.log.push({t:agora(),d:hojeYMD(),e:ev,por:(function(){try{return quemAssina();}catch(e){return '';}})(),m:det||null}); }
+function prevFim(iniMin,qtd,cad){ if(!cad)return iniMin; return iniMin + Math.round(qtd/cad*60); }
+
+/* ======================================================================
+   CARDS (padrão Envase aprovado)
+   ====================================================================== */
+var SELO = {programada:['cz','Programada'],produzindo:['ok','SOPRANDO'],pausada:['amb','Pausada'],concluida:['cz','Concluída']};
+function selos(o){
+  if(o.status==='produzindo') return '<span class="pcx-sl ok">'+(o.origem==='sopro'?'Soprando':'Rotulando')+'</span>';
+  if(o.status==='pausada') return '<span class="pcx-sl amb">Pausada'+(o.pausaMotivo?' · '+esc(o.pausaMotivo):'')+'</span>';
+  if(o.status==='concluida') return '<span class="pcx-sl cz">Concluída</span>'+(o.noPrazo?'<span class="pcx-sl ok">★ No prazo</span>':'');
+  return '<span class="pcx-sl cz">Programada</span>';
+}
+function boxes(arr){ return '<div class="pcx-boxes c'+arr.length+'">'+arr.map(function(b){ return '<div class="pcx-bx"><span>'+esc(b[0])+'</span><b'+(b[2]?' class="mono"':'')+'>'+b[1]+'</b></div>'; }).join('')+'</div>'; }
+function temposBloco(rows, foot, footCls){
+  return '<div class="pcx-tempos"><div class="pcx-tr pcx-th"><span class="l">Tempos</span><span class="pp">Previsto</span><span class="pr">Realizado</span></div>'+
+    rows.map(function(r){ return '<div class="pcx-tr row"><span class="lab">'+esc(r[0])+'</span><span class="pcol">'+r[1]+'</span><span class="rcol">'+r[2]+'</span></div>'; }).join('')+
+    '<div class="pcx-tot"><span>'+foot[0]+'</span><span class="'+(footCls||'')+'">'+foot[1]+'</span></div></div>';
+}
+function etapas(a,b,c){
+  return '<div class="pcx-etapas"><div class="pcx-et"><span class="d on">✓</span><small><b>'+a[0]+'</b>'+a[1]+'</small></div><div class="pcx-eln on"></div>'+
+    '<div class="pcx-et"><span class="d now"></span><small><b>'+b[0]+'</b>'+b[1]+'</small></div><div class="pcx-eln"></div>'+
+    '<div class="pcx-et"><span class="d"></span><small><b>'+c[0]+'</b>'+c[1]+'</small></div></div>';
+}
+function cardSoproN(o){
+  var sop=sopradoras(), cad=maqCad(o.maq,sop)||1;
+  var ini=o.iniReal?hm(o.iniReal):(o.iniPrev||0);
+  var foot, rows=[], bt='';
+  if(o.status==='concluida'){
+    var pct=o.qtdPrev?Math.round(o.boas/o.qtdPrev*1000)/10:0;
+    var qpct=o.qtdPrev?Math.round((o.quebra||0)/o.qtdPrev*1000)/10:0;
+    rows=[['Sopro', hhmm(o.iniPrev)+' → '+hhmm(o.fimPrev), (o.iniReal||'--:--')+' → '+(o.fimReal||'--:--')]];
+    return '<div class="pcx-card conc" data-op="'+o.id+'">'+
+      (o.criadoData&&o.criadoData!==o.data?'<div class="pcx-comecou">OP começou em '+esc(o.criadoData)+'</div>':'')+
+      '<div class="pcx-top"><div class="pcx-ph">🧴</div><div class="pcx-nome">'+esc(o.titulo)+'</div><div class="pcx-seals">'+selos(o)+'<span class="pcx-sl cz mono">'+esc(o.num)+'</span></div></div>'+
+      boxes([['Qtd prevista', nfx(o.qtdPrev)+' un', 1],['Qtd realizada', nfx(o.boas)+' <span class="pct">'+String(pct).replace('.',',')+'%</span>', 1],['Qtd quebra', (o.quebra||0)+' <span class="pct">'+String(qpct).replace('.',',')+'%</span>', 1]])+
+      temposBloco(rows,['OP '+esc(o.num),''],'')+'</div>';
+  }
+  if(o.status==='produzindo'){
+    rows=[['Sopro', hhmm(o.iniPrev)+' → '+hhmm(o.fimPrev), (o.iniReal||agora())+' → agora']];
+    foot=['Previsto '+hhmm(o.fimPrev-o.iniPrev).replace(/^0/,''),'Em produção'];
+    bt='<div class="pcx-btns"><button class="pcx-b go" data-ac="concluir" data-op="'+o.id+'">▶ Concluir sopro</button><button class="pcx-b pausar" data-ac="pausar" data-op="'+o.id+'">PAUSAR</button></div>';
+  } else if(o.status==='pausada'){
+    rows=[['Sopro', hhmm(o.iniPrev)+' → '+hhmm(o.fimPrev), (o.iniReal||'--:--')+' → pausada']];
+    foot=['Pausada'+(o.pausaMotivo?' · '+esc(o.pausaMotivo):''),''];
+    bt='<div class="pcx-btns"><button class="pcx-b ret" data-ac="retomar" data-op="'+o.id+'">▶ Retomar</button></div>';
+  } else {
+    return '<div class="pcx-card" data-op="'+o.id+'">'+
+      '<div class="pcx-top"><div class="pcx-ph">🧴</div><div class="pcx-nome">'+esc(o.titulo)+'</div><div class="pcx-seals">'+selos(o)+'</div></div>'+
+      boxes([['OP Nº', esc(o.num), 1],['Preforma', esc(nomeCurtoSku(o.preformaSku)), 0],['Qtd prevista', nfx(o.qtdPrev)+' un', 1]])+
+      '<div class="pcx-prev"><span class="k">Previsto</span><span class="v">'+hhmm(o.iniPrev)+' → '+hhmm(o.fimPrev)+'</span></div>'+
+      '<div class="pcx-btns"><button class="pcx-b go" data-ac="iniciar" data-op="'+o.id+'">▶ Iniciar sopro</button></div></div>';
+  }
+  return '<div class="pcx-card cur" data-op="'+o.id+'">'+
+    '<div class="pcx-top"><div class="pcx-ph">🧴</div><div class="pcx-nome">'+esc(o.titulo)+'</div><div class="pcx-seals">'+selos(o)+'</div></div>'+
+    boxes([['OP Nº', esc(o.num), 1],['Preforma', esc(nomeCurtoSku(o.preformaSku)), 0],['Qtd prevista', nfx(o.qtdPrev)+' un', 1]])+
+    bt + temposBloco(rows,foot[0]!==undefined?foot:['',''],'') +
+    etapas(['Preforma','consumida'],['Sopro', o.status==='pausada'?'pausado':'agora'],['Estoque','soprado'])+'</div>';
+}
+function nomeCurtoSku(sku){ var n=nomeSku(sku); return n.replace(/^PREFORMAS?\s*-\s*/i,'').replace(/^ROTULO\s*-\s*/i,'').replace(/^FRASCOS?\s*-\s*/i,''); }
+
+function cardRotuloN(o){
+  var rot=rotuladoras();
+  if(o.status==='concluida'){
+    var pct=o.qtdPrev?Math.round(o.boas/o.qtdPrev*1000)/10:0;
+    var qr=o.qtdPrev?Math.round((o.quebraRotulo||0)/o.qtdPrev*1000)/10:0;
+    var qf=o.qtdPrev?Math.round((o.quebraFrasco||0)/o.qtdPrev*1000)/10:0;
+    return '<div class="pcx-card conc" data-op="'+o.id+'">'+
+      (o.criadoData&&o.criadoData!==o.data?'<div class="pcx-comecou">OP '+esc(o.num)+' · começou em '+esc(o.criadoData)+'</div>':'')+
+      '<div class="pcx-top"><div class="pcx-ph">🧴</div><div class="pcx-nome">'+esc(o.titulo)+'</div><div class="pcx-seals">'+selos(o)+'</div></div>'+
+      boxes([['Qtd prevista', nfx(o.qtdPrev)+' un', 1],['Qtd realizada', nfx(o.boas)+' <span class="pct">'+String(pct).replace('.',',')+'%</span>', 1],['Quebra rótulo', (o.quebraRotulo||0)+' <span class="pct">'+String(qr).replace('.',',')+'%</span>', 1],['Quebra frasco', (o.quebraFrasco||0)+' <span class="pct">'+String(qf).replace('.',',')+'%</span>', 1]])+
+      temposBloco([['Rotulagem', hhmm(o.iniPrev)+' → '+hhmm(o.fimPrev), (o.iniReal||'--:--')+' → '+(o.fimReal||'--:--')]],['Rótulo '+esc(nomeCurtoSku(o.rotuloSku)),''],'')+'</div>';
+  }
+  var body = boxes([['OP Nº', esc(o.num), 1],['Frasco soprado', esc(nomeCurtoSku(o.frascoSku))+' '+(saldoPCP(o.frascoSku)>0?'✓':''), 0],['Rótulo', esc(nomeCurtoSku(o.rotuloSku)), 0],['Qtd prevista', nfx(o.qtdPrev)+' un', 1]]);
+  if(o.status==='programada'){
+    return '<div class="pcx-card" data-op="'+o.id+'">'+
+      '<div class="pcx-top"><div class="pcx-ph">🧴</div><div class="pcx-nome">'+esc(o.titulo)+'</div><div class="pcx-seals">'+selos(o)+'</div></div>'+
+      body+'<div class="pcx-prev"><span class="k">Previsto</span><span class="v">'+hhmm(o.iniPrev)+' → '+hhmm(o.fimPrev)+'</span></div>'+
+      '<div class="pcx-btns"><button class="pcx-b go" data-ac="iniciar" data-op="'+o.id+'">▶ Iniciar rotulagem</button></div></div>';
+  }
+  var bt = o.status==='pausada'
+    ? '<div class="pcx-btns"><button class="pcx-b ret" data-ac="retomar" data-op="'+o.id+'">▶ Retomar</button></div>'
+    : '<div class="pcx-btns"><button class="pcx-b go" data-ac="concluir" data-op="'+o.id+'">▶ Concluir rotulagem</button><button class="pcx-b pausar" data-ac="pausar" data-op="'+o.id+'">PAUSAR</button></div>';
+  var rows=[['Rotulagem', hhmm(o.iniPrev)+' → '+hhmm(o.fimPrev), (o.iniReal||agora())+(o.status==='pausada'?' → pausada':' → agora')]];
+  return '<div class="pcx-card cur" data-op="'+o.id+'">'+
+    '<div class="pcx-top"><div class="pcx-ph">🧴</div><div class="pcx-nome">'+esc(o.titulo)+'</div><div class="pcx-seals">'+selos(o)+'</div></div>'+
+    body + bt + temposBloco(rows,['Previsto',''],'') +
+    etapas(['Soprado','consumido'],['Rotulagem', o.status==='pausada'?'pausada':'agora'],['Estoque','rotulado'])+'</div>';
+}
+
+/* ======================================================================
+   GRADE (páginas)
+   ====================================================================== */
+function toolbar(origem){
+  var lbl = origem==='sopro'?'Nova OP de sopro':'Nova OP de rotulagem';
+  var extra = (origem==='rotulagem'?'<button class="pcx-ghost" data-ac="juntar" data-origem="rotulagem">⊕ Juntar lotes iguais</button>':'');
+  return '<div class="pcx-bar"><div class="pcx-bar-l">'+
+    '<button class="pcx-nav" data-ac="dia-prev">‹</button>'+
+    '<b>'+esc((function(){try{return dLongo(dataRef());}catch(e){return dataRef();}})())+'</b>'+
+    '<button class="pcx-nav" data-ac="dia-next">›</button></div>'+
+    '<div class="pcx-bar-r">'+extra+
+    '<button class="pcx-ghost" data-ac="tablet" data-origem="'+origem+'">📱 Abrir no tablet</button>'+
+    '<button class="pcx-nova" data-ac="nova" data-origem="'+origem+'">＋ '+lbl+'</button></div></div>';
+}
+function coluna(titulo, cad, ops){
+  var cur = ops.filter(function(o){return o.status==='produzindo'||o.status==='pausada';});
+  var prog = ops.filter(function(o){return o.status==='programada';});
+  var conc = ops.filter(function(o){return o.status==='concluida';});
+  var ocup = ops.filter(function(o){return o.status!=='concluida';}).reduce(function(s,o){return s+(o.qtdPrev||0);},0);
+  var cardf = titulo.o==='sopro'?cardSoproN:cardRotuloN;
+  var h = '<div class="pcx-col"><div class="pcx-colh"><div class="r1"><b>'+esc(titulo.nome)+'</b></div>'+
+    '<i>'+ops.filter(function(o){return o.status!=='concluida';}).length+' OP(s) · '+(cad?nfx(cad)+' un/h':'')+'</i></div><div class="pcx-colb">';
+  if(cur.length) h += cur.map(cardf).join('');
+  else h += '<div class="pcx-vazio">Sem OP em produção.</div>';
+  if(prog.length){ h += '<div class="pcx-fila">▸ Próximas na fila ('+prog.length+')</div>' + prog.map(cardf).join(''); }
+  if(conc.length){ h += '<div class="pcx-conc">▾ Concluídas ('+conc.length+')</div>' + conc.map(cardf).join(''); }
+  h += '</div></div>';
+  return h;
+}
+
+function metaPanelSopro(){
+  var fr = (typeof FRASCOS!=='undefined'?FRASCOS:[]);
+  var cards = fr.map(function(f){
+    var meta=0; try{ meta=metaSemanal(f); }catch(e){ meta=Math.round((+f.consumo||0)/(52/12)*(1+(+f.seg||0)/100)); }
+    var pct = meta?Math.min(100,Math.round(0/meta*100)):0;
+    return '<div class="pcx-metac"><div class="h"><b>'+esc(f.id)+'</b><span>meta '+nfx(meta)+'/sem</span></div>'+
+      '<div class="barw"><i style="width:'+pct+'%"></i></div><div class="ft"><span>'+pct+'% produzido</span><span>meta semanal por consumo</span></div></div>';
+  }).join('');
+  return '<details class="pcx-meta" open><summary><span class="mt">Meta de sopro da semana</span></summary><div class="pcx-mpanel">'+cards+'</div></details>';
+}
+
+function gradeSoproN(){
+  var data=dataRef();
+  var ops=opsDe('sopro',data).concat(opsDe('sopro',null).filter(function(o){return o.status!=='concluida'&&o.data!==data;}));
+  // mostra do dia; mantém abertas de outros dias
+  ops = opsDe('sopro').filter(function(o){ return o.data===data || o.status!=='concluida'; });
+  if(MM('spsem')) MM('spsem').innerHTML = toolbar('sopro') + metaPanelSopro();
+  var sop=sopradoras();
+  var html = '<div class="pcx-maqs">'+ sop.map(function(m){
+    var mo = ops.filter(function(o){return o.maq===m.id;});
+    return coluna({nome:m.nome||m.id,o:'sopro'}, +m.cad||0, mo);
+  }).join('') +'</div>';
+  if(MM('spgrid')) MM('spgrid').innerHTML = html;
+  ligarEventos('spwrap');
+  lateralSoproN();
+}
+function gradeRotulagemN(){
+  var data=dataRef();
+  var ops = opsDe('rotulagem').filter(function(o){ return o.data===data || o.status!=='concluida'; });
+  var rot=rotuladoras();
+  var html = toolbar('rotulagem') + '<div class="pcx-maqs">'+ rot.map(function(m){
+    var mo = ops.filter(function(o){return o.maq===m.id;});
+    return coluna({nome:m.nome||m.id,o:'rotulagem'}, +m.cad||0, mo);
+  }).join('') +'</div>';
+  if(MM('rtgrid')) MM('rtgrid').innerHTML = html;
+  ligarEventos('rtwrap');
+  lateralRotulagemN();
+}
+function lateralSoproN(){
+  if(MM('sT')) MM('sT').textContent='Estoque soprado';
+  if(MM('sD')) MM('sD').textContent='Saldo interno do PCP (não vai ao Tiny)';
+  var fr = frascosSopro();
+  if(MM('sB')) MM('sB').innerHTML = fr.length? fr.map(function(i){
+    var s=saldoPCP(i.sku);
+    return '<div class="pcx-side"><div class="n">'+esc(i.nome)+'</div><div class="q '+(s<0?'neg':'')+'">'+nfx(s)+' un</div></div>';
+  }).join('') : '<div class="pcx-vazio">Sem frascos sopráveis no cadastro.</div>';
+}
+function lateralRotulagemN(){
+  if(MM('sT')) MM('sT').textContent='Estoque rotulado';
+  if(MM('sD')) MM('sD').textContent='Saldo interno do PCP (não vai ao Tiny)';
+  var fr = rotulados();
+  if(MM('sB')) MM('sB').innerHTML = fr.length? fr.slice(0,40).map(function(i){
+    var s=saldoPCP(i.sku);
+    return '<div class="pcx-side"><div class="n">'+esc(i.nome)+'</div><div class="q '+(s<0?'neg':'')+'">'+nfx(s)+' un</div></div>';
+  }).join('') : '<div class="pcx-vazio">Sem frascos rotulados no cadastro.</div>';
+}
+
+/* ---------- eventos (delegação) ---------- */
+function ligarEventos(wrapId){
+  var w=MM(wrapId); if(!w)return;
+  w.querySelectorAll('[data-ac]').forEach(function(el){
+    el.onclick=function(ev){
+      ev.stopPropagation();
+      var ac=el.getAttribute('data-ac'), id=el.getAttribute('data-op');
+      if(ac==='nova'){ novaOP(el.getAttribute('data-origem')); return; }
+      if(ac==='tablet'){ abrirTablet(el.getAttribute('data-origem')); return; }
+      if(ac==='juntar'){ juntarLotes(); return; }
+      if(ac==='dia-prev'||ac==='dia-next'){ moverDia(ac==='dia-next'?1:-1); return; }
+      var o=opPorId(id); if(!o)return;
+      if(ac==='iniciar') acIniciar(o);
+      else if(ac==='concluir') acConcluir(o);
+      else if(ac==='pausar') acPausar(o);
+      else if(ac==='retomar') acRetomar(o);
+    };
+  });
+  // clicar no card abre o histórico/apontamento
+  w.querySelectorAll('.pcx-card').forEach(function(c){
+    c.addEventListener('click',function(){ var o=opPorId(c.getAttribute('data-op')); if(o) abrirOP(o); });
+  });
+}
+function moverDia(d){ try{ var base=S.refTq?new Date(S.refTq):new Date(); base.setDate(base.getDate()+d); S.refTq=base; render(); }catch(e){} }
+
+/* ======================================================================
+   AÇÕES
+   ====================================================================== */
+function acIniciar(o){ if(!podeEd())return; o.status='produzindo'; o.iniReal=o.iniReal||agora(); logar(o,'Iniciou'); salvar(); render(); avisa('OP '+o.num+' iniciada.'); }
+function acPausar(o){ if(!podeEd())return; o.status='pausada'; o.pausaMotivo='Pausa'; logar(o,'Pausou'); salvar(); render(); avisa('OP '+o.num+' pausada.'); }
+function acRetomar(o){ if(!podeEd())return; o.status='produzindo'; o.pausaMotivo=''; logar(o,'Retomou'); salvar(); render(); avisa('OP '+o.num+' retomada.'); }
+function acConcluir(o){ abrirConcluir(o); }
+
+/* ======================================================================
+   MODAIS
+   ====================================================================== */
+function opt(sel,val,txt){ return '<option value="'+esc(val)+'"'+(sel===val?' selected':'')+'>'+esc(txt)+'</option>'; }
+
+function novaOP(origem){
+  if(!podeEd()){ avisa('Sem permissão para criar OP.',true); return; }
+  var isRot = origem==='rotulagem';
+  var itens = isRot? rotulados() : frascosSopro();
+  if(!itens.length){ avisa('Nenhum '+(isRot?'frasco rotulado':'frasco soprável')+' no cadastro.',true); return; }
+  var maqs = isRot? rotuladoras() : sopradoras();
+  MM('mTit').textContent = isRot?'Nova OP de rotulagem':'Nova OP de sopro';
+  MM('mSub').hidden=true;
+  MM('modal').classList.remove('wide');
+  MM('mB').innerHTML =
+    '<div class="fld"><label>'+(isRot?'Frasco rotulado a produzir':'Frasco a produzir')+'</label>'+
+      '<select id="pcpItem">'+itens.map(function(i){return opt('', i.sku, i.nome);}).join('')+'</select></div>'+
+    '<div id="pcpCons"></div>'+
+    '<div class="g2"><div class="fld"><label>Quantidade a produzir</label><input id="pcpQtd" type="number" min="1" step="1" value="1000"></div>'+
+      '<div class="fld"><label>Máquina</label><select id="pcpMaq">'+maqs.map(function(m){return opt('', m.id, (m.nome||m.id)+(m.cad?' — '+nfx(m.cad)+' un/h':''));}).join('')+'</select></div></div>'+
+    '<div class="g2"><div class="fld"><label>Data de início</label><input id="pcpData" type="date" value="'+dataRef()+'"></div>'+
+      '<div class="fld"><label>Hora de início</label><input id="pcpHora" type="time" step="300" value="'+(isRot?'05:00':'05:00')+'"></div></div>'+
+    '<div class="pcx-calc" id="pcpCalc"></div>';
+  MM('mF').innerHTML='<div class="mfdir" style="margin-left:auto;display:flex;gap:8px"><button class="btn" id="pcpCancel">Cancelar</button><button class="btn pri" id="pcpCriar">Criar OP</button></div>';
+  function atualiza(){
+    var sku=MM('pcpItem').value, qtd=+MM('pcpQtd').value||0, maq=MM('pcpMaq').value, hora=MM('pcpHora').value;
+    var cad=maqCad(maq,maqs)||1;
+    var fim = hhmm(prevFim(hm(hora||'05:00'), qtd, cad));
+    var cons='';
+    if(isRot){
+      var fsku=frascoDoRotulado(sku), rsku=rotuloDoRotulado(sku);
+      cons = faixaCons('Frasco soprado que consome','🧴',fsku) + faixaCons('Rótulo que consome','🏷️',rsku);
+    } else {
+      var psku=preformaDoFrasco(sku);
+      cons = faixaCons('Preforma que consome','⬡',psku);
+    }
+    MM('pcpCons').innerHTML = cons;
+    MM('pcpCalc').innerHTML = '<div class="k">Pronto previsto</div><div class="v">'+fim+'</div><div class="s">'+nfx(qtd)+' ÷ '+nfx(cad)+' un/h · começa '+(hora||'05:00')+'</div>';
+  }
+  function faixaCons(lbl,ic,sku){
+    if(!sku) return '<div class="pcx-cons mau"><b>'+lbl+':</b> item não encontrado na ficha do cadastro.</div>';
+    var i=porSku(sku), s=saldoPCP(sku);
+    return '<div class="pcx-cons"><div class="ic">'+ic+'</div><div class="t"><small>'+lbl+'</small><b>'+esc(i?i.nome:sku)+'</b><span>saldo interno: '+nfx(s)+' un · cód. '+esc(codDe(i))+'</span></div></div>';
+  }
+  ['pcpItem','pcpQtd','pcpMaq','pcpHora'].forEach(function(id){ var e=MM(id); if(e) e.addEventListener('input',atualiza); });
+  atualiza();
+  MM('pcpCancel').onclick=fecharModal;
+  MM('pcpCriar').onclick=function(){
+    var sku=MM('pcpItem').value, qtd=+MM('pcpQtd').value||0, maq=MM('pcpMaq').value, data=MM('pcpData').value||dataRef(), hora=MM('pcpHora').value||'05:00';
+    if(!sku||qtd<=0){ avisa('Informe o frasco e a quantidade.',true); return; }
+    var cad=maqCad(maq,maqs)||1, ini=hm(hora);
+    var o={ id:uid(), origem:origem, num:(isRot?'ROT ':'SP ')+p4(isRot?(++PCP.seqROT):(++PCP.seqSP)),
+      titulo: nomeSku(sku), itemSku:sku, maq:maq, qtd:qtd, qtdPrev:qtd, data:data, criadoData:hojeYMD(),
+      iniPrev:ini, fimPrev:prevFim(ini,qtd,cad), status:'programada',
+      iniReal:'', fimReal:'', boas:0, quebra:0, quebraRotulo:0, quebraFrasco:0, operador:'', log:[],
+      criadoPor:(function(){try{return quemAssina();}catch(e){return '';}})(), criadoEm:new Date().toISOString() };
+    if(isRot){ o.frascoSku=frascoDoRotulado(sku); o.rotuloSku=rotuloDoRotulado(sku); o.rotTipo=tipoRotulo(o.rotuloSku); }
+    else { o.frascoSku=sku; o.preformaSku=preformaDoFrasco(sku); }
+    logar(o,'OP criada', o.num);
+    PCP.ops.push(o); salvar(); fecharModal(); render();
+    avisa('OP '+o.num+' criada.');
+  };
+  abrirMask();
+}
+
+function abrirConcluir(o){
+  if(!podeEd())return;
+  var isRot=o.origem==='rotulagem';
+  MM('mTit').textContent='Concluir '+(isRot?'rotulagem':'sopro')+' · '+o.num;
+  MM('mSub').hidden=false; MM('mSub').textContent=o.titulo+' · previsto '+nfx(o.qtdPrev)+' un';
+  MM('modal').classList.remove('wide');
+  MM('mB').innerHTML =
+    '<div class="g2"><div class="fld"><label>Início real</label><input id="cIni" type="time" step="300" value="'+(o.iniReal||agora())+'"></div>'+
+      '<div class="fld"><label>Fim real</label><input id="cFim" type="time" step="300" value="'+agora()+'"></div></div>'+
+    '<div class="g2"><div class="fld"><label>Produzidas boas (un)</label><input id="cBoas" type="number" min="0" step="1" value="'+(o.qtdPrev||0)+'"></div>'+
+      (isRot
+        ? '<div class="fld"><label>Quebra de rótulo (un)</label><input id="cQR" type="number" min="0" step="1" value="0"></div>'
+        : '<div class="fld"><label>Quebra (un)</label><input id="cQ" type="number" min="0" step="1" value="0"></div>')+
+    '</div>'+
+    (isRot? '<div class="g2"><div class="fld"><label><input type="checkbox" id="cHabFr"> Lançar quebra de frasco</label><input id="cQF" type="number" min="0" step="1" value="0" disabled></div><div class="fld"><label>Operador</label><input id="cOp" type="text" value="'+esc(o.operador||'')+'"></div></div>'
+           : '<div class="fld"><label>Operador</label><input id="cOp" type="text" value="'+esc(o.operador||'')+'"></div>')+
+    '<div class="pcx-calc" id="cResumo"></div>';
+  MM('mF').innerHTML='<div class="mfesq"><button class="btn warn sm" id="cReabrir">Reabrir</button></div><div class="mfdir" style="margin-left:auto;display:flex;gap:8px"><button class="btn" id="cCancel">Cancelar</button><button class="btn pri" id="cOK">Concluir e lançar estoque</button></div>';
+  if(isRot){ var hab=MM('cHabFr'); if(hab) hab.onchange=function(){ MM('cQF').disabled=!hab.checked; }; }
+  function resumo(){
+    var boas=+MM('cBoas').value||0;
+    var html='';
+    if(isRot){
+      var qr=+MM('cQR').value||0, qf=(MM('cHabFr')&&MM('cHabFr').checked)?(+MM('cQF').value||0):0;
+      html='<b>Entrada</b> + '+nfx(boas)+' '+esc(nomeCurtoSku(o.itemSku))+'<br>'+
+        '<b>Baixa</b> − '+nfx(boas+qf)+' '+esc(nomeCurtoSku(o.frascoSku))+' · − '+nfx(boas+qr)+' '+esc(nomeCurtoSku(o.rotuloSku));
+    } else {
+      var q=+MM('cQ').value||0;
+      html='<b>Entrada</b> + '+nfx(boas)+' '+esc(nomeCurtoSku(o.frascoSku))+'<br>'+
+        '<b>Baixa</b> − '+nfx(boas+q)+' '+esc(nomeCurtoSku(o.preformaSku));
+    }
+    MM('cResumo').innerHTML='<div class="s">Movimento interno do ERP (não vai ao Tiny):</div>'+html;
+  }
+  ['cBoas','cQ','cQR','cQF','cHabFr'].forEach(function(id){ var e=MM(id); if(e) e.addEventListener('input',resumo); });
+  resumo();
+  MM('cCancel').onclick=fecharModal;
+  MM('cReabrir').onclick=function(){ o.status='produzindo'; estornaOP(o.num); logar(o,'Reaberta'); salvar(); fecharModal(); render(); avisa('OP reaberta · estoque estornado.'); };
+  MM('cOK').onclick=function(){
+    var boas=+MM('cBoas').value||0;
+    o.iniReal=MM('cIni').value||o.iniReal; o.fimReal=MM('cFim').value||agora();
+    o.boas=boas; o.operador=MM('cOp').value||'';
+    o.status='concluida';
+    o.noPrazo = o.fimReal && hhmm(o.fimPrev) && hm(o.fimReal)<=o.fimPrev;
+    estornaOP(o.num); // idempotente
+    if(isRot){
+      var qr=+MM('cQR').value||0, qf=(MM('cHabFr')&&MM('cHabFr').checked)?(+MM('cQF').value||0):0;
+      o.quebraRotulo=qr; o.quebraFrasco=qf;
+      lanca(o.itemSku,'E',boas,o.num);
+      lanca(o.frascoSku,'S',boas+qf,o.num);
+      lanca(o.rotuloSku,'S',boas+qr,o.num);
+    } else {
+      var q=+MM('cQ').value||0; o.quebra=q;
+      lanca(o.frascoSku,'E',boas,o.num);
+      lanca(o.preformaSku,'S',boas+q,o.num);
+    }
+    logar(o,'Concluída', nfx(boas)+' boas');
+    salvar(); fecharModal(); render();
+    avisa('OP '+o.num+' concluída · estoque lançado no ERP.');
+  };
+  abrirMask();
+}
+
+function abrirOP(o){
+  var isRot=o.origem==='rotulagem';
+  MM('mTit').textContent=o.num+' · '+o.titulo;
+  MM('mSub').hidden=false; MM('mSub').textContent=(isRot?'Rotulagem':'Sopro')+' · '+maqNome(o.maq,isRot?rotuladoras():sopradoras())+' · '+nfx(o.qtdPrev)+' un';
+  MM('modal').classList.remove('wide');
+  var hist=(o.log||[]).slice().reverse().map(function(l){ return '<div class="pcx-he"><span class="t">'+esc(l.t||'')+'</span><span>'+esc(l.e)+(l.m?' · '+esc(l.m):'')+(l.por?' ('+esc(l.por)+')':'')+'</span></div>'; }).join('')||'<div class="pcx-vazio">Sem histórico ainda.</div>';
+  MM('mB').innerHTML =
+    '<div class="pcx-calc"><div class="k">Consumo da ficha</div><div class="s">'+
+      (isRot? ('Frasco: '+esc(nomeSku(o.frascoSku))+' · Rótulo: '+esc(nomeSku(o.rotuloSku))) : ('Preforma: '+esc(nomeSku(o.preformaSku))))+'</div></div>'+
+    '<h4 style="margin:12px 0 6px">Histórico</h4><div class="pcx-hist">'+hist+'</div>';
+  MM('mF').innerHTML='<div class="mfdir" style="margin-left:auto;display:flex;gap:8px"><button class="btn sm" id="oPDF">OP em PDF</button><button class="btn" id="oFechar">Fechar</button></div>';
+  MM('oFechar').onclick=fecharModal;
+  MM('oPDF').onclick=function(){ try{ pdfOP(o); }catch(e){ avisa('Não consegui gerar o PDF.',true); } };
+  abrirMask();
+}
+
+/* ---------- PDF (reusa helpers do sistema) ---------- */
+function pdfOP(o){
+  var isRot=o.origem==='rotulagem';
+  if(typeof folha!=='function'||typeof abrirFolha!=='function'||typeof campo!=='function'){ avisa('PDF indisponível.',true); return; }
+  var corpo='<div class="campos">'+
+    campo('OP',o.num,true)+campo('Produto',o.titulo,true)+
+    campo('Máquina',maqNome(o.maq,isRot?rotuladoras():sopradoras()))+campo('Quantidade',nfx(o.qtdPrev)+' un')+'</div>'+
+    '<div class="campos">'+
+    (isRot? campo('Frasco',nomeSku(o.frascoSku),true)+campo('Rótulo',nomeSku(o.rotuloSku),true)
+          : campo('Preforma',nomeSku(o.preformaSku),true)+campo('Frasco gerado',nomeSku(o.frascoSku),true))+
+    campo('Início previsto',hhmm(o.iniPrev))+'</div>'+
+    '<h2>Apontamento</h2>'+
+    (typeof anotar==='function'?anotar('Início','Fim','Produzidas',isRot?'Quebra rótulo':'Quebra'):'')+
+    (typeof assinar==='function'?assinar('Operador','Conferido por'):'');
+  abrirFolha(folha('Ordem de produção — '+(isRot?'Rotulagem':'Sopro'),'','',
+    '<p class="aviso">'+esc(o.num)+' · '+esc(o.titulo)+' · '+nfx(o.qtdPrev)+' un</p>'+corpo));
+}
+
+/* ======================================================================
+   JUNTAR LOTES (rotulagem) — agrupa programadas do mesmo rotulado+máquina,
+   somando a quantidade na OP de menor prazo
+   ====================================================================== */
+function juntarLotes(){
+  if(!podeEd()){ avisa('Sem permissão para juntar lotes.',true); return; }
+  mergeLotes(true);
+}
+function mergeLotes(feedback){
+  var progs = PCP.ops.filter(function(o){ return o.origem==='rotulagem' && o.status==='programada'; });
+  var grupos={};
+  progs.forEach(function(o){ var k=o.itemSku+'|'+o.maq; (grupos[k]||(grupos[k]=[])).push(o); });
+  var juntou=0;
+  Object.keys(grupos).forEach(function(k){
+    var g=grupos[k]; if(g.length<2)return;
+    g.sort(function(a,b){ return (a.fimPrev||0)-(b.fimPrev||0); });
+    var base=g[0], soma=0;
+    g.slice(1).forEach(function(o){ soma+=(o.qtdPrev||0); });
+    base.qtdPrev=(base.qtdPrev||0)+soma; base.qtd=base.qtdPrev;
+    var cad=maqCad(base.maq,rotuladoras())||1; base.fimPrev=prevFim(base.iniPrev,base.qtdPrev,cad);
+    logar(base,'Lotes juntados','+'+nfx(soma)+' un de '+(g.length-1)+' OP(s)');
+    g.slice(1).forEach(function(o){ PCP.ops = PCP.ops.filter(function(x){ return x.id!==o.id; }); });
+    juntou+=g.length-1;
+  });
+  if(juntou){ salvar(); render(); if(feedback)avisa(juntou+' lote(s) juntado(s).'); }
+  else if(feedback) avisa('Nada para juntar (precisa de 2+ programadas do mesmo item na mesma máquina).');
+  return juntou;
+}
+
+/* ======================================================================
+   LISTA GERAL DE ORDENS — seção aditiva de Sopro e Rotulagem, com
+   marcador de origem e busca (não mexe na tabela do envase)
+   ====================================================================== */
+var ODSR_BUSCA='';
+function injetarOrdensSR(){
+  var host=document.querySelector('#odgrid .od2'); if(!host) return;
+  if(host.querySelector('#odsrSec')) host.querySelector('#odsrSec').remove();
+  var ops=PCP.ops.slice().sort(function(a,b){ return (b.criadoEm||'').localeCompare(a.criadoEm||''); });
+  var q=ODSR_BUSCA.trim().toLowerCase();
+  if(q) ops=ops.filter(function(o){ return (o.num+' '+o.titulo+' '+o.origem+' '+(o.maq||'')).toLowerCase().indexOf(q)>=0; });
+  var sit={programada:['cz','Programada'],produzindo:['ok','Em produção'],pausada:['amb','Pausada'],concluida:['cz','Concluída']};
+  var linhas = ops.length? ops.map(function(o){
+    var s=sit[o.status]||['cz',o.status];
+    var tag=o.origem==='sopro'?'<span class="odsr-tag sp">Sopro</span>':'<span class="odsr-tag rt">Rotulagem</span>';
+    return '<tr data-odsrop="'+o.id+'"><td class="m"><b>'+esc(o.num)+'</b></td><td>'+tag+'</td>'+
+      '<td><b>'+esc(o.titulo)+'</b></td><td class="m">'+esc(maqNome(o.maq, o.origem==='sopro'?sopradoras():rotuladoras()))+'</td>'+
+      '<td class="m">'+nfx(o.qtdPrev)+' un</td><td><span class="pcx-sl '+s[0]+'">'+s[1]+'</span></td>'+
+      '<td class="m">'+esc(o.data||'')+'</td></tr>';
+  }).join('') : '<tr><td colspan="7" style="padding:14px;color:var(--ink3)">Nenhuma OP de sopro ou rotulagem.</td></tr>';
+  var sec=document.createElement('div');
+  sec.id='odsrSec'; sec.className='odsr';
+  sec.innerHTML='<div class="odsr-h"><h3>Sopro e Rotulagem <small>('+ops.length+')</small></h3>'+
+    '<input id="odsrB" placeholder="Nº, produto, origem ou máquina" value="'+esc(ODSR_BUSCA)+'"></div>'+
+    '<div class="odsr-rol"><table class="odsr-t"><thead><tr><th>Nº OP</th><th>Origem</th><th>Produto</th><th>Máquina</th><th>Qtd</th><th>Situação</th><th>Data</th></tr></thead><tbody>'+linhas+'</tbody></table></div>';
+  var top=host.querySelector('.od2top');
+  if(top&&top.nextSibling) host.insertBefore(sec, top.nextSibling); else host.appendChild(sec);
+  var b=sec.querySelector('#odsrB');
+  if(b) b.oninput=function(){ ODSR_BUSCA=b.value; var pos=b.selectionStart; injetarOrdensSR(); var nb=document.querySelector('#odsrB'); if(nb){ nb.focus(); try{nb.setSelectionRange(pos,pos);}catch(e){} } };
+  sec.querySelectorAll('[data-odsrop]').forEach(function(tr){ tr.style.cursor='pointer'; tr.onclick=function(){ var o=opPorId(tr.getAttribute('data-odsrop')); if(o) abrirOP(o); }; });
+}
+
+/* ======================================================================
+   TABLET (sopro/rotulagem) — mesmo fluxo do tablet dos tanques:
+   abertura em tela cheia, tela de PIN, as máquinas lado a lado, data no
+   topo e ⋮ histórico por máquina.
+   ====================================================================== */
+var TAB={origem:null, data:null, pin:false, maq:null};
+function elTab(){ var e=MM('pcpTab'); if(!e){ e=document.createElement('div'); e.id='pcpTab'; e.className='pcx-tab'; e.hidden=true; document.body.appendChild(e); } return e; }
+function abrirTablet(origem){ TAB.origem=origem; TAB.data=dataRef(); TAB.pin=false; renderTablet(); elTab().hidden=false; document.documentElement.style.overflow='hidden'; }
+function fecharTablet(){ elTab().hidden=true; document.documentElement.style.overflow=''; }
+function renderTablet(){
+  var e=elTab(); var isRot=TAB.origem==='rotulagem';
+  if(!TAB.pin){
+    e.innerHTML='<div class="pcx-tbar"><b>Atrius · '+(isRot?'Rotulagem':'Sopro')+'</b><button class="pcx-tsair" data-tac="sair">Sair ✕</button></div>'+
+      '<div class="pcx-pin"><div class="box"><div class="tt">PIN do operador</div>'+
+      '<input id="pcpPin" type="password" inputmode="numeric" maxlength="8" placeholder="• • • •">'+
+      '<div class="kp">'+[1,2,3,4,5,6,7,8,9,0].map(function(n){return '<button data-k="'+n+'">'+n+'</button>';}).join('')+'<button data-k="x">←</button></div>'+
+      '<button class="pcx-tenter" data-tac="entrar">Entrar</button>'+
+      '<div class="hint">Informe o PIN do operador para assinar a produção.</div></div></div>';
+  } else {
+    var maqs = isRot?rotuladoras():sopradoras();
+    var data=TAB.data;
+    var ops = opsDe(TAB.origem).filter(function(o){ return o.data===data || o.status!=='concluida'; });
+    e.innerHTML='<div class="pcx-tbar"><b>Atrius · '+(isRot?'Rotulagem':'Sopro')+'</b>'+
+      '<div class="pcx-tdate"><button data-tac="dprev">‹</button><span>'+esc((function(){try{return dLongo(data);}catch(x){return data;}})())+'</span><button data-tac="dnext">›</button></div>'+
+      '<button class="pcx-tsair" data-tac="sair">Sair ✕</button></div>'+
+      '<div class="pcx-tgrid">'+ maqs.map(function(m){
+        var mo=ops.filter(function(o){return o.maq===m.id;});
+        var cur=mo.filter(function(o){return o.status==='produzindo'||o.status==='pausada';})[0];
+        var prox=mo.filter(function(o){return o.status==='programada';});
+        return '<div class="pcx-tmc"><div class="pcx-tmh"><b>'+esc(m.nome||m.id)+'</b><span>'+(m.cad?nfx(m.cad)+' un/h':'')+'</span><button class="pcx-tdots" data-thist="'+esc(m.id)+'">⋮</button></div>'+
+          '<div class="pcx-tmb">'+ (cur?cardTablet(cur):'<div class="pcx-tvazio">Sem OP ativa.</div>') +
+          (prox.length?'<div class="pcx-tfila">Na fila: '+prox.map(function(o){return esc(o.num)+' · '+nfx(o.qtdPrev)+' un';}).join(' · ')+'</div>':'')+
+          '</div></div>';
+      }).join('') +'</div>';
+  }
+  ligarTablet();
+}
+function cardTablet(o){
+  var isRot=o.origem==='rotulagem';
+  var st = o.status==='pausada'?'<span class="pcx-sl amb">Pausada</span>':'<span class="pcx-sl ok">'+(isRot?'Rotulando':'Soprando')+'</span>';
+  var btn = o.status==='pausada'
+    ? '<button class="pcx-tbig ret" data-tac="retomar" data-op="'+o.id+'">▶ Retomar</button>'
+    : '<button class="pcx-tbig fim" data-tac="concluir" data-op="'+o.id+'">✓ Concluir</button><div class="pcx-tsub"><button data-tac="pausar" data-op="'+o.id+'">⏸ Pausar</button></div>';
+  var cons = isRot
+    ? '<div class="pcx-tcons"><div><small>Frasco</small><b>'+esc(nomeCurtoSku(o.frascoSku))+'</b></div><div><small>Rótulo</small><b>'+esc(nomeCurtoSku(o.rotuloSku))+'</b></div></div>'
+    : '<div class="pcx-tcons"><div><small>Preforma</small><b>'+esc(nomeCurtoSku(o.preformaSku))+'</b></div></div>';
+  return '<div class="pcx-tcard"><div class="pcx-tnome">'+esc(o.titulo)+'</div><div class="pcx-tseals">'+st+'<span class="pcx-sl cz mono">'+esc(o.num)+'</span></div>'+
+    cons + btn + '<div class="pcx-tqt"><div><span>Previsão</span><b>'+nfx(o.qtdPrev)+'</b></div><div><span>Início</span><b>'+esc(o.iniReal||'—')+'</b></div></div></div>';
+}
+function histTablet(maqId){
+  var isRot=TAB.origem==='rotulagem';
+  var ops=opsDe(TAB.origem).filter(function(o){return o.maq===maqId;}).sort(function(a,b){return (b.criadoEm||'').localeCompare(a.criadoEm||'');});
+  var linhas=ops.length?ops.map(function(o){
+    return '<div class="pcx-he"><span class="t">'+esc(o.num)+'</span><span>'+esc(o.titulo)+' · '+nfx(o.qtdPrev)+' un · '+esc(o.status)+(o.boas?' · '+nfx(o.boas)+' boas':'')+'</span></div>';
+  }).join(''):'<div class="pcx-vazio">Sem produções.</div>';
+  var e=elTab();
+  var ov=document.createElement('div'); ov.className='pcx-thistov';
+  ov.innerHTML='<div class="box"><div class="hh"><b>Histórico · '+esc(maqNome(maqId,isRot?rotuladoras():sopradoras()))+'</b><button data-tac="fh">✕</button></div><div class="bd">'+linhas+'</div></div>';
+  e.appendChild(ov);
+  ov.addEventListener('click',function(ev){ if(ev.target===ov||ev.target.getAttribute('data-tac')==='fh') ov.remove(); });
+}
+function ligarTablet(){
+  var e=elTab();
+  e.querySelectorAll('[data-k]').forEach(function(b){ b.onclick=function(){ var inp=MM('pcpPin'); if(!inp)return; var k=b.getAttribute('data-k'); if(k==='x') inp.value=inp.value.slice(0,-1); else inp.value+=k; }; });
+  e.querySelectorAll('[data-thist]').forEach(function(b){ b.onclick=function(){ histTablet(b.getAttribute('data-thist')); }; });
+  e.querySelectorAll('[data-tac]').forEach(function(b){
+    b.onclick=function(ev){ ev.stopPropagation();
+      var ac=b.getAttribute('data-tac'), id=b.getAttribute('data-op');
+      if(ac==='sair') return fecharTablet();
+      if(ac==='entrar'){ var v=(MM('pcpPin')||{}).value||''; if(v.length<2){ avisa('Informe o PIN.',true); return; } TAB.pin=true; TAB.operador=v; renderTablet(); return; }
+      if(ac==='dprev'||ac==='dnext'){ try{var d=new Date(TAB.data+'T12:00:00'); d.setDate(d.getDate()+(ac==='dnext'?1:-1)); TAB.data=ymd(d);}catch(x){} renderTablet(); return; }
+      var o=opPorId(id); if(!o)return;
+      if(ac==='concluir'){ fecharTablet(); abrirConcluir(o); }
+      else if(ac==='pausar'){ acPausar(o); renderTablet(); }
+      else if(ac==='retomar'){ acRetomar(o); renderTablet(); }
+    };
+  });
+}
+
+/* ======================================================================
+   OVERRIDES (ligam o modelo novo às páginas)
+   ====================================================================== */
+try{ gradeSopro = gradeSoproN; }catch(e){ window.gradeSopro=gradeSoproN; }
+try{ lateralSopro = lateralSoproN; }catch(e){ window.lateralSopro=lateralSoproN; }
+try{ gradeRotulagem = gradeRotulagemN; }catch(e){ window.gradeRotulagem=gradeRotulagemN; }
+try{ lateralRotulagem = lateralRotulagemN; }catch(e){ window.lateralRotulagem=lateralRotulagemN; }
+
+/* lista geral de ordens: injeta a seção SR depois que a página renderiza */
+try{ var _go=gradeOrdens; gradeOrdens=function(){ var r=_go.apply(this,arguments); try{ injetarOrdensSR(); }catch(e){} return r; }; }catch(e){}
+
+/* necessidade de compra: soma preforma (sopro) e rótulo (rotulagem) das OPs
+   abertas ao reservado — mesmo padrão de wrap que o sistema já usa no csNucleo.
+   Só ADICIONA; se algo falhar, devolve o original intacto. */
+try{
+  if(window.csNucleo && typeof csNucleo.reservado==='function'){
+    var _res=csNucleo.reservado;
+    csNucleo.reservado=function(o){
+      var out=_res.apply(this,arguments);
+      try{
+        var add=function(sku,qtd,origem){
+          if(!sku||!(qtd>0))return;
+          var it=porSku(sku); var nome=it?it.nome:sku;
+          var r=out[sku]||(out[sku]={sku:sku,nome:nome,qtd:0,ops:0,origens:[],det:[]});
+          r.qtd+=qtd; r.ops=(r.ops||0)+1;
+          r.origens=r.origens||[]; if(r.origens.length<12)r.origens.push(origem);
+          r.det=r.det||[]; r.det.push({o:origem,q:qtd});
+        };
+        PCP.ops.filter(function(x){ return x.status!=='concluida'; }).forEach(function(x){
+          var falta=Math.max(0,(x.qtdPrev||0)-(x.boas||0));
+          if(x.origem==='sopro') add(x.preformaSku, falta, 'Sopro '+x.num);
+          else if(x.origem==='rotulagem') add(x.rotuloSku, falta, 'Rotulagem '+x.num);
+        });
+      }catch(e){}
+      return out;
+    };
+  }
+}catch(e){}
+
+/* atalho do tablet: os arquivos sopro.html / rotulagem.html redirecionam
+   para #optsp / #optrt; aqui abrimos o tablet correspondente. */
+function checarHashTablet(){
+  try{ var h=(location.hash||'').toLowerCase();
+    if(h==='#optsp'){ abrirTablet('sopro'); }
+    else if(h==='#optrt'){ abrirTablet('rotulagem'); }
+  }catch(e){}
+}
+try{ window.addEventListener('hashchange', checarHashTablet); }catch(e){}
+try{ if(document.readyState!=='loading') setTimeout(checarHashTablet,300); else window.addEventListener('load',function(){ setTimeout(checarHashTablet,300); }); }catch(e){}
+
+/* hook de inspeção/teste (não altera comportamento) */
+try{ window.__PCP={ PCP:PCP, mergeLotes:mergeLotes, abrirTablet:abrirTablet, novaOP:novaOP, injetarOrdensSR:injetarOrdensSR, saldoPCP:saldoPCP, checarHashTablet:checarHashTablet }; }catch(e){}
+
 })();
 
 </script>

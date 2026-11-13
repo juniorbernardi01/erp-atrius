@@ -1,6 +1,6 @@
 {
- "v": "v545",
- "versao": "5.4.1",
- "data": "12/11/2026",
- "o_que_mudou": "Nova permissão 'Telas e tablets' em Pessoas e permissões › PCP: com ela tu liberas pessoa a pessoa (ex.: a Mariane) o acesso a Configurações › PCP, pra abrir o Visualizar das telas dos tablets e operar os tanques com o PIN, sem precisar ser master. Também leva a v5.4.0: 'químico/química' virou 'Qualidade', páginas de treino removidas, tarja do dólar fixa no topo em toda a página das compras e botão 'Tela da TV' fora do Envase e Tanques."
+ "v": "v550",
+ "versao": "5.5.0",
+ "data": "13/11/2026",
+ "o_que_mudou": "Novo módulo PCP: Sopro e Rotulagem completo. OP própria (numeração SP e ROT), produção para estoque interno do ERP (sem Tiny), apontamento, concluir/retomar, histórico e OP em PDF. Sopro consome preforma e gera frasco; rotulagem consome frasco soprado e rótulo e gera frasco rotulado, com duas quebras. Adicionados: as OPs aparecem na página de Ordens de produção numa seção Sopro e Rotulagem com marcador de origem e busca; a Necessidade de compra passa a somar preforma (sopro) e rótulo (rotulagem) das OPs abertas; juntar lotes iguais na rotulagem; e os tablets de sopro e rotulagem (tela cheia, PIN, maquinas lado a lado, data no topo e historico por maquina). Bloco isolado e aditivo: nenhuma outra pagina foi alterada."
 }
