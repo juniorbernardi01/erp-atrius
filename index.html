@@ -39883,6 +39883,8 @@ function csMp519(simular){
 
 
 
+
+
 <!--PCP_SOPRO_ROTULAGEM-->
 <style id="pcpSrCss">
 /* PCP Sopro/Rotulagem — estilos isolados (prefixo pcx-) */
@@ -40084,6 +40086,26 @@ button.pcx-lat-it{width:100%;text-align:left;background:none;font:inherit;align-
 .pcx-lat-it .q.falta{color:var(--anl,#DC2626);font-weight:800}
 .pcx-lat-it .q.ok{color:#16A34A}
 
+/* --- cabeçalho: seletor + data juntos --- */
+.pcx-sr-l{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.pcx-nova.sm{padding:8px 12px;font-size:12.5px}
+/* --- fila de pedidos do envase (lateral) --- */
+.pcx-ped{display:flex;align-items:center;gap:10px;padding:9px 12px;border-bottom:1px solid var(--line,#DDE3EC);cursor:grab;user-select:none}
+.pcx-ped:hover{background:var(--wash,#F1F5F9)}
+.pcx-ped.sel{background:#EFF5FE;box-shadow:inset 3px 0 0 #1D4ED8}
+.pcx-ped.dragging{opacity:.5}
+.pcx-ped .seq{width:22px;height:22px;flex:none;border-radius:999px;background:var(--navy,#0E1B33);color:#fff;font:800 11px ui-monospace,monospace;display:grid;place-items:center}
+.pcx-ped .mid{flex:1;min-width:0}
+.pcx-ped .mid .n{font:700 12.5px system-ui;color:var(--ink,#0F172A);line-height:1.2}
+.pcx-ped .mid .pz{font:600 10.5px system-ui;color:#B45309;margin-top:2px}
+.pcx-ped .qq{flex:none;text-align:right;font:800 15px ui-monospace,monospace;color:var(--anl,#DC2626);line-height:1}
+.pcx-ped .qq small{display:block;font:600 8.5px system-ui;color:var(--ink3,#64748B)}
+.pcx-selbar{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 12px;background:#EFF5FE;border-top:1px solid #BBD4F7}
+.pcx-selbar span{font:700 11.5px system-ui;color:#1D4ED8}
+.pcx-col.drop{outline:2px dashed #1D4ED8;outline-offset:-4px}
+
+.pcx-selbar[hidden]{display:none}
+
 </style>
 <script>
 /* =====================================================================
@@ -40260,10 +40282,14 @@ function cardRotuloN(o, vez){
 function headerSR(tab){
   var lbl = tab==='sopro'?'Nova OP de sopro':'Nova OP de rotulagem';
   var juntar = tab==='rotulagem'?'<button class="pcx-ghost" data-ac="juntar">⊕ Juntar lotes iguais</button>':'';
+  var dataTxt = esc((function(){try{return dLongo(dataRef());}catch(e){return dataRef();}})());
   return '<div class="pcx-sr-head">'+
-    '<div class="pcx-sw">'+
-      '<button class="'+(tab==='sopro'?'on':'')+'" data-tab="sopro">Sopro</button>'+
-      '<button class="'+(tab==='rotulagem'?'on':'')+'" data-tab="rotulagem">Rotulagem</button>'+
+    '<div class="pcx-sr-l">'+
+      '<div class="pcx-sw">'+
+        '<button class="'+(tab==='sopro'?'on':'')+'" data-tab="sopro">Sopro</button>'+
+        '<button class="'+(tab==='rotulagem'?'on':'')+'" data-tab="rotulagem">Rotulagem</button>'+
+      '</div>'+
+      '<div class="pcx-datesel"><button class="pcx-nav" data-ac="dia-prev">‹</button><b>'+dataTxt+'</b><button class="pcx-nav" data-ac="dia-next">›</button></div>'+
     '</div>'+
     '<div class="pcx-head-r">'+juntar+
       '<button class="pcx-nova" data-ac="nova" data-origem="'+tab+'">＋ '+lbl+'</button>'+
@@ -40276,7 +40302,7 @@ function coluna(titulo, cad, ops){
   var fila = abertos.filter(function(o){return o!==vez;});
   var conc = ops.filter(function(o){return o.status==='concluida';});
   var cardf = titulo.o==='sopro'?cardSoproN:cardRotuloN;
-  var h = '<div class="pcx-col"><div class="pcx-colh"><div class="r1"><b>'+esc(titulo.nome)+'</b></div>'+
+  var h = '<div class="pcx-col" data-maqdrop="'+esc(titulo.id||'')+'" data-orig="'+esc(titulo.o)+'"><div class="pcx-colh"><div class="r1"><b>'+esc(titulo.nome)+'</b></div>'+
     '<i>'+abertos.length+' OP(s) · '+(cad?nfx(cad)+' un/h':'')+'</i></div><div class="pcx-colb">';
   h += vez ? cardf(vez,true) : '<div class="pcx-vazio">Nenhuma OP na máquina agora.</div>';
   if(fila.length){ h += '<div class="pcx-fila">▸ Próximas na fila ('+fila.length+')</div>' + fila.map(function(o){return cardf(o,false);}).join(''); }
@@ -40323,7 +40349,7 @@ function metaPanelSopro(){
       '<div class="big">'+nfx(prod)+' <small>/ '+nfx(meta)+'</small></div>'+
       '<div class="barw"><i style="width:'+pct+'%"></i></div>'+
       '<div class="ft"><span class="at">'+pct+'% produzido</span><span class="fa">faltam '+nfx(Math.max(0,meta-prod))+'</span></div>'+
-      '<div class="cob '+cls+'"><svg class="spark" viewBox="0 0 90 22" preserveAspectRatio="none"><polyline points="'+sparkPts(pct)+'" fill="none" stroke="'+cor+'" stroke-width="2"/></svg><b>'+(auto?'consumo auto · '+nfx(consumoMesDe(f))+'/mês':'consumo manual · '+nfx(f.consumo)+'/mês')+'</b></div></div>';
+      '<div class="cob '+cls+'"><svg class="spark" viewBox="0 0 90 22" preserveAspectRatio="none"><polyline points="'+sparkPts(pct)+'" fill="none" stroke="'+cor+'" stroke-width="2"/></svg><b>'+(pct>=100?'atende a demanda':pct>=75?'no ritmo':'precisa acelerar')+'</b> · '+(auto?'auto':'manual')+' '+nfx(consumoMesDe(f))+'/mês</div></div>';
   });
   var totPct=somaMeta?Math.min(100,Math.round(somaProd/somaMeta*100)):0;
   var sel='base: <select class="pcx-metaper" onclick="event.stopPropagation()">'+[[1,'1 mês'],[3,'3 meses'],[6,'6 meses'],[12,'12 meses']].map(function(o){return '<option value="'+o[0]+'"'+(SR_METAMESES==o[0]?' selected':'')+'>'+o[1]+'</option>';}).join('')+'</select>';
@@ -40331,9 +40357,25 @@ function metaPanelSopro(){
     '<div class="minibars">'+mb+'</div></summary><div class="pcx-mpanel">'+panel+'</div></details>';
 }
 
+function dCurtoSafe(d){ try{ return dCurto(d); }catch(e){ return d||''; } }
+function prazoEnvasePorFRR(){
+  var pz={};
+  try{
+    (typeof ORDENS!=='undefined'?ORDENS:[]).forEach(function(o){
+      var st; try{ st=sit(o); }catch(e){ st=''; } if(['concluida','cancelada','finalizado'].indexOf(st)>=0) return;
+      var ng=true; try{ ng=naGrade(o); }catch(e){} if(!ng) return;
+      var cons; try{ cons=consumoDaOP(o, caixasPrev(o)); }catch(e){ cons=[]; }
+      (cons||[]).forEach(function(c){ var it=porSku(c.sku); if(!it||grupoDe(it)!=='frrot') return;
+        var key=(o.data||'9999-99-99')+'T'+('000'+(o.inicio||0)).slice(-4);
+        if(!pz[c.sku]||key<pz[c.sku].key) pz[c.sku]={key:key,data:o.data,ini:o.inicio||0};
+      });
+    });
+  }catch(e){}
+  return pz;
+}
 function demandaEnvaseFRR(){
   var res={}; try{ res=csNucleo.reservado({envase:true,tanques:false})||{}; }catch(e){}
-  var out=[];
+  var pz=prazoEnvasePorFRR(), out=[];
   rotulados().forEach(function(it){
     var need=(res[it.sku]&&res[it.sku].qtd)||0;
     var interno=saldoPCP(it.sku), tiny=0;
@@ -40341,34 +40383,67 @@ function demandaEnvaseFRR(){
     var saldo=interno+tiny;
     var falta=Math.max(0, Math.round(need-Math.max(0,saldo)));
     if(saldo<0) falta=Math.max(falta, Math.round(-saldo));
-    if(falta>0||need>0) out.push({sku:it.sku,nome:it.nome,falta:falta,need:Math.round(need)});
+    if(falta>0){ var p=pz[it.sku]||null; out.push({sku:it.sku,nome:it.nome,falta:falta,prazoData:p&&p.data,prazoIni:p&&p.ini,prazoKey:p?p.key:'9999'}); }
   });
-  return out.sort(function(a,b){return b.falta-a.falta;});
-}
-function demandaRotulagemPET(){
-  var need={};
-  PCP.ops.forEach(function(o){ if(o.origem==='rotulagem'&&o.status!=='concluida'&&o.frascoSku){ need[o.frascoSku]=(need[o.frascoSku]||0)+Math.max(0,(o.qtdPrev||0)-(o.boas||0)); } });
-  var out=[];
-  frascosSopro().forEach(function(it){
-    var n=need[it.sku]||0, saldo=saldoPCP(it.sku);
-    var falta=Math.max(0, Math.round(n-Math.max(0,saldo)));
-    if(saldo<0) falta=Math.max(falta, Math.round(-saldo));
-    if(falta>0||n>0) out.push({sku:it.sku,nome:it.nome,falta:falta,need:Math.round(n)});
-  });
-  return out.sort(function(a,b){return b.falta-a.falta;});
+  out.sort(function(a,b){ var c=(a.prazoKey||'9999').localeCompare(b.prazoKey||'9999'); return c||(b.falta-a.falta); });
+  return out;
 }
 function lateralDemanda(origem){
-  var isRot=origem==='rotulagem';
-  var itens=isRot?demandaEnvaseFRR():demandaRotulagemPET();
-  var titulo=isRot?'Pedidos do envase':'Pedidos da rotulagem';
-  var nota=isRot?'o que o envase está pedindo · toque pra rotular':'frasco soprado que falta · toque pra soprar';
-  var linhas=itens.length? itens.map(function(d){
-    return '<button type="button" class="pcx-lat-it ped" data-pedido="'+esc(d.sku)+'" data-porig="'+origem+'">'+
-      '<div class="n">'+esc(nomeCurtoSku(d.sku))+'</div>'+
-      '<div class="q '+(d.falta>0?'falta':'ok')+'">'+(d.falta>0?'faltam '+nfx(d.falta):'ok')+'</div></button>';
-  }).join('') : '<div class="pcx-vazio">Sem pedido no momento.</div>';
-  return '<div class="pcx-lh"><b>'+titulo+'</b><span>'+itens.filter(function(d){return d.falta>0;}).length+' em falta</span></div>'+
-    '<div class="pcx-lb">'+linhas+'</div><p class="pcx-lnote">'+nota+'</p>';
+  var itens=demandaEnvaseFRR();
+  var linhas=itens.length? itens.map(function(d,i){
+    var prazo = d.prazoData ? ('pronto até '+esc(dCurtoSafe(d.prazoData))+(d.prazoIni?' '+hhmm(d.prazoIni):'')) : 'sem prazo definido';
+    return '<div class="pcx-ped" draggable="true" data-pedido="'+esc(d.sku)+'" data-falta="'+d.falta+'">'+
+      '<div class="seq">'+(i+1)+'</div>'+
+      '<div class="mid"><div class="n">'+esc(nomeCurtoSku(d.sku))+'</div><div class="pz">'+prazo+'</div></div>'+
+      '<div class="qq">'+nfx(d.falta)+'<small>frascos</small></div></div>';
+  }).join('') : '<div class="pcx-vazio">Sem pedido do envase no momento.</div>';
+  var selbar='<div class="pcx-selbar" id="pcpSelBar" hidden><span id="pcpSelN">0 selecionadas</span><button type="button" class="pcx-nova sm" data-ac="juntarsel">⊕ Juntar e criar OP</button></div>';
+  return '<div class="pcx-lh"><b>Pedidos do envase</b><span>'+itens.length+' na fila</span></div>'+
+    '<div class="pcx-lb" id="pcpPedLista">'+linhas+'</div>'+selbar+
+    '<p class="pcx-lnote">Clique pra selecionar e juntar · arraste pra cima da máquina pra aproveitar</p>';
+}
+/* ações dos pedidos: criar/juntar/arrastar */
+function criarOProtulagem(sku, qtd, maq, registro){
+  var it=porSku(sku); if(!it||qtd<=0) return null;
+  var maqs=rotuladoras(); maq=maq||((maqs[0]&&maqs[0].id)||'');
+  var cad=maqCad(maq,maqs)||1, ini=hm('05:00');
+  var o={ id:uid(), origem:'rotulagem', num:'ROT '+p4(++PCP.seqROT), titulo:it.nome, itemSku:sku,
+    frascoSku:frascoDoRotulado(sku), rotuloSku:rotuloDoRotulado(sku), rotTipo:tipoRotulo(rotuloDoRotulado(sku)),
+    maq:maq, qtd:qtd, qtdPrev:qtd, data:dataRef(), criadoData:hojeYMD(), iniPrev:ini, fimPrev:prevFim(ini,qtd,cad),
+    status:'programada', iniReal:'', fimReal:'', boas:0, quebraRotulo:0, quebraFrasco:0, operador:'', log:[], pedidos:[],
+    criadoEm:new Date().toISOString(), criadoPor:(function(){try{return quemAssina();}catch(e){return '';}})() };
+  if(registro) o.pedidos.push(registro);
+  logar(o,'OP criada do pedido', o.num+' · '+nfx(qtd)+' un');
+  PCP.ops.push(o); return o;
+}
+function soltarPedidoNaMaq(sku, maq){
+  if(!podeEd()){ avisa('Sem permissão.',true); return; }
+  var d=demandaEnvaseFRR().filter(function(x){return x.sku===sku;})[0];
+  var qtd=d?d.falta:0; if(qtd<=0){ avisa('Esse pedido já está coberto.'); return; }
+  var alvo=PCP.ops.filter(function(o){return o.origem==='rotulagem'&&o.maq===maq&&o.itemSku===sku&&o.status!=='concluida';})[0];
+  if(alvo){
+    alvo.qtdPrev+=qtd; alvo.qtd=alvo.qtdPrev;
+    var cad=maqCad(maq,rotuladoras())||1; alvo.fimPrev=prevFim(alvo.iniPrev,alvo.qtdPrev,cad);
+    (alvo.pedidos||(alvo.pedidos=[])).push({qtd:qtd,em:hojeYMD()});
+    logar(alvo,'Pedido aproveitado','+'+nfx(qtd)+' un'); avisa('Somado '+nfx(qtd)+' na OP '+alvo.num+' ('+(alvo.pedidos.length)+' pedidos).');
+  } else {
+    var o=criarOProtulagem(sku,qtd,maq,{qtd:qtd,em:hojeYMD()}); if(o) avisa('OP '+o.num+' criada em '+maqNome(maq,rotuladoras())+'.');
+  }
+  salvar(); render();
+}
+function atualizaSelBar(w){
+  var sel=w.querySelectorAll('.pcx-ped.sel'), bar=w.querySelector('#pcpSelBar'); if(!bar)return;
+  if(sel.length){ bar.hidden=false; var n=w.querySelector('#pcpSelN'); if(n)n.textContent=sel.length+' selecionada'+(sel.length>1?'s':''); }
+  else bar.hidden=true;
+}
+function juntarSelecionados(w){
+  if(!podeEd()){ avisa('Sem permissão.',true); return; }
+  var sel=[].slice.call(w.querySelectorAll('.pcx-ped.sel'));
+  if(!sel.length){ avisa('Selecione os pedidos primeiro.'); return; }
+  var map={};
+  sel.forEach(function(el){ var s=el.getAttribute('data-pedido'), q=+el.getAttribute('data-falta')||0; map[s]=(map[s]||0)+q; });
+  var n=0; Object.keys(map).forEach(function(s){ var o=criarOProtulagem(s,map[s],null,{qtd:map[s],em:hojeYMD()}); if(o)n++; });
+  salvar(); render(); avisa(n+' OP(s) criada(s) dos pedidos selecionados.');
 }
 function renderSR(host, tab){
   if(!host) return;
@@ -40376,10 +40451,11 @@ function renderSR(host, tab){
   var ops = opsDe(tab).filter(function(o){ return o.data===data || o.status!=='concluida'; });
   var maqs = tab==='sopro'?sopradoras():rotuladoras();
   var cols = '<div class="pcx-maqs">'+ maqs.map(function(m){
-    return coluna({nome:m.nome||m.id,o:tab}, +m.cad||0, ops.filter(function(o){return o.maq===m.id;}));
+    return coluna({nome:m.nome||m.id,id:m.id,o:tab}, +m.cad||0, ops.filter(function(o){return o.maq===m.id;}));
   }).join('') +'</div>';
-  var wrap = '<div class="pcx-rotwrap"><aside class="pcx-lateral">'+lateralDemanda(tab)+'</aside><div class="pcx-rotmain">'+cols+'</div></div>';
-  var corpo = tab==='rotulagem' ? wrap : (metaPanelSopro() + wrap);
+  var corpo = tab==='rotulagem'
+    ? '<div class="pcx-rotwrap"><aside class="pcx-lateral">'+lateralDemanda(tab)+'</aside><div class="pcx-rotmain">'+cols+'</div></div>'
+    : metaPanelSopro() + cols;
   host.innerHTML = '<div class="pcx-page">'+ headerSR(tab) + corpo + '</div>';
   // injeta o ⋮ em cada bloco (um só lugar)
   host.querySelectorAll('.pcx-card[data-op]').forEach(function(c){
@@ -40420,6 +40496,7 @@ function ligarEventos(wrapId){
       if(ac==='nova'){ novaOP(el.getAttribute('data-origem')); return; }
       if(ac==='tablet'){ abrirTablet(el.getAttribute('data-origem')); return; }
       if(ac==='juntar'){ juntarLotes(); return; }
+      if(ac==='juntarsel'){ juntarSelecionados(w); return; }
       if(ac==='dia-prev'||ac==='dia-next'){ moverDia(ac==='dia-next'?1:-1); return; }
       var o=opPorId(id); if(!o)return;
       if(ac==='iniciar') acIniciar(o);
@@ -40428,9 +40505,17 @@ function ligarEventos(wrapId){
       else if(ac==='retomar') acRetomar(o);
     };
   });
-  // pedidos (lateral) → abre Nova OP atendendo
-  w.querySelectorAll('[data-pedido]').forEach(function(el){
-    el.onclick=function(ev){ ev.stopPropagation(); novaOP(el.getAttribute('data-porig'), el.getAttribute('data-pedido')); };
+  // pedidos do envase: clique seleciona; arraste pra máquina aproveita
+  w.querySelectorAll('.pcx-ped').forEach(function(el){
+    el.onclick=function(){ el.classList.toggle('sel'); atualizaSelBar(w); };
+    el.addEventListener('dragstart',function(ev){ try{ ev.dataTransfer.setData('text/plain', el.getAttribute('data-pedido')); ev.dataTransfer.effectAllowed='copy'; el.classList.add('dragging'); }catch(e){} });
+    el.addEventListener('dragend',function(){ el.classList.remove('dragging'); });
+  });
+  atualizaSelBar(w);
+  w.querySelectorAll('.pcx-col[data-orig="rotulagem"]').forEach(function(col){
+    col.addEventListener('dragover',function(ev){ ev.preventDefault(); col.classList.add('drop'); });
+    col.addEventListener('dragleave',function(){ col.classList.remove('drop'); });
+    col.addEventListener('drop',function(ev){ ev.preventDefault(); col.classList.remove('drop'); var sku=''; try{ sku=ev.dataTransfer.getData('text/plain'); }catch(e){} if(sku) soltarPedidoNaMaq(sku, col.getAttribute('data-maqdrop')); });
   });
   // seletor de período da meta
   var per=w.querySelector('.pcx-metaper');
@@ -40883,6 +40968,22 @@ function injetarTabletsSR(){
   });
 }
 try{ if(typeof abrirCfgPCP==='function'){ var _cfgpcp=abrirCfgPCP; abrirCfgPCP=function(){ var r=_cfgpcp.apply(this,arguments); try{ injetarTabletsSR(); }catch(e){} return r; }; } }catch(e){}
+
+/* cabeçalho do app: nas páginas de Sopro e Rotulagem esconde o título e a
+   data do topo (o seletor e a data ficam no conteúdo), evitando duplicar. */
+try{
+  var _rendSR=render;
+  render=function(){
+    var r=_rendSR.apply(this,arguments);
+    try{
+      var sr=(S.page==='sopro'||S.page==='rotulagem');
+      var oe=MM('ondeest'); if(oe) oe.style.display=sr?'none':'';
+      var per=MM('per'); if(per) per.style.display=sr?'none':'';
+      var nav=document.querySelector('header .nav'); if(nav) nav.style.display=sr?'none':'';
+    }catch(e){}
+    return r;
+  };
+}catch(e){}
 
 /* hook de inspeção/teste (não altera comportamento) */
 try{ window.__PCP={ PCP:PCP, mergeLotes:mergeLotes, abrirTablet:abrirTablet, novaOP:novaOP, injetarOrdensSR:injetarOrdensSR, saldoPCP:saldoPCP, checarHashTablet:checarHashTablet }; }catch(e){}
