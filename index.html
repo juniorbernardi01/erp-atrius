@@ -39878,6 +39878,8 @@ function csMp519(simular){
 
 
 
+
+
 <!--PCP_SOPRO_ROTULAGEM-->
 <style id="pcpSrCss">
 /* PCP Sopro/Rotulagem — estilos isolados (prefixo pcx-) */
@@ -39999,6 +40001,30 @@ function csMp519(simular){
 .pcx-thistov .hh{display:flex;align-items:center;padding:13px 16px;background:#0E1B33}.pcx-thistov .hh b{flex:1}.pcx-thistov .hh button{background:rgba(255,255,255,.12);color:#fff;border:0;border-radius:8px;width:32px;height:32px;cursor:pointer}
 .pcx-thistov .bd{padding:12px 16px;overflow:auto}
 .pcx-thistov .pcx-he{border-color:#243049}.pcx-thistov .pcx-he .t{color:#93a1bb}
+
+/* --- página unificada Sopro e Rotulagem --- */
+#spwrap,#rtwrap{display:block;width:100%}
+#spgrid,#rtgrid{display:block;width:100%}
+.pcx-page{width:100%;padding:4px 2px 40px}
+.pcx-sr-head{margin-bottom:4px}
+.pcx-sr-top{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:12px}
+.pcx-sr-tit{font:800 20px system-ui;margin:0}
+.pcx-head-r{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.pcx-datesel{display:flex;align-items:center;gap:8px;border:1px solid var(--line,#DDE3EC);border-radius:10px;padding:4px 10px}
+.pcx-datesel b{font:700 13px system-ui}
+.pcx-tabs{display:flex;gap:2px;border-bottom:1px solid var(--line,#DDE3EC);margin-bottom:16px}
+.pcx-tabbtn{border:0;background:none;padding:11px 20px;font:800 14px system-ui;color:var(--ink3,#64748B);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px}
+.pcx-tabbtn.on{color:var(--ink,#0F172A);border-bottom-color:#1D4ED8}
+.pcx-maqs{width:100%}
+/* --- ⋮ e menu do bloco --- */
+.pcx-card{position:relative}
+.pcx-kb{position:absolute;top:10px;right:10px;border:1px solid var(--line,#DDE3EC);background:var(--surface,#fff);color:var(--ink3,#64748B);border-radius:7px;width:27px;height:27px;font-size:16px;line-height:1;cursor:pointer;z-index:3}
+.pcx-kb:hover{background:var(--wash,#F1F5F9)}
+.pcx-seals{max-width:130px;padding-right:30px}
+.pcx-cardmenu{position:fixed;z-index:10000;background:var(--surface,#fff);border:1px solid var(--line,#DDE3EC);border-radius:10px;box-shadow:0 12px 32px rgba(15,23,42,.18);padding:5px;min-width:182px;display:flex;flex-direction:column}
+.pcx-cardmenu button{text-align:left;border:0;background:none;padding:10px 12px;font:600 13px system-ui;color:var(--ink,#0F172A);cursor:pointer;border-radius:7px}
+.pcx-cardmenu button:hover{background:var(--wash,#F1F5F9)}
+.pcx-cardmenu button.del{color:#B91C1C}
 
 </style>
 <script>
@@ -40187,16 +40213,24 @@ function cardRotuloN(o){
 /* ======================================================================
    GRADE (páginas)
    ====================================================================== */
-function toolbar(origem){
-  var lbl = origem==='sopro'?'Nova OP de sopro':'Nova OP de rotulagem';
-  var extra = (origem==='rotulagem'?'<button class="pcx-ghost" data-ac="juntar" data-origem="rotulagem">⊕ Juntar lotes iguais</button>':'');
-  return '<div class="pcx-bar"><div class="pcx-bar-l">'+
-    '<button class="pcx-nav" data-ac="dia-prev">‹</button>'+
-    '<b>'+esc((function(){try{return dLongo(dataRef());}catch(e){return dataRef();}})())+'</b>'+
-    '<button class="pcx-nav" data-ac="dia-next">›</button></div>'+
-    '<div class="pcx-bar-r">'+extra+
-    '<button class="pcx-ghost" data-ac="tablet" data-origem="'+origem+'">📱 Abrir no tablet</button>'+
-    '<button class="pcx-nova" data-ac="nova" data-origem="'+origem+'">＋ '+lbl+'</button></div></div>';
+function headerSR(tab){
+  var lbl = tab==='sopro'?'Nova OP de sopro':'Nova OP de rotulagem';
+  var juntar = tab==='rotulagem'?'<button class="pcx-ghost" data-ac="juntar">⊕ Juntar lotes iguais</button>':'';
+  var dataTxt = esc((function(){try{return dLongo(dataRef());}catch(e){return dataRef();}})());
+  return '<div class="pcx-sr-head">'+
+    '<div class="pcx-sr-top">'+
+      '<h2 class="pcx-sr-tit">Sopro e Rotulagem</h2>'+
+      '<div class="pcx-head-r">'+
+        '<div class="pcx-datesel"><button class="pcx-nav" data-ac="dia-prev">‹</button><b>'+dataTxt+'</b><button class="pcx-nav" data-ac="dia-next">›</button></div>'+
+        juntar+
+        '<button class="pcx-ghost" data-ac="tablet" data-origem="'+tab+'">📱 Abrir no tablet</button>'+
+        '<button class="pcx-nova" data-ac="nova" data-origem="'+tab+'">＋ '+lbl+'</button>'+
+      '</div>'+
+    '</div>'+
+    '<div class="pcx-tabs">'+
+      '<button class="pcx-tabbtn '+(tab==='sopro'?'on':'')+'" data-tab="sopro">Sopro</button>'+
+      '<button class="pcx-tabbtn '+(tab==='rotulagem'?'on':'')+'" data-tab="rotulagem">Rotulagem</button>'+
+    '</div></div>';
 }
 function coluna(titulo, cad, ops){
   var cur = ops.filter(function(o){return o.status==='produzindo'||o.status==='pausada';});
@@ -40225,33 +40259,25 @@ function metaPanelSopro(){
   return '<details class="pcx-meta" open><summary><span class="mt">Meta de sopro da semana</span></summary><div class="pcx-mpanel">'+cards+'</div></details>';
 }
 
-function gradeSoproN(){
+function renderSR(host, tab){
+  if(!host) return;
   var data=dataRef();
-  var ops=opsDe('sopro',data).concat(opsDe('sopro',null).filter(function(o){return o.status!=='concluida'&&o.data!==data;}));
-  // mostra do dia; mantém abertas de outros dias
-  ops = opsDe('sopro').filter(function(o){ return o.data===data || o.status!=='concluida'; });
-  if(MM('spsem')) MM('spsem').innerHTML = toolbar('sopro') + metaPanelSopro();
-  var sop=sopradoras();
-  var html = '<div class="pcx-maqs">'+ sop.map(function(m){
-    var mo = ops.filter(function(o){return o.maq===m.id;});
-    return coluna({nome:m.nome||m.id,o:'sopro'}, +m.cad||0, mo);
+  var ops = opsDe(tab).filter(function(o){ return o.data===data || o.status!=='concluida'; });
+  var maqs = tab==='sopro'?sopradoras():rotuladoras();
+  var cols = '<div class="pcx-maqs">'+ maqs.map(function(m){
+    return coluna({nome:m.nome||m.id,o:tab}, +m.cad||0, ops.filter(function(o){return o.maq===m.id;}));
   }).join('') +'</div>';
-  if(MM('spgrid')) MM('spgrid').innerHTML = html;
-  ligarEventos('spwrap');
-  lateralSoproN();
+  host.innerHTML = '<div class="pcx-page">'+ headerSR(tab) + (tab==='sopro'?metaPanelSopro():'') + cols + '</div>';
+  // injeta o ⋮ em cada bloco (um só lugar)
+  host.querySelectorAll('.pcx-card[data-op]').forEach(function(c){
+    if(c.querySelector('.pcx-kb')) return;
+    var kb=document.createElement('button'); kb.className='pcx-kb'; kb.type='button';
+    kb.setAttribute('data-menu', c.getAttribute('data-op')); kb.textContent='⋮';
+    c.appendChild(kb);
+  });
 }
-function gradeRotulagemN(){
-  var data=dataRef();
-  var ops = opsDe('rotulagem').filter(function(o){ return o.data===data || o.status!=='concluida'; });
-  var rot=rotuladoras();
-  var html = toolbar('rotulagem') + '<div class="pcx-maqs">'+ rot.map(function(m){
-    var mo = ops.filter(function(o){return o.maq===m.id;});
-    return coluna({nome:m.nome||m.id,o:'rotulagem'}, +m.cad||0, mo);
-  }).join('') +'</div>';
-  if(MM('rtgrid')) MM('rtgrid').innerHTML = html;
-  ligarEventos('rtwrap');
-  lateralRotulagemN();
-}
+function gradeSoproN(){ if(MM('spsem')) MM('spsem').innerHTML=''; renderSR(MM('spgrid'),'sopro'); ligarEventos('spwrap'); lateralSoproN(); }
+function gradeRotulagemN(){ renderSR(MM('rtgrid'),'rotulagem'); ligarEventos('rtwrap'); lateralRotulagemN(); }
 function lateralSoproN(){
   if(MM('sT')) MM('sT').textContent='Estoque soprado';
   if(MM('sD')) MM('sD').textContent='Saldo interno do PCP (não vai ao Tiny)';
@@ -40289,10 +40315,61 @@ function ligarEventos(wrapId){
       else if(ac==='retomar') acRetomar(o);
     };
   });
-  // clicar no card abre o histórico/apontamento
-  w.querySelectorAll('.pcx-card').forEach(function(c){
-    c.addEventListener('click',function(){ var o=opPorId(c.getAttribute('data-op')); if(o) abrirOP(o); });
+  // abas Sopro | Rotulagem
+  w.querySelectorAll('[data-tab]').forEach(function(t){
+    t.onclick=function(){ try{ S.page=t.getAttribute('data-tab'); render(); }catch(e){} };
   });
+  // menu ⋮ de cada bloco
+  w.querySelectorAll('[data-menu]').forEach(function(k){
+    k.onclick=function(ev){ ev.stopPropagation(); var o=opPorId(k.getAttribute('data-menu')); if(o) abrirMenuCard(k,o); };
+  });
+}
+function fecharMenuCard(){ var m=MM('pcpCardMenu'); if(m)m.remove(); }
+function abrirMenuCard(btn,o){
+  fecharMenuCard();
+  var m=document.createElement('div'); m.className='pcx-cardmenu'; m.id='pcpCardMenu';
+  m.innerHTML='<button data-mi="hist">Histórico</button><button data-mi="edit">Editar OP</button><button data-mi="pdf">Imprimir PDF</button><button data-mi="del" class="del">Excluir OP</button>';
+  document.body.appendChild(m);
+  var r=btn.getBoundingClientRect();
+  var top=Math.min(r.bottom+4, window.innerHeight-180);
+  m.style.top=top+'px'; m.style.left=Math.max(8,Math.min(r.right-182, window.innerWidth-190))+'px';
+  m.querySelectorAll('[data-mi]').forEach(function(b){ b.onclick=function(ev){ ev.stopPropagation(); var mi=b.getAttribute('data-mi'); fecharMenuCard();
+    if(mi==='hist') abrirOP(o);
+    else if(mi==='edit') editarOP(o);
+    else if(mi==='pdf'){ try{ pdfOP(o); }catch(e){ avisa('PDF indisponível.',true); } }
+    else if(mi==='del') excluirOP(o);
+  }; });
+  setTimeout(function(){ document.addEventListener('click', fecharMenuCard, {once:true}); },0);
+}
+function excluirOP(o){
+  if(!podeEd()){ avisa('Sem permissão.',true); return; }
+  if(!window.confirm('Excluir a OP '+o.num+' ('+o.titulo+')?'+(o.status==='concluida'?'\\nO estoque lançado por ela será estornado.':''))) return;
+  estornaOP(o.num);
+  PCP.ops = PCP.ops.filter(function(x){ return x.id!==o.id; });
+  salvar(); render(); avisa('OP '+o.num+' excluída.');
+}
+function editarOP(o){
+  if(!podeEd()){ avisa('Sem permissão.',true); return; }
+  var isRot=o.origem==='rotulagem';
+  var maqs = isRot?rotuladoras():sopradoras();
+  MM('mTit').textContent='Editar '+o.num;
+  MM('mSub').hidden=false; MM('mSub').textContent=o.titulo;
+  MM('modal').classList.remove('wide');
+  MM('mB').innerHTML=
+    '<div class="g2"><div class="fld"><label>Quantidade a produzir</label><input id="eQtd" type="number" min="1" step="1" value="'+(o.qtdPrev||0)+'"></div>'+
+      '<div class="fld"><label>Máquina</label><select id="eMaq">'+maqs.map(function(m){return opt(o.maq, m.id, (m.nome||m.id)+(m.cad?' — '+nfx(m.cad)+' un/h':''));}).join('')+'</select></div></div>'+
+    '<div class="g2"><div class="fld"><label>Data</label><input id="eData" type="date" value="'+esc(o.data||dataRef())+'"></div>'+
+      '<div class="fld"><label>Hora de início</label><input id="eHora" type="time" step="300" value="'+esc(hhmm(o.iniPrev))+'"></div></div>';
+  MM('mF').innerHTML='<div class="mfdir" style="margin-left:auto;display:flex;gap:8px"><button class="btn" id="eCancel">Cancelar</button><button class="btn pri" id="eOK">Salvar</button></div>';
+  MM('eCancel').onclick=fecharModal;
+  MM('eOK').onclick=function(){
+    var q=+MM('eQtd').value||0; if(q<=0){ avisa('Quantidade inválida.',true); return; }
+    o.qtdPrev=q; o.qtd=q; o.maq=MM('eMaq').value; o.data=MM('eData').value||o.data;
+    o.iniPrev=hm(MM('eHora').value||hhmm(o.iniPrev));
+    var cad=maqCad(o.maq,maqs)||1; o.fimPrev=prevFim(o.iniPrev,o.qtdPrev,cad);
+    logar(o,'OP editada'); salvar(); fecharModal(); render(); avisa('OP '+o.num+' atualizada.');
+  };
+  abrirMask();
 }
 function moverDia(d){ try{ var base=S.refTq?new Date(S.refTq):new Date(); base.setDate(base.getDate()+d); S.refTq=base; render(); }catch(e){} }
 
