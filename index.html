@@ -39882,6 +39882,7 @@ function csMp519(simular){
 
 
 
+
 <!--PCP_SOPRO_ROTULAGEM-->
 <style id="pcpSrCss">
 /* PCP Sopro/Rotulagem — estilos isolados (prefixo pcx-) */
@@ -40072,6 +40073,16 @@ function csMp519(simular){
 .pcx-rel-hist th{text-align:left;font:800 9px system-ui;text-transform:uppercase;letter-spacing:.03em;color:var(--ink3,#64748B);padding:8px 12px;background:var(--wash,#F1F5F9);position:sticky;top:0}
 .pcx-rel-hist td{padding:8px 12px;border-top:1px solid var(--line,#DDE3EC);vertical-align:top}
 .pcx-rel-hist td.mono{font-family:ui-monospace,monospace;color:var(--ink3,#64748B);white-space:nowrap}
+
+/* --- seletor de período da meta --- */
+.pcx-metaperw{font:600 11px system-ui;color:var(--ink3,#64748B);display:flex;align-items:center;gap:5px}
+.pcx-metaper{border:1px solid var(--line,#DDE3EC);border-radius:7px;padding:3px 7px;font:700 11px system-ui;background:var(--surface,#fff);color:var(--ink,#0F172A);cursor:pointer}
+/* --- linhas de pedido (lateral clicável) --- */
+button.pcx-lat-it{width:100%;text-align:left;background:none;font:inherit;align-items:center}
+.pcx-lat-it.ped{cursor:pointer}
+.pcx-lat-it.ped:hover{background:var(--wash,#F1F5F9)}
+.pcx-lat-it .q.falta{color:var(--anl,#DC2626);font-weight:800}
+.pcx-lat-it .q.ok{color:#16A34A}
 
 </style>
 <script>
@@ -40275,17 +40286,36 @@ function coluna(titulo, cad, ops){
 }
 
 function sparkPts(pct){ return '0,18 30,'+(18-Math.round(pct/100*4))+' 60,'+(18-Math.round(pct/100*7))+' 90,'+(18-Math.round(pct/100*10)); }
+var SR_METAMESES = 3;
+function periodoMeta(){ var ate=hojeYMD(); var d=new Date(); d.setMonth(d.getMonth()-SR_METAMESES); return {de:ymd(d), ate:ate}; }
+function consumoMensalAuto(fid){
+  var P=periodoMeta(), tot=0;
+  try{
+    (typeof ORDENS!=='undefined'?ORDENS:[]).forEach(function(o){
+      if(!o.data||o.data<P.de||o.data>P.ate) return;
+      var st; try{ st=sit(o); }catch(e){ st=''; } if(st!=='concluida') return;
+      var p; try{ p=prodOf(o.codigo); }catch(e){} if(!p) return;
+      var fr; try{ fr=preformaDe(p); }catch(e){} if(!fr){ try{ fr=FRASCO_PADRAO(+p.litragem||0); }catch(e){} }
+      if(fr!==fid) return;
+      var cx; try{ cx=(o.caixas!=null?+o.caixas:caixasPrev(o)); }catch(e){ cx=0; }
+      tot += (cx||0)*(+p.un_cx||1);
+    });
+  }catch(e){}
+  var dias=Math.max(1, Math.round((new Date(P.ate)-new Date(P.de))/864e5)+1);
+  return Math.round(tot/dias*30);
+}
+function consumoMesDe(f){ return (+f.consumo>0)?+f.consumo:consumoMensalAuto(f.id); }
+function metaSemDe(f){ return Math.round(consumoMesDe(f)/(52/12)*(1+(+f.seg||0)/100)); }
 function metaPanelSopro(){
   var fr = (typeof FRASCOS!=='undefined'?FRASCOS:[]);
   if(!fr.length) return '';
-  var ini7=(function(){var d=new Date();d.setDate(d.getDate()-6);return hojeYMD()&&ymd(d);})();
+  var ini7=(function(){var d=new Date();d.setDate(d.getDate()-6);return ymd(d);})();
   var prodSku={};
-  PCP.ops.forEach(function(o){ if(o.origem==='sopro'&&o.status==='concluida'&&(!ini7||o.data>=ini7)){ prodSku[o.frascoSku]=(prodSku[o.frascoSku]||0)+(o.boas||0); } });
+  PCP.ops.forEach(function(o){ if(o.origem==='sopro'&&o.status==='concluida'&&o.data>=ini7){ prodSku[o.frascoSku]=(prodSku[o.frascoSku]||0)+(o.boas||0); } });
   function prodDe(f){ var total=0, id=(f.id||'').toLowerCase(); Object.keys(prodSku).forEach(function(sku){ var nm=(nomeSku(sku)||'').toLowerCase(); if(id&&nm.indexOf(id)>=0) total+=prodSku[sku]; }); return total; }
   var mb='', panel='', somaMeta=0, somaProd=0;
   fr.forEach(function(f){
-    var meta=0; try{ meta=metaSemanal(f); }catch(e){ meta=Math.round((+f.consumo||0)/(52/12)*(1+(+f.seg||0)/100)); }
-    var prod=prodDe(f), pct=meta?Math.min(100,Math.round(prod/meta*100)):0;
+    var meta=metaSemDe(f), prod=prodDe(f), pct=meta?Math.min(100,Math.round(prod/meta*100)):0, auto=!(+f.consumo>0);
     somaMeta+=meta; somaProd+=prod;
     var cls=pct<40?'cr':pct<75?'lo':'ok', cor=cls==='cr'?'#DC2626':cls==='lo'?'#F59E0B':'#16A34A';
     mb+='<div class="mb '+cls+'"><span>'+esc(f.id)+' · '+pct+'%</span><div class="bar"><i style="width:'+pct+'%"></i></div></div>';
@@ -40293,23 +40323,52 @@ function metaPanelSopro(){
       '<div class="big">'+nfx(prod)+' <small>/ '+nfx(meta)+'</small></div>'+
       '<div class="barw"><i style="width:'+pct+'%"></i></div>'+
       '<div class="ft"><span class="at">'+pct+'% produzido</span><span class="fa">faltam '+nfx(Math.max(0,meta-prod))+'</span></div>'+
-      '<div class="cob '+cls+'"><svg class="spark" viewBox="0 0 90 22" preserveAspectRatio="none"><polyline points="'+sparkPts(pct)+'" fill="none" stroke="'+cor+'" stroke-width="2"/></svg><b>meta semanal por consumo</b></div></div>';
+      '<div class="cob '+cls+'"><svg class="spark" viewBox="0 0 90 22" preserveAspectRatio="none"><polyline points="'+sparkPts(pct)+'" fill="none" stroke="'+cor+'" stroke-width="2"/></svg><b>'+(auto?'consumo auto · '+nfx(consumoMesDe(f))+'/mês':'consumo manual · '+nfx(f.consumo)+'/mês')+'</b></div></div>';
   });
   var totPct=somaMeta?Math.min(100,Math.round(somaProd/somaMeta*100)):0;
-  return '<details class="pcx-meta"><summary><span class="mt">Meta de sopro da semana</span><span class="mpct">'+totPct+'%</span>'+
+  var sel='base: <select class="pcx-metaper" onclick="event.stopPropagation()">'+[[1,'1 mês'],[3,'3 meses'],[6,'6 meses'],[12,'12 meses']].map(function(o){return '<option value="'+o[0]+'"'+(SR_METAMESES==o[0]?' selected':'')+'>'+o[1]+'</option>';}).join('')+'</select>';
+  return '<details class="pcx-meta"><summary><span class="mt">Meta de sopro da semana</span><span class="pcx-metaperw" onclick="event.stopPropagation()">'+sel+'</span><span class="mpct">'+totPct+'%</span>'+
     '<div class="minibars">'+mb+'</div></summary><div class="pcx-mpanel">'+panel+'</div></details>';
 }
 
-function frascosARotular(){
-  var fr = frascosSopro();
-  var disp = fr.filter(function(i){ return saldoPCP(i.sku)>0; });
-  var base = disp.length?disp:fr;
-  var linhas = base.map(function(i){ var s=saldoPCP(i.sku);
-    return '<div class="pcx-lat-it"><div class="n">'+esc(nomeCurtoSku(i.sku))+'</div><div class="q '+(s<=0?'zero':'')+'">'+nfx(s)+' un</div></div>';
-  }).join('');
-  return '<div class="pcx-lh"><b>Frascos a rotular</b><span>'+disp.length+' em estoque</span></div>'+
-    '<div class="pcx-lb">'+(linhas||'<div class="pcx-vazio">Sem frasco soprado em estoque.</div>')+'</div>'+
-    '<p class="pcx-lnote">Saldo interno do PCP · a rotulagem consome daqui.</p>';
+function demandaEnvaseFRR(){
+  var res={}; try{ res=csNucleo.reservado({envase:true,tanques:false})||{}; }catch(e){}
+  var out=[];
+  rotulados().forEach(function(it){
+    var need=(res[it.sku]&&res[it.sku].qtd)||0;
+    var interno=saldoPCP(it.sku), tiny=0;
+    try{ if(it.tiny!=null&&typeof ESTOQUE!=='undefined'&&ESTOQUE[it.tiny]!=null) tiny=+ESTOQUE[it.tiny]; }catch(e){}
+    var saldo=interno+tiny;
+    var falta=Math.max(0, Math.round(need-Math.max(0,saldo)));
+    if(saldo<0) falta=Math.max(falta, Math.round(-saldo));
+    if(falta>0||need>0) out.push({sku:it.sku,nome:it.nome,falta:falta,need:Math.round(need)});
+  });
+  return out.sort(function(a,b){return b.falta-a.falta;});
+}
+function demandaRotulagemPET(){
+  var need={};
+  PCP.ops.forEach(function(o){ if(o.origem==='rotulagem'&&o.status!=='concluida'&&o.frascoSku){ need[o.frascoSku]=(need[o.frascoSku]||0)+Math.max(0,(o.qtdPrev||0)-(o.boas||0)); } });
+  var out=[];
+  frascosSopro().forEach(function(it){
+    var n=need[it.sku]||0, saldo=saldoPCP(it.sku);
+    var falta=Math.max(0, Math.round(n-Math.max(0,saldo)));
+    if(saldo<0) falta=Math.max(falta, Math.round(-saldo));
+    if(falta>0||n>0) out.push({sku:it.sku,nome:it.nome,falta:falta,need:Math.round(n)});
+  });
+  return out.sort(function(a,b){return b.falta-a.falta;});
+}
+function lateralDemanda(origem){
+  var isRot=origem==='rotulagem';
+  var itens=isRot?demandaEnvaseFRR():demandaRotulagemPET();
+  var titulo=isRot?'Pedidos do envase':'Pedidos da rotulagem';
+  var nota=isRot?'o que o envase está pedindo · toque pra rotular':'frasco soprado que falta · toque pra soprar';
+  var linhas=itens.length? itens.map(function(d){
+    return '<button type="button" class="pcx-lat-it ped" data-pedido="'+esc(d.sku)+'" data-porig="'+origem+'">'+
+      '<div class="n">'+esc(nomeCurtoSku(d.sku))+'</div>'+
+      '<div class="q '+(d.falta>0?'falta':'ok')+'">'+(d.falta>0?'faltam '+nfx(d.falta):'ok')+'</div></button>';
+  }).join('') : '<div class="pcx-vazio">Sem pedido no momento.</div>';
+  return '<div class="pcx-lh"><b>'+titulo+'</b><span>'+itens.filter(function(d){return d.falta>0;}).length+' em falta</span></div>'+
+    '<div class="pcx-lb">'+linhas+'</div><p class="pcx-lnote">'+nota+'</p>';
 }
 function renderSR(host, tab){
   if(!host) return;
@@ -40319,9 +40378,8 @@ function renderSR(host, tab){
   var cols = '<div class="pcx-maqs">'+ maqs.map(function(m){
     return coluna({nome:m.nome||m.id,o:tab}, +m.cad||0, ops.filter(function(o){return o.maq===m.id;}));
   }).join('') +'</div>';
-  var corpo = tab==='rotulagem'
-    ? '<div class="pcx-rotwrap"><aside class="pcx-lateral">'+frascosARotular()+'</aside><div class="pcx-rotmain">'+cols+'</div></div>'
-    : metaPanelSopro() + cols;
+  var wrap = '<div class="pcx-rotwrap"><aside class="pcx-lateral">'+lateralDemanda(tab)+'</aside><div class="pcx-rotmain">'+cols+'</div></div>';
+  var corpo = tab==='rotulagem' ? wrap : (metaPanelSopro() + wrap);
   host.innerHTML = '<div class="pcx-page">'+ headerSR(tab) + corpo + '</div>';
   // injeta o ⋮ em cada bloco (um só lugar)
   host.querySelectorAll('.pcx-card[data-op]').forEach(function(c){
@@ -40370,6 +40428,13 @@ function ligarEventos(wrapId){
       else if(ac==='retomar') acRetomar(o);
     };
   });
+  // pedidos (lateral) → abre Nova OP atendendo
+  w.querySelectorAll('[data-pedido]').forEach(function(el){
+    el.onclick=function(ev){ ev.stopPropagation(); novaOP(el.getAttribute('data-porig'), el.getAttribute('data-pedido')); };
+  });
+  // seletor de período da meta
+  var per=w.querySelector('.pcx-metaper');
+  if(per) per.onchange=function(){ SR_METAMESES=+per.value||3; try{ render(); }catch(e){} };
   // abas Sopro | Rotulagem
   w.querySelectorAll('[data-tab]').forEach(function(t){
     t.onclick=function(){ try{ S.page=t.getAttribute('data-tab'); render(); }catch(e){} };
@@ -40441,7 +40506,7 @@ function acConcluir(o){ abrirConcluir(o); }
    ====================================================================== */
 function opt(sel,val,txt){ return '<option value="'+esc(val)+'"'+(sel===val?' selected':'')+'>'+esc(txt)+'</option>'; }
 
-function novaOP(origem){
+function novaOP(origem, preSku){
   if(!podeEd()){ avisa('Sem permissão para criar OP.',true); return; }
   var isRot = origem==='rotulagem';
   var itens = isRot? rotulados() : frascosSopro();
@@ -40452,7 +40517,7 @@ function novaOP(origem){
   MM('modal').classList.remove('wide');
   MM('mB').innerHTML =
     '<div class="fld"><label>'+(isRot?'Frasco rotulado a produzir':'Frasco a produzir')+'</label>'+
-      '<select id="pcpItem">'+itens.map(function(i){return opt('', i.sku, i.nome);}).join('')+'</select></div>'+
+      '<select id="pcpItem">'+itens.map(function(i){return opt(preSku||'', i.sku, i.nome);}).join('')+'</select></div>'+
     '<div id="pcpCons"></div>'+
     '<div class="g2"><div class="fld"><label>Quantidade a produzir</label><input id="pcpQtd" type="number" min="1" step="1" value="1000"></div>'+
       '<div class="fld"><label>Máquina</label><select id="pcpMaq">'+maqs.map(function(m){return opt('', m.id, (m.nome||m.id)+(m.cad?' — '+nfx(m.cad)+' un/h':''));}).join('')+'</select></div></div>'+
