@@ -5508,7 +5508,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v554';const VERSAO_DATA='16/11/2026';
+const VERSAO_APP='v556';const VERSAO_DATA='16/11/2026';
 /* número que aparece na tela: v438 → v4.3.8 (por dentro continua v438, que é o que as versões comparam) */
 const csRotVer=v=>{const d=String(v||'').replace(/\D/g,'');return d.length>=3?'v'+d.slice(0,-2)+'.'+d.slice(-2,-1)+'.'+d.slice(-1):String(v||'');};
 const VERSAO_ROTULO=csRotVer(VERSAO_APP)+' · '+VERSAO_DATA;
@@ -40125,11 +40125,38 @@ button.pcx-lat-it{width:100%;text-align:left;background:none;font:inherit;align-
 .pcx-ped-lote{font:600 10.5px system-ui;color:var(--ink3,#64748B)}.pcx-ped-lote.dim{opacity:.7}
 .pcx-ped-qt{font:800 16px ui-monospace,monospace;color:var(--navy,#0E1B33);line-height:1;white-space:nowrap}
 .pcx-ped-qt small{font:600 10px system-ui;color:var(--ink3,#64748B)}
-.pcx-selbar{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 12px;background:#EFF5FE;border-top:1px solid #BBD4F7}
-.pcx-selbar span{font:700 11.5px system-ui;color:#1D4ED8}
+.pcx-selbar{display:flex;flex-direction:column;align-items:stretch;gap:8px;padding:9px 12px;background:#EFF5FE;border-top:1px solid #BBD4F7}
+.pcx-selbar>span{font:700 11.5px system-ui;color:#1D4ED8}
+.pcx-selac{display:flex;gap:6px;flex-wrap:wrap}
+.pcx-sb{flex:1;min-width:92px;border:0;border-radius:8px;padding:8px 8px;font:700 11.5px system-ui;cursor:pointer;white-space:nowrap}
+.pcx-sb.ok{background:#16A34A;color:#fff}
+.pcx-sb.no{background:#fff;color:#B91C1C;border:1px solid #FCA5A5}
+.pcx-sb.jt{background:var(--navy,#0E1B33);color:#fff;flex-basis:100%}
+.pcx-sb[hidden]{display:none}
 .pcx-col.drop{outline:2px dashed #1D4ED8;outline-offset:-4px}
-
 .pcx-selbar[hidden]{display:none}
+/* selo de estoque no bloquinho do pedido */
+.pcx-est{display:inline-block;margin-top:2px;font:700 10px system-ui;border-radius:999px;padding:2px 8px;width:fit-content}
+.pcx-est.ok{color:#15803D;background:#DCFCE7;border:1px solid #BBF7D0}
+.pcx-est.pt{color:#92400E;background:#FEF3C7;border:1px solid #FDE68A}
+/* resolvidos do dia (atendidos / cancelados) */
+.pcx-resolv{margin:4px 8px 8px;border:1px solid var(--line,#DDE3EC);border-radius:11px;overflow:hidden;background:var(--surface,#fff)}
+.pcx-resolv>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:8px;padding:9px 11px;font:700 11.5px system-ui;color:var(--ink,#0F172A)}
+.pcx-resolv>summary::-webkit-details-marker{display:none}
+.pcx-resolv .pcx-rv-c{margin-left:auto;font:600 10.5px system-ui;color:var(--ink3,#64748B)}
+.pcx-resolv .chev{transition:transform .15s}.pcx-resolv[open] .chev{transform:rotate(180deg)}
+.pcx-rv-body{border-top:1px solid var(--line,#DDE3EC);padding:6px 8px;max-height:260px;overflow:auto}
+.pcx-rv-it{display:flex;align-items:center;gap:8px;padding:7px 4px;border-bottom:1px dashed var(--line,#EEF1F6)}
+.pcx-rv-it:last-child{border-bottom:0}
+.pcx-rv-l{flex:1;min-width:0}
+.pcx-rv-top{display:flex;align-items:center;gap:7px}
+.pcx-rv-top b{font:800 12px system-ui;color:var(--ink,#0F172A);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pcx-rv-tag{font:700 9px system-ui;text-transform:uppercase;letter-spacing:.03em;border-radius:999px;padding:2px 7px;white-space:nowrap;flex:none}
+.pcx-rv-tag.ok{color:#15803D;background:#DCFCE7}
+.pcx-rv-tag.no{color:#B91C1C;background:#FEE2E2}
+.pcx-rv-sub{font:600 10px system-ui;color:var(--ink3,#64748B);margin-top:2px;line-height:1.3}
+.pcx-rv-undo{flex:none;border:1px solid var(--line,#DDE3EC);background:var(--wash,#F1F5F9);color:#1D4ED8;border-radius:7px;padding:5px 9px;font:700 10.5px system-ui;cursor:pointer}
+.pcx-rv-undo:hover{background:#EFF5FE;border-color:#BBD4F7}
 
 /* ===== bloco "o que pegar" dentro do card (frasco + rótulo nome inteiro) ===== */
 .pcx-pega{margin-top:10px;border:1px solid var(--line,#DDE3EC);border-radius:10px;overflow:hidden;background:var(--surface,#fff)}
@@ -40191,6 +40218,53 @@ button.pcx-lat-it{width:100%;text-align:left;background:none;font:inherit;align-
 .pcx-graf-row .bar i{display:block;height:100%}
 .pcx-graf-row .vl{width:120px;flex:none;text-align:right;font:800 12px ui-monospace,monospace;color:var(--ink,#0F172A)}
 .pcx-graf-row .vl small{font:600 10px system-ui;color:#DC2626}
+
+/* ===== botão Programação no topo ===== */
+.pcx-progbtn{border:1px solid var(--line,#DDE3EC);background:var(--surface,#fff);color:var(--ink,#0F172A);border-radius:10px;padding:10px 14px;font:700 13px system-ui;cursor:pointer}
+.pcx-progbtn:hover{border-color:#BBD4F7;background:#F8FAFF}
+
+/* ===== scroll por dentro: cabeçalhos fixos, rolam só os cards/bloquinhos ===== */
+.pcx-col{overflow:hidden}
+.pcx-colb{flex:1;min-height:0;overflow-y:auto;scrollbar-width:thin}
+.pcx-lateral{display:flex;flex-direction:column;overflow:hidden}
+.pcx-lateral .pcx-lb{flex:1 1 auto;min-height:0;overflow-y:auto;scrollbar-width:thin}
+.pcx-lateral .pcx-lh,.pcx-lateral .pcx-lsub,.pcx-lateral .pcx-selbar,.pcx-lateral .pcx-resolv,.pcx-lateral .pcx-lnote{flex:none}
+@media(max-width:960px){.pcx-colb,.pcx-lateral .pcx-lb{overflow:visible}}
+
+/* ===== tela cheia da Programação (mesmo formato do Envase) ===== */
+#pcpProg{position:fixed;inset:0;z-index:700;background:#F3F4F6;display:none;flex-direction:column;font-family:Inter,system-ui,sans-serif}
+#pcpProg.on{display:flex}
+#pcpProg .ps-pgcab{display:flex;align-items:center;gap:14px;padding:14px 24px;background:#fff;border-bottom:1px solid #E5E7EB}
+#pcpProg .ps-pgcab h2{margin:0;font-size:20px;font-weight:700;color:#0F172A}
+#pcpProg .ps-dt{display:inline-flex;align-items:center;gap:6px;border:1px solid #D1D5DB;border-radius:10px;padding:4px 8px;background:#fff}
+#pcpProg .ps-dt b{font-size:14px;min-width:230px;text-align:center}
+#pcpProg .ps-nv{width:30px;height:30px;border:0;background:#F3F4F6;border-radius:8px;font-size:16px;cursor:pointer}
+#pcpProg .ps-hj{border:1px solid #D1D5DB;background:#fff;border-radius:8px;padding:5px 10px;font-size:12.5px;cursor:pointer}
+#pcpProg .ps-x{margin-left:auto;border:1px solid #D1D5DB;background:#fff;border-radius:10px;padding:7px 14px;font-size:13px;font-weight:600;cursor:pointer}
+#pcpProg .ps-corpo{flex:1;overflow:auto;padding:18px 24px}
+.ps-tl{background:#fff;border:1px solid #E5E7EB;border-radius:14px;padding:18px 22px;max-width:1500px;margin:0 auto}
+.ps-cab{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#6B7280;margin-bottom:16px;display:flex;align-items:center;gap:10px}
+.ps-cab span{margin-left:auto;font-weight:400;letter-spacing:0;text-transform:none;font-size:13px;color:#374151}
+.ps-cab span b{color:#15803D}
+.ps-hh{position:relative;height:18px;font-size:12px;color:#6B7280;margin:0 128px 8px 118px}
+.ps-hh span{position:absolute;transform:translateX(-50%);white-space:nowrap;font-family:ui-monospace,Menlo,monospace}
+.ps-csl{display:flex;align-items:center;margin-bottom:12px}
+.ps-nm{width:110px;flex:none;font:700 16px system-ui;color:#111827;padding-right:8px}
+.ps-fx{flex:1;height:54px;background:#F3F4F6;border-radius:10px;position:relative;overflow:hidden;background-image:repeating-linear-gradient(to right,#E5E7EB 0 1px,transparent 1px 8.333%)}
+.ps-csb{position:absolute;top:4px;bottom:4px;border-radius:8px;display:flex;align-items:center;padding:0 10px;overflow:hidden;white-space:nowrap;cursor:pointer;background:color-mix(in srgb,var(--c) 22%,#fff);color:#1F2937;border-left:5px solid var(--c);box-shadow:0 1px 2px rgba(15,23,42,.12)}
+.ps-csb span{min-width:0;overflow:hidden;line-height:1.2}
+.ps-csb b{font:700 12.5px system-ui;display:block;overflow:hidden;text-overflow:ellipsis}
+.ps-csb small{display:block;font-weight:500;color:#4B5563;font-size:11px;overflow:hidden;text-overflow:ellipsis}
+.ps-csb:hover{outline:2px solid var(--c)}
+.ps-oc{width:120px;flex:none;text-align:right;padding-left:12px;line-height:1.2}
+.ps-oc b{font-size:18px;display:block;color:#0F172A}.ps-oc i{font-style:normal;font-size:11.5px;color:#6B7280;display:block}
+.ps-leg{display:flex;gap:16px;flex-wrap:wrap;margin-top:16px;padding-top:12px;border-top:1px solid #E5E7EB;font-size:12px;color:#4B5563}
+.ps-leg span{display:flex;align-items:center;gap:6px}.ps-leg .q{width:16px;height:13px;border-radius:4px;display:block}
+.ps-leg .q.prog{background:color-mix(in srgb,#0E1B33 22%,#fff);border-left:4px solid #0E1B33}
+.ps-leg .q.prod{background:color-mix(in srgb,#16A34A 22%,#fff);border-left:4px solid #16A34A}
+.ps-leg .q.pausa{background:color-mix(in srgb,#B45309 22%,#fff);border-left:4px solid #B45309}
+.ps-vazio{padding:34px;text-align:center;color:#6B7280;font-size:14px}
+@media(max-width:720px){.ps-nm{width:70px;font-size:13px}.ps-hh{margin:0 80px 8px 78px}.ps-oc{width:72px}}
 </style>
 <script>
 /* =====================================================================
@@ -40209,7 +40283,7 @@ button.pcx-lat-it{width:100%;text-align:left;background:none;font:inherit;align-
 if(window.__PCP_SR__)return; window.__PCP_SR__=true;
 
 /* ---------- estado interno ---------- */
-var PCP = window.PCP = { ops:[], mov:[], seqSP:0, seqROT:0 };
+var PCP = window.PCP = { ops:[], mov:[], seqSP:0, seqROT:0, resolv:[] };
 var p4 = function(n){ n=String(n); while(n.length<4)n='0'+n; return n; };
 
 /* ---------- persistência (aditiva; nunca toca Tiny/ESTOQUE) ---------- */
@@ -40227,7 +40301,7 @@ try{
     var r = _ap.apply(this, arguments);
     try{ var d = JSON.parse(txt);
       if(d && d.pcp){ PCP.ops=d.pcp.ops||[]; PCP.mov=d.pcp.mov||[];
-        PCP.seqSP=+d.pcp.seqSP||0; PCP.seqROT=+d.pcp.seqROT||0; } }
+        PCP.seqSP=+d.pcp.seqSP||0; PCP.seqROT=+d.pcp.seqROT||0; PCP.resolv=d.pcp.resolv||[]; } }
     catch(e){}
     return r;
   };
@@ -40438,7 +40512,7 @@ function headerSR(tab){
       '</div>'+
       '<div class="pcx-datesel"><button class="pcx-nav" data-ac="dia-prev">‹</button><button class="pcx-datetext" data-ac="cal">'+dataTxt+' ▾</button><button class="pcx-nav" data-ac="dia-next">›</button></div>'+
     '</div>'+
-    '<div class="pcx-head-r"><button class="pcx-nova" data-ac="nova" data-origem="'+tab+'">＋ '+lbl+'</button></div></div>';
+    '<div class="pcx-head-r"><button class="pcx-progbtn" data-ac="prog" data-origem="'+tab+'">▦ Programação</button><button class="pcx-nova" data-ac="nova" data-origem="'+tab+'">＋ '+lbl+'</button></div></div>';
 }
 function coluna(titulo, cad, ops){
   var abertos = ops.filter(function(o){return o.status!=='concluida';})
@@ -40527,6 +40601,17 @@ function cobertoPedido(oid, sku){
   }catch(e){}
   return s;
 }
+/* pedidos que o operador resolveu na mão (cancelou ou marcou já atendido pelo
+   estoque). Guardado em PCP.resolv pra não voltar na fila. Chave = oid+sku. */
+function chavePed(oid, sku){ return String(oid)+'|'+String(sku); }
+function pedResolvido(oid, sku){
+  try{ for(var i=0;i<(PCP.resolv||[]).length;i++){ var r=PCP.resolv[i]; if(r && r.oid===oid && r.sku===sku) return r; } }catch(e){}
+  return null;
+}
+function resolvDoDia(data){
+  return (PCP.resolv||[]).filter(function(r){ return r && (r.data===data || (r.em||'').slice(0,10)===data); })
+    .sort(function(a,b){ return String(b.em||'').localeCompare(String(a.em||'')); });
+}
 function pedidosEnvaseOPs(data){
   var out=[];
   try{
@@ -40542,16 +40627,30 @@ function pedidosEnvaseOPs(data){
         // já entra pronto no estoque de rotulado, não passa pela rotulagem.
         if(!rotulaInterno(it)) return;
         var bruto=Math.round(c.qtd||0); if(bruto<=0) return;
+        // resolvido na mão (cancelado/atendido): some da fila.
+        if(pedResolvido(o.id, c.sku)) return;
         // desconta o que já virou OP de rotulagem: o pedido some da lista.
         var falta=bruto - cobertoPedido(o.id, c.sku); if(falta<=0) return;
         var op; try{ op=rotuloOP(o); }catch(e){ op=o.id; }
         var prod=''; try{ var pp=prodOf(o.codigo); prod=pp?(pp.nome||''):''; }catch(e){}
-        out.push({ oid:o.id, op:op, prod:prod, lote:(o.lote||''), sku:c.sku, nome:it.nome, qtd:falta, prazoData:o.data, prazoIni:(o.inicio||0) });
+        out.push({ oid:o.id, op:op, prod:prod, lote:(o.lote||''), sku:c.sku, nome:it.nome, qtd:falta, prazoData:o.data, prazoIni:(o.inicio||0), concl:(st==='concluida') });
       });
     });
   }catch(e){}
   out.sort(function(a,b){ return (a.prazoIni||0)-(b.prazoIni||0); });
   return out;
+}
+/* selo no bloquinho: ajuda o operador a decidir se já pode marcar "já atendido".
+   Prioriza o sinal que o Junior descreveu — a ordem do envase já concluída (o
+   produto já foi feito, não precisa mais rotular). Depois, se por acaso já houver
+   frasco rotulado em estoque, mostra isso. Não mexe em nada. */
+function seloEstoquePed(d){
+  if(d && d.concl) return '<span class="pcx-est ok" title="A ordem do envase já está concluída — provavelmente já tem o produto pronto">✓ ordem já concluída</span>';
+  var est=null; try{ est=saldoReal(d.sku); }catch(e){ est=null; }
+  if(est==null) return '';
+  if(est>=d.qtd) return '<span class="pcx-est ok" title="Já há '+nfx(est)+' em estoque — cobre o pedido">✓ já em estoque</span>';
+  if(est>0)      return '<span class="pcx-est pt" title="Há '+nfx(est)+' em estoque — não cobre o pedido todo">estoque '+nfx(est)+'</span>';
+  return '';
 }
 function lateralDemanda(origem){
   var data=dataRef();
@@ -40559,7 +40658,7 @@ function lateralDemanda(origem){
   var linhas=itens.length? itens.map(function(d){
     var prazo = d.prazoData ? (esc(dCurtoSafe(d.prazoData))+(d.prazoIni?' '+hhmm(d.prazoIni):'')) : 'sem horário';
     var prodTxt = esc(nomeCurtoSku(d.sku)||d.nome||'');
-    return '<label class="pcx-ped" draggable="true" data-pedido="'+esc(d.sku)+'" data-falta="'+d.qtd+'" data-oid="'+esc(d.oid)+'">'+
+    return '<label class="pcx-ped" draggable="true" data-pedido="'+esc(d.sku)+'" data-falta="'+d.qtd+'" data-oid="'+esc(d.oid)+'" data-op="'+esc(d.op)+'" data-nome="'+esc(prodTxt)+'" data-lote="'+esc(d.lote||'')+'">'+
       '<input type="checkbox" class="pcx-ck">'+
       '<div class="pcx-ped-in">'+
         '<div class="pcx-ped-top"><span class="pcx-ped-op">OP '+esc(d.op)+'</span>'+
@@ -40567,13 +40666,37 @@ function lateralDemanda(origem){
         '<div class="pcx-ped-prod">'+prodTxt+'</div>'+
         '<div class="pcx-ped-bot">'+(d.lote?'<span class="pcx-ped-lote">lote '+esc(d.lote)+'</span>':'<span class="pcx-ped-lote dim">sem lote</span>')+
           '<span class="pcx-ped-qt">'+nfx(d.qtd)+' <small>frascos</small></span></div>'+
+        seloEstoquePed(d)+
       '</div></label>';
   }).join('') : '<div class="pcx-vazio">Nenhum pedido do envase para '+esc(dCurtoSafe(data))+'.</div>';
-  var selbar='<div class="pcx-selbar" id="pcpSelBar" hidden><span id="pcpSelN">0 selecionadas</span><button type="button" class="pcx-nova sm" data-ac="juntarsel">⊕ Juntar e criar OP</button></div>';
+  var selbar='<div class="pcx-selbar" id="pcpSelBar" hidden><span id="pcpSelN">0 selecionadas</span>'+
+    '<div class="pcx-selac">'+
+      '<button type="button" class="pcx-sb ok" data-ac="atendersel">✓ Já atendido</button>'+
+      '<button type="button" class="pcx-sb no" data-ac="cancelarsel">✕ Cancelar</button>'+
+      '<button type="button" class="pcx-sb jt" id="pcpBtnJuntar" data-ac="juntarsel">⊕ Juntar e criar OP</button>'+
+    '</div></div>';
   return '<div class="pcx-lh"><b>Pedidos do envase</b><span>'+itens.length+' '+(itens.length===1?'ordem':'ordens')+'</span></div>'+
     '<div class="pcx-lsub">previstas para '+esc(dCurtoSafe(data))+'</div>'+
     '<div class="pcx-lb" id="pcpPedLista">'+linhas+'</div>'+selbar+
-    '<p class="pcx-lnote">Marque pra juntar (2+) · arraste pra máquina (OP nova) ou pra cima de uma OP do mesmo produto pra somar</p>';
+    blocoResolvidos(data)+
+    '<p class="pcx-lnote">Marque pra juntar (2+), cancelar ou dar baixa · arraste pra máquina (OP nova) ou pra cima de uma OP do mesmo produto pra somar</p>';
+}
+/* resolvidos do dia (atendidos pelo estoque / cancelados), com desfazer */
+function blocoResolvidos(data){
+  var rs=resolvDoDia(data); if(!rs.length) return '';
+  var nAt=rs.filter(function(r){return r.tipo==='atendido';}).length, nCa=rs.length-nAt;
+  var linhas=rs.map(function(r){
+    var tag = r.tipo==='atendido' ? '<span class="pcx-rv-tag ok">já atendido</span>' : '<span class="pcx-rv-tag no">cancelado</span>';
+    var quem = (r.quem?esc(r.quem):'')+(r.em?' · '+esc(String(r.em).slice(11,16)):'');
+    return '<div class="pcx-rv-it">'+
+      '<div class="pcx-rv-l"><div class="pcx-rv-top">'+tag+'<b>'+esc(r.nome||nomeCurtoSku(r.sku)||r.sku)+'</b></div>'+
+        '<div class="pcx-rv-sub">OP '+esc(r.op||'')+' · '+nfx(r.qtd||0)+' frascos'+(r.motivo?' · '+esc(r.motivo):'')+(quem?' · '+quem:'')+'</div></div>'+
+      '<button type="button" class="pcx-rv-undo" data-undo="'+esc(chavePed(r.oid,r.sku))+'" title="Desfazer">voltar</button>'+
+    '</div>';
+  }).join('');
+  return '<details class="pcx-resolv"><summary><span class="mt">Resolvidos hoje</span>'+
+    '<span class="pcx-rv-c">'+(nAt?nAt+' atendido'+(nAt>1?'s':''):'')+(nAt&&nCa?' · ':'')+(nCa?nCa+' cancelado'+(nCa>1?'s':''):'')+'</span>'+
+    '<span class="chev" aria-hidden="true">▾</span></summary><div class="pcx-rv-body">'+linhas+'</div></details>';
 }
 /* ações dos pedidos: criar/juntar/arrastar */
 function criarOProtulagem(sku, qtd, maq, registro){
@@ -40631,9 +40754,66 @@ function aproveitarNaOP(opId){
 }
 function atualizaSelBar(w){
   var sel=w.querySelectorAll('.pcx-ped.sel'), bar=w.querySelector('#pcpSelBar'); if(!bar)return;
-  // o botão de juntar só aparece quando há mais de uma ordem selecionada
-  if(sel.length>1){ bar.hidden=false; var n=w.querySelector('#pcpSelN'); if(n)n.textContent=sel.length+' selecionadas'; }
+  // a barra aparece com 1+ selecionada (cancelar / já atendido); o Juntar só com 2+
+  if(sel.length>=1){ bar.hidden=false; var n=w.querySelector('#pcpSelN'); if(n)n.textContent=sel.length+(sel.length===1?' selecionada':' selecionadas');
+    var jt=w.querySelector('#pcpBtnJuntar'); if(jt) jt.hidden=(sel.length<2); }
   else bar.hidden=true;
+}
+/* lê os pedidos selecionados num formato de registro resolvível */
+function pedsSelecionados(w){
+  return [].slice.call(w.querySelectorAll('.pcx-ped.sel')).map(function(el){
+    return { oid:el.getAttribute('data-oid')||'', sku:el.getAttribute('data-pedido')||'',
+      qtd:+el.getAttribute('data-falta')||0, op:el.getAttribute('data-op')||'',
+      nome:el.getAttribute('data-nome')||'', lote:el.getAttribute('data-lote')||'' };
+  });
+}
+/* modal simples de motivo (reusa o modal padrão do sistema) */
+function pedeMotivoCancel(qtd, cb){
+  var sugest=['Já tinha estoque','Ordem já concluída','Pedido duplicado','Envase cancelou','Erro de lançamento'];
+  abrirMask();
+  var md=MM('modal'); if(md) md.classList.remove('wide');
+  if(MM('mTit')) MM('mTit').textContent='Cancelar '+(qtd>1?qtd+' pedidos':'pedido');
+  var sub=MM('mSub'); if(sub){ sub.hidden=false; sub.textContent='Diga o motivo do cancelamento'; }
+  MM('mB').innerHTML='<div class="pcx-motivos">'+sugest.map(function(m){return '<button type="button" class="pcx-motivo" data-mot="'+esc(m)+'">'+esc(m)+'</button>';}).join('')+'</div>'+
+    '<div class="fld" style="margin-top:12px"><label>Motivo</label><input id="cxMot" placeholder="motivo do cancelamento"></div>';
+  MM('mF').innerHTML='<div class="mfdir" style="margin-left:auto;display:flex;gap:8px"><button class="btn" id="cxC">Voltar</button><button class="btn pri" id="cxOK">Cancelar pedidos</button></div>';
+  MM('cxC').onclick=fecharModal;
+  MM('mB').querySelectorAll('[data-mot]').forEach(function(b){ b.onclick=function(){ var i=MM('cxMot'); if(i){ i.value=b.getAttribute('data-mot'); } }; });
+  MM('cxOK').onclick=function(){ var m=((MM('cxMot')&&MM('cxMot').value)||'').trim(); if(!m){ avisa('Diga o motivo.',true); return; } fecharModal(); cb(m); };
+  abrirMask();
+}
+function registraResolv(peds, tipo, motivo, quem){
+  var em=(function(){ try{ return new Date().toISOString(); }catch(e){ return hojeYMD()+'T'+agora(); } })();
+  var data=dataRef();
+  peds.forEach(function(p){
+    if(p.qtd<=0 && tipo==='atendido'){} // mesmo sem falta, registra a baixa
+    if(pedResolvido(p.oid,p.sku)) return;
+    PCP.resolv.push({ oid:p.oid, sku:p.sku, qtd:p.qtd, op:p.op, nome:p.nome, lote:p.lote,
+      tipo:tipo, motivo:motivo||'', quem:quem||'', em:em, data:data });
+  });
+}
+function atenderSelecionados(w){
+  if(!podeEd()){ avisa('Sem permissão.',true); return; }
+  var peds=pedsSelecionados(w); if(!peds.length){ avisa('Selecione os pedidos primeiro.'); return; }
+  pedePin('Dar baixa · já atendido', 'Confirme com o PIN. Marca como já atendido pelo estoque (não mexe no estoque).', function(op){
+    registraResolv(peds, 'atendido', '', opNome());
+    salvar(); render(); avisa(peds.length+' pedido(s) marcado(s) como já atendido.');
+  });
+}
+function cancelarSelecionados(w){
+  if(!podeEd()){ avisa('Sem permissão.',true); return; }
+  var peds=pedsSelecionados(w); if(!peds.length){ avisa('Selecione os pedidos primeiro.'); return; }
+  pedeMotivoCancel(peds.length, function(motivo){
+    pedePin('Cancelar pedido(s)', 'Confirme o cancelamento com o PIN.', function(op){
+      registraResolv(peds, 'cancelado', motivo, opNome());
+      salvar(); render(); avisa(peds.length+' pedido(s) cancelado(s).');
+    });
+  });
+}
+function desfazerResolvido(chave){
+  if(!podeEd()){ avisa('Sem permissão.',true); return; }
+  PCP.resolv=(PCP.resolv||[]).filter(function(r){ return chavePed(r.oid,r.sku)!==chave; });
+  salvar(); render(); avisa('Pedido devolvido pra fila.');
 }
 function juntarSelecionados(w){
   if(!podeEd()){ avisa('Sem permissão.',true); return; }
@@ -40653,35 +40833,88 @@ function juntarSelecionados(w){
   salvar(); render(); avisa(n+' OP(s) criada(s) dos pedidos selecionados.');
 }
 /* ======================================================================
-   PROGRAMAÇÃO DO DIA — linha do tempo de ocupação das máquinas, pra ver
-   encaixe e prever troca de molde (mesma ideia da programação do Envase).
+   PROGRAMAÇÃO DO DIA — tela cheia no mesmo formato do Envase (botão abre),
+   pra ver ocupação das máquinas, encaixe e troca de molde.
    ====================================================================== */
-function programacaoSR(tab){
+var PS_PROG_TAB='rotulagem';
+function faixaSR(tab){
   var maqs = tab==='sopro'?sopradoras():rotuladoras();
   var data=dataRef();
   var ops=opsDe(tab).filter(function(o){ return o.data===data && o.status!=='concluida'; });
-  var ini0=300, fim0=1320; // 05:00–22:00 como janela base
+  var ini0=300, fim0=1320; // 05:00–22:00 base
   ops.forEach(function(o){ if((o.iniPrev||0)<ini0) ini0=o.iniPrev||0; if((o.fimPrev||0)>fim0) fim0=o.fimPrev||0; });
   ini0=Math.floor(ini0/60)*60; fim0=Math.ceil(fim0/60)*60;
   var span=Math.max(60, fim0-ini0);
-  var passo=(span>8*60)?2:1; // de 2 em 2h quando o dia é longo, pra não apertar
-  var horas=''; for(var h=ini0/60; h*60<=fim0; h+=passo){ var hx=((h*60-ini0)/span*100); horas+='<span class="pcx-tl-h" style="left:'+hx+'%">'+p2(h)+'h</span>'; }
+  var passo=(span>10*60)?2:1;
+  var horas=''; for(var h=ini0/60; h*60<=fim0; h+=passo){ var hx=((h*60-ini0)/span*100); horas+='<span style="left:'+hx+'%">'+p2(h)+'h</span>'; }
+  var cores={prog:'#0E1B33',prod:'#16A34A',pausa:'#B45309'};
   var linhas=maqs.map(function(m){
     var mops=ops.filter(function(o){return o.maq===m.id;}).sort(function(a,b){return (a.iniPrev||0)-(b.iniPrev||0);});
     var ocup=mops.reduce(function(s,o){return s+Math.max(0,(o.fimPrev||0)-(o.iniPrev||0));},0);
     var pctOcup=Math.round(ocup/span*100);
+    var un=mops.reduce(function(s,o){return s+(+o.qtdPrev||0);},0);
     var blocos=mops.map(function(o){
-      var l=((o.iniPrev-ini0)/span*100), wv=Math.max(1.5,((o.fimPrev-o.iniPrev)/span*100));
+      var l=((o.iniPrev-ini0)/span*100), wv=Math.max(2,((o.fimPrev-o.iniPrev)/span*100));
       var cls=o.status==='produzindo'?'prod':o.status==='pausada'?'pausa':'prog';
-      return '<div class="pcx-tl-op '+cls+'" style="left:'+l+'%;width:'+wv+'%" data-op="'+esc(o.id)+'" title="'+esc(o.num+' · '+nomeCurtoSku(o.itemSku)+' · '+hhmm(o.iniPrev)+'–'+hhmm(o.fimPrev))+'"><span>'+esc(nomeCurtoSku(o.itemSku))+'</span></div>';
+      var nm=nomeCurtoSku(o.itemSku);
+      return '<div class="ps-csb" style="left:'+l+'%;width:'+wv+'%;--c:'+cores[cls]+'" data-op="'+esc(o.id)+'" title="'+esc(o.num+' · '+nm+' · '+hhmm(o.iniPrev)+'–'+hhmm(o.fimPrev))+'"><span><b>'+esc(nm)+'</b><small>'+esc(o.num)+' · '+hhmm(o.iniPrev)+'–'+hhmm(o.fimPrev)+'</small></span></div>';
     }).join('');
-    return '<div class="pcx-tl-row"><div class="pcx-tl-maq"><b>'+esc(m.nome||m.id)+'</b><span>'+pctOcup+'% ocupada</span></div>'+
-      '<div class="pcx-tl-track">'+(blocos||'')+'</div></div>';
+    return '<div class="ps-csl"><div class="ps-nm">'+esc(m.nome||m.id)+'</div>'+
+      '<div class="ps-fx">'+(blocos||'')+'</div>'+
+      '<div class="ps-oc"><b>'+pctOcup+'%</b><i>'+(mops.length?nfx(un)+' un · '+mops.length+' OP':'livre')+'</i></div></div>';
   }).join('');
-  return '<details class="pcx-meta pcx-prog"><summary><span class="mt">Programação do dia · ocupação das máquinas</span>'+
-    '<span class="mpct">'+maqs.length+' máq.</span><div class="pcx-tl-leg"><i class="prog"></i>programada <i class="prod"></i>em produção <i class="pausa"></i>pausada</div><span class="chev" aria-hidden="true">▾</span></summary>'+
-    '<div class="pcx-mpanel"><div class="pcx-tl"><div class="pcx-tl-axis">'+horas+'</div>'+(linhas||'<div class="pcx-vazio" style="padding:14px">Sem OPs programadas no dia.</div>')+'</div></div></details>';
+  return '<div class="ps-tl"><div class="ps-cab">Ocupação das máquinas<span><b>'+maqs.length+'</b> máquinas · <b>'+ops.length+'</b> OP no dia</span></div>'+
+    '<div class="ps-hh">'+horas+'</div>'+
+    (linhas||'<div class="ps-vazio">Nenhuma máquina trabalha neste dia.</div>')+
+    '<div class="ps-leg"><span><i class="q prog"></i>programada</span><span><i class="q prod"></i>em produção</span><span><i class="q pausa"></i>pausada</span></div></div>';
 }
+function progSRPinta(){
+  var p=MM('pcpProg'); if(!p||!p.classList.contains('on'))return;
+  var corpo=p.querySelector('.ps-corpo'); if(corpo){ corpo.innerHTML=faixaSR(PS_PROG_TAB);
+    corpo.querySelectorAll('.ps-csb[data-op]').forEach(function(b){ b.onclick=function(){ var o=opPorId(b.getAttribute('data-op')); if(o){ try{ abrirOP(o); }catch(e){} } }; });
+  }
+  var dt=p.querySelector('.ps-dt b'); if(dt){ var dtx=dataRef(); try{ dtx=dLongo(dataRef()); }catch(e){} dt.textContent=(dtx&&dtx.charAt(0).toUpperCase()+dtx.slice(1))||dtx; }
+  var tt=p.querySelector('.ps-cab-tit'); if(tt) tt.textContent='Programação do dia · '+(PS_PROG_TAB==='sopro'?'Sopro':'Rotulagem');
+}
+function progSRAbre(tab){
+  PS_PROG_TAB = tab || (S.page==='sopro'?'sopro':'rotulagem');
+  var p=MM('pcpProg');
+  if(!p){ p=document.createElement('div'); p.id='pcpProg';
+    p.innerHTML='<div class="ps-pgcab"><h2 class="ps-cab-tit">Programação do dia</h2>'+
+      '<span class="ps-dt"><button type="button" class="ps-nv" data-d="-1">‹</button><b></b><button type="button" class="ps-nv" data-d="1">›</button></span>'+
+      '<button type="button" class="ps-hj">Hoje</button><button type="button" class="ps-x">✕ Fechar</button></div>'+
+      '<div class="ps-corpo"></div>';
+    document.body.appendChild(p);
+    p.querySelectorAll('.ps-nv').forEach(function(b){ b.onclick=function(){ moverDia(+b.getAttribute('data-d')); }; });
+    p.querySelector('.ps-hj').onclick=function(){ try{ S.refTq=new Date(); }catch(e){} render(); };
+    p.querySelector('.ps-x').onclick=progSRFecha;
+  }
+  p.classList.add('on'); document.body.classList.add('pcp-prog-on'); progSRPinta();
+}
+function progSRFecha(){ var p=MM('pcpProg'); if(p) p.classList.remove('on'); document.body.classList.remove('pcp-prog-on'); }
+try{ document.addEventListener('keydown',function(ev){ if(ev.key==='Escape'){ var p=MM('pcpProg'); if(p&&p.classList.contains('on')) progSRFecha(); } }); }catch(e){}
+
+/* ======================================================================
+   SCROLL POR DENTRO — topo e cabeçalhos fixos; rolam só os cards das máquinas
+   e os bloquinhos da lateral (mesmo método do Envase/Tanques v376).
+   ====================================================================== */
+function srAlturas(){
+  try{
+    if(S.page!=='sopro'&&S.page!=='rotulagem')return;
+    var wrapId = S.page==='sopro'?'spgrid':'rtgrid';
+    var g=MM(wrapId); if(!g)return;
+    var cols=[].slice.call(g.querySelectorAll('.pcx-col'));
+    var lat=g.querySelector('.pcx-lateral');
+    // tela estreita: deixa a página rolar normal (nada de altura travada)
+    if(window.innerWidth<=960){ cols.concat(lat?[lat]:[]).forEach(function(c){ if(c){ c.style.height=''; c.style.maxHeight=''; } }); return; }
+    var ref=g.querySelector('.pcx-maqs')||g.querySelector('.pcx-rotwrap')||g;
+    var top=Math.round(ref.getBoundingClientRect().top);
+    var alt=Math.max(320, Math.round(window.innerHeight-top-14));
+    cols.forEach(function(c){ c.style.height=alt+'px'; c.style.maxHeight=alt+'px'; });
+    if(lat){ lat.style.height=alt+'px'; lat.style.maxHeight=alt+'px'; }
+  }catch(e){}
+}
+try{ window.addEventListener('resize',function(){ try{ srAlturas(); }catch(e){} }); }catch(e){}
 function renderSR(host, tab){
   if(!host) return;
   var data=dataRef();
@@ -40691,8 +40924,8 @@ function renderSR(host, tab){
     return coluna({nome:m.nome||m.id,id:m.id,o:tab}, +m.cad||0, ops.filter(function(o){return o.maq===m.id;}));
   }).join('') +'</div>';
   var corpo = tab==='rotulagem'
-    ? programacaoSR(tab) + '<div class="pcx-rotwrap"><div class="pcx-rotmain">'+cols+'</div><aside class="pcx-lateral pcx-anexo">'+lateralDemanda(tab)+'</aside></div>'
-    : metaPanelSopro() + programacaoSR(tab) + cols;
+    ? '<div class="pcx-rotwrap"><div class="pcx-rotmain">'+cols+'</div><aside class="pcx-lateral pcx-anexo">'+lateralDemanda(tab)+'</aside></div>'
+    : metaPanelSopro() + cols;
   host.innerHTML = '<div class="pcx-page">'+ headerSR(tab) + corpo + '</div>';
   // injeta o ⋮ em cada bloco (um só lugar)
   host.querySelectorAll('.pcx-card[data-op]').forEach(function(c){
@@ -40716,9 +40949,12 @@ function ligarEventos(wrapId){
       ev.stopPropagation();
       var ac=el.getAttribute('data-ac'), id=el.getAttribute('data-op');
       if(ac==='nova'){ novaOP(el.getAttribute('data-origem')); return; }
+      if(ac==='prog'){ progSRAbre(el.getAttribute('data-origem')); return; }
       if(ac==='tablet'){ abrirTablet(el.getAttribute('data-origem')); return; }
       if(ac==='juntar'){ juntarLotes(); return; }
       if(ac==='juntarsel'){ juntarSelecionados(w); return; }
+      if(ac==='atendersel'){ atenderSelecionados(w); return; }
+      if(ac==='cancelarsel'){ cancelarSelecionados(w); return; }
       if(ac==='dia-prev'||ac==='dia-next'){ moverDia(ac==='dia-next'?1:-1); return; }
       if(ac==='cal'){ try{ var cb=MM('calAbre'); if(cb){ cb.click(); } else { moverDia(0); } }catch(e){} return; }
       var o=opPorId(id); if(!o)return;
@@ -40735,6 +40971,10 @@ function ligarEventos(wrapId){
     if(ck) ck.onchange=function(ev){ ev.stopPropagation(); el.classList.toggle('sel',ck.checked); atualizaSelBar(w); };
     el.addEventListener('dragstart',function(ev){ try{ ev.dataTransfer.setData('text/plain', el.getAttribute('data-pedido')+'|'+(el.getAttribute('data-falta')||0)+'|'+(el.getAttribute('data-oid')||'')); ev.dataTransfer.effectAllowed='copy'; el.classList.add('dragging'); }catch(e){} });
     el.addEventListener('dragend',function(){ el.classList.remove('dragging'); });
+  });
+  // desfazer um resolvido (volta pra fila)
+  w.querySelectorAll('[data-undo]').forEach(function(b){
+    b.onclick=function(ev){ ev.stopPropagation(); ev.preventDefault(); desfazerResolvido(b.getAttribute('data-undo')); };
   });
   atualizaSelBar(w);
   var lerDrop=function(ev){ var raw=''; try{ raw=ev.dataTransfer.getData('text/plain'); }catch(e){} if(!raw)return null; var p=raw.split('|'); return {sku:p[0], q:+p[1]||0, oid:p[2]||''}; };
@@ -41408,6 +41648,10 @@ try{
       var oe=MM('ondeest'); if(oe) oe.style.display=sr?'none':'';
       var sd=MM('side'); if(sd) sd.style.display=sr?'none':'';
       var pb=MM('csPgBar'); if(pb) pb.hidden=sr?true:pb.hidden;
+      // tela de programação: repinta na navegação de data, fecha ao sair
+      if(sr){ try{ progSRPinta(); }catch(e){} } else { try{ progSRFecha(); }catch(e){} }
+      // alturas das colunas/lateral (scroll só por dentro, cabeçalhos fixos)
+      try{ srAlturas(); }catch(e){}
     }catch(e){}
     return r;
   };

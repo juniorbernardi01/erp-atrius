@@ -1,6 +1,6 @@
 {
- "v": "v554",
- "versao": "5.5.4",
+ "v": "v556",
+ "versao": "5.5.6",
  "data": "16/11/2026",
- "o_que_mudou": "Sobe tudo junto em cima da 5.5.1. (1) Sopro e Rotulagem no padrao Tanques/Envase: pedidos do Envase em bloquinhos (OP, item, frasco, lote, qtd, hora pronto), arrastar pra fila / juntar / aproveitar na sequencia, card de pega com nome completo do produto, log de quem agregou o que e quando, PIN/motivo/desfazer, PDF da OP e relatorios com grafico, programacao com ocupacao da maquina, meta que recolhe, pulo de fim de semana. (2) Sopro/Rotulagem usam o estoque real do ERP por deposito (nao mais um ledger separado) — producao interna lanca na FABRICA sem tocar no Tiny, estorno reverte. Industrializado/comprado fora entra no deposito do fornecedor pela OC. (3) Formulacao do tablet mostra o estoque atual de cada materia-prima no lancamento do lote (tem / nao tem / apertado), nao so o OK. (4) FILME TERMO ENCOLHIVEL: correcao automatica que unifica o saldo do codigo separado (640716862) no codigo certo (ERP-CX003), roda uma vez no deploy. Tiny segue so lendo nota fiscal pra baixar acabado."
+ "o_que_mudou": "CORRECAO URGENTE: a Performance de vendas tinha sido substituida por um prototipo visual (dados chumbados no codigo, periodo travado em Out/2026, botoes sem acao). Restaurado o modulo de Vendas completo e funcional (Performance, Venda x Faturamento, Ranking, Clientes novos, Metas, Pedidos de venda, Necessidade de producao, Evolucao, Clientes sem compra), lendo do Tiny com seletor de periodo de verdade. Inclui tudo da 5.5.5 (sopro/rotulagem: cancelar/ja atendido, scroll fixo, programacao em tela; checklist: gravidade colorida, ciencia total, visualizador de fotos) e da 5.5.4 (FILME TERMO, formulacao com estoque)."
 }
