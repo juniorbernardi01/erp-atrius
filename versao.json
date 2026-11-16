@@ -1,6 +1,6 @@
 {
- "v": "v558",
- "versao": "5.5.8",
+ "v": "v559",
+ "versao": "5.5.9",
  "data": "16/11/2026",
- "o_que_mudou": "Tanque pulmao no computador: os gestores (Neuci, Mari) agora transferem pro pulmao pelo ⋮ (tres pontinhos) de cada tanque na grade de Tanques — nao pelo lote do envase. Abre um modal com motivo obrigatorio e PIN; se o envase ja comecou, avisa que precisa de quem pode liberar (Neuci). A config em Configuracoes > PCP virou 'Transferencia para o pulmao' com dropdown ao lado (Sem trava / Trava no setup / Trava no envase). No tablet segue igual pros operadores. Inclui tudo da 5.5.7 (trava no envase, setup libera) e da 5.5.6 (vendas funcional, checklist, sopro/rotulagem, FILME TERMO)."
+ "o_que_mudou": "Ajustes: (1) Transferir para o pulmao agora fica DENTRO dos tres pontinhos que ja existem no card do lote (Formulacao, Analise, Historico, Transferir pro pulmao...), nao mais num ⋮ separado no cabecalho do tanque. (2) A config 'Transferencia para o pulmao' tem rotulos claros: Libera sempre / Libera so antes do setup / Libera ate o envase comecar, com explicacao do que acontece depois do ponto. (3) Os tablets das maquinas (MAQ 1/2/3) passam a ficar escuros como o dos tanques (migracao automatica + padrao escuro). (4) O titulo 'PCP' no topo parava de aparecer nas telas Rotulagem e Tanques; agora aparece consistente em todas. Inclui tudo das versoes anteriores (vendas funcional, checklist, sopro/rotulagem, FILME TERMO, regra do pulmao)."
 }

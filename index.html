@@ -530,8 +530,6 @@ body.arrastando .vaoslim i{opacity:.4}
 .tqh .n b{font-family:'Barlow Condensed';font-size:20px;font-weight:700}
 .tqh .n span{font-family:'Inter';font-size:10.5px;color:var(--ink3);margin-left:auto}
 .tqh .s{font-size:11px;color:var(--ink3);margin-top:2px}
-.tqh .tqdots{position:absolute;bottom:8px;right:8px;width:28px;height:24px;border:1px solid var(--line);background:var(--paper);border-radius:7px;cursor:pointer;font-size:15px;line-height:1;color:var(--ink2);display:flex;align-items:center;justify-content:center;padding:0}
-.tqh .tqdots:hover{background:var(--surface);border-color:var(--ink3)}
 .tqb{padding:10px;display:flex;flex-direction:column;gap:9px;min-height:70px}
 .bat{background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden;
   border-left:4px solid var(--bc);cursor:pointer}
@@ -5515,7 +5513,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v558';const VERSAO_DATA='16/11/2026';
+const VERSAO_APP='v559';const VERSAO_DATA='16/11/2026';
 /* número que aparece na tela: v438 → v4.3.8 (por dentro continua v438, que é o que as versões comparam) */
 const csRotVer=v=>{const d=String(v||'').replace(/\D/g,'');return d.length>=3?'v'+d.slice(0,-2)+'.'+d.slice(-2,-1)+'.'+d.slice(-1):String(v||'');};
 const VERSAO_ROTULO=csRotVer(VERSAO_APP)+' · '+VERSAO_DATA;
@@ -6003,20 +6001,16 @@ function gradeTanques(){
     +TANQUES.map(t=>{
     const seq=bats.filter(b=>b.tanque===t.id).sort((a,b)=>a.prontoAte-b.prontoAte);
     const usado=seq.reduce((s,b)=>s+b.volume,0);
-    /* lote que dá pra mandar ao pulmão (preparo pronto, setup ou envasando); o ⋮ age nele */
-    const loteAtivo=t.pul?null:seq.find(b=>{try{const st=csTqSt(b).st;return CS_TQ_PRODUZIDO.includes(st)||st==='prep'||st==='envasando';}catch(e){return false;}});
     return `<div class="tqcol" data-tq="${t.id}">
       <div class="tqh"><div class="n"><b>${t.id}</b><span>${nf(t.cap)} L</span></div>
         <div class="s">${seq.length?`${seq.length} lote${seq.length>1?'s':''} · ${nf(usado)} L no dia`
-          :'Sem programação'}</div>
-        ${loteAtivo?`<button class="tqdots" data-tqm="${escAttr(loteAtivo.chave)}" title="Ações do tanque">⋯</button>`:''}</div>
+          :'Sem programação'}</div></div>
       <div class="tqb">${seq.length?seq.map(cardBat).join('')
         :`<div class="tqvazio">Solte um lote aqui.<br>Eles ficam em <b>a programar</b>, à direita.</div>`}</div>
     </div>`;
   }).join('');
 
   if(M('tqAviso'))M('tqAviso').onclick=abrirSemTanque;
-  M('tqgrid').querySelectorAll('[data-tqm]').forEach(b=>b.onclick=ev=>{ev.stopPropagation();menuTanque(b);});
   M('tqgrid').querySelectorAll('[data-puxa]').forEach(e=>
     e.addEventListener('click',ev=>{ev.stopPropagation();
       const sd=SALDOS.find(x=>x.id===e.dataset.puxa);
@@ -15824,21 +15818,21 @@ function abrirCfgPCP(){
   M('mTit').textContent='Configurações do PCP';M('mSub').hidden=true;
   cfgPcpCss();
   const base=location.origin+location.pathname.replace(/[^/]*$/,'');
-  const tm=q=>(CS_TABLETS.tema||{})[q]||(q==='tq'?'escuro':'claro');
+  const tm=q=>(CS_TABLETS.tema||{})[q]||'escuro';
   const telas=[{q:'tq',nome:'Tanques',sub:'operador dos tanques',ic:'▦',cls:'tq'},
     ...MAQUINAS.map((m,i)=>({q:String(i+1),nome:m,sub:'operador do envase',ic:String(i+1),cls:'mq'}))];
   const linkDe=q=>q==='tq'?base+'tanques.html':base+'maq'+q+'.html';
   const des=()=>{M('mB').innerHTML=`<div class="st">Marcadores das OPs</div><div class="cfgmk" style="margin:8px 0 22px">${CAD_MK_OP.map((m,i)=>`<span><input type="color" value="${m.cor}" data-mkc="${i}">${escAttr(m.nome)}<em data-mkx="${i}">✕</em></span>`).join('')}
       <input id="mkNovo" placeholder="novo marcador" style="width:170px;height:32px"><button class="btn sm" id="mkAdd">+ incluir</button></div>
-    <div class="cs-pulmrow" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:16px 0 22px">
+    <div class="cs-pulmrow" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:16px 0 6px">
       <b style="font-size:13.5px">Transferência para o pulmão</b>
       <select id="cfgPulm" style="height:34px;padding:0 10px;border:1px solid var(--line,#DDE3EC);border-radius:9px;font:inherit">
-        <option value="nenhuma">Sem trava</option>
-        <option value="setup">Trava no setup</option>
-        <option value="envase">Trava no envase</option>
+        <option value="nenhuma">Libera sempre (sem trava)</option>
+        <option value="setup">Libera só antes do setup</option>
+        <option value="envase">Libera até o envase começar (no setup ainda pode)</option>
       </select>
-      <small style="color:var(--ink3);font-size:11.5px">passado o ponto, só quem pode liberar (Neuci) · sempre com motivo</small>
     </div>
+    <p class="adp" style="margin:0 0 22px">O operador transfere sozinho <b>até esse ponto</b>. Depois dele, só quem tem permissão de liberar (o Neuci, ou outro master/liberador) transfere — e a transferência <b>sempre pede um motivo</b>, em qualquer situação.</p>
     <div class="st">Telas e tablets</div>
     <p class="adp" style="margin:0 0 12px">Toque em <b>Visualizar</b> para abrir a tela numa janela só de acompanhamento — fecha e volta pro sistema, sem prender o computador. Nos Tanques dá pra operar com o PIN.</p>
     <div class="cs-telas">${telas.map(t=>`<div class="cs-telar">
@@ -20990,9 +20984,12 @@ function csCtxLote(ev,chave){
   if(!b)return;
   const c=document.getElementById('csCtx');
   const temCert=(()=>{try{return !!ensaiosDe(b.produto).length;}catch(e){return false;}})();
+  const podePulmao=(()=>{try{const st=csTqSt(b).st;const P=recursosDe('tanque').find(r=>r.pul&&r.ativo!==false);
+    return !!P&&!tqOf(b.tanque).pul&&(CS_TQ_PRODUZIDO.includes(st)||st==='prep'||st==='envasando');}catch(e){return false;}})();
   c.innerHTML=`<button data-csl="form">Formulação do lote</button>
     <button data-csl="anl">Análise</button>
     <button data-csl="hist">Histórico do lote</button>
+    ${podePulmao?`<div class="div"></div><button data-csl="pulmao">↳ Transferir para o pulmão</button>`:''}
     <div class="div"></div>
     <button data-csl="op">OP do tanque em PDF</button>
     ${temCert?`<button data-csl="cert">Emitir certificado</button>`:''}
@@ -21010,6 +21007,7 @@ function csCtxLote(ev,chave){
     try{
       if(a==='form'){ABA_LOTE='preparo';CS_CTX_OP=null;abrirLote(b);}
       else if(a==='anl'){ABA_LOTE='cert';CS_CTX_OP=null;abrirLote(b);}
+      else if(a==='pulmao')transferirPulmaoPC(b);
       else if(a==='hist')csRelLote(b);
       else if(a==='op')imprimirOPTanque(b);
       else if(a==='cert')imprimirCertificado(b);
@@ -22557,6 +22555,11 @@ function csGrupoTopo(){
   g.textContent=nome;g.hidden=!nome;
 }
 if(typeof csPintar==='function'){const _csp=csPintar;csPintar=function(){const r=_csp.apply(this,arguments);try{csGrupoTopo();}catch(e){}return r;};}
+/* páginas que compartilham a mesma entrada de menu: 'rotulagem' usa a de 'sopro'
+   ("Sopro e Rotulagem"), 'tanques' usa a de 'envase' ("Envase e tanques"). Sem isso o
+   csOnde não achava o módulo e o título "PCP" sumia do topo nessas telas. */
+try{const _csOnde0=csOnde;const CS_PG_ALIAS={rotulagem:'sopro',tanques:'envase'};
+  csOnde=function(){const al=CS_PG_ALIAS[S.page];if(al){const sp=S.page;S.page=al;try{return _csOnde0.apply(this,arguments);}finally{S.page=sp;}}return _csOnde0.apply(this,arguments);};}catch(e){}
 setInterval(()=>{try{csGrupoTopo();}catch(e){}},1000);
 </script>
 <script>
@@ -26755,6 +26758,16 @@ setTimeout(function cx3(){try{if(!PRONTO)return setTimeout(cx3,3000);if(MODO_TV)
     CS_ELOG.push({em,id:ERR,tipo:'S',qtd:Math.abs(total),dif:-total,dep:csEPrinc(),origem:'Ajuste',obs:'Unificação FILME TERMO ENCOLHIVEL — saldo movido para o código '+OK+' (recebimento de OC lançado em código separado).',quem,uid:csENovoUid(),man:true});
     CS_ELOG.push({em,id:OK,tipo:'E',qtd:Math.abs(total),dif:+total,dep:csEPrinc(),origem:'Ajuste',obs:'Unificação FILME TERMO ENCOLHIVEL — saldo recebido do código '+ERR+' (correção de recebimento de OC).',quem,uid:csENovoUid(),man:true});}
   CS_MIGRA.push('cx003-filme-1116');agendarSalvar();}catch(e){console.log('migra cx003',e);}},6500);
+/* ===================== v559 · tablets das máquinas no escuro =====================
+   Os tablets do envase (MAQ 1..N) vinham claros; devem ficar escuros como o dos tanques.
+   Roda uma vez: marca cada tablet de máquina como escuro. Depois o usuário pode trocar no seletor. */
+setTimeout(function tabEsc(){try{if(!PRONTO)return setTimeout(tabEsc,3000);if(MODO_TV)return;
+  if(CS_MIGRA.includes('tablets-escuro-1116'))return;
+  CS_TABLETS.tema=CS_TABLETS.tema||{};
+  (typeof MAQUINAS!=='undefined'?MAQUINAS:[]).forEach(function(m,i){CS_TABLETS.tema[String(i+1)]='escuro';});
+  if(!CS_TABLETS.tema.tq)CS_TABLETS.tema.tq='escuro';
+  CS_MIGRA.push('tablets-escuro-1116');agendarSalvar();try{if(typeof csTemaTablet==='function')csTemaTablet();}catch(e){}
+}catch(e){console.log('migra tabEsc',e);}},6600);
 try{csNucleo.versao='v356';}catch(e){}
 
 </script>
@@ -31060,16 +31073,7 @@ function csTqAcao(k,a,x,pin){
   agendarSalvar();try{render();}catch(e){}
   return {ok:true,msg:msg?(msg+(quem?' · '+quem.nome:'')):''};
 }
-/* ⋮ do tanque na grade do computador (gestores): só a transferência para o pulmão por enquanto */
-function menuTanque(btn){
-  const old=document.getElementById('od2m');if(old){const mesmo=old.dataset.id===btn.dataset.tqm;old.remove();if(mesmo)return;}
-  const chave=btn.dataset.tqm;const b=csTqAchar(chave);if(!b)return;
-  const m=document.createElement('div');m.className='od2m';m.id='od2m';m.dataset.id=chave;
-  m.innerHTML=`<div class="mh">${escAttr(b.tanque)} · ${escAttr(b.produto)}</div><button data-a="pulmao">Transferência para o pulmão</button>`;
-  document.body.appendChild(m);const r=btn.getBoundingClientRect();m.style.left=Math.max(8,Math.min(r.right-230,window.innerWidth-240))+'px';m.style.top=(r.bottom+4)+'px';m.onclick=ev=>ev.stopPropagation();
-  m.querySelector('[data-a="pulmao"]').onclick=()=>{m.remove();transferirPulmaoPC(b);};
-}
-/* transferência para o pulmão no computador (gestores): motivo + PIN; reusa a regra do csTqAcao */
+/* transferência para o pulmão no computador (gestores), pelo ⋮ do lote: motivo + PIN; reusa a regra do csTqAcao */
 function transferirPulmaoPC(b){
   const P=recursosDe('tanque').find(r=>r.pul&&r.ativo!==false);if(!P)return toast('Não há pulmão cadastrado.',true);
   const s=csTqSt(b);
@@ -31455,7 +31459,7 @@ try{const _ir407=csIr;csIr=function(p){if(p&&p.fin&&!p.acao)window.CS_FIN_FORCA=
 function csTabletsHTML(){
   const linhas=[...MAQUINAS.map((m,i)=>({q:String(i+1),nome:m,sub:'operador do envase',u:csLinkMaq(i+1)})),
     {q:'tq',nome:'Tanques',sub:'operador dos tanques',u:location.origin+location.pathname.replace(/[^/]*$/,'')+'tanques.html'}];
-  const tm=q=>(CS_TABLETS.tema||{})[q]||(q==='tq'?'escuro':'claro');
+  const tm=q=>(CS_TABLETS.tema||{})[q]||'escuro';
   return `<div class="st" style="margin-top:18px">Tablets</div>
     <p class="adp">Abra o link no tablet e instale (Chrome › três pontinhos › Instalar app). Daí em diante ele abre sempre na tela dele, e nem o Voltar nem outro endereço tiram de lá. Para sair: segurar o logo 3 s + PIN do master.
       O tema (claro ou escuro) de cada tablet é escolhido aqui e vale na hora, sem mexer no aparelho.</p>
@@ -31483,7 +31487,7 @@ try{csNucleo.tolAtraso=()=>typeof TOL_ATRASO!=='undefined'?TOL_ATRASO:10;}catch(
 function csTemaTablet(){
   try{const q=csQuiosque();if(!q)return;
     if(q==='tq'){if(document.documentElement.classList.contains('cs-escuro'))document.documentElement.classList.remove('cs-escuro');return;}
-    const esc=((CS_TABLETS.tema||{})[q]||'claro')==='escuro';
+    const esc=((CS_TABLETS.tema||{})[q]||'escuro')==='escuro';
     if(document.documentElement.classList.contains('cs-escuro')!==esc)csTema(esc);
   }catch(e){}
 }
