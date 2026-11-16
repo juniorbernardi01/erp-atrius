@@ -1,6 +1,6 @@
 {
- "v": "v551",
- "versao": "5.5.1",
- "data": "13/11/2026",
- "o_que_mudou": "Sopro e Rotulagem: tirado o titulo de cima (so o seletor Sopro|Rotulagem ao lado da data, que agora abre o calendario do Envase). Pedidos do envase na rotulagem passam a listar ordem por ordem (numero da OP, produto e quantidade de frascos), filtrados pelo dia selecionado, num anexo cinza a direita com o botao Nova OP junto. Clica pra selecionar e juntar, ou arrasta pra maquina aproveitando a quantidade daquela ordem. Sem painel lateral de estoque. Estoque so no ERP (sem Tiny). Nenhuma outra pagina alterada."
+ "v": "v554",
+ "versao": "5.5.4",
+ "data": "16/11/2026",
+ "o_que_mudou": "Sobe tudo junto em cima da 5.5.1. (1) Sopro e Rotulagem no padrao Tanques/Envase: pedidos do Envase em bloquinhos (OP, item, frasco, lote, qtd, hora pronto), arrastar pra fila / juntar / aproveitar na sequencia, card de pega com nome completo do produto, log de quem agregou o que e quando, PIN/motivo/desfazer, PDF da OP e relatorios com grafico, programacao com ocupacao da maquina, meta que recolhe, pulo de fim de semana. (2) Sopro/Rotulagem usam o estoque real do ERP por deposito (nao mais um ledger separado) — producao interna lanca na FABRICA sem tocar no Tiny, estorno reverte. Industrializado/comprado fora entra no deposito do fornecedor pela OC. (3) Formulacao do tablet mostra o estoque atual de cada materia-prima no lancamento do lote (tem / nao tem / apertado), nao so o OK. (4) FILME TERMO ENCOLHIVEL: correcao automatica que unifica o saldo do codigo separado (640716862) no codigo certo (ERP-CX003), roda uma vez no deploy. Tiny segue so lendo nota fiscal pra baixar acabado."
 }

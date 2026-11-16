@@ -497,7 +497,12 @@ body.kbon .modal.gen,body.kbon .modal{overflow-y:auto;padding-bottom:270px!impor
 .acao.cdesc{display:flex!important;align-items:center;justify-content:center;gap:12px;color:var(--fg)!important}.acao.cdesc b{font:800 24px var(--font);color:#15803D}.acao.cdesc span{display:block;line-height:1.15}.acao.cdesc small{display:block;margin-top:3px}
 :root[data-theme="dark"] .acao.cdesc b{color:#4ADE80}
 .pill.agu{background:#E8EFF9;color:#1B4F9C}:root[data-theme="dark"] .pill.agu{background:#1A2A4A;color:#93B4E8}
-
+/* v5.5.2: estoque da MP na formulação do tablet */
+.t.form td .estq{display:block;font:700 11.5px var(--mono);margin-top:2px}
+.t.form td .estq.ok{color:#15803D}
+.t.form td .estq.aperto{color:#B45309}
+.t.form td .estq.falta{color:#DC2626}
+.t.form td .estq.sem{color:var(--ink3);font-weight:500}
 </style>
 </head><body>
 <div class="tela" id="tela">
@@ -899,7 +904,10 @@ function abrirForm(t,aba){const l=lote(t);if(!l)return toast('Sem lote neste tan
   const tot=(l.mp||[]).length,ok=Object.values(r.itens).filter(v=>v.ok).length;
   f.innerHTML=`<div class="fh"><b>Formulação e Modo de Fazer · ${esc(l.p)}</b><small>${esc(t.id)}${l.lote?' · lote '+esc(l.lote):''} · ${nl(l.vol)} L · ${ok} de ${tot} separadas</small><span class="x" id="fX">×</span></div>
   <div class="fb"><div class="box"><h3>Separação das matérias-primas <span>previsto para ${nl(l.vol)} L · água não pesa: completa no tanque</span></h3><div class="bb"><table class="t form"><thead><tr><th>Matéria-prima</th><th>Previsto</th><th>Lote da MP</th><th>Separado</th><th></th></tr></thead><tbody>
-    ${(l.mp||[]).map((m,i)=>{const v=r.itens[m.nome]||{};return `<tr class="${v.ok?'okr':''}"><td>${esc(m.nome)}${m.sku?`<small>${esc(m.sku)}</small>`:''}</td><td class="m">${nl(m.kg)} ${esc(m.un)}</td><td><input class="in" data-i="${i}" data-c="lote" value="${esc(v.lote||'')}" placeholder="lote" ${v.ok?'disabled':''}></td><td><input class="in" inputmode="decimal" data-i="${i}" data-c="kg" value="${esc(v.kg||'')}" placeholder="kg" ${v.ok?'disabled':''}></td><td><span class="ck ${v.ok?'on':''}" data-k="${i}">${v.ok?'✓':''}</span></td></tr>`;}).join('')||'<tr><td colspan="5" style="color:var(--ink3)">Este produto não tem formulação cadastrada.</td></tr>'}
+    ${(l.mp||[]).map((m,i)=>{const v=r.itens[m.nome]||{};
+      const est=(m.estoque==null)?'<small class="estq sem">estoque: sem leitura</small>'
+        :`<small class="estq ${m.sit==='falta'?'falta':m.sit==='aperto'?'aperto':'ok'}">estoque: ${nl(m.estoque)} ${esc(m.un)}${m.sit==='falta'?' · falta':m.sit==='aperto'?' · apertado':''}</small>`;
+      return `<tr class="${v.ok?'okr':''}"><td>${esc(m.nome)}${m.sku?`<small>${esc(m.sku)}</small>`:''}${est}</td><td class="m">${nl(m.kg)} ${esc(m.un)}</td><td><input class="in" data-i="${i}" data-c="lote" value="${esc(v.lote||'')}" placeholder="lote" ${v.ok?'disabled':''}></td><td><input class="in" inputmode="decimal" data-i="${i}" data-c="kg" value="${esc(v.kg||'')}" placeholder="kg" ${v.ok?'disabled':''}></td><td><span class="ck ${v.ok?'on':''}" data-k="${i}">${v.ok?'✓':''}</span></td></tr>`;}).join('')||'<tr><td colspan="5" style="color:var(--ink3)">Este produto não tem formulação cadastrada.</td></tr>'}
     ${pend.map(a=>{const v=r.aj[a.i]||{};return `<tr class="ajr"><td><b class="ajn">${esc(a.nome)}</b><small>pedido por ${esc(a.por||'')}${a.obs?' · '+esc(a.obs):''}</small></td><td class="m">${nl(a.kg)} ${esc(a.un||'kg')}</td><td><input class="in" data-aj="${a.i}" data-c="lote" value="${esc(v.lote||'')}" placeholder="lote" ${v.ok?'disabled':''}></td><td><input class="in" inputmode="decimal" data-aj="${a.i}" data-c="kg" value="${esc(v.kg||'')}" placeholder="kg" ${v.ok?'disabled':''}></td><td><span class="ck ${v.ok?'on':''}" data-akj="${a.i}">${v.ok?'✓':''}</span></td></tr>`;}).join('')}
     ${feitos.map(a=>`<tr class="okr"><td>${esc(a.nome)}<small>ajuste lançado às ${esc(a.lanc.h||'')} · ${esc(a.lanc.q||'')}</small></td><td class="m">${nl(a.kg)} ${esc(a.un||'kg')}</td><td class="m">${esc(a.lanc.lote||'—')}</td><td class="m">${nl(a.lanc.kg)}</td><td><span class="ck on">✓</span></td></tr>`).join('')}
     ${r.ext.map((a,j)=>`<tr class="ajr"><td><b class="ajn">${esc(a.nome)}</b><small>MP de ajuste</small></td><td class="m">—</td><td><input class="in" data-ex="${j}" data-c="lote" value="${esc(a.lote||'')}" placeholder="lote"></td><td><input class="in" inputmode="decimal" data-ex="${j}" data-c="kg" value="${esc(a.kg||'')}" placeholder="kg"></td><td><span class="ck" data-exx="${j}" title="tirar">×</span></td></tr>`).join('')}

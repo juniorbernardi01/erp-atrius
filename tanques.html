@@ -1,12 +1,181 @@
-<!doctype html>
-<html lang="pt-BR"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Atrius · Tanques</title>
-<meta name="theme-color" content="#0E1B33"><link rel="icon" href="icone-192.png">
-</head><body style="margin:0;background:#0E1B33;color:#fff;font-family:system-ui,sans-serif;display:grid;place-items:center;height:100vh">
-<div>Abrindo os Tanques…</div>
+<title>Tela do operador · Tanques</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@600;700&display=swap">
+<style>
+/* Layout: tablet 10,1" deitado (1280×800), interativo: os botões mudam o status, os três pontinhos abrem a barra lateral, Formulação e Análise abrem na tela toda. Foco do cartão: status, produto, tanque, volume, hora de pronto, máquina e o botão. */
+:root{--bg:#F3F4F6;--card:#fff;--fg:#0E1B33;--ink2:#374151;--ink3:#6B7280;--line:#E5E7EB;--line2:#F1F2F4;--navy:#0E1B33;--azul:#1B4F9C;--ok:#15803D;--okbg:#DCFCE7;--amb:#B45309;--ambbg:#FEF3C7;--mau:#B91C1C;--maubg:#FEE2E2;--cinza:#6B7280;--cinzabg:#E5E7EB;--roxo:#6D28D9;--roxobg:#EDE9FE;--lar:#EA580C;--font:Inter,system-ui,sans-serif;--mono:'JetBrains Mono',ui-monospace,monospace}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#0B0F17;--card:#151A24;--fg:#E7E9EE;--ink2:#C9CDD6;--ink3:#8B93A1;--line:#262B36;--line2:#1C202A;--okbg:#113322;--ok:#4ADE80;--ambbg:#3A2A08;--amb:#FBBF24;--maubg:#3A1518;--mau:#F87171;--cinzabg:#262B36;--cinza:#9CA3AF;--roxobg:#2A1F4A;--roxo:#C4B5FD;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0B0F17;--card:#151A24;--fg:#E7E9EE;--ink2:#C9CDD6;--ink3:#8B93A1;--line:#262B36;--line2:#1C202A;--okbg:#113322;--ok:#4ADE80;--ambbg:#3A2A08;--amb:#FBBF24;--maubg:#3A1518;--mau:#F87171;--cinzabg:#262B36;--cinza:#9CA3AF;--roxobg:#2A1F4A;--roxo:#C4B5FD;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.35 var(--font)}
+.wrap{max-width:1300px;margin:0 auto;padding-block:12px 50px;padding-inline:16px}
+.nota{font-size:12px;color:var(--ink3);margin-bottom:10px}.nota b{color:var(--fg)}
+.tablet{width:1280px;max-width:100%;margin:0 auto 20px;background:var(--bg);border:10px solid #111;border-radius:22px;overflow:hidden;box-shadow:0 20px 50px rgba(0,0,0,.25);position:relative}
+.tela{width:1260px;max-width:100%;height:780px;display:flex;flex-direction:column;overflow:hidden;background:var(--bg);position:relative}
+.top{background:var(--navy);color:#fff;display:flex;align-items:center;gap:12px;padding:0 18px;height:62px;flex:none}
+.top .logo{background:#fff;border-radius:8px;padding:3px 10px;font:800 20px var(--font);color:#1B4F9C;letter-spacing:-.02em}
+.top .ola{font-size:16px;color:#C9D4EA}.top .ola b{color:#fff}
+.top .res{display:flex;gap:6px;margin:0 auto}.top .res span{font-size:12px;padding:5px 10px;border-radius:999px;font-weight:600}.top .res span b{font-family:var(--mono)}
+.top .res .ok{background:var(--okbg);color:var(--ok)}.top .res .amb{background:var(--ambbg);color:var(--amb)}.top .res .az{background:#DBEAFE;color:#1D4ED8}.top .res .rx{background:var(--roxobg);color:var(--roxo)}.top .res .cz{background:rgba(255,255,255,.14);color:#fff}
+.top .hora{text-align:right}.top .hora b{display:block;font:700 26px/1 var(--mono)}.top .hora small{font-size:11px;color:#C9D4EA}
+.top .menu{width:38px;height:38px;border-radius:50%;background:#2B3A57;display:grid;place-items:center;font-size:20px;color:#fff}
+.grade{flex:1;display:grid;grid-template-columns:repeat(24,1fr);grid-template-rows:1fr 1fr;gap:10px;padding:10px 12px;min-height:0}
+.tq{background:var(--card);border:1px solid var(--line);border-radius:14px;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+.tq.c8{grid-column:span 8}.tq.c7{grid-column:span 7}.tq.c5{grid-column:span 5}
+.tq .cab{background:var(--navy);color:#fff;display:flex;align-items:center;gap:8px;padding:0 10px 0 14px;height:46px;flex:none}
+.tq .cab b{font:800 24px/1 var(--font)}
+.tq .cab .pts{margin-left:auto;width:32px;height:32px;border-radius:50%;background:#2B3A57;display:grid;place-items:center;font-size:18px;cursor:pointer}
+.st{margin:8px 12px 0;padding:8px 12px;border-radius:10px;font:800 13.5px var(--font);letter-spacing:.02em;display:flex;justify-content:space-between;align-items:center;gap:6px;white-space:nowrap}
+.st span:first-child{overflow:hidden;text-overflow:ellipsis}.st .t{font:700 14px var(--mono)}
+.st.ok{background:var(--okbg);color:var(--ok)}.st.amb{background:var(--ambbg);color:var(--amb)}.st.mau{background:var(--maubg);color:var(--mau)}.st.cz{background:var(--cinzabg);color:var(--cinza)}.st.az{background:#DBEAFE;color:#1D4ED8}.st.rx{background:var(--roxobg);color:var(--roxo)}
+.prod{padding:9px 14px 0;font:800 22px/1.05 var(--font);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.prod small{display:block;font:500 12px var(--font);color:var(--ink3);margin-top:4px}
+.tiles{display:grid;grid-template-columns:1fr 1.2fr 1fr;gap:8px;padding:9px 12px 0}
+.tiles div{background:var(--line2);border-radius:10px;padding:7px 10px;min-width:0}
+.tiles div span{display:block;font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3);font-weight:700;white-space:nowrap}
+.tiles div b{display:block;font:700 19px/1.2 var(--mono);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--ink2)}
+.tiles div.dest b{font-size:26px;font-weight:800;color:var(--fg)}.tiles div.dest span{color:var(--ink2)}
+.acoes{margin:auto 12px 8px;display:flex;flex-direction:column;gap:6px;padding-top:9px}
+.acao{height:48px;border-radius:12px;border:0;font:800 16px var(--font);color:#fff;background:var(--ok);display:grid;place-items:center;text-align:center;line-height:1.1;padding:0 8px;cursor:pointer;user-select:none}
+.acao.amb{background:var(--amb)}.acao.az{background:var(--azul)}.acao.rx{background:var(--roxo)}.acao.off{background:var(--cinzabg);color:var(--ink3);cursor:default}
+.sub2{display:flex;gap:6px}.sub2 div{flex:1;height:34px;white-space:nowrap;border-radius:9px;border:1.5px solid var(--line);display:grid;place-items:center;font:700 12.5px var(--font);color:var(--ink2);background:var(--card);cursor:pointer}
+.sub2 div.feito{border-color:var(--okbg);background:var(--okbg);color:var(--ok)}
+.prox{background:var(--line2);padding:8px 12px;font-size:12px;color:var(--ink3);display:flex;gap:8px;align-items:center;white-space:nowrap;overflow:hidden}
+.prox i{font-style:normal;border:1.5px solid var(--ink3);color:var(--ink2);font:700 10px var(--font);letter-spacing:.05em;padding:2px 8px;border-radius:999px;flex:none}
+.prox b{color:var(--fg);font-weight:600;overflow:hidden;text-overflow:ellipsis}.prox .h{margin-left:auto;font:700 12.5px var(--mono);color:var(--fg)}
+.tq.c5 .cab{height:42px}.tq.c5 .cab b{font-size:21px}.tq.c5 .st{font-size:12.5px;padding:8px 10px}.tq.c5 .st .t{font-size:13px}
+.tq.c5 .prod{font-size:18px}.tq.c5 .tiles{grid-template-columns:1fr 1fr;gap:6px}.tq.c5 .tiles div b{font-size:16px}.tq.c5 .tiles div.dest b{font-size:22px}
+.tq.c5 .acao{height:44px;font-size:14px}.tq.c5 .sub2 div{font-size:11.5px;padding:0 4px}.tq.c5 .prox{font-size:11.5px}
+.sim{font-size:11px;color:var(--ink3);text-align:center;cursor:pointer;text-decoration:underline dotted;margin-top:-2px}
+/* barra lateral */
+.sombra{position:absolute;inset:0;background:rgba(14,27,51,.45);display:none}.sombra.on{display:block}
+.drawer{position:absolute;top:0;right:0;bottom:0;width:520px;background:var(--card);box-shadow:-20px 0 40px rgba(0,0,0,.25);display:none;flex-direction:column}.drawer.on{display:flex}
+.drawer .dh{background:var(--navy);color:#fff;padding:14px 16px;position:relative}.drawer .dh b{display:block;font-size:26px}.drawer .dh small{color:#C9D4EA;font-size:13px}.drawer .dh .x{position:absolute;right:14px;top:16px;width:32px;height:32px;border-radius:50%;background:#2B3A57;display:grid;place-items:center;cursor:pointer}
+.dbtn{display:flex;gap:10px;padding:14px 16px 6px}.dbtn .acao{flex:1;height:56px;font-size:17px}
+.meta{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding:10px 16px 0}.meta div{background:var(--line2);border-radius:10px;padding:9px 10px}.meta span{display:block;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3);font-weight:700}.meta b{display:block;font:800 22px var(--mono)}.meta small{color:var(--ink3);font-size:11.5px}
+.dbar{height:8px;background:var(--line2);border-radius:4px;margin:10px 16px 0;overflow:hidden}.dbar i{display:block;height:100%;background:var(--ok)}
+.lista{flex:1;overflow:auto;padding:0 16px 14px;font-size:13.5px}.lista h4{margin:14px 0 6px;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3)}
+.lista .li{display:flex;gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid var(--line2)}.lista .li.agora{background:var(--okbg);margin:0 -8px;padding:9px 8px;border-radius:8px;border:0}
+.lista em{font-style:normal;font:700 14px var(--mono);width:48px;color:var(--ink2);flex:none}.lista .li>div{flex:1;min-width:0}.lista small{display:block;color:var(--ink3);font-size:11.5px}.lista s{color:var(--ink3)}
+.pill{display:inline-block;border-radius:999px;padding:4px 10px;font:700 12px var(--font)}.pill.ok{background:var(--okbg);color:var(--ok)}.pill.mau{background:var(--maubg);color:var(--mau)}.pill.cz{background:var(--cinzabg);color:var(--cinza)}.pill.amb{background:var(--ambbg);color:var(--amb)}
+/* tela cheia */
+.full{position:absolute;inset:0;background:var(--bg);display:none;flex-direction:column}.full.on{display:flex}
+.full .fh{background:var(--navy);color:#fff;display:flex;align-items:center;gap:12px;padding:0 18px;height:62px;flex:none}.full .fh b{font-size:19px}.full .fh small{color:#C9D4EA;font-size:13px}.full .fh .x{margin-left:auto;width:36px;height:36px;border-radius:50%;background:#2B3A57;display:grid;place-items:center;font-size:18px;cursor:pointer}
+.full .fb{flex:1;display:grid;grid-template-columns:1.35fr 1fr;gap:12px;padding:12px;min-height:0}
+.box{background:var(--card);border:1px solid var(--line);border-radius:14px;display:flex;flex-direction:column;min-height:0;overflow:hidden}
+.box h3{margin:0;padding:10px 14px;font:800 12px var(--font);letter-spacing:.07em;text-transform:uppercase;color:var(--ink3);border-bottom:1px solid var(--line);display:flex;gap:10px;align-items:center}.box h3 span{margin-left:auto;font-weight:600;text-transform:none;letter-spacing:0;color:var(--ink2)}
+.box .bb{padding:6px 14px;overflow:auto;flex:1}
+.box .bf{display:flex;gap:8px;padding:10px 12px;border-top:1px solid var(--line);flex:none}.box .bf .acao{height:48px;padding:0 18px}.box .bf .acao.sec{background:transparent;border:1.5px solid var(--line);color:var(--ink2)}.box .bf .acao.lar{background:var(--lar);width:48px;padding:0;font-size:22px}
+table.t{width:100%;border-collapse:collapse;font-size:14px}.t th{font:600 10.5px var(--font);letter-spacing:.05em;text-transform:uppercase;color:var(--ink3);text-align:left;padding:6px 8px;border-bottom:1px solid var(--line)}.t td{padding:9px 8px;border-bottom:1px solid var(--line2);vertical-align:middle}
+.t td.m{font:700 14px var(--mono)}.t .in{display:inline-block;border:1.5px solid var(--line);border-radius:9px;padding:8px 10px;min-width:96px;font:700 15px var(--mono);background:var(--bg);color:var(--fg)}
+.t .in.vazio{color:var(--ink3);font-weight:500}.ck{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:8px;border:2px solid var(--line);color:#fff;font-weight:800;cursor:pointer}.ck.on{background:var(--ok);border-color:var(--ok)}
+.modo{list-style:none;margin:0;padding:0}.modo li{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--line2);font-size:14px;line-height:1.4;cursor:pointer}.modo li em{font-style:normal;width:30px;height:30px;border-radius:50%;background:var(--navy);color:#fff;display:grid;place-items:center;font:800 13px var(--font);flex:none}.modo li.feito em{background:var(--ok)}.modo li.feito{color:var(--ink3)}
+.modo li small{display:block;color:var(--ink3);font-size:12px}
+.full .ff{display:flex;gap:8px;padding:10px 12px 12px;border-top:1px solid var(--line);background:var(--card);flex:none}.full .ff .acao{height:50px;padding:0 22px}
+.toast{position:absolute;left:50%;bottom:18px;transform:translateX(-50%);background:#111827;color:#fff;padding:10px 16px;border-radius:10px;font-size:13px;display:none}
+.leg{font-size:13px;color:var(--ink2);line-height:1.6;max-width:1280px;margin:0 auto}
+</style>
+
+<div class="wrap">
+<div class="nota"><b>Desenho interativo</b> · pode mexer: os botões mudam o status, os três pontinhos abrem a barra lateral, Formulação e Análise abrem na tela toda. Os links "simular…" fazem o papel do químico e do operador de envase.</div>
+
+<div class="tablet"><div class="tela" id="tela">
+  <div class="top"><span class="logo">Atrius</span><span class="ola">Boa tarde, <b>Marcos</b></span><div class="res" id="res"></div><div class="hora"><b id="relogio">16:48</b><small>Terça feira, 13 de outubro de 2026</small></div><div class="menu">⋮</div></div>
+  <div class="grade" id="grade"></div>
+  <div class="sombra" id="sombra"></div>
+  <div class="drawer" id="drawer"></div>
+  <div class="full" id="fForm"></div>
+  <div class="full" id="fAna"></div>
+  <div class="toast" id="toast"></div>
+</div></div>
+
+<div class="leg">
+<b>Foco do cartão</b>: status · produto · tanque · volume · <b>hora de pronto</b> (só a fonte maior, sem bloco escuro) · máquina que vai puxar · botão da etapa · Formulação e Análise. Nada de "próximo/último".<br>
+<b>Passo a passo</b>: Iniciar preparo → Formulação (pesagem + modo de fazer) → Concluir preparo → Análise → Enviar análise para liberação → o químico libera → Liberado → o envase puxa (Envasando · MAQ) → o operador de envase conclui → Concluído · limpar → Iniciar limpeza → Concluir limpeza → próximo lote da fila. Cada botão pede o PIN no sistema.
+</div>
+</div>
+
 <script>
-/* marca este aparelho como o tablet dos tanques e abre a tela deles */
-try{localStorage.removeItem('erp.maqTablet');localStorage.setItem('erp.quiosque','tq');sessionStorage.removeItem('erp.qSaiu');}catch(e){}
-location.replace('./#optq');
-</script></body></html>
+/* dados de exemplo: cada tanque tem a fila do dia (lotes) e o estado do lote atual */
+const T=[
+ {id:'TQ 1',cls:'c8',st:'prep',ini:'14:39',fila:[{p:'AMACIANTE AZUL',lote:384,op:'0178',vol:3800,pronto:'15:30',maq:'MAQ 2',prev:90},{p:'AMACIANTE ROSA',lote:null,op:'0181',vol:3800,pronto:'17:00',maq:'MAQ 2',prev:90}],feitos:[{p:'AMA Azul',lote:382,vol:3800,h:'08:09',maq:'MAQ 2'},{p:'AMA Azul',lote:383,vol:3800,h:'08:13',maq:'MAQ 2'},{p:'L.L Neutro',lote:1776,vol:3800,h:'13:04',maq:'MAQ 1'}],pes:3,passo:3},
+ {id:'TQ 2',cls:'c8',st:'quimico',ini:'14:10',fila:[{p:'L.L NEUTRO',lote:1777,op:'0176',vol:3800,pronto:'14:54',maq:'MAQ 1',prev:80}],feitos:[],pes:7,passo:6},
+ {id:'TQ 3',cls:'c8',st:'envasando',ini:'11:17',fila:[{p:'L.R PREMIUM',lote:817,op:'0172',vol:3800,pronto:'15:39',maq:'MAQ 2',prev:80},{p:'DESINFETANTE FLORAL',lote:null,op:'0183',vol:3800,pronto:'16:30',maq:'MAQ 2',prev:70}],feitos:[],pes:7,passo:6},
+ {id:'TQ 4',cls:'c7',st:'limpar',ini:'13:58',fila:[{p:'L.L NEUTRO',lote:null,op:'0184',vol:3800,pronto:'17:30',maq:'MAQ 1',prev:80}],feitos:[{p:'AMA Roxo',lote:156,vol:3800,h:'09:15',maq:'MAQ 1'}],pes:0,passo:0},
+ {id:'TQ 5',cls:'c7',st:'limpando',ini:'16:36',fila:[{p:'DES EUCALIPTO',lote:null,op:'0185',vol:4600,pronto:'17:45',maq:'MAQ 1',prev:75}],feitos:[{p:'DES Lavanda',lote:1577,vol:4600,h:'15:16',maq:'MAQ 1'}],pes:0,passo:0},
+ {id:'TQ 6',cls:'c5',st:'envasando',ini:'14:34',fila:[{p:'ÁGUA SANITÁRIA',lote:3583,op:'0165',vol:10000,pronto:'17:50',maq:'MAQ 3',prev:120}],feitos:[],pes:4,passo:4},
+ {id:'TQ 7',cls:'c5',st:'fila',ini:'',fila:[{p:'ÁGUA SANITÁRIA',lote:3584,op:'0180',vol:10000,pronto:'16:45',maq:'MAQ 3',prev:120}],feitos:[],pes:0,passo:0}];
+const ST={fila:['cz','Na fila'],atras:['mau','Atrasado'],prep:['ok','Preparando'],prepok:['ok','Preparo concluído · fazer análise'],quimico:['amb','Aguardando o químico'],liberado:['az','Liberado · esperando o envase'],envasando:['az','Envasando'],limpar:['rx','Concluído · limpar'],limpando:['rx','Limpando'],livre:['cz','Livre']};
+let AGORA=16*60+48;const hm=m=>String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0');const min=h=>+h.slice(0,2)*60+ +h.slice(3);
+const nl=v=>v.toLocaleString('pt-BR');const esc=s=>String(s).replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]));
+function toast(t){const e=document.getElementById('toast');e.textContent=t;e.style.display='block';clearTimeout(e._t);e._t=setTimeout(()=>e.style.display='none',1800);}
+function lote(t){return t.fila[0];}
+function statusDe(t){if(t.st==='fila'&&lote(t)&&min(lote(t).pronto)-lote(t).prev<AGORA)return 'atras';return t.st;}
+function cartao(t){const l=lote(t);const s=statusDe(t);const [cor,rot]=ST[s];
+  let tempo='';if(s==='prep'||s==='limpando')tempo=hm(AGORA-min(t.ini))+(s==='prep'?' / '+hm(l.prev):'');else if(s==='atras')tempo=hm(AGORA-(min(l.pronto)-l.prev))+' atrasado';else if(t.ini)tempo=(s==='envasando'?'desde ':'')+t.ini;
+  let rotulo=rot;if(s==='envasando')rotulo='Envasando · '+l.maq;
+  const btn=s==='fila'||s==='atras'?`<div class="acao" data-a="prep">Iniciar preparo</div>`:s==='prep'?`<div class="acao" data-a="prepok">Concluir preparo</div>`:s==='prepok'?`<div class="acao amb" data-a="ana">Preencher análise</div>`:s==='quimico'?`<div class="acao off">Esperando a liberação</div><div class="sim" data-a="simLib">simular: químico liberou</div>`:s==='liberado'?`<div class="acao off">Esperando o envase puxar</div><div class="sim" data-a="simEnv">simular: envase começou</div>`:s==='envasando'?`<div class="acao off">O envase conclui o tanque</div><div class="sim" data-a="simFim">simular: envase concluído</div>`:s==='limpar'?`<div class="acao rx" data-a="limpando">Iniciar limpeza</div>`:s==='limpando'?`<div class="acao rx" data-a="fimLimp">Concluir limpeza</div>`:`<div class="acao off">Nenhum lote na fila</div>`;
+  const fOk=t.pes>=7,aOk=['quimico','liberado','envasando','limpar'].includes(s);
+  const prox=t.fila[1];
+  return `<div class="tq ${t.cls}" data-t="${t.id}"><div class="cab"><b>${t.id}</b><span class="pts" data-a="menu">⋮</span></div>
+    <div class="st ${cor}"><span>${rotulo}</span><span class="t">${tempo}</span></div>
+    ${l?`<div class="prod">${esc(l.p)}<small>${l.lote?'lote '+l.lote+' · ':''}OP ${l.op}</small></div>
+    <div class="tiles"><div><span>Volume (L)</span><b>${nl(l.vol)}</b></div><div class="dest"><span>${s==='envasando'?'Envase até':'Pronto até'}</span><b>${l.pronto}</b></div><div><span>${s==='envasando'?'Máquina':'Vai para'}</span><b>${l.maq}</b></div></div>`:`<div class="prod" style="color:var(--ink3)">—</div><div class="tiles"></div>`}
+    <div class="acoes">${btn}<div class="sub2"><div class="${fOk?'feito':''}" data-a="form">📋 Formulação${fOk?' ✓':t.pes?' · '+t.pes+'/7':''}</div><div class="${aOk?'feito':''}" data-a="ana">🧪 Análise${aOk?' ✓':''}</div></div></div>
+    <div class="prox"><i>DEPOIS</i>${prox?`<b>${esc(prox.p)}</b> · ${nl(prox.vol)} L<span class="h">${prox.pronto}</span>`:'nada mais hoje'}</div></div>`;}
+function desenha(){document.getElementById('grade').innerHTML=T.map(cartao).join('');
+  const c={prep:0,quimico:0,envasando:0,limpando:0,fila:0};T.forEach(t=>{const s=statusDe(t);if(s==='prep'||s==='prepok')c.prep++;else if(s==='quimico')c.quimico++;else if(s==='envasando'||s==='liberado')c.envasando++;else if(s==='limpando'||s==='limpar')c.limpando++;else if(s==='fila'||s==='atras')c.fila++;});
+  document.getElementById('res').innerHTML=`<span class="ok">Preparando <b>${c.prep}</b></span><span class="amb">Aguardando o químico <b>${c.quimico}</b></span><span class="az">Envasando <b>${c.envasando}</b></span><span class="rx">Limpando <b>${c.limpando}</b></span><span class="cz">Na fila <b>${c.fila}</b></span>`;
+  document.getElementById('relogio').textContent=hm(AGORA);
+  document.querySelectorAll('[data-a]').forEach(b=>b.onclick=()=>acao(b.closest('.tq').dataset.t,b.dataset.a));}
+function acao(id,a){const t=T.find(x=>x.id===id);const l=lote(t);
+  if(a==='menu')return abrirDrawer(t);if(a==='form')return abrirForm(t);
+  if(a==='ana'){if(!['prepok','quimico','liberado','envasando','limpar'].includes(statusDe(t)))return toast('A análise é depois de concluir o preparo.');return abrirAna(t);}
+  if(a==='prep'){t.st='prep';t.ini=hm(AGORA);if(!l.lote)l.lote=Math.floor(1000+Math.random()*900);toast(t.id+' · preparo iniciado às '+t.ini+' (PIN)');abrirForm(t);}
+  if(a==='prepok'){if(t.pes<7)return toast('Faltam '+(7-t.pes)+' matérias-primas na pesagem.');t.st='prepok';t.ini=hm(AGORA);toast('Preparo concluído · agora a análise');}
+  if(a==='simLib'){t.st='liberado';t.ini=hm(AGORA);toast('Químico liberou o lote '+l.lote);}
+  if(a==='simEnv'){t.st='envasando';t.ini=hm(AGORA);toast(l.maq+' começou a envasar');}
+  if(a==='simFim'){t.st='limpar';t.ini=hm(AGORA);t.feitos.push({p:l.p,lote:l.lote,vol:l.vol,h:hm(AGORA),maq:l.maq});t.fila.shift();t.pes=0;t.passo=0;toast('Envase concluído · tanque precisa de limpeza');}
+  if(a==='limpando'){t.st='limpando';t.ini=hm(AGORA);toast('Limpeza iniciada (PIN)');}
+  if(a==='fimLimp'){t.st=t.fila.length?'fila':'livre';t.ini='';toast('Limpeza concluída · tanque pronto');}
+  AGORA+=1;desenha();}
+/* barra lateral */
+function abrirDrawer(t){const l=lote(t);const d=document.getElementById('drawer');const totL=t.feitos.reduce((s,x)=>s+x.vol,0)+t.fila.reduce((s,x)=>s+x.vol,0);const feitL=t.feitos.reduce((s,x)=>s+x.vol,0);
+  d.innerHTML=`<div class="dh"><b>${t.id}</b><small>${l?esc(l.p)+(l.lote?' · lote '+l.lote:'')+' · '+ST[statusDe(t)][1].toLowerCase():'sem lote'}</small><span class="x" id="dX">×</span></div>
+  <div class="dbtn"><div class="acao az" id="dF">📋 Formulação</div><div class="acao amb" id="dA">🧪 Análise</div></div>
+  <div class="meta"><div><span>Meta do dia</span><b>${t.feitos.length+t.fila.length} lotes</b><small>${nl(totL)} L</small></div><div><span>Concluídos</span><b>${t.feitos.length}</b><small>${nl(feitL)} L</small></div><div><span>Faltam</span><b>${t.fila.length}</b><small>${nl(totL-feitL)} L</small></div></div>
+  <div class="dbar"><i style="width:${totL?feitL/totL*100:0}%"></i></div>
+  <div class="lista"><h4>Fila do tanque</h4>${t.fila.map((x,i)=>`<div class="li ${i===0&&statusDe(t)!=='fila'&&statusDe(t)!=='atras'?'agora':''}"><em>${x.pronto}</em><div><b>${esc(x.p)}</b>${x.lote?' · lote '+x.lote:''} · ${nl(x.vol)} L<small>${i===0?ST[statusDe(t)][1].toLowerCase()+' · ':''}vai para ${x.maq}</small></div><span class="pill ${i===0&&statusDe(t)!=='fila'?'ok':'cz'}">${i===0&&statusDe(t)!=='fila'&&statusDe(t)!=='atras'?'agora':'na fila'}</span></div>`).join('')||'<div class="li" style="color:var(--ink3)">nada mais hoje</div>'}
+  <h4>Concluídas hoje</h4>${t.feitos.map(x=>`<div class="li"><em>${x.h}</em><div><s>${esc(x.p)} · lote ${x.lote} · ${nl(x.vol)} L</s><small>envasado na ${x.maq}</small></div><span class="pill ok">✓</span></div>`).join('')||'<div class="li" style="color:var(--ink3)">nenhuma ainda</div>'}</div>`;
+  d.classList.add('on');document.getElementById('sombra').classList.add('on');
+  const fecha=()=>{d.classList.remove('on');document.getElementById('sombra').classList.remove('on');};document.getElementById('dX').onclick=fecha;document.getElementById('sombra').onclick=fecha;
+  document.getElementById('dF').onclick=()=>{fecha();abrirForm(t);};document.getElementById('dA').onclick=()=>{fecha();acao(t.id,'ana');};}
+/* formulação */
+const MP=[['Água',3420,'—',true],['Base amaciante QUAT 80',190,'L24-0931'],['Espessante',11.4,'L24-0877'],['Fragrância',15.2,''],['Corante',0.38,''],['Conservante',3.8,''],['Ácido cítrico (ajuste de pH)','q.s.','']];
+const MODO=['Encher o tanque com a água até o peso previsto|água em temperatura ambiente','Ligar a agitação e adicionar a base aos poucos|agitar 15 min até homogeneizar','Adicionar o espessante com a agitação ligada|esperar engrossar · 10 min','Adicionar a fragrância e o corante|agitar 5 min','Adicionar o conservante e ajustar o pH|alvo na especificação do produto','Deixar em descanso e coletar a amostra para a análise|descanso 20 min'];
+function abrirForm(t){const l=lote(t);if(!l)return toast('Sem lote neste tanque.');const f=document.getElementById('fForm');
+  f.innerHTML=`<div class="fh"><b>Formulação · ${esc(l.p)}</b><small>${t.id}${l.lote?' · lote '+l.lote:''} · ${nl(l.vol)} L · ${t.pes} de 7 pesados</small><span class="x" id="fX">×</span></div>
+  <div class="fb"><div class="box"><h3>Matérias-primas e pesagem <span>previsto para ${nl(l.vol)} L</span></h3><div class="bb"><table class="t"><thead><tr><th>Matéria-prima</th><th>Previsto</th><th>Lote da MP</th><th>Pesado</th><th></th></tr></thead><tbody>
+    ${MP.map((m,i)=>{const ok=i<t.pes;return `<tr><td>${m[0]}</td><td class="m">${typeof m[1]==='number'?nl(m[1])+' kg':m[1]}</td><td><span class="in ${m[2]?'':'vazio'}">${m[2]||'lote'}</span></td><td><span class="in ${ok?'':'vazio'}">${ok?(typeof m[1]==='number'?nl(m[1]):'0,6'):'kg'}</span></td><td><span class="ck ${ok?'on':''}" data-i="${i}">${ok?'✓':''}</span></td></tr>`;}).join('')}
+    </tbody></table><div style="font-size:12px;color:var(--ink3);padding:8px 0">Toque no ✓ para marcar a pesagem (no sistema: digita o lote da MP e o peso). Diferença do previsto vira ajuste no lote.</div></div>
+    <div class="bf"><div class="acao sec">+ MP de ajuste</div><div class="acao lar">!</div><span style="flex:1"></span><div class="acao" id="fS">Salvar pesagem</div></div></div>
+  <div class="box"><h3>Modo de fazer <span>passo ${Math.min(t.passo+1,6)} de 6</span></h3><div class="bb"><ol class="modo">${MODO.map((p,i)=>{const [a,b]=p.split('|');return `<li class="${i<t.passo?'feito':''}" data-p="${i}"><em>${i<t.passo?'✓':i+1}</em><div>${a}<small>${b}</small></div></li>`;}).join('')}</ol></div></div></div>`;
+  f.classList.add('on');f.querySelector('#fX').onclick=()=>{f.classList.remove('on');desenha();};
+  f.querySelectorAll('.ck').forEach(c=>c.onclick=()=>{const i=+c.dataset.i;t.pes=i<t.pes?i:i+1;abrirForm(t);});
+  f.querySelectorAll('.modo li').forEach(li=>li.onclick=()=>{const i=+li.dataset.p;t.passo=i<t.passo?i:i+1;abrirForm(t);});
+  f.querySelector('#fS').onclick=()=>{f.classList.remove('on');toast('Pesagem salva · '+t.pes+' de 7');desenha();};}
+/* análise */
+function abrirAna(t){const l=lote(t);const f=document.getElementById('fAna');const enviada=['quimico','liberado','envasando','limpar'].includes(statusDe(t));
+  f.innerHTML=`<div class="fh"><b>Análise · ${esc(l.p)}</b><small>${t.id} · lote ${l.lote||'—'} · preparo concluído ${t.ini}</small><span class="x" id="aX">×</span></div>
+  <div class="fb" style="grid-template-columns:1.5fr 1fr"><div class="box"><h3>Ensaios do produto <span>resultado fora da faixa fica vermelho na hora</span></h3><div class="bb"><table class="t"><thead><tr><th>Ensaio</th><th>Especificação</th><th>Resultado</th><th></th></tr></thead><tbody>
+    <tr><td>Cor</td><td>Incolor</td><td><span class="pill ok">Conforme</span> &nbsp;<span class="pill cz">Não conforme</span></td><td></td></tr>
+    <tr><td>Odor</td><td>Característico</td><td><span class="pill ok">Conforme</span> &nbsp;<span class="pill cz">Não conforme</span></td><td></td></tr>
+    <tr><td>Aspecto</td><td>Líquido límpido</td><td><span class="pill ok">Conforme</span> &nbsp;<span class="pill cz">Não conforme</span></td><td></td></tr>
+    <tr><td>pH</td><td>entre 6,5 e 7,5</td><td><span class="in">7,2</span></td><td><span class="pill ok">dentro</span></td></tr>
+    <tr><td>Viscosidade (copo Ford 5)</td><td>entre 15 e 25 s</td><td><span class="in">18</span></td><td><span class="pill ok">dentro</span></td></tr>
+    <tr><td>Teor de ativo</td><td>entre 5,0 e 6,0 %</td><td><span class="in">4,7</span></td><td><span class="pill mau">fora</span></td></tr></tbody></table></div></div>
+  <div class="box"><h3>Ajustes feitos no lote</h3><div class="bb"><table class="t"><thead><tr><th>Hora</th><th>O que entrou</th><th>Quanto</th></tr></thead><tbody><tr><td class="m">14:02</td><td>Ácido cítrico (ajuste de pH)</td><td class="m">0,6 kg</td></tr><tr><td colspan="3" style="color:var(--ink3);font-size:12.5px">Vem do "+ MP de ajuste" da formulação. Se o químico pedir ajuste, o tanque volta para "Preparando" com o aviso.</td></tr></tbody></table>
+    <div style="margin-top:10px"><span style="font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink3);font-weight:700">Observação para o químico</span><div class="in" style="display:block;min-height:70px;margin-top:6px;font:500 13px var(--font);color:var(--ink3)">Ativo deu 4,7 %, abaixo da faixa. Aguardo orientação.</div></div></div></div></div>
+  <div class="ff"><span style="flex:1"></span><div class="acao ${enviada?'off':'amb'}" id="aE">${enviada?'Análise já enviada':'ENVIAR ANÁLISE PARA LIBERAÇÃO'}</div></div>`;
+  f.classList.add('on');f.querySelector('#aX').onclick=()=>f.classList.remove('on');
+  f.querySelector('#aE').onclick=()=>{if(enviada)return;t.st='quimico';t.ini=hm(AGORA);f.classList.remove('on');toast('Análise enviada · aguardando o químico');desenha();};}
+desenha();setInterval(()=>{AGORA+=1;desenha();},30000);
+</script>

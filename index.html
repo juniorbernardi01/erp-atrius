@@ -5508,7 +5508,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v551';const VERSAO_DATA='13/11/2026';
+const VERSAO_APP='v554';const VERSAO_DATA='16/11/2026';
 /* número que aparece na tela: v438 → v4.3.8 (por dentro continua v438, que é o que as versões comparam) */
 const csRotVer=v=>{const d=String(v||'').replace(/\D/g,'');return d.length>=3?'v'+d.slice(0,-2)+'.'+d.slice(-2,-1)+'.'+d.slice(-1):String(v||'');};
 const VERSAO_ROTULO=csRotVer(VERSAO_APP)+' · '+VERSAO_DATA;
@@ -26715,6 +26715,22 @@ setTimeout(function a56(){try{if(!PRONTO)return setTimeout(a56,3000);if(MODO_TV)
   if(CS_MIGRA.includes('alvejante5l-4600'))return;
   if(TEMPOS['303']&&+TEMPOS['303'].lote===5000)TEMPOS['303'].lote=4600;
   CS_MIGRA.push('alvejante5l-4600');agendarSalvar();}catch(e){}},6000);
+/* ===================== v554 · FILME TERMO ENCOLHIVEL — unifica código =====================
+   O recebimento de uma OC da Uniplast caiu num código separado (640716862) enquanto o
+   consumo corre no código certo (ERP-CX003), deixando o saldo quebrado. Esta correção
+   roda uma vez: move TODO o saldo do código errado pro certo (depósito por depósito, pra
+   preservar rateio), zera o errado e deixa o rastro no razão. Robusta: move o que estiver
+   lá na hora (não um número fixo) e é idempotente pela trava do CS_MIGRA. */
+setTimeout(function cx3(){try{if(!PRONTO)return setTimeout(cx3,3000);if(MODO_TV)return;
+  if(CS_MIGRA.includes('cx003-filme-1116'))return;
+  const ERR='640716862', OK='ERP-CX003';
+  const sd=csSaldoDeps(ERR);let total=0;
+  Object.keys(sd.por||{}).forEach(function(dep){const v=+sd.por[dep]||0;
+    if(v){csEAplica(ERR,dep,-v);csEAplica(OK,dep,+v);total+=v;}});
+  if(total){const em=csEEm(),quem='Sistema';
+    CS_ELOG.push({em,id:ERR,tipo:'S',qtd:Math.abs(total),dif:-total,dep:csEPrinc(),origem:'Ajuste',obs:'Unificação FILME TERMO ENCOLHIVEL — saldo movido para o código '+OK+' (recebimento de OC lançado em código separado).',quem,uid:csENovoUid(),man:true});
+    CS_ELOG.push({em,id:OK,tipo:'E',qtd:Math.abs(total),dif:+total,dep:csEPrinc(),origem:'Ajuste',obs:'Unificação FILME TERMO ENCOLHIVEL — saldo recebido do código '+ERR+' (correção de recebimento de OC).',quem,uid:csENovoUid(),man:true});}
+  CS_MIGRA.push('cx003-filme-1116');agendarSalvar();}catch(e){console.log('migra cx003',e);}},6500);
 try{csNucleo.versao='v356';}catch(e){}
 
 </script>
@@ -30852,7 +30868,14 @@ function csTqLote(b){
   const at=APONTA[b.chave]||{},tq=at.tq||{},s=csTqSt(b);
   const o0=(b.ordens||[])[0];
   const maqs=[...new Set((b.ordens||[]).map(o=>o.maq).filter(Boolean))];
-  let mp=[];try{mp=mpDoLote(b).map(x=>({nome:x.nome,sku:x.sku||'',kg:+x.kg||0,un:x.un||'kg'}));}catch(e){}
+  let mp=[];try{mp=mpDoLote(b).map(x=>{
+    /* v5.5.2: leva o estoque atual de cada MP pro tablet, pra quem faz o lote
+       ver na hora se tem o suficiente (não só o OK de separado). */
+    const t=x.tiny||(insPorNome(x.nome)||{}).tiny;
+    const fis=(t!=null&&typeof ESTOQUE!=='undefined'&&ESTOQUE[t]!==undefined)?+ESTOQUE[t]:null;
+    let sit='sem';try{sit=situacaoItem(t,+x.kg||0,null).k;}catch(e){}
+    return {nome:x.nome,sku:x.sku||'',kg:+x.kg||0,un:x.un||'kg',estoque:fis,sit:sit};
+  });}catch(e){}
   let ens=[];try{const E=especDe(b.produto)||{};ens=ensaiosDe(b.produto).map(([k,rot])=>({k,rot,quali:QUALI.includes(k),esp:csTqEspec(b.produto,k),
     min:(E[k]&&typeof E[k]==='object'&&E[k].min!=null)?+E[k].min:null,max:(E[k]&&typeof E[k]==='object'&&E[k].max!=null)?+E[k].max:null,
     st:confereEnsaio(b.produto,k,((b.analise&&b.analise.resultados)||{})[k])}));}catch(e){}
@@ -39873,18 +39896,6 @@ function csMp519(simular){
 
 </script>
 
-
-
-
-
-
-
-
-
-
-
-
-
 <!--PCP_SOPRO_ROTULAGEM-->
 <style id="pcpSrCss">
 /* PCP Sopro/Rotulagem — estilos isolados (prefixo pcx-) */
@@ -40097,31 +40108,98 @@ button.pcx-lat-it{width:100%;text-align:left;background:none;font:inherit;align-
 /* --- cabeçalho: seletor + data juntos --- */
 .pcx-sr-l{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .pcx-nova.sm{padding:8px 12px;font-size:12.5px}
-/* --- fila de pedidos do envase (lateral) --- */
-.pcx-ped{display:flex;align-items:center;gap:10px;padding:9px 12px;border-bottom:1px solid var(--line,#DDE3EC);cursor:grab;user-select:none}
-.pcx-ped:hover{background:var(--wash,#F1F5F9)}
-.pcx-ped.sel{background:#EFF5FE;box-shadow:inset 3px 0 0 #1D4ED8}
+/* --- pedidos do envase: bloquinhos modernos (checkbox + bloco) --- */
+.pcx-lb{padding:8px}
+.pcx-ped{display:flex;align-items:flex-start;gap:9px;padding:10px 11px;margin:0 0 8px;background:var(--surface,#fff);border:1px solid var(--line,#DDE3EC);border-radius:11px;cursor:grab;user-select:none;transition:box-shadow .12s,border-color .12s}
+.pcx-ped:last-child{margin-bottom:0}
+.pcx-ped:hover{border-color:#BBD4F7;box-shadow:0 1px 6px rgba(15,23,42,.06)}
+.pcx-ped.sel{border-color:#1D4ED8;box-shadow:0 0 0 1px #1D4ED8}
 .pcx-ped.dragging{opacity:.5}
-.pcx-ped .seq{width:22px;height:22px;flex:none;border-radius:999px;background:var(--navy,#0E1B33);color:#fff;font:800 11px ui-monospace,monospace;display:grid;place-items:center}
-.pcx-ped .mid{flex:1;min-width:0}
-.pcx-ped .mid .op{font:800 10px ui-monospace,monospace;color:var(--navy,#0E1B33);text-transform:uppercase;letter-spacing:.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.pcx-ped .mid .n{font:700 12.5px system-ui;color:var(--ink,#0F172A);line-height:1.2;margin-top:1px}
-.pcx-ped .mid .pz{font:600 10.5px system-ui;color:#B45309;margin-top:2px}
-.pcx-ped .qq{flex:none;text-align:right;font:800 15px ui-monospace,monospace;color:var(--anl,#DC2626);line-height:1}
-.pcx-ped .qq small{display:block;font:600 8.5px system-ui;color:var(--ink3,#64748B)}
+.pcx-ped .pcx-ck{width:18px;height:18px;margin:2px 0 0;flex:none;accent-color:#1D4ED8;cursor:pointer}
+.pcx-ped-in{flex:1;min-width:0;display:flex;flex-direction:column;gap:5px}
+.pcx-ped-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.pcx-ped-op{font:800 10px ui-monospace,monospace;color:#fff;background:var(--navy,#0E1B33);border-radius:5px;padding:2px 7px;letter-spacing:.3px;white-space:nowrap}
+.pcx-ped-prazo{font:700 10px system-ui;color:#92400E;background:#FEF3C7;border:1px solid #FDE68A;border-radius:999px;padding:2px 9px;white-space:nowrap;margin-left:auto}
+.pcx-ped-prod{font:800 13px system-ui;color:var(--ink,#0F172A);line-height:1.25}
+.pcx-ped-bot{display:flex;align-items:flex-end;justify-content:space-between;gap:8px;margin-top:1px}
+.pcx-ped-lote{font:600 10.5px system-ui;color:var(--ink3,#64748B)}.pcx-ped-lote.dim{opacity:.7}
+.pcx-ped-qt{font:800 16px ui-monospace,monospace;color:var(--navy,#0E1B33);line-height:1;white-space:nowrap}
+.pcx-ped-qt small{font:600 10px system-ui;color:var(--ink3,#64748B)}
 .pcx-selbar{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 12px;background:#EFF5FE;border-top:1px solid #BBD4F7}
 .pcx-selbar span{font:700 11.5px system-ui;color:#1D4ED8}
 .pcx-col.drop{outline:2px dashed #1D4ED8;outline-offset:-4px}
 
 .pcx-selbar[hidden]{display:none}
+
+/* ===== bloco "o que pegar" dentro do card (frasco + rótulo nome inteiro) ===== */
+.pcx-pega{margin-top:10px;border:1px solid var(--line,#DDE3EC);border-radius:10px;overflow:hidden;background:var(--surface,#fff)}
+.pcx-pega-r{display:flex;align-items:center;gap:9px;padding:9px 11px;border-bottom:1px solid var(--line,#DDE3EC)}
+.pcx-pega-r .lb{font:800 9.5px system-ui;text-transform:uppercase;letter-spacing:.04em;color:var(--ink3,#64748B);width:52px;flex:none}
+.pcx-pega-r .nm{font:800 13.5px system-ui;color:var(--ink,#0F172A);line-height:1.2;flex:1;min-width:0}
+.pcx-pega-ok{font:700 9.5px system-ui;color:#15803D;background:#DCFCE7;border-radius:999px;padding:2px 8px;white-space:nowrap;flex:none}
+.pcx-pega-no{font:700 9.5px system-ui;color:#92400E;background:#FEF3C7;border-radius:999px;padding:2px 8px;white-space:nowrap;flex:none;text-transform:uppercase}
+.pcx-pega-f{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 11px;background:var(--wash,#F1F5F9)}
+.pcx-pega-f .op{font:700 10px ui-monospace,monospace;color:var(--ink3,#64748B);letter-spacing:.3px}
+.pcx-pega-f .qt{font:800 17px ui-monospace,monospace;color:var(--navy,#0E1B33);line-height:1}
+.pcx-pega-f .qt small{font:600 10px system-ui;color:var(--ink3,#64748B);margin-left:3px}
+
+/* ===== botão desfazer (discreto, padrão do sistema) ===== */
+.pcx-b.undo{flex:none;background:var(--surface,#fff);border:1px solid var(--line,#DDE3EC);color:var(--ink2,#475569);font:700 13px system-ui;padding:13px 14px}
+.pcx-b.undo:hover{background:var(--wash,#F1F5F9)}
+
+/* ===== seleção de motivo da pausa (reusa MOTIVOS do sistema) ===== */
+.pcx-motivos{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+@media(max-width:560px){.pcx-motivos{grid-template-columns:1fr}}
+.pcx-motivo{text-align:left;border:1px solid var(--line,#DDE3EC);background:var(--surface,#fff);color:var(--ink,#0F172A);border-radius:10px;padding:12px 13px;font:700 13px system-ui;cursor:pointer}
+.pcx-motivo:hover{border-color:#1D4ED8;background:#EFF5FE}
+
+/* ===== card como alvo de arraste (aproveitar) ===== */
+.pcx-card.drop{outline:2px dashed #16A34A;outline-offset:2px}
+
+/* ===== chevron de expandir/recolher na barra da meta (padrão tanques) ===== */
+.pcx-meta>summary{position:relative}
+.pcx-meta>summary .chev{margin-left:auto;width:22px;height:22px;flex:none;display:grid;place-items:center;border:1px solid var(--line,#DDE3EC);border-radius:7px;color:var(--ink3,#64748B);font-size:11px;background:var(--surface,#fff);transition:transform .15s}
+.pcx-meta[open]>summary .chev{transform:rotate(180deg)}
+/* barra mais estreita */
+.pcx-meta>summary{padding:9px 14px}
+
+/* ===== programação: linha do tempo de ocupação das máquinas ===== */
+.pcx-prog .pcx-tl-leg{display:flex;align-items:center;gap:6px;font:600 10px system-ui;color:var(--ink3,#64748B);margin-left:14px}
+.pcx-prog .pcx-tl-leg i{width:11px;height:11px;border-radius:3px;display:inline-block;margin-left:6px}
+.pcx-tl-leg i.prog{background:#64748B}.pcx-tl-leg i.prod{background:#1D4ED8}.pcx-tl-leg i.pausa{background:#B45309}
+.pcx-tl{padding:12px 14px}
+.pcx-tl-axis{position:relative;height:15px;margin-left:132px}
+.pcx-tl-h{position:absolute;transform:translateX(-50%);font:600 9px ui-monospace,monospace;color:var(--ink3,#64748B)}
+.pcx-tl-row{display:flex;align-items:center;margin:7px 0}
+.pcx-tl-maq{width:132px;flex:none;font:800 12px system-ui;color:var(--ink,#0F172A);padding-right:10px}
+.pcx-tl-maq span{display:block;font:600 10px system-ui;color:var(--ink3,#64748B);margin-top:1px}
+.pcx-tl-track{position:relative;flex:1;height:32px;background:var(--wash,#F1F5F9);border:1px solid var(--line,#DDE3EC);border-radius:8px;overflow:hidden}
+.pcx-tl-op{position:absolute;top:3px;bottom:3px;border-radius:5px;display:flex;align-items:center;padding:0 7px;overflow:hidden;cursor:pointer;color:#fff;box-shadow:0 1px 2px rgba(15,23,42,.15)}
+.pcx-tl-op span{font:700 10px system-ui;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pcx-tl-op.prog{background:#64748B}.pcx-tl-op.prod{background:#1D4ED8}.pcx-tl-op.pausa{background:#B45309}
+.pcx-tl-op:hover{filter:brightness(1.08)}
+
+/* ===== gráfico de barras do relatório ===== */
+.pcx-graf{border:1px solid var(--line,#DDE3EC);border-radius:12px;padding:12px 14px;margin-bottom:16px;background:var(--surface,#fff)}
+.pcx-graf .leg{display:flex;gap:16px;font:600 11px system-ui;color:var(--ink3,#64748B);margin-bottom:10px}
+.pcx-graf .leg i{width:11px;height:11px;border-radius:3px;display:inline-block;margin-right:5px;vertical-align:-1px}
+.pcx-graf .leg i.f,.pcx-graf-row .bar i.f{background:#1D4ED8}
+.pcx-graf .leg i.q,.pcx-graf-row .bar i.q{background:#DC2626}
+.pcx-graf-row{display:flex;align-items:center;gap:10px;margin:6px 0}
+.pcx-graf-row .lb{width:150px;flex:none;font:700 12px system-ui;color:var(--ink,#0F172A);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pcx-graf-row .bar{flex:1;height:16px;background:var(--wash,#F1F5F9);border-radius:5px;overflow:hidden;display:flex}
+.pcx-graf-row .bar i{display:block;height:100%}
+.pcx-graf-row .vl{width:120px;flex:none;text-align:right;font:800 12px ui-monospace,monospace;color:var(--ink,#0F172A)}
+.pcx-graf-row .vl small{font:600 10px system-ui;color:#DC2626}
 </style>
 <script>
 /* =====================================================================
    PCP · SOPRO E ROTULAGEM  (módulo aditivo, isolado)
    - Modelo independente por estoque: OP própria SP/ROT, produz pra
      estoque interno; o envase puxa do soprado.
-   - Livro de estoque SÓ no ERP (PCP.mov). NUNCA escreve em ESTOQUE
-     (Tiny) nem envia movimento ao Tiny.
+   - Estoque todo no ERP: a produção lança no razão real por depósito
+     (ESTOQUE + CS_ELOG, na FÁBRICA), sem tocar no Tiny (Tiny fica só pra
+     NFe de acabado). O estorno da OP reverte esses lançamentos.
    - Redefine as funções do esqueleto antigo (envase-driven) pelo
      modelo novo. Bloco isolado: se algo falhar aqui, o resto do
      sistema segue intacto.
@@ -40201,14 +40279,57 @@ function maqNome(id,lista){ for(var i=0;i<lista.length;i++) if(lista[i].id===id)
 function maqCad(id,lista){ for(var i=0;i<lista.length;i++) if(lista[i].id===id) return +lista[i].cad||0; return 0; }
 
 /* ---------- livro interno (nunca mexe no Tiny) ---------- */
-function saldoPCP(sku){ var s=0; for(var i=0;i<PCP.mov.length;i++){ var m=PCP.mov[i]; if(m.sku===sku) s += (m.tipo==='E'?1:-1)*(+m.qtd||0); } return s; }
-function lanca(sku,tipo,qtd,num){ if(!sku||!qtd)return; PCP.mov.push({sku:sku,cod:codDe(porSku(sku)),tipo:tipo,qtd:+qtd,op:num,em:new Date().toISOString()}); }
-function estornaOP(num){ PCP.mov = PCP.mov.filter(function(m){ return m.op!==num; }); }
+/* saldo real do item no razão de estoque do ERP (total de todos os depósitos).
+   Antes o módulo usava um ledger próprio (PCP.mov) pra não tocar no Tiny; agora
+   o controle é todo no ERP, então lê e escreve no estoque real. */
+function saldoReal(sku){
+  try{
+    var cod=codDe(porSku(sku)); if(!cod) return 0;
+    if(typeof csSaldoDeps==='function'){ var s=csSaldoDeps(cod); return (s&&s.tot!=null)?+s.tot:0; }
+    if(typeof ESTOQUE!=='undefined'&&ESTOQUE[cod]!=null) return +ESTOQUE[cod];
+  }catch(e){}
+  return 0;
+}
+function saldoPCP(sku){ return saldoReal(sku); }
+/* lança produção no razão real, na FÁBRICA (produção interna aumenta o total).
+   Não vai ao Tiny: csEAplica só mexe no razão; o Tiny fica só pra NFe de acabado. */
+function lanca(sku,tipo,qtd,num){
+  if(!sku||!qtd) return;
+  var it=porSku(sku); var cod=codDe(it); if(!cod) return;
+  var q=Math.abs(+qtd||0); if(!q) return;
+  var delta=(tipo==='E'?1:-1)*q;
+  try{
+    var dep=(typeof csEPrinc==='function')?csEPrinc():'fab';
+    if(typeof csEAplica==='function') csEAplica(cod, dep, delta);
+    else if(typeof ESTOQUE!=='undefined') ESTOQUE[cod]=(+ESTOQUE[cod]||0)+delta;
+    if(typeof CS_ELOG!=='undefined'){
+      CS_ELOG.push({ em:(typeof csEAgora==='function'?csEAgora():new Date().toISOString().slice(0,16).replace('T',' ')),
+        id:cod, tipo:tipo, qtd:q, dif:delta, dep:dep, origem:'OP '+num, obs:'Produção '+num,
+        quem:(function(){try{return quemAssina();}catch(e){return '';}})(),
+        uid:(typeof csENovoUid==='function'?csENovoUid():'sr'+Date.now().toString(36)+Math.random().toString(36).slice(2,6)),
+        srOp:num });
+    }
+  }catch(e){}
+}
+function estornaOP(num){
+  try{
+    if(typeof CS_ELOG==='undefined') return;
+    var dep0=(typeof csEPrinc==='function')?csEPrinc():'fab';
+    CS_ELOG.filter(function(x){ return x.srOp===num && !x.rm; }).forEach(function(x){
+      var delta=(x.dif!=null)?+x.dif:((x.tipo==='E'?1:-1)*(+x.qtd||0));
+      if(typeof csEAplica==='function') csEAplica(x.id, x.dep||dep0, -delta);
+      else if(typeof ESTOQUE!=='undefined') ESTOQUE[x.id]=(+ESTOQUE[x.id]||0)-delta;
+      x.rm={ em:(typeof csEAgora==='function'?csEAgora():''),
+        quem:(function(){try{return quemAssina();}catch(e){return '';}})(), mot:'Estorno da OP '+num };
+    });
+  }catch(e){}
+}
 
 /* ---------- OPs ---------- */
 function opsDe(origem, data){ return PCP.ops.filter(function(o){ return o.origem===origem && (!data || o.data===data); }); }
 function opPorId(id){ for(var i=0;i<PCP.ops.length;i++) if(PCP.ops[i].id===id) return PCP.ops[i]; return null; }
 function logar(o,ev,det){ o.log=o.log||[]; o.log.push({t:agora(),d:hojeYMD(),e:ev,por:(function(){try{return quemAssina();}catch(e){return '';}})(),m:det||null}); }
+function opEnvaseNum(oid){ try{ var o=(typeof ORDENS!=='undefined'?ORDENS:[]).filter(function(x){return x.id===oid;})[0]; return o?rotuloOP(o):(oid||''); }catch(e){ return oid||''; } }
 function prevFim(iniMin,qtd,cad){ if(!cad)return iniMin; return iniMin + Math.round(qtd/cad*60); }
 
 /* ======================================================================
@@ -40233,15 +40354,32 @@ function etapas(a,b,c){
     '<div class="pcx-et"><span class="d"></span><small><b>'+c[0]+'</b>'+c[1]+'</small></div></div>';
 }
 function nomeCurtoSku(sku){ var n=nomeSku(sku); return n.replace(/^PREFORMAS?\s*-\s*/i,'').replace(/^ROTULO\s*-\s*/i,'').replace(/^FRASCOS?\s*-\s*/i,''); }
+function nomeFull(sku){ try{ var i=porSku(sku); return i&&i.nome?i.nome:(sku||'—'); }catch(e){ return sku||'—'; } }
+/* bloco "o que pegar no estoque": frasco e rótulo em linhas próprias, com o
+   nome inteiro (não corta), e embaixo a OP (discreta) e a qtd prevista (forte).
+   linhas = [[rótulo, nome, estado]] onde estado: true=✓ em estoque,
+   'texto'=aviso (ex.: soprar/comprar), null=sem selo. */
+function blocoPega(linhas, o){
+  var rows=(linhas||[]).map(function(l){
+    var tag='';
+    if(l[2]===true) tag='<span class="pcx-pega-ok">✓ em estoque</span>';
+    else if(typeof l[2]==='string') tag='<span class="pcx-pega-no">'+esc(l[2])+'</span>';
+    return '<div class="pcx-pega-r"><span class="lb">'+esc(l[0])+'</span><b class="nm">'+esc(l[1])+'</b>'+tag+'</div>';
+  }).join('');
+  return '<div class="pcx-pega">'+rows+
+    '<div class="pcx-pega-f"><span class="op">OP '+esc(o.num)+'</span>'+
+      '<span class="qt">'+nfx(o.qtdPrev)+' <small>un previstas</small></span></div></div>';
+}
 function topo(o, extra){ return '<div class="pcx-top"><div class="pcx-ph">🧴</div><div class="pcx-nome">'+esc(o.titulo)+'</div><div class="pcx-seals">'+selos(o)+(extra||'')+'</div></div>'; }
+function btnDesf(o){ return '<button class="pcx-b undo" data-ac="desfazer" data-op="'+o.id+'" title="Desfazer o último passo">↶ Desfazer</button>'; }
 function botoesSopro(o){
-  if(o.status==='produzindo') return '<div class="pcx-btns"><button class="pcx-b go" data-ac="concluir" data-op="'+o.id+'">▶ Concluir sopro</button><button class="pcx-b pausar" data-ac="pausar" data-op="'+o.id+'">PAUSAR</button></div>';
-  if(o.status==='pausada') return '<div class="pcx-btns"><button class="pcx-b ret" data-ac="retomar" data-op="'+o.id+'">▶ Retomar</button></div>';
+  if(o.status==='produzindo') return '<div class="pcx-btns"><button class="pcx-b go" data-ac="concluir" data-op="'+o.id+'">▶ Concluir sopro</button><button class="pcx-b pausar" data-ac="pausar" data-op="'+o.id+'">PAUSAR</button>'+btnDesf(o)+'</div>';
+  if(o.status==='pausada') return '<div class="pcx-btns"><button class="pcx-b ret" data-ac="retomar" data-op="'+o.id+'">▶ Retomar</button>'+btnDesf(o)+'</div>';
   return '<div class="pcx-btns"><button class="pcx-b go" data-ac="iniciar" data-op="'+o.id+'">▶ Iniciar sopro</button></div>';
 }
 function botoesRot(o){
-  if(o.status==='produzindo') return '<div class="pcx-btns"><button class="pcx-b go" data-ac="concluir" data-op="'+o.id+'">▶ Concluir rotulagem</button><button class="pcx-b pausar" data-ac="pausar" data-op="'+o.id+'">PAUSAR</button></div>';
-  if(o.status==='pausada') return '<div class="pcx-btns"><button class="pcx-b ret" data-ac="retomar" data-op="'+o.id+'">▶ Retomar</button></div>';
+  if(o.status==='produzindo') return '<div class="pcx-btns"><button class="pcx-b go" data-ac="concluir" data-op="'+o.id+'">▶ Concluir rotulagem</button><button class="pcx-b pausar" data-ac="pausar" data-op="'+o.id+'">PAUSAR</button>'+btnDesf(o)+'</div>';
+  if(o.status==='pausada') return '<div class="pcx-btns"><button class="pcx-b ret" data-ac="retomar" data-op="'+o.id+'">▶ Retomar</button>'+btnDesf(o)+'</div>';
   return '<div class="pcx-btns"><button class="pcx-b go" data-ac="iniciar" data-op="'+o.id+'">▶ Iniciar rotulagem</button></div>';
 }
 function linhaReal(o){ return o.status==='produzindo'?(o.iniReal||agora())+' → agora':o.status==='pausada'?(o.iniReal||'--:--')+' → pausada':'—'; }
@@ -40255,7 +40393,7 @@ function cardSoproN(o, vez){
       boxes([['Qtd prevista', nfx(o.qtdPrev)+' un', 1],['Qtd realizada', nfx(o.boas)+' <span class="pct">'+String(pct).replace('.',',')+'%</span>', 1],['Qtd quebra', (o.quebra||0)+' <span class="pct">'+String(qpct).replace('.',',')+'%</span>', 1]])+
       temposBloco([['Sopro', hhmm(o.iniPrev)+' → '+hhmm(o.fimPrev), (o.iniReal||'--:--')+' → '+(o.fimReal||'--:--')]],['OP '+esc(o.num),''],'')+'</div>';
   }
-  var bx = boxes([['OP Nº', esc(o.num), 1],['Preforma', esc(nomeCurtoSku(o.preformaSku)), 0],['Qtd prevista', nfx(o.qtdPrev)+' un', 1]]);
+  var bx = blocoPega([['Preforma', nomeFull(o.preformaSku), saldoPCP(o.preformaSku)>0?true:'comprar']], o);
   if(!vez){
     return '<div class="pcx-card" data-op="'+o.id+'">'+topo(o)+bx+
       '<div class="pcx-prev"><span class="k">Previsto</span><span class="v">'+hhmm(o.iniPrev)+' → '+hhmm(o.fimPrev)+'</span></div></div>';
@@ -40274,7 +40412,7 @@ function cardRotuloN(o, vez){
       boxes([['Qtd prevista', nfx(o.qtdPrev)+' un', 1],['Qtd realizada', nfx(o.boas)+' <span class="pct">'+String(pct).replace('.',',')+'%</span>', 1],['Quebra rótulo', (o.quebraRotulo||0)+' <span class="pct">'+String(qr).replace('.',',')+'%</span>', 1],['Quebra frasco', (o.quebraFrasco||0)+' <span class="pct">'+String(qf).replace('.',',')+'%</span>', 1]])+
       temposBloco([['Rotulagem', hhmm(o.iniPrev)+' → '+hhmm(o.fimPrev), (o.iniReal||'--:--')+' → '+(o.fimReal||'--:--')]],['Rótulo '+esc(nomeCurtoSku(o.rotuloSku)),''],'')+'</div>';
   }
-  var bx = boxes([['OP Nº', esc(o.num), 1],['Frasco soprado', esc(nomeCurtoSku(o.frascoSku))+(saldoPCP(o.frascoSku)>0?' ✓':''), 0],['Rótulo', esc(nomeCurtoSku(o.rotuloSku)), 0],['Qtd prevista', nfx(o.qtdPrev)+' un', 1]]);
+  var bx = blocoPega([['Frasco', nomeFull(o.frascoSku), saldoPCP(o.frascoSku)>0?true:'soprar'],['Rótulo', nomeFull(o.rotuloSku), null]], o);
   if(!vez){
     return '<div class="pcx-card" data-op="'+o.id+'">'+topo(o)+bx+
       '<div class="pcx-prev"><span class="k">Previsto</span><span class="v">'+hhmm(o.iniPrev)+' → '+hhmm(o.fimPrev)+'</span></div></div>';
@@ -40361,10 +40499,34 @@ function metaPanelSopro(){
   var totPct=somaMeta?Math.min(100,Math.round(somaProd/somaMeta*100)):0;
   var sel='base: <select class="pcx-metaper" onclick="event.stopPropagation()">'+[[1,'1 mês'],[3,'3 meses'],[6,'6 meses'],[12,'12 meses']].map(function(o){return '<option value="'+o[0]+'"'+(SR_METAMESES==o[0]?' selected':'')+'>'+o[1]+'</option>';}).join('')+'</select>';
   return '<details class="pcx-meta"><summary><span class="mt">Meta de sopro da semana</span><span class="pcx-metaperw" onclick="event.stopPropagation()">'+sel+'</span><span class="mpct">'+totPct+'%</span>'+
-    '<div class="minibars">'+mb+'</div></summary><div class="pcx-mpanel">'+panel+'</div></details>';
+    '<div class="minibars">'+mb+'</div><span class="chev" aria-hidden="true">▾</span></summary><div class="pcx-mpanel">'+panel+'</div></details>';
 }
 
 function dCurtoSafe(d){ try{ return dCurto(d); }catch(e){ return d||''; } }
+/* frasco rotulado que a gente rotula aqui dentro: só esse gera demanda de
+   rotulagem. O industrializado/comprado fora (ex.: água sanitária, via OC de
+   industrialização) já entra pronto no estoque de rotulado — fica de fora. */
+function rotulaInterno(it){
+  try{
+    var ob=it&&it.obtem;
+    if(!ob) return true;        // sem info de obtenção: mantém (não esconder demanda real)
+    if(ob.p) return true;       // produzido aqui: rotula aqui
+    if(ob.i||ob.c) return false;// industrializado ou comprado fora: já vem rotulado
+    return true;
+  }catch(e){ return true; }
+}
+/* quanto de uma linha de pedido (OP do envase + sku) já foi puxado pra
+   rotulagem. Some os registros das OPs de rotulagem que apontam pra ela. */
+function cobertoPedido(oid, sku){
+  var s=0;
+  try{
+    (PCP.ops||[]).forEach(function(o){
+      if(o.origem!=='rotulagem') return;
+      (o.pedidos||[]).forEach(function(p){ if(p && p.oid===oid && p.sku===sku) s+=(+p.qtd||0); });
+    });
+  }catch(e){}
+  return s;
+}
 function pedidosEnvaseOPs(data){
   var out=[];
   try{
@@ -40376,10 +40538,15 @@ function pedidosEnvaseOPs(data){
       var cons; try{ cons=consumoDaOP(o, cx); }catch(e){ cons=[]; }
       (cons||[]).forEach(function(c){
         var it=porSku(c.sku); if(!it||grupoDe(it)!=='frrot') return;
-        var q=Math.round(c.qtd||0); if(q<=0) return;
+        // frasco rotulado industrializado/comprado fora (ex.: água sanitária)
+        // já entra pronto no estoque de rotulado, não passa pela rotulagem.
+        if(!rotulaInterno(it)) return;
+        var bruto=Math.round(c.qtd||0); if(bruto<=0) return;
+        // desconta o que já virou OP de rotulagem: o pedido some da lista.
+        var falta=bruto - cobertoPedido(o.id, c.sku); if(falta<=0) return;
         var op; try{ op=rotuloOP(o); }catch(e){ op=o.id; }
         var prod=''; try{ var pp=prodOf(o.codigo); prod=pp?(pp.nome||''):''; }catch(e){}
-        out.push({ op:op, prod:prod, sku:c.sku, nome:it.nome, qtd:q, prazoData:o.data, prazoIni:(o.inicio||0) });
+        out.push({ oid:o.id, op:op, prod:prod, lote:(o.lote||''), sku:c.sku, nome:it.nome, qtd:falta, prazoData:o.data, prazoIni:(o.inicio||0) });
       });
     });
   }catch(e){}
@@ -40389,18 +40556,24 @@ function pedidosEnvaseOPs(data){
 function lateralDemanda(origem){
   var data=dataRef();
   var itens=pedidosEnvaseOPs(data);
-  var linhas=itens.length? itens.map(function(d,i){
-    var prazo = d.prazoData ? ('pronto até '+esc(dCurtoSafe(d.prazoData))+(d.prazoIni?' '+hhmm(d.prazoIni):'')) : 'sem horário';
-    return '<div class="pcx-ped" draggable="true" data-pedido="'+esc(d.sku)+'" data-falta="'+d.qtd+'">'+
-      '<div class="seq">'+(i+1)+'</div>'+
-      '<div class="mid"><div class="op">OP '+esc(d.op)+(d.prod?' · '+esc(d.prod):'')+'</div><div class="n">'+esc(nomeCurtoSku(d.sku))+'</div><div class="pz">'+prazo+'</div></div>'+
-      '<div class="qq">'+nfx(d.qtd)+'<small>frascos</small></div></div>';
+  var linhas=itens.length? itens.map(function(d){
+    var prazo = d.prazoData ? (esc(dCurtoSafe(d.prazoData))+(d.prazoIni?' '+hhmm(d.prazoIni):'')) : 'sem horário';
+    var prodTxt = esc(nomeCurtoSku(d.sku)||d.nome||'');
+    return '<label class="pcx-ped" draggable="true" data-pedido="'+esc(d.sku)+'" data-falta="'+d.qtd+'" data-oid="'+esc(d.oid)+'">'+
+      '<input type="checkbox" class="pcx-ck">'+
+      '<div class="pcx-ped-in">'+
+        '<div class="pcx-ped-top"><span class="pcx-ped-op">OP '+esc(d.op)+'</span>'+
+          '<span class="pcx-ped-prazo">pronto até '+prazo+'</span></div>'+
+        '<div class="pcx-ped-prod">'+prodTxt+'</div>'+
+        '<div class="pcx-ped-bot">'+(d.lote?'<span class="pcx-ped-lote">lote '+esc(d.lote)+'</span>':'<span class="pcx-ped-lote dim">sem lote</span>')+
+          '<span class="pcx-ped-qt">'+nfx(d.qtd)+' <small>frascos</small></span></div>'+
+      '</div></label>';
   }).join('') : '<div class="pcx-vazio">Nenhum pedido do envase para '+esc(dCurtoSafe(data))+'.</div>';
   var selbar='<div class="pcx-selbar" id="pcpSelBar" hidden><span id="pcpSelN">0 selecionadas</span><button type="button" class="pcx-nova sm" data-ac="juntarsel">⊕ Juntar e criar OP</button></div>';
   return '<div class="pcx-lh"><b>Pedidos do envase</b><span>'+itens.length+' '+(itens.length===1?'ordem':'ordens')+'</span></div>'+
     '<div class="pcx-lsub">previstas para '+esc(dCurtoSafe(data))+'</div>'+
     '<div class="pcx-lb" id="pcpPedLista">'+linhas+'</div>'+selbar+
-    '<p class="pcx-lnote">Clique pra selecionar (2+ abre o juntar) · arraste pra cima da máquina pra aproveitar</p>';
+    '<p class="pcx-lnote">Marque pra juntar (2+) · arraste pra máquina (OP nova) ou pra cima de uma OP do mesmo produto pra somar</p>';
 }
 /* ações dos pedidos: criar/juntar/arrastar */
 function criarOProtulagem(sku, qtd, maq, registro){
@@ -40416,18 +40589,44 @@ function criarOProtulagem(sku, qtd, maq, registro){
   logar(o,'OP criada do pedido', o.num+' · '+nfx(qtd)+' un');
   PCP.ops.push(o); return o;
 }
-function soltarPedidoNaMaq(sku, qtd, maq){
+/* soltar na máquina (área da coluna): SEMPRE abre uma OP nova, que entra na
+   fila. É isso que destrava fazer uma atrás da outra na mesma máquina. */
+function soltarNaColuna(sku, qtd, maq, oid){
   if(!podeEd()){ avisa('Sem permissão.',true); return; }
   qtd=Math.round(+qtd||0); if(qtd<=0){ avisa('Pedido sem quantidade.'); return; }
-  var alvo=PCP.ops.filter(function(o){return o.origem==='rotulagem'&&o.maq===maq&&o.itemSku===sku&&o.status!=='concluida';})[0];
-  if(alvo){
-    alvo.qtdPrev+=qtd; alvo.qtd=alvo.qtdPrev;
-    var cad=maqCad(maq,rotuladoras())||1; alvo.fimPrev=prevFim(alvo.iniPrev,alvo.qtdPrev,cad);
-    (alvo.pedidos||(alvo.pedidos=[])).push({qtd:qtd,em:hojeYMD()});
-    logar(alvo,'Pedido aproveitado','+'+nfx(qtd)+' un'); avisa('Somado '+nfx(qtd)+' na OP '+alvo.num+' ('+(alvo.pedidos.length)+' pedidos).');
-  } else {
-    var o=criarOProtulagem(sku,qtd,maq,{qtd:qtd,em:hojeYMD()}); if(o) avisa('OP '+o.num+' criada em '+maqNome(maq,rotuladoras())+'.');
-  }
+  var o=criarOProtulagem(sku,qtd,maq,{oid:oid||'',sku:sku,qtd:qtd,em:hojeYMD()});
+  if(o) avisa('OP '+o.num+' criada em '+maqNome(maq,rotuladoras())+'.');
+  salvar(); render();
+}
+/* soltar em cima de uma OP do MESMO produto: soma naquela produção. */
+function soltarNaOP(sku, qtd, opId, oid){
+  if(!podeEd()){ avisa('Sem permissão.',true); return; }
+  qtd=Math.round(+qtd||0); if(qtd<=0) return;
+  var alvo=opPorId(opId); if(!alvo||alvo.origem!=='rotulagem') return;
+  if(alvo.status==='concluida'){ avisa('Essa OP já foi concluída.'); return; }
+  if(alvo.itemSku!==sku){ avisa('Produto diferente — solte na máquina pra abrir uma OP nova.'); return; }
+  alvo.qtdPrev=(+alvo.qtdPrev||0)+qtd; alvo.qtd=alvo.qtdPrev;
+  var cad=maqCad(alvo.maq,rotuladoras())||1; alvo.fimPrev=prevFim(alvo.iniPrev,alvo.qtdPrev,cad);
+  (alvo.pedidos||(alvo.pedidos=[])).push({oid:oid||'',sku:sku,qtd:qtd,em:hojeYMD()});
+  logar(alvo,'Item adicionado','+'+nfx(qtd)+' un de '+nomeCurtoSku(sku)+(oid?' · da OP '+esc(opEnvaseNum(oid)):''));
+  avisa('Somado '+nfx(qtd)+' na OP '+alvo.num+' ('+alvo.pedidos.length+' pedidos).');
+  salvar(); render();
+}
+/* "+" no card: aproveita puxando o que ainda falta do mesmo produto (as
+   linhas de pedido que sobraram no dia). Idempotente — se não há pendência,
+   não faz nada. */
+function aproveitarNaOP(opId){
+  if(!podeEd()){ avisa('Sem permissão.',true); return; }
+  var alvo=opPorId(opId); if(!alvo||alvo.origem!=='rotulagem') return;
+  if(alvo.status==='concluida'){ avisa('Essa OP já foi concluída.'); return; }
+  var pend=pedidosEnvaseOPs(alvo.data||dataRef()).filter(function(p){return p.sku===alvo.itemSku;});
+  var soma=pend.reduce(function(s,p){return s+p.qtd;},0);
+  if(soma<=0){ avisa('Não há pedido pendente desse produto.'); return; }
+  alvo.qtdPrev=(+alvo.qtdPrev||0)+soma; alvo.qtd=alvo.qtdPrev;
+  var cad=maqCad(alvo.maq,rotuladoras())||1; alvo.fimPrev=prevFim(alvo.iniPrev,alvo.qtdPrev,cad);
+  pend.forEach(function(p){ (alvo.pedidos||(alvo.pedidos=[])).push({oid:p.oid,sku:p.sku,qtd:p.qtd,em:hojeYMD(),aproveita:true});
+    logar(alvo,'Item adicionado','+'+nfx(p.qtd)+' un de '+nomeCurtoSku(p.sku)+(p.oid?' · da OP '+esc(opEnvaseNum(p.oid)):'')+' (aproveitamento)'); });
+  avisa('OP '+alvo.num+' +'+nfx(soma)+' un (demanda do produto no dia).');
   salvar(); render();
 }
 function atualizaSelBar(w){
@@ -40440,10 +40639,48 @@ function juntarSelecionados(w){
   if(!podeEd()){ avisa('Sem permissão.',true); return; }
   var sel=[].slice.call(w.querySelectorAll('.pcx-ped.sel'));
   if(!sel.length){ avisa('Selecione os pedidos primeiro.'); return; }
+  // agrupa por produto, mas guarda cada linha (oid) pra descontar certinho
   var map={};
-  sel.forEach(function(el){ var s=el.getAttribute('data-pedido'), q=+el.getAttribute('data-falta')||0; map[s]=(map[s]||0)+q; });
-  var n=0; Object.keys(map).forEach(function(s){ var o=criarOProtulagem(s,map[s],null,{qtd:map[s],em:hojeYMD()}); if(o)n++; });
+  sel.forEach(function(el){
+    var s=el.getAttribute('data-pedido'), q=+el.getAttribute('data-falta')||0, oid=el.getAttribute('data-oid')||'';
+    if(q<=0) return;
+    (map[s]||(map[s]={soma:0,linhas:[]})); map[s].soma+=q; map[s].linhas.push({oid:oid,sku:s,qtd:q,em:hojeYMD()});
+  });
+  var n=0; Object.keys(map).forEach(function(s){
+    var g=map[s]; var o=criarOProtulagem(s,g.soma,null,null); if(!o) return;
+    o.pedidos=(o.pedidos||[]).concat(g.linhas); n++;
+  });
   salvar(); render(); avisa(n+' OP(s) criada(s) dos pedidos selecionados.');
+}
+/* ======================================================================
+   PROGRAMAÇÃO DO DIA — linha do tempo de ocupação das máquinas, pra ver
+   encaixe e prever troca de molde (mesma ideia da programação do Envase).
+   ====================================================================== */
+function programacaoSR(tab){
+  var maqs = tab==='sopro'?sopradoras():rotuladoras();
+  var data=dataRef();
+  var ops=opsDe(tab).filter(function(o){ return o.data===data && o.status!=='concluida'; });
+  var ini0=300, fim0=1320; // 05:00–22:00 como janela base
+  ops.forEach(function(o){ if((o.iniPrev||0)<ini0) ini0=o.iniPrev||0; if((o.fimPrev||0)>fim0) fim0=o.fimPrev||0; });
+  ini0=Math.floor(ini0/60)*60; fim0=Math.ceil(fim0/60)*60;
+  var span=Math.max(60, fim0-ini0);
+  var passo=(span>8*60)?2:1; // de 2 em 2h quando o dia é longo, pra não apertar
+  var horas=''; for(var h=ini0/60; h*60<=fim0; h+=passo){ var hx=((h*60-ini0)/span*100); horas+='<span class="pcx-tl-h" style="left:'+hx+'%">'+p2(h)+'h</span>'; }
+  var linhas=maqs.map(function(m){
+    var mops=ops.filter(function(o){return o.maq===m.id;}).sort(function(a,b){return (a.iniPrev||0)-(b.iniPrev||0);});
+    var ocup=mops.reduce(function(s,o){return s+Math.max(0,(o.fimPrev||0)-(o.iniPrev||0));},0);
+    var pctOcup=Math.round(ocup/span*100);
+    var blocos=mops.map(function(o){
+      var l=((o.iniPrev-ini0)/span*100), wv=Math.max(1.5,((o.fimPrev-o.iniPrev)/span*100));
+      var cls=o.status==='produzindo'?'prod':o.status==='pausada'?'pausa':'prog';
+      return '<div class="pcx-tl-op '+cls+'" style="left:'+l+'%;width:'+wv+'%" data-op="'+esc(o.id)+'" title="'+esc(o.num+' · '+nomeCurtoSku(o.itemSku)+' · '+hhmm(o.iniPrev)+'–'+hhmm(o.fimPrev))+'"><span>'+esc(nomeCurtoSku(o.itemSku))+'</span></div>';
+    }).join('');
+    return '<div class="pcx-tl-row"><div class="pcx-tl-maq"><b>'+esc(m.nome||m.id)+'</b><span>'+pctOcup+'% ocupada</span></div>'+
+      '<div class="pcx-tl-track">'+(blocos||'')+'</div></div>';
+  }).join('');
+  return '<details class="pcx-meta pcx-prog"><summary><span class="mt">Programação do dia · ocupação das máquinas</span>'+
+    '<span class="mpct">'+maqs.length+' máq.</span><div class="pcx-tl-leg"><i class="prog"></i>programada <i class="prod"></i>em produção <i class="pausa"></i>pausada</div><span class="chev" aria-hidden="true">▾</span></summary>'+
+    '<div class="pcx-mpanel"><div class="pcx-tl"><div class="pcx-tl-axis">'+horas+'</div>'+(linhas||'<div class="pcx-vazio" style="padding:14px">Sem OPs programadas no dia.</div>')+'</div></div></details>';
 }
 function renderSR(host, tab){
   if(!host) return;
@@ -40454,8 +40691,8 @@ function renderSR(host, tab){
     return coluna({nome:m.nome||m.id,id:m.id,o:tab}, +m.cad||0, ops.filter(function(o){return o.maq===m.id;}));
   }).join('') +'</div>';
   var corpo = tab==='rotulagem'
-    ? '<div class="pcx-rotwrap"><div class="pcx-rotmain">'+cols+'</div><aside class="pcx-lateral pcx-anexo">'+lateralDemanda(tab)+'</aside></div>'
-    : metaPanelSopro() + cols;
+    ? programacaoSR(tab) + '<div class="pcx-rotwrap"><div class="pcx-rotmain">'+cols+'</div><aside class="pcx-lateral pcx-anexo">'+lateralDemanda(tab)+'</aside></div>'
+    : metaPanelSopro() + programacaoSR(tab) + cols;
   host.innerHTML = '<div class="pcx-page">'+ headerSR(tab) + corpo + '</div>';
   // injeta o ⋮ em cada bloco (um só lugar)
   host.querySelectorAll('.pcx-card[data-op]').forEach(function(c){
@@ -40489,19 +40726,37 @@ function ligarEventos(wrapId){
       else if(ac==='concluir') acConcluir(o);
       else if(ac==='pausar') acPausar(o);
       else if(ac==='retomar') acRetomar(o);
+      else if(ac==='desfazer') desfazerPasso(o);
     };
   });
-  // pedidos do envase: clique seleciona; arraste pra máquina aproveita
+  // pedidos do envase: caixinha seleciona; arraste pra máquina ou pra uma OP
   w.querySelectorAll('.pcx-ped').forEach(function(el){
-    el.onclick=function(){ el.classList.toggle('sel'); atualizaSelBar(w); };
-    el.addEventListener('dragstart',function(ev){ try{ ev.dataTransfer.setData('text/plain', el.getAttribute('data-pedido')+'|'+(el.getAttribute('data-falta')||0)); ev.dataTransfer.effectAllowed='copy'; el.classList.add('dragging'); }catch(e){} });
+    var ck=el.querySelector('.pcx-ck');
+    if(ck) ck.onchange=function(ev){ ev.stopPropagation(); el.classList.toggle('sel',ck.checked); atualizaSelBar(w); };
+    el.addEventListener('dragstart',function(ev){ try{ ev.dataTransfer.setData('text/plain', el.getAttribute('data-pedido')+'|'+(el.getAttribute('data-falta')||0)+'|'+(el.getAttribute('data-oid')||'')); ev.dataTransfer.effectAllowed='copy'; el.classList.add('dragging'); }catch(e){} });
     el.addEventListener('dragend',function(){ el.classList.remove('dragging'); });
   });
   atualizaSelBar(w);
+  var lerDrop=function(ev){ var raw=''; try{ raw=ev.dataTransfer.getData('text/plain'); }catch(e){} if(!raw)return null; var p=raw.split('|'); return {sku:p[0], q:+p[1]||0, oid:p[2]||''}; };
+  // soltar em cima de uma OP (mesmo produto) soma; captura antes da coluna
+  w.querySelectorAll('.pcx-col[data-orig="rotulagem"] .pcx-card[data-op]').forEach(function(card){
+    card.addEventListener('dragover',function(ev){ ev.preventDefault(); ev.stopPropagation(); card.classList.add('drop'); });
+    card.addEventListener('dragleave',function(){ card.classList.remove('drop'); });
+    card.addEventListener('drop',function(ev){ ev.preventDefault(); ev.stopPropagation(); card.classList.remove('drop'); var d=lerDrop(ev); if(d&&d.sku) soltarNaOP(d.sku, d.q, card.getAttribute('data-op'), d.oid); });
+  });
+  // soltar na área da máquina abre OP nova (fila)
   w.querySelectorAll('.pcx-col[data-orig="rotulagem"]').forEach(function(col){
     col.addEventListener('dragover',function(ev){ ev.preventDefault(); col.classList.add('drop'); });
     col.addEventListener('dragleave',function(){ col.classList.remove('drop'); });
-    col.addEventListener('drop',function(ev){ ev.preventDefault(); col.classList.remove('drop'); var raw=''; try{ raw=ev.dataTransfer.getData('text/plain'); }catch(e){} if(!raw)return; var p=raw.split('|'); var sku=p[0], q=+p[1]||0; if(sku) soltarPedidoNaMaq(sku, q, col.getAttribute('data-maqdrop')); });
+    col.addEventListener('drop',function(ev){ ev.preventDefault(); col.classList.remove('drop'); var d=lerDrop(ev); if(d&&d.sku) soltarNaColuna(d.sku, d.q, col.getAttribute('data-maqdrop'), d.oid); });
+  });
+  // "+" aproveitar no card
+  w.querySelectorAll('[data-aprov]').forEach(function(b){
+    b.onclick=function(ev){ ev.stopPropagation(); aproveitarNaOP(b.getAttribute('data-aprov')); };
+  });
+  // bloco da programação abre a OP
+  w.querySelectorAll('.pcx-tl-op[data-op]').forEach(function(b){
+    b.onclick=function(ev){ ev.stopPropagation(); var o=opPorId(b.getAttribute('data-op')); if(o) abrirOP(o); };
   });
   // seletor de período da meta
   var per=w.querySelector('.pcx-metaper');
@@ -40562,15 +40817,78 @@ function editarOP(o){
   };
   abrirMask();
 }
-function moverDia(d){ try{ var base=S.refTq?new Date(S.refTq):new Date(); base.setDate(base.getDate()+d); S.refTq=base; render(); }catch(e){} }
+/* dia navegável no sopro/rotulagem: dia útil (jornada marcada) ou dia que tem
+   alguma OP lançada. Mesma ideia do Envase, só que olhando as OPs do PCP. */
+function diaNavegavelSR(x){
+  try{ if(typeof diaUtil==='function' && diaUtil(x)) return true; }catch(e){}
+  try{ var d=ymd(x); return PCP.ops.some(function(o){ return o.data===d; }); }catch(e){ return true; }
+}
+function addDia(x,dir){ try{ if(typeof addD==='function') return addD(x,dir); }catch(e){} var n=new Date(x); n.setDate(n.getDate()+dir); return n; }
+/* setas: pulam dia sem produção (fim de semana, folga) como no Envase, e dizem
+   o que pularam. O calendário (clicar na data) continua deixando escolher
+   qualquer dia direto. */
+function moverDia(d){
+  try{
+    var x=addDia(S.refTq?new Date(S.refTq):new Date(), d), pulados=[], g=0;
+    while(!diaNavegavelSR(x) && g++<60){ pulados.push(ymd(x)); x=addDia(x,d); }
+    S.refTq=x; render();
+    if(pulados.length){ try{ var lista=pulados.slice(0,3).map(dCurto).join(', ');
+      toast('Sem produção em '+lista+(pulados.length>3?' e mais '+(pulados.length-3):'')+'. Pra trabalhar nesse dia, marque no calendário.'); }catch(e){} }
+  }catch(e){}
+}
 
 /* ======================================================================
    AÇÕES
    ====================================================================== */
-function acIniciar(o){ if(!podeEd())return; o.status='produzindo'; o.iniReal=o.iniReal||agora(); logar(o,'Iniciou'); salvar(); render(); avisa('OP '+o.num+' iniciada.'); }
-function acPausar(o){ if(!podeEd())return; o.status='pausada'; o.pausaMotivo='Pausa'; logar(o,'Pausou'); salvar(); render(); avisa('OP '+o.num+' pausada.'); }
-function acRetomar(o){ if(!podeEd())return; o.status='produzindo'; o.pausaMotivo=''; logar(o,'Retomou'); salvar(); render(); avisa('OP '+o.num+' retomada.'); }
-function acConcluir(o){ abrirConcluir(o); }
+/* identificação de quem está na máquina (padrão do sistema: OPERADOR/quemAssina) */
+function opNome(){ try{ if(typeof OPERADOR!=='undefined'&&OPERADOR&&OPERADOR.nome) return OPERADOR.nome; }catch(e){} try{ return quemAssina(); }catch(e){} return ''; }
+/* pede o PIN reusando o modal padrão do sistema (pedirPin). Só segue no cb
+   depois de identificar quem está lançando. */
+function pedePin(titulo, texto, cb){
+  if(typeof pedirPin!=='function'){ try{ cb(); }catch(e){} return; }
+  try{
+    abrirMask();
+    var md=MM('modal'); if(md) md.classList.remove('wide');
+    var sub=MM('mSub'); if(sub) sub.hidden=true;
+    if(MM('mTit')) MM('mTit').textContent=titulo; if(MM('mB')) MM('mB').innerHTML=''; if(MM('mF')) MM('mF').innerHTML='';
+    pedirPin(titulo, texto||'Informe o PIN ou senha de quem está na máquina.', function(op){ try{ fecharModal(); }catch(e){} try{ cb(op); }catch(e){} });
+    var pc=MM('pnC'); if(pc) pc.onclick=function(){ try{ fecharModal(); }catch(e){} };
+  }catch(e){ try{ cb(); }catch(_){} }
+}
+/* motivos de pausa: reusa a lista MOTIVOS do sistema (parada/interrupção). */
+function motivosPausa(){
+  var set={}, out=[];
+  try{ ['parada','interrupcao'].forEach(function(et){ (typeof motivosDe==='function'?motivosDe(et):[]).forEach(function(m){ if(!set[m.id]){ set[m.id]=1; out.push(m); } }); }); }catch(e){}
+  return out;
+}
+function pedeMotivoPausa(o, cb){
+  var ms=motivosPausa();
+  if(!ms.length){ cb(''); return; }
+  abrirMask();
+  var md=MM('modal'); if(md) md.classList.remove('wide');
+  if(MM('mTit')) MM('mTit').textContent='Motivo da pausa';
+  var sub=MM('mSub'); if(sub){ sub.hidden=false; sub.textContent=o.num+' · '+o.titulo; }
+  MM('mB').innerHTML='<div class="pcx-motivos">'+ms.map(function(m){ return '<button type="button" class="pcx-motivo" data-mot="'+esc(m.nome)+'">'+esc(m.nome)+'</button>'; }).join('')+'</div>'+
+    '<div class="fld" style="margin-top:12px"><label>Observação (opcional)</label><input id="pzObs" placeholder="detalhe, se precisar"></div>';
+  MM('mF').innerHTML='<div class="mfdir" style="margin-left:auto;display:flex;gap:8px"><button class="btn" id="pzC">Voltar</button></div>';
+  MM('pzC').onclick=fecharModal;
+  MM('mB').querySelectorAll('[data-mot]').forEach(function(b){ b.onclick=function(){ var obs=((MM('pzObs')&&MM('pzObs').value)||'').trim(); var mot=b.getAttribute('data-mot')+(obs?' — '+obs:''); fecharModal(); cb(mot); }; });
+  abrirMask();
+}
+function acIniciar(o){ pedePin('Iniciar '+o.num, null, function(){ o.status='produzindo'; o.iniReal=o.iniReal||agora(); o.operador=opNome()||o.operador; logar(o,'Iniciou'); salvar(); render(); avisa('OP '+o.num+' iniciada.'); }); }
+function acPausar(o){ pedePin('Pausar '+o.num, null, function(){ pedeMotivoPausa(o, function(mot){ o.status='pausada'; o.pausaMotivo=mot||'Pausa'; logar(o,'Pausou', mot||''); salvar(); render(); avisa('OP '+o.num+' pausada.'); }); }); }
+function acRetomar(o){ pedePin('Retomar '+o.num, null, function(){ o.status='produzindo'; o.pausaMotivo=''; logar(o,'Retomou'); salvar(); render(); avisa('OP '+o.num+' retomada.'); }); }
+function acConcluir(o){ pedePin('Concluir '+o.num, null, function(){ abrirConcluir(o); }); }
+/* desfazer último passo (um de cada vez), igual ao padrão do sistema */
+function desfazerPasso(o){
+  pedePin('Desfazer passo · '+o.num, null, function(){
+    if(o.status==='concluida'){ try{ estornaOP(o.num); }catch(e){} o.status='produzindo'; o.fimReal=''; logar(o,'Desfez a conclusão','estoque estornado'); }
+    else if(o.status==='pausada'){ o.status='produzindo'; o.pausaMotivo=''; logar(o,'Desfez a pausa'); }
+    else if(o.status==='produzindo'){ o.status='programada'; o.iniReal=''; logar(o,'Desfez o início'); }
+    else { avisa('Nada para desfazer nessa OP.'); return; }
+    salvar(); render(); avisa('Passo desfeito na OP '+o.num+'.');
+  });
+}
 
 /* ======================================================================
    MODAIS
@@ -40613,8 +40931,8 @@ function novaOP(origem, preSku){
   }
   function faixaCons(lbl,ic,sku){
     if(!sku) return '<div class="pcx-cons mau"><b>'+lbl+':</b> item não encontrado na ficha do cadastro.</div>';
-    var i=porSku(sku), s=saldoPCP(sku);
-    return '<div class="pcx-cons"><div class="ic">'+ic+'</div><div class="t"><small>'+lbl+'</small><b>'+esc(i?i.nome:sku)+'</b><span>saldo interno: '+nfx(s)+' un · cód. '+esc(codDe(i))+'</span></div></div>';
+    var i=porSku(sku), s=saldoReal(sku);
+    return '<div class="pcx-cons"><div class="ic">'+ic+'</div><div class="t"><small>'+lbl+'</small><b>'+esc(i?i.nome:sku)+'</b><span>em estoque: '+nfx(s)+' un · cód. '+esc(codDe(i))+'</span></div></div>';
   }
   ['pcpItem','pcpQtd','pcpMaq','pcpHora'].forEach(function(id){ var e=MM(id); if(e) e.addEventListener('input',atualiza); });
   atualiza();
@@ -40729,22 +41047,33 @@ function abrirOP(o){
   abrirMask();
 }
 
-/* ---------- PDF (reusa helpers do sistema) ---------- */
+/* ---------- PDF da OP: usa o MODAL PADRÃO do sistema (csFolhaModal:
+   prévia + zoom + Salvar em PDF + Imprimir). Monta a folha com os mesmos
+   helpers (folha/campo/anotar/assinar). ---------- */
 function pdfOP(o){
   var isRot=o.origem==='rotulagem';
-  if(typeof folha!=='function'||typeof abrirFolha!=='function'||typeof campo!=='function'){ avisa('PDF indisponível.',true); return; }
-  var corpo='<div class="campos">'+
-    campo('OP',o.num,true)+campo('Produto',o.titulo,true)+
-    campo('Máquina',maqNome(o.maq,isRot?rotuladoras():sopradoras()))+campo('Quantidade',nfx(o.qtdPrev)+' un')+'</div>'+
-    '<div class="campos">'+
-    (isRot? campo('Frasco',nomeSku(o.frascoSku),true)+campo('Rótulo',nomeSku(o.rotuloSku),true)
-          : campo('Preforma',nomeSku(o.preformaSku),true)+campo('Frasco gerado',nomeSku(o.frascoSku),true))+
-    campo('Início previsto',hhmm(o.iniPrev))+'</div>'+
+  if(typeof folha!=='function'||typeof campo!=='function'){ avisa('PDF indisponível.',true); return; }
+  var maqs=isRot?rotuladoras():sopradoras();
+  var corpo='<div class="campos c2">'+
+      campo('Produto',o.titulo,true)+campo('Máquina',maqNome(o.maq,maqs))+'</div>'+
+    '<div class="campos c2">'+
+      campo('Quantidade prevista',nfx(o.qtdPrev)+' un',true)+
+      campo('Janela prevista',hhmm(o.iniPrev)+' → '+hhmm(o.fimPrev))+'</div>'+
+    '<h2>O que pegar no estoque</h2>'+
+    '<div class="campos c2">'+
+      (isRot? campo('Frasco',nomeSku(o.frascoSku),true)+campo('Rótulo',nomeSku(o.rotuloSku),true)
+            : campo('Preforma',nomeSku(o.preformaSku),true)+campo('Frasco que vai gerar',nomeSku(o.frascoSku||o.itemSku),true))+'</div>'+
     '<h2>Apontamento</h2>'+
     (typeof anotar==='function'?anotar('Início','Fim','Produzidas',isRot?'Quebra rótulo':'Quebra'):'')+
     (typeof assinar==='function'?assinar('Operador','Conferido por'):'');
-  abrirFolha(folha('Ordem de produção — '+(isRot?'Rotulagem':'Sopro'),'','',
-    '<p class="aviso">'+esc(o.num)+' · '+esc(o.titulo)+' · '+nfx(o.qtdPrev)+' un</p>'+corpo));
+  var html=folha('Ordem de produção — '+(isRot?'Rotulagem':'Sopro'), esc(o.num), '',
+    '<p class="aviso">'+esc(o.num)+' · '+esc(o.titulo)+' · '+nfx(o.qtdPrev)+' un</p>'+corpo);
+  if(typeof csFolhaModal==='function'){
+    csFolhaModal({ titulo:'OP de '+(isRot?'rotulagem':'sopro'),
+      sub:esc(o.num)+' · '+esc(o.titulo)+' · '+maqNome(o.maq,maqs),
+      arquivo:String(o.num).replace(/\s+/g,'-'), html:html });
+  } else if(typeof abrirFolha==='function'){ abrirFolha(html); }
+  else { avisa('PDF indisponível.',true); }
 }
 
 /* ======================================================================
@@ -40953,6 +41282,116 @@ function injetarTabletsSR(){
 }
 try{ if(typeof abrirCfgPCP==='function'){ var _cfgpcp=abrirCfgPCP; abrirCfgPCP=function(){ var r=_cfgpcp.apply(this,arguments); try{ injetarTabletsSR(); }catch(e){} return r; }; } }catch(e){}
 
+/* ======================================================================
+   RELATÓRIOS de Sopro e Rotulagem (abas que já existem em Relatórios)
+   Lê as OPs novas (PCP.ops), no mesmo formato do Envase/Tanques:
+   produção, perdas com % de perda, frascos/hora, aproveitamento por
+   máquina, produção por operador e a tabela de ordens. Puxa o produto
+   de cada OP pelo cadastro.
+   ====================================================================== */
+function srPct(n){ try{ return String(Math.round((n||0)*10)/10).replace('.',','); }catch(e){ return '0'; } }
+function srMin(o){ try{ return (o.iniReal&&o.fimReal)?Math.max(0,hm(o.fimReal)-hm(o.iniReal)):0; }catch(e){ return 0; } }
+function srHoras(min){ return min?Math.floor(min/60)+'h'+p2(min%60):'—'; }
+/* gráfico de barras: produção (e perdas) por máquina — dados, sem explicação */
+function grafBarrasMq(byMq, rot){
+  var keys=Object.keys(byMq||{}); if(!keys.length) return '';
+  var max=Math.max(1, keys.reduce(function(m,k){ return Math.max(m, byMq[k].feito+byMq[k].quebra); },0));
+  var rows=keys.map(function(k){
+    var e=byMq[k]; var wF=e.feito/max*100, wQ=e.quebra/max*100;
+    return '<div class="pcx-graf-row"><div class="lb">'+esc(k)+'</div>'+
+      '<div class="bar"><i class="f" style="width:'+wF+'%"></i><i class="q" style="width:'+wQ+'%"></i></div>'+
+      '<div class="vl">'+nf(e.feito)+(e.quebra?' <small>+'+nf(e.quebra)+'</small>':'')+'</div></div>';
+  }).join('');
+  return '<div class="st">Produção por máquina</div><div class="pcx-graf">'+
+    '<div class="leg"><span><i class="f"></i>'+(rot?'rotulado':'soprado')+'</span><span><i class="q"></i>perdas</span></div>'+rows+'</div>';
+}
+function srQuebra(o){ return o.origem==='rotulagem'?((+o.quebraRotulo||0)+(+o.quebraFrasco||0)):(+o.quebra||0); }
+function relSoproN(etapa){
+  var rot=etapa==='rotulagem';
+  var per=diasDoPeriodo(), f=FILTRO_REP;
+  var maqs=rot?rotuladoras():sopradoras();
+  var ops=(PCP.ops||[]).filter(function(o){
+    if(o.origem!==etapa || o.status!=='concluida') return false;
+    if(o.data<per.de || o.data>per.ate) return false;
+    var nm=maqNome(o.maq,maqs)||o.maq||'';
+    if(f.maq && f.maq!==nm) return false;
+    return casaBusca((nomeCurtoSku(o.itemSku)||'')+' '+nm);
+  }).sort(function(a,b){ return (a.data+(a.iniReal||'')).localeCompare(b.data+(b.iniReal||'')); });
+
+  var prev=0,feito=0,quebra=0,tot=0;
+  ops.forEach(function(o){ prev+=(+o.qtdPrev||0); feito+=(+o.boas||0); quebra+=srQuebra(o); tot+=srMin(o); });
+  var perdaPct=(feito+quebra)?quebra/(feito+quebra)*100:0;
+  var prevPct=prev?feito/prev*100:0;
+  var porHora=tot?Math.round(feito/(tot/60)):null;
+
+  var byOp={}, byMq={};
+  ops.forEach(function(o){
+    var ko=(o.operador||'—'); (byOp[ko]||(byOp[ko]={feito:0,quebra:0,min:0,n:0}));
+    byOp[ko].feito+=(+o.boas||0); byOp[ko].quebra+=srQuebra(o); byOp[ko].min+=srMin(o); byOp[ko].n++;
+    var km=maqNome(o.maq,maqs)||o.maq||'—'; (byMq[km]||(byMq[km]={feito:0,quebra:0,min:0,n:0}));
+    byMq[km].feito+=(+o.boas||0); byMq[km].quebra+=srQuebra(o); byMq[km].min+=srMin(o); byMq[km].n++;
+  });
+  function linMq(){ return Object.keys(byMq).map(function(k){ var e=byMq[k]; var ph=e.min?Math.round(e.feito/(e.min/60)):0; var pp=(e.feito+e.quebra)?e.quebra/(e.feito+e.quebra)*100:0;
+    return '<tr><td>'+esc(k)+'</td><td class="n">'+e.n+'</td><td class="n">'+nf(e.feito)+'</td><td class="n">'+nf(e.quebra)+'</td><td class="n">'+srPct(pp)+'%</td><td class="n">'+srHoras(e.min)+'</td><td class="n">'+(ph||'—')+'</td></tr>'; }).join(''); }
+  function linOp(){ return Object.keys(byOp).sort(function(a,b){return byOp[b].feito-byOp[a].feito;}).map(function(k){ var e=byOp[k]; var pp=(e.feito+e.quebra)?e.quebra/(e.feito+e.quebra)*100:0;
+    return '<tr><td>'+esc(k)+'</td><td class="n">'+e.n+'</td><td class="n">'+nf(e.feito)+'</td><td class="n">'+nf(e.quebra)+'</td><td class="n">'+srPct(pp)+'%</td><td class="n">'+srHoras(e.min)+'</td></tr>'; }).join(''); }
+  function linOrd(){ return ops.map(function(o){ var q=srQuebra(o), b=(+o.boas||0); var pp=(b+q)?q/(b+q)*100:0; var m=srMin(o);
+    return '<tr><td>'+esc(dCurto(o.data))+'</td><td>'+esc(o.num)+'</td><td>'+esc(nomeCurtoSku(o.itemSku))+'</td><td>'+esc(maqNome(o.maq,maqs)||'—')+'</td><td>'+esc(o.operador||'—')+'</td><td class="n">'+nf(+o.qtdPrev||0)+'</td><td class="n">'+nf(b)+'</td><td class="n">'+nf(q)+'</td><td class="n">'+srPct(pp)+'%</td><td class="n">'+srHoras(m)+'</td></tr>'; }).join(''); }
+
+  var filtro='<div class="filtx">'+
+    '<div class="fl"><span>De</span><input type="date" id="fbDe" value="'+esc(f.de||per.de)+'"></div>'+
+    '<div class="fl"><span>até</span><input type="date" id="fbAte" value="'+esc(f.ate||per.ate)+'"></div>'+
+    '<div class="fl"><span>Máquina</span><select id="fbMaqSR"><option value="">todas</option>'+maqs.map(function(m){ var nm=m.nome||m.id; return '<option '+(f.maq===nm?'selected':'')+'>'+esc(nm)+'</option>'; }).join('')+'</select></div>'+
+    '<input type="text" id="fbBusca" class="busca" style="max-width:230px" placeholder="Produto, máquina" value="'+esc(f.busca||'')+'">'+
+    ((f.busca||f.maq||f.de||f.ate)?'<button class="btn sm" id="fbLimpa">Limpar</button>':'')+
+    '<button class="btn sm" id="fbPDF" style="margin-left:auto">Baixar PDF</button>'+
+  '</div>';
+
+  var corpo = ops.length ? (
+    grafBarrasMq(byMq, rot)+
+    '<div class="st">Por máquina · aproveitamento</div>'+
+    '<table><thead><tr><th>Máquina</th><th class="n">OPs</th><th class="n">'+(rot?'Rotulado':'Soprado')+'</th><th class="n">Perdas</th><th class="n">% perda</th><th class="n">Horas</th><th class="n">un/h</th></tr></thead><tbody>'+linMq()+'</tbody></table>'+
+    '<div class="st">Por operador</div>'+
+    '<table><thead><tr><th>Operador</th><th class="n">OPs</th><th class="n">Produzido</th><th class="n">Perdas</th><th class="n">% perda</th><th class="n">Horas</th></tr></thead><tbody>'+linOp()+'</tbody></table>'+
+    '<div class="st">Ordens de '+(rot?'rotulagem':'sopro')+'</div>'+
+    '<table><thead><tr><th>Dia</th><th>OP</th><th>Produto</th><th>Máquina</th><th>Operador</th><th class="n">Previsto</th><th class="n">Feito</th><th class="n">Perdas</th><th class="n">% perda</th><th class="n">Tempo</th></tr></thead><tbody>'+linOrd()+'</tbody></table>'
+  ) : '<div class="pcx-vazio" style="padding:30px;text-align:center">Nenhuma OP de '+(rot?'rotulagem':'sopro')+' concluída no período.</div>';
+
+  var html=filtro+'<div class="repd">'+tituloPeriodo()+'</div>'+
+    '<div class="kpis">'+
+      '<div class="kpi"><div class="k">Ordens</div><div class="v">'+ops.length+'</div><div class="s">concluídas no período</div></div>'+
+      '<div class="kpi"><div class="k">Previsto</div><div class="v">'+nf(prev)+' un</div><div class="s">necessidade do envase</div></div>'+
+      '<div class="kpi"><div class="k">'+(rot?'Rotulado':'Soprado')+'</div><div class="v ok">'+nf(feito)+' un</div><div class="s">'+srPct(prevPct)+'% do previsto</div></div>'+
+      '<div class="kpi"><div class="k">Perdas</div><div class="v '+(quebra?'ruim':'')+'">'+nf(quebra)+' un</div><div class="s">'+srPct(perdaPct)+'% do produzido</div></div>'+
+      '<div class="kpi"><div class="k">Frascos/hora</div><div class="v">'+(porHora!=null?nf(porHora):'—')+'</div><div class="s">'+(tot?'em '+srHoras(tot)+' apontados':'sem tempo apontado')+'</div></div>'+
+    '</div>'+corpo;
+
+  var g=MM('repgrid'); if(g) g.innerHTML=html;
+  // PDF do relatório: folha padrão do sistema, só dados (sem texto explicativo)
+  var fazPdf=function(){
+    if(typeof folha!=='function'||typeof csFolhaModal!=='function'){ avisa('PDF indisponível.',true); return; }
+    var resumo='<table><tbody>'+
+      '<tr><td>Ordens concluídas</td><td class="n forte">'+nf(ops.length)+'</td></tr>'+
+      '<tr><td>Previsto</td><td class="n forte">'+nf(prev)+' un</td></tr>'+
+      '<tr><td>'+(rot?'Rotulado':'Soprado')+'</td><td class="n forte">'+nf(feito)+' un · '+srPct(prevPct)+'%</td></tr>'+
+      '<tr><td>Perdas</td><td class="n forte">'+nf(quebra)+' un · '+srPct(perdaPct)+'%</td></tr>'+
+      '<tr><td>Frascos por hora</td><td class="n forte">'+(porHora!=null?nf(porHora):'—')+'</td></tr></tbody></table>';
+    var tMq='<h2>Por máquina</h2><table><thead><tr><th>Máquina</th><th class="n">OPs</th><th class="n">'+(rot?'Rotulado':'Soprado')+'</th><th class="n">Perdas</th><th class="n">% perda</th><th class="n">Horas</th><th class="n">un/h</th></tr></thead><tbody>'+linMq()+'</tbody></table>';
+    var tOp='<h2>Por operador</h2><table><thead><tr><th>Operador</th><th class="n">OPs</th><th class="n">Produzido</th><th class="n">Perdas</th><th class="n">% perda</th><th class="n">Horas</th></tr></thead><tbody>'+linOp()+'</tbody></table>';
+    var tOrd='<h2>Ordens</h2><table><thead><tr><th>Dia</th><th>OP</th><th>Produto</th><th>Máquina</th><th>Operador</th><th class="n">Prev.</th><th class="n">Feito</th><th class="n">Perdas</th><th class="n">% perda</th><th class="n">Tempo</th></tr></thead><tbody>'+linOrd()+'</tbody></table>';
+    var cab='<p class="aviso">'+esc(tituloPeriodo?tituloPeriodo():'')+' · '+(rot?'Rotulagem':'Sopro')+'</p>';
+    var htmlPdf=folha('Relatório de '+(rot?'rotulagem':'sopro'),'','', cab+resumo+(ops.length?(tMq+tOp+tOrd):'<p class="aviso">Sem ordens no período.</p>'));
+    csFolhaModal({ titulo:'Relatório de '+(rot?'rotulagem':'sopro'), sub:(tituloPeriodo?tituloPeriodo():''), arquivo:'relatorio-'+(rot?'rotulagem':'sopro'), html:htmlPdf });
+  };
+  var pb=MM('fbPDF'); if(pb) pb.onclick=fazPdf;
+  var reRel=function(){ try{ gradeRelatorio(); }catch(e){} };
+  var wire=function(id,k){ var e=MM(id); if(e) e.addEventListener('change',function(){ FILTRO_REP[k]=e.value; reRel(); }); };
+  wire('fbDe','de'); wire('fbAte','ate');
+  var ms=MM('fbMaqSR'); if(ms) ms.addEventListener('change',function(){ FILTRO_REP.maq=ms.value; reRel(); });
+  var bb=MM('fbBusca'); if(bb) bb.addEventListener('input',function(){ FILTRO_REP.busca=bb.value; clearTimeout(relSoproN._t); relSoproN._t=setTimeout(reRel,250); });
+  var lp=MM('fbLimpa'); if(lp) lp.onclick=function(){ FILTRO_REP={busca:'',maq:'',prod:'',de:'',ate:''}; reRel(); };
+}
+try{ relSopro = relSoproN; }catch(e){ window.relSopro=relSoproN; }
 
 /* cabeçalho do app: nas páginas de Sopro e Rotulagem esconde o título e a
    data do topo (o seletor e a data ficam no conteúdo), evitando duplicar. */
@@ -40975,7 +41414,7 @@ try{
 }catch(e){}
 
 /* hook de inspeção/teste (não altera comportamento) */
-try{ window.__PCP={ PCP:PCP, mergeLotes:mergeLotes, abrirTablet:abrirTablet, novaOP:novaOP, injetarOrdensSR:injetarOrdensSR, saldoPCP:saldoPCP, checarHashTablet:checarHashTablet }; }catch(e){}
+try{ window.__PCP={ PCP:PCP, mergeLotes:mergeLotes, abrirTablet:abrirTablet, novaOP:novaOP, injetarOrdensSR:injetarOrdensSR, saldoPCP:saldoPCP, saldoReal:saldoReal, checarHashTablet:checarHashTablet }; }catch(e){}
 
 })();
 </script>
