@@ -15824,15 +15824,14 @@ function abrirCfgPCP(){
   const linkDe=q=>q==='tq'?base+'tanques.html':base+'maq'+q+'.html';
   const des=()=>{M('mB').innerHTML=`<div class="st">Marcadores das OPs</div><div class="cfgmk" style="margin:8px 0 22px">${CAD_MK_OP.map((m,i)=>`<span><input type="color" value="${m.cor}" data-mkc="${i}">${escAttr(m.nome)}<em data-mkx="${i}">✕</em></span>`).join('')}
       <input id="mkNovo" placeholder="novo marcador" style="width:170px;height:32px"><button class="btn sm" id="mkAdd">+ incluir</button></div>
-    <div class="cs-pulmrow" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:16px 0 6px">
+    <div class="cs-pulmrow" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:16px 0 22px">
       <b style="font-size:13.5px">Transferência para o pulmão</b>
       <select id="cfgPulm" style="height:34px;padding:0 10px;border:1px solid var(--line,#DDE3EC);border-radius:9px;font:inherit">
-        <option value="nenhuma">Libera sempre (sem trava)</option>
-        <option value="setup">Libera só antes do setup</option>
-        <option value="envase">Libera até o envase começar (no setup ainda pode)</option>
+        <option value="nenhuma">Transfere sempre</option>
+        <option value="setup">Transfere antes do setup</option>
+        <option value="envase">Transfere antes do envase</option>
       </select>
     </div>
-    <p class="adp" style="margin:0 0 22px">O operador transfere sozinho <b>até esse ponto</b>. Depois dele, só quem tem permissão de liberar (o Neuci, ou outro master/liberador) transfere — e a transferência <b>sempre pede um motivo</b>, em qualquer situação.</p>
     <div class="st">Telas e tablets</div>
     <p class="adp" style="margin:0 0 12px">Toque em <b>Visualizar</b> para abrir a tela numa janela só de acompanhamento — fecha e volta pro sistema, sem prender o computador. Nos Tanques dá pra operar com o PIN.</p>
     <div class="cs-telas">${telas.map(t=>`<div class="cs-telar">
