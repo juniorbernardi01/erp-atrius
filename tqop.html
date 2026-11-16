@@ -783,6 +783,22 @@ function pausar(t){const st={grupo:'',mot:'',obs:''};const G=motivosDe('pausa');
       pedirPin(t.id+' · Pausar',pin=>{m.classList.remove('on');exec(t,'pausa',pin,{grupo:st.grupo,mot:st.mot,obs:st.obs});});};};
   pinta();}
 
+/* ---------- transferir para o pulmão (motivo obrigatório; depois do envase, só liberador) ---------- */
+function transferirPulmao(t){const l=lote(t);if(!l)return toast('Sem lote neste tanque.');
+  const P=pulmao();if(!P)return toast('Não há pulmão cadastrado.');
+  const st={obs:''};const envOn=!!l.pulmaoTravado;
+  const sug=['Troca de produto na máquina','Setup demorado','Problema na máquina','Aproveitar o tanque','Fim de expediente'];
+  const m=modal(`<div class="mc prob"><div class="mh"><span><b>Transferir para o pulmão · ${esc(t.id)}</b><small>${esc(l.p)}${l.lote?' · lote '+esc(l.lote):''} · ${nl(l.vol)} L → ${esc(P.id)}</small></span><span class="x" data-fechar>×</span></div>
+    ${envOn?`<div class="aviso2" style="margin:0 0 10px">O envase já começou. Daqui pra frente, a transferência precisa do PIN de quem pode liberar (Neuci).</div>`:''}
+    <h4>Motivo da transferência <b class="obr">obrigatório</b></h4>
+    <div class="chips">${sug.map(s=>`<span data-sug="${esc(s)}">${esc(s)}</span>`).join('')}</div>
+    <textarea class="in obs" id="pMot" placeholder="escreva o motivo">${esc(st.obs)}</textarea>
+    <div class="libb"><span class="sp"></span><div class="acao" id="pOk">Transferir</div></div></div>`);
+  const o=m.querySelector('#pMot');o.oninput=()=>st.obs=o.value;
+  m.querySelectorAll('[data-sug]').forEach(e=>e.onclick=()=>{st.obs=e.dataset.sug;o.value=st.obs;});
+  m.querySelector('#pOk').onclick=()=>{if(!st.obs.trim())return toast('Escreva o motivo da transferência.');
+    pedirPin('Transferir '+l.p+' para o pulmão'+(envOn?' · precisa de quem libera':''),pin=>{m.classList.remove('on');fechaDrawer();exec(t,'pulmao',pin,{motivo:st.obs.trim()});});};}
+
 /* ---------- os 3 pontinhos de cada tanque ---------- */
 function fechaDrawer(){$('drawer').classList.remove('on','larga');$('sombra').classList.remove('on');}
 function pulmao(){return T.find(x=>x.pul);}
@@ -820,7 +836,7 @@ function abrirHistTq(t,aba,aberto){const f=$('fHist');const l=lote(t);const dia=
   f.querySelectorAll('[data-sg]').forEach(b=>b.onclick=()=>abrirHistTq(t,b.dataset.sg));
   f.querySelectorAll('[data-hk]').forEach(h=>h.onclick=()=>abrirHistTq(t,'dia',aberto===h.dataset.hk?null:h.dataset.hk));}
 function abrirDrawer(t,aba){const l=lote(t);const d=$('drawer');const s=statusDe(t);aba=aba||'prox';
-  const P=pulmao();const transf=l&&!t.pul&&(PRODUZIDO.includes(s)||s==='prep');const pode=transf&&P&&pulmaoLivre()&&l.vol<=P.cap&&!ehAmanha();
+  const P=pulmao();const transf=l&&!t.pul&&(PRODUZIDO.includes(s)||s==='prep'||s==='envasando');const pode=transf&&P&&pulmaoLivre()&&l.vol<=P.cap&&!ehAmanha();
   const cur=DIA||(D&&D.hoje);
   /* próximos: o resto da fila do dia e o próximo dia de produção */
   let px=[];try{if(D&&D.prox&&N.tqDados){const o=N.tqDados(D.prox).T.find(z=>z.id===t.id);px=o?o.fila.filter(x=>!x.saldo&&!t.fila.some(f=>f.k===x.k)):[];}}catch(e){}
@@ -850,8 +866,11 @@ function abrirDrawer(t,aba){const l=lote(t);const d=$('drawer');const s=statusDe
   $('dF').onclick=()=>{if(!l)return toast('Sem lote neste tanque.');if(l.saldo)return toast('Saldo de lote não tem formulação a fazer.');fechaDrawer();abrirForm(t,'sep');};
   $('dA').onclick=()=>{if(!anaOk)return toast(s==='descanso'?'A análise libera ao fim do descanso.':'Precisa finalizar o preparo antes da análise.');fechaDrawer();acao(t.id,'ana');};
   $('dH').onclick=()=>{fechaDrawer();abrirHistTq(t,l?'lote':'dia');};
-  if($('dT'))$('dT').onclick=()=>{if(!pode)return toast(!transf?'Só dá para mandar ao pulmão o lote com o preparo concluído. Outras trocas são feitas pelo PCP.':'Pulmão ocupado agora.');
-    pedirPin('Transferir '+l.p+' para o pulmão',pin=>{fechaDrawer();exec(t,'pulmao',pin);});};}
+  if($('dT'))$('dT').onclick=()=>{if(!transf)return toast('Só dá para mandar ao pulmão o lote com o preparo concluído. Outras trocas são feitas pelo PCP.');
+    if(!P||!pulmaoLivre())return toast('Pulmão ocupado agora. Espere esvaziar.');
+    if(l.vol>P.cap)return toast('O lote não cabe no pulmão.');
+    if(ehAmanha())return toast('Só no dia da produção.');
+    transferirPulmao(t);};}
 
 /* ---------- os 3 pontinhos do topo: o total de todos os tanques ---------- */
 function abrirGeral(fil){const d=$('drawer');fil=fil||'todos';

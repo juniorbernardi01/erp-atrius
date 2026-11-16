@@ -1,6 +1,6 @@
 {
- "v": "v556",
- "versao": "5.5.6",
+ "v": "v558",
+ "versao": "5.5.8",
  "data": "16/11/2026",
- "o_que_mudou": "CORRECAO URGENTE: a Performance de vendas tinha sido substituida por um prototipo visual (dados chumbados no codigo, periodo travado em Out/2026, botoes sem acao). Restaurado o modulo de Vendas completo e funcional (Performance, Venda x Faturamento, Ranking, Clientes novos, Metas, Pedidos de venda, Necessidade de producao, Evolucao, Clientes sem compra), lendo do Tiny com seletor de periodo de verdade. Inclui tudo da 5.5.5 (sopro/rotulagem: cancelar/ja atendido, scroll fixo, programacao em tela; checklist: gravidade colorida, ciencia total, visualizador de fotos) e da 5.5.4 (FILME TERMO, formulacao com estoque)."
+ "o_que_mudou": "Tanque pulmao no computador: os gestores (Neuci, Mari) agora transferem pro pulmao pelo ⋮ (tres pontinhos) de cada tanque na grade de Tanques — nao pelo lote do envase. Abre um modal com motivo obrigatorio e PIN; se o envase ja comecou, avisa que precisa de quem pode liberar (Neuci). A config em Configuracoes > PCP virou 'Transferencia para o pulmao' com dropdown ao lado (Sem trava / Trava no setup / Trava no envase). No tablet segue igual pros operadores. Inclui tudo da 5.5.7 (trava no envase, setup libera) e da 5.5.6 (vendas funcional, checklist, sopro/rotulagem, FILME TERMO)."
 }

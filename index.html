@@ -530,6 +530,8 @@ body.arrastando .vaoslim i{opacity:.4}
 .tqh .n b{font-family:'Barlow Condensed';font-size:20px;font-weight:700}
 .tqh .n span{font-family:'Inter';font-size:10.5px;color:var(--ink3);margin-left:auto}
 .tqh .s{font-size:11px;color:var(--ink3);margin-top:2px}
+.tqh .tqdots{position:absolute;bottom:8px;right:8px;width:28px;height:24px;border:1px solid var(--line);background:var(--paper);border-radius:7px;cursor:pointer;font-size:15px;line-height:1;color:var(--ink2);display:flex;align-items:center;justify-content:center;padding:0}
+.tqh .tqdots:hover{background:var(--surface);border-color:var(--ink3)}
 .tqb{padding:10px;display:flex;flex-direction:column;gap:9px;min-height:70px}
 .bat{background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden;
   border-left:4px solid var(--bc);cursor:pointer}
@@ -4708,6 +4710,11 @@ let EU=null;                                   /* sessão atual */
 const usuPorPin=v=>USUARIOS.find(u=>u.pin===String(v||'').trim());
 /* quem pode liberar lote: precisa de 'editar' ou mais na permissão própria */
 const podeLiberar=()=>RANK[nivel('liberar')]>=2;
+/* uma PESSOA do PIN (operador ou acesso) tem permissão de liberar? (mesmo critério da liberação de lote) */
+function qPodeLiberar(q){try{if(!q)return false;if(q.master||(q.op&&q.op.master))return true;
+  const a=(typeof ACESSOS!=='undefined'?ACESSOS:[]).find(x=>norMail(x.email)===norMail(q.email||''));
+  if(a)return RANK[(a.master?'excluir':((a.perm||{}).liberar||''))]>=2;
+  return q.op?RANK[((q.op.perm||{}).liberar||'')]>=2:false;}catch(e){return false;}}
 /* master de verdade: é quem vê credencial alheia e mexe em cadastro de pessoa */
 const souMestreAqui=()=>!!(typeof MEU_ACESSO!=='undefined'&&MEU_ACESSO&&MEU_ACESSO.master);
 const nivel=t=>{
@@ -5508,7 +5515,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v556';const VERSAO_DATA='16/11/2026';
+const VERSAO_APP='v558';const VERSAO_DATA='16/11/2026';
 /* número que aparece na tela: v438 → v4.3.8 (por dentro continua v438, que é o que as versões comparam) */
 const csRotVer=v=>{const d=String(v||'').replace(/\D/g,'');return d.length>=3?'v'+d.slice(0,-2)+'.'+d.slice(-2,-1)+'.'+d.slice(-1):String(v||'');};
 const VERSAO_ROTULO=csRotVer(VERSAO_APP)+' · '+VERSAO_DATA;
@@ -5996,16 +6003,20 @@ function gradeTanques(){
     +TANQUES.map(t=>{
     const seq=bats.filter(b=>b.tanque===t.id).sort((a,b)=>a.prontoAte-b.prontoAte);
     const usado=seq.reduce((s,b)=>s+b.volume,0);
+    /* lote que dá pra mandar ao pulmão (preparo pronto, setup ou envasando); o ⋮ age nele */
+    const loteAtivo=t.pul?null:seq.find(b=>{try{const st=csTqSt(b).st;return CS_TQ_PRODUZIDO.includes(st)||st==='prep'||st==='envasando';}catch(e){return false;}});
     return `<div class="tqcol" data-tq="${t.id}">
       <div class="tqh"><div class="n"><b>${t.id}</b><span>${nf(t.cap)} L</span></div>
         <div class="s">${seq.length?`${seq.length} lote${seq.length>1?'s':''} · ${nf(usado)} L no dia`
-          :'Sem programação'}</div></div>
+          :'Sem programação'}</div>
+        ${loteAtivo?`<button class="tqdots" data-tqm="${escAttr(loteAtivo.chave)}" title="Ações do tanque">⋯</button>`:''}</div>
       <div class="tqb">${seq.length?seq.map(cardBat).join('')
         :`<div class="tqvazio">Solte um lote aqui.<br>Eles ficam em <b>a programar</b>, à direita.</div>`}</div>
     </div>`;
   }).join('');
 
   if(M('tqAviso'))M('tqAviso').onclick=abrirSemTanque;
+  M('tqgrid').querySelectorAll('[data-tqm]').forEach(b=>b.onclick=ev=>{ev.stopPropagation();menuTanque(b);});
   M('tqgrid').querySelectorAll('[data-puxa]').forEach(e=>
     e.addEventListener('click',ev=>{ev.stopPropagation();
       const sd=SALDOS.find(x=>x.id===e.dataset.puxa);
@@ -15819,6 +15830,15 @@ function abrirCfgPCP(){
   const linkDe=q=>q==='tq'?base+'tanques.html':base+'maq'+q+'.html';
   const des=()=>{M('mB').innerHTML=`<div class="st">Marcadores das OPs</div><div class="cfgmk" style="margin:8px 0 22px">${CAD_MK_OP.map((m,i)=>`<span><input type="color" value="${m.cor}" data-mkc="${i}">${escAttr(m.nome)}<em data-mkx="${i}">✕</em></span>`).join('')}
       <input id="mkNovo" placeholder="novo marcador" style="width:170px;height:32px"><button class="btn sm" id="mkAdd">+ incluir</button></div>
+    <div class="cs-pulmrow" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:16px 0 22px">
+      <b style="font-size:13.5px">Transferência para o pulmão</b>
+      <select id="cfgPulm" style="height:34px;padding:0 10px;border:1px solid var(--line,#DDE3EC);border-radius:9px;font:inherit">
+        <option value="nenhuma">Sem trava</option>
+        <option value="setup">Trava no setup</option>
+        <option value="envase">Trava no envase</option>
+      </select>
+      <small style="color:var(--ink3);font-size:11.5px">passado o ponto, só quem pode liberar (Neuci) · sempre com motivo</small>
+    </div>
     <div class="st">Telas e tablets</div>
     <p class="adp" style="margin:0 0 12px">Toque em <b>Visualizar</b> para abrir a tela numa janela só de acompanhamento — fecha e volta pro sistema, sem prender o computador. Nos Tanques dá pra operar com o PIN.</p>
     <div class="cs-telas">${telas.map(t=>`<div class="cs-telar">
@@ -15837,6 +15857,7 @@ function abrirCfgPCP(){
     M('mB').querySelectorAll('[data-mkx]').forEach(x=>x.onclick=()=>{if(!confirm('Tirar este marcador?'))return;CAD_MK_OP.splice(+x.dataset.mkx,1);agendarSalvar();des();});
     M('mkAdd').onclick=()=>{const n=M('mkNovo').value.trim();if(!n)return;if(CAD_MK_OP.some(m=>m.nome.toLowerCase()===n.toLowerCase()))return toast('Esse marcador já existe.',true);
       CAD_MK_OP.push({nome:n,cor:OD_MK_CORES[CAD_MK_OP.length%OD_MK_CORES.length]});agendarSalvar();des();};
+    {const cp=M('cfgPulm');if(cp){cp.value=CS_TABLETS.pulmaoTrava||'envase';cp.onchange=()=>{CS_TABLETS.pulmaoTrava=cp.value;agendarSalvar();toast('Regra do tanque pulmão salva.');};}}
     /* tema por tela: claro/escuro, vale na hora no aparelho sem mexer nele */
     M('mB').querySelectorAll('[data-tbt]').forEach(b=>b.onclick=()=>{const [q,v]=b.dataset.tbt.split('|');
       CS_TABLETS.tema={...(CS_TABLETS.tema||{}),[q]:v};agendarSalvar();
@@ -16014,7 +16035,9 @@ const CS_CFGV={reservaPor:'prev'};
 /* v405 · Rastreabilidade: lote obrigatório (oc = recebimento da ordem de compra; producao = PCP e tablet dos tanques) */
 const CS_RASTRO={oc:true,producao:false};
 /* v408 · tema de cada tablet ('1','2','3' = máquinas do envase; 'tq' = tanques) */
-const CS_TABLETS={tema:{tq:'escuro'}};
+const CS_TABLETS={tema:{tq:'escuro'},pulmaoTrava:'envase'};
+/* regra do tanque pulmão: 'nenhuma' (sempre pode, só motivo) · 'setup' (trava quando o setup começa) · 'envase' (trava quando o envase começa) */
+const CS_PULM_REGRA=()=>{try{return CS_TABLETS.pulmaoTrava||'envase';}catch(e){return 'envase';}};
 /* v294: histórico das leituras do Tiny (carga e atualizações) */
 const CS_TLOG=[];
 
@@ -17996,6 +18019,7 @@ function aplicarEstado(txt){
   if(d.cfgVendas)Object.assign(CS_CFGV,d.cfgVendas);
   if(d.rastro)Object.assign(CS_RASTRO,d.rastro);
   if(d.tablets&&d.tablets.tema)CS_TABLETS.tema={...d.tablets.tema};
+  if(d.tablets&&d.tablets.pulmaoTrava)CS_TABLETS.pulmaoTrava=d.tablets.pulmaoTrava;
   REVISAO_MOTIVO.length=0;(d.revisaoMotivo||[]).forEach(x=>REVISAO_MOTIVO.push(x));
   if(d.estoque){
     Object.keys(ESTOQUE).forEach(k=>delete ESTOQUE[k]);
@@ -30884,6 +30908,8 @@ function csTqLote(b){
   return {k:b.chave,data:b.data,p:b.produto,lote:b.lote||'',op:o0?rotuloOP(o0):'',vol:+b.volume||0,
     pronto:b.prontoAte<1e9?hhmm(b.prontoAte):'—',prontoMin:b.prontoAte<1e9?b.prontoAte:null,
     maq:maqs.join(', ')||'—',tanque:b.tanque,st:s.st,ini:s.ini,desde:s.desde,maqEnv:s.maq||'',reana:!!s.reana,pausa:s.pausa||null,
+    envIniciou:(b.ordens||[]).some(o=>sit(o)==='producao'),/* envase de verdade começou (não só o setup da máquina) */
+    pulmaoTravado:(function(){var rg=CS_PULM_REGRA();if(rg==='nenhuma')return false;return rg==='setup'?(s.st==='envasando'):(b.ordens||[]).some(o=>sit(o)==='producao');})(),/* transferir agora exige liberador? */
     prev:csTqPreparo(b),desc:csTqDescanso(b),plan:{limp:pl('limpeza'),ench:pl('enchimento'),fab:pl('fabricacao'),desc:pl('descanso')},
     tq:{...tq},mp,sep:tq.sep||{},lotesMP:at.lotesMP||{},proc,passo:+tq.passo||0,ens,res:((b.analise&&b.analise.resultados)||{}),
     ajPed:tq.ajPed||[],extra:at.mpExtra||[],lib:b.liberadoEm||'',libPor:at.liberadoPor||'',de:tq.de||'',
@@ -30931,7 +30957,7 @@ function csTqAcao(k,a,x,pin){
   x=x||{};
   const b=csTqAchar(k);if(!b)return {erro:'Esse lote não está mais na programação. A tela vai atualizar.'};
   let quem=null;
-  if(a!=='passo'){const r=csTqQuem(pin);if(!r.ok)return {erro:r.erro,pin:true};quem=r.q;}
+  if(a!=='passo'){if(x&&x._quem){quem=x._quem;}else{const r=csTqQuem(pin);if(!r.ok)return {erro:r.erro,pin:true};quem=r.q;}}
   const at=APONTA[b.chave]||{},tq={...(at.tq||{})},s=csTqSt(b);
   const log=[...(at.log||[])];
   const L=(e,m,tudo)=>{log.push({t:relogio(),d:ymd(new Date()),e,op:quem?quem.nome:'',m:m||null,w:b.tanque});
@@ -31007,12 +31033,25 @@ function csTqAcao(k,a,x,pin){
       msg='Problema registrado · PCP e Qualidade avisados';break;
     case 'pulmao':{
       const P=recursosDe('tanque').find(r=>r.pul&&r.ativo!==false);if(!P)return {erro:'Não há pulmão cadastrado.'};
-      if(!CS_TQ_PRODUZIDO.includes(s.st)&&s.st!=='prep')return {erro:'Só dá para mandar ao pulmão o lote com o preparo concluído.'};
+      /* precisa ter produto pronto. O setup da máquina ('envasando' em preparação) ainda deixa transferir. */
+      if(!CS_TQ_PRODUZIDO.includes(s.st)&&s.st!=='prep'&&s.st!=='envasando')return {erro:'Só dá para mandar ao pulmão o lote com o preparo concluído.'};
+      /* trava conforme a regra configurada (Configurações › PCP › Regra do tanque pulmão):
+         'nenhuma' nunca exige liberação; 'setup' trava quando o setup começa; 'envase' (padrão) quando o envase começa.
+         Depois do ponto de trava, só quem pode liberar (Neuci) transfere. */
+      const regra=CS_PULM_REGRA();
+      const envaseIniciou=(b.ordens||[]).some(o=>sit(o)==='producao');
+      const setupOn=s.st==='envasando';/* 'envasando' cobre setup (preparação) e envase (produção) */
+      const travado=regra==='nenhuma'?false:(regra==='setup'?setupOn:envaseIniciou);
+      if(travado&&!qPodeLiberar(quem))return {erro:(regra==='setup'?'O setup da máquina já começou. A partir daí':'O envase já começou. A partir daí')+', a transferência para o pulmão só com a liberação do Neuci.',pin:true};
+      /* motivo obrigatório na transferência para o pulmão */
+      const motivo=String(x.motivo||'').trim();
+      if(!motivo)return {erro:'Diga o motivo da transferência para o pulmão.'};
       if(b.volume>(+P.cap||0))return {erro:`O lote tem ${nf(b.volume)} L e o pulmão leva ${nf(P.cap)} L.`};
       const ocup=csTqDia(b.data).find(t=>t.id===P.id);
       if(ocup&&ocup.fila.some(l=>!CS_TQ_NAO_COMECOU.includes(l.st)))return {erro:'O pulmão está ocupado agora. Espere esvaziar.'};
-      APONTA[b.chave]={...novo,tq,log:[...log,{t:relogio(),d:ymd(new Date()),e:'Transferiu para o pulmão',op:quem.nome,m:`${b.tanque} → ${P.id} · ${b.tanque} liberado para limpeza`,w:b.tanque}]};
-      csTqMover(b,P.id,quem,'transferido para o pulmão');
+      const detLog=`${b.tanque} → ${P.id} · motivo: ${motivo}${envaseIniciou?' · após início do envase, liberado por '+quem.nome:''} · ${b.tanque} liberado para limpeza`;
+      APONTA[b.chave]={...novo,tq,log:[...log,{t:relogio(),d:ymd(new Date()),e:'Transferiu para o pulmão',op:quem.nome,m:detLog,w:b.tanque}]};
+      csTqMover(b,P.id,quem,'transferido para o pulmão · '+motivo);
       agendarSalvar();try{render();}catch(e){}
       return {ok:true,msg:`Lote foi para o pulmão · ${b.tanque} liberado para limpeza`};}
     default:return {erro:'Ação desconhecida: '+a};
@@ -31020,6 +31059,46 @@ function csTqAcao(k,a,x,pin){
   APONTA[b.chave]={...novo,tq,log};
   agendarSalvar();try{render();}catch(e){}
   return {ok:true,msg:msg?(msg+(quem?' · '+quem.nome:'')):''};
+}
+/* ⋮ do tanque na grade do computador (gestores): só a transferência para o pulmão por enquanto */
+function menuTanque(btn){
+  const old=document.getElementById('od2m');if(old){const mesmo=old.dataset.id===btn.dataset.tqm;old.remove();if(mesmo)return;}
+  const chave=btn.dataset.tqm;const b=csTqAchar(chave);if(!b)return;
+  const m=document.createElement('div');m.className='od2m';m.id='od2m';m.dataset.id=chave;
+  m.innerHTML=`<div class="mh">${escAttr(b.tanque)} · ${escAttr(b.produto)}</div><button data-a="pulmao">Transferência para o pulmão</button>`;
+  document.body.appendChild(m);const r=btn.getBoundingClientRect();m.style.left=Math.max(8,Math.min(r.right-230,window.innerWidth-240))+'px';m.style.top=(r.bottom+4)+'px';m.onclick=ev=>ev.stopPropagation();
+  m.querySelector('[data-a="pulmao"]').onclick=()=>{m.remove();transferirPulmaoPC(b);};
+}
+/* transferência para o pulmão no computador (gestores): motivo + PIN; reusa a regra do csTqAcao */
+function transferirPulmaoPC(b){
+  const P=recursosDe('tanque').find(r=>r.pul&&r.ativo!==false);if(!P)return toast('Não há pulmão cadastrado.',true);
+  const s=csTqSt(b);
+  if(!CS_TQ_PRODUZIDO.includes(s.st)&&s.st!=='prep'&&s.st!=='envasando')return toast('Só dá para mandar ao pulmão o lote com o preparo concluído.',true);
+  if(b.volume>(+P.cap||0))return toast(`O lote tem ${nf(b.volume)} L e o pulmão leva ${nf(P.cap)} L.`,true);
+  const regra=CS_PULM_REGRA();const envOn=(b.ordens||[]).some(o=>sit(o)==='producao');
+  const travado=regra==='nenhuma'?false:(regra==='setup'?s.st==='envasando':envOn);
+  const sug=['Troca de produto na máquina','Setup demorado','Problema na máquina','Aproveitar o tanque','Fim de expediente'];
+  if(M('mAcao'))M('mAcao').innerHTML='';M('modal').classList.remove('wide');
+  M('mTit').textContent='Transferir para o pulmão';M('mSub').hidden=false;M('mSub').textContent=`${b.tanque} · ${b.produto}${b.lote?' · lote '+b.lote:''} · ${nf(b.volume)} L → ${P.id}`;
+  M('mB').innerHTML=`${travado?`<div class="alert blue">${regra==='setup'?'O setup da máquina já começou':'O envase já começou'} — a transferência precisa do PIN de quem pode liberar (ex.: Neuci).</div>`:''}
+    <div class="fld"><label>Motivo da transferência <b>*</b></label>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin:6px 0">${sug.map(x=>`<button type="button" class="btn sm" data-sug="${escAttr(x)}">${escP(x)}</button>`).join('')}</div>
+      <textarea id="pulmMot" placeholder="escreva o motivo"></textarea></div>
+    <div class="fld"><label>PIN ou senha de quem está fazendo <b>*</b></label><input id="pulmPin" placeholder="••••" autocomplete="off"><div class="hint" id="pulmDica" style="font-size:12px;color:var(--ink3);margin-top:6px"></div></div>`;
+  M('mF').innerHTML=`<div class="mfesq"></div><div class="mfdir"><button class="btn" id="pulmC">Voltar</button><button class="btn pri" id="pulmK">Transferir</button></div>`;
+  abrirMask();
+  M('pulmC').onclick=fecharModal;
+  M('mB').querySelectorAll('[data-sug]').forEach(x=>x.onclick=()=>{M('pulmMot').value=x.dataset.sug;});
+  M('pulmK').onclick=()=>{
+    const motivo=(M('pulmMot').value||'').trim();
+    if(!motivo){M('pulmDica').innerHTML='<b style="color:var(--danger)">Escreva o motivo.</b>';return;}
+    const o=quemPorCredencial((M('pulmPin').value||'').trim());
+    if(!o){M('pulmDica').innerHTML='<b style="color:var(--danger)">PIN ou senha não encontrados.</b>';return;}
+    if(travado&&!qPodeLiberar(o)){M('pulmDica').innerHTML=`<b style="color:var(--danger)">${escP(o.nome)} não tem permissão de liberar.</b>`;return;}
+    const r=csTqAcao(b.chave,'pulmao',{motivo,_quem:o},'');
+    if(!r||r.erro){M('pulmDica').innerHTML=`<b style="color:var(--danger)">${escP((r&&r.erro)||'Não consegui transferir.')}</b>`;return;}
+    fecharModal();toast(r.msg||'Lote transferido para o pulmão.');try{render();}catch(e){}
+  };
 }
 try{
   csNucleo.tqDados=dia=>({dia:dia||ymd(new Date()),hoje:ymd(new Date()),agora:agoraMin(),pronto:typeof PRONTO!=='undefined'&&!!PRONTO,
