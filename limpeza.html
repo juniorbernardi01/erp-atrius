@@ -589,7 +589,21 @@ input.sel4{width:120px;font-family:'Inter',monospace}
 .lpLb .lb-bar{display:flex;align-items:center;gap:16px;margin-top:14px}
 .lpLb .lb-play{border:0;background:#fff;border-radius:999px;padding:10px 18px;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.3)}
 .lpLb #lbCt{color:#fff;font-size:13px;font-weight:600;text-shadow:0 1px 3px rgba(0,0,0,.6)}
+.lpLb .lb-cap{padding:30px 16px 13px}
+.lpLb .lb-set{font-size:16px;font-weight:800;letter-spacing:.01em;margin-bottom:2px}
+.lpLb .lb-meta{font-size:13px;font-weight:600;opacity:.96;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.lpLb .lb-meta .lb-g{padding:1px 9px;border-radius:999px;font-size:11px;font-weight:800}
+.lpLb .lb-meta .lb-g.ghigh{background:#FDE0E0;color:#B4232C}.lpLb .lb-meta .lb-g.gmed{background:#FCE9CF;color:#B45309}.lpLb .lb-meta .lb-g.glow{background:#FEF3C0;color:#92600A}.lpLb .lb-meta .lb-g.gnone{background:#E5E7EB;color:#374151}
+.lpLb .lb-obs{font-size:13px;font-weight:500;opacity:.93;margin-top:5px;font-style:italic;line-height:1.4}
 .lp .ft{cursor:zoom-in}
+/* cabeçalho clicável pra ordenar a tabela de não conformidades */
+.lp .lpt th.ord{cursor:pointer;user-select:none;white-space:nowrap}
+.lp .lpt th.ord:hover{color:var(--bc)}
+.lp .lpt th .seta{font-size:10px;opacity:.95}.lp .lpt th .seta.off{opacity:.3}
+/* filtro (dropdown) da conferência */
+.lp .fconf{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.lp .fconf label{font-size:11px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.04em}
+.lp .fconf .cont{font-size:12.5px;color:var(--ink3);font-weight:600}
 /* botão conferir todas */
 .lp .cftd{border:1px solid var(--ok);background:#fff;color:var(--ok);border-radius:9px;padding:9px 14px;font-size:13px;font-weight:700;cursor:pointer;margin-right:8px}
 .lp .cftd:hover{background:#F0FBF4}
@@ -1223,7 +1237,7 @@ function desenhaLista(){
 async function telaVist(numero){
   $('app').innerHTML='<div class="lp"><div class="vazio">Carregando…</div></div>';
   try{await carregaBase();const V=await carregaVist(numero);if(!V){$('app').innerHTML='<div class="lp">'+avisoErro('Vistoria '+n4(numero)+' não encontrada.')+'</div>';return;}
-    LP.V=V;LP.errSet='';
+    LP.V=V;LP.errSet='';LP.ordNC=null;LP.filtroConf='nc';
     const prox=V.sets.findIndex(s=>!s.concluido_em);
     LP.cur=V.v.situacao!=='andamento'?-1:(prox>=0?prox:V.sets.length);
   }catch(e){$('app').innerHTML='<div class="lp">'+avisoErro(e.message)+'</div>';return;}
@@ -1293,6 +1307,7 @@ function ligaVist(){
     el.querySelectorAll('input[data-up]').forEach(i=>i.onchange=()=>subirFotos(r,i.files));
   });
   pintaFotos(a);
+  if(a.querySelector('th[data-ord]'))ligaTabNC(a,desenhaVist);
   if($('bConc'))$('bConc').onclick=concluirSetor;
   if($('bReab'))$('bReab').onclick=reabrirSetor;
   if($('bFechar'))$('bFechar').onclick=fecharVist;
@@ -1340,11 +1355,42 @@ function resumo(){const V=V_(),L=ncsDe(V),pc=pcConf(V),alta=L.filter(x=>x.gravid
    <div class="caixa"><h3>Não conformidades da semana<span class="dir">por tipo de problema</span></h3><div class="cp">${L.length?quebraTipos(L)+tabNC(L,false):'<div class="vazio" style="color:var(--ok);font-weight:600">Nenhuma não conformidade nesta semana.</div>'}</div></div>
    ${ehP?`<div class="caixa"><h3>Fechar a vistoria</h3><div class="cp"><div class="leg">Depois de fechada, a vistoria não pode ser alterada.${ligada('realizada')?' O aviso de vistoria realizada sai por e-mail na hora.':''}</div><button class="btn pri gr" id="bFechar">Fechar vistoria com meu PIN</button></div></div>`
      :`<div class="lpav">Para fechar a vistoria é preciso ter a permissão de preencher o checklist.</div>`}`;}
-function tabNC(L,cienc){const V=V_(),sets=Object.fromEntries(V.sets.map(s=>[s.setor_id,s]));
-  return `<div class="rolx"><table class="tv lpt"><thead><tr><th>Setor</th><th>Item</th><th>Tipo</th><th>Observação</th><th>Gravidade</th><th>Fotos</th>${cienc?'<th style="min-width:170px">Conferência</th>':''}</tr></thead><tbody>
-  ${L.map(r=>{const s=sets[r.setor_id]||{},outro=s.concluido_por&&!mesmo(s.concluido_por,v_fechou());
-    return `<tr data-r="${r.id}"><td>${esc(r.setor_nome)}${outro?`<span class="tag n">${esc(pri(s.concluido_por))}</span>`:''}</td><td>${esc(r.item_nome)}${r.reincidente_de?'<span class="tag">Reincidente</span>':''}</td><td>${esc(r.tipo_nome||'')}${r.tipo_outro?'<span class="gmud">'+esc(r.tipo_outro)+'</span>':''}</td><td>${esc(r.observacao||'')}</td>
-    <td>${cienc?gravCiencia(r,s):gPill(r.gravidade)}</td><td>${fotosHtml(r)}</td>${cienc?`<td>${confCiencia(r,s)}</td>`:''}</tr>`;}).join('')}</tbody></table></div>`;}
+/* ordenação (clicar no cabeçalho) e filtro (dropdown) da tabela de não conformidades */
+const GRANK={alta:3,media:2,baixa:1};
+function filtraNC(V){const f=LP.filtroConf||'nc';
+  if(f==='conf')return V.resp.filter(r=>r.resposta==='conforme');
+  if(f==='tudo')return V.resp.slice();
+  const nc=ncsDe(V);
+  if(f==='alta'||f==='media'||f==='baixa')return nc.filter(r=>r.gravidade===f);
+  return nc;}
+function ordenaNC(rows){const o=LP.ordNC;if(!o||!o.col)return rows;const d=o.dir||1;
+  const txt=(r,k)=>semAc(k==='setor'?r.setor_nome:k==='item'?r.item_nome:k==='tipo'?(r.tipo_nome||r.tipo_outro||''):k==='obs'?(r.observacao||''):'');
+  const arr=rows.slice();
+  arr.sort((a,b)=>{if(o.col==='grav')return d*((GRANK[a.gravidade]||0)-(GRANK[b.gravidade]||0));
+    return d*txt(a,o.col).localeCompare(txt(b,o.col),'pt');});
+  return arr;}
+const setaOrd=col=>{const o=LP.ordNC;return o&&o.col===col?(o.dir>0?'<span class="seta">▲</span>':'<span class="seta">▼</span>'):'<span class="seta off">↕</span>';};
+const thOrd=(col,rot,extra)=>`<th data-ord="${col}" class="ord"${extra||''}>${rot} ${setaOrd(col)}</th>`;
+function tabNC(_L,cienc){const V=V_(),sets=Object.fromEntries(V.sets.map(s=>[s.setor_id,s]));
+  const rows=ordenaNC(filtraNC(V)),f=LP.filtroConf||'nc';
+  const filtro=`<div class="fconf"><label>Mostrar</label><select class="lpsel" id="fConf">
+    <option value="nc"${f==='nc'?' selected':''}>Todas as não conformidades</option>
+    <option value="alta"${f==='alta'?' selected':''}>Só gravidade alta</option>
+    <option value="media"${f==='media'?' selected':''}>Só gravidade média</option>
+    <option value="baixa"${f==='baixa'?' selected':''}>Só gravidade baixa</option>
+    <option value="conf"${f==='conf'?' selected':''}>Só os conformes</option>
+    <option value="tudo"${f==='tudo'?' selected':''}>Tudo (conformes e não conformes)</option>
+  </select><span class="cont">${rows.length} ${rows.length===1?'item':'itens'}</span></div>`;
+  const tab=`<div class="rolx"><table class="tv lpt"><thead><tr>${thOrd('setor','Setor')}${thOrd('item','Item')}${thOrd('tipo','Tipo')}${thOrd('obs','Observação')}${thOrd('grav','Gravidade')}<th>Fotos</th>${cienc?'<th style="min-width:170px">Conferência</th>':''}</tr></thead><tbody>
+  ${rows.length?rows.map(r=>{const s=sets[r.setor_id]||{},outro=s.concluido_por&&!mesmo(s.concluido_por,v_fechou()),conf=r.resposta==='conforme';
+    return `<tr data-r="${r.id}"><td>${esc(r.setor_nome)}${outro?`<span class="tag n">${esc(pri(s.concluido_por))}</span>`:''}</td><td>${esc(r.item_nome)}${r.reincidente_de?'<span class="tag">Reincidente</span>':''}</td><td>${conf?'<span style="color:var(--ink3)">—</span>':esc(r.tipo_nome||'')}${r.tipo_outro?'<span class="gmud">'+esc(r.tipo_outro)+'</span>':''}</td><td>${conf?'':esc(r.observacao||'')}</td>
+    <td>${conf?'<span class="gpill gok">Conforme</span>':(cienc?gravCiencia(r,s):gPill(r.gravidade))}</td><td>${fotosHtml(r)}</td>${cienc?`<td>${conf?'<span style="color:var(--ink3)">não precisa</span>':confCiencia(r,s)}</td>`:''}</tr>`;}).join(''):`<tr><td colspan="${cienc?7:6}" class="vazio" style="padding:26px 10px">Nada para mostrar com esse filtro.</td></tr>`}</tbody></table></div>`;
+  return filtro+tab;}
+/* liga o dropdown do filtro e os cabeçalhos ordenáveis; redraw redesenha a tela */
+function ligaTabNC(root,redraw){
+  root.querySelectorAll('th[data-ord]').forEach(th=>th.onclick=()=>{const c=th.dataset.ord,o=LP.ordNC;
+    if(o&&o.col===c)LP.ordNC={col:c,dir:-o.dir};else LP.ordNC={col:c,dir:c==='grav'?-1:1};redraw();});
+  const sel=root.querySelector('#fConf');if(sel)sel.onchange=()=>{LP.filtroConf=sel.value;redraw();};}
 
 /* ---------- fotos: comprimidas no aparelho (~1.280 px) e guardadas no Storage, nunca no banco ---------- */
 function comprime(file){return new Promise((ok,erro)=>{const u=URL.createObjectURL(file),im=new Image();
@@ -1367,7 +1413,7 @@ function pintaFotos(raiz){raiz.querySelectorAll('img[data-ft]').forEach(async im
 /* lista de todas as fotos das não conformidades da vistoria, pra passar de uma
    pra outra no visualizador (setas do teclado, ‹ ›, e passar automático). */
 function galeriaFotos(){const V=V_();if(!V)return [];const out=[];
-  V.resp.forEach(r=>{(r.fotos||[]).forEach(f=>out.push({cam:f.caminho,fid:f.id,item:r.item_nome||'',setor:r.setor_nome||''}));});
+  V.resp.forEach(r=>{(r.fotos||[]).forEach(f=>out.push({cam:f.caminho,fid:f.id,item:r.item_nome||'',setor:r.setor_nome||'',tipo:r.tipo_nome||r.tipo_outro||'',obs:r.observacao||'',grav:r.gravidade,conf:r.resposta==='conforme'}));});
   return out;}
 let LB={list:[],i:0,timer:null};
 function verFoto(c,fid){
@@ -1381,7 +1427,7 @@ function abreLightbox(){
   const multi=LB.list.length>1;
   m.innerHTML=`<button class="lb-x" data-lx>×</button>
     ${multi?'<button class="lb-nav prev" data-lp>‹</button>':''}
-    <div class="lb-stage"><img id="lbImg" alt="Foto"><div class="lb-cap" id="lbCap"></div></div>
+    <div class="lb-stage"><img id="lbImg" alt="Foto"><div class="lb-cap" id="lbCap"><div class="lb-set" id="lbSet"></div><div class="lb-meta" id="lbMeta"></div><div class="lb-obs" id="lbObs"></div></div></div>
     ${multi?'<button class="lb-nav next" data-ln>›</button>':''}
     <div class="lb-bar">${multi?'<button class="lb-play" id="lbPlay">▶ Passar automático</button>':''}<span id="lbCt"></span><button class="btn del" id="lbDel" style="display:none">Tirar esta foto</button></div>`;
   document.body.append(v,m);
@@ -1402,7 +1448,9 @@ function lbKey(e){if(!document.getElementById('lpLb'))return;
   else if(e.key===' '){e.preventDefault();lbToggle();}}
 function lbVai(d){if(!LB.list.length)return;LB.i=(LB.i+d+LB.list.length)%LB.list.length;lbPinta();}
 async function lbPinta(){const it=LB.list[LB.i];if(!it)return;const im=$('lbImg');if(im){im.src='';const u=await urlFoto(it.cam);if($('lbImg'))$('lbImg').src=u||'';}
-  const cap=$('lbCap');if(cap)cap.textContent=[it.setor,it.item].filter(Boolean).join(' · ');
+  const setEl=$('lbSet');if(setEl)setEl.textContent=it.setor||'';
+  const meta=$('lbMeta');if(meta)meta.innerHTML=[it.item,it.tipo].filter(Boolean).map(esc).join(' · ')+(!it.conf&&it.grav?` <span class="lb-g ${gClr(it.grav)}">${gRot(it.grav)}</span>`:'');
+  const obs=$('lbObs');if(obs)obs.textContent=it.obs?('“'+it.obs+'”'):'';
   const ct=$('lbCt');if(ct)ct.textContent=(LB.i+1)+' / '+LB.list.length;
   const del=$('lbDel');if(del){const r=lbRemovivel(it);del.style.display=r?'':'none';
     del.onclick=!r?null:async()=>{if(LB.timer)lbToggle();
@@ -1474,6 +1522,7 @@ function telaCiencia(){
         if(t)gravaC(r,{confere:'nao',justificativa_confere:t,conferido_por:eu(),conferido_em:agoraIso()},true);
         else if(r.confere==='nao')gravaC(r,{confere:'pendente',justificativa_confere:null,conferido_por:null,conferido_em:null},true);},700);};});});
   pintaFotos(a);
+  ligaTabNC(a,telaCiencia);
   if($('bCfTudo'))$('bCfTudo').onclick=conferirTodas;
   if($('bCien'))$('bCien').onclick=()=>pedePin('Dar ciência · Nº '+n4(v.numero),'Registra que você conferiu a vistoria. Depois disso não muda mais.',async nome=>{
     try{const x=await sb(`vistorias?id=eq.${v.id}`,{method:'PATCH',body:{situacao:'ciencia',ciencia_por:nome},prefer:'return=representation'});if(x&&x[0])Object.assign(v,x[0]);

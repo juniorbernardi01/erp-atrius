@@ -986,7 +986,7 @@ function abrirAna(t){const l=lote(t);if(!l)return;const f=$('fAna');const enviad
   f.querySelectorAll('[data-q]').forEach(b=>b.onclick=()=>{if(enviada)return;const [k,v]=b.dataset.q.split('|');R[k]=v;pinta();});
   const o=f.querySelector('#aObs');if(o)o.oninput=()=>obs=o.value;
   f.querySelector('#aE').onclick=()=>{if(enviada)return;const falta=(l.ens||[]).filter(e=>R[e.k]===''||R[e.k]==null);if(falta.length)return toast('Falta: '+falta.map(e=>e.rot).join(', ')+'.');
-    pedirPin(t.id+' · Enviar '+(l.reana?'reanálise':'análise'),pin=>{const res={};(l.ens||[]).forEach(e=>{res[e.k]=e.quali?R[e.k]:String(R[e.k]).replace(',','.');});
+    pedirPin(t.id+' · Enviar '+(l.reana?'reanálise':'análise'),pin=>{const res={};(l.ens||[]).forEach(e=>{res[e.k]=e.quali?R[e.k]:String(R[e.k]).trim().replace('.',',');});
       if(exec(t,'ana',pin,{res,obs}))f.classList.remove('on');});};};
   pinta();}
 

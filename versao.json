@@ -1,6 +1,6 @@
 {
- "v": "v559",
- "versao": "5.5.9",
- "data": "16/11/2026",
- "o_que_mudou": "Ajustes: (1) Transferir para o pulmao agora fica DENTRO dos tres pontinhos que ja existem no card do lote (Formulacao, Analise, Historico, Transferir pro pulmao...), nao mais num ⋮ separado no cabecalho do tanque. (2) A config 'Transferencia para o pulmao' tem rotulos claros: Libera sempre / Libera so antes do setup / Libera ate o envase comecar, com explicacao do que acontece depois do ponto. (3) Os tablets das maquinas (MAQ 1/2/3) passam a ficar escuros como o dos tanques (migracao automatica + padrao escuro). (4) O titulo 'PCP' no topo parava de aparecer nas telas Rotulagem e Tanques; agora aparece consistente em todas. Inclui tudo das versoes anteriores (vendas funcional, checklist, sopro/rotulagem, FILME TERMO, regra do pulmao)."
+ "v": "v561",
+ "versao": "5.6.1",
+ "data": "17/11/2026",
+ "o_que_mudou": "Liberacao do lote (Qualidade), tela repensada e padrao para todos os gestores no computador e no tablet: (1) Formulacao de um lado e Analise (certificado) do outro, lado a lado, numa tela so, sem trocar de aba. Abre igual pelo selo 'enviou a analise' e pelos tres pontinhos do lote. (2) Tela enxuta: saiu o 'Abastece', o 'precisa estar liberado ate' e o Previsto/Realizado (isso fica no Historico do lote). Fica so o que a Qualidade precisa: formulacao, lotes das MPs, falta de insumo, pedir ajuste ao tanque, certificado de analise e observacao. (3) Modo de fazer (expande e recolhe) mostra os passos que o tanque marcou, com check verde, quem preparou e a hora; daqui pra frente guarda a hora de cada passo. (4) Analise: os campos de numero (pH, viscosidade) agora so aceitam numero. No tablet o teclado ja e numerico; no computador a letra e barrada (o 'O' no lugar do zero travava a liberacao) com aviso 'esse campo aceita so numero', e o ponto vira virgula (0.5 -> 0,5). O sistema ficou tolerante aos valores antigos gravados com 'O'. Inclui tudo das versoes anteriores (checklist de limpeza, pulmao, tablets escuros, vendas, FILME TERMO, sopro/rotulagem)."
 }

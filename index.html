@@ -684,6 +684,15 @@ tr.mot td{background:#FDFAF0;font-size:11px;color:#7A5C0B;padding:6px 12px}
 .modal{background:var(--surface);border-radius:14px;width:100%;max-width:680px;max-height:93vh;
   display:flex;flex-direction:column;box-shadow:0 18px 50px rgba(0,0,0,.3)}
 .modal.wide{max-width:920px}
+.modal.wide:has(.loteLR){max-width:1060px}
+/* liberação lado a lado: formulação de um lado, análise do outro */
+.loteLR{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:18px;align-items:start;margin:4px 0 2px}
+.loteLR .llcol{min-width:0}
+.loteLR .llcol>.lin:first-of-type{margin-top:0}
+.loteLR .llh{font:800 12px Inter,system-ui,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3);margin:0 0 8px;padding-bottom:6px;border-bottom:1.5px solid var(--line)}
+.loteLR .cert{margin-top:0}
+.loteLR .certt{font-size:12.5px}
+@media(max-width:860px){.loteLR{grid-template-columns:1fr;gap:14px}}
 .modal.sacode{animation:sacode .28s}
 @keyframes sacode{0%,100%{transform:translateX(0)}20%{transform:translateX(-7px)}
   40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(2px)}}
@@ -1542,6 +1551,14 @@ ol.proc textarea{width:100%;font:inherit;font-size:13px;padding:8px 11px;border:
 ol.procl{margin:0;padding:12px 14px 12px 32px;display:flex;flex-direction:column;gap:7px;
   font-size:13px;line-height:1.5;border-top:1px solid var(--line)}
 ol.procl li{padding-left:3px}
+/* modo de fazer com os checks que o tanque marcou */
+ol.procl.chk{list-style:none;padding:12px 14px}
+ol.procl.chk li{display:flex;gap:10px;align-items:flex-start;padding:0}
+ol.procl.chk .pm{flex:none;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font:800 12px Inter,system-ui,sans-serif;margin-top:1px}
+ol.procl.chk li.fez .pm{background:var(--ok,#16A34A);color:#fff}
+ol.procl.chk li.pend .pm{background:#E8E9ED;color:#8A92A0}
+ol.procl.chk li.pend>div{color:var(--ink3)}
+ol.procl.chk small{display:block;font-size:11px;color:var(--ink3);margin-top:1px}
 .procz{padding:12px 14px;font-size:12.5px;color:var(--ink3);border-top:1px solid var(--line)}
 
 input.lido{background:var(--surface);color:var(--ink3);cursor:default}
@@ -4652,7 +4669,7 @@ function confereEnsaio(g,k,valor){
   const e=especDe(g);if(!e||!e[k])return null;
   if(QUALI.includes(k))return valor==='ok'?'ok':(valor==='fora'?'fora':null);
   if(valor===''||valor==null)return null;
-  const v=+String(valor).replace(',','.');
+  const v=+String(valor).replace(/[Oo]/g,'0').replace(',','.');
   if(isNaN(v))return null;
   const f=e[k];
   if(f.min!=null&&v<f.min)return 'fora';
@@ -5513,7 +5530,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v559';const VERSAO_DATA='16/11/2026';
+const VERSAO_APP='v561';const VERSAO_DATA='17/11/2026';
 /* número que aparece na tela: v438 → v4.3.8 (por dentro continua v438, que é o que as versões comparam) */
 const csRotVer=v=>{const d=String(v||'').replace(/\D/g,'');return d.length>=3?'v'+d.slice(0,-2)+'.'+d.slice(-2,-1)+'.'+d.slice(-1):String(v||'');};
 const VERSAO_ROTULO=csRotVer(VERSAO_APP)+' · '+VERSAO_DATA;
@@ -13768,6 +13785,18 @@ function ligarCertificado(b){
     const nova=bateladas(b.data).find(x=>x.chave===b.chave);
     if(nova)abrirLote(nova);
   };
+  /* padrão vírgula e só número: ponto vira vírgula (0.5 -> 0,5), letra O vira
+     zero (O,22 -> 0,22) e qualquer outra letra é barrada na hora de digitar.
+     Sem isto um "O" no lugar do zero deixava a análise como "a medir" e
+     travava a liberação. */
+  const limpaNum=s=>{let t=String(s).replace(/[Oo]/g,'0').replace(/\./g,',').replace(/[^0-9,]/g,'');
+    const i=t.indexOf(',');if(i>=0)t=t.slice(0,i+1)+t.slice(i+1).replace(/,/g,'');return t;};
+  const avisaNum=()=>{const n=Date.now();if(window.__avNum&&n-window.__avNum<2500)return;window.__avNum=n;try{toast('Esse campo aceita só número.',true);}catch(x){}};
+  M('mB').querySelectorAll('input[data-ens]').forEach(e=>{
+    const lim=limpaNum(e.value);if(lim!==e.value)e.value=lim;   /* conserta o que já estava salvo torto */
+    e.setAttribute('inputmode','decimal');
+    e.addEventListener('beforeinput',ev=>{if(ev.data&&/[^0-9.,]/.test(ev.data)){ev.preventDefault();avisaNum();}});
+    e.addEventListener('input',()=>{const raw=e.value,p=e.selectionStart,nv=limpaNum(raw);if(nv!==raw){e.value=nv;try{e.setSelectionRange(p-1<0?0:p,p-1<0?0:p);}catch(x){}}});});
   M('mB').querySelectorAll('[data-ens]').forEach(e=>e.addEventListener('change',grava));
   if(M('certDv'))M('certDv').onclick=()=>modalDesvio(b);
 }
@@ -14464,8 +14493,6 @@ function abrirLote(b){
   M('mB').innerHTML=`
     ${'' /* Formulação deixou de ser aba: na hora de preparar, o que se quer
            é a lista do que pesar junto com o tempo, não em outra tela. */}
-    <div class="adabas">${[['preparo','Formulação'],['cert','Análise']]
-      .map(([c,r])=>`<button class="adaba ${c===ABA_LOTE?'on':''}" data-lab="${c}">${r}</button>`).join('')}</div>
     <div class="lotecab">
       <div class="fld"><label>Lote do tanque</label>
         <div class="cxbox" style="text-align:left">${b.lote
@@ -14478,13 +14505,15 @@ function abrirLote(b){
       <div class="fld"><label>Produto</label>
         <div class="cxbox" style="text-align:left">${b.produto}</div></div>
     </div>
-    ${ABA_LOTE==='preparo'?`    <div class="alert blue">Abastece:
-      ${b.ordens.map(o=>`${nomeCurto(o.codigo)} na ${o.maq} às ${hhmm(o.inicio)}`).join(' · ')}.</div>
+    ${'' /* Tela focada só na liberação (Qualidade): formulação + análise + ajuste.
+            O tempo de preparo, o "precisa estar liberado até" e o abastecimento
+            saíram daqui para não confundir — ficam no Histórico do lote. */}
     ${!b.tanque?`<div class="alert">Sem tanque definido. Arraste este lote para uma coluna
       na tela de Tanques antes de liberar.</div>`:''}
     ${b.status==='liberado'?`<div class="alert ok">Liberado às ${b.liberadoEm}.</div>`:''}
     ${b.status==='concluido'?`<div class="alert">Lote concluído — todo o envase terminou.</div>`:''}
-    ${etapasHTML(b)}
+    <div class="loteLR">
+      <div class="llcol"><div class="llh">Formulação</div>
     ${'' /* Eram um bloco só chamado "Como fazer", com a tabela e os passos
             juntos. Viraram dois: a formulação, que é o que se usa pesando,
             e o modo de fazer, que se lê uma vez e depois só atrapalha — por
@@ -14521,7 +14550,11 @@ function abrirLote(b){
             <td colspan="2"></td></tr>
         </tbody></table>
       </div>`;})()}
-
+      </div>
+      <div class="llcol"><div class="llh">Análise</div>
+        ${certificadoHTML(b)}
+      </div>
+    </div>
       ${(()=>{
         const faltando=mpDoLote(b).map(x=>({x,
           t:x.tiny||(insPorNome(x.nome)||{}).tiny}))
@@ -14538,19 +14571,23 @@ function abrirLote(b){
       ${ajustesHTML(b,trava)}
       ${(()=>{
         const proc=(formulaDe(b.produto).proc||[]).filter(Boolean);
+        /* o modo de fazer mostra o que o tanque já marcou, com a hora — assim
+           a Qualidade vê o processo que o operador seguiu, sem sair da tela */
+        const tqp=((APONTA[b.chave]||{}).tq)||{};
+        const feitos=Math.min(+tqp.passo||0,proc.length);
+        const plog=Array.isArray(tqp.passosLog)?tqp.passosLog:[];
+        const prepPor=(function(){try{return (((APONTA[b.chave]||{}).log)||[]).filter(l=>/Concluiu o preparo/.test(String(l.e||''))).slice(-1)[0];}catch(e){return null;}})();
         return `<div class="lin">
           <button type="button" class="linh linsw" id="lProcSw"
             aria-expanded="${PROC_ABERTO?'true':'false'}">
             <span class="sw">${PROC_ABERTO?'&#9662;':'&#9656;'}</span>
-            Modo de fazer${proc.length?` · ${proc.length} passos`:''}</button>
+            Modo de fazer${proc.length?` · <b>${feitos} de ${proc.length}</b> feitos no tanque`:''}${prepPor?` · preparo por ${escAttr(prepPor.op||'—')}${prepPor.t?' às '+prepPor.t:''}`:''}</button>
           ${PROC_ABERTO?(proc.length
-            ?`<ol class="procl">${proc.map(p=>`<li>${p}</li>`).join('')}</ol>`
+            ?`<ol class="procl chk">${proc.map((p,i)=>{const ok=i<feitos,lg=plog[i]||{};
+                return `<li class="${ok?'fez':'pend'}"><span class="pm">${ok?'&#10003;':i+1}</span><div>${p}${ok?`<small>${lg.t?'feito às '+lg.t:'feito'}</small>`:'<small>ainda não marcado</small>'}</div></li>`;}).join('')}</ol>`
             :'<div class="procz">Nenhum passo escrito. Cadastre em Configurações, aba Formulações.</div>')
             :''}
         </div>`;})()}
-`:''}
-    ${ABA_LOTE==='cert'?`    ${certificadoHTML(b)}
-`:''}
     <div class="fld"><label>Observação</label>
       <textarea id="lObs" ${trava} placeholder="O que precisa ficar registrado">${b.obs}</textarea></div>
 `;   /* o histórico virou o relatório do lote, nos três pontinhos */
@@ -30990,7 +31027,11 @@ function csTqAcao(k,a,x,pin){
       const tot=(x.total!=null?x.total:Object.keys(it).length),ok=Object.values(it).filter(v=>v&&v.ok).length;
       L('Salvou a separação',`${ok} de ${tot} MPs · `+Object.entries(it).filter(([n,v])=>v&&v.ok).map(([n,v])=>`${n}: lote ${v.lote||'—'} · ${v.kg||'—'} kg`).join(' · '));
       msg='Separação salva';break;}
-    case 'passo':tq.passo=Math.max(0,+x.n||0);break;
+    case 'passo':{const nv=Math.max(0,+x.n||0),old=+tq.passo||0;
+      tq.passosLog=Array.isArray(tq.passosLog)?tq.passosLog:[];
+      if(nv>old){for(let i=old;i<nv;i++)tq.passosLog[i]={t:relogio(),d:ymd(new Date())};}
+      else if(nv<old){for(let i=nv;i<old;i++)tq.passosLog[i]=null;}
+      tq.passo=nv;break;}
     case 'prepIni':
       novo.fabIni={data:ymd(new Date()),hora:relogio()};
       L('Iniciou o preparo',tq.enchFim?'ficou cheio esperando '+csTqDur(csTqDesde(tq.enchFim)):'',true);msg='Preparo iniciado';break;
