@@ -4638,9 +4638,16 @@ function loteDaBatelada(o,criar){
 const somaMP=g=>(formulaDe(g).mp||[]).reduce((s,x)=>s+(+x.pct||0),0);
 /* quanto de cada insumo uma batelada consome */
 function consumoMP(g,litros){
-  return (formulaDe(g).mp||[]).map(x=>({...x,
-    kg:+( (+x.pct||0)/100*(litros||0) ).toFixed(3),
-    total:+( (+x.pct||0)/100*(litros||0)*(+x.custo||0) ).toFixed(2)}));
+  return (formulaDe(g).mp||[]).map(x=>{
+    /* a fórmula guarda o SKU; resolvemos o insumo pelo SKU primeiro e só
+       depois pelo nome. Havendo dois insumos com o mesmo nome (ex.: ALPHADT
+       120 em MP-040 e num código velho), buscar pelo nome pegava o errado e o
+       estoque aparecia zerado. Pelo SKU acerta o código e o estoque certo. */
+    const ins=insPorSku(x.sku)||insPorNome(x.nome)||{};
+    return {...x,tiny:x.tiny||ins.tiny||'',
+      kg:+( (+x.pct||0)/100*(litros||0) ).toFixed(3),
+      total:+( (+x.pct||0)/100*(litros||0)*(+x.custo||0) ).toFixed(2)};
+  });
 }
 
 /* =====================================================================
@@ -5530,7 +5537,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v561';const VERSAO_DATA='17/11/2026';
+const VERSAO_APP='v565';const VERSAO_DATA='17/11/2026';
 /* número que aparece na tela: v438 → v4.3.8 (por dentro continua v438, que é o que as versões comparam) */
 const csRotVer=v=>{const d=String(v||'').replace(/\D/g,'');return d.length>=3?'v'+d.slice(0,-2)+'.'+d.slice(-2,-1)+'.'+d.slice(-1):String(v||'');};
 const VERSAO_ROTULO=csRotVer(VERSAO_APP)+' · '+VERSAO_DATA;
@@ -19119,7 +19126,21 @@ async function modalAcesso(a){
         /* a conta de entrada e o cadastro são coisas diferentes: sem a conta a
            pessoa não passa do login, sem o cadastro ela entra e não vê nada */
         const r=await criarConta(mail,sen);
-        if(r.jaExistia)recado=' A conta já existia — a senha dela continua a antiga.';
+        /* se a conta já existia no login, o signup não troca a senha: o
+           cadastro mostraria a senha nova e o acesso continuaria com a antiga
+           (a pessoa não entrava). Então sincronizamos a senha de entrada com a
+           que o administrador acabou de definir. */
+        if(r.jaExistia&&sen){
+          try{
+            const rr=await fetch(`${SUPA.url}/functions/v1/redefinir-senha`,{
+              method:'POST',headers:cabecalhos(),
+              body:JSON.stringify({email:mail,senha:sen})});
+            recado=rr.ok?' A conta já existia — a senha de entrada foi atualizada para a que você definiu.'
+              :' A conta já existia e a senha de entrada não trocou: '+(rr.status===404
+                ?'a peça do servidor ainda não está instalada.'
+                :((await rr.json().catch(()=>({}))).erro||('erro '+rr.status)));
+          }catch(e){recado=' A conta já existia e não consegui falar com o servidor para trocar a senha de entrada.';}
+        }else if(r.jaExistia){recado=' A conta já existia — a senha dela continua a antiga.';}
         await gravarAcesso(linha,true);
       }else{
         await gravarAcesso(linha,false,a.email);
@@ -26794,6 +26815,23 @@ setTimeout(function cx3(){try{if(!PRONTO)return setTimeout(cx3,3000);if(MODO_TV)
     CS_ELOG.push({em,id:ERR,tipo:'S',qtd:Math.abs(total),dif:-total,dep:csEPrinc(),origem:'Ajuste',obs:'Unificação FILME TERMO ENCOLHIVEL — saldo movido para o código '+OK+' (recebimento de OC lançado em código separado).',quem,uid:csENovoUid(),man:true});
     CS_ELOG.push({em,id:OK,tipo:'E',qtd:Math.abs(total),dif:+total,dep:csEPrinc(),origem:'Ajuste',obs:'Unificação FILME TERMO ENCOLHIVEL — saldo recebido do código '+ERR+' (correção de recebimento de OC).',quem,uid:csENovoUid(),man:true});}
   CS_MIGRA.push('cx003-filme-1116');agendarSalvar();}catch(e){console.log('migra cx003',e);}},6500);
+/* ===================== v565 · fórmulas: SKU real no lugar de "SEMSKU-" =====================
+   Algumas MPs/embalagens entraram na fórmula com um SKU provisório "SEMSKU-NOME"
+   em vez do SKU real do insumo (ex.: FRAGRÂNCIA AM ROXO -> FR008, CORANTE AMARELO
+   METANIL -> CO001). O sistema achava pelo nome, mas o certo é guardar o SKU. Esta
+   correção roda uma vez: para cada item de fórmula com SKU "SEMSKU-", acha o insumo
+   pelo nome e grava o SKU e o código reais. Idempotente pela trava do CS_MIGRA. */
+setTimeout(function fxSku(){try{if(!PRONTO)return setTimeout(fxSku,3000);if(MODO_TV)return;
+  if(CS_MIGRA.includes('semsku-real-1117'))return;
+  let n=0;
+  Object.keys(FORMULAS||{}).forEach(function(prod){const f=FORMULAS[prod];if(!f)return;
+    const trata=function(it){if(!it)return;if(!/^SEMSKU-/i.test(String(it.sku||'')))return;
+      const ins=insPorNome(it.nome);if(!ins||!ins.sku||/^SEMSKU-/i.test(String(ins.sku)))return;
+      it.sku=ins.sku;it.tiny=ins.tiny||it.tiny||'';n++;};
+    (f.mp||[]).forEach(trata);
+    Object.keys(f.emb||{}).forEach(function(sz){(f.emb[sz]||[]).forEach(trata);});});
+  CS_MIGRA.push('semsku-real-1117');agendarSalvar();if(n)console.log('migra semsku: '+n+' itens corrigidos');
+}catch(e){console.log('migra semsku',e);}},7000);
 /* ===================== v559 · tablets das máquinas no escuro =====================
    Os tablets do envase (MAQ 1..N) vinham claros; devem ficar escuros como o dos tanques.
    Roda uma vez: marca cada tablet de máquina como escuro. Depois o usuário pode trocar no seletor. */
@@ -31218,7 +31256,7 @@ try{const _al403=abrirLote;abrirLote=function(b){
     if(tq.anaEnv)info.push(`Análise ${(+tq.anaN||1)>1?'refeita':'enviada'} pelo tanque às <b>${escAttr(tq.anaEnv.h||'')}</b>${tq.anaEnv.q?' por '+escAttr(tq.anaEnv.q):''}${tq.anaObs?` · “${escAttr(tq.anaObs)}”`:''}`);
     if(pend.length)info.push(`Ajuste pedido, esperando o tanque lançar: ${pend.map(a=>`<b>+ ${String(a.kg).replace('.',',')} ${escAttr(a.un||'kg')} ${escAttr(a.nome)}</b> (${escAttr(a.por||'')})`).join(', ')}`);
     if(tq.reana)info.push('Ajuste lançado no tanque · <b>esperando a reanálise</b>');
-    if(info.length&&M('mB')&&!M('mB').querySelector('.cs-tqinfo'))M('mB').insertAdjacentHTML('afterbegin',`<div class="alert blue cs-tqinfo" style="margin-bottom:10px">${info.join('<br>')}</div>`);
+    if(info.length&&M('mB')&&!M('mB').querySelector('.cs-tqinfo'))M('mB').insertAdjacentHTML('afterbegin',`<div class="cs-tqinfo" style="margin:0 0 12px;padding:11px 14px 11px 15px;border-radius:10px;background:#FFF1E6;border:1.5px solid #F97316;border-left:5px solid #EA580C;color:#9A3412;font-weight:600;font-size:13.5px;line-height:1.45">${info.join('<br>')}</div>`);
     if(b.status!=='liberado'&&b.status!=='concluido'&&M('mF')&&!M('mF').querySelector('#csTqAj')){
       const esq=M('mF').querySelector('.mfesq')||M('mF');
       const bt=document.createElement('button');bt.className='btn warn sm';bt.id='csTqAj';bt.textContent='Pedir ajuste ao tanque';
