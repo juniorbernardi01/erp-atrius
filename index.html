@@ -5546,7 +5546,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v571';const VERSAO_DATA='18/11/2026';
+const VERSAO_APP='v572';const VERSAO_DATA='18/11/2026';
 /* número que aparece na tela: v438 → v4.3.8 (por dentro continua v438, que é o que as versões comparam) */
 const csRotVer=v=>{const d=String(v||'').replace(/\D/g,'');return d.length>=3?'v'+d.slice(0,-2)+'.'+d.slice(-2,-1)+'.'+d.slice(-1):String(v||'');};
 const VERSAO_ROTULO=csRotVer(VERSAO_APP)+' · '+VERSAO_DATA;
@@ -17998,6 +17998,7 @@ function aplicarRemoto(dados){
   if(!dados)return;
   /* v301: alguém digitando — guarda e aplica quando parar */
   try{if(typeof csDigitando==='function'&&csDigitando()){window.CS_REMOTO_PEND=dados;return;}}catch(e){}
+  try{if(typeof csTqCacheZera==='function')csTqCacheZera();}catch(e){}
   try{
     /* aplicarEstado troca ORDENS por objetos novos. Com um modal aberto, o EDIT
        continuava apontando para o objeto antigo: a pessoa editava, salvava, e
@@ -18286,7 +18287,7 @@ async function persistir(forcar){
     el.title='Falha: '+erro;
   }
 }
-const agendarSalvar=()=>{clearTimeout(tSalvar);tSalvar=setTimeout(()=>persistir(),600);};
+const agendarSalvar=()=>{try{if(typeof csTqCacheZera==='function')csTqCacheZera();}catch(e){}clearTimeout(tSalvar);tSalvar=setTimeout(()=>persistir(),600);};
 
 /* =====================================================================
    BANCO ONLINE — Supabase
@@ -31972,6 +31973,25 @@ try{const _td432=csNucleo.tqDados;csNucleo.tqDados=function(dia){
       if(l)t.fila.push({...l,adiant:true,adiantDia:prox,adiantRot:rot});});
   }catch(e){console.warn('adiantar',e);}
   return r;};}catch(e){}
+/* CACHE do tqDados. Montar um dia de tanque (mais o dia anterior e o seguinte)
+   custa ~200ms, e a telinha pede isso várias vezes por desenho e a cada toque.
+   Sem cache, cada toque recalculava tudo do zero e o tablet travava. Guarda o
+   resultado por dia e reaproveita; zera a cada mudança (ação, nova carga da
+   nuvem) ou depois de 400ms — um desenho inteiro cabe nessa janela. */
+try{
+  let _TQC=new Map(),_TQCt=0;
+  window.csTqCacheZera=function(){try{_TQC.clear();}catch(e){}};
+  const _tdMemo=csNucleo.tqDados;
+  csNucleo.tqDados=function(dia){
+    const agora=Date.now();
+    if(agora-_TQCt>400){_TQC.clear();_TQCt=agora;}
+    const k=dia||'__hoje';
+    if(_TQC.has(k))return _TQC.get(k);
+    const r=_tdMemo.apply(this,arguments);
+    try{_TQC.set(k,r);}catch(e){}
+    return r;
+  };
+}catch(e){}
 /* faixa dos Tanques e coluna do envase: o lote da fila em duas linhas (hora | produto inteiro; lote e situação embaixo) */
 (function(){try{const s=document.createElement('style');s.textContent=`
 #tqgrid .bat.cs8.cs8-fila,#csTqMini .bat.cs8.cs8-fila{display:grid!important;grid-template-columns:auto minmax(0,1fr);column-gap:10px;row-gap:6px;align-items:center;padding:10px 38px 10px 12px!important}

@@ -1,6 +1,6 @@
 {
- "v": "v571",
- "versao": "5.7.1",
+ "v": "v572",
+ "versao": "5.7.2",
  "data": "18/11/2026",
- "o_que_mudou": "Conserto do tablet dos tanques que estava impossivel de usar (demorava a abrir e a tecla do PIN levava segundos para responder). Duas causas atacadas: 1) O arranque esperava baixar os ~4,5MB do sistema inteiro antes de mostrar o PIN; se a rede do tablet travasse, a tela ficava presa em 'Carregando a programacao'. Agora da no maximo 7s: passou disso, abre com o ultimo estado salvo no aparelho e busca o novo em segundo plano. O PIN aparece rapido. 2) No tablet, o sistema reaplicava os 4,5MB inteiros a cada 4 segundos durante a producao, e isso engasgava o aparelho a ponto do toque no PIN demorar a registrar. Agora o tablet confere a cada 25 segundos, que e de sobra para a tela do tanque, e o PIN fica solto. Inclui tudo das anteriores (nome so de quem fez, fila so empurra na propria maquina, materia-prima que acompanha o lote, etc). OBS: um tablet que ja esta travado pode precisar de um refresh manual uma vez para pegar esta versao."
+ "o_que_mudou": "Conserto de verdade da lentidao do tablet dos tanques (achado medindo o sistema, nao chutando). A funcao que monta os dados do tanque (tqDados / bateladas) leva ~220ms cada vez, e a tela chamava ela 8 a 10 vezes a cada desenho e a cada toque. Por isso cada toque no PIN custava quase 2 segundos e empilhava ate travar por 15s, no tablet E no computador (nao era rede nem tablet fraco). Agora tem cache: o dia do tanque e calculado uma vez e reaproveitado; 10 chamadas seguidas cairam de ~2s para 1ms. O cache zera na hora que uma acao muda algo ou chega carga nova da nuvem, entao nao mostra dado velho. Mantem os consertos das anteriores: abre com o ultimo estado salvo se a nuvem demorar (nao fica preso em 'Carregando'), tablet confere a cada 25s, nome so de quem fez, fila so empurra na propria maquina. OBS: tablet ja travado pode precisar de um refresh manual uma vez para pegar esta versao."
 }
