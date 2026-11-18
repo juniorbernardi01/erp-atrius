@@ -1,6 +1,6 @@
 {
- "v": "v574",
- "versao": "5.7.4",
+ "v": "v576",
+ "versao": "5.7.6",
  "data": "18/11/2026",
- "o_que_mudou": "Continuacao do conserto da velocidade do tablet dos tanques, agora na tela DEPOIS do login. Montar a tela do tanque custa ~215ms (monta 8 lotes com materia-prima, ensaios, passos). Antes o cache dessa tela durava so 400ms, entao cada toque depois de uma pausa recalculava tudo e a tela ficava lenta. Agora o cache dura 8 segundos e se apaga na hora a cada acao do operador ou carga nova da nuvem, entao nunca mostra dado velho: a primeira tela monta em ~215ms e os toques seguintes ficam instantaneos (0ms) ate algo mudar. Tambem parei de calcular o dia anterior (o tablet so mostra hoje e o proximo dia com programacao, passado nao), que era um dia inteiro de tanque calculado a toa a cada vez. Junto com o 5.7.3 (teclado do PIN instantaneo) e as anteriores. OBS: tablet ja travado pode precisar de um refresh manual uma vez para pegar esta versao."
+ "o_que_mudou": "ACHADO medindo com o estado real de hoje (nao com dado antigo): montar a tela do tanque levava 905ms porque recalculava o mapa de reserva de materia-prima (a funcao 'reservas', que varre todas as OPs em aberto, ~20ms) uma vez para cada MP de cada lote - dezenas de vezes por desenho. Agora 'reservas' tem cache e e calculada uma vez: a tela do tanque caiu de 905ms para ~2ms com o dado cheio. Era isso que fazia as telas demorarem 'um seculo' depois do login. Isso tambem acelera o resto do sistema que usa reserva/estoque. O cache se apaga a cada acao ou carga nova da nuvem, entao nunca mostra dado velho. Mantem: teclado do PIN instantaneo (5.7.3), numero da versao no canto do tablet (5.7.5), so hoje+proximo dia, abre com ultimo estado salvo se a nuvem demorar. OBS: tablet ja travado pode precisar de um refresh manual uma vez; depois dela o numero 5.7.6 aparece no canto."
 }

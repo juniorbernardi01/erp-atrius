@@ -1067,6 +1067,16 @@ kbMarca();
 setInterval(()=>{if(DIA&&DIA<=ymd(new Date()))DIA=null;if(!document.querySelector('.modal.on,.full.on'))atualiza();else{carrega();topo();}},20000);
 atualiza();
 if(N)trava();
+/* número da versão no canto, pra confirmar o que o tablet está rodando de fato
+   (pega o ?v= com que esta tela foi carregada). */
+(function(){try{
+  const v=(location.search.match(/[?&]v=([^&]+)/)||[])[1]||'';
+  const rot=v.replace(/\D/g,'');
+  const txt=rot.length>=3?rot.slice(0,-2)+'.'+rot.slice(-2,-1)+'.'+rot.slice(-1):(v||'?');
+  const el=document.createElement('div');el.id='tqVer';el.textContent='v'+txt;
+  el.style.cssText='position:fixed;right:8px;bottom:6px;z-index:99999;font:600 11px system-ui,sans-serif;color:#5B6B86;background:rgba(11,15,23,.55);padding:2px 7px;border-radius:999px;pointer-events:none';
+  document.body.appendChild(el);
+}catch(e){}})();
 
 /* v444: cartão enxuto — nome por extenso (quebra linha), "Tanque pronto até" em destaque, aviso leve no lugar de botão
    apagado; o envasando mostra máquina e horário na faixa verde e não repete. Tudo cabe no cartão. */

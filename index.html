@@ -5546,7 +5546,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v574';const VERSAO_DATA='18/11/2026';
+const VERSAO_APP='v576';const VERSAO_DATA='18/11/2026';
 /* número que aparece na tela: v438 → v4.3.8 (por dentro continua v438, que é o que as versões comparam) */
 const csRotVer=v=>{const d=String(v||'').replace(/\D/g,'');return d.length>=3?'v'+d.slice(0,-2)+'.'+d.slice(-2,-1)+'.'+d.slice(-1):String(v||'');};
 const VERSAO_ROTULO=csRotVer(VERSAO_APP)+' · '+VERSAO_DATA;
@@ -16274,6 +16274,16 @@ function disponivel(tiny,mapa){
   if(f===undefined)return null;              /* nunca lido: não invento saldo */
   return f-reservado(tiny,mapa);
 }
+/* reservas() varre todas as OPs em aberto para montar o mapa de reserva de MP.
+   É pura (ORDENS/APONTA), mas custa ~20ms, e a tela do tanque chamava ela uma
+   vez por MP de cada lote — dezenas de vezes por desenho, somando ~900ms. Cache
+   curto, zerado junto com o resto a cada mudança (ação ou carga nova da nuvem). */
+try{
+  const _resBase=reservas;
+  let _RESV=null,_RESVt=0;
+  window.csResReset=function(){_RESV=null;};
+  reservas=function(){const now=Date.now();if(_RESV&&now-_RESVt<8000)return _RESV;_RESV=_resBase.apply(this,arguments);_RESVt=now;return _RESV;};
+}catch(e){}
 /* a situação de um item, do ponto de vista de quem vai produzir */
 function situacaoItem(tiny,precisa,mapa){
   const d=disponivel(tiny,mapa);
@@ -31986,7 +31996,7 @@ try{const _td432=csNucleo.tqDados;csNucleo.tqDados=function(dia){
    nuvem) ou depois de 400ms — um desenho inteiro cabe nessa janela. */
 try{
   let _TQC=new Map(),_TQCt=0;
-  window.csTqCacheZera=function(){try{_TQC.clear();_TQCt=0;}catch(e){}};
+  window.csTqCacheZera=function(){try{_TQC.clear();_TQCt=0;}catch(e){}try{if(typeof csResReset==='function')csResReset();}catch(e){}};
   const _tdMemo=csNucleo.tqDados;
   csNucleo.tqDados=function(dia){
     const agora=Date.now();
