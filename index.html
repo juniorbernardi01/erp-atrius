@@ -5546,7 +5546,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v573';const VERSAO_DATA='18/11/2026';
+const VERSAO_APP='v574';const VERSAO_DATA='18/11/2026';
 /* número que aparece na tela: v438 → v4.3.8 (por dentro continua v438, que é o que as versões comparam) */
 const csRotVer=v=>{const d=String(v||'').replace(/\D/g,'');return d.length>=3?'v'+d.slice(0,-2)+'.'+d.slice(-2,-1)+'.'+d.slice(-1):String(v||'');};
 const VERSAO_ROTULO=csRotVer(VERSAO_APP)+' · '+VERSAO_DATA;
@@ -31598,7 +31598,9 @@ function csTqOutroDia(d,dir){
   return util||(()=>{const x=new Date((d||ymd(new Date()))+'T12:00:00');x.setDate(x.getDate()+dir);return ymd(x);})();
 }
 try{csNucleo.tqOutroDia=(d,dir)=>csTqOutroDia(d,dir);
-  const _td405=csNucleo.tqDados;csNucleo.tqDados=function(dia){const r=_td405.apply(this,arguments);try{r.rastro=!!CS_RASTRO.producao;r.prox=csTqOutroDia(r.dia,1);r.ant=csTqOutroDia(r.dia,-1);}catch(e){}return r;};}catch(e){}
+  const _td405=csNucleo.tqDados;csNucleo.tqDados=function(dia){const r=_td405.apply(this,arguments);/* v574: o tablet só mostra hoje e o próximo dia. O dia anterior (r.ant) era
+   calculado e nunca usado — um dia inteiro de tanque à toa a cada chamada. */
+try{r.rastro=!!CS_RASTRO.producao;r.prox=csTqOutroDia(r.dia,1);}catch(e){}return r;};}catch(e){}
 
 </script>
 <script>
@@ -31984,11 +31986,14 @@ try{const _td432=csNucleo.tqDados;csNucleo.tqDados=function(dia){
    nuvem) ou depois de 400ms — um desenho inteiro cabe nessa janela. */
 try{
   let _TQC=new Map(),_TQCt=0;
-  window.csTqCacheZera=function(){try{_TQC.clear();}catch(e){}};
+  window.csTqCacheZera=function(){try{_TQC.clear();_TQCt=0;}catch(e){}};
   const _tdMemo=csNucleo.tqDados;
   csNucleo.tqDados=function(dia){
     const agora=Date.now();
-    if(agora-_TQCt>400){_TQC.clear();_TQCt=agora;}
+    /* o cache dura 8s, mas se apaga na hora a cada ação (agendarSalvar) ou carga
+       nova da nuvem (aplicarRemoto), então nunca mostra dado velho — só evita
+       recalcular 200ms a cada toque entre uma mudança e outra. */
+    if(agora-_TQCt>8000){_TQC.clear();_TQCt=agora;}
     const k=dia||'__hoje';
     if(_TQC.has(k))return _TQC.get(k);
     const r=_tdMemo.apply(this,arguments);
