@@ -5546,7 +5546,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v572';const VERSAO_DATA='18/11/2026';
+const VERSAO_APP='v573';const VERSAO_DATA='18/11/2026';
 /* número que aparece na tela: v438 → v4.3.8 (por dentro continua v438, que é o que as versões comparam) */
 const csRotVer=v=>{const d=String(v||'').replace(/\D/g,'');return d.length>=3?'v'+d.slice(0,-2)+'.'+d.slice(-2,-1)+'.'+d.slice(-1):String(v||'');};
 const VERSAO_ROTULO=csRotVer(VERSAO_APP)+' · '+VERSAO_DATA;
@@ -31261,6 +31261,10 @@ try{
     online:typeof ONLINE!=='undefined'&&!!ONLINE,T:csTqDia(dia)});
   csNucleo.tqAcao=(k,a,x,pin)=>{try{return csTqAcao(k,a,x,pin);}catch(e){console.warn('tqAcao',e);return {erro:'Não consegui gravar: '+e.message};}};
   csNucleo.tqPin=pin=>csTqQuem(pin);
+  /* sim/não leve: a tela do PIN só quer saber se o sistema já carregou. Antes
+     ela chamava tqDados (que monta vários dias de tanque, ~240ms) só para ler
+     este flag, e por isso cada toque no PIN travava. Aqui responde na hora. */
+  csNucleo.tqPronto=()=>(typeof PRONTO!=='undefined'&&!!PRONTO);
   csNucleo.tqLogo=()=>LOGO;
   /* motivos do setor Tanques (Configurações › Motivos de desvio) */
   csNucleo.tqMotivos=et=>{try{const l=et==='problema'?[...gruposDe('pausa','tanque'),...gruposDe('parada','tanque')]:gruposDe(et,'tanque');

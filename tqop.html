@@ -998,7 +998,7 @@ try{if(N&&N.tqLogo)$('logo').src=N.tqLogo();}catch(e){}
 
 /* ---------- abrir o tablet: PIN de quem está no tanque (ao abrir e ao recarregar) ---------- */
 function trava(sair){OPER='';const m=$('trava');let v='',msg='',erro=false;
-  const pronto=()=>{try{return !!(N&&N.tqDados&&N.tqDados().pronto);}catch(e){return false;}};
+  const pronto=()=>{try{return !!(N&&(N.tqPronto?N.tqPronto():(N.tqDados&&N.tqDados().pronto)));}catch(e){return false;}};
   const pinta=()=>{const ok=pronto();let lg='';try{lg=(N&&N.tqLogo&&N.tqLogo())||'';}catch(e){}
     /* v521: teclado já na tela: só as bolinhas e a mensagem mudam (redesenhar tudo piscava no tablet) */
     {const dd=m.querySelector('.trc .dots');if(ok&&dd&&m.querySelector('.kp')&&m.dataset.sair===String(!!sair)){dd.innerHTML=[0,1,2,3].map(i=>`<i class="${i<v.length?'on':''}"></i>`).join('');const g=m.querySelector('.trc .msg');if(g){g.className='msg '+(erro?'erro':'');g.innerHTML=esc(msg)||'&nbsp;';}return;}}

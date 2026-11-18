@@ -1,6 +1,6 @@
 {
- "v": "v572",
- "versao": "5.7.2",
+ "v": "v573",
+ "versao": "5.7.3",
  "data": "18/11/2026",
- "o_que_mudou": "Conserto de verdade da lentidao do tablet dos tanques (achado medindo o sistema, nao chutando). A funcao que monta os dados do tanque (tqDados / bateladas) leva ~220ms cada vez, e a tela chamava ela 8 a 10 vezes a cada desenho e a cada toque. Por isso cada toque no PIN custava quase 2 segundos e empilhava ate travar por 15s, no tablet E no computador (nao era rede nem tablet fraco). Agora tem cache: o dia do tanque e calculado uma vez e reaproveitado; 10 chamadas seguidas cairam de ~2s para 1ms. O cache zera na hora que uma acao muda algo ou chega carga nova da nuvem, entao nao mostra dado velho. Mantem os consertos das anteriores: abre com o ultimo estado salvo se a nuvem demorar (nao fica preso em 'Carregando'), tablet confere a cada 25s, nome so de quem fez, fila so empurra na propria maquina. OBS: tablet ja travado pode precisar de um refresh manual uma vez para pegar esta versao."
+ "o_que_mudou": "ESTE e o conserto que faltava para o PIN do tablet dos tanques. A tela do PIN, para saber se ja podia mostrar o teclado, chamava a funcao que monta o tanque inteiro (~240ms) a cada toque e a cada 0,7s durante o 'Carregando'. Medido: 100 verificacoes assim levavam 20 SEGUNDOS. Era isso que fazia a tecla demorar 15s para registrar. Agora a tela do PIN usa um atalho que responde o sim/nao na hora, sem montar tanque nenhum: as mesmas 100 verificacoes caíram de 20s para 0ms. Junto com o cache da 5.7.2 (tela do tanque calculada uma vez e reaproveitada) e os consertos anteriores (abre com o ultimo estado salvo se a nuvem demorar, tablet confere a cada 25s, nome so de quem fez, fila so na propria maquina). OBS: tablet ja travado pode precisar de um refresh manual uma vez para pegar esta versao."
 }
