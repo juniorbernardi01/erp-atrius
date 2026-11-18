@@ -1,6 +1,6 @@
 {
- "v": "v565",
- "versao": "5.6.5",
- "data": "17/11/2026",
- "o_que_mudou": "Formulas: itens que estavam com SKU provisorio 'SEMSKU-' agora recebem o SKU real do insumo automaticamente na subida (FRAGRANCIA AM ROXO -> FR008, CORANTE AMARELO METANIL -> CO001, FILME TERMO ENCOLHIVEL -> CX003). Roda uma vez, idempotente. Inclui tudo da 5.6.4: login sincroniza a senha quando a conta ja existia, formulacao le o insumo pelo SKU (estoque certo), liberacao do lote lado a lado, aviso da analise em laranja, campos de numero so aceitam numero, modo de fazer com os checks e a hora, checklist de limpeza, pulmao, tablets escuros, vendas."
+ "v": "v568",
+ "versao": "5.6.8",
+ "data": "18/11/2026",
+ "o_que_mudou": "Checklist de limpeza, cartoes por setor: agora lideram pelo lado positivo - mostram o percentual OK (ex.: 92% ok) e 'X de Y conformes', com o numero de nao conformes so como complemento, no lugar do antigo '3 NC'. O PDF ja trazia o % conforme geral e por setor e a tabela de nao conformidades. Inclui a correcao URGENTE da 5.6.7 (tanques.html restaurado, o tablet volta pra tela real) e tudo das anteriores: tres pontinhos na lista do checklist com Cancelar vistoria, SKU real nas formulas, login sincroniza senha, liberacao do lote lado a lado, campos de numero so aceitam numero, pulmao, tablets escuros, vendas."
 }

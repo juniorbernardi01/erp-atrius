@@ -507,7 +507,8 @@ input.sel4{width:120px;font-family:'Inter',monospace}
 .lp .chip{cursor:pointer}.lp .chip.on{background:var(--navy);border-color:var(--navy);color:#fff;font-weight:600}.lp .chip.azul{border-color:#CFDDF6;background:#EFF4FD;color:#1B4F9C;font-weight:600;cursor:default}
 .lp .tv td .s{display:block;font-size:11.5px;color:var(--ink3);margin-top:1px}.lp .tv tbody tr[data-n]{cursor:pointer}.lp .tv tbody tr[data-n]:hover td{background:#F8FAFE}
 .lp .tv td.n,.lp .tv th.n{text-align:right}
-.lp .pill.Alta,.lp .p-atr{background:#FDECEC;color:var(--danger)}.lp .pill.Média,.lp .p-and{background:#FDF3E3;color:#B45309}.lp .pill.Baixa{background:var(--line3);color:var(--ink2)}.lp .p-fec{background:#EFF4FD;color:#1B4F9C}.lp .p-ok{background:#E6F4EA;color:var(--ok)}
+.lp .pill.Alta,.lp .p-atr{background:#FDECEC;color:var(--danger)}.lp .pill.Média,.lp .p-and{background:#FDF3E3;color:#B45309}.lp .pill.Baixa{background:var(--line3);color:var(--ink2)}.lp .p-fec{background:#EFF4FD;color:#1B4F9C}.lp .p-ok{background:#E6F4EA;color:var(--ok)}.lp .p-can{background:var(--line3);color:var(--ink3)}
+.lp tr.cancelada td{opacity:.6}
 .lp .leg{font-size:12.5px;color:var(--ink3);line-height:1.6;margin:10px 0}
 .lp .caixa{margin-bottom:12px}.lp .caixa>h3{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.lp .caixa>h3 .dir{margin-left:auto;font-weight:400;color:var(--ink3);font-size:12px}.lp .cp{padding:14px 16px}
 .lp .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-bottom:12px}.lp .cards.sets{grid-template-columns:repeat(auto-fit,minmax(130px,1fr))}
@@ -1170,6 +1171,7 @@ async function garanteSemana(){try{await sb('rpc/checklist_semana',{method:'POST
 /* ---------- situação ---------- */
 const quando=(seg,dia,hora)=>{const d=new Date(addDias(seg,((+dia||5)+6)%7)+'T'+(hora||'00:00')+':00');return d;};
 function situacao(x){
+  if(x.situacao==='cancelada')return ['can','Cancelada'];
   if(x.situacao==='ciencia')return ['ok','Com ciência'];
   const agora=new Date();
   if(x.situacao==='fechada'){
@@ -1178,7 +1180,7 @@ function situacao(x){
   const lim=quando(x.semana,regra('nao_realizada','dia',5),regra('nao_realizada','hora','17:30'));
   return agora>lim?['atr','Atrasada']:['and','Em andamento'];
 }
-const PILL={and:'p-and',fec:'p-fec',ok:'p-ok',atr:'p-atr'};
+const PILL={and:'p-and',fec:'p-fec',ok:'p-ok',atr:'p-atr',can:'p-can'};
 const respNome=sets=>{const c={};sets.forEach(s=>c[s.responsavel]=(c[s.responsavel]||0)+1);return Object.entries(c).sort((a,b)=>b[1]-a[1]).map(x=>x[0]);};
 
 /* ---------- rotas ---------- */
@@ -1222,13 +1224,43 @@ function desenhaLista(){
   if(!L.length){l.innerHTML='<div class="vazio">Nenhuma vistoria no período.</div>';return;}
   /* decisão de 11/11: só o essencial. Data = o dia em que foi feita (fechada); responsável = quem fez */
   const dia=iso=>iso?new Date(iso).toLocaleDateString('pt-BR'):'';
-  l.innerHTML=`<div class="rolx"><table class="tv"><thead><tr><th>Nº</th><th>Data</th><th>Responsável</th><th style="text-align:right">Itens</th><th style="text-align:right">Não conformes</th><th>Situação</th><th>Ciência</th></tr></thead><tbody>
+  l.innerHTML=`<div class="rolx"><table class="tv"><thead><tr><th>Nº</th><th>Data</th><th>Responsável</th><th style="text-align:right">Itens</th><th style="text-align:right">Não conformes</th><th>Situação</th><th>Ciência</th><th></th></tr></thead><tbody>
   ${L.map(x=>{const st=situacao(x),rn=respNome(x.sets),nr=x.resp.filter(r=>r.resposta).length,nc=x.resp.filter(r=>r.resposta==='nao_conforme').length;
     const quem=x.fechada_por||x.iniciada_por||rn[0]||'';
-    return `<tr data-n="${x.numero}"><td class="m"><b>${n4(x.numero)}</b></td><td>${x.fechada_em?dia(x.fechada_em):'<span style="color:var(--ink3)">semana de '+br(x.semana).slice(0,5)+'</span>'}</td>
+    return `<tr data-n="${x.numero}" class="${x.situacao==='cancelada'?'cancelada':''}"><td class="m"><b>${n4(x.numero)}</b></td><td>${x.fechada_em?dia(x.fechada_em):'<span style="color:var(--ink3)">semana de '+br(x.semana).slice(0,5)+'</span>'}</td>
     <td>${esc(pri(quem))}</td><td class="n">${nr}/${x.resp.length}</td><td class="n">${nc||''}</td>
-    <td><span class="pill ${PILL[st[0]]}">${st[1]}</span></td><td>${x.ciencia_em?esc(pri(x.ciencia_por))+' · '+dia(x.ciencia_em):''}</td></tr>`;}).join('')}</tbody></table></div>`;
-  l.querySelectorAll('tr[data-n]').forEach(r=>r.onclick=()=>ir('lista',r.dataset.n));
+    <td><span class="pill ${PILL[st[0]]}">${st[1]}</span></td><td>${x.ciencia_em?esc(pri(x.ciencia_por))+' · '+dia(x.ciencia_em):''}</td>
+    <td style="text-align:right"><button class="dots" data-dot="${x.numero}" title="Ações">⋮</button></td></tr>`;}).join('')}</tbody></table></div>`;
+  l.querySelectorAll('tr[data-n]').forEach(r=>r.onclick=e=>{if(e.target.closest('[data-dot]'))return;ir('lista',r.dataset.n);});
+  l.querySelectorAll('[data-dot]').forEach(b=>b.onclick=e=>{e.stopPropagation();const x=(LP.vists||[]).find(v=>String(v.numero)===b.dataset.dot);if(x)menuVist(b,x);});
+}
+
+/* ---------- menu de ações da vistoria (três pontinhos da lista) ---------- */
+function fechaMenuVist(){const m=document.getElementById('m3v');if(m)m.remove();}
+function menuVist(btn,x){
+  fechaMenuVist();
+  const edita=pode('pcp.limp','editar'),r=btn.getBoundingClientRect();
+  let h=`<div class="mh">Nº ${n4(x.numero)} · semana de ${br(x.semana).slice(0,5)}</div><button data-act="abrir">Abrir</button>`;
+  if(x.situacao==='cancelada'){ if(edita)h+=`<div class="sep"></div><button data-act="reabrir">↩ Reabrir vistoria</button>`; }
+  else if(x.situacao!=='ciencia'&&edita){ h+=`<div class="sep"></div><button data-act="cancelar" style="color:var(--danger)">✕ Cancelar vistoria</button>`; }
+  const m=document.createElement('div');m.className='m3';m.id='m3v';m.innerHTML=h;document.body.appendChild(m);
+  const top=Math.min(r.bottom+4,innerHeight-m.offsetHeight-8),left=Math.min(r.right-m.offsetWidth,innerWidth-m.offsetWidth-8);
+  m.style.top=Math.max(8,top)+'px';m.style.left=Math.max(8,left)+'px';
+  m.querySelectorAll('button').forEach(b=>b.onclick=()=>{const a=b.dataset.act;fechaMenuVist();
+    if(a==='abrir')ir('lista',x.numero);else if(a==='cancelar')cancelarVist(x);else if(a==='reabrir')reabrirVist(x);});
+  setTimeout(()=>document.addEventListener('mousedown',fechaMenuVist,{once:true}),0);
+}
+function cancelarVist(x){
+  pedePin('Cancelar a vistoria Nº '+n4(x.numero),'A vistoria sai da lista de pendências e não conta como atrasada. Dá para reabrir depois.',async nome=>{
+    try{const r=await sb(`vistorias?id=eq.${x.id}`,{method:'PATCH',body:{situacao:'cancelada'},prefer:'return=representation'});
+      if(r&&r[0])Object.assign(x,r[0]);else x.situacao='cancelada';
+      toast('Vistoria cancelada.');desenhaLista();}catch(e){toast(e.message,true);}});
+}
+function reabrirVist(x){
+  pedePin('Reabrir a vistoria Nº '+n4(x.numero),'Ela volta para Em andamento.',async nome=>{
+    try{const r=await sb(`vistorias?id=eq.${x.id}`,{method:'PATCH',body:{situacao:'andamento'},prefer:'return=representation'});
+      if(r&&r[0])Object.assign(x,r[0]);else x.situacao='andamento';
+      toast('Vistoria reaberta.');desenhaLista();}catch(e){toast(e.message,true);}});
 }
 
 /* =====================================================================
@@ -1346,7 +1378,7 @@ const ncsDe=V=>V.resp.filter(r=>r.resposta==='nao_conforme');
 const pcConf=V=>Math.round((V.resp.length-ncsDe(V).length)/Math.max(1,V.resp.length)*100);
 function quebraTipos(L){if(!L.length)return '';const t={};L.forEach(x=>{const k=x.tipo_nome||'—';t[k]=(t[k]||0)+1;});
   return `<div class="tipos">${Object.entries(t).sort((a,b)=>b[1]-a[1]).map(([n,v])=>`<div><b>${Math.round(v/L.length*100)}%</b>${esc(n)}<small>${v} de ${L.length}</small></div>`).join('')}</div>`;}
-function porSetor(V){return `<div class="cards sets">${V.sets.map((s,i)=>{const R=respDe(s),n=R.filter(r=>r.resposta==='nao_conforme').length;return `<div class="card ${n?'a':'g'}"><span>${i+1}. ${esc(s.setor_nome)}</span><b>${n?n+' NC':'100%'}</b><small>${Math.round((R.length-n)/Math.max(1,R.length)*100)}% conforme</small></div>`;}).join('')}</div>`;}
+function porSetor(V){return `<div class="cards sets">${V.sets.map((s,i)=>{const R=respDe(s),n=R.filter(r=>r.resposta==='nao_conforme').length,ok=R.length-n,pc=Math.round(ok/Math.max(1,R.length)*100);return `<div class="card ${n?'a':'g'}"><span>${i+1}. ${esc(s.setor_nome)}</span><b>${pc}% ok</b><small>${ok} de ${R.length} conformes${n?' · '+n+' não conforme'+(n>1?'s':''):''}</small></div>`;}).join('')}</div>`;}
 const fotosHtml=r=>r.fotos.length?`<div class="fotos">${r.fotos.map(f=>`<img class="ft" data-ft="${esc(f.caminho)}" alt="Foto">`).join('')}</div>`:'<span style="color:var(--ink3)">sem foto</span>';
 function resumo(){const V=V_(),L=ncsDe(V),pc=pcConf(V),alta=L.filter(x=>x.gravidade==='alta').length,ehP=pode('pcp.limp','editar');
   return `<div class="sethead" style="background:${pc>=90?'var(--ok)':'var(--amb)'}"><div><h2>Resumo da vistoria</h2><small>confira antes de fechar · depois de fechada não muda mais</small></div><div class="st"><b>${pc}%</b>conforme</div></div>
@@ -1504,11 +1536,12 @@ function confCiencia(r,s){
 function telaCiencia(){
   const V=V_(),v=V.v,L=ncsDe(V),sets=Object.fromEntries(V.sets.map(s=>[s.setor_id,s]));
   const pend=ehCiencia()?L.filter(r=>!autoItem(sets[r.setor_id]||{})&&!(r.confere==='sim'||(r.confere==='nao'&&String(r.justificativa_confere||'').trim()))).length:0;
-  const cab=`<div class="migalha"><a data-volta="1">PCP › Checklist semanal de limpeza</a> › Nº ${n4(v.numero)}</div><div class="topo"><h1>Checklist semanal de limpeza · Nº ${n4(v.numero)}</h1><button class="btn" id="bPdfV">Salvar PDF</button><div class="dir">Semana de ${br(v.semana)} · Fechada por ${esc(pri(v.fechada_por))} em ${dh(v.fechada_em)} · ${pcConf(V)}% conforme<br>${L.length} não conformes</div></div>`;
+  const cab=`<div class="migalha"><a data-volta="1">PCP › Checklist semanal de limpeza</a> › Nº ${n4(v.numero)}</div><div class="topo"><h1>Checklist semanal de limpeza · Nº ${n4(v.numero)}</h1><button class="btn" id="bPdfV">Salvar PDF</button><div class="dir">Semana de ${br(v.semana)} · ${v.situacao==='cancelada'?'<b style="color:var(--danger)">Cancelada</b>':'Fechada por '+esc(pri(v.fechada_por))+' em '+dh(v.fechada_em)} · ${pcConf(V)}% conforme<br>${L.length} não conformes</div></div>`;
   $('app').innerHTML=`<div class="lp">${cab}${porSetor(V)}
    <div class="caixa"><h3>Não conformidades<span class="dir">${ehCiencia()?'Confere / Não confere em cada uma · a gravidade pode ser corrigida':'conferência'}</span></h3><div class="cp">${L.length?quebraTipos(L)+tabNC(L,true):'<div class="vazio" style="color:var(--ok);font-weight:600">Nenhuma não conformidade. Só dar ciência.</div>'}</div></div>
    ${v.situacao==='ciencia'?`<div class="caixa"><div class="feito"><div class="bola">&#10003;</div><b>Ciência de ${esc(v.ciencia_por)} em ${dh(v.ciencia_em)}</b><span>Os não conformes com Confere entram nos indicadores. A correção é cobrada fora do sistema; na próxima vistoria, item que voltar não conforme aparece como reincidente.</span></div></div>`
     :ehCiencia()?`<div class="caixa"><h3>Dar ciência</h3><div class="cp"><div class="leg">Confira as não conformidades e dê a ciência. Dá pra conferir uma a uma ou <b>conferir todas de uma vez</b> e depois ajustar as que você não concorda. Quem marca <b>Não confere</b> precisa de justificativa. Os setores que você mesmo vistoriou entram direto. A cobrança da correção é feita fora do sistema.</div><div class="pin">${pend?`<button class="cftd" id="bCfTudo">✓ Conferir todas (${pend})</button>`:''}<button class="btn pri gr" id="bCien" ${pend?'disabled':''}>Dar ciência com meu PIN</button>${pend?`<span style="color:var(--ink3)">${pend} item(ns) sem conferência</span>`:''}</div></div></div>`
+    :v.situacao==='cancelada'?'<div class="lpav">Esta vistoria foi cancelada. Dá para reabrir pela lista, nos três pontinhos.</div>'
     :'<div class="lpav">Aguardando a ciência de quem confere o checklist.</div>'}</div>`;
   const a=$('app');a.querySelectorAll('[data-volta]').forEach(x=>x.onclick=()=>ir('lista'));
   $('bPdfV').onclick=pdfVist;
