@@ -5275,7 +5275,8 @@ function registrar(o,ev,op,det){
   /* evento automático da fila/realizado não leva nome de pessoa: ninguém
      clicou. O nome só entra quando o operador faz algo de fato (preparo,
      setup, envase, pausa, motivo). */
-  const auto=(typeof EV_SISTEMA!=='undefined'&&EV_SISTEMA.includes(ev));
+  const auto=(typeof EV_SISTEMA!=='undefined'&&EV_SISTEMA.includes(ev))
+    ||(typeof EV_ACOMPANHA!=='undefined'&&EV_ACOMPANHA.includes(ev));
   o.log.push({t:relogio(),d:ymd(new Date()),e:ev,
     op:auto?'':((op&&op.nome)||quemAssina()),m:det||null});
 }
@@ -5289,6 +5290,10 @@ function registrar(o,ev,op,det){
    porque competem por atenção com o que uma pessoa de fato fez. */
 const EV_SISTEMA=['Reprogramada na fila','Reajustada pelo realizado',
   'Reajustada pela fila','OP empurrada','OP puxada'];
+/* Consequências automáticas de mover/editar um lote: ninguém clicou uma baixa
+   ou liberação, o registro só acompanhou o lote. Também não levam nome. */
+const EV_ACOMPANHA=['Baixa de matéria-prima acompanhou o lote',
+  'Baixa de matéria-prima não repetida','Liberação acompanhou o lote'];
 /* Eventos de apoio: aconteceram, mas não movem a produção. */
 const EV_APOIO=['Etiquetas impressas','Motivos informados','Lote do insumo',
   'Estoque enviado ao Tiny','Ajuste de estoque enviado ao Tiny',
@@ -11081,6 +11086,12 @@ function csHistRotulo(o,e,ctx){
         }catch(x){}
       return {ev:'Estoque P.A. estornado',det};}
     case 'OP reaberta':{const r=/^(.*?) · fim (\S+) desmarcado · (\S+) cx a reconfirmar$/.exec(m);return {ev:'OP reaberta',det:r?[`Motivo: ${r[1]} · o fim ${r[2]} foi desmarcado · ${r[3]} ${un} a reconfirmar`]:[m?`Motivo: ${m}`:'']};}
+    case 'Baixa de matéria-prima acompanhou o lote':
+      return {ev:'Matéria-prima seguiu o lote',auto:true,det:['A baixa já estava feita e seguiu junto quando o lote mudou de dia. Nada foi baixado de novo.']};
+    case 'Baixa de matéria-prima não repetida':
+      return {ev:'Matéria-prima não rebaixada',auto:true,det:['O lote já tinha a baixa; o sistema não repetiu. Conferir no Estoque.']};
+    case 'Liberação acompanhou o lote':
+      return {ev:'Liberação seguiu o lote',auto:true,det:[m]};
     default:return {ev,det:[m]};
   }
 }
@@ -11104,7 +11115,8 @@ function historicoHTML(o){
     if(/^Lote liberado/.test(e.e)){const ant=log.slice(0,i).find(x=>/^Lote liberado/.test(String(x.e||'')));if(ant){R.ev='Lote liberado · desconsiderado';R.det=[`<span class="hmais">já liberado em ${ant.d?dCurto(ant.d):''} ${ant.t||''}</span>`];}}
     if(/^Matéria-prima (baixada do estoque|enviada ao Tiny|na fila do Tiny)$/.test(e.e)){const ant=log.slice(0,i).find(x=>/^Matéria-prima (baixada do estoque|enviada ao Tiny|na fila do Tiny)$/.test(String(x.e||'')));if(ant){R.ev='MP baixada · desconsiderada';R.det=[`<span class="hmais">já baixada em ${ant.d?dCurto(ant.d):''} ${ant.t||''} · corrigida no balanço</span>`];}}
     const det=(R.det||[]).filter(Boolean).map(x=>`<em>${x}</em>`).join('');
-    const quem=(R.auto||pesoEvento(e)==='sis')?'<span class="qsis">fila automática</span>':esc_(e.op||'—');
+    const ehAuto=R.auto||pesoEvento(e)==='sis';
+    const quem=ehAuto?`<span class="qsis">${pesoEvento(e)==='sis'?'fila automática':'automático'}</span>`:esc_(e.op||'—');
     return `<tr class="hl ${cls}"><td class="d">${e.d?dCurto(e.d):''}</td><td class="t">${e.t||''}</td><td class="qm">${quem}</td><td class="ev"><b>${esc_(R.ev)}</b>${etq}</td><td class="m">${det}</td></tr>`;
   });
   if(!linhas.length)return '';
@@ -12858,7 +12870,9 @@ function finalizarEnvase(o){
       `envase ${ei}–${f} (${envaseReal(o)} min)${badge(dvEnvase(o)).replace(/<[^>]+>/g,'')}`+
       `${obs?` · ${obs}`:''}`);
     const mudou=recomporERegistrar();
-    mudou.forEach(({x,antes,novo})=>registrarFila(x,antes,novo,o));
+    /* a fila só empurra dentro da própria máquina: fechar um lote de uma
+       linha não pode registrar empurrão numa OP de outra linha */
+    mudou.forEach(({x,antes,novo})=>{if(x.maq===o.maq)registrarFila(x,antes,novo,o);});
     fecharModal();render();
     toast(mudou.length?`Envase finalizado · ${mudou.length} OP reajustada${mudou.length>1?'s':''}.`
       :'Envase finalizado · informe as caixas para concluir.');
@@ -13548,7 +13562,8 @@ function concluir(o){
         `${nf(q)} cx · ${nf(q*litrosCx(o))} L · ${nf1(q/caixasPrev(o)*100)}% do lote`);})();
     /* a fila da máquina acompanha o que realmente aconteceu */
     const mudou=recomporERegistrar();
-    mudou.forEach(({x,antes,novo})=>registrarFila(x,antes,novo,o));
+    /* só empurra dentro da própria máquina (ver nota no fim do envase) */
+    mudou.forEach(({x,antes,novo})=>{if(x.maq===o.maq)registrarFila(x,antes,novo,o);});
     /* o lote do tanque conclui junto quando todo o envase dele terminou */
     const b=batDe(o);
     if(b){
@@ -24349,6 +24364,11 @@ csDigitando=function(){
   if(document.body.classList.contains('cs-operon'))return false;
   const a=document.activeElement;
   if(a&&(a.tagName==='INPUT'||a.tagName==='TEXTAREA'||a.tagName==='SELECT'||a.isContentEditable))return true;
+  /* o PIN e os campos do tablet dos tanques (e do financeiro) vivem dentro de
+     um iframe: para a página de fora, o foco é o próprio iframe. Sem isto, o
+     sistema baixava o estado inteiro no meio da digitação e a tecla travava.
+     Defere só enquanto o operador está mexendo (últimos 8s); parou, atualiza. */
+  try{if(a&&a.tagName==='IFRAME'&&(a.id==='csTqFrame'||a.id==='finFrame')&&typeof CS_ULT_TECLA!=='undefined'&&Date.now()-CS_ULT_TECLA<8000)return true;}catch(e){}
   return Date.now()-CS_MEXEU<20000&&(S.page==='admin'||(M('mask')&&M('mask').classList.contains('on')));
 };
 </script>
@@ -30748,7 +30768,7 @@ const csVerNum=v=>+String(v||'').replace(/\D/g,'')||0;
 let CS_APPVER_BANCO='',CS_VER_NOVA='',CS_VER_DESDE=0,CS_ULT_TECLA=0;
 const csTeclou=()=>{CS_ULT_TECLA=Date.now();};
 try{document.addEventListener('keydown',csTeclou,true);document.addEventListener('input',csTeclou,true);}catch(e){}
-setInterval(()=>{try{const f=M('finFrame');const d=f&&f.contentWindow&&f.contentWindow.document;if(d&&!d.__csTec){d.__csTec=1;d.addEventListener('keydown',csTeclou,true);d.addEventListener('input',csTeclou,true);}}catch(e){}},2000);
+setInterval(()=>{try{['finFrame','csTqFrame'].forEach(id=>{const f=M(id);const d=f&&f.contentWindow&&f.contentWindow.document;if(d&&!d.__csTec){d.__csTec=1;d.addEventListener('keydown',csTeclou,true);d.addEventListener('input',csTeclou,true);d.addEventListener('pointerdown',csTeclou,true);}});}catch(e){}},2000);
 function csPodeAtualizar(){try{
   if(Date.now()-CS_ULT_TECLA<20000)return false;
   if(typeof csDigitando==='function'&&csDigitando())return false;
