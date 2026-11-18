@@ -1,6 +1,6 @@
 {
- "v": "v576",
- "versao": "5.7.6",
+ "v": "v577",
+ "versao": "5.7.7",
  "data": "18/11/2026",
- "o_que_mudou": "ACHADO medindo com o estado real de hoje (nao com dado antigo): montar a tela do tanque levava 905ms porque recalculava o mapa de reserva de materia-prima (a funcao 'reservas', que varre todas as OPs em aberto, ~20ms) uma vez para cada MP de cada lote - dezenas de vezes por desenho. Agora 'reservas' tem cache e e calculada uma vez: a tela do tanque caiu de 905ms para ~2ms com o dado cheio. Era isso que fazia as telas demorarem 'um seculo' depois do login. Isso tambem acelera o resto do sistema que usa reserva/estoque. O cache se apaga a cada acao ou carga nova da nuvem, entao nunca mostra dado velho. Mantem: teclado do PIN instantaneo (5.7.3), numero da versao no canto do tablet (5.7.5), so hoje+proximo dia, abre com ultimo estado salvo se a nuvem demorar. OBS: tablet ja travado pode precisar de um refresh manual uma vez; depois dela o numero 5.7.6 aparece no canto."
+ "o_que_mudou": "Conserto de seguranca no tablet dos tanques: ao tocar em 'trocar operador', a tela voltava para o PIN mas os botoes continuavam ligados no PIN anterior (que ja estava com os 4 digitos certos do operador que acabou de sair), entao o primeiro toque em qualquer numero revalidava e abria o sistema sem digitar o PIN. Agora a tela do PIN se refaz do zero a cada vez: o primeiro toque so marca um digito e o sistema so abre com o PIN completo de novo. Mantem a velocidade da 5.7.6 (tela do tanque de 905ms para ~2ms com o cache de reservas) e o numero da versao no canto. OBS: tablet ja travado pode precisar de um refresh manual uma vez; depois o numero 5.7.7 aparece no canto."
 }

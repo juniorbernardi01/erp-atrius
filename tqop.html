@@ -998,6 +998,11 @@ try{if(N&&N.tqLogo)$('logo').src=N.tqLogo();}catch(e){}
 
 /* ---------- abrir o tablet: PIN de quem está no tanque (ao abrir e ao recarregar) ---------- */
 function trava(sair){OPER='';const m=$('trava');let v='',msg='',erro=false;
+  /* zera a tela do PIN do zero a cada vez: sem isto, ao "trocar operador" o
+     atalho que só atualiza as bolinhas deixava os botões ligados no PIN
+     anterior (já com 4 dígitos), e o primeiro toque revalidava e abria sem
+     digitar. Limpando aqui, pinta() refaz os botões e o v começa vazio. */
+  try{m.innerHTML='';delete m.dataset.sair;}catch(e){}
   const pronto=()=>{try{return !!(N&&(N.tqPronto?N.tqPronto():(N.tqDados&&N.tqDados().pronto)));}catch(e){return false;}};
   const pinta=()=>{const ok=pronto();let lg='';try{lg=(N&&N.tqLogo&&N.tqLogo())||'';}catch(e){}
     /* v521: teclado já na tela: só as bolinhas e a mensagem mudam (redesenhar tudo piscava no tablet) */
