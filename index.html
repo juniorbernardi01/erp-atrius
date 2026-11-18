@@ -5537,7 +5537,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v568';const VERSAO_DATA='18/11/2026';
+const VERSAO_APP='v569';const VERSAO_DATA='18/11/2026';
 /* número que aparece na tela: v438 → v4.3.8 (por dentro continua v438, que é o que as versões comparam) */
 const csRotVer=v=>{const d=String(v||'').replace(/\D/g,'');return d.length>=3?'v'+d.slice(0,-2)+'.'+d.slice(-2,-1)+'.'+d.slice(-1):String(v||'');};
 const VERSAO_ROTULO=csRotVer(VERSAO_APP)+' · '+VERSAO_DATA;
@@ -19145,14 +19145,21 @@ async function modalAcesso(a){
       }else{
         await gravarAcesso(linha,false,a.email);
         if(sen&&sen!==a.senha){
+          /* a pessoa já está no cadastro, mas a conta de ENTRADA pode nunca ter
+             sido criada no servidor. Então: cria a conta se faltar (já com a
+             senha nova) e, se ela já existir, troca a senha pela função. Sem
+             isto, quem tinha cadastro mas não tinha conta nunca conseguia entrar. */
           try{
-            const r=await fetch(`${SUPA.url}/functions/v1/redefinir-senha`,{
-              method:'POST',headers:cabecalhos(),
-              body:JSON.stringify({email:mail,senha:sen})});
-            if(!r.ok)recado=' A senha de entrada não trocou: '+(r.status===404
-              ?'a peça do servidor ainda não está instalada.'
-              :((await r.json().catch(()=>({}))).erro||('erro '+r.status)));
-          }catch(e){recado=' Não consegui falar com o servidor para trocar a senha de entrada.';}
+            const c=await criarConta(mail,sen);
+            if(c.jaExistia){
+              const r=await fetch(`${SUPA.url}/functions/v1/redefinir-senha`,{
+                method:'POST',headers:cabecalhos(),
+                body:JSON.stringify({email:mail,senha:sen})});
+              if(!r.ok)recado=' A senha de entrada não trocou: '+(r.status===404
+                ?'a peça do servidor ainda não está instalada.'
+                :((await r.json().catch(()=>({}))).erro||('erro '+r.status)));
+            }else{recado=' A conta de entrada foi criada agora com essa senha.';}
+          }catch(e){recado=' Não consegui acertar a conta de entrada: '+(e.message||'erro no servidor');}
         }
       }
       fecharModal();await gradeAcessos();
@@ -25962,6 +25969,17 @@ function csSaiCom(msg){
   try{localStorage.removeItem('erp.sid');}catch(e){}
   try{sair();}catch(e){location.reload();}
 }
+/* Tablet preso no "Carregando" quando sai versão nova: o service worker (sw.js)
+   guardava o index antigo em cache e o recarregar servia o velho de novo, em loop.
+   Aqui a gente desregistra o service worker e apaga os caches ANTES de recarregar,
+   então o aparelho busca a versão nova de verdade e sai do loop sozinho. */
+let CS_FORCA=false;
+async function csForcaAtualizar(){
+  if(CS_FORCA)return;CS_FORCA=true;
+  try{if('serviceWorker' in navigator){const rs=await navigator.serviceWorker.getRegistrations();await Promise.all(rs.map(r=>r.unregister().catch(()=>{})));}}catch(e){}
+  try{if(window.caches&&caches.keys){const ks=await caches.keys();await Promise.all(ks.map(k=>caches.delete(k)));}}catch(e){}
+  try{const u=location.pathname+'?v='+Date.now()+location.hash;location.replace(u);}catch(e){try{location.reload();}catch(x){}}
+}
 let CS_CONF_T=0;
 async function csConfereSinais(motivo){
   if(!temNuvem()||!SESSAO)return;
@@ -25970,7 +25988,7 @@ async function csConfereSinais(motivo){
   let s;try{s=await csSinalLer(ids);}catch(e){return;}
   const v=(s.versao||{}).v;
   if(csVnum(v)>csVnum(VERSAO_APP)){
-    if(comp){try{location.reload();}catch(e){}return;}   /* tablet: só recarrega */
+    if(comp){csForcaAtualizar();return;}   /* tablet: limpa o cache e recarrega a versão nova */
     return csSaiCom(`Saiu uma versão nova do sistema (${v}). Entre de novo.`);}
   if(!comp){const ss=s['sessao:'+norMail(emailDaSessao())];
     if(ss&&ss.sid&&csSid()&&ss.sid!==csSid())return csSaiCom('Sua conta foi aberta em outro aparelho. Este acesso foi encerrado.');

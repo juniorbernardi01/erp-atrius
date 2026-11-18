@@ -1,6 +1,6 @@
 {
- "v": "v568",
- "versao": "5.6.8",
+ "v": "v569",
+ "versao": "5.6.9",
  "data": "18/11/2026",
- "o_que_mudou": "Checklist de limpeza, cartoes por setor: agora lideram pelo lado positivo - mostram o percentual OK (ex.: 92% ok) e 'X de Y conformes', com o numero de nao conformes so como complemento, no lugar do antigo '3 NC'. O PDF ja trazia o % conforme geral e por setor e a tabela de nao conformidades. Inclui a correcao URGENTE da 5.6.7 (tanques.html restaurado, o tablet volta pra tela real) e tudo das anteriores: tres pontinhos na lista do checklist com Cancelar vistoria, SKU real nas formulas, login sincroniza senha, liberacao do lote lado a lado, campos de numero so aceitam numero, pulmao, tablets escuros, vendas."
+ "o_que_mudou": "Login: ao salvar a senha de alguem que ja esta no cadastro mas nunca teve conta de acesso criada no servidor, o sistema agora CRIA a conta na hora com essa senha (antes so tentava trocar a senha de uma conta que nao existia, e a pessoa nunca entrava). Tablet preso no 'Carregando programacao': quando sai versao nova, o tablet agora limpa o service worker e os caches antes de recarregar, saindo sozinho do loop (antes o cache servia o app velho de novo, em loop). Observacao: esse conserto so age a partir desta versao; o tablet que ja esta travado precisa de uma limpeza de cache manual uma vez para pegar a 5.6.9. Inclui tudo das anteriores."
 }
