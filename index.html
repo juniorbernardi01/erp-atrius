@@ -5546,7 +5546,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v570';const VERSAO_DATA='18/11/2026';
+const VERSAO_APP='v571';const VERSAO_DATA='18/11/2026';
 /* número que aparece na tela: v438 → v4.3.8 (por dentro continua v438, que é o que as versões comparam) */
 const csRotVer=v=>{const d=String(v||'').replace(/\D/g,'');return d.length>=3?'v'+d.slice(0,-2)+'.'+d.slice(-2,-1)+'.'+d.slice(-1):String(v||'');};
 const VERSAO_ROTULO=csRotVer(VERSAO_APP)+' · '+VERSAO_DATA;
@@ -18405,7 +18405,12 @@ async function conferirNuvem(){
 }
 function ligarPolling(){
   clearInterval(tPoll);
-  tPoll=setInterval(conferirNuvem,(MODO_TV||/^#op/.test(location.hash)||(typeof csQuiosque==='function'&&csQuiosque()))?4000:8000);
+  /* tablet dos tanques (quiosque): reaplicar os 4,5MB do sistema de 4 em 4s
+     engasgava o aparelho a ponto de a tecla do PIN levar segundos para
+     responder. Aqui ele confere a cada 25s, o que já é de sobra para a tela
+     do tanque, e o PIN fica solto. TV e módulos seguem rápidos. */
+  let _quio=false;try{_quio=(typeof CS_TQ_KIOSK==='function'&&CS_TQ_KIOSK())||(typeof csQuiosque==='function'&&csQuiosque()==='tq');}catch(e){}
+  tPoll=setInterval(conferirNuvem, _quio?25000 : (MODO_TV||/^#op/.test(location.hash))?4000:8000);
 }
 
 /* ---------- tela de login ---------- */
@@ -19297,7 +19302,26 @@ async function iniciarComNuvem(){
   try{ await lerAcessos(); }
   catch(e){ console.warn('nao consegui ler os acessos:',(e&&e.message)||e); }
   let linha=null;
-  try{ linha=await nuvemLer(); }
+  try{
+    /* tablet com rede ruim: a leitura dos ~4,5MB pode travar sem erro e a tela
+       fica presa no "Carregando". Dá no máximo 7s; estourou, abre com o que
+       está salvo neste aparelho e o polling pega o estado novo quando der. */
+    let estourou=false;
+    linha=await Promise.race([
+      nuvemLer(),
+      new Promise((_,rej)=>setTimeout(()=>{estourou=true;rej(new Error('tempo de leitura'));},7000))
+    ]).catch(err=>{if(estourou)return '__TIMEOUT__';throw err;});
+    if(linha==='__TIMEOUT__'){
+      ONLINE=true;
+      await restaurarLocal();          /* restaurarLocal já marca PRONTO=true */
+      marcarEstado('abrindo com o último estado salvo · sincronizando…');
+      render();
+      if(!MEU_ACESSO&&!MODO_TV)semAcesso();
+      if(MODO_TV){try{renderTV();}catch(e){}}else{irParaAgora();}
+      ligarPolling();
+      return;
+    }
+  }
   catch(e){
     if(String(e.message).indexOf('sessão')>=0){telaLogin('Sua sessão expirou. Entre de novo.');return;}
     ONLINE=false;
