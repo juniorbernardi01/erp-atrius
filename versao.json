@@ -1,6 +1,6 @@
 {
- "v": "v569",
- "versao": "5.6.9",
+ "v": "v570",
+ "versao": "5.7.0",
  "data": "18/11/2026",
- "o_que_mudou": "Login: ao salvar a senha de alguem que ja esta no cadastro mas nunca teve conta de acesso criada no servidor, o sistema agora CRIA a conta na hora com essa senha (antes so tentava trocar a senha de uma conta que nao existia, e a pessoa nunca entrava). Tablet preso no 'Carregando programacao': quando sai versao nova, o tablet agora limpa o service worker e os caches antes de recarregar, saindo sozinho do loop (antes o cache servia o app velho de novo, em loop). Observacao: esse conserto so age a partir desta versao; o tablet que ja esta travado precisa de uma limpeza de cache manual uma vez para pegar a 5.6.9. Inclui tudo das anteriores."
+ "o_que_mudou": "1) Tablet dos tanques mais leve: no modo quiosque (a tela do PIN dos tanques), o sistema NAO monta mais o ERP inteiro por tras da tela do tanque, so carrega os dados e a propria tela de operacao. Isso tira o travamento no 'Carregando programacao' e o touch preso, mantendo tudo que ja foi construido. O PIN dos operadores segue igual. 2) Nome no historico so de quem fez: evento automatico da fila (quando uma OP desloca o horario sozinha porque outro lote da mesma maquina terminou atrasado ou adiantado) NAO leva mais nome de operador, nem na gravacao nem na tela. Aparece como 'Empurrada pela fila'/'Adiantada pela fila', quem = 'fila automatica', e o detalhe diz que o horario ajustou por causa do atraso do anterior. Isso vale para TODAS as OPs e tambem limpa os registros antigos que ja tinham ficado com nome errado. O nome da pessoa so entra quando ela faz algo de fato: preparo no tanque, setup, envase, pausa ou motivo. Inclui tudo das anteriores."
 }

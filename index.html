@@ -757,7 +757,7 @@ tr.mot td{background:#FDFAF0;font-size:11px;color:#7A5C0B;padding:6px 12px}
 .log table.htab td.m{color:var(--ink2)}.log table.htab td.m em{display:block;font-style:normal}
 .log table.htab tr.p-sis{background:#FAFAF8}.log table.htab tr.p-ed{background:#FFFBEB}.log table.htab tr.morta td{color:#6B7280;background:#FAFAFA}
 .log table.htab tr.turno{background:#FFF4E8}
-.log table.htab .hmais{color:#DC2626;font-weight:700}.log table.htab .hmenos{color:#15803D;font-weight:700}.log table.htab .hok{color:#15803D;font-weight:600}
+.log table.htab .hmais{color:#DC2626;font-weight:700}.log table.htab .hmenos{color:#15803D;font-weight:700}.log table.htab .hok{color:#15803D;font-weight:600}.log table.htab .qsis{color:#9CA3AF;font-weight:500;font-style:italic}
 .log .e .t{font-family:'Inter';color:var(--ink3)}
 .log .e .qm{color:var(--ink2);font-weight:500;overflow:hidden;text-overflow:ellipsis;
   white-space:nowrap}
@@ -5272,8 +5272,12 @@ function tanquePreso(tanque,granel){
 const APONTA={};
 /* nada entra no histórico sem nome: é o que responde "quem fez isso e quando" */
 function registrar(o,ev,op,det){
+  /* evento automático da fila/realizado não leva nome de pessoa: ninguém
+     clicou. O nome só entra quando o operador faz algo de fato (preparo,
+     setup, envase, pausa, motivo). */
+  const auto=(typeof EV_SISTEMA!=='undefined'&&EV_SISTEMA.includes(ev));
   o.log.push({t:relogio(),d:ymd(new Date()),e:ev,
-    op:(op&&op.nome)||quemAssina(),m:det||null});
+    op:auto?'':((op&&op.nome)||quemAssina()),m:det||null});
 }
 
 /* Edicao posterior tem peso diferente da execucao: nao e "aconteceu isso",
@@ -5537,13 +5541,19 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v569';const VERSAO_DATA='18/11/2026';
+const VERSAO_APP='v570';const VERSAO_DATA='18/11/2026';
 /* número que aparece na tela: v438 → v4.3.8 (por dentro continua v438, que é o que as versões comparam) */
 const csRotVer=v=>{const d=String(v||'').replace(/\D/g,'');return d.length>=3?'v'+d.slice(0,-2)+'.'+d.slice(-2,-1)+'.'+d.slice(-1):String(v||'');};
 const VERSAO_ROTULO=csRotVer(VERSAO_APP)+' · '+VERSAO_DATA;
 let DRAG=null;
 function render(){
   recomporTudo();
+  /* Tablet dos tanques (quiosque): a tela cheia do ERP fica escondida atrás do
+     iframe dos tanques, mas mesmo escondida ela era montada toda vez — centenas
+     de elementos — e isso travava os tablets mais fracos. No quiosque só o dado
+     importa (o recomporTudo acima já calculou), então paramos aqui e não
+     montamos a interface que ninguém vê. */
+  try{if(typeof CS_TQ_KIOSK==='function'&&CS_TQ_KIOSK()){return;}}catch(e){}
   const c=conflitos();
   topo(c);
   M('wrap').hidden=true;
@@ -11029,7 +11039,7 @@ function csHistRotulo(o,e,ctx){
       const troca=s=>{const r=/^(.+?) (.*?) → (.*)$/.exec(s);if(!r)return s;const campo=({'início':'horário','maq':'máquina'})[r[1]]||r[1];return `${campo}: de <b>${r[2]}</b> para <b>${r[3]}</b>`;};
       return {ev:'OP editada',det:m.split(/\s*·\s*/).filter(Boolean).map(troca)};}
     case 'OP puxada':case 'OP empurrada':{const r=/^(\S+) · estava para (\S+), entra (\S+) — (.*)$/.exec(m);
-      return {ev:'OP editada',det:r?[`horário: de <b>${r[2]}</b> para <b>${r[3]}</b> · ${r[1]} ${ev==='OP puxada'?'antes':'depois'} — ${r[4]}`]:[m]};}
+      return {ev:ev==='OP empurrada'?'Empurrada pela fila':'Adiantada pela fila',auto:true,det:r?[`Deslocou sozinha de <b>${r[2]}</b> para <b>${r[3]}</b> (${r[1]}) porque ${r[4]}`]:[m]};}
     case 'Edição de registro':case 'Horários apagados':
       return {ev:'Correção de registro',det:[...(e.campos||[]).map(c=>`${c.c}: de <b>${c.de}</b> para <b>${c.para}</b>`),e.mot?`Motivo: ${e.mot}`:'',e.m||'']};
     case 'Lote liberado':return {ev:'Lote liberado',det:[`<span class="hok">Análise conforme</span> · por <b>${e.op||'—'}</b>${m?' · '+m:''}`]};
@@ -11094,7 +11104,8 @@ function historicoHTML(o){
     if(/^Lote liberado/.test(e.e)){const ant=log.slice(0,i).find(x=>/^Lote liberado/.test(String(x.e||'')));if(ant){R.ev='Lote liberado · desconsiderado';R.det=[`<span class="hmais">já liberado em ${ant.d?dCurto(ant.d):''} ${ant.t||''}</span>`];}}
     if(/^Matéria-prima (baixada do estoque|enviada ao Tiny|na fila do Tiny)$/.test(e.e)){const ant=log.slice(0,i).find(x=>/^Matéria-prima (baixada do estoque|enviada ao Tiny|na fila do Tiny)$/.test(String(x.e||'')));if(ant){R.ev='MP baixada · desconsiderada';R.det=[`<span class="hmais">já baixada em ${ant.d?dCurto(ant.d):''} ${ant.t||''} · corrigida no balanço</span>`];}}
     const det=(R.det||[]).filter(Boolean).map(x=>`<em>${x}</em>`).join('');
-    return `<tr class="hl ${cls}"><td class="d">${e.d?dCurto(e.d):''}</td><td class="t">${e.t||''}</td><td class="qm">${esc_(e.op||'—')}</td><td class="ev"><b>${esc_(R.ev)}</b>${etq}</td><td class="m">${det}</td></tr>`;
+    const quem=(R.auto||pesoEvento(e)==='sis')?'<span class="qsis">fila automática</span>':esc_(e.op||'—');
+    return `<tr class="hl ${cls}"><td class="d">${e.d?dCurto(e.d):''}</td><td class="t">${e.t||''}</td><td class="qm">${quem}</td><td class="ev"><b>${esc_(R.ev)}</b>${etq}</td><td class="m">${det}</td></tr>`;
   });
   if(!linhas.length)return '';
   return `<table class="htab"><colgroup><col style="width:46px"><col style="width:42px"><col style="width:150px"><col style="width:190px"><col></colgroup><thead><tr><th>Data</th><th>Hora</th><th>Quem</th><th>Registro</th><th>Detalhe</th></tr></thead><tbody>${linhas.join('')}</tbody></table>`;
