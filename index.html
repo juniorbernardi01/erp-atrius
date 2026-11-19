@@ -4669,11 +4669,22 @@ function mpDoLote(b){
   return base;
 }
 const trocasDoLote=b=>((APONTA[b.chave]||{}).trocasMP)||[];
-const especDe=g=>ESPEC[g]||null;
-const ensaiosDe=g=>{const e=especDe(g);return e?ENSAIOS.filter(([k])=>e[k]):[];};
+/* Versões da especificação de análise por granel, com data — igual à fórmula
+   (FORM_VERS). Uma alteração de critério vale "do dia pra frente": o lote lê a
+   versão que valia na data dele, então certificado e PDF de lote antigo NÃO
+   mudam quando a especificação é editada hoje. Sem histórico, lê a atual. */
+let ESPEC_VERS={};
+const especDe=(g,data)=>{
+  if(data&&ESPEC_VERS[g]&&ESPEC_VERS[g].length){
+    const v=ESPEC_VERS[g].find(x=>(!x.desde||x.desde<=data)&&(!x.ate||x.ate>data));
+    if(v)return v.espec;
+  }
+  return ESPEC[g]||null;
+};
+const ensaiosDe=(g,data)=>{const e=especDe(g,data);return e?ENSAIOS.filter(([k])=>e[k]):[];};
 /* devolve 'ok', 'fora' ou null quando ainda não foi medido */
-function confereEnsaio(g,k,valor){
-  const e=especDe(g);if(!e||!e[k])return null;
+function confereEnsaio(g,k,valor,data){
+  const e=especDe(g,data);if(!e||!e[k])return null;
   if(QUALI.includes(k))return valor==='ok'?'ok':(valor==='fora'?'fora':null);
   if(valor===''||valor==null)return null;
   const v=+String(valor).replace(/[Oo]/g,'0').replace(',','.');
@@ -4682,6 +4693,26 @@ function confereEnsaio(g,k,valor){
   if(f.min!=null&&v<f.min)return 'fora';
   if(f.max!=null&&v>f.max)return 'fora';
   return 'ok';
+}
+/* compara duas especificações pelo que importa (critérios e limites), ignorando
+   o texto formatado, para só versionar quando muda de verdade */
+const espCanon=e=>JSON.stringify(Object.keys(e||{}).sort().map(k=>{const v=(e||{})[k];return [k,(v&&typeof v==='object')?[v.min==null?null:+v.min,v.max==null?null:+v.max]:String(v)];}));
+/* grava uma nova versão da especificação quando ela muda, com a data de hoje. O
+   que valia antes fica preservado: lotes já feitos leem a versão da data deles,
+   então certificado e PDF antigos não mudam. Igual ao versionamento da fórmula. */
+function versionarEspec(g,novo){
+  const antigo=ESPEC[g]||{};
+  if(espCanon(antigo)===espCanon(novo))return;
+  const hoje=ymd(new Date());
+  if(!ESPEC_VERS[g]||!ESPEC_VERS[g].length){
+    ESPEC_VERS[g]=[{v:1,desde:'',ate:hoje,espec:JSON.parse(JSON.stringify(antigo))}];
+  }else{
+    const u=ESPEC_VERS[g][ESPEC_VERS[g].length-1];
+    if(u.desde===hoje){u.espec=JSON.parse(JSON.stringify(novo));return;}  /* mesma data: atualiza a versão de hoje */
+    u.ate=hoje;
+  }
+  const ult=ESPEC_VERS[g][ESPEC_VERS[g].length-1];
+  ESPEC_VERS[g].push({v:(+ult.v||ESPEC_VERS[g].length)+1,desde:hoje,ate:'',espec:JSON.parse(JSON.stringify(novo))});
 }
 const grupoDoTanque=t=>(PRODUTOS.find(p=>p.tanque===t)||{}).grupo;
 const MAQUINAS=['MAQ 1','MAQ 2','MAQ 3'];
@@ -5462,12 +5493,12 @@ function liberadoAPartir(b){
 }
 /* a análise cumpre a especificação? */
 function analiseOk(b){
-  const ens=ensaiosDe(b.produto);
+  const ens=ensaiosDe(b.produto,b.data);
   if(!ens.length)return {ok:true,pend:[],fora:[]};
   const r=(b.analise&&b.analise.resultados)||{};
   const pend=[],fora=[];
   ens.forEach(([k,rot])=>{
-    const s=confereEnsaio(b.produto,k,r[k]);
+    const s=confereEnsaio(b.produto,k,r[k],b.data);
     if(s===null)pend.push(rot); else if(s==='fora')fora.push(rot);
   });
   return {ok:!pend.length&&!fora.length,pend,fora,desvio:!!(b.analise&&b.analise.desvio)};
@@ -5553,7 +5584,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v581';const VERSAO_DATA='19/11/2026';
+const VERSAO_APP='v582';const VERSAO_DATA='19/11/2026';
 /* número que aparece na tela: v438 → v4.3.8 (por dentro continua v438, que é o que as versões comparam) */
 const csRotVer=v=>{const d=String(v||'').replace(/\D/g,'');return d.length>=3?'v'+d.slice(0,-2)+'.'+d.slice(-2,-1)+'.'+d.slice(-1):String(v||'');};
 const VERSAO_ROTULO=csRotVer(VERSAO_APP)+' · '+VERSAO_DATA;
@@ -7807,16 +7838,16 @@ const LOGO_PDF=LOGO;
    "Salvar como PDF" gera o arquivo — sem depender de nada instalado.
    ===================================================================== */
 function imprimirCertificado(b){
-  const ens=ensaiosDe(b.produto);
+  const ens=ensaiosDe(b.produto,b.data);
   if(!ens.length){toast('Este produto não tem ensaios cadastrados.',true);return;}
-  const esp=especDe(b.produto)||{};
+  const esp=especDe(b.produto,b.data)||{};
   const r=(b.analise&&b.analise.resultados)||{};
   const ap=APONTA[b.chave]||{};
   const a=analiseOk(b);
   const esc=s=>String(s==null?'':s).replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]));
   const dataFab=b.ordens[0]?dFab(b.ordens[0].data):'—';
   const linhas=ens.map(([k,rot])=>{
-    const s=confereEnsaio(b.produto,k,r[k]);
+    const s=confereEnsaio(b.produto,k,r[k],b.data);
     const espTxt=QUALI.includes(k)?esp[k]:(esp[k]&&esp[k].txt)||'—';
     const res=r[k]==null||r[k]===''?'—'
       :(QUALI.includes(k)?(r[k]==='ok'?'Conforme':'Não conforme'):r[k]);
@@ -8814,7 +8845,7 @@ function imprimirOPTanque(b){
          ensaio novo no cadastro não aparecia aqui, e o papel dizia um nome
          e a tela outro. Agora sai daqui o que ensaiosDe() devolve, que é o
          mesmo que a Análise e o certificado usam. */
-      const ens=ensaiosDe(b.produto).map(([k,rot])=>
+      const ens=ensaiosDe(b.produto,b.data).map(([k,rot])=>
         [rot, QUALI.includes(k)?esp[k]:(esp[k]&&esp[k].txt)]).filter(([,v])=>v);
       return ens.length?`<section class="bl"><h2>Análise</h2>
       <table><thead><tr><th style="width:118px">Análise</th><th>Especificação</th>
@@ -13783,10 +13814,10 @@ const SVG_TROCA=`<svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="tr
 const fabIniDe=b=>((APONTA[b.chave]||{}).fabIni)||null;
 
 function certificadoHTML(b){
-  const ens=ensaiosDe(b.produto);
+  const ens=ensaiosDe(b.produto,b.data);
   if(!ens.length)return `<div class="alert">Sem especificação de análise cadastrada para
     <b>${b.produto}</b>.</div>`;
-  const esp=especDe(b.produto);
+  const esp=especDe(b.produto,b.data);
   const r=(b.analise&&b.analise.resultados)||{};
   const a=analiseOk(b);
   const trava=b.status==='concluido'?'disabled':'';
@@ -13797,7 +13828,7 @@ function certificadoHTML(b){
       <th>Análise</th><th>Especificação</th><th>Resultado</th><th class="n">Situação</th>
     </tr></thead><tbody>
     ${ens.map(([k,rot])=>{
-      const s=confereEnsaio(b.produto,k,r[k]);
+      const s=confereEnsaio(b.produto,k,r[k],b.data);
       const espTxt=QUALI.includes(k)?esp[k]:esp[k].txt;
       return `<tr class="${s==='fora'?'fora':''}">
         <td>${rot}</td>
@@ -14668,7 +14699,7 @@ function abrirLote(b){
       ?`<button class="btn sm" id="lV">Voltar para a programar</button>`:''}
     <div style="flex:1"></div>
     <button class="btn sm" id="lOP">OP do tanque em PDF</button>
-    ${ensaiosDe(b.produto).length?`<button class="btn sm" id="lPdf">Emitir certificado</button>`:''}
+    ${ensaiosDe(b.produto,b.data).length?`<button class="btn sm" id="lPdf">Emitir certificado</button>`:''}
     <button class="btn sm" id="lEtq" ${b.liberadoEm?'':'disabled'}
       title="${b.liberadoEm?'Imprime a amostra deste lote'
         :'Sai depois de liberar o lote — os dados da análise vão impressos nela'}"
@@ -14708,7 +14739,7 @@ function abrirLote(b){
     /* v4.3.9: no tablet do tanque o preparo concluído continua obrigatório; no computador quem libera atesta que o tanque está pronto */
     if(!fabFimDe(b)&&typeof CS_TQ_KIOSK==='function'&&CS_TQ_KIOSK()){toast('Conclua o preparo do tanque antes de liberar o lote.',true);return;}
     const semRegTq=(typeof csTqFaltou==='function')?csTqFaltou(b):[];
-    if(!ensaiosDe(b.produto).length){toast('Este produto não tem ensaios cadastrados: a liberação exige análise. Cadastre os ensaios na ficha do produto.',true);return;}
+    if(!ensaiosDe(b.produto,b.data).length){toast('Este produto não tem ensaios cadastrados: a liberação exige análise. Cadastre os ensaios na ficha do produto.',true);return;}
     const a=analiseOk(b);
     /* Falta medir não é decisão de ninguém: é ensaio em branco. */
     if(a.pend.length){
@@ -18073,7 +18104,7 @@ function estadoAtual(){
     ordens:ORDENS,aponta:APONTA,saldos:SALDOS,sopro:SOPRO,
     ocorrencias:OCORRENCIAS,
     cadastro:{produtos:PRODUTOS,insumos:INSUMOS,calendario:CALENDARIO,alertasParada:ALERTAS_PARADA,
-      paradasDesde:PARADAS_DESDE,marcoAplicado:MARCO_APLICADO,migra:(typeof CS_MIGRA!=='undefined'?CS_MIGRA:[]),exigeLiberacao:EXIGE_LIBERACAO,travaLinha:CS_TRAVA_LINHA,proxLote:PROX_LOTE,proxLoteManual:(typeof PROX_LOTE_MAN!=='undefined'?PROX_LOTE_MAN:{}),formulas:FORMULAS,funcoes:FUNCOES,validade:VALIDADE,rt:RT,operadores:OPERADORES,pinBloq:CS_PINBLOQ,espec:ESPEC,ensaios:ENSAIOS,quali:QUALI,modulosErp:MODULOS_ERP,fotosProd:FOTOS_PROD,fotosAju:FOTOS_AJU,preformas:PREFORMAS,prefProd:PREF_PROD,recursos:RECURSOS,gruposMaq:GRUPOS_MAQ,mkOp:CAD_MK_OP,formVers:FORM_VERS,grupos:CAD_GRUPOS,waModelo:WA_MODELO,mod272:true,mod275:true,mod278:true,motivos:MOTIVOS,tolerancia:TOLERANCIA,quebraL:QUEBRA_L,quebraTol:QUEBRA_TOL,tempos:TEMPOS,setupEnv:SETUP_ENV,tempoGranel:TEMPO_GRANEL,frascos:FRASCOS,sopradoras:SOPRADORAS,tanques:TANQUES,
+      paradasDesde:PARADAS_DESDE,marcoAplicado:MARCO_APLICADO,migra:(typeof CS_MIGRA!=='undefined'?CS_MIGRA:[]),exigeLiberacao:EXIGE_LIBERACAO,travaLinha:CS_TRAVA_LINHA,proxLote:PROX_LOTE,proxLoteManual:(typeof PROX_LOTE_MAN!=='undefined'?PROX_LOTE_MAN:{}),formulas:FORMULAS,funcoes:FUNCOES,validade:VALIDADE,rt:RT,operadores:OPERADORES,pinBloq:CS_PINBLOQ,espec:ESPEC,especVers:ESPEC_VERS,ensaios:ENSAIOS,quali:QUALI,modulosErp:MODULOS_ERP,fotosProd:FOTOS_PROD,fotosAju:FOTOS_AJU,preformas:PREFORMAS,prefProd:PREF_PROD,recursos:RECURSOS,gruposMaq:GRUPOS_MAQ,mkOp:CAD_MK_OP,formVers:FORM_VERS,grupos:CAD_GRUPOS,waModelo:WA_MODELO,mod272:true,mod275:true,mod278:true,motivos:MOTIVOS,tolerancia:TOLERANCIA,quebraL:QUEBRA_L,quebraTol:QUEBRA_TOL,tempos:TEMPOS,setupEnv:SETUP_ENV,tempoGranel:TEMPO_GRANEL,frascos:FRASCOS,sopradoras:SOPRADORAS,tanques:TANQUES,
       jornada:JORNADA,frascoProd:FRASCO_PROD,usuarios:USUARIOS,proxOp:PROX_OP,
       gruposMotivo:GRUPOS_MOTIVO,semana:SEMANA_PADRAO,tolAtraso:TOL_ATRASO},
     estoque:{saldos:ESTOQUE,em:ESTOQUE_EM,d:ESTOQUE_D},
@@ -18179,6 +18210,7 @@ function aplicarEstado(txt){
   if(!MODULOS_TESTE&&cad.modulosErp&&typeof cad.modulosErp==='object')
     Object.keys(cad.modulosErp).forEach(k=>{MODULOS_ERP[k]={...(MODULOS_ERP[k]||{}),...cad.modulosErp[k]};});
   if(cad.espec)Object.assign(ESPEC,cad.espec);
+  if(cad.especVers&&typeof cad.especVers==='object')ESPEC_VERS=cad.especVers;
   if(cad.preformas&&cad.preformas.length){PREFORMAS.length=0;cad.preformas.forEach(x=>PREFORMAS.push(x));}
   if(cad.prefProd)Object.assign(PREF_PROD,cad.prefProd);
   if(cad.gruposMaq&&cad.gruposMaq.length){GRUPOS_MAQ.length=0;cad.gruposMaq.forEach(g=>GRUPOS_MAQ.push(g));}
@@ -21049,14 +21081,14 @@ function csRelLote(b){
   /* a análise, só de leitura */
   let analise='';
   try{
-    const ens=ensaiosDe(b.produto), esp=especDe(b.produto);
+    const ens=ensaiosDe(b.produto,b.data), esp=especDe(b.produto,b.data);
     const r=(b.analise&&b.analise.resultados)||{};
     analise=ens.length?`<div class="lin">
       <div class="linh">Análise do lote</div>
       <table class="certt"><thead><tr><th>Análise</th><th>Especificação</th>
         <th>Resultado</th><th class="n">Situação</th></tr></thead><tbody>
       ${ens.map(([k,rot])=>{
-        const st=confereEnsaio(b.produto,k,r[k]);
+        const st=confereEnsaio(b.produto,k,r[k],b.data);
         const ex=QUALI.includes(k)?esp[k]:esp[k].txt;
         const vl=r[k]==null||r[k]===''?'—':(r[k]==='ok'?'Conforme':r[k]==='fora'?'Não conforme':r[k]);
         return `<tr class="${st==='fora'?'fora':''}"><td>${rot}</td><td class="k">${ex}</td>
@@ -21122,7 +21154,7 @@ function csRelLote(b){
   document.getElementById('csHistF').onclick=fecha;
   const pdf=document.getElementById('csRelPdf');
   if(pdf){
-    let tem=false;try{tem=!!ensaiosDe(b.produto).length;}catch(e){}
+    let tem=false;try{tem=!!ensaiosDe(b.produto,b.data).length;}catch(e){}
     if(!tem)pdf.remove(); else pdf.onclick=()=>{try{imprimirCertificado(b);}catch(e){}};
   }
   d.onclick=ev2=>{if(ev2.target===d)fecha();};
@@ -21136,7 +21168,7 @@ function csCtxLote(ev,chave){
        ||bateladas(ymd(S.ref)).find(x=>x.chave===chave);}catch(e){}
   if(!b)return;
   const c=document.getElementById('csCtx');
-  const temCert=(()=>{try{return !!ensaiosDe(b.produto).length;}catch(e){return false;}})();
+  const temCert=(()=>{try{return !!ensaiosDe(b.produto,b.data).length;}catch(e){return false;}})();
   const podePulmao=(()=>{try{const st=csTqSt(b).st;const P=recursosDe('tanque').find(r=>r.pul&&r.ativo!==false);
     return !!P&&!tqOf(b.tanque).pul&&(CS_TQ_PRODUZIDO.includes(st)||st==='prep'||st==='envasando');}catch(e){return false;}})();
   c.innerHTML=`<button data-csl="form">Formulação do lote</button>
@@ -31107,7 +31139,7 @@ const ehHojeTq=d=>{try{return d===ymd(new Date());}catch(e){return false;}};
 function csTqDescanso(b){try{return +csTempoTq(b.produto,b.tanque).descanso||0;}catch(e){return 0;}}
 function csTqPreparo(b){try{return +csTempoTq(b.produto,b.tanque).fabricacao||0;}catch(e){return 0;}}
 const CS_TQ_NAO_COMECOU=['limpar','encher','livre'],CS_TQ_PRODUZIDO=['descanso','analise','naolib','liberado','ajuste'];
-function csTqEspec(g,k){try{const e=especDe(g)||{};const v=e[k];if(v==null)return '';return typeof v==='object'?(v.txt||((v.min!=null?v.min:'')+' a '+(v.max!=null?v.max:''))):String(v);}catch(e){return '';}}
+function csTqEspec(g,k,data){try{const e=especDe(g,data)||{};const v=e[k];if(v==null)return '';return typeof v==='object'?(v.txt||((v.min!=null?v.min:'')+' a '+(v.max!=null?v.max:''))):String(v);}catch(e){return '';}}
 function csTqLote(b){
   const at=APONTA[b.chave]||{},tq=at.tq||{},s=csTqSt(b);
   const o0=(b.ordens||[])[0];
@@ -31120,9 +31152,9 @@ function csTqLote(b){
     let sit='sem';try{sit=situacaoItem(t,+x.kg||0,null).k;}catch(e){}
     return {nome:x.nome,sku:x.sku||'',kg:+x.kg||0,un:x.un||'kg',estoque:fis,sit:sit};
   });}catch(e){}
-  let ens=[];try{const E=especDe(b.produto)||{};ens=ensaiosDe(b.produto).map(([k,rot])=>({k,rot,quali:QUALI.includes(k),esp:csTqEspec(b.produto,k),
+  let ens=[];try{const E=especDe(b.produto,b.data)||{};ens=ensaiosDe(b.produto,b.data).map(([k,rot])=>({k,rot,quali:QUALI.includes(k),esp:csTqEspec(b.produto,k,b.data),
     min:(E[k]&&typeof E[k]==='object'&&E[k].min!=null)?+E[k].min:null,max:(E[k]&&typeof E[k]==='object'&&E[k].max!=null)?+E[k].max:null,
-    st:confereEnsaio(b.produto,k,((b.analise&&b.analise.resultados)||{})[k])}));}catch(e){}
+    st:confereEnsaio(b.produto,k,((b.analise&&b.analise.resultados)||{})[k],b.data)}));}catch(e){}
   const proc=((typeof FORMULAS!=='undefined'&&FORMULAS[b.produto]&&FORMULAS[b.produto].proc)||[]).filter(Boolean);
   const pl=k=>{const p=csTqPasso(b,k);return p?{min:p.min,de:p.de!=null?hhmm(p.de):'',ate:p.ate!=null?hhmm(p.ate):''}:null;};
   return {k:b.chave,data:b.data,p:b.produto,lote:b.lote||'',op:o0?rotuloOP(o0):'',vol:+b.volume||0,
@@ -31217,7 +31249,7 @@ function csTqAcao(k,a,x,pin){
       const mud=Object.keys(x.res||{}).filter(kk=>String(antes[kk]??'')!==String(res[kk]??''));
       novo.analise={...(at.analise||{}),resultados:res,em:relogio(),por:quem.nome};
       tq.anaEnv=C();tq.anaObs=x.obs||'';const era=!!tq.reana;tq.reana=false;tq.anaN=(+tq.anaN||0)+1;
-      let fora=[];try{fora=ensaiosDe(b.produto).filter(([kk])=>confereEnsaio(b.produto,kk,res[kk])==='fora').map(([,r])=>r);}catch(e){}
+      let fora=[];try{fora=ensaiosDe(b.produto,b.data).filter(([kk])=>confereEnsaio(b.produto,kk,res[kk],b.data)==='fora').map(([,r])=>r);}catch(e){}
       L(era?'Enviou a reanálise':'Enviou a análise para aprovação',
         (mud.length?mud.map(kk=>{const e=(ENSAIOS.find(z=>z[0]===kk)||[kk,kk])[1];return `${e}: ${res[kk]}`;}).join(' · '):'')+(fora.length?' · fora: '+fora.join(', '):'')+(x.obs?' · '+x.obs:''),true);
       msg=era?'Reanálise enviada':'Análise enviada';break;}
@@ -35233,6 +35265,7 @@ try{csNucleo.versao='v491';}catch(e){}
       if(F.ana){const g=F.id,esp={};Object.keys(F.ana).forEach(k=>{const v=F.ana[k];
         if(QUALI.includes(k)){if(v!=null&&String(v).trim())esp[k]=String(v).trim();}
         else if(v&&(v.min!=null||v.max!=null))esp[k]=v;});
+        try{versionarEspec(g,esp);}catch(e){}   /* guarda a versão de hoje antes de trocar; o antigo fica para os lotes já feitos */
         if(Object.keys(esp).length)ESPEC[g]=esp; else delete ESPEC[g];
         if(!PROD_TANQUE.includes(g))PROD_TANQUE.push(g);}}
     agendarSalvar();toast('Cadastro salvo.');I5.ficha=null;gradeCadProd();
