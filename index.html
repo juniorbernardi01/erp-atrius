@@ -5553,7 +5553,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v580';const VERSAO_DATA='19/11/2026';
+const VERSAO_APP='v581';const VERSAO_DATA='19/11/2026';
 /* número que aparece na tela: v438 → v4.3.8 (por dentro continua v438, que é o que as versões comparam) */
 const csRotVer=v=>{const d=String(v||'').replace(/\D/g,'');return d.length>=3?'v'+d.slice(0,-2)+'.'+d.slice(-2,-1)+'.'+d.slice(-1):String(v||'');};
 const VERSAO_ROTULO=csRotVer(VERSAO_APP)+' · '+VERSAO_DATA;
@@ -8191,18 +8191,19 @@ function excluirEnsaio(k){
    e não sai no papel. */
 function i5AnaHTML(ana){
   ana=ana||{};
-  const linhas=ENSAIOS.map(([k,r])=>{
+  const linhas=ENSAIOS.filter(([k])=>k in ana).map(([k,r])=>{
     const v=ana[k], quali=QUALI.includes(k);
-    const tem=quali?(v!=null&&String(v).trim()!==''):(v&&(v.min!=null||v.max!=null));
     const campo=quali
-      ? `<input class="i5in" data-anq="${k}" value="${escAttr(tem?v:'')}" placeholder="ex.: AZUL / CLORO / LÍQUIDO LÍMPIDO">`
+      ? `<input class="i5in" data-anq="${k}" value="${escAttr(v==null?'':v)}" placeholder="ex.: AZUL / CLORO / LÍQUIDO LÍMPIDO">`
       : `<span class="i5ann"><input class="i5in" data-anmin="${k}" value="${v&&v.min!=null?v.min:''}" placeholder="mín"><em>a</em><input class="i5in" data-anmax="${k}" value="${v&&v.max!=null?v.max:''}" placeholder="máx"></span>`;
-    return `<tr class="${tem?'':'i5anoff'}"><td><b>${escAttr(r)}</b> <span class="i5antp">${quali?'texto':'número'}</span></td><td>${campo}</td>
-      <td class="i5anac">${tem?`<button type="button" class="i5dt" data-anx="${k}" title="não medir neste produto">✕</button>`:'<span class="k">não medido</span>'}</td></tr>`;
+    return `<tr><td><b>${escAttr(r)}</b> <span class="i5antp">${quali?'texto':'número'}</span></td><td>${campo}</td>
+      <td class="i5anac"><button type="button" class="i5dt" data-anx="${k}" title="tirar este critério do produto">✕</button></td></tr>`;
   }).join('');
-  return `<p class="adp">O que o laboratório mede neste produto. Entra no certificado e aparece no tablet dos tanques para o operador preencher. Deixe em branco o que não se mede aqui — não sai no papel.</p>
-    <table class="i5t i5ana"><thead><tr><th>Critério</th><th>Especificação</th><th></th></tr></thead><tbody>${linhas||'<tr><td colspan="3" class="k">nenhum critério cadastrado</td></tr>'}</tbody></table>
-    <button type="button" class="i5add" id="i5AnaNovo">＋ Novo critério</button>`;
+  const disp=ENSAIOS.filter(([k])=>!(k in ana));
+  const addSel=`<select class="i5sel" id="i5AnaAdd" style="max-width:340px"><option value="">＋ Adicionar critério…</option>${disp.length?`<optgroup label="Critérios já existentes">${disp.map(([k,r])=>`<option value="${k}">${escAttr(r)}</option>`).join('')}</optgroup>`:''}<option value="__novo">＋ Criar critério novo…</option></select>`;
+  return `<p class="adp">O que o laboratório mede neste produto. Entra no certificado e aparece no tablet dos tanques para o operador preencher. Adicione um critério para medir; o ✕ tira do produto.</p>
+    <table class="i5t i5ana"><thead><tr><th>Critério</th><th>Especificação</th><th></th></tr></thead><tbody>${linhas||'<tr><td colspan="3" class="k">nenhum critério ainda — adicione abaixo</td></tr>'}</tbody></table>
+    <div style="margin-top:10px">${addSel}</div>`;
 }
 /* ---------- análise do lote: só os valores deste granel ---------- */
 /* A lista de critérios saiu daqui. Esta aba é usada todo dia, por quem
@@ -35156,19 +35157,25 @@ try{csNucleo.versao='v491';}catch(e){}
     if(M('i5Form'))M('i5Form').onclick=()=>abrirTanque(F.id,'form');
     if(M('i5Cert'))M('i5Cert').onclick=()=>abrirTanque(F.id,'cert');
     if(M('i5s-an')&&F.ana){
-      const setQ=k=>{const i=el.querySelector(`[data-anq="${k}"]`);if(!i)return;const v=i.value.trim();if(v)F.ana[k]=v;else delete F.ana[k];};
+      /* ao preencher, mantém o critério na lista (não some enquanto edita); só o
+         ✕ tira do produto. Vazio é descartado na hora de salvar. */
+      const setQ=k=>{const i=el.querySelector(`[data-anq="${k}"]`);if(!i)return;F.ana[k]=i.value;};
       const setN=k=>{const a=el.querySelector(`[data-anmin="${k}"]`),b=el.querySelector(`[data-anmax="${k}"]`);
         const mn=a&&a.value!==''?+a.value:null,mx=b&&b.value!==''?+b.value:null;
-        if(mn==null&&mx==null)delete F.ana[k];
-        else F.ana[k]={min:mn,max:mx,txt:mn!=null&&mx!=null?`Entre ${mn} e ${mx}`:(mn!=null?`Acima de ${mn}`:`Até ${mx}`)};};
+        F.ana[k]={min:mn,max:mx,txt:mn!=null&&mx!=null?`Entre ${mn} e ${mx}`:(mn!=null?`Acima de ${mn}`:(mx!=null?`Até ${mx}`:''))};};
       el.querySelectorAll('[data-anq]').forEach(i=>i.oninput=()=>setQ(i.dataset.anq));
       el.querySelectorAll('[data-anmin]').forEach(i=>i.oninput=()=>setN(i.dataset.anmin));
       el.querySelectorAll('[data-anmax]').forEach(i=>i.oninput=()=>setN(i.dataset.anmax));
       el.querySelectorAll('[data-anx]').forEach(b=>b.onclick=()=>{delete F.ana[b.dataset.anx];fichaDesenha();});
-      if(M('i5AnaNovo'))M('i5AnaNovo').onclick=()=>{
-        const nome=(prompt('Nome do novo critério (ex.: Teor de cloro ativo):')||'').trim();if(!nome)return;
-        const tipo=confirm('Esse critério é de NÚMERO, com mínimo e máximo?\n\nOK = número  ·  Cancelar = texto (conforme / não conforme)')?'num':'texto';
-        const r=criarEnsaio(nome,tipo);if(r&&r.erro)return toast(r.erro,true);fichaDesenha();
+      const add=M('i5AnaAdd');
+      if(add)add.onchange=()=>{const val=add.value;if(!val)return;
+        if(val==='__novo'){
+          const nome=(prompt('Nome do novo critério (ex.: Teor de cloro ativo):')||'').trim();if(!nome){add.value='';return;}
+          const tipo=confirm('Esse critério é de NÚMERO, com mínimo e máximo?\n\nOK = número  ·  Cancelar = texto (conforme / não conforme)')?'num':'texto';
+          const r=criarEnsaio(nome,tipo);if(r&&r.erro){toast(r.erro,true);add.value='';return;}
+          F.ana[r.ok]=QUALI.includes(r.ok)?'':{min:null,max:null,txt:''};
+        }else{ F.ana[val]=QUALI.includes(val)?'':{min:null,max:null,txt:''}; }
+        fichaDesenha();
       };
     }
     el.querySelectorAll('[data-eq]').forEach(i=>i.onchange=()=>{const x=lnum(i.value);if(x!=null)F.emb[+i.dataset.eq].qtd=x;fichaDesenha();});

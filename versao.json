@@ -1,6 +1,6 @@
 {
- "v": "v580",
- "versao": "5.8.0",
+ "v": "v581",
+ "versao": "5.8.1",
  "data": "19/11/2026",
- "o_que_mudou": "NOVO: seção 'Análise' dentro do cadastro do produto de tanque (o produto mae). Agora, no cadastro de cada produto de tanque (ex.: ÁGUA SANITÁRIA), tem um passo 'Análise' onde se escolhe QUAIS criterios aquele produto mede e a especificacao de cada um: preenche o que mede, deixa em branco o que nao se aplica (ex.: agua sanitaria mede Teor de ativo e NAO mede Viscosidade; amaciante o contrario). Da para remover um criterio do produto (✕) e criar um criterio novo (+ Novo criterio). Usa o MESMO modelo que ja alimenta o certificado de analise e o tablet dos tanques, entao o que se define aqui aparece certinho para o operador preencher e sai no certificado. Nada do que ja existia foi mexido para pior. Mantem tudo das 5.7.x (velocidade do tablet, trocar operador, historico do lote limpo, backup resiliente, auditoria de integridade). OBS: tablet ja travado pode precisar de um refresh manual uma vez."
+ "o_que_mudou": "Ajuste na secao Analise do cadastro (pedido do Junior): agora a lista mostra SO os criterios que o produto mede, cada um com o ✕ para tirar do produto. O criterio que nao se aplica nao aparece mais como 'nao medido' - sai da lista. Para medir um criterio, usa o seletor '＋ Adicionar criterio…', que lista os criterios ja existentes que ainda nao estao no produto e a opcao de criar um novo. Mantem tudo da 5.8.0 (parametros de analise por produto, mesma base do certificado e do tablet) e das 5.7.x. OBS: tablet ja travado pode precisar de um refresh manual uma vez."
 }
