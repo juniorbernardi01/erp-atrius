@@ -5553,7 +5553,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v579';const VERSAO_DATA='19/11/2026';
+const VERSAO_APP='v580';const VERSAO_DATA='19/11/2026';
 /* número que aparece na tela: v438 → v4.3.8 (por dentro continua v438, que é o que as versões comparam) */
 const csRotVer=v=>{const d=String(v||'').replace(/\D/g,'');return d.length>=3?'v'+d.slice(0,-2)+'.'+d.slice(-2,-1)+'.'+d.slice(-1):String(v||'');};
 const VERSAO_ROTULO=csRotVer(VERSAO_APP)+' · '+VERSAO_DATA;
@@ -8184,6 +8184,26 @@ function excluirEnsaio(k){
   agendarSalvar();
 }
 
+/* Seção de Análise dentro do cadastro do produto de tanque (pedido do Junior,
+   19/11). Cada produto escolhe quais critérios mede e a especificação de cada
+   um. Usa o MESMO modelo ENSAIOS/ESPEC/QUALI que alimenta o certificado e o
+   tablet dos tanques — nada reinventado. Em branco = não se mede neste produto
+   e não sai no papel. */
+function i5AnaHTML(ana){
+  ana=ana||{};
+  const linhas=ENSAIOS.map(([k,r])=>{
+    const v=ana[k], quali=QUALI.includes(k);
+    const tem=quali?(v!=null&&String(v).trim()!==''):(v&&(v.min!=null||v.max!=null));
+    const campo=quali
+      ? `<input class="i5in" data-anq="${k}" value="${escAttr(tem?v:'')}" placeholder="ex.: AZUL / CLORO / LÍQUIDO LÍMPIDO">`
+      : `<span class="i5ann"><input class="i5in" data-anmin="${k}" value="${v&&v.min!=null?v.min:''}" placeholder="mín"><em>a</em><input class="i5in" data-anmax="${k}" value="${v&&v.max!=null?v.max:''}" placeholder="máx"></span>`;
+    return `<tr class="${tem?'':'i5anoff'}"><td><b>${escAttr(r)}</b> <span class="i5antp">${quali?'texto':'número'}</span></td><td>${campo}</td>
+      <td class="i5anac">${tem?`<button type="button" class="i5dt" data-anx="${k}" title="não medir neste produto">✕</button>`:'<span class="k">não medido</span>'}</td></tr>`;
+  }).join('');
+  return `<p class="adp">O que o laboratório mede neste produto. Entra no certificado e aparece no tablet dos tanques para o operador preencher. Deixe em branco o que não se mede aqui — não sai no papel.</p>
+    <table class="i5t i5ana"><thead><tr><th>Critério</th><th>Especificação</th><th></th></tr></thead><tbody>${linhas||'<tr><td colspan="3" class="k">nenhum critério cadastrado</td></tr>'}</tbody></table>
+    <button type="button" class="i5add" id="i5AnaNovo">＋ Novo critério</button>`;
+}
 /* ---------- análise do lote: só os valores deste granel ---------- */
 /* A lista de critérios saiu daqui. Esta aba é usada todo dia, por quem
    ajusta um pH ou uma cor; criar e apagar critério acontece uma ou duas
@@ -34912,6 +34932,12 @@ try{csNucleo.versao='v491';}catch(e){}
 .i5chips{display:flex;gap:6px;flex-wrap:wrap}.i5chips span{border:1px solid var(--line);border-radius:9px;padding:5px 9px;font-size:12.5px;background:#fff}.i5chips span em{font-style:normal;color:var(--ink3);cursor:pointer;margin-left:6px}
 .i5add{color:#1D4ED8;font-weight:700;font-size:13px;cursor:pointer;background:none;border:0;padding:0;text-align:left}
 .i5in{height:32px;border:1px solid var(--line);border-radius:8px;padding:0 8px;width:90px;text-align:right}
+.i5ana td{vertical-align:middle}.i5ana td:nth-child(2){width:46%}
+.i5ana input[data-anq]{width:100%;text-align:left}
+.i5ann{display:inline-flex;align-items:center;gap:6px}.i5ann input{width:84px}.i5ann em{color:var(--ink3);font-style:normal;font-size:12px}
+.i5antp{font:700 10px Inter,system-ui;color:var(--ink3);letter-spacing:.05em;text-transform:uppercase;margin-left:6px;opacity:.7}
+.i5ana tr.i5anoff td{opacity:.62}.i5ana tr.i5anoff td:first-child{opacity:1}
+.i5anac{text-align:right;white-space:nowrap}
 .i5sw{display:flex;align-items:center;gap:12px;border:1px solid var(--line);border-radius:12px;padding:12px 14px;cursor:pointer}
 .i5sw i{width:42px;height:24px;border-radius:12px;background:#C9CCD3;position:relative;flex:none}.i5sw i:after{content:'';position:absolute;left:3px;top:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:.15s}
 .i5sw.on i{background:#15803D}.i5sw.on i:after{left:21px}.i5sw b{font-size:15px}.i5sw small{display:block;color:var(--ink3);font-size:12.5px}
@@ -35040,7 +35066,8 @@ try{csNucleo.versao='v491';}catch(e){}
     const nome=tp==='t'?F.id:tp==='p'?d.descricao:d.nome;const sku=tp==='t'?(d.sku||''):tp==='p'?d.codigo:d.sku;
     const temFT=ob.p||ob.i;const kit=tp==='p'&&/^KIT/i.test(d.descricao||'');
     const secs=[['id','Identificação'],['ob','Como é obtido']];if(temFT)secs.push(['ft',tp==='t'?'Formulação':'Ficha técnica']);if(tp==='t')secs.push(['mf','Modo de fazer']);
-    if(tp!=='t')secs.push(['dm','Dimensões e peso'],['fi','Fiscal']);secs.push(['es','Estoque']);
+    if(tp!=='t')secs.push(['dm','Dimensões e peso'],['fi','Fiscal']);if(tp==='t')secs.push(['an','Análise']);secs.push(['es','Estoque']);
+    if(tp==='t'&&!F.ana)F.ana=JSON.parse(JSON.stringify(ESPEC[F.id]||{}));
     const n=k=>secs.findIndex(s=>s[0]===k)+1;
     const grupoSel=tp==='t'&&!F.novo?`<input value="Tanques" readonly>`:`<select data-f="cgrupo" ${F.novo?'id="i5NG"':''}>${F.novo&&!F.gk?'<option value="">escolha o grupo…</option>':''}${GR.map(x=>{const fs=(x.f.length?x.f:[[x.k,x.n]]).filter(([k])=>F.novo||k!=='tanques');return fs.length?`<optgroup label="${x.n}">${fs.map(([k,n])=>`<option value="${k}" ${k===(F.novo?F.gk:g)?'selected':''}>${n}</option>`).join('')}</optgroup>`:'';}).join('')}</select>`;
     const marc=(d.tags||[]).filter(t=>t!=='Produto Acabado'&&t!==d.tipo);
@@ -35108,6 +35135,7 @@ try{csNucleo.versao='v491';}catch(e){}
       ${blk('id','Identificação',idb)}${blk('ob','Como é obtido',obb,'pode marcar mais de um')}
       ${temFT?blk('ft',tp==='t'?'Formulação':'Ficha técnica',ftb,tp==='t'?'a mesma do tablet dos tanques':'para 1 unidade'):''}
       ${tp==='t'?blk('mf','Modo de fazer',mfb,'o mesmo do tablet dos tanques'):''}
+      ${tp==='t'?blk('an','Análise',i5AnaHTML(F.ana),'critérios e especificação deste produto'):''}
       ${tp!=='t'?blk('dm','Dimensões e peso',dmb)+blk('fi','Fiscal',fib):''}${blk('es','Estoque',esb)}
       <div class="i5ft"><button class="btn" id="i5Can">Cancelar</button><button class="btn pri" id="i5Sal">Salvar</button></div></div></div>`;
     /* ligações */
@@ -35127,6 +35155,22 @@ try{csNucleo.versao='v491';}catch(e){}
     if(M('i5Tp'))M('i5Tp').onclick=()=>{try{csAbrirTempos(tp==='t'?F.id:d.tanque||'');}catch(e){}};
     if(M('i5Form'))M('i5Form').onclick=()=>abrirTanque(F.id,'form');
     if(M('i5Cert'))M('i5Cert').onclick=()=>abrirTanque(F.id,'cert');
+    if(M('i5s-an')&&F.ana){
+      const setQ=k=>{const i=el.querySelector(`[data-anq="${k}"]`);if(!i)return;const v=i.value.trim();if(v)F.ana[k]=v;else delete F.ana[k];};
+      const setN=k=>{const a=el.querySelector(`[data-anmin="${k}"]`),b=el.querySelector(`[data-anmax="${k}"]`);
+        const mn=a&&a.value!==''?+a.value:null,mx=b&&b.value!==''?+b.value:null;
+        if(mn==null&&mx==null)delete F.ana[k];
+        else F.ana[k]={min:mn,max:mx,txt:mn!=null&&mx!=null?`Entre ${mn} e ${mx}`:(mn!=null?`Acima de ${mn}`:`Até ${mx}`)};};
+      el.querySelectorAll('[data-anq]').forEach(i=>i.oninput=()=>setQ(i.dataset.anq));
+      el.querySelectorAll('[data-anmin]').forEach(i=>i.oninput=()=>setN(i.dataset.anmin));
+      el.querySelectorAll('[data-anmax]').forEach(i=>i.oninput=()=>setN(i.dataset.anmax));
+      el.querySelectorAll('[data-anx]').forEach(b=>b.onclick=()=>{delete F.ana[b.dataset.anx];fichaDesenha();});
+      if(M('i5AnaNovo'))M('i5AnaNovo').onclick=()=>{
+        const nome=(prompt('Nome do novo critério (ex.: Teor de cloro ativo):')||'').trim();if(!nome)return;
+        const tipo=confirm('Esse critério é de NÚMERO, com mínimo e máximo?\n\nOK = número  ·  Cancelar = texto (conforme / não conforme)')?'num':'texto';
+        const r=criarEnsaio(nome,tipo);if(r&&r.erro)return toast(r.erro,true);fichaDesenha();
+      };
+    }
     el.querySelectorAll('[data-eq]').forEach(i=>i.onchange=()=>{const x=lnum(i.value);if(x!=null)F.emb[+i.dataset.eq].qtd=x;fichaDesenha();});
     el.querySelectorAll('[data-ex]').forEach(b=>b.onclick=()=>{F.emb.splice(+b.dataset.ex,1);fichaDesenha();});
     if(M('i5EA'))M('i5EA').onchange=e=>{const [t,id]=e.target.value.split(/\|(.*)/s);if(t==='i'){const x=insPorSku(id);if(x)F.emb.push({comp:nomeG(x.cgrupo||grupoIns(x)),nome:x.nome,sku:x.sku,qtd:1});}
@@ -35176,7 +35220,14 @@ try{csNucleo.versao='v491';}catch(e){}
     else if(F.tp==='i'){const i=INSUMOS.find(x=>x.sku===F.id);if(!i)return;if(!String(d.nome||'').trim())return toast('O nome não pode ficar vazio.',true);
       if(!String(d.tiny||'').trim())d.tiny=i.tiny&&String(i.tiny).startsWith('ERP-')?i.tiny:('ERP-'+i.sku);
       Object.assign(i,d);if(d.obtem&&(d.obtem.p||d.obtem.i))i.ficha=F.emb.map(e=>({...e}));}
-    else{const f=FORMULAS[F.id]=FORMULAS[F.id]||{mp:[],emb:{}};f.cad=Object.assign(f.cad||{},d);f.proc=F.proc.map(s=>String(s).trim()).filter(Boolean);}
+    else{const f=FORMULAS[F.id]=FORMULAS[F.id]||{mp:[],emb:{}};f.cad=Object.assign(f.cad||{},d);f.proc=F.proc.map(s=>String(s).trim()).filter(Boolean);
+      /* análise do produto: grava os critérios escolhidos em ESPEC, mesma forma
+         do certificado (texto para cor/odor/aspecto, {min,max,txt} para número) */
+      if(F.ana){const g=F.id,esp={};Object.keys(F.ana).forEach(k=>{const v=F.ana[k];
+        if(QUALI.includes(k)){if(v!=null&&String(v).trim())esp[k]=String(v).trim();}
+        else if(v&&(v.min!=null||v.max!=null))esp[k]=v;});
+        if(Object.keys(esp).length)ESPEC[g]=esp; else delete ESPEC[g];
+        if(!PROD_TANQUE.includes(g))PROD_TANQUE.push(g);}}
     agendarSalvar();toast('Cadastro salvo.');I5.ficha=null;gradeCadProd();
   }
   /* ---------- recorte da foto, do jeito do WhatsApp ----------
