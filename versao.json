@@ -1,6 +1,6 @@
 {
- "v": "v577",
- "versao": "5.7.7",
- "data": "18/11/2026",
- "o_que_mudou": "Conserto de seguranca no tablet dos tanques: ao tocar em 'trocar operador', a tela voltava para o PIN mas os botoes continuavam ligados no PIN anterior (que ja estava com os 4 digitos certos do operador que acabou de sair), entao o primeiro toque em qualquer numero revalidava e abria o sistema sem digitar o PIN. Agora a tela do PIN se refaz do zero a cada vez: o primeiro toque so marca um digito e o sistema so abre com o PIN completo de novo. Mantem a velocidade da 5.7.6 (tela do tanque de 905ms para ~2ms com o cache de reservas) e o numero da versao no canto. OBS: tablet ja travado pode precisar de um refresh manual uma vez; depois o numero 5.7.7 aparece no canto."
+ "v": "v579",
+ "versao": "5.7.9",
+ "data": "19/11/2026",
+ "o_que_mudou": "Historico do lote limpo (pedido do Junior). Antes, quando uma OP terminava cedo ou tarde, as seguintes na mesma maquina recebiam no proprio historico um aviso 'empurrada/puxada pela fila' que falava de OUTRO lote - isso poluia a leitura do lote. Agora: a OP seguinte so AJUSTA o horario de inicio previsto, em silencio, sem linha no historico dela. A nota fica UMA vez na OP que CAUSOU: 'Atrasou o inicio das proximas' ou 'Antecipou as da fila' (termos profissionais, sem 'empurrar/puxar', sem nome de pessoa porque e automatico). Uma migracao roda uma vez e LIMPA do historico as 731 linhas de fila antigas que vinham de outros lotes, preservando 100% dos eventos reais de cada lote. Tambem: backup mais resistente a queda de conexao - ele le o sistema inteiro tabela por tabela (centenas de leituras nas tabelas grandes), e antes uma unica queda abortava tudo; agora tenta de novo algumas vezes antes de desistir, e a mensagem de erro diz qual tabela falhou. Mantem tudo das 5.7.x (velocidade do tablet, trocar operador, auditoria de integridade). OBS: tablet ja travado pode precisar de um refresh manual uma vez."
 }

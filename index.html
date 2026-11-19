@@ -5289,7 +5289,8 @@ function registrar(o,ev,op,det){
 /* Eventos que o sistema produz sozinho, sem ninguém clicar. Vão apagados,
    porque competem por atenção com o que uma pessoa de fato fez. */
 const EV_SISTEMA=['Reprogramada na fila','Reajustada pelo realizado',
-  'Reajustada pela fila','OP empurrada','OP puxada'];
+  'Reajustada pela fila','OP empurrada','OP puxada',
+  'Atrasou o início das próximas','Antecipou as da fila','Reorganizou a fila da máquina'];
 /* Consequências automáticas de mover/editar um lote: ninguém clicou uma baixa
    ou liberação, o registro só acompanhou o lote. Também não levam nome. */
 const EV_ACOMPANHA=['Baixa de matéria-prima acompanhou o lote',
@@ -5301,15 +5302,21 @@ const EV_APOIO=['Etiquetas impressas','Motivos informados','Lote do insumo',
 
 /* A fila move uma OP por causa de outra. "Reajustada pelo realizado" some
    com o culpado; aqui a linha diz quem empurrou, por quanto e para onde. */
-function registrarFila(x,antes,novo,causa){
-  const d=novo-antes;
-  if(!d)return;
-  const quem=causa
-    ? `${nomeCurto(causa.codigo)}${causa.lote?` · lote ${causa.lote}`:''}`
-    : 'a OP anterior';
-  registrar(x, d>0?'OP empurrada':'OP puxada', null,
-    `${hmm(Math.abs(d))} · estava para ${hhmm(antes)}, entra ${hhmm(novo)}`
-    +` — ${quem} terminou ${d>0?'depois':'antes'} do previsto`);
+/* Pedido do Junior (19/11): o histórico de um lote deve mostrar só o que
+   aconteceu DENTRO dele. Quando uma OP termina cedo ou tarde, as seguintes na
+   mesma máquina têm o horário de início previsto ajustado em silêncio (sem
+   linha no histórico delas). A nota fica UMA vez na OP que causou: "Atrasou o
+   início das próximas" ou "Antecipou as da fila". Sem termos "empurrar/puxar". */
+function notaFila(causa,mudou){
+  if(!causa||!Array.isArray(mudou)||!mudou.length)return;
+  let atras=0,antec=0;
+  mudou.forEach(m=>{const d=(m.novo||0)-(m.antes||0);if(d>0)atras++;else if(d<0)antec++;});
+  if(!atras&&!antec)return;
+  const n=atras+antec;
+  const ev=(atras&&!antec)?'Atrasou o início das próximas'
+          :(antec&&!atras)?'Antecipou as da fila'
+          :'Reorganizou a fila da máquina';
+  registrar(causa, ev, null, `${n} ${n>1?'ordens seguintes':'ordem seguinte'} na ${causa.maq||'máquina'}`);
 }
 
 function pesoEvento(e){
@@ -5546,7 +5553,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v577';const VERSAO_DATA='18/11/2026';
+const VERSAO_APP='v579';const VERSAO_DATA='19/11/2026';
 /* número que aparece na tela: v438 → v4.3.8 (por dentro continua v438, que é o que as versões comparam) */
 const csRotVer=v=>{const d=String(v||'').replace(/\D/g,'');return d.length>=3?'v'+d.slice(0,-2)+'.'+d.slice(-2,-1)+'.'+d.slice(-1):String(v||'');};
 const VERSAO_ROTULO=csRotVer(VERSAO_APP)+' · '+VERSAO_DATA;
@@ -12869,10 +12876,10 @@ function finalizarEnvase(o){
       `setup ${i}–${sf} (${setupReal(o)} min)${badge(dvSetup(o)).replace(/<[^>]+>/g,'')} · `+
       `envase ${ei}–${f} (${envaseReal(o)} min)${badge(dvEnvase(o)).replace(/<[^>]+>/g,'')}`+
       `${obs?` · ${obs}`:''}`);
-    const mudou=recomporERegistrar();
-    /* a fila só empurra dentro da própria máquina: fechar um lote de uma
-       linha não pode registrar empurrão numa OP de outra linha */
-    mudou.forEach(({x,antes,novo})=>{if(x.maq===o.maq)registrarFila(x,antes,novo,o);});
+    const mudou=recomporERegistrar().filter(m=>m.x&&m.x.maq===o.maq);
+    /* o lote empurrado só ajusta o horário (já feito acima); a nota de que ele
+       atrasou/antecipou as próximas fica na própria OP que causou (o) */
+    notaFila(o,mudou);
     fecharModal();render();
     toast(mudou.length?`Envase finalizado · ${mudou.length} OP reajustada${mudou.length>1?'s':''}.`
       :'Envase finalizado · informe as caixas para concluir.');
@@ -13560,10 +13567,10 @@ function concluir(o){
     (()=>{const q=caixasPrev(o)-(o.caixas||0);
       if(q>0)registrar(o,'Quebra confirmada',quem,
         `${nf(q)} cx · ${nf(q*litrosCx(o))} L · ${nf1(q/caixasPrev(o)*100)}% do lote`);})();
-    /* a fila da máquina acompanha o que realmente aconteceu */
-    const mudou=recomporERegistrar();
-    /* só empurra dentro da própria máquina (ver nota no fim do envase) */
-    mudou.forEach(({x,antes,novo})=>{if(x.maq===o.maq)registrarFila(x,antes,novo,o);});
+    /* a fila da máquina acompanha o que realmente aconteceu; a nota de atraso/
+       antecipação das próximas fica na OP que causou, não no lote empurrado */
+    const mudou=recomporERegistrar().filter(m=>m.x&&m.x.maq===o.maq);
+    notaFila(o,mudou);
     /* o lote do tanque conclui junto quando todo o envase dele terminou */
     const b=batDe(o);
     if(b){
@@ -26916,6 +26923,27 @@ setTimeout(function fxSku(){try{if(!PRONTO)return setTimeout(fxSku,3000);if(MODO
     Object.keys(f.emb||{}).forEach(function(sz){(f.emb[sz]||[]).forEach(trata);});});
   CS_MIGRA.push('semsku-real-1117');agendarSalvar();if(n)console.log('migra semsku: '+n+' itens corrigidos');
 }catch(e){console.log('migra semsku',e);}},7000);
+/* v579 · histórico do lote limpo (pedido do Junior, 19/11). Cada lote deve
+   mostrar só o que aconteceu DENTRO dele. Os avisos de fila que vinham de OUTROS
+   lotes (empurrada/puxada/reprogramada/reajustada pela fila) poluíam a leitura
+   e são REMOVIDOS. Os eventos do próprio lote ficam; os que são consequência
+   automática dentro dele (reajuste pelo realizado, matéria-prima/liberação que
+   acompanhou o lote) perdem o nome de quem estava logado na hora. Roda uma vez,
+   NÃO toca em nada que uma pessoa fez (lançar, editar, iniciar, liberar...). */
+setTimeout(function fxFila(){try{if(!PRONTO)return setTimeout(fxFila,3000);if(MODO_TV)return;
+  if(CS_MIGRA.includes('hist-fila-limpa-1119'))return;
+  const FORA=['OP empurrada','OP puxada','Reprogramada na fila','Reajustada pela fila'];
+  const SEMNOME=['Reajustada pelo realizado','Baixa de matéria-prima acompanhou o lote','Baixa de matéria-prima não repetida','Liberação acompanhou o lote'];
+  let rem=0,lim=0;
+  (ORDENS||[]).forEach(function(o){
+    if(!Array.isArray(o.log))return;
+    const antes=o.log.length;
+    o.log=o.log.filter(function(e){return !(e&&FORA.indexOf(e.e)>=0);});
+    rem+=antes-o.log.length;
+    o.log.forEach(function(e){if(e&&SEMNOME.indexOf(e.e)>=0&&e.op){e.op='';lim++;}});
+  });
+  CS_MIGRA.push('hist-fila-limpa-1119');agendarSalvar();if(rem||lim)console.log('migra fila: '+rem+' linhas de fila removidas, '+lim+' sem nome');
+}catch(e){console.log('migra fila',e);}},7500);
 /* ===================== v559 · tablets das máquinas no escuro =====================
    Os tablets do envase (MAQ 1..N) vinham claros; devem ficar escuros como o dos tanques.
    Roda uma vez: marca cada tablet de máquina como escuro. Depois o usuário pode trocar no seletor. */
@@ -33864,8 +33892,18 @@ try{csNucleo.versao='v470';}catch(e){}
     const out=[];const pg=1000;
     for(let o=0;;o+=pg){
       const ir=()=>fetch(`${SUPA.url}/rest/v1/${nome}?select=*`,{headers:cabecalhos({'Range-Unit':'items','Range':`${o}-${o+pg-1}`})});
-      let r=await ir();if(r.status===401&&await renovarSessao())r=await ir();
-      if(r.status===416)break;if(!r.ok)throw new Error(r.status);
+      /* tabelas grandes = centenas de leituras seguidas; uma queda de conexão
+         não pode mais abortar o backup inteiro. Tenta de novo, com espera. */
+      let r=null;
+      for(let tent=1;tent<=4;tent++){
+        try{ r=await ir(); }
+        catch(e){ if(tent===4)throw new Error('a conexão caiu ao ler '+nome+' — tente de novo'); await esp(700*tent); continue; }
+        if(r.status===401&&await renovarSessao()){ try{r=await ir();}catch(e){r=null;} }
+        if(r&&r.status>=500&&tent<4){ await esp(700*tent); continue; }
+        break;
+      }
+      if(!r)throw new Error('não consegui ler '+nome+' — tente de novo');
+      if(r.status===416)break;if(!r.ok)throw new Error(nome+': '+r.status);
       const l=await r.json();out.push(...l);prog&&prog(out.length);if(l.length<pg)break;
     }
     return out;
