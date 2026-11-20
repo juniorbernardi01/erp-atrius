@@ -5584,7 +5584,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v587';const VERSAO_DATA='20/11/2026';
+const VERSAO_APP='v589';const VERSAO_DATA='20/11/2026';
 /* número que aparece na tela: v438 → v4.3.8 (por dentro continua v438, que é o que as versões comparam) */
 const csRotVer=v=>{const d=String(v||'').replace(/\D/g,'');return d.length>=3?'v'+d.slice(0,-2)+'.'+d.slice(-2,-1)+'.'+d.slice(-1):String(v||'');};
 const VERSAO_ROTULO=csRotVer(VERSAO_APP)+' · '+VERSAO_DATA;
@@ -40807,6 +40807,18 @@ function estornaOP(num){
 
 /* ---------- OPs ---------- */
 function opsDe(origem, data){ return PCP.ops.filter(function(o){ return o.origem===origem && (!data || o.data===data); }); }
+/* v5.8.9: o dia escolhido em cima manda na tela. Antes toda OP não concluída aparecia em QUALQUER
+   dia, então avançar a data não mudava nada e a OP programada para amanhã ficava escondida atrás da
+   que estava aberta hoje. Agora cada dia mostra as OPs daquele dia. Só o dia de HOJE carrega junto o
+   que ficou aberto de dias anteriores e o que está em produção — é hoje que isso precisa ser feito. */
+function opsDoDia(origem, data){
+  var hoje=hojeYMD();
+  return opsDe(origem).filter(function(o){
+    if(o.data===data) return true;
+    if(data!==hoje||o.status==='concluida') return false;
+    return String(o.data||'')<hoje||o.status==='produzindo'||o.status==='pausada';
+  });
+}
 function opPorId(id){ for(var i=0;i<PCP.ops.length;i++) if(PCP.ops[i].id===id) return PCP.ops[i]; return null; }
 function logar(o,ev,det){ o.log=o.log||[]; o.log.push({t:agora(),d:hojeYMD(),e:ev,por:(function(){try{return quemAssina();}catch(e){return '';}})(),m:det||null}); }
 function opEnvaseNum(oid){ try{ var o=(typeof ORDENS!=='undefined'?ORDENS:[]).filter(function(x){return x.id===oid;})[0]; return o?rotuloOP(o):(oid||''); }catch(e){ return oid||''; } }
@@ -40870,7 +40882,7 @@ function cardSoproN(o, vez){
     return '<div class="pcx-card conc" data-op="'+o.id+'">'+
       (o.criadoData&&o.criadoData!==o.data?'<div class="pcx-comecou">OP '+esc(o.num)+' · começou em '+esc(o.criadoData)+'</div>':'')+
       topo(o,'<span class="pcx-sl cz mono">'+esc(o.num)+'</span>')+
-      boxes([['Qtd prevista', nfx(o.qtdPrev)+' un', 1],['Qtd realizada', nfx(o.boas)+' <span class="pct">'+String(pct).replace('.',',')+'%</span>', 1],['Qtd quebra', (o.quebra||0)+' <span class="pct">'+String(qpct).replace('.',',')+'%</span>', 1]])+
+      boxes([['Qtd prevista', nfx(o.qtdPrev)+' un', 1],['Qtd realizada', nfx(o.boas)+' <span class="pct">'+String(pct).replace('.',',')+'%</span>', 1],['Qtd quebra', nfx(o.quebra||0)+' <span class="pct">'+String(qpct).replace('.',',')+'%</span>', 1]])+
       temposBloco([['Sopro', hhmm(o.iniPrev)+' → '+hhmm(o.fimPrev), (o.iniReal||'--:--')+' → '+(o.fimReal||'--:--')]],['OP '+esc(o.num),''],'')+'</div>';
   }
   var bx = blocoPega([['Preforma', nomeFull(o.preformaSku), saldoPCP(o.preformaSku)>0?true:'comprar']], o);
@@ -40889,7 +40901,7 @@ function cardRotuloN(o, vez){
     return '<div class="pcx-card conc" data-op="'+o.id+'">'+
       (o.criadoData&&o.criadoData!==o.data?'<div class="pcx-comecou">OP '+esc(o.num)+' · começou em '+esc(o.criadoData)+'</div>':'')+
       topo(o)+
-      boxes([['Qtd prevista', nfx(o.qtdPrev)+' un', 1],['Qtd realizada', nfx(o.boas)+' <span class="pct">'+String(pct).replace('.',',')+'%</span>', 1],['Quebra rótulo', (o.quebraRotulo||0)+' <span class="pct">'+String(qr).replace('.',',')+'%</span>', 1],['Quebra frasco', (o.quebraFrasco||0)+' <span class="pct">'+String(qf).replace('.',',')+'%</span>', 1]])+
+      boxes([['Qtd prevista', nfx(o.qtdPrev)+' un', 1],['Qtd realizada', nfx(o.boas)+' <span class="pct">'+String(pct).replace('.',',')+'%</span>', 1],['Quebra rótulo', nfx(o.quebraRotulo||0)+' <span class="pct">'+String(qr).replace('.',',')+'%</span>', 1],['Quebra frasco', nfx(o.quebraFrasco||0)+' <span class="pct">'+String(qf).replace('.',',')+'%</span>', 1]])+
       temposBloco([['Rotulagem', hhmm(o.iniPrev)+' → '+hhmm(o.fimPrev), (o.iniReal||'--:--')+' → '+(o.fimReal||'--:--')]],['Rótulo '+esc(nomeCurtoSku(o.rotuloSku)),''],'')+'</div>';
   }
   var bx = blocoPega([['Frasco', nomeFull(o.frascoSku), saldoPCP(o.frascoSku)>0?true:'soprar'],['Rótulo', nomeFull(o.rotuloSku), null]], o);
@@ -41324,7 +41336,7 @@ try{ window.addEventListener('resize',function(){ try{ srAlturas(); }catch(e){} 
 function renderSR(host, tab){
   if(!host) return;
   var data=dataRef();
-  var ops = opsDe(tab).filter(function(o){ return o.data===data || o.status!=='concluida'; });
+  var ops = opsDoDia(tab, data);
   var maqs = tab==='sopro'?sopradoras():rotuladoras();
   var cols = '<div class="pcx-maqs">'+ maqs.map(function(m){
     return coluna({nome:m.nome||m.id,id:m.id,o:tab}, +m.cad||0, ops.filter(function(o){return o.maq===m.id;}));
@@ -41420,13 +41432,19 @@ function fecharMenuCard(){ var m=MM('pcpCardMenu'); if(m)m.remove(); }
 function abrirMenuCard(btn,o){
   fecharMenuCard();
   var m=document.createElement('div'); m.className='pcx-cardmenu'; m.id='pcpCardMenu';
-  m.innerHTML='<button data-mi="hist">Histórico</button><button data-mi="edit">Editar OP</button><button data-mi="pdf">Imprimir PDF</button><button data-mi="del" class="del">Excluir OP</button>';
+  /* v5.8.8: no cartão ficam Concluir e Pausar; fim de turno e troca de operador entram aqui,
+     em cima do histórico, e só existem com a OP em produção */
+  m.innerHTML=(o.status==='produzindo'?'<button data-mi="turno">Fim de turno</button><button data-mi="troca">Trocar operador</button>'
+      :(o.status==='pausada'&&o.pausaMotivo!=='Fim de turno'?'<button data-mi="turno">Fim de turno</button>':''))+
+    '<button data-mi="hist">Histórico</button><button data-mi="edit">Editar OP</button><button data-mi="pdf">Imprimir PDF</button><button data-mi="del" class="del">Excluir OP</button>';
   document.body.appendChild(m);
   var r=btn.getBoundingClientRect();
   var top=Math.min(r.bottom+4, window.innerHeight-180);
   m.style.top=top+'px'; m.style.left=Math.max(8,Math.min(r.right-182, window.innerWidth-190))+'px';
   m.querySelectorAll('[data-mi]').forEach(function(b){ b.onclick=function(ev){ ev.stopPropagation(); var mi=b.getAttribute('data-mi'); fecharMenuCard();
-    if(mi==='hist') abrirOP(o);
+    if(mi==='turno') abrirTurnoSR(o);
+    else if(mi==='troca') abrirTrocaSR(o);
+    else if(mi==='hist') abrirOP(o);
     else if(mi==='edit') editarOP(o);
     else if(mi==='pdf'){ try{ pdfOP(o); }catch(e){ avisa('PDF indisponível.',true); } }
     else if(mi==='del') excluirOP(o);
@@ -41444,22 +41462,37 @@ function editarOP(o){
   if(!podeEd()){ avisa('Sem permissão.',true); return; }
   var isRot=o.origem==='rotulagem';
   var maqs = isRot?rotuladoras():sopradoras();
-  MM('mTit').textContent='Editar '+o.num;
-  MM('mSub').hidden=false; MM('mSub').textContent=o.titulo;
-  MM('modal').classList.remove('wide');
-  MM('mB').innerHTML=
-    '<div class="g2"><div class="fld"><label>Quantidade a produzir</label><input id="eQtd" type="number" min="1" step="1" value="'+(o.qtdPrev||0)+'"></div>'+
-      '<div class="fld"><label>Máquina</label><select id="eMaq">'+maqs.map(function(m){return opt(o.maq, m.id, (m.nome||m.id)+(m.cad?' — '+nfx(m.cad)+' un/h':''));}).join('')+'</select></div></div>'+
-    '<div class="g2"><div class="fld"><label>Data</label><input id="eData" type="date" value="'+esc(o.data||dataRef())+'"></div>'+
-      '<div class="fld"><label>Hora de início</label><input id="eHora" type="time" step="300" value="'+esc(hhmm(o.iniPrev))+'"></div></div>';
+  MM('mTit').textContent='Editar OP de '+(isRot?'rotulagem':'sopro');
+  MM('mSub').hidden=false; MM('mSub').innerHTML='<b class="cs585-opn">'+esc(o.num)+'</b> · '+esc(o.titulo);
+  MM('modal').classList.add('wide');
+  MM('mB').innerHTML='<div class="cs585-sr">'+
+    '<div class="opl"><div class="fld pgrande"><label>'+(isRot?'Frasco rotulado a produzir':'Frasco a produzir')+'</label>'+
+      '<div class="cxbox" style="text-align:left;color:var(--ink)">'+esc(o.titulo)+'</div></div>'+
+      '<div class="fld pcx" style="width:190px"><label>Quantidade a produzir <b>*</b></label><input id="eQtd" type="number" min="1" step="1" value="'+(o.qtdPrev||0)+'"></div></div>'+
+    '<div id="pcpCons" style="margin:12px 0 0"></div>'+
+    progSRHTML(maqs,o.maq,o.operador||'',o.data||dataRef(),hhmm(o.iniPrev),o.origem)+'</div>';
   MM('mF').innerHTML='<div class="mfdir" style="margin-left:auto;display:flex;gap:8px"><button class="btn" id="eCancel">Cancelar</button><button class="btn pri" id="eOK">Salvar</button></div>';
+  function atualiza(){
+    var q=+MM('eQtd').value||0, cad=maqCad(MM('pcpMaq').value,maqs)||1, ini=hm(MM('pcpHora').value||hhmm(o.iniPrev)), fim=prevFim(ini,q,cad);
+    /* o que ainda falta consumir: quem já produziu parte não reserva o que já fez */
+    MM('pcpCons').innerHTML = o.status==='concluida'?'':consumoSRHTML({id:o.id,origem:o.origem,itemSku:o.itemSku,qtd:Math.max(0,q-(+o.boas||0)),data:MM('pcpData').value||o.data,ini:ini});
+    MM('pcpFim').textContent = hhmm(fim);
+    MM('pcpCalc').innerHTML = '<div><span>Produção</span><b>'+hhmm(ini)+' → '+hhmm(fim)+'</b><small>'+nfx(q)+' ÷ '+nfx(cad)+' un/h</small></div>'+
+      '<div class="fim"><span>Total</span><b>'+durTxt(fim-ini)+'</b><small>pronto às '+hhmm(fim)+'</small></div>';
+  }
+  ['eQtd','pcpMaq','pcpHora','pcpData'].forEach(function(id){ var e=MM(id); if(e) e.addEventListener('input',atualiza); });
+  var operOk=ligaOperSR(o.origem);
+  atualiza();
   MM('eCancel').onclick=fecharModal;
   MM('eOK').onclick=function(){
     var q=+MM('eQtd').value||0; if(q<=0){ avisa('Quantidade inválida.',true); return; }
-    o.qtdPrev=q; o.qtd=q; o.maq=MM('eMaq').value; o.data=MM('eData').value||o.data;
-    o.iniPrev=hm(MM('eHora').value||hhmm(o.iniPrev));
+    if(!operOk()) return;
+    var opAnt=o.operador||'', opNovo=MM('pcpOper').value||'';
+    o.qtdPrev=q; o.qtd=q; o.maq=MM('pcpMaq').value; o.data=MM('pcpData').value||o.data;
+    o.iniPrev=hm(MM('pcpHora').value||hhmm(o.iniPrev));
     var cad=maqCad(o.maq,maqs)||1; o.fimPrev=prevFim(o.iniPrev,o.qtdPrev,cad);
-    logar(o,'OP editada'); salvar(); fecharModal(); render(); avisa('OP '+o.num+' atualizada.');
+    o.operador=opNovo;
+    logar(o,'OP editada', opNovo!==opAnt?('operador: '+(opAnt||'—')+' → '+(opNovo||'—')):null); salvar(); fecharModal(); render(); avisa('OP '+o.num+' atualizada.');
   };
   abrirMask();
 }
@@ -41523,13 +41556,155 @@ function pedeMotivoPausa(o, cb){
 }
 function acIniciar(o){ pedePin('Iniciar '+o.num, null, function(){ o.status='produzindo'; o.iniReal=o.iniReal||agora(); o.operador=opNome()||o.operador; logar(o,'Iniciou'); salvar(); render(); avisa('OP '+o.num+' iniciada.'); }); }
 function acPausar(o){ pedePin('Pausar '+o.num, null, function(){ pedeMotivoPausa(o, function(mot){ o.status='pausada'; o.pausaMotivo=mot||'Pausa'; logar(o,'Pausou', mot||''); salvar(); render(); avisa('OP '+o.num+' pausada.'); }); }); }
-function acRetomar(o){ pedePin('Retomar '+o.num, null, function(){ o.status='produzindo'; o.pausaMotivo=''; logar(o,'Retomou'); salvar(); render(); avisa('OP '+o.num+' retomada.'); }); }
+function acRetomar(o){ pedePin('Retomar '+o.num, null, function(){
+  /* v5.8.8: depois de um fim de turno, quem retoma é o operador do turno novo */
+  var eraTurno=(o.pausaMotivo==='Fim de turno'), ant=o.operador||'';
+  if(eraTurno){ o.operador=opNome()||o.operador; var t=turnosSR(o), u=t[t.length-1]; if(u&&!u.retomou) u.retomou=agora(); }
+  o.status='produzindo'; o.pausaMotivo=''; logar(o,'Retomou', eraTurno&&o.operador!==ant?('operador: '+(o.operador||'—')):null); salvar(); render(); avisa('OP '+o.num+' retomada.'); }); }
+
+/* ======================================================================
+   v5.8.8 · FIM DE TURNO E TROCA DE OPERADOR (sopro e rotulagem)
+   A OP de sopro atravessa turnos e a rotulagem precisa dos frascos antes de a OP fechar. Por
+   isso, diferente do envase, o que o turno fez JÁ ENTRA no estoque (e o que consumiu já baixa),
+   com o número da OP — a conclusão continua estornando tudo da OP e lançando o total final, então
+   a conta fecha do mesmo jeito. Cada trecho guarda quem estava na máquina, para o relatório por
+   operador saber quanto cada um fez. Quem assina é sempre o PIN, pedido num modal à parte.
+   ====================================================================== */
+function turnosSR(o){ return o.turnos||(o.turnos=[]); }
+/* de onde conta o trecho que está aberto: do fim do último trecho (ou de quando retomou) */
+function iniTrechoSR(o){ var t=turnosSR(o), u=t[t.length-1]; return (u&&(u.retomou||u.fim))||o.iniReal||hhmm(o.iniPrev); }
+function fechaTrechoSR(o,d,quem){
+  var isRot=o.origem==='rotulagem', boas=Math.max(0,+d.boas||0);
+  var t={tipo:d.tipo,dia:d.dia,ini:d.ini,fim:d.fim,boas:boas,operador:o.operador||'',por:quem||'',em:new Date().toISOString()};
+  if(isRot){
+    t.quebraRotulo=Math.max(0,+d.quebraRotulo||0); t.quebraFrasco=Math.max(0,+d.quebraFrasco||0);
+    lanca(o.itemSku,'E',boas,o.num); lanca(o.frascoSku,'S',boas+t.quebraFrasco,o.num); lanca(o.rotuloSku,'S',boas+t.quebraRotulo,o.num);
+    o.quebraRotulo=(+o.quebraRotulo||0)+t.quebraRotulo; o.quebraFrasco=(+o.quebraFrasco||0)+t.quebraFrasco;
+  } else {
+    t.quebra=Math.max(0,+d.quebra||0);
+    lanca(o.frascoSku,'E',boas,o.num); lanca(o.preformaSku,'S',boas+t.quebra,o.num);
+    o.quebra=(+o.quebra||0)+t.quebra;
+  }
+  o.boas=(+o.boas||0)+boas;
+  turnosSR(o).push(t);
+  return t;
+}
+/* depois de estornar a OP inteira: repõe no estoque o que os turnos já tinham lançado e acerta os totais */
+function relancaTurnosSR(o){
+  var t=o.turnos||[]; if(!t.length) return;
+  var isRot=o.origem==='rotulagem', b=0,q=0,qr=0,qf=0;
+  t.forEach(function(x){ var bo=+x.boas||0;
+    if(isRot){ lanca(o.itemSku,'E',bo,o.num); lanca(o.frascoSku,'S',bo+(+x.quebraFrasco||0),o.num); lanca(o.rotuloSku,'S',bo+(+x.quebraRotulo||0),o.num); qr+=(+x.quebraRotulo||0); qf+=(+x.quebraFrasco||0); }
+    else { lanca(o.frascoSku,'E',bo,o.num); lanca(o.preformaSku,'S',bo+(+x.quebra||0),o.num); q+=(+x.quebra||0); }
+    b+=bo; });
+  o.boas=b; if(isRot){ o.quebraRotulo=qr; o.quebraFrasco=qf; } else { o.quebra=q; }
+}
+/* tira o último trecho (fim de turno ou troca) e o que ele lançou */
+function desfazTrechoSR(o){
+  var t=o.turnos||[], u=t.pop(); if(!u) return null;
+  estornaOP(o.num);
+  if(t.length) relancaTurnosSR(o);
+  else { o.boas=0; if(o.origem==='rotulagem'){ o.quebraRotulo=0; o.quebraFrasco=0; } else { o.quebra=0; } }
+  return u;
+}
+function trechoTxt(t){ var q=(+t.quebra||0)+(+t.quebraRotulo||0)+(+t.quebraFrasco||0); return nfx(t.boas)+' un'+(q?' · quebra '+nfx(q):'')+' · '+t.ini+'–'+t.fim+(t.operador?' · '+t.operador:''); }
+function camposQuebraSR(isRot,sufixo){
+  return isRot
+    ? '<div class="fld"><label>Quebra de rótulo '+sufixo+'</label><input id="tQR" type="number" min="0" step="1" value="0"></div>'+
+      '<div class="fld"><label>Quebra de frasco '+sufixo+'</label><input id="tQF" type="number" min="0" step="1" value="0"></div>'
+    : '<div class="fld"><label>Quebra '+sufixo+'</label><input id="tQ" type="number" min="0" step="1" value="0"></div>';
+}
+function leTrechoSR(isRot){
+  var v=function(id){ var e=MM(id); return e?(+e.value||0):0; };
+  return {boasTxt:(MM('tBoas').value||'').trim(), boas:v('tBoas'), quebra:v('tQ'), quebraRotulo:v('tQR'), quebraFrasco:v('tQF')};
+}
+function abrirTurnoSR(o){
+  if(!podeEd()){ avisa('Sem permissão.',true); return; }
+  var isRot=o.origem==='rotulagem', maqs=isRot?rotuladoras():sopradoras();
+  MM('mTit').textContent='Fim de turno';
+  MM('mSub').hidden=false; MM('mSub').textContent=o.num+' · '+o.titulo+' · '+maqNome(o.maq,maqs);
+  MM('modal').classList.remove('wide');
+  MM('mB').innerHTML='<div class="cs585-sr">'+
+    '<div class="g3"><div class="fld"><label>Dia <b>*</b></label><input id="tDia" type="date" value="'+hojeYMD()+'"></div>'+
+      '<div class="fld"><label>Início <b>*</b></label><input id="tIni" type="time" step="300" value="'+esc(iniTrechoSR(o))+'"></div>'+
+      '<div class="fld"><label>Fim <b>*</b></label><input id="tFim" type="time" step="300" value="'+agora()+'"></div></div>'+
+    '<div class="'+(isRot?'g3':'g2')+'"><div class="fld"><label>'+(isRot?'Frascos rotulados neste turno':'Frascos produzidos neste turno')+' <b>*</b></label><input id="tBoas" type="number" min="0" step="1"></div>'+
+      camposQuebraSR(isRot,'neste turno')+'</div>'+
+    '<div class="calc" id="tCalc"></div></div>';
+  MM('mF').innerHTML='<div class="mfdir" style="margin-left:auto;display:flex;gap:8px"><button class="btn" id="tC">Fechar</button><button class="btn blue" id="tK">Fechar turno</button></div>';
+  function upd(){
+    var d=leTrechoSR(isRot), i=MM('tIni').value, f=MM('tFim').value, min=(i&&f)?hm(f)-hm(i):null, resta=Math.max(0,(+o.qtdPrev||0)-(+o.boas||0)-d.boas), x='';
+    if(min!=null&&min>0) x+='Turno de <b>'+durTxt(min)+'</b>. ';
+    if(d.boasTxt!=='') x+= resta?('Restam <b>'+nfx(resta)+' un</b> para o próximo turno.'):'<b style="color:var(--run)">A quantidade da OP foi atingida.</b>';
+    MM('tCalc').innerHTML=x||'Informe os frascos do turno.';
+  }
+  ['tIni','tFim','tBoas','tQ','tQR','tQF'].forEach(function(id){ var e=MM(id); if(e) e.addEventListener('input',upd); });
+  upd();
+  MM('tC').onclick=fecharModal;
+  MM('tK').onclick=function(){
+    var d=leTrechoSR(isRot); d.dia=MM('tDia').value||hojeYMD(); d.ini=MM('tIni').value; d.fim=MM('tFim').value; d.tipo='turno';
+    if(d.boasTxt===''){ avisa('Informe os frascos produzidos neste turno.',true); MM('tBoas').focus(); return; }
+    if(!d.ini||!d.fim||hm(d.fim)<=hm(d.ini)){ avisa('Confira o início e o fim do turno.',true); return; }
+    pedePin('Fechar turno · '+o.num, 'PIN de quem está fechando o turno.', function(op){
+      var quem=(op&&op.nome)||opNome();
+      var t=fechaTrechoSR(o,d,quem);
+      o.status='pausada'; o.pausaMotivo='Fim de turno';
+      logar(o,'Fim de turno', trechoTxt(t));
+      salvar(); render(); avisa('Turno fechado · '+nfx(t.boas)+' un lançadas no estoque.');
+    });
+  };
+  abrirMask();
+}
+function abrirTrocaSR(o){
+  if(!podeEd()){ avisa('Sem permissão.',true); return; }
+  var isRot=o.origem==='rotulagem', maqs=isRot?rotuladoras():sopradoras(), ini0=iniTrechoSR(o);
+  MM('mTit').textContent='Trocar operador';
+  MM('mSub').hidden=false; MM('mSub').textContent=o.num+' · '+o.titulo+' · '+maqNome(o.maq,maqs);
+  MM('modal').classList.remove('wide');
+  MM('mB').innerHTML='<div class="cs585-sr">'+
+    '<div class="g2"><div class="fld"><label>Sai</label><div class="cxbox" style="text-align:left;color:var(--ink);font-weight:700">'+esc(o.operador||'sem operador')+'</div></div>'+
+      '<div class="fld"><label>Hora da troca <b>*</b></label><input id="tFim" type="time" step="300" value="'+agora()+'"></div></div>'+
+    '<div class="'+(isRot?'g3':'g2')+'"><div class="fld"><label>'+(isRot?'Frascos rotulados até agora':'Frascos produzidos até agora')+' <b>*</b><span class="cs585-lh">desde '+esc(ini0)+'</span></label><input id="tBoas" type="number" min="0" step="1"></div>'+
+      camposQuebraSR(isRot,'até agora')+'</div>'+
+    '<div class="calc" id="tCalc"></div></div>';
+  MM('mF').innerHTML='<div class="mfdir" style="margin-left:auto;display:flex;gap:8px"><button class="btn" id="tC">Fechar</button><button class="btn blue" id="tK">Trocar operador</button></div>';
+  function upd(){
+    var d=leTrechoSR(isRot), f=MM('tFim').value, min=f?hm(f)-hm(ini0):null, resta=Math.max(0,(+o.qtdPrev||0)-(+o.boas||0)-d.boas);
+    if(d.boasTxt===''){ MM('tCalc').innerHTML='Informe o que foi produzido até a troca.'; return; }
+    MM('tCalc').innerHTML=esc(o.operador||'Quem sai')+': <b>'+nfx(d.boas)+' un</b>'+(min>0?' em <b>'+durTxt(min)+'</b> · <b>'+nfx(Math.round(d.boas/(min/60)))+' un/h</b>':'')+'. Restam <b>'+nfx(resta)+' un</b> para quem assume.';
+  }
+  ['tFim','tBoas','tQ','tQR','tQF'].forEach(function(id){ var e=MM(id); if(e) e.addEventListener('input',upd); });
+  upd();
+  MM('tC').onclick=fecharModal;
+  MM('tK').onclick=function(){
+    var d=leTrechoSR(isRot); d.dia=hojeYMD(); d.ini=ini0; d.fim=MM('tFim').value; d.tipo='troca';
+    if(d.boasTxt===''){ avisa('Informe os frascos produzidos até agora.',true); MM('tBoas').focus(); return; }
+    if(!d.fim||hm(d.fim)<hm(d.ini)){ avisa('Confira a hora da troca.',true); return; }
+    var sai=o.operador||'';
+    pedePin('Trocar operador · '+o.num, 'PIN de quem assume a máquina.', function(op){
+      var entra=(op&&op.nome)||opNome();
+      if(!entra){ avisa('PIN não identificado.',true); return; }
+      if(entra===sai){ avisa(entra+' já é quem está na máquina. A troca não foi registrada.',true); return; }
+      var t=fechaTrechoSR(o,d,entra);
+      o.operador=entra;
+      logar(o,'Trocou operador', (sai||'—')+' → '+entra+' · '+nfx(t.boas)+' un'+(((+t.quebra||0)+(+t.quebraRotulo||0)+(+t.quebraFrasco||0))?' · quebra '+nfx((+t.quebra||0)+(+t.quebraRotulo||0)+(+t.quebraFrasco||0)):''));
+      salvar(); render(); avisa('Operador trocado: '+entra+'.');
+    });
+  };
+  abrirMask();
+}
 function acConcluir(o){ pedePin('Concluir '+o.num, null, function(){ abrirConcluir(o); }); }
 /* desfazer último passo (um de cada vez), igual ao padrão do sistema */
 function desfazerPasso(o){
   pedePin('Desfazer passo · '+o.num, null, function(){
-    if(o.status==='concluida'){ try{ estornaOP(o.num); }catch(e){} o.status='produzindo'; o.fimReal=''; logar(o,'Desfez a conclusão','estoque estornado'); }
+    /* v5.8.8: com turnos, desfazer anda um passo de cada vez também por eles — e o estoque que os
+       turnos já tinham lançado volta a valer quando a conclusão é desfeita */
+    var ut=(o.turnos||[])[(o.turnos||[]).length-1];
+    if(o.status==='concluida'){ try{ estornaOP(o.num); relancaTurnosSR(o); }catch(e){} o.status='produzindo'; o.fimReal=''; logar(o,'Desfez a conclusão','estoque estornado'+((o.turnos||[]).length?' · ficou o que os turnos lançaram':'')); }
+    else if(o.status==='pausada'&&o.pausaMotivo==='Fim de turno'&&ut){ var d1=desfazTrechoSR(o); o.status='produzindo'; o.pausaMotivo=''; logar(o,'Desfez o fim de turno', d1?trechoTxt(d1):null); }
     else if(o.status==='pausada'){ o.status='produzindo'; o.pausaMotivo=''; logar(o,'Desfez a pausa'); }
+    else if(o.status==='produzindo'&&ut&&ut.tipo==='troca'){ var novo=o.operador||'', d2=desfazTrechoSR(o); o.operador=(d2&&d2.operador)||''; logar(o,'Desfez a troca de operador', novo+' → '+(o.operador||'—')); }
+    else if(o.status==='produzindo'&&ut&&ut.tipo==='turno'){ delete ut.retomou; o.operador=ut.operador||o.operador; o.status='pausada'; o.pausaMotivo='Fim de turno'; logar(o,'Desfez a retomada'); }
     else if(o.status==='produzindo'){ o.status='programada'; o.iniReal=''; logar(o,'Desfez o início'); }
     else { avisa('Nada para desfazer nessa OP.'); return; }
     salvar(); render(); avisa('Passo desfeito na OP '+o.num+'.');
@@ -41541,6 +41716,106 @@ function desfazerPasso(o){
    ====================================================================== */
 function opt(sel,val,txt){ return '<option value="'+esc(val)+'"'+(sel===val?' selected':'')+'>'+esc(txt)+'</option>'; }
 
+/* ======================================================================
+   v5.8.8 · MODAIS DO SOPRO E DA ROTULAGEM NO PADRÃO DO ENVASE
+   Operador escolhido da lista do cadastro (nunca texto livre), ao lado da
+   máquina; o que a OP consome aparece com a mesma leitura da embalagem do
+   envase: estoque físico · reservado · disponível · situação.
+   ====================================================================== */
+function operLista(atual){
+  var l=[]; try{ l=(typeof OPERADORES!=='undefined'?OPERADORES:[]).filter(function(x){return x.ativo!==false;}); }catch(e){}
+  var fora=(atual&&!l.some(function(x){return x.nome===atual;}))?'<option value="'+esc(atual)+'" selected>'+esc(atual)+' · fora do cadastro</option>':'';
+  return '<option value="">Selecione…</option>'+fora+l.map(function(x){ return '<option value="'+esc(x.nome)+'"'+(atual===x.nome?' selected':'')+'>'+esc(x.nome)+'</option>'; }).join('');
+}
+function operDaMaqSR(maq){ try{ var d=(typeof operadorDaMaq==='function')?operadorDaMaq(maq):null; return d?d.nome:''; }catch(e){ return ''; } }
+function operObrig(origem){ try{ return (window.__V585&&__V585.obrigDe)?__V585.obrigDe(origem,'operador'):true; }catch(e){ return true; } }
+/* o que a OP consome. Disponível = saldo na Fábrica menos o que as ordens que vêm ANTES desta
+   (sopro, rotulagem e envase) ainda vão pegar. Sem leitura de estoque não se inventa número. */
+function consumoSR(o){
+  var isRot=o.origem==='rotulagem';
+  var comps=isRot?[['Frasco',frascoDoRotulado(o.itemSku)],['Rótulo',rotuloDoRotulado(o.itemSku)]]:[['Preforma',preformaDoFrasco(o.itemSku)]];
+  var od=String(o.data||''), om=(o.ini!=null?+o.ini:Infinity);
+  var antes=function(d,m){ d=String(d||''); return !od||d<od||(d===od&&(+m||0)<om); };
+  return comps.map(function(c){
+    var sku=c[1], r={comp:c[0],sku:sku,it:sku?porSku(sku):null,precisa:+o.qtd||0,fis:null,res:0,ops:[],disp:null,k:'sem'};
+    if(!sku||!r.it){ r.k='nf'; return r; }
+    try{
+      var cod=codDe(r.it), sd=csSaldoDeps(cod);
+      PCP.ops.forEach(function(x){
+        if(x.id===o.id||x.status==='concluida')return;
+        var usa=(x.origem==='rotulagem')?[x.frascoSku,x.rotuloSku]:[x.preformaSku];
+        if(usa.indexOf(sku)<0||!antes(x.data,x.iniPrev))return;
+        var q=Math.max(0,(+x.qtdPrev||0)-(+x.boas||0));
+        if(q>0){ r.res+=q; r.ops.push({n:x.num,qtd:q,quando:dCurto(x.data)+' · '+hhmm(x.iniPrev)}); }
+      });
+      try{ (((reservas()[cod]||{}).por)||[]).forEach(function(p){ if(antes(p.op.data,p.op.inicio)){ r.res+=(+p.qtd||0); r.ops.push({n:'OP '+rotuloOP(p.op),qtd:+p.qtd||0,quando:p.quando||''}); } }); }catch(e){}
+      if(!sd||sd.tot==null)return r;
+      r.fis=+(sd.por[csEPrinc()]||0); r.disp=r.fis-r.res;
+      r.k=r.disp>=r.precisa?'ok':(r.disp<=0?'falta':'baixo');
+    }catch(e){}
+    return r;
+  });
+}
+function consumoSRHTML(o){
+  var L=consumoSR(o);
+  var th=function(n,d){ return '<th class="n"><span class="cs585-temdica" data-cs585dica="'+esc(d)+'" tabindex="0">'+n+'</span></th>'; };
+  var tr=L.map(function(r){
+    if(r.k==='nf') return '<tr class="cs585-sem"><td><b>'+r.comp+'</b></td><td colspan="6" style="color:#B3261E">item não encontrado na ficha do cadastro</td></tr>';
+    var ruim=r.k==='falta'||r.k==='baixo', sem=r.k==='sem', tr0='<span class="k">—</span>';
+    var falta=sem?0:r.precisa-Math.max(0,r.disp);
+    var sit=r.k==='ok'?'<span class="cs585-sit ok"><i>✓</i>OK</span>'
+      :sem?'<span class="k">sem leitura</span>'
+      :r.k==='falta'?'<span class="cs585-sit baixo"><span class="cs585-selo">FALTA</span><small>faltam '+nfx(falta)+'</small></span>'
+      :'<span class="cs585-sit baixo"><i>!</i>Abaixo<small>faltam '+nfx(falta)+'</small></span>';
+    var nomes=r.ops.slice(0,2).map(function(z){return esc(z.n);}).join(', ')+(r.ops.length>2?' +'+(r.ops.length-2):'');
+    var dica=r.ops.map(function(z){return z.n+' · '+z.quando+' · '+nfx(z.qtd);}).join('\n');
+    var res=sem?tr0:(!r.res?'<span class="k">0</span>':'<span class="cs585-temdica" data-cs585dica="'+esc(dica)+'"><b>'+nfx(r.res)+'</b><small>'+nomes+'</small></span>');
+    return '<tr class="'+(ruim?'cs585-sem':'')+'"><td><b>'+r.comp+'</b></td><td>'+esc(r.it.nome)+' <span class="k">'+esc(r.sku)+'</span></td>'+
+      '<td class="n mono"><b>'+nfx(r.precisa)+'</b></td>'+
+      '<td class="n mono cs585-est'+(!sem&&r.fis<0?' w':'')+'">'+(sem?tr0:'<b>'+nfx(r.fis)+'</b>')+'</td>'+
+      '<td class="n mono cs585-est">'+res+'</td>'+
+      '<td class="n mono cs585-est'+(ruim?' w':'')+'">'+(sem?tr0:'<b>'+nfx(Math.max(0,r.disp))+'</b>')+'</td><td>'+sit+'</td></tr>';
+  }).join('');
+  return '<table class="tb cs585-emb" style="margin:2px 0 4px"><thead><tr><th>Consome</th><th>Item</th>'+
+    th('Necessário','Quantidade que esta OP consome: uma unidade para cada frasco produzido.')+
+    th('Estoque físico','Saldo na Fábrica neste momento. O que as ordens concluídas consumiram já saiu daqui.')+
+    th('Reservado','Comprometido com ordens programadas antes desta que ainda não deram baixa no estoque. Passe o mouse no número para ver quais.')+
+    th('Disponível','Estoque físico menos o reservado: o que está livre para esta OP agora.')+
+    '<th>Situação</th></tr></thead><tbody>'+tr+'</tbody></table>';
+}
+/* a parte "Programação" é a mesma em Nova OP e em Editar OP */
+function progSRHTML(maqs,maqSel,oper,data,hora,origem){
+  return '<div class="st2 cs585-st">Programação</div>'+
+    /* duas linhas: em cima quem e onde (máquina e operador, com espaço para o nome inteiro);
+       embaixo quando (data, início e pronto previsto) */
+    '<div class="cs588-l1">'+
+      '<div class="fld"><label>Máquina <b>*</b></label><select id="pcpMaq">'+maqs.map(function(m){return opt(maqSel||'', m.id, (m.nome||m.id)+(m.cad?' — '+nfx(m.cad)+' un/h':''));}).join('')+'</select></div>'+
+      '<div class="fld" id="pcpOperF"><label>Operador'+(operObrig(origem)?' <b>*</b>':'')+'<span class="cs585-lh" id="pcpOperH"></span></label><select id="pcpOper">'+operLista(oper||'')+'</select></div>'+
+    '</div><div class="cs588-l2">'+
+      '<div class="fld"><label>Data <b>*</b></label><input id="pcpData" type="date" value="'+esc(data)+'"></div>'+
+      '<div class="fld"><label>Início <b>*</b></label><input id="pcpHora" type="time" step="300" value="'+esc(hora)+'"></div>'+
+      '<div class="cs585-seta" aria-hidden="true">→</div>'+
+      '<div class="fld"><label>Pronto previsto</label><div class="fimbox" id="pcpFim">--:--</div></div>'+
+    '</div><div class="cs588-p" id="pcpCalc"></div>';
+}
+function durTxt(min){ min=Math.max(0,Math.round(min)); var h=Math.floor(min/60), m=min%60; return h?(h+'h'+(m<10?'0':'')+m):(m+' min'); }
+/* liga a máquina ao operador (traz o cadastrado dela) e devolve a função que cobra o operador */
+function ligaOperSR(origem){
+  var fm=MM('pcpMaq'), fo=MM('pcpOper'), h=MM('pcpOperH'), ant=fm?fm.value:'';
+  var dica=function(){ if(!h||!fm)return; var d=operDaMaqSR(fm.value);
+    h.classList.remove('erro'); MM('pcpOperF').classList.remove('cs585-erro');
+    h.textContent=d?(fo.value===d?'cadastrado da máquina':'da máquina: '+d):''; };
+  if(fo&&!fo.value){ var d0=operDaMaqSR(ant); if(d0) fo.value=d0; }
+  if(fm) fm.addEventListener('change',function(){ var da=operDaMaqSR(ant), dn=operDaMaqSR(fm.value); if(dn&&(!fo.value||fo.value===da)) fo.value=dn; ant=fm.value; dica(); });
+  if(fo) fo.addEventListener('change',dica);
+  dica();
+  return function(){
+    if(!operObrig(origem)||fo.value) return true;
+    MM('pcpOperF').classList.add('cs585-erro'); if(h){ h.classList.add('erro'); h.textContent='Selecione o operador'; }
+    avisa('Selecione o operador.',true); fo.focus(); return false;
+  };
+}
+
 function novaOP(origem, preSku){
   if(!podeEd()){ avisa('Sem permissão para criar OP.',true); return; }
   var isRot = origem==='rotulagem';
@@ -41549,48 +41824,35 @@ function novaOP(origem, preSku){
   var maqs = isRot? rotuladoras() : sopradoras();
   MM('mTit').textContent = isRot?'Nova OP de rotulagem':'Nova OP de sopro';
   MM('mSub').hidden=true;
-  MM('modal').classList.remove('wide');
-  MM('mB').innerHTML =
-    '<div class="fld"><label>'+(isRot?'Frasco rotulado a produzir':'Frasco a produzir')+'</label>'+
+  MM('modal').classList.add('wide');
+  MM('mB').innerHTML = '<div class="cs585-sr">'+
+    '<div class="opl"><div class="fld pgrande"><label>'+(isRot?'Frasco rotulado a produzir':'Frasco a produzir')+' <b>*</b></label>'+
       '<select id="pcpItem">'+itens.map(function(i){return opt(preSku||'', i.sku, i.nome);}).join('')+'</select></div>'+
-    '<div id="pcpCons"></div>'+
-    '<div class="g2"><div class="fld"><label>Quantidade a produzir</label><input id="pcpQtd" type="number" min="1" step="1" value="1000"></div>'+
-      '<div class="fld"><label>Máquina</label><select id="pcpMaq">'+maqs.map(function(m){return opt('', m.id, (m.nome||m.id)+(m.cad?' — '+nfx(m.cad)+' un/h':''));}).join('')+'</select></div></div>'+
-    '<div class="g2"><div class="fld"><label>Data de início</label><input id="pcpData" type="date" value="'+dataRef()+'"></div>'+
-      '<div class="fld"><label>Hora de início</label><input id="pcpHora" type="time" step="300" value="'+(isRot?'05:00':'05:00')+'"></div></div>'+
-    '<div class="pcx-calc" id="pcpCalc"></div>';
+      '<div class="fld pcx" style="width:190px"><label>Quantidade a produzir <b>*</b></label><input id="pcpQtd" type="number" min="1" step="1" value="1000"></div></div>'+
+    '<div id="pcpCons" style="margin:12px 0 0"></div>'+
+    progSRHTML(maqs,'','',dataRef(),'05:00',origem)+'</div>';
   MM('mF').innerHTML='<div class="mfdir" style="margin-left:auto;display:flex;gap:8px"><button class="btn" id="pcpCancel">Cancelar</button><button class="btn pri" id="pcpCriar">Criar OP</button></div>';
   function atualiza(){
     var sku=MM('pcpItem').value, qtd=+MM('pcpQtd').value||0, maq=MM('pcpMaq').value, hora=MM('pcpHora').value;
-    var cad=maqCad(maq,maqs)||1;
-    var fim = hhmm(prevFim(hm(hora||'05:00'), qtd, cad));
-    var cons='';
-    if(isRot){
-      var fsku=frascoDoRotulado(sku), rsku=rotuloDoRotulado(sku);
-      cons = faixaCons('Frasco soprado que consome','🧴',fsku) + faixaCons('Rótulo que consome','🏷️',rsku);
-    } else {
-      var psku=preformaDoFrasco(sku);
-      cons = faixaCons('Preforma que consome','⬡',psku);
-    }
-    MM('pcpCons').innerHTML = cons;
-    MM('pcpCalc').innerHTML = '<div class="k">Pronto previsto</div><div class="v">'+fim+'</div><div class="s">'+nfx(qtd)+' ÷ '+nfx(cad)+' un/h · começa '+(hora||'05:00')+'</div>';
+    var cad=maqCad(maq,maqs)||1, ini=hm(hora||'05:00'), fim=prevFim(ini, qtd, cad);
+    MM('pcpCons').innerHTML = consumoSRHTML({origem:origem,itemSku:sku,qtd:qtd,data:MM('pcpData').value||dataRef(),ini:ini});
+    MM('pcpFim').textContent = hhmm(fim);
+    MM('pcpCalc').innerHTML = '<div><span>Produção</span><b>'+hhmm(ini)+' → '+hhmm(fim)+'</b><small>'+nfx(qtd)+' ÷ '+nfx(cad)+' un/h</small></div>'+
+      '<div class="fim"><span>Total</span><b>'+durTxt(fim-ini)+'</b><small>pronto às '+hhmm(fim)+'</small></div>';
   }
-  function faixaCons(lbl,ic,sku){
-    if(!sku) return '<div class="pcx-cons mau"><b>'+lbl+':</b> item não encontrado na ficha do cadastro.</div>';
-    var i=porSku(sku), s=saldoReal(sku);
-    return '<div class="pcx-cons"><div class="ic">'+ic+'</div><div class="t"><small>'+lbl+'</small><b>'+esc(i?i.nome:sku)+'</b><span>em estoque: '+nfx(s)+' un · cód. '+esc(codDe(i))+'</span></div></div>';
-  }
-  ['pcpItem','pcpQtd','pcpMaq','pcpHora'].forEach(function(id){ var e=MM(id); if(e) e.addEventListener('input',atualiza); });
+  ['pcpItem','pcpQtd','pcpMaq','pcpHora','pcpData'].forEach(function(id){ var e=MM(id); if(e) e.addEventListener('input',atualiza); });
+  var operOk=ligaOperSR(origem);
   atualiza();
   MM('pcpCancel').onclick=fecharModal;
   MM('pcpCriar').onclick=function(){
     var sku=MM('pcpItem').value, qtd=+MM('pcpQtd').value||0, maq=MM('pcpMaq').value, data=MM('pcpData').value||dataRef(), hora=MM('pcpHora').value||'05:00';
     if(!sku||qtd<=0){ avisa('Informe o frasco e a quantidade.',true); return; }
+    if(!operOk()) return;
     var cad=maqCad(maq,maqs)||1, ini=hm(hora);
     var o={ id:uid(), origem:origem, num:(isRot?'ROT ':'SP ')+p4(isRot?(++PCP.seqROT):(++PCP.seqSP)),
       titulo: nomeSku(sku), itemSku:sku, maq:maq, qtd:qtd, qtdPrev:qtd, data:data, criadoData:hojeYMD(),
       iniPrev:ini, fimPrev:prevFim(ini,qtd,cad), status:'programada',
-      iniReal:'', fimReal:'', boas:0, quebra:0, quebraRotulo:0, quebraFrasco:0, operador:'', log:[],
+      iniReal:'', fimReal:'', boas:0, quebra:0, quebraRotulo:0, quebraFrasco:0, operador:MM('pcpOper').value||'', log:[],
       criadoPor:(function(){try{return quemAssina();}catch(e){return '';}})(), criadoEm:new Date().toISOString() };
     if(isRot){ o.frascoSku=frascoDoRotulado(sku); o.rotuloSku=rotuloDoRotulado(sku); o.rotTipo=tipoRotulo(o.rotuloSku); }
     else { o.frascoSku=sku; o.preformaSku=preformaDoFrasco(sku); }
@@ -41610,13 +41872,14 @@ function abrirConcluir(o){
   MM('mB').innerHTML =
     '<div class="g2"><div class="fld"><label>Início real</label><input id="cIni" type="time" step="300" value="'+(o.iniReal||agora())+'"></div>'+
       '<div class="fld"><label>Fim real</label><input id="cFim" type="time" step="300" value="'+agora()+'"></div></div>'+
-    '<div class="g2"><div class="fld"><label>Produzidas boas (un)</label><input id="cBoas" type="number" min="0" step="1" value="'+(o.qtdPrev||0)+'"></div>'+
+    '<div class="g2"><div class="fld"><label>Produzidas boas (un)</label><input id="cBoas" type="number" min="0" step="1" value="'+Math.max(+o.qtdPrev||0,+o.boas||0)+'"></div>'+
       (isRot
-        ? '<div class="fld"><label>Quebra de rótulo (un)</label><input id="cQR" type="number" min="0" step="1" value="0"></div>'
-        : '<div class="fld"><label>Quebra (un)</label><input id="cQ" type="number" min="0" step="1" value="0"></div>')+
+        ? '<div class="fld"><label>Quebra de rótulo (un)</label><input id="cQR" type="number" min="0" step="1" value="'+((o.turnos&&o.turnos.length)?(+o.quebraRotulo||0):0)+'"></div>'
+        : '<div class="fld"><label>Quebra (un)</label><input id="cQ" type="number" min="0" step="1" value="'+((o.turnos&&o.turnos.length)?(+o.quebra||0):0)+'"></div>')+
     '</div>'+
-    (isRot? '<div class="g2"><div class="fld"><label><input type="checkbox" id="cHabFr"> Lançar quebra de frasco</label><input id="cQF" type="number" min="0" step="1" value="0" disabled></div><div class="fld"><label>Operador</label><input id="cOp" type="text" value="'+esc(o.operador||'')+'"></div></div>'
-           : '<div class="fld"><label>Operador</label><input id="cOp" type="text" value="'+esc(o.operador||'')+'"></div>')+
+    (isRot? '<div class="g2"><div class="fld"><label><input type="checkbox" id="cHabFr"'+((o.turnos&&o.turnos.length&&+o.quebraFrasco)?' checked':'')+'> Lançar quebra de frasco</label><input id="cQF" type="number" min="0" step="1" value="'+((o.turnos&&o.turnos.length)?(+o.quebraFrasco||0):0)+'"'+((o.turnos&&o.turnos.length&&+o.quebraFrasco)?'':' disabled')+'></div><div class="fld"><label>Operador</label><select id="cOp">'+operLista(o.operador||'')+'</select></div></div>'
+           : '<div class="fld"><label>Operador</label><select id="cOp">'+operLista(o.operador||'')+'</select></div>')+
+    ((o.turnos&&o.turnos.length)?'<div class="alert blue" style="margin:10px 0 0">Os números acima são o <b>total da OP</b>. Os turnos já fechados lançaram <b>'+nfx(+o.boas||0)+' un</b>; a conclusão acerta o estoque pelo total.</div>':'')+
     '<div class="pcx-calc" id="cResumo"></div>';
   MM('mF').innerHTML='<div class="mfesq"><button class="btn warn sm" id="cReabrir">Reabrir</button></div><div class="mfdir" style="margin-left:auto;display:flex;gap:8px"><button class="btn" id="cCancel">Cancelar</button><button class="btn pri" id="cOK">Concluir e lançar estoque</button></div>';
   if(isRot){ var hab=MM('cHabFr'); if(hab) hab.onchange=function(){ MM('cQF').disabled=!hab.checked; }; }
@@ -41637,7 +41900,7 @@ function abrirConcluir(o){
   ['cBoas','cQ','cQR','cQF','cHabFr'].forEach(function(id){ var e=MM(id); if(e) e.addEventListener('input',resumo); });
   resumo();
   MM('cCancel').onclick=fecharModal;
-  MM('cReabrir').onclick=function(){ o.status='produzindo'; estornaOP(o.num); logar(o,'Reaberta'); salvar(); fecharModal(); render(); avisa('OP reaberta · estoque estornado.'); };
+  MM('cReabrir').onclick=function(){ o.status='produzindo'; estornaOP(o.num); relancaTurnosSR(o); logar(o,'Reaberta'); salvar(); fecharModal(); render(); avisa('OP reaberta · estoque estornado.'); };
   MM('cOK').onclick=function(){
     var boas=+MM('cBoas').value||0;
     o.iniReal=MM('cIni').value||o.iniReal; o.fimReal=MM('cFim').value||agora();
@@ -41700,20 +41963,35 @@ function pdfOP(o){
   var isRot=o.origem==='rotulagem';
   if(typeof folha!=='function'||typeof campo!=='function'){ avisa('PDF indisponível.',true); return; }
   var maqs=isRot?rotuladoras():sopradoras();
-  var corpo='<div class="campos c2">'+
-      campo('Produto',o.titulo,true)+campo('Máquina',maqNome(o.maq,maqs))+'</div>'+
-    '<div class="campos c2">'+
-      campo('Quantidade prevista',nfx(o.qtdPrev)+' un',true)+
-      campo('Janela prevista',hhmm(o.iniPrev)+' → '+hhmm(o.fimPrev))+'</div>'+
-    '<h2>O que pegar no estoque</h2>'+
-    '<div class="campos c2">'+
-      (isRot? campo('Frasco',nomeSku(o.frascoSku),true)+campo('Rótulo',nomeSku(o.rotuloSku),true)
-            : campo('Preforma',nomeSku(o.preformaSku),true)+campo('Frasco que vai gerar',nomeSku(o.frascoSku||o.itemSku),true))+'</div>'+
-    '<h2>Apontamento</h2>'+
-    (typeof anotar==='function'?anotar('Início','Fim','Produzidas',isRot?'Quebra rótulo':'Quebra'):'')+
+  var p2=function(n){return (n<10?'0':'')+n;};
+  /* v5.8.8: apontamento hora a hora, para o operador anotar no papel e conferir com a contagem.
+     Vai da hora cheia do início previsto até as 17:30 (a última linha é 17:00 – 17:30).
+     OP que começa depois disso (hora extra) leva seis horas a partir do início. */
+  var h0=Math.floor((+o.iniPrev||300)/60), FIM=17*60+30, faixas=[];
+  if(h0*60<FIM){ for(var h=h0;h*60<FIM;h++){ var ate=Math.min((h+1)*60,FIM); faixas.push(p2(h)+':00 – '+p2(Math.floor(ate/60))+':'+p2(ate%60)); } }
+  else { for(var i=0;i<6&&h0+i<24;i++) faixas.push(p2(h0+i)+':00 – '+p2((h0+i+1)%24)+':00'); }
+  var horaAHora='<table class="hah"><thead><tr><th style="width:21%">Horário</th><th style="width:19%">Produzido (un)</th><th style="width:15%">Quebra (un)</th><th style="width:25%">Operador(a)</th><th>Observação</th></tr></thead><tbody>'+
+    faixas.map(function(f){ return '<tr><td class="hh">'+f+'</td><td></td><td></td><td></td><td></td></tr>'; }).join('')+
+    '<tr class="tot"><td class="hh">Total</td><td></td><td></td><td colspan="2"></td></tr></tbody></table>'+
+    '<style>.hah{width:100%;border-collapse:collapse;margin:2px 0 8px}.hah th{font-size:7.5px;font-weight:800;letter-spacing:.11em;text-transform:uppercase;text-align:left;padding:4px 7px;border:1px solid #12151A;background:#F1F2F4}'+
+    '.hah td{border:1px solid #9CA3AF;height:12mm;padding:0 7px}.hah td.hh{font-size:13px;font-weight:700;white-space:nowrap}.hah tr.tot td{border:2px solid #12151A;height:13mm}'+
+    '.idl .nm small{display:block;font-size:7.5px;font-weight:700;letter-spacing:.14em;color:#6B7280;margin-bottom:2px}'+
+    '.cons{display:grid;grid-template-columns:1fr 46mm;gap:5px;margin-bottom:5px}.cons .c{padding:5px 10px 6px}.cons .c .v{font-size:19px;font-weight:800}.cons .c.qt{border:2px solid #12151A;text-align:right}</style>';
+  var dia=(function(){ var d=String(o.data||'').split('-'); return d.length===3?d[2]+'/'+d[1]+'/'+d[0]:(o.data||'—'); })();
+  /* a ordem de leitura que o Junior definiu: o que fazer e em que máquina; o que consome e quanto;
+     quando e quem. O que se procura primeiro no papel vem grande. */
+  var linCons=function(rot,nome){ return '<div class="cons"><div class="c forte"><div class="k">'+rot+'</div><div class="v">'+esc(nome)+'</div></div>'+
+    '<div class="c forte qt"><div class="k">Quantidade</div><div class="v">'+nfx(o.qtdPrev)+' un</div></div></div>'; };
+  var corpo='<div class="idl" style="grid-template-columns:1fr auto">'+
+      '<div class="mid"><div class="nm"><small>'+(isRot?'FRASCO ROTULADO A PRODUZIR':'FRASCO A PRODUZIR')+'</small>'+esc(o.titulo)+'</div></div>'+
+      '<div class="fab"><div class="k">Máquina</div><div class="v">'+esc(maqNome(o.maq,maqs))+'</div></div>'+
+    '</div>'+
+    '<h2>O que vai consumir do estoque</h2>'+
+    (isRot? linCons('Frasco',nomeSku(o.frascoSku))+linCons('Rótulo',nomeSku(o.rotuloSku)) : linCons('Preforma',nomeSku(o.preformaSku)))+
+    '<div class="campos c3" style="margin-top:8px">'+campo('Início previsto',hhmm(o.iniPrev),true)+campo('Data',dia,true)+campo('Operador',o.operador||'—',true)+'</div>'+
+    '<h2>Apontamento hora a hora</h2>'+horaAHora+
     (typeof assinar==='function'?assinar('Operador','Conferido por'):'');
-  var html=folha('Ordem de produção — '+(isRot?'Rotulagem':'Sopro'), esc(o.num), '',
-    '<p class="aviso">'+esc(o.num)+' · '+esc(o.titulo)+' · '+nfx(o.qtdPrev)+' un</p>'+corpo);
+  var html=folha('Ordem de produção — '+(isRot?'Rotulagem':'Sopro'), esc(o.num), '', corpo);
   if(typeof csFolhaModal==='function'){
     csFolhaModal({ titulo:'OP de '+(isRot?'rotulagem':'sopro'),
       sub:esc(o.num)+' · '+esc(o.titulo)+' · '+maqNome(o.maq,maqs),
@@ -41804,7 +42082,7 @@ function renderTablet(){
   } else {
     var maqs = isRot?rotuladoras():sopradoras();
     var data=TAB.data;
-    var ops = opsDe(TAB.origem).filter(function(o){ return o.data===data || o.status!=='concluida'; });
+    var ops = opsDoDia(TAB.origem, data);
     e.innerHTML='<div class="pcx-tbar"><b>Atrius · '+(isRot?'Rotulagem':'Sopro')+'</b>'+
       '<div class="pcx-tdate"><button data-tac="dprev">‹</button><span>'+esc((function(){try{return dLongo(data);}catch(x){return data;}})())+'</span><button data-tac="dnext">›</button></div>'+
       '<button class="pcx-tsair" data-tac="sair">Sair ✕</button></div>'+
@@ -41840,9 +42118,13 @@ function histTablet(maqId){
   }).join(''):'<div class="pcx-vazio">Sem produções.</div>';
   var e=elTab();
   var ov=document.createElement('div'); ov.className='pcx-thistov';
-  ov.innerHTML='<div class="box"><div class="hh"><b>Histórico · '+esc(maqNome(maqId,isRot?rotuladoras():sopradoras()))+'</b><button data-tac="fh">✕</button></div><div class="bd">'+linhas+'</div></div>';
+  var ativa=ops.filter(function(o){return o.status==='produzindo';})[0];
+  var acoes=ativa?'<div style="display:flex;gap:8px;padding:0 0 12px"><button class="btn" data-tmenu="turno">Fim de turno</button><button class="btn" data-tmenu="troca">Trocar operador</button></div>':'';
+  ov.innerHTML='<div class="box"><div class="hh"><b>'+esc(maqNome(maqId,isRot?rotuladoras():sopradoras()))+'</b><button data-tac="fh">✕</button></div><div class="bd">'+acoes+linhas+'</div></div>';
   e.appendChild(ov);
   ov.addEventListener('click',function(ev){ if(ev.target===ov||ev.target.getAttribute('data-tac')==='fh') ov.remove(); });
+  ov.querySelectorAll('[data-tmenu]').forEach(function(b){ b.onclick=function(ev){ ev.stopPropagation(); ov.remove(); fecharTablet();
+    if(b.getAttribute('data-tmenu')==='turno') abrirTurnoSR(ativa); else abrirTrocaSR(ativa); }; });
 }
 function ligarTablet(){
   var e=elTab();
@@ -41852,7 +42134,12 @@ function ligarTablet(){
     b.onclick=function(ev){ ev.stopPropagation();
       var ac=b.getAttribute('data-tac'), id=b.getAttribute('data-op');
       if(ac==='sair') return fecharTablet();
-      if(ac==='entrar'){ var v=(MM('pcpPin')||{}).value||''; if(v.length<2){ avisa('Informe o PIN.',true); return; } TAB.pin=true; TAB.operador=v; renderTablet(); return; }
+      if(ac==='entrar'){ var v=((MM('pcpPin')||{}).value||'').trim(); if(v.length<2){ avisa('Informe o PIN.',true); return; }
+        /* v5.8.8: só entra quem tem PIN no cadastro, e fica gravado o nome — não o número digitado */
+        var qp=null; try{ qp=(typeof quemPorCredencial==='function')?quemPorCredencial(v):null; }catch(x){}
+        if(!qp){ avisa('PIN não encontrado.',true); var ip=MM('pcpPin'); if(ip) ip.value=''; return; }
+        try{ OPERADOR=qp; }catch(x){}
+        TAB.pin=true; TAB.operador=qp.nome; renderTablet(); return; }
       if(ac==='dprev'||ac==='dnext'){ try{var d=new Date(TAB.data+'T12:00:00'); d.setDate(d.getDate()+(ac==='dnext'?1:-1)); TAB.data=ymd(d);}catch(x){} renderTablet(); return; }
       var o=opPorId(id); if(!o)return;
       if(ac==='concluir'){ fecharTablet(); abrirConcluir(o); }
@@ -41972,8 +42259,13 @@ function relSoproN(etapa){
 
   var byOp={}, byMq={};
   ops.forEach(function(o){
-    var ko=(o.operador||'—'); (byOp[ko]||(byOp[ko]={feito:0,quebra:0,min:0,n:0}));
-    byOp[ko].feito+=(+o.boas||0); byOp[ko].quebra+=srQuebra(o); byOp[ko].min+=srMin(o); byOp[ko].n++;
+    /* v5.8.8: OP com fim de turno ou troca de operador reparte por trecho; o que sobra (a parte
+       final, lançada na conclusão) fica com o operador que estava na máquina no fim */
+    var tr=(o.turnos||[]), usado={feito:0,quebra:0,min:0}, viu={};
+    var soma=function(k,f,q,m){ k=k||'—'; (byOp[k]||(byOp[k]={feito:0,quebra:0,min:0,n:0})); byOp[k].feito+=f; byOp[k].quebra+=q; byOp[k].min+=m; if(!viu[k]){ viu[k]=1; byOp[k].n++; } };
+    tr.forEach(function(t){ var q=(+t.quebra||0)+(+t.quebraRotulo||0)+(+t.quebraFrasco||0), m=0; try{ m=Math.max(0,hm(t.fim)-hm(t.ini)); }catch(e){}
+      soma(t.operador,+t.boas||0,q,m); usado.feito+=(+t.boas||0); usado.quebra+=q; usado.min+=m; });
+    soma(o.operador,Math.max(0,(+o.boas||0)-usado.feito),Math.max(0,srQuebra(o)-usado.quebra),Math.max(0,srMin(o)-usado.min));
     var km=maqNome(o.maq,maqs)||o.maq||'—'; (byMq[km]||(byMq[km]={feito:0,quebra:0,min:0,n:0}));
     byMq[km].feito+=(+o.boas||0); byMq[km].quebra+=srQuebra(o); byMq[km].min+=srMin(o); byMq[km].n++;
   });
@@ -42064,7 +42356,7 @@ try{
 }catch(e){}
 
 /* hook de inspeção/teste (não altera comportamento) */
-try{ window.__PCP={ PCP:PCP, mergeLotes:mergeLotes, abrirTablet:abrirTablet, novaOP:novaOP, injetarOrdensSR:injetarOrdensSR, saldoPCP:saldoPCP, saldoReal:saldoReal, checarHashTablet:checarHashTablet }; }catch(e){}
+try{ window.__PCP={ PCP:PCP, mergeLotes:mergeLotes, abrirTablet:abrirTablet, novaOP:novaOP, editarOP:editarOP, pdfOP:pdfOP, abrirConcluir:abrirConcluir, abrirTurnoSR:abrirTurnoSR, abrirTrocaSR:abrirTrocaSR, acRetomar:acRetomar, acIniciar:acIniciar, desfazerPasso:desfazerPasso, saldoReal:saldoReal, abrirMenuCard:abrirMenuCard, injetarOrdensSR:injetarOrdensSR, saldoPCP:saldoPCP, saldoReal:saldoReal, checarHashTablet:checarHashTablet }; }catch(e){}
 
 })();
 </script>
@@ -42142,6 +42434,18 @@ document.head.insertAdjacentHTML('beforeend',`<style id="cs585css">
 @media(max-width:900px){.cs585-g3,.cs585-gmaq{grid-template-columns:1fr 1fr!important}.cs585-seta{display:none}
   #mB>.cs585-tabs~.prevlin .pl{flex-basis:100%;border-left:0;border-top:1px solid var(--line2)}}
 
+/* ---- modais do sopro e da rotulagem (v5.8.8): mesmos campos e a mesma leitura do envase ---- */
+.cs585-sr .fld label{display:flex;align-items:baseline;gap:4px;flex-wrap:wrap}
+.cs585-sr .st2.cs585-st{margin-top:16px}
+.cs588-l1{display:grid;grid-template-columns:1fr 1.3fr;gap:10px}
+.cs588-l2{display:grid;grid-template-columns:1fr 1fr 16px 1fr;gap:10px;align-items:start}
+@media(max-width:700px){.cs588-l1,.cs588-l2{grid-template-columns:1fr 1fr}.cs588-l2 .cs585-seta{display:none}}
+.cs588-p{display:grid;grid-template-columns:2fr 1fr;border:1px solid var(--line2);border-radius:10px;overflow:hidden;margin:2px 0 4px}
+.cs588-p>div{padding:9px 14px;display:flex;flex-direction:column;gap:1px;min-width:0}
+.cs588-p>div.fim{background:#F6F8FC;border-left:1px solid var(--line2)}
+.cs588-p span{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;font-weight:700;color:var(--ink3)}
+.cs588-p b{font-size:15px;font-weight:700}
+.cs588-p small{font-size:11.5px;color:var(--ink3)}
 /* ---- aba Embalagem ---- */
 .cs585-tarja{display:flex;align-items:center;gap:9px;background:#FBEAE8;border:1px solid #EFCCC8;color:#8A1C16;
   border-radius:9px;padding:9px 12px;font-size:13px;font-weight:600;margin:0 0 12px}
@@ -42194,12 +42498,14 @@ th .cs585-temdica{border-bottom:1px dotted var(--ink3);padding-bottom:1px}
 
 /* ================= campos obrigatórios ================= */
 const OB_PADRAO={operador:true,tanque:false};
-function obrig(k){
-  try{const c=((CS_RASTRO.opObrig||{}).envase)||{};return (k in c)?!!c[k]:OB_PADRAO[k];}catch(e){return OB_PADRAO[k];}
+/* v5.8.8: a mesma regra vale por setor (envase, sopro, rotulagem) */
+function obrigDe(setor,k){
+  try{const c=((CS_RASTRO.opObrig||{})[setor])||{};return (k in c)?!!c[k]:OB_PADRAO[k];}catch(e){return OB_PADRAO[k];}
 }
-function obrigSet(k,v){
+const obrig=k=>obrigDe('envase',k);
+function obrigSet(setor,k,v){
   const t=CS_RASTRO.opObrig||{};
-  CS_RASTRO.opObrig={...t,envase:{...(t.envase||{}),[k]:!!v}};
+  CS_RASTRO.opObrig={...t,[setor]:{...(t[setor]||{}),[k]:!!v}};
   agendarSalvar();
 }
 
@@ -42551,6 +42857,7 @@ try{const _al=abrirLote;abrirLote=function(b){
 
 /* ================= Configurações › Produção › PCP ================= */
 const SVG_CAD='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>';
+let CFG_SETOR='envase';
 function cfgObrig(){
   const cx=$('mB'),tit=$('mTit');
   if(!cx||!tit||tit.textContent!=='Configurações do PCP')return;
@@ -42561,17 +42868,24 @@ function cfgObrig(){
     const alvo=[...cx.querySelectorAll(':scope>.st')].find(s=>/Telas e tablets/i.test(s.textContent));
     alvo?alvo.before(box):cx.appendChild(box);
   }
-  const L=[['Produto','fixo'],['Volume do tanque','fixo'],['Máquina','fixo'],['Data','fixo'],['Início','fixo'],['Lote','auto'],
-    ['Operador','operador'],['Tanque','tanque']];
+  const SET={
+    envase:['Envase',[['Produto','fixo'],['Volume do tanque','fixo'],['Máquina','fixo'],['Data','fixo'],['Início','fixo'],['Lote','auto'],['Operador','operador'],['Tanque','tanque']]],
+    sopro:['Sopro',[['Frasco a produzir','fixo'],['Quantidade a produzir','fixo'],['Máquina','fixo'],['Data','fixo'],['Início','fixo'],['Operador','operador']]],
+    rotulagem:['Rotulagem',[['Frasco rotulado a produzir','fixo'],['Quantidade a produzir','fixo'],['Máquina','fixo'],['Data','fixo'],['Início','fixo'],['Operador','operador']]]};
+  if(!SET[CFG_SETOR])CFG_SETOR='envase';
+  const L=SET[CFG_SETOR][1];
   const pode=(()=>{try{return podeEditar('admin');}catch(e){return true;}})();
-  box.innerHTML=`<div class="st">Campos obrigatórios · OP de envase</div><div class="cs585-cfgl">${L.map(([n,k])=>
+  box.innerHTML=`<div class="st">Campos obrigatórios da OP</div>
+    <div class="subabas" style="margin-bottom:2px">${Object.keys(SET).map(k=>`<button type="button" class="subaba ${k===CFG_SETOR?'on':''}" data-cs585set="${k}">${SET[k][0]}</button>`).join('')}</div>
+    <div class="cs585-cfgl">${L.map(([n,k])=>
     k==='fixo'?`<div class="cs585-cpo trav"><span class="nm">${n}</span><span class="tg">${SVG_CAD}Sempre</span></div>`
     :k==='auto'?`<div class="cs585-cpo trav"><span class="nm">${n}</span><span class="tg">Automático</span></div>`
-    :`<div class="cs585-cpo"><span class="nm">${n}</span><button type="button" class="cs585-sw ${obrig(k)?'on':''}" data-cs585ob="${k}"
-        role="switch" aria-checked="${obrig(k)}" aria-label="${n} obrigatório" ${pode?'':'disabled'}></button></div>`).join('')}</div>`;
+    :`<div class="cs585-cpo"><span class="nm">${n}</span><button type="button" class="cs585-sw ${obrigDe(CFG_SETOR,k)?'on':''}" data-cs585ob="${k}"
+        role="switch" aria-checked="${obrigDe(CFG_SETOR,k)}" aria-label="${n} obrigatório" ${pode?'':'disabled'}></button></div>`).join('')}</div>`;
+  box.querySelectorAll('[data-cs585set]').forEach(b=>b.onclick=ev=>{ev.stopPropagation();CFG_SETOR=b.dataset.cs585set;cfgObrig();});
   box.querySelectorAll('[data-cs585ob]').forEach(b=>b.onclick=ev=>{ev.stopPropagation();
-    const k=b.dataset.cs585ob,v=!obrig(k);obrigSet(k,v);cfgObrig();
-    toast(`${k==='operador'?'Operador':'Tanque'} ${v?'obrigatório':'opcional'} na OP de envase.`);});
+    const k=b.dataset.cs585ob,v=!obrigDe(CFG_SETOR,k);obrigSet(CFG_SETOR,k,v);cfgObrig();
+    toast(`${k==='operador'?'Operador':'Tanque'} ${v?'obrigatório':'opcional'} na OP de ${SET[CFG_SETOR][0].toLowerCase()}.`);});
 }
 try{const _cf=abrirCfgPCP;abrirCfgPCP=function(){const r=_cf.apply(this,arguments);try{cfgObrig();}catch(e){}return r;};}catch(e){}
 /* a página do PCP se redesenha sozinha ao incluir ou tirar um marcador: a seção volta junto */
@@ -42601,7 +42915,7 @@ document.addEventListener('click',()=>{setTimeout(()=>{try{if($('mTit')&&$('mTit
   document.addEventListener('scroll',some,true);
 })();
 
-try{window.__V585={obrig,embLinhas,numKg};}catch(e){}
+try{window.__V585={obrig,obrigDe,embLinhas,numKg};}catch(e){}
 })();
 </script>
 </body>
