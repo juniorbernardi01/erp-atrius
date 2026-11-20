@@ -1,6 +1,6 @@
 {
- "v": "v582",
- "versao": "5.8.2",
+ "v": "v583",
+ "versao": "5.8.3",
  "data": "19/11/2026",
- "o_que_mudou": "Analise agora vale DO DIA PRA FRENTE (integridade). Quando a Mariane altera um criterio ou uma especificacao de um produto, a mudanca vale so para os lotes feitos daquele dia em diante. Os lotes ja feitos mantem o criterio e a especificacao que tinham na epoca: certificado, PDF e tablet de lote antigo NAO mudam quando a especificacao e editada hoje, e a conferencia conforme/fora de cada lote usa a versao da data dele. Funciona igual ao versionamento da formula (o 'vale desde'): cada alteracao fecha a versao atual com a data de hoje e abre uma nova. Lote novo pega a versao atual; lote antigo le a versao da data dele. Testado: editar o pH de um produto nao muda o certificado de um lote antigo, so o novo. Mantem tudo das 5.8.x (secao Analise no cadastro) e 5.7.x. OBS: tablet ja travado pode precisar de um refresh manual uma vez."
+ "o_que_mudou": "Checklist de limpeza: agora da para EXCLUIR uma vistoria. Nos tres pontinhos da lista, alem de Abrir, Cancelar e Reabrir, tem 'Excluir vistoria'. Ela apaga de vez a vistoria e tudo que e dela (respostas, setores, fotos e os arquivos de foto), com PIN e aviso de que nao da para desfazer. Para so tirar da lista sem apagar, continua o Cancelar. Mantem tudo das 5.8.x (analise por produto com versionamento do dia pra frente) e 5.7.x. OBS: tablet ja travado pode precisar de um refresh manual uma vez."
 }

@@ -1243,11 +1243,12 @@ function menuVist(btn,x){
   let h=`<div class="mh">Nº ${n4(x.numero)} · semana de ${br(x.semana).slice(0,5)}</div><button data-act="abrir">Abrir</button>`;
   if(x.situacao==='cancelada'){ if(edita)h+=`<div class="sep"></div><button data-act="reabrir">↩ Reabrir vistoria</button>`; }
   else if(x.situacao!=='ciencia'&&edita){ h+=`<div class="sep"></div><button data-act="cancelar" style="color:var(--danger)">✕ Cancelar vistoria</button>`; }
+  if(edita)h+=`<div class="sep"></div><button data-act="excluir" style="color:var(--danger)">🗑 Excluir vistoria</button>`;
   const m=document.createElement('div');m.className='m3';m.id='m3v';m.innerHTML=h;document.body.appendChild(m);
   const top=Math.min(r.bottom+4,innerHeight-m.offsetHeight-8),left=Math.min(r.right-m.offsetWidth,innerWidth-m.offsetWidth-8);
   m.style.top=Math.max(8,top)+'px';m.style.left=Math.max(8,left)+'px';
   m.querySelectorAll('button').forEach(b=>b.onclick=()=>{const a=b.dataset.act;fechaMenuVist();
-    if(a==='abrir')ir('lista',x.numero);else if(a==='cancelar')cancelarVist(x);else if(a==='reabrir')reabrirVist(x);});
+    if(a==='abrir')ir('lista',x.numero);else if(a==='cancelar')cancelarVist(x);else if(a==='reabrir')reabrirVist(x);else if(a==='excluir')excluirVist(x);});
   setTimeout(()=>document.addEventListener('mousedown',fechaMenuVist,{once:true}),0);
 }
 function cancelarVist(x){
@@ -1261,6 +1262,26 @@ function reabrirVist(x){
     try{const r=await sb(`vistorias?id=eq.${x.id}`,{method:'PATCH',body:{situacao:'andamento'},prefer:'return=representation'});
       if(r&&r[0])Object.assign(x,r[0]);else x.situacao='andamento';
       toast('Vistoria reaberta.');desenhaLista();}catch(e){toast(e.message,true);}});
+}
+/* Excluir de vez: apaga a vistoria e tudo que é dela (respostas, setores, fotos
+   e os arquivos de foto no storage). Não dá para desfazer — por isso o PIN e o
+   aviso. Para só tirar da lista sem apagar, existe o Cancelar. */
+function excluirVist(x){
+  pedePin('Excluir a vistoria Nº '+n4(x.numero),'Apaga DE VEZ a vistoria e tudo dela (respostas e fotos). Não dá para desfazer. Se é só para tirar da lista, use Cancelar.',async nome=>{
+    try{
+      const rs=await sb(`vistoria_respostas?vistoria_id=eq.${x.id}&select=id`)||[];
+      const rids=rs.map(r=>r.id);
+      if(rids.length){
+        let fts=[];try{fts=await sb(`vistoria_fotos?resposta_id=in.${lista(rids)}&select=id,caminho`)||[];}catch(e){}
+        for(const f of fts){try{if(f.caminho)await N.sbTira('vistorias',f.caminho);}catch(e){}}
+        if(fts.length)await sb(`vistoria_fotos?resposta_id=in.${lista(rids)}`,{method:'DELETE'});
+      }
+      await sb(`vistoria_respostas?vistoria_id=eq.${x.id}`,{method:'DELETE'});
+      await sb(`vistoria_setores?vistoria_id=eq.${x.id}`,{method:'DELETE'});
+      await sb(`vistorias?id=eq.${x.id}`,{method:'DELETE'});
+      LP.vists=(LP.vists||[]).filter(v=>v.id!==x.id);
+      toast('Vistoria excluída.');desenhaLista();
+    }catch(e){toast('Não consegui excluir: '+e.message,true);}});
 }
 
 /* =====================================================================
