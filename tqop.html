@@ -950,7 +950,9 @@ function abrirForm(t,aba){const l=lote(t);if(!l)return toast('Sem lote neste tan
       /* v419: o peso não é mais preenchido sozinho: o operador digita o que separou de verdade */
       const foco=c2=>{const e=$('fForm').querySelector(`input[data-i="${i}"][data-c="${c2}"]`);if(e){e.classList.add('falta');e.focus();setTimeout(()=>e.classList.remove('falta'),1600);}};
       if(!v.lote&&D&&D.rastro){toast('Digite o lote da '+nomes[i]+' antes do ✓.');return foco('lote');}
-      if(!String(v.kg||'').trim()){const mm=(l.mp||[])[i];v.kg=mm?nl(mm.kg):'';}}   /* v520: ✓ sem peso digitado = separou o previsto */
+      /* v585: o ✓ só vale com o peso digitado. Antes, sem peso, entrava o previsto como se fosse o da balança —
+         e esse número agora aparece na coluna "Pesado" do PCP: tem que ser o que foi pesado de verdade. */
+      if(!String(v.kg||'').trim()){toast('Digite o peso que você separou de '+nomes[i]+' antes do ✓.');return foco('kg');}}
     v.ok=!v.ok;
     const kb=!!KB.on;abrirForm(t,aba);
     if(kb){const nx=[...$('fForm').querySelectorAll('input[data-i]')].find(e=>!e.disabled&&!e.value);if(nx)nx.focus();}});

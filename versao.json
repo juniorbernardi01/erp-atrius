@@ -1,6 +1,6 @@
 {
- "v": "v583",
- "versao": "5.8.3",
- "data": "19/11/2026",
- "o_que_mudou": "Checklist de limpeza: agora da para EXCLUIR uma vistoria. Nos tres pontinhos da lista, alem de Abrir, Cancelar e Reabrir, tem 'Excluir vistoria'. Ela apaga de vez a vistoria e tudo que e dela (respostas, setores, fotos e os arquivos de foto), com PIN e aviso de que nao da para desfazer. Para so tirar da lista sem apagar, continua o Cancelar. Mantem tudo das 5.8.x (analise por produto com versionamento do dia pra frente) e 5.7.x. OBS: tablet ja travado pode precisar de um refresh manual uma vez."
+ "v": "v587",
+ "versao": "5.8.7",
+ "data": "20/11/2026",
+ "o_que_mudou": "OP de envase: o modal ficou com um tamanho so e tres abas que nao somem mais (Ordem, Embalagem, Formulacao e analise). No cabecalho aparece o numero da OP, nao o codigo interno. Na aba Ordem o operador fica ao lado da maquina e e obrigatorio (liga e desliga em Configuracoes, Producao, PCP). Na Embalagem, cada item mostra o estoque fisico, o que ja esta reservado por outras OPs (e quais), o disponivel e a situacao (OK, abaixo ou FALTA), com uma explicacao ao passar o mouse no titulo de cada coluna; a aba leva o selo FALTA. Na formulacao entrou a coluna Pesado, com o que o tanque digitou na separacao, e saiu a tarja repetida de falta. Tablet dos tanques: o visto da separacao so vale com o peso digitado. Correcao: o quadro Modo de fazer aparecia cortado na tela do lote. Mantem tudo das 5.8.x e 5.7.x."
 }

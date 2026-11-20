@@ -5584,7 +5584,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v583';const VERSAO_DATA='19/11/2026';
+const VERSAO_APP='v587';const VERSAO_DATA='20/11/2026';
 /* número que aparece na tela: v438 → v4.3.8 (por dentro continua v438, que é o que as versões comparam) */
 const csRotVer=v=>{const d=String(v||'').replace(/\D/g,'');return d.length>=3?'v'+d.slice(0,-2)+'.'+d.slice(-2,-1)+'.'+d.slice(-1):String(v||'');};
 const VERSAO_ROTULO=csRotVer(VERSAO_APP)+' · '+VERSAO_DATA;
@@ -40312,9 +40312,13 @@ function csMp519(simular){
 .pcx-meta .mt{font:800 14px system-ui;white-space:nowrap}.pcx-meta .mpct{font:800 13px ui-monospace,monospace;color:#1D4ED8}
 .minibars{display:flex;gap:10px;margin-left:6px;flex:1;overflow-x:auto;scrollbar-width:none}
 .minibars::-webkit-scrollbar{display:none}
-.mb{display:flex;flex-direction:column;gap:3px;min-width:84px}.mb span{font-size:10px;color:var(--ink3,#64748B);white-space:nowrap}
-.mb .bar{height:6px;border-radius:3px;background:var(--surface,#fff);overflow:hidden}.mb .bar i{display:block;height:100%;border-radius:3px}
-.mb.ok .bar i{background:#16A34A}.mb.lo .bar i{background:#F59E0B}.mb.cr .bar i{background:#DC2626}
+/* v5.8.4: estas regras são das mini barras da meta do sopro e estavam soltas (".mb").
+   ".mb" também é o corpo de TODO modal do sistema (#mB): ele virava coluna flex, e os
+   quadros com overflow:hidden (Modo de fazer, formulação) eram espremidos em vez de o
+   modal rolar. Presas ao .minibars, só valem onde foram feitas para valer. */
+.minibars .mb{display:flex;flex-direction:column;gap:3px;min-width:84px}.minibars .mb span{font-size:10px;color:var(--ink3,#64748B);white-space:nowrap}
+.minibars .mb .bar{height:6px;border-radius:3px;background:var(--surface,#fff);overflow:hidden}.minibars .mb .bar i{display:block;height:100%;border-radius:3px}
+.minibars .mb.ok .bar i{background:#16A34A}.minibars .mb.lo .bar i{background:#F59E0B}.minibars .mb.cr .bar i{background:#DC2626}
 .pcx-mpanel{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;padding:14px 16px}
 @media(max-width:760px){.pcx-mpanel{grid-template-columns:1fr 1fr}}@media(max-width:500px){.pcx-mpanel{grid-template-columns:1fr}}
 .pcx-metac{border:1px solid var(--line,#DDE3EC);border-radius:11px;padding:12px}
@@ -42062,6 +42066,542 @@ try{
 /* hook de inspeção/teste (não altera comportamento) */
 try{ window.__PCP={ PCP:PCP, mergeLotes:mergeLotes, abrirTablet:abrirTablet, novaOP:novaOP, injetarOrdensSR:injetarOrdensSR, saldoPCP:saldoPCP, saldoReal:saldoReal, checarHashTablet:checarHashTablet }; }catch(e){}
 
+})();
+</script>
+<script>
+/* ===================== v5.8.5 · MODAL DA OP DE ENVASE (20/11/2026) =====================
+   Pedido do Junior, validado antes na simulação. É tudo casca: nenhuma regra de gravação,
+   de estoque ou de tempo foi tocada; as funções de sempre desenham e este bloco arruma.
+   1) Cabeçalho mostra o número da OP (rotuloOP), não o código interno do registro (#00DB75DA).
+   2) Três abas, sempre no topo: Ordem · Embalagem · Formulação e análise. A tela do lote deixou
+      de desenhar abas quando formulação e análise viraram uma tela só, e a rotina que repunha as
+      abas da OP procurava as antigas para trocar: não achava, e a OP ficava sem aba nenhuma.
+   3) O modal da OP tem um tamanho só (antes 920 px e pulava para 1060 px na formulação).
+   4) Aba Ordem: operador ao lado da máquina; as informações pequenas vão na linha do título do
+      campo; início → fim previsto lado a lado; previsto em blocos.
+   5) Embalagem: em cima só a tarja curta; na linha, "Estoque disponível" (o que tem na Fábrica
+      menos o que já está reservado pelas OPs que vêm ANTES desta na programação — é a regra de
+      reserva do sistema: quem tem data mais cedo pega primeiro) e "Situação". A aba leva o selo FALTA.
+      v5.8.6: a conta fica aberta em três colunas — Estoque físico · Reservado · Disponível — e o
+      Reservado diz de quais OPs é. Quem programa precisa ver que as ordens já lançadas tomaram o
+      material e que mais uma não fecha.
+   6) Formulação: coluna "Pesado" (o que o tanque digitou na separação). A tarja "Falta insumos"
+      saiu: a falta já está na linha e no selo da aba. Depois que a matéria-prima do lote já saiu
+      do estoque, a linha não acusa mais falta — o saldo que aparece ali já é o de depois da baixa.
+   7) Campos obrigatórios da OP de envase em Configurações › Produção › PCP. Produto, volume,
+      máquina, data e início continuam sempre obrigatórios (o salvar já cobrava); operador liga e
+      desliga (nasce ligado) e tanque também (nasce desligado). Fica guardado junto da
+      Rastreabilidade, que é a outra regra de "campo obrigatório" e já vai e volta do banco. */
+(function(){
+'use strict';
+const $=id=>document.getElementById(id);
+const E=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const N0=n=>{try{return nfSaldo(n);}catch(e){return String(n);}};
+/* peso sempre com uma casa, como a coluna "Pesar"; até três quando o número pede */
+const KG=n=>(+n).toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:3});
+
+document.head.insertAdjacentHTML('beforeend',`<style id="cs585css">
+/* tamanho único do modal da OP (todas as abas) */
+.modal:has(#mB>.cs585-tabs){max-width:1060px;height:min(93vh,820px)}
+#mB>.cs585-tabs{display:flex!important;gap:2px;border-bottom:1px solid var(--line);margin:0 0 16px!important}
+.cs585-selo{display:inline-block;font-size:9.5px;font-weight:800;letter-spacing:.07em;padding:2px 7px;border-radius:5px;
+  background:var(--danger);color:#fff;margin-left:7px;vertical-align:1px}
+.mh .cs585-opn{color:var(--ink);font-weight:700;font-size:12.5px}
+
+/* ---- aba Ordem ---- */
+#mB>.cs585-tabs~.g4 .fld label,#mB>.cs585-tabs~.opl .fld label{display:flex;align-items:baseline;gap:4px;flex-wrap:wrap}
+.cs585-lh{margin:0 0 0 auto!important;padding-left:8px;font-size:11px!important;font-weight:400;color:var(--ink3);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;max-width:100%}
+.cs585-lh b{color:var(--ink2);font-weight:700}
+/* aviso de verdade (lote sem numeração etc.) não pode ser cortado: desce para a linha de baixo */
+.cs585-lh:has(.w){white-space:normal;flex-basis:100%;padding:3px 0 0;margin-left:0!important}
+.cs585-lh.erro{color:var(--danger);font-weight:600}
+.cs585-g3{grid-template-columns:1.2fr 1fr 1fr!important}
+.cs585-gmaq{grid-template-columns:.9fr 2fr 1fr .85fr 16px .85fr!important;align-items:start}
+.cs585-seta{margin-top:30px;text-align:center;color:var(--ink3);font-size:16px}
+.cs585-erro select,.cs585-erro input{border-color:var(--danger)!important;background:#FDF4F3!important}
+#mB>.cs585-tabs~.st2.cs585-st{margin-top:16px}
+#mB>.cs585-tabs~.prevlin{display:flex;flex-wrap:wrap;border-radius:10px;margin:2px 0 14px}
+#mB>.cs585-tabs~.prevlin .ph{display:none}
+#mB>.cs585-tabs~.prevlin .pl{flex:1 1 0;flex-direction:column;align-items:flex-start;gap:1px;padding:9px 14px;
+  border-top:0;border-left:1px solid var(--line2);min-width:0}
+#mB>.cs585-tabs~.prevlin .ph+.pl{border-left:0}
+#mB>.cs585-tabs~.prevlin .pl .pe{width:auto;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;font-weight:700}
+#mB>.cs585-tabs~.prevlin .pl .pt{font-size:15px;font-weight:700}
+#mB>.cs585-tabs~.prevlin .pl .pd{margin-left:0}
+#mB>.cs585-tabs~.prevlin .pl.fim{background:#F6F8FC}
+#mB>.cs585-tabs~.prevlin .pl:has(.pe:empty){flex:1 1 100%;flex-direction:row;align-items:center;gap:10px;
+  padding:6px 14px;border-left:0;border-top:1px solid var(--line2)}
+#mB>.cs585-tabs~.prevlin .pl:has(.pe:empty) .pe{display:none}
+#mB>.cs585-tabs~.prevlin .pl:has(.pe:empty) .pt{font-size:12.5px;font-weight:600}
+#mB>.cs585-tabs~.prevlin .pl:has(.pe:empty) .pd{margin-left:auto}
+/* sem apontamento, a barra de baixo já diz "0 de N": a caixa vazia repetia a mesma coisa */
+#mB>.cs585-tabs~.sec .turnos:has(>.tvazio.compacto){display:none}
+/* na aba Embalagem não há conta de caixas para mostrar: a caixinha com um traço sai */
+#mB:has(>.cs585-emb)>#fCalc{display:none}
+@media(max-width:900px){.cs585-g3,.cs585-gmaq{grid-template-columns:1fr 1fr!important}.cs585-seta{display:none}
+  #mB>.cs585-tabs~.prevlin .pl{flex-basis:100%;border-left:0;border-top:1px solid var(--line2)}}
+
+/* ---- aba Embalagem ---- */
+.cs585-tarja{display:flex;align-items:center;gap:9px;background:#FBEAE8;border:1px solid #EFCCC8;color:#8A1C16;
+  border-radius:9px;padding:9px 12px;font-size:13px;font-weight:600;margin:0 0 12px}
+.cs585-tarja svg{flex:none}
+.tb.cs585-emb td.cs585-est{white-space:nowrap}
+.tb.cs585-emb th,.tb.cs585-emb td{padding-left:9px;padding-right:9px}
+.cs585-temdica{cursor:help}
+th .cs585-temdica{border-bottom:1px dotted var(--ink3);padding-bottom:1px}
+#cs585dica{position:fixed;z-index:99999;max-width:290px;background:#1A1D23;color:#fff;font:500 12.5px/1.45 Inter,system-ui,sans-serif;
+  padding:9px 12px;border-radius:9px;box-shadow:0 8px 24px rgba(0,0,0,.25);white-space:pre-line;pointer-events:none;
+  letter-spacing:0;text-transform:none;text-align:left}
+.tb.cs585-emb td.cs585-est.w b{color:var(--danger)}
+.tb.cs585-emb td.cs585-est small{display:block;font-size:10.5px;color:var(--ink3);font-weight:400}
+.tb.cs585-emb tr.cs585-sem td{background:#FDF4F3}
+.cs585-sit{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:600;white-space:nowrap}
+.cs585-sit i{width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:800;font-style:normal;flex:none}
+.cs585-sit.ok{color:var(--run)}.cs585-sit.ok i{background:#E6F4EA;color:var(--run)}
+.cs585-sit.baixo{color:var(--danger)}.cs585-sit.baixo i{background:var(--danger);color:#fff}
+.cs585-sit small{font-weight:500;color:var(--ink3);font-size:11.5px}
+.cs585-sit .cs585-selo{margin-left:0;font-size:10.5px;padding:3px 9px}
+
+/* ---- Formulação e análise ---- */
+.cs585-res{display:flex;gap:18px;flex-wrap:wrap;font-size:12.5px;color:var(--ink3);margin:0 0 12px}
+.cs585-res b{color:var(--ink);font-weight:700}
+.modal:has(#mB>.cs585-tabs) .loteLR{grid-template-columns:minmax(0,1.45fr) minmax(0,1fr)}
+.certt.tform.cs585-tf th:nth-child(1){width:42px}
+.certt.tform.cs585-tf th:nth-child(2){width:auto}
+.certt.tform.cs585-tf th:nth-child(3){width:13%}
+.certt.tform.cs585-tf th:nth-child(4){width:15%}
+.certt.tform.cs585-tf th:nth-child(5){width:21%}
+.certt.tform.cs585-tf th:nth-child(6){width:17%}
+.certt.tform.cs585-tf td.estq .selo{display:table;margin:2px 0 0 auto}
+.cs585-dif{display:block;font-size:10.5px;color:var(--pausa);font-weight:700}
+.cs585-pres{display:block;font-size:10.5px;color:var(--pausa)}
+.cs585-sepq{float:right;font-weight:600;letter-spacing:.02em;text-transform:none;font-size:11px;color:var(--run)}
+@media(max-width:860px){.modal:has(#mB>.cs585-tabs) .loteLR{grid-template-columns:1fr}}
+
+/* ---- Configurações › Produção › PCP › Campos obrigatórios ---- */
+.cs585-cfg{margin:4px 0 22px}
+.cs585-cpo{display:flex;align-items:center;gap:12px;padding:11px 2px;border-top:1px solid var(--line2);font-size:13.5px}
+.cs585-cfgl>.cs585-cpo:first-child{border-top:0}
+.cs585-cpo .nm{flex:1;font-weight:600}
+.cs585-cpo.trav .nm{color:var(--ink2);font-weight:500}
+.cs585-cpo .tg{font-size:11.5px;color:var(--ink3);display:inline-flex;align-items:center;gap:6px}
+.cs585-sw{width:42px;height:24px;border-radius:99px;background:#D5D8DE;position:relative;flex:none;border:0;cursor:pointer;transition:background .15s}
+.cs585-sw::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;
+  box-shadow:0 1px 2px rgba(0,0,0,.25);transition:left .15s}
+.cs585-sw.on{background:#15803D}.cs585-sw.on::after{left:21px}
+</style>`);
+
+/* ================= campos obrigatórios ================= */
+const OB_PADRAO={operador:true,tanque:false};
+function obrig(k){
+  try{const c=((CS_RASTRO.opObrig||{}).envase)||{};return (k in c)?!!c[k]:OB_PADRAO[k];}catch(e){return OB_PADRAO[k];}
+}
+function obrigSet(k,v){
+  const t=CS_RASTRO.opObrig||{};
+  CS_RASTRO.opObrig={...t,envase:{...(t.envase||{}),[k]:!!v}};
+  agendarSalvar();
+}
+
+/* ================= estoque da embalagem =================
+   Disponível para ESTA OP = o que está na Fábrica menos o que já está reservado pelas OPs que vêm
+   ANTES dela (data e início mais cedo). É a mesma regra das reservas do sistema: a OP de depois é
+   que acusa a falta, não a que entra primeiro na máquina. A reserva da própria OP não desconta
+   dela mesma. Item sem leitura de estoque fica sem número: não se inventa saldo. */
+function antesDe(lista,o){
+  /* a lista de reservas já vem na ordem da programação */
+  const i=o&&o.id?lista.findIndex(p=>p.op&&p.op.id===o.id):-1;
+  if(i>=0)return lista.slice(0,i);
+  /* OP ainda não lançada: entra na fila pela data e hora que estão no formulário */
+  const d=String((o&&o.data)||''),h=(o&&o.inicio!=null)?+o.inicio:Infinity;
+  if(!d)return lista.slice();
+  return lista.filter(p=>{const pd=String(p.op.data||'');return pd<d||(pd===d&&(+p.op.inicio||0)<h);});
+}
+function embLinhas(o){
+  const fin=!!(o&&o.id&&(()=>{try{return ['cancelada','concluida','finalizado'].includes(sit(o));}catch(e){return false;}})());
+  let mapa=null;try{mapa=reservas();}catch(e){mapa={};}
+  let princ=null;try{princ=csEPrinc();}catch(e){}
+  return embalagemDe(o).map(x=>{
+    const r={x,precisa:+x.precisa||0,disp:null,fis:null,res:0,ops:[],k:'sem'};
+    if(fin||o.fimReal){r.k='fim';return r;}
+    try{
+      const ins=insPorSku(x.sku)||insPorNome(x.nome);
+      const t=String(x.tiny||(ins?tinyDe(ins):'')||'');
+      if(!t)return r;
+      const sd=csSaldoDeps(t);
+      if(sd.tot==null)return r;
+      r.fis=+(sd.por[princ]||0);
+      const antes=antesDe(((mapa[t]||{}).por)||[],o);
+      r.res=antes.reduce((s,p)=>s+(+p.qtd||0),0);
+      r.ops=antes.map(p=>({n:(()=>{try{return rotuloOP(p.op);}catch(e){return '';}})(),qtd:+p.qtd||0,quando:p.quando||''}));
+      r.disp=r.fis-r.res;
+      r.k=r.disp>=r.precisa?'ok':(r.disp<=0?'falta':'baixo');
+    }catch(e){}
+    return r;
+  });
+}
+const embRuins=o=>{try{const p=prodOf(o.codigo);if(!p||!o.litros)return 0;return embLinhas(o).filter(r=>r.k==='falta'||r.k==='baixo').length;}catch(e){return 0;}};
+
+/* título de coluna com balão: o nome fica curto e a conta se explica ao passar o mouse */
+const TH=(nome,dica)=>`<th class="n"><span class="cs585-temdica" data-cs585dica="${E(dica)}" tabindex="0">${nome}</span></th>`;
+const SVG_AV='<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>';
+
+try{const _eh=embalagemHTML;embalagemHTML=function(o){
+  const h=_eh.apply(this,arguments);
+  try{
+    /* produto não escolhido, volume vazio, sem embalagem cadastrada: fica o aviso de sempre */
+    if(!o||h.indexOf('<table class="tb">')<0)return h;
+    /* OP ainda não lançada: a hora digitada no formulário diz em que ponto da fila ela entra */
+    if(!o.id&&o.inicio==null){try{if(RASCUNHO&&RASCUNHO.inicio!=null)o={...o,inicio:RASCUNHO.inicio};}catch(e){}}
+    const p=prodOf(o.codigo),L=embLinhas(o);
+    if(!p||!L.length)return h;
+    const un=caixasPrev(o)*(p.un_cx||0);
+    const trava=!!o.fimReal;
+    const comEst=L.some(r=>r.k!=='fim');
+    const ruins=L.filter(r=>r.k==='falta'||r.k==='baixo').length;
+    const sitH=r=>{
+      if(r.k==='ok')return '<span class="cs585-sit ok"><i>✓</i>OK</span>';
+      if(r.k==='sem')return '<span class="k">sem leitura</span>';
+      const falta=r.precisa-Math.max(0,r.disp);
+      return r.k==='falta'
+        ?`<span class="cs585-sit baixo"><span class="cs585-selo">FALTA</span><small>faltam ${N0(falta)}</small></span>`
+        :`<span class="cs585-sit baixo"><i>!</i>Abaixo<small>faltam ${N0(falta)}</small></span>`;
+    };
+    /* a conta inteira na linha: o que tem, o que as ordens já lançadas tomaram e o que sobra para esta */
+    const fisH=r=>r.k==='sem'?'<span class="k">—</span>':`<b>${N0(r.fis)}</b>`;
+    const resH=r=>{
+      if(r.k==='sem')return '<span class="k">—</span>';
+      if(!r.res)return '<span class="k">0</span>';
+      const nomes=r.ops.slice(0,2).map(z=>'OP '+E(z.n)).join(', ')+(r.ops.length>2?` +${r.ops.length-2}`:'');
+      const dica=r.ops.map(z=>`OP ${z.n} · ${z.quando} · ${N0(z.qtd)}`).join('\n');
+      return `<span class="cs585-temdica" data-cs585dica="${E(dica)}"><b>${N0(r.res)}</b><small>${nomes}</small></span>`;
+    };
+    const dispH=r=>r.k==='sem'?'<span class="k">—</span>':`<b>${N0(Math.max(0,r.disp))}</b>`;
+    return `${ruins?`<div class="cs585-tarja">${SVG_AV}${ruins} ${ruins>1?'itens':'item'} com estoque insuficiente</div>`:''}
+    <p class="adp">Para <b>${nf(caixasPrev(o))} caixas</b> · ${nf(un)} unidades envasadas.</p>
+    <table class="tb cs585-emb"><thead><tr><th></th><th>Componente</th><th>Item</th>
+      <th class="n">Por unidade</th>${comEst
+        ?`${TH('Necessário','Quantidade que esta OP consome: a ficha do produto aplicada ao volume do tanque.')}${
+           TH('Estoque físico','Saldo na Fábrica neste momento. O que as ordens concluídas consumiram já saiu daqui.')}${
+           TH('Reservado','Comprometido com ordens programadas antes desta que ainda não deram baixa no estoque. Passe o mouse no número para ver quais.')}${
+           TH('Disponível','Estoque físico menos o reservado: o que está livre para esta OP agora.')}<th>Situação</th>`
+        :'<th class="n">Total</th>'}
+    </tr></thead><tbody>
+    ${L.map(r=>{const x=r.x,ruim=r.k==='falta'||r.k==='baixo';return `<tr class="${x._orig?'trocada':''}${ruim?' cs585-sem':''}">
+      <td class="c"><button class="btroca ico" data-trocaemb="${escAttr(x._orig||x.nome)}"
+        ${trava?'disabled':''} aria-label="Trocar ${escAttr(x.nome)}"
+        title="${trava?'O envase já terminou — a troca só vale antes do fim':'Trocar este item nesta OP'}">${SVG_TROCA}</button></td>
+      <td><b>${x.comp}</b></td>
+      <td>${x.nome}${x.sku&&x.sku.indexOf('SEMSKU')<0?` <span class="k">${x.sku}</span>`:''}${x.obs?`<span style="display:block;font-size:11.5px;color:#B45309;font-weight:600">${escAttr(x.obs)}</span>`:''}
+        ${x._orig?`<span class="k" style="display:block;font-size:10.5px">no lugar de
+          ${x._orig}${x._quem?` · ${x._quem}`:''}</span>`:''}</td>
+      <td class="n mono">${x.qtd}</td>
+      <td class="n mono"><b>${nf(x.precisa)}</b></td>
+      ${comEst?`<td class="n mono cs585-est ${r.k!=='sem'&&r.fis<0?'w':''}">${fisH(r)}</td><td class="n mono cs585-est">${resH(r)}</td><td class="n mono cs585-est ${ruim?'w':''}">${dispH(r)}</td><td>${sitH(r)}</td>`:''}
+    </tr>`;}).join('')}
+    </tbody></table>`;
+  }catch(e){console.warn('[v585] embalagem',e);return h;}
+};}catch(e){}
+
+/* ================= falta de matéria-prima (para o selo da aba) ================= */
+function mpFaltaLote(b){
+  try{if(!b||csMPSaiu(b))return 0;const m=reservas();
+    return mpDoLote(b).filter(x=>!x._rem&&situacaoItem(x.tiny||(insPorNome(x.nome)||{}).tiny,x.kg,m).k==='falta').length;
+  }catch(e){return 0;}
+}
+function mpFaltaPrev(cod,litros){
+  try{const p=prodOf(cod),vol=+litros||0;if(!p||!vol)return 0;const m=reservas();
+    return consumoMP(p.tanque,vol).filter(x=>situacaoItem(x.tiny||(insPorNome(x.nome)||{}).tiny,x.kg,m).k==='falta').length;
+  }catch(e){return 0;}
+}
+
+/* ================= abas ================= */
+const SELO='<span class="cs585-selo">FALTA</span>';
+try{csTabsOP=function(o,ativa,b){
+  const at=(ativa==='cert'||ativa==='form'||ativa==='anal')?'preparo':ativa;
+  const t=[['op','Ordem',0],['emb','Embalagem',embRuins(o)],['preparo','Formulação e análise',b?mpFaltaLote(b):0]];
+  return `<div class="adabas cs585-tabs">${t.map(([c,r,f])=>
+    `<button class="adaba ${c===at?'on':''}" data-csoab="${c}"${
+      c==='preparo'&&!b?' disabled title="Esta OP ainda não tem tanque"':''}>${r}${f?SELO:''}</button>`).join('')}</div>`;
+};}catch(e){}
+try{csLigaTabsOP=function(o,ativa){
+  const b=csLoteDaOP(o),cx=$('mB');if(!cx)return;
+  /* a tela do lote não desenha mais abas: quando não há o que trocar, as da OP entram no topo */
+  cx.querySelectorAll(':scope>.adabas').forEach(v=>v.remove());
+  cx.insertAdjacentHTML('afterbegin',csTabsOP(o,ativa,b));
+  cx.querySelectorAll('[data-csoab]').forEach(x=>x.onclick=()=>{
+    const a=x.dataset.csoab;
+    if(a==='preparo'){if(b)csAbaTanque(o,b,'preparo');return;}
+    ABA_OP=a;abrirOrdem(o);
+  });
+};}catch(e){}
+function subOP(o,b){
+  return `<b class="cs585-opn">OP ${E(rotuloOP(o))}</b> · <span class="stq ${sit(o)}">${ST[sit(o)]}</span>${
+    b?` · lote ${E(b.lote||o.lote||'—')} · ${E(b.tanque||'sem tanque')}`:(o.lote?` · lote ${E(o.lote)}`:'')}`;
+}
+try{csCabecalhoOP=function(o,b,aba){
+  const tit=$('mTit'),sub=$('mSub');
+  /* o título é o mesmo nas três abas: trocar de aba não pode parecer trocar de tela */
+  if(tit)tit.textContent=sit(o)==='concluida'?'OP concluída':'Editar OP de envase';
+  if(sub){sub.hidden=false;sub.innerHTML=subOP(o,b);}
+  csLigaTabsOP(o,'preparo');
+};}catch(e){}
+
+/* abas da OP nova (ainda sem registro): mesma regra de guardar o digitado antes de trocar */
+function tabsNova(pre){
+  const cx=$('mB');if(!cx)return;
+  const x=(pre&&pre.codigo)?{codigo:pre.codigo,litros:+pre.litros||0,tanque:pre.tanque||'',maq:pre.maq||'',data:pre.data,inicio:pre.inicio}:null;
+  const at=(ABA_OP==='form'||ABA_OP==='anal')?'form':ABA_OP;
+  const t=[['op','Lançamento',0],['emb','Embalagem',x?embRuins(x):0],['form','Formulação e análise',x?mpFaltaPrev(x.codigo,x.litros):0]];
+  cx.querySelectorAll(':scope>.adabas').forEach(v=>v.remove());
+  cx.insertAdjacentHTML('afterbegin',`<div class="adabas cs585-tabs">${t.map(([c,r,f])=>
+    `<button class="adaba ${c===at?'on':''}" data-cs585n="${c}">${r}${f?SELO:''}</button>`).join('')}</div>`);
+  cx.querySelectorAll('[data-cs585n]').forEach(b=>b.onclick=()=>{
+    if($('fVol'))RASCUNHO=ler();
+    ABA_OP=b.dataset.cs585n;abrirOrdem(null,RASCUNHO);});
+}
+
+/* ================= aba Ordem ================= */
+const curtoOper=()=>{
+  const fo=$('fOper'),h=$('fOperHint');if(!fo||!h||h.classList.contains('erro'))return;
+  const m=$('fMq')?$('fMq').value:'';const dono=m?operadorDaMaq(m):null;
+  h.textContent=!m?'':(!dono?'sem operador cadastrado':(fo.value===dono.nome?`cadastrado da ${m}`:`da ${m}: ${dono.nome}`));
+  h.title=h.textContent;
+};
+function arrumaOrdem(o){
+  const fo=$('fOper'),fm=$('fMq'),ft=$('fTq');
+  if(!fo||!fm||!ft)return;
+  const ga=ft.closest('.g4'),gb=fm.closest('.g4'),fldO=fo.closest('.fld'),fldM=fm.closest('.fld');
+  if(!ga||!gb||!fldO||!fldM||ga===gb)return;
+  fldM.after(fldO);ga.classList.add('cs585-g3');gb.classList.add('cs585-gmaq');
+  const fim=$('fFimP')?$('fFimP').closest('.fld'):null;
+  if(fim&&!gb.querySelector('.cs585-seta'))fim.insertAdjacentHTML('beforebegin','<div class="cs585-seta" aria-hidden="true">→</div>');
+  /* "O que sai deste lote" some; a linha da máquina ganha o título dela */
+  const cx=$('mB');
+  cx.querySelectorAll(':scope>.st2').forEach(s=>{if(/O que sai deste lote/i.test(s.textContent))s.remove();});
+  if(!cx.querySelector('.cs585-st'))gb.insertAdjacentHTML('beforebegin','<div class="st2 cs585-st">Programação</div>');
+  /* as informações pequenas sobem para a linha do título do campo */
+  [['fOperHint',fldO],['fLoteHint',$('fLote')&&$('fLote').closest('.fld')],['fPrHint',$('fPr')&&$('fPr').closest('.fld')]].forEach(([id,fld])=>{
+    const h=$(id),lb=fld&&fld.querySelector('label');
+    if(h&&lb){h.classList.add('cs585-lh');h.removeAttribute('style');lb.appendChild(h);}
+  });
+  /* o tanque já mostra a capacidade no próprio campo: a linha de baixo só fica quando é aviso */
+  const th=$('fTqHint');
+  const tqDica=()=>{if(th)th.hidden=/de capacidade\.\s*$/.test(th.textContent||'');};
+  ft.addEventListener('change',tqDica);if($('fVol'))$('fVol').addEventListener('change',tqDica);tqDica();
+  /* trocar a máquina traz o operador dela, se o campo estava vazio ou no operador da máquina anterior */
+  let ant=fm.value;
+  fm.addEventListener('change',()=>{
+    try{const da=ant?operadorDaMaq(ant):null,dn=fm.value?operadorDaMaq(fm.value):null;
+      if(!fo.disabled&&dn&&(!fo.value||(da&&fo.value===da.nome)))fo.value=dn.nome;}catch(e){}
+    ant=fm.value;limpaErro();curtoOper();});
+  fo.addEventListener('change',()=>{limpaErro();curtoOper();});
+  ft.addEventListener('change',limpaErro);
+  /* asterisco no que a configuração pede */
+  const ast=(el,liga)=>{const lb=el.closest('.fld').querySelector('label');if(!lb)return;
+    let a=lb.querySelector('b.cs585-ast');
+    if(liga&&!a){a=document.createElement('b');a.className='cs585-ast';a.textContent='*';
+      const h=lb.querySelector('.cs585-lh');h?lb.insertBefore(a,h):lb.appendChild(a);lb.insertBefore(document.createTextNode(' '),a);}
+    if(!liga&&a)a.remove();};
+  ast(fo,obrig('operador'));ast(ft,obrig('tanque'));
+  curtoOper();
+}
+function limpaErro(){
+  document.querySelectorAll('#mB .cs585-erro').forEach(e=>e.classList.remove('cs585-erro'));
+  const h=$('fOperHint');if(h&&h.classList.contains('erro')){h.classList.remove('erro');}
+}
+
+/* ================= OP nova: formulação e análise previstas, numa aba só ================= */
+function juntaPrev(pre){
+  const cx=$('mB');if(!cx)return;
+  const cod=(pre&&pre.codigo)||'';
+  const nos=[...cx.children].filter(n=>!n.classList.contains('cs585-tabs'));
+  if(!nos.length||nos.some(n=>n.classList.contains('loteLR')))return;
+  /* sem produto ou sem volume a prévia é um aviso só: não há o que pôr lado a lado */
+  if(!cx.querySelector('.lin'))return;
+  const lr=document.createElement('div');lr.className='loteLR';
+  lr.innerHTML='<div class="llcol"><div class="llh">Formulação</div></div><div class="llcol"><div class="llh">Análise</div></div>';
+  cx.appendChild(lr);
+  nos.forEach(n=>lr.children[0].appendChild(n));
+  lr.children[1].insertAdjacentHTML('beforeend',csPrevAnaliseHTML(cod));
+}
+
+/* ================= abrirOrdem: arruma depois de desenhar ================= */
+try{const _ao=abrirOrdem;abrirOrdem=function(o,pre){
+  const r=_ao.apply(this,arguments);
+  try{
+    const cx=$('mB'),tit=$('mTit');
+    /* kit, tela do operador e qualquer outro modal que não seja a ficha da OP: não é aqui */
+    if(!cx||!tit||(o&&o.kit)||!/OP de envase|OP concluída/.test(tit.textContent||'')||!cx.querySelector(':scope>.adabas'))return r;
+    if(o){
+      const sub=$('mSub');if(sub){sub.hidden=false;sub.innerHTML=subOP(o,csLoteDaOP(o));}
+      if(ABA_OP!=='op'&&ABA_OP!=='emb')ABA_OP='op';
+      csLigaTabsOP(o,ABA_OP);
+    }else{
+      tabsNova(pre);
+      if(ABA_OP==='form'||ABA_OP==='anal')juntaPrev(pre);
+    }
+    arrumaOrdem(o);
+  }catch(e){console.warn('[v585] ficha da OP',e);}
+  return r;
+};}catch(e){}
+
+/* a dica do operador é reescrita pelo calc a cada tecla: aqui ela volta para a forma curta */
+try{const _calc=calc;calc=function(){const r=_calc.apply(this,arguments);try{if($('mB')&&$('mB').querySelector(':scope>.cs585-tabs'))curtoOper();}catch(e){}return r;};}catch(e){}
+
+/* ================= salvar: cobra o que a configuração pede ================= */
+try{const _sv=salvar;salvar=function(){
+  try{
+    const cx=$('mB');
+    if(cx&&cx.querySelector(':scope>.cs585-tabs')&&$('fLote')&&$('fOper')){
+      const f=ler(),fo=$('fOper'),ft=$('fTq');
+      /* máquina vem antes: sem ela o salvar de sempre já avisa, e é ela que traz o operador */
+      if(f.maq&&obrig('operador')&&!fo.disabled&&!f.operador){
+        fo.closest('.fld').classList.add('cs585-erro');
+        const h=$('fOperHint');if(h){h.classList.add('erro');h.textContent='Selecione o operador';}
+        toast('Selecione o operador.',true);fo.focus();return;
+      }
+      if(obrig('tanque')&&ft&&!ft.disabled&&!f.saldoId&&!f.tanque){
+        ft.closest('.fld').classList.add('cs585-erro');
+        toast('Selecione o tanque.',true);ft.focus();return;
+      }
+    }
+  }catch(e){console.warn('[v585] obrigatórios',e);}
+  return _sv.apply(this,arguments);
+};}catch(e){}
+
+/* ================= tela do lote: coluna Pesado, sem tarja repetida ================= */
+/* o peso que o tanque digitou: "12,5", "1.250,0" ou "12.5" */
+function numKg(v){
+  const s=String(v==null?'':v).trim();if(!s)return null;
+  const n=s.indexOf(',')>=0?+s.replace(/\./g,'').replace(',','.'):+s;
+  return isFinite(n)?n:null;
+}
+function arrumaLote(b){
+  const cx=$('mB');if(!cx||!b)return;
+  const tb=cx.querySelector('table.certt.tform');
+  if(tb&&!tb.classList.contains('cs585-tf')){
+    const at=APONTA[b.chave]||{},sep=((at.tq||{}).sep)||{};
+    const mp=(()=>{try{return mpDoLote(b);}catch(e){return [];}})();
+    const saiu=(()=>{try{return csMPSaiu(b);}catch(e){return false;}})();
+    const ths=tb.querySelectorAll('thead th');
+    if(ths.length===5){
+      tb.classList.add('cs585-tf');
+      const thP=document.createElement('th');thP.className='n';thP.textContent='Pesado';
+      ths[2].after(thP);ths[4].after(ths[3]);              /* ⋯ · Insumo · Pesar · Pesado · Lote · Estoque */
+      let nSep=0;
+      tb.querySelectorAll('tbody tr').forEach(tr=>{
+        const tds=tr.children,inp=tr.querySelector('input[data-lmp]');
+        if(!inp){const c=tr.querySelector('td[colspan]');if(c)c.colSpan=(+c.colSpan||2)+1;return;}
+        const nome=inp.dataset.lmp,x=mp.find(z=>z.nome===nome)||{};
+        const v=sep[nome]||(x._orig?sep[x._orig]:null);
+        const td=document.createElement('td');td.className='n mono';
+        const kg=v&&v.ok?numKg(v.kg):null;
+        if(kg==null)td.innerHTML='<span class="k">—</span>';
+        else{nSep++;const d=x.kg!=null?Math.round((kg-(+x.kg||0))*1000)/1000:0;
+          td.innerHTML=`<b>${KG(kg)}</b> kg${Math.abs(d)>=0.05?`<span class="cs585-dif">${d>0?'+':'−'}${KG(Math.abs(d))} kg</span>`:''}`;}
+        const est=tds[3];tds[2].after(td);
+        if(est)tr.appendChild(est);
+        /* a matéria-prima deste lote já saiu do estoque: o saldo ao lado é o de depois da baixa,
+           então "falta" ali não é mais desta OP */
+        if(saiu){tr.classList.remove('semmp');const s=tr.querySelector('td.estq .selo');if(s)s.remove();
+          const e2=tr.querySelector('td.estq');if(e2){e2.classList.remove('w');e2.classList.add('k');}
+          const bt=tr.querySelector('.bmp3.urg');if(bt)bt.classList.remove('urg');}
+        else if(tr.classList.contains('semmp')){
+          /* quem está segurando o insumo: saiu da tarja e veio para baixo do nome. Só conta a OP
+             que vem ANTES na programação — a de depois não tira nada desta */
+          try{const t=x.tiny||(insPorNome(nome)||{}).tiny;
+            const ids=(b.ordens||[]).map(z=>z.id),pr=ondePresas(t),i0=pr.findIndex(z=>ids.includes(z.op.id));
+            const p1=(i0>0?pr.slice(0,i0):[]).filter(z=>!ids.includes(z.op.id))[0];
+            if(p1&&tds[1])tds[1].insertAdjacentHTML('beforeend',`<span class="cs585-pres">reservado para a OP ${E(rotuloOP(p1.op))} de ${E(p1.quando)}</span>`);}catch(e){}
+        }
+      });
+      const lh=tb.closest('.lin')&&tb.closest('.lin').querySelector('.linh');
+      const tot=mp.filter(z=>!z._rem&&+z.kg>0).length||mp.length;
+      if(lh&&nSep){
+        const ult=((at.log||[]).filter(l=>/Salvou a separação/.test(String(l.e||''))).slice(-1)[0])||null;
+        lh.insertAdjacentHTML('beforeend',`<span class="cs585-sepq">${nSep} de ${tot} separadas${ult&&ult.op?' · '+E(ult.op)+(ult.t?' às '+E(ult.t):''):''}</span>`);
+      }
+    }
+  }
+  /* a falta já está na linha e no selo da aba: a tarja repetia */
+  cx.querySelectorAll(':scope>.alert.q').forEach(a=>{
+    const b0=a.querySelector('b');if(!a.id&&b0&&/^Falta insumos?:/.test(b0.textContent.trim()))a.remove();});
+}
+function arrumaLoteOP(b){
+  const cx=$('mB');if(!cx||!CS_CTX_OP)return;
+  const tabs=cx.querySelector(':scope>.cs585-tabs');
+  if(!tabs)return;
+  if(cx.firstElementChild!==tabs)cx.prepend(tabs);          /* avisos que entram depois não empurram as abas */
+  /* lote e produto já estão no cabeçalho e na aba Ordem: aqui viram uma linha */
+  const cab=cx.querySelector(':scope>.lotecab');
+  if(cab&&b.lote){
+    cab.outerHTML=`<div class="cs585-res"><span>Lote do tanque <b>${E(b.lote)}</b></span><span>Produto <b>${E(b.produto)}</b></span>
+      <span>Tanque <b>${E(b.tanque||'—')}</b></span><span>Volume <b>${nf(b.volume)} L</b></span></div>`;
+  }
+}
+try{const _al=abrirLote;abrirLote=function(b){
+  /* vindo da OP só existe uma aba de lote; "preparo" é a que mostra os dois botões do rodapé */
+  try{if(CS_CTX_OP)ABA_LOTE='preparo';}catch(e){}
+  const r=_al.apply(this,arguments);
+  try{arrumaLote(b);}catch(e){console.warn('[v585] lote',e);}
+  try{arrumaLoteOP(b);}catch(e){console.warn('[v585] lote na OP',e);}
+  return r;
+};}catch(e){}
+
+/* ================= Configurações › Produção › PCP ================= */
+const SVG_CAD='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>';
+function cfgObrig(){
+  const cx=$('mB'),tit=$('mTit');
+  if(!cx||!tit||tit.textContent!=='Configurações do PCP')return;
+  let box=$('cs585cfg');
+  if(!box){
+    box=document.createElement('div');box.id='cs585cfg';box.className='cs585-cfg';
+    /* antes de "Telas e tablets": é regra da OP, fica junto das outras regras */
+    const alvo=[...cx.querySelectorAll(':scope>.st')].find(s=>/Telas e tablets/i.test(s.textContent));
+    alvo?alvo.before(box):cx.appendChild(box);
+  }
+  const L=[['Produto','fixo'],['Volume do tanque','fixo'],['Máquina','fixo'],['Data','fixo'],['Início','fixo'],['Lote','auto'],
+    ['Operador','operador'],['Tanque','tanque']];
+  const pode=(()=>{try{return podeEditar('admin');}catch(e){return true;}})();
+  box.innerHTML=`<div class="st">Campos obrigatórios · OP de envase</div><div class="cs585-cfgl">${L.map(([n,k])=>
+    k==='fixo'?`<div class="cs585-cpo trav"><span class="nm">${n}</span><span class="tg">${SVG_CAD}Sempre</span></div>`
+    :k==='auto'?`<div class="cs585-cpo trav"><span class="nm">${n}</span><span class="tg">Automático</span></div>`
+    :`<div class="cs585-cpo"><span class="nm">${n}</span><button type="button" class="cs585-sw ${obrig(k)?'on':''}" data-cs585ob="${k}"
+        role="switch" aria-checked="${obrig(k)}" aria-label="${n} obrigatório" ${pode?'':'disabled'}></button></div>`).join('')}</div>`;
+  box.querySelectorAll('[data-cs585ob]').forEach(b=>b.onclick=ev=>{ev.stopPropagation();
+    const k=b.dataset.cs585ob,v=!obrig(k);obrigSet(k,v);cfgObrig();
+    toast(`${k==='operador'?'Operador':'Tanque'} ${v?'obrigatório':'opcional'} na OP de envase.`);});
+}
+try{const _cf=abrirCfgPCP;abrirCfgPCP=function(){const r=_cf.apply(this,arguments);try{cfgObrig();}catch(e){}return r;};}catch(e){}
+/* a página do PCP se redesenha sozinha ao incluir ou tirar um marcador: a seção volta junto */
+document.addEventListener('click',()=>{setTimeout(()=>{try{if($('mTit')&&$('mTit').textContent==='Configurações do PCP'&&!$('cs585cfg'))cfgObrig();}catch(e){}},0);});
+
+/* ================= balão de explicação =================
+   Um só, preso à página e não à tabela, para não ser cortado pela borda do modal. Aparece na
+   hora (o balão nativo do navegador demora) e também no toque, para o tablet. */
+(function(){
+  let b=null,dono=null;
+  const some=()=>{if(b)b.hidden=true;dono=null;};
+  const mostra=el=>{
+    const t=el.getAttribute('data-cs585dica');if(!t)return;
+    if(!b){b=document.createElement('div');b.id='cs585dica';b.setAttribute('role','tooltip');document.body.appendChild(b);}
+    b.textContent=t;b.hidden=false;dono=el;
+    const r=el.getBoundingClientRect(),w=b.offsetWidth,h=b.offsetHeight;
+    let x=r.left+r.width/2-w/2,y=r.bottom+8;
+    x=Math.max(8,Math.min(x,innerWidth-w-8));
+    if(y+h>innerHeight-8)y=r.top-h-8;
+    b.style.left=x+'px';b.style.top=Math.max(8,y)+'px';
+  };
+  const alvo=ev=>ev.target&&ev.target.closest?ev.target.closest('[data-cs585dica]'):null;
+  document.addEventListener('mouseover',ev=>{const el=alvo(ev);if(el&&el!==dono)mostra(el);else if(!el&&dono)some();});
+  document.addEventListener('focusin',ev=>{const el=alvo(ev);if(el)mostra(el);});
+  document.addEventListener('focusout',some);
+  document.addEventListener('click',ev=>{const el=alvo(ev);if(el)mostra(el);else some();});
+  document.addEventListener('scroll',some,true);
+})();
+
+try{window.__V585={obrig,embLinhas,numKg};}catch(e){}
 })();
 </script>
 </body>
