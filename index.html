@@ -5584,7 +5584,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v589';const VERSAO_DATA='20/11/2026';
+const VERSAO_APP='v590';const VERSAO_DATA='20/11/2026';
 /* número que aparece na tela: v438 → v4.3.8 (por dentro continua v438, que é o que as versões comparam) */
 const csRotVer=v=>{const d=String(v||'').replace(/\D/g,'');return d.length>=3?'v'+d.slice(0,-2)+'.'+d.slice(-2,-1)+'.'+d.slice(-1):String(v||'');};
 const VERSAO_ROTULO=csRotVer(VERSAO_APP)+' · '+VERSAO_DATA;
@@ -11171,7 +11171,7 @@ function historicoHTML(o){
     const atraso=(e.k==='edicao')?defasagem(e):0;
     const etq=atraso?`<span class="tg tarde">informado ${hmm(atraso)} depois</span>`:'';
     if(morta){const reab=log.slice(i+1).find(x=>x.e==='OP reaberta');const mot=reab?String(reab.m||'').split(' · ')[0]:'';R.ev='Apontamento estornado';R.det=[...(R.det||[]),`<span class="hmais">Estornado${reab?' às '+(reab.t||'')+(mot?' · '+mot:''):''} · vale o apontamento seguinte</span>`];}
-    if(/^Lote liberado/.test(e.e)){const ant=log.slice(0,i).find(x=>/^Lote liberado/.test(String(x.e||'')));if(ant){R.ev='Lote liberado · desconsiderado';R.det=[`<span class="hmais">já liberado em ${ant.d?dCurto(ant.d):''} ${ant.t||''}</span>`];}}
+    if(/^Lote liberado/.test(e.e)&&!/liberado de novo/.test(String(e.m||''))){const desde=log.slice(0,i).map(x=>x.e).lastIndexOf('Lote reaberto');const ant=log.slice(desde+1,i).find(x=>/^Lote liberado/.test(String(x.e||'')));if(ant){R.ev='Lote liberado · desconsiderado';R.det=[`<span class="hmais">já liberado em ${ant.d?dCurto(ant.d):''} ${ant.t||''}</span>`];}}
     if(/^Matéria-prima (baixada do estoque|enviada ao Tiny|na fila do Tiny)$/.test(e.e)){const ant=log.slice(0,i).find(x=>/^Matéria-prima (baixada do estoque|enviada ao Tiny|na fila do Tiny)$/.test(String(x.e||'')));if(ant){R.ev='MP baixada · desconsiderada';R.det=[`<span class="hmais">já baixada em ${ant.d?dCurto(ant.d):''} ${ant.t||''} · corrigida no balanço</span>`];}}
     const det=(R.det||[]).filter(Boolean).map(x=>`<em>${x}</em>`).join('');
     const ehAuto=R.auto||pesoEvento(e)==='sis';
@@ -14732,9 +14732,18 @@ function abrirLote(b){
   ligarCertificado(b);
   if(M('lK'))M('lK').onclick=()=>{
     /* v385: a liberação é do lote — se já foi liberado (em outro tanque/dia), não libera nem baixa de novo */
+    /* v5.9.0: essa trava virava beco sem saída. Ela olhava só se o histórico da OP tinha um "Lote
+       liberado", sem ver se depois veio um "Lote reaberto" — então lote reaberto nunca mais liberava.
+       E quando a liberação antiga não estava mais com o lote (lote separado de outro, troca de ordem
+       no tanque), mandava "reabrir" um lote que nem aparece como liberado: não existe botão para isso.
+       Agora: reaberto depois da liberação libera normalmente; e quando o histórico diz liberado mas a
+       liberação não está aqui, a tela avisa na confirmação e deixa liberar. A matéria-prima não baixa
+       duas vezes — a baixa manda só a diferença do que já saiu (csMPNaLiberacao). */
+    let relib=null;
     try{if(csMigraChaveLote(b)){fecharModal();render();toast('Este lote já tinha sido liberado: a liberação acompanhou o lote.');return;}
-      const jaLib=(b.ordens||[]).map(o=>(o.log||[]).filter(l=>/^Lote liberado/.test(String(l.e||''))).slice(-1)[0]).filter(Boolean)[0];
-      if(jaLib&&!(APONTA[b.chave]||{}).liberadoEm){toast(`Este lote já foi liberado em ${jaLib.d?dCurto(jaLib.d):''} ${jaLib.t||''} (${jaLib.m||''}). Para liberar de novo, reabra o lote.`,true);return;}
+      const valeAinda=o=>{const lg=o.log||[];let iL=-1,iR=-1;lg.forEach((l,i)=>{const e=String(l.e||'');if(/^Lote liberado/.test(e))iL=i;else if(e==='Lote reaberto')iR=i;});return iL>=0&&iR<iL?lg[iL]:null;};
+      const jaLib=(b.ordens||[]).map(valeAinda).filter(Boolean)[0];
+      if(jaLib&&!(APONTA[b.chave]||{}).liberadoEm)relib=jaLib;
     }catch(e){}
     /* v4.3.9: no tablet do tanque o preparo concluído continua obrigatório; no computador quem libera atesta que o tanque está pronto */
     if(!fabFimDe(b)&&typeof CS_TQ_KIOSK==='function'&&CS_TQ_KIOSK()){toast('Conclua o preparo do tanque antes de liberar o lote.',true);return;}
@@ -14770,7 +14779,7 @@ function abrirLote(b){
     /* Fora da especificação, liberar vira exceção: a tela diz o que está
        fora e a confirmação exige a senha de quem pode liberar. */
     const seguir=()=>pedirPin('Liberar lote',
-      `${a.ok?'':`<b style="color:var(--danger)">Lote fora do padrão: ${a.fora.join(', ')}.</b><br>`}<b>${b.tanque} · ${b.produto}</b>${b.lote?` · lote ${b.lote}`:''} vai para o envase.
+      `${relib?`<b style="color:var(--pausa)">O histórico desta OP tem uma liberação em ${relib.d?dCurto(relib.d):''} ${relib.t||''}, mas ela não está registrada neste lote.</b> Confirmar libera este lote agora; a matéria-prima não baixa duas vezes.<br>`:''}${a.ok?'':`<b style="color:var(--danger)">Lote fora do padrão: ${a.fora.join(', ')}.</b><br>`}<b>${b.tanque} · ${b.produto}</b>${b.lote?` · lote ${b.lote}`:''} vai para o envase.
        Só quem tem permissão de liberação pode confirmar, e o nome fica no certificado.
        Depois de liberado, o certificado fica travado — para mexer, alguém precisa reabrir.`,
       quem=>{
@@ -14783,7 +14792,7 @@ function abrirLote(b){
             e:fora?'Lote liberado fora do padrão':'Lote liberado para envase',
             op:quem.nome,m:fora?`${a.fora.join(', ')}${obs?' · '+obs:''}`:obs}]};
         b.ordens.forEach(o=>registrar(o,fora?'Lote liberado fora do padrão':'Lote liberado',
-          quem,`${b.tanque} · ${b.produto}`));
+          quem,`${b.tanque} · ${b.produto}${relib?` · liberado de novo (constava ${relib.d?dCurto(relib.d):''} ${relib.t||''})`:''}`));
         if(semRegTq.length){APONTA[b.chave].semRegistroTq=semRegTq;APONTA[b.chave].log.push({t:relogio(),d:ymd(new Date()),e:'Liberado pelo gestor sem o registro do tanque',op:quem.nome,m:'Não lançado no tanque: '+semRegTq.join(', ')});
           b.ordens.forEach(o=>registrar(o,'Liberado sem registro do tanque',quem,'não lançado no tanque: '+semRegTq.join(', ')));}
         agendarSalvar();fecharModal();render();
