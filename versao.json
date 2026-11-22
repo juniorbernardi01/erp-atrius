@@ -1,6 +1,6 @@
 {
- "v": "v592",
- "versao": "5.9.2",
+ "v": "v594",
+ "versao": "5.9.4",
  "data": "22/11/2026",
- "o_que_mudou": "1) Sopro e Rotulagem: a jornada da maquina aparece no titulo da coluna (abre as 05:00 e fecha as 20:00, por exemplo), valendo o cadastro do recurso, o calendario do dia e o ajuste feito para aquela maquina naquele dia, que aparece com o selo AJUSTADA; maquina parada no dia mostra NAO RODA HOJE. 2) Estoque, tela do item: o ultimo balanco/inventario do item virou o marco. A tela abre mostrando so do marco pra frente, as notas do Tiny anteriores nao sao mais lidas nem cobradas, e uma faixa verde diz quando foi conferido, por quem e para quanto. Tem o botao Ver tudo pra quem quiser o historico inteiro. 3) Estoque: a lista de lancamentos ficou paginada, 50 por pagina, com os numeros embaixo e o resumo de lancamentos, entradas e saidas, no lugar da rolagem infinita. Mantem tudo da 5.9.1 e da 5.9.0."
+ "o_que_mudou": "Sopro e Rotulagem no mesmo formato do Envase: a jornada da maquina aparece em texto corrido no titulo da coluna (3 OP(s) · 1.200 un/h · 05:00-20:00), sem selo nenhum. Quando a maquina ou a fabrica nao trabalham no dia, escreve 'nao roda hoje' no lugar do horario, igual o Envase faz. Mantem as maquinas lado a lado e o cabecalho preso no topo da 5.9.1, o marco do inventario e a paginacao do estoque da 5.9.2."
 }

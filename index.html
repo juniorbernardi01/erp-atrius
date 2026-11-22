@@ -5584,7 +5584,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v592';const VERSAO_DATA='20/11/2026';
+const VERSAO_APP='v594';const VERSAO_DATA='20/11/2026';
 /* número que aparece na tela: v438 → v4.3.8 (por dentro continua v438, que é o que as versões comparam) */
 const csRotVer=v=>{const d=String(v||'').replace(/\D/g,'');return d.length>=3?'v'+d.slice(0,-2)+'.'+d.slice(-2,-1)+'.'+d.slice(-1):String(v||'');};
 const VERSAO_ROTULO=csRotVer(VERSAO_APP)+' · '+VERSAO_DATA;
@@ -42970,18 +42970,13 @@ try{window.__V585={obrig,obrigDe,embLinhas,numKg};}catch(e){}
   setTimeout(liga,1500);
 })();
 </script>
-<style id="cs592-jor">
-.pcx-colh .cs592-jor{color:#CBD9F2}
-.pcx-colh .cs592-jor b{font-weight:800;color:#fff;font-family:ui-monospace,monospace;letter-spacing:.2px}
-.pcx-colh .cs592-aj{display:inline-block;margin-left:6px;padding:1px 6px;border-radius:999px;background:#F59E0B;color:#20160A;font:800 9.5px system-ui;letter-spacing:.03em;text-transform:uppercase;vertical-align:1px}
-.pcx-colh .cs592-off{display:inline-block;margin-left:6px;padding:1px 6px;border-radius:999px;background:#991B1B;color:#fff;font:800 9.5px system-ui;letter-spacing:.03em;text-transform:uppercase;vertical-align:1px}
-</style>
 <script>
-/* v5.9.2 · jornada da máquina no título (Sopro e Rotulagem)
-   A coluna mostrava só "N OP(s) · cadência". Agora mostra também o horário em
-   que aquela máquina abre e fecha NAQUELE dia: vale o cadastro do recurso, o
-   calendário da fábrica aperta a janela, e o ajuste feito para a máquina no dia
-   vence os dois (é o mesmo encadeamento do Envase, em jornDia). */
+/* v5.9.4 · jornada da máquina no título (Sopro e Rotulagem), no mesmo formato do
+   Envase: texto corrido separado por " · ", sem selo nenhum. O Envase escreve
+   "3 OPs · 05:00–20:00 · 7h ocupada · 1h livres"; aqui fica
+   "3 OP(s) · 1.200 un/h · 05:00–20:00", e "não roda hoje" quando a máquina ou a
+   fábrica não trabalham naquele dia. Vale o cadastro do recurso, o calendário do
+   dia aperta a janela e o ajuste da máquina no dia vence os dois (igual jornDia). */
 (function(){
   function hm(s){ s=String(s||''); return /^\d{1,2}:\d{2}$/.test(s)?(s.length===4?'0'+s:s):''; }
   function jor(id,data){
@@ -42991,11 +42986,11 @@ try{window.__V585={obrig,obrigDe,embLinhas,numKg};}catch(e){}
     var ini=hm(r.ini)||'05:00', fim=hm(r.fim)||'20:00', dia=null, ex=null;
     try{ dia=(typeof diaDe==='function')?diaDe(data):null; }catch(e){}
     try{ ex=((CALENDARIO[data]||{}).maq||{})[id]; }catch(e){}
-    if(ex&&ex.trab===false) return {off:'não roda hoje'};
-    if(dia&&dia.trab===false&&!ex) return {off:'fábrica fechada'};
-    if(ex){ ini=hm(ex.ini)||ini; fim=hm(ex.fim)||fim; return {ini:ini,fim:fim,aj:true}; }
+    if(ex&&ex.trab===false) return '';
+    if(dia&&dia.trab===false&&!ex) return '';
+    if(ex){ return (hm(ex.ini)||ini)+'–'+(hm(ex.fim)||fim); }
     if(dia){ var di=hm(dia.ini), df=hm(dia.fim); if(di&&di>ini)ini=di; if(df&&df<fim)fim=df; }
-    return {ini:ini,fim:fim,aj:false};
+    return ini+'–'+fim;
   }
   function pinta(w){
     if(!w) return;
@@ -43003,20 +42998,17 @@ try{window.__V585={obrig,obrigDe,embLinhas,numKg};}catch(e){}
     w.querySelectorAll('.pcx-col[data-maqdrop]').forEach(function(c){
       var id=c.getAttribute('data-maqdrop'), i=c.querySelector('.pcx-colh i');
       if(!id||!i) return;
-      var j=jor(id,data);
-      var html=j.off ? '<span class="cs592-off">'+j.off+'</span>'
-                     : '<span class="cs592-jor">· <b>'+j.ini+'</b> → <b>'+j.fim+'</b></span>'+
-                       (j.aj?'<span class="cs592-aj" title="jornada ajustada para esta máquina neste dia">ajustada</span>':'');
-      var s=i.querySelector('.cs592-w');
-      if(!s){ s=document.createElement('span'); s.className='cs592-w'; s.style.marginLeft='5px'; i.appendChild(s); }
-      if(s.innerHTML!==html) s.innerHTML=html;   /* só escreve quando muda: não realimenta o observador */
+      var txt=' · '+(jor(id,data)||'não roda hoje');
+      var s=i.querySelector('.cs594-j');
+      if(!s){ s=document.createElement('span'); s.className='cs594-j'; i.appendChild(s); }
+      if(s.textContent!==txt) s.textContent=txt;   /* só escreve quando muda */
     });
   }
   function liga(){
     ['spwrap','rtwrap'].forEach(function(id){
       var w=document.getElementById(id); if(!w) return;
       pinta(w);
-      if(w.__cs592) return; w.__cs592=1;
+      if(w.__cs594) return; w.__cs594=1;
       try{ new MutationObserver(function(){ pinta(w); }).observe(w,{childList:true,subtree:true}); }catch(e){}
     });
   }
