@@ -1,6 +1,6 @@
 {
- "v": "v590",
- "versao": "5.9.0",
- "data": "20/11/2026",
- "o_que_mudou": "Correcao no beco sem saida da liberacao do lote. A trava que existe desde a 5.8.3 olhava so se o historico da OP tinha um 'Lote liberado' e nao enxergava uma reabertura depois dele: lote reaberto nunca mais liberava. E quando a liberacao antiga nao estava mais no registro do lote (tanque refeito, lote movido, gravacao de outro aparelho), a tela mandava 'reabra o lote' sem existir botao de reabrir, travando a liberacao com tudo lancado. Agora: lote reaberto libera normal; e quando o historico diz liberado mas a liberacao nao esta no lote, a confirmacao avisa com data e hora e deixa liberar, registrando no historico 'liberado de novo'. A materia-prima nao baixa duas vezes: a baixa manda so a diferenca do que ja saiu, conferido no dado real do lote 1047. Mantem tudo das 5.8.x e 5.7.x."
+ "v": "v591",
+ "versao": "5.9.1",
+ "data": "22/11/2026",
+ "o_que_mudou": "Sopro e Rotulagem: as maquinas agora ficam sempre lado a lado, qualquer que seja a quantidade cadastrada (antes o grid era fixo em duas colunas e a terceira caia pra baixo). Elas dividem a largura por igual e, se nao couber, a faixa rola de lado, igual aos tanques no Envase. A barra de cima (abas Sopro/Rotulagem, data, Programacao e Nova OP) ficou presa no topo e o conteudo passa por baixo, com sombra quando esta colada. O nome da maquina tambem acompanha a rolagem da coluna. Vale no Sopro e na Rotulagem. Mantem tudo da 5.9.0, inclusive a correcao da liberacao de lote."
 }

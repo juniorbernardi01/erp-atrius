@@ -5584,7 +5584,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v590';const VERSAO_DATA='20/11/2026';
+const VERSAO_APP='v591';const VERSAO_DATA='20/11/2026';
 /* número que aparece na tela: v438 → v4.3.8 (por dentro continua v438, que é o que as versões comparam) */
 const csRotVer=v=>{const d=String(v||'').replace(/\D/g,'');return d.length>=3?'v'+d.slice(0,-2)+'.'+d.slice(-2,-1)+'.'+d.slice(-1):String(v||'');};
 const VERSAO_ROTULO=csRotVer(VERSAO_APP)+' · '+VERSAO_DATA;
@@ -42925,6 +42925,49 @@ document.addEventListener('click',()=>{setTimeout(()=>{try{if($('mTit')&&$('mTit
 })();
 
 try{window.__V585={obrig,obrigDe,embLinhas,numKg};}catch(e){}
+})();
+</script>
+<style id="cs591-sr">
+/* v5.9.1 · Sopro e Rotulagem: máquinas sempre lado a lado e cabeçalho fixo.
+   O grid era repeat(2,1fr), então a terceira máquina caía pra baixo. Agora é
+   flex, do mesmo jeito que o Envase faz com os tanques (.tqgrid/.tqcol):
+   dividem o espaço por igual e nunca quebram linha. Se não couber, quem rola
+   de lado é o .tqwrap (#spwrap/#rtwrap), que já rola. */
+.pcx-maqs{display:flex!important;grid-template-columns:none!important;gap:14px;align-items:flex-start}
+.pcx-maqs>.pcx-col{flex:1 1 0;min-width:238px}
+@media(max-width:720px){.pcx-maqs{display:flex!important;grid-template-columns:none!important}}
+/* abas, data e botões presos no topo, igual à faixa dos tanques no Envase:
+   o -16px desconta o respiro do wrap, que é quem rola. */
+.pcx-sr-head{position:sticky;top:-16px;z-index:45;background:var(--surface,#F5F4F0);
+  margin:-20px -4px 12px;padding:20px 4px 11px;transition:box-shadow .15s}
+.pcx-sr-head.cs591-fix{box-shadow:0 10px 12px -10px rgba(14,27,51,.22)}
+/* o nome da máquina acompanha a rolagem da própria coluna, como o cabeçalho do
+   tanque. Sem o overflow:hidden o canto de cima é arredondado no próprio .pcx-colh. */
+.pcx-maqs>.pcx-col{overflow:visible}
+.pcx-maqs>.pcx-col>.pcx-colh{position:sticky;top:calc(var(--cs591h,72px) - 16px);z-index:12;border-radius:13px 13px 0 0}
+</style>
+<script>
+/* mede a altura do cabeçalho (ela muda quando a janela é estreita e os botões
+   quebram linha) e marca a sombra quando ele está colado no topo. */
+(function(){
+  function mede(w){
+    var h=w.querySelector('.pcx-sr-head'), p=w.querySelector('.pcx-page');
+    if(h&&p) p.style.setProperty('--cs591h', Math.round(h.getBoundingClientRect().height)+'px');
+  }
+  function liga(){
+    ['spwrap','rtwrap'].forEach(function(id){
+      var w=document.getElementById(id); if(!w) return;
+      mede(w);
+      if(w.__cs591) return; w.__cs591=1;
+      w.addEventListener('scroll',function(){
+        var h=w.querySelector('.pcx-sr-head'); if(h) h.classList.toggle('cs591-fix', w.scrollTop>6);
+      },{passive:true});
+      try{ new MutationObserver(function(){ mede(w); }).observe(w,{childList:true,subtree:true}); }catch(e){}
+    });
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',liga); else liga();
+  window.addEventListener('resize',liga);
+  setTimeout(liga,1500);
 })();
 </script>
 </body>
