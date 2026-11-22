@@ -1,6 +1,6 @@
 {
- "v": "v599",
- "versao": "5.9.9",
+ "v": "v600",
+ "versao": "6.0.0",
  "data": "22/11/2026",
- "o_que_mudou": "Tablet do sopro e da rotulagem: as maquinas ficam sempre lado a lado, como nas demais telas de producao. Antes, a partir da terceira maquina elas caiam para baixo e saiam da vista do operador. E o pe do card da OP deixou de mostrar so previsao e inicio: agora mostra a quantidade a produzir com a unidade, a hora em que comecou e ha quanto tempo a maquina esta rodando. Mantem tudo da 5.9.8."
+ "o_que_mudou": "Tablet do sopro e da rotulagem redesenhado para o aparelho de 10.1 deitado: o card ocupa a coluna inteira, a quantidade a produzir aparece em numero grande, os tempos ficam em tres blocos (comecou, rodando ha, previsto ate), entra uma barra que mostra de longe se a maquina esta dentro do tempo previsto, e os botoes de concluir e pausar ficam colados no pe, no alcance do polegar. Numero 6.0.0 porque o formato da versao so comporta um digito por parte: depois da 5.9.9 nao cabe 5.10.0. Mantem tudo da 5.9.9."
 }

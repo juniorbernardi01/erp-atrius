@@ -5590,7 +5590,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v599';const VERSAO_DATA='22/11/2026';
+const VERSAO_APP='v600';const VERSAO_DATA='22/11/2026';
 /* número que aparece na tela: v438 → v4.3.8 (por dentro continua v438, que é o que as versões comparam) */
 const csRotVer=v=>{const d=String(v||'').replace(/\D/g,'');return d.length>=3?'v'+d.slice(0,-2)+'.'+d.slice(-2,-1)+'.'+d.slice(-1):String(v||'');};
 const VERSAO_ROTULO=csRotVer(VERSAO_APP)+' · '+VERSAO_DATA;
@@ -40483,16 +40483,31 @@ function csMp519(simular){
 .pcx-tgrid>.pcx-tmc{flex:1 1 0;min-width:0}
 .pcx-tmc{background:#111a2e;border:1px solid #243049;border-radius:14px;display:flex;flex-direction:column;overflow:hidden}
 .pcx-tmh{display:flex;align-items:center;gap:10px;padding:12px 16px;background:#0E1B33}.pcx-tmh b{font-size:16px}.pcx-tmh span{color:#9fb0cc;font-size:12px}.pcx-tdots{margin-left:auto;background:rgba(255,255,255,.12);color:#fff;border:0;border-radius:8px;width:34px;height:34px;font-size:18px;cursor:pointer}
-.pcx-tmb{padding:14px}
+/* v5.10.0: desenho para o tablet de 10.1 deitado (1280x800). O card ocupa a
+   coluna inteira: identificacao em cima, o numero do que produzir em destaque,
+   os tempos no meio e a acao colada embaixo, no alcance do polegar. */
+.pcx-tmb{padding:14px;flex:1;display:flex;flex-direction:column;min-height:0}
+.pcx-tcard{flex:1;display:flex;flex-direction:column;min-height:0}
+.pcx-tacao{margin-top:auto;padding-top:12px}
+.pcx-ttmp{margin-top:10px}
+.pcx-ttmp .lb{display:flex;justify-content:space-between;align-items:baseline;font:600 10.5px system-ui;color:#93a1bb;margin-bottom:6px}
+.pcx-ttmp .lb b{font:700 13px system-ui;color:#e8edf6}
+.pcx-ttmp .tr{height:10px;border-radius:999px;background:#0b1120;border:1px solid #1b2744;overflow:hidden}
+.pcx-ttmp .tr i{display:block;height:100%;background:#16A34A;border-radius:999px}
+.pcx-ttmp.atr .tr i{background:#E8820C}.pcx-ttmp.atr .lb b{color:#F6A94A}
 .pcx-tvazio,.pcx-tfila{color:#93a1bb;font-size:13px;padding:10px 0}
-.pcx-tfila{border-top:1px dashed #243049;margin-top:12px}
-.pcx-tcard .pcx-tnome{font:800 18px system-ui;line-height:1.2}
-.pcx-tseals{display:flex;gap:8px;align-items:center;margin:8px 0 12px}
-.pcx-tcons{display:flex;gap:16px;background:#0b1120;border-radius:10px;padding:10px 12px;margin-bottom:12px}
+.pcx-tfila{border-top:1px dashed #243049;margin-top:10px;padding-bottom:0}
+.pcx-tcard .pcx-tnome{font:800 22px system-ui;line-height:1.15;letter-spacing:-.3px}
+.pcx-tseals{display:flex;gap:8px;align-items:center;margin:7px 0 12px}
+.pcx-tdest{background:#0b1120;border:1px solid #1b2744;border-radius:12px;padding:10px 14px 12px;margin-bottom:10px;display:flex;align-items:baseline;gap:10px}
+.pcx-tdest i{font-style:normal;font:600 10.5px system-ui;color:#93a1bb;text-transform:uppercase;letter-spacing:.04em}
+.pcx-tdest b{margin-left:auto;font:800 40px system-ui;line-height:1;letter-spacing:-1.5px}
+.pcx-tdest b small{font:600 14px system-ui;color:#93a1bb;margin-left:5px;letter-spacing:0}
+.pcx-tcons{display:flex;gap:16px;background:#0b1120;border-radius:10px;padding:10px 12px;margin-bottom:10px}
 .pcx-tcons small{display:block;font:700 9px system-ui;text-transform:uppercase;color:#93a1bb}.pcx-tcons b{font-size:13px}
-.pcx-tbig{width:100%;border:0;border-radius:12px;padding:18px;font:800 19px system-ui;color:#fff;cursor:pointer}.pcx-tbig.fim{background:#16A34A}.pcx-tbig.ret{background:#1D4ED8}
+.pcx-tbig{width:100%;border:0;border-radius:12px;padding:22px;font:800 21px system-ui;color:#fff;cursor:pointer}.pcx-tbig.fim{background:#16A34A}.pcx-tbig.ret{background:#1D4ED8}
 .pcx-tsub{display:flex;gap:8px;margin-top:9px}.pcx-tsub button{flex:1;background:#0b1120;border:1px solid #243049;color:#e8edf6;border-radius:10px;padding:12px;font:700 13px system-ui;cursor:pointer}
-.pcx-tqt{display:flex;gap:8px;margin-top:11px}.pcx-tqt>div{flex:1;min-width:0;background:#0b1120;border:1px solid #1b2744;border-radius:9px;padding:7px 10px}.pcx-tqt span{display:block;font:600 9.5px system-ui;color:#93a1bb;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.pcx-tqt b{display:block;font:700 17px system-ui;letter-spacing:-.2px;white-space:nowrap}.pcx-tqt b small{font-size:11px;font-weight:600;color:#93a1bb;margin-left:3px}
+.pcx-tqt{display:flex;gap:8px;margin-top:0}.pcx-tqt>div{flex:1;min-width:0;background:#0b1120;border:1px solid #1b2744;border-radius:9px;padding:7px 10px}.pcx-tqt span{display:block;font:600 9.5px system-ui;color:#93a1bb;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.pcx-tqt b{display:block;font:700 17px system-ui;letter-spacing:-.2px;white-space:nowrap}.pcx-tqt b small{font-size:11px;font-weight:600;color:#93a1bb;margin-left:3px}
 .pcx-thistov{position:absolute;inset:0;background:rgba(0,0,0,.55);display:grid;place-items:center}
 .pcx-thistov .box{background:#111a2e;border:1px solid #243049;border-radius:14px;width:min(560px,92%);max-height:80%;display:flex;flex-direction:column;overflow:hidden}
 .pcx-thistov .hh{display:flex;align-items:center;padding:13px 16px;background:#0E1B33}.pcx-thistov .hh b{flex:1}.pcx-thistov .hh button{background:rgba(255,255,255,.12);color:#fff;border:0;border-radius:8px;width:32px;height:32px;cursor:pointer}
@@ -42157,11 +42172,31 @@ function cardTablet(o){
   try{ if(o.iniReal){ var pi=String(o.iniReal).split(':'), mi=(+pi[0])*60+(+pi[1]);
     var ag=new Date(), am=ag.getHours()*60+ag.getMinutes(), d=am-mi;
     if(d>=0) dec=(d>=60?Math.floor(d/60)+'h'+(d%60<10?'0':'')+(d%60):d+'min'); } }catch(e){}
-  return '<div class="pcx-tcard"><div class="pcx-tnome">'+esc(o.titulo)+'</div><div class="pcx-tseals">'+st+'<span class="pcx-sl cz mono">'+esc(o.num)+'</span></div>'+
-    cons + btn + '<div class="pcx-tqt">'+
-      '<div><span>A produzir</span><b>'+nfx(o.qtdPrev)+'<small>un</small></b></div>'+
+  /* v5.10.0: a barra diz de longe se a maquina esta no tempo. Verde enquanto
+     cabe no previsto, laranja quando passou, com quanto falta ou quanto passou. */
+  var barra='';
+  try{
+    var durPrev=Math.max(1,(+o.fimPrev||0)-(+o.iniPrev||0));
+    if(o.iniReal&&durPrev>1){
+      var q=String(o.iniReal).split(':'), im=(+q[0])*60+(+q[1]);
+      var ago=new Date(), amin=ago.getHours()*60+ago.getMinutes(), pass=Math.max(0,amin-im);
+      var pct=Math.min(100,Math.round(pass/durPrev*100)), falta=durPrev-pass, atr=falta<0;
+      var txt=atr?('passou '+hhmm(Math.abs(falta))):('faltam '+hhmm(falta));
+      barra='<div class="pcx-ttmp'+(atr?' atr':'')+'"><div class="lb"><span>Tempo previsto · '+hhmm(durPrev)+'</span><b>'+txt+'</b></div>'+
+        '<div class="tr"><i style="width:'+pct+'%"></i></div></div>';
+    }
+  }catch(e){}
+  return '<div class="pcx-tcard">'+
+    '<div class="pcx-tnome">'+esc(o.titulo)+'</div>'+
+    '<div class="pcx-tseals">'+st+'<span class="pcx-sl cz mono">'+esc(o.num)+'</span></div>'+
+    '<div class="pcx-tdest"><i>A produzir</i><b>'+nfx(o.qtdPrev)+'<small>un</small></b></div>'+
+    cons +
+    '<div class="pcx-tqt">'+
       '<div><span>Começou</span><b>'+esc(o.iniReal||'—')+'</b></div>'+
-      '<div><span>Rodando há</span><b>'+dec+'</b></div></div></div>';
+      '<div><span>Rodando há</span><b>'+dec+'</b></div>'+
+      '<div><span>Previsto até</span><b>'+esc(hhmm(o.fimPrev))+'</b></div></div>'+
+    barra +
+    '<div class="pcx-tacao">'+btn+'</div></div>';
 }
 function histTablet(maqId){
   var isRot=TAB.origem==='rotulagem';
