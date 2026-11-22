@@ -1,6 +1,6 @@
 {
- "v": "v595",
- "versao": "5.9.5",
+ "v": "v596",
+ "versao": "5.9.6",
  "data": "22/11/2026",
- "o_que_mudou": "Saldo de estoque nao se perde mais quando duas gravacoes acontecem no mesmo minuto. Antes, se o servidor baixasse uma nota fiscal e alguem lancasse no ERP ao mesmo tempo, os dois lancamentos entravam no historico mas o saldo ficava so com um deles (o do aparelho). Agora as duas mudancas somam: o que tinha quando leu, mais o que o aparelho mexeu, mais o que o servidor mexeu. Vale para o saldo total e para o saldo por deposito; fora do estoque nada muda. Mantem tudo da 5.9.4, da 5.9.2 e da 5.9.0."
+ "o_que_mudou": "Controle de estoque: a barra de paginas agora fica fixa no pe da tela e a lista rola por tras, em vez de so aparecer quando se rola ate o fim. E a tarja da conferencia do item deixou de oferecer 'Ver tudo' e de contar os lancamentos anteriores: a regra e so a partir da contagem, ponto. Mantem tudo da 5.9.5."
 }
