@@ -3143,6 +3143,12 @@ body .body{flex-direction:column;flex-wrap:nowrap}body .body>*:not(#csPgBar){fle
 .od2mk{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;border:1px solid var(--line);margin:1px 3px 1px 0}.od2mk i{width:9px;height:9px;border-radius:50%;background:var(--c)}
 .od2xp td{background:#F8FAFE;padding:0 8px 12px!important;white-space:normal}.od2xc{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.od2xc span{display:block;font-size:11px;color:var(--ink3)}.od2xc b{font-size:12.5px;font-weight:500}
 .od2tot{position:sticky;bottom:0;background:var(--surface);border-top:1px solid var(--line2,#EFEEE9);display:flex;justify-content:flex-end;align-items:flex-end;gap:26px;padding:10px 12px 8px}
+.od2tot .pgnav{display:flex;align-items:center;gap:3px;flex-wrap:wrap;margin-right:auto}
+.od2tot .pgn,.od2tot .pgs{min-width:30px;height:30px;padding:0 7px;border:0;background:none;border-radius:8px;font:700 12.5px ui-monospace,monospace;color:var(--ink3);cursor:pointer}
+.od2tot .pgn:hover,.od2tot .pgs:hover:not(:disabled){background:#EFF3FA;color:var(--ink)}
+.od2tot .pgn.on{background:var(--ink,#0F172A);color:#fff}
+.od2tot .pgs:disabled{opacity:.3;cursor:default}
+.od2tot .pgsep{color:var(--ink3);padding:0 2px}
 .od2tot div{line-height:1.2;white-space:nowrap}.od2tot b{display:block;font-size:14px;font-weight:500}.od2tot span{font-size:11px;color:var(--ink3)}.od2tot .acoes{margin-right:auto;display:flex;gap:6px;align-items:center}.od2tot .cnt{font-size:15px;color:var(--ink2)}
 .od2m{position:fixed;z-index:80;width:260px;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:0 14px 36px rgba(20,24,33,.16);padding:6px 0}
 .od2m .mh{padding:10px 14px;border-bottom:1px solid var(--line2,#EFEEE9);font-size:13px;font-weight:600}
@@ -5584,7 +5590,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v596';const VERSAO_DATA='22/11/2026';
+const VERSAO_APP='v597';const VERSAO_DATA='22/11/2026';
 /* número que aparece na tela: v438 → v4.3.8 (por dentro continua v438, que é o que as versões comparam) */
 const csRotVer=v=>{const d=String(v||'').replace(/\D/g,'');return d.length>=3?'v'+d.slice(0,-2)+'.'+d.slice(-2,-1)+'.'+d.slice(-1):String(v||'');};
 const VERSAO_ROTULO=csRotVer(VERSAO_APP)+' · '+VERSAO_DATA;
@@ -15402,6 +15408,20 @@ const OD2_SORT={num:x=>+(x.o.lote||x.b.lote||0),data:x=>x.o.data||x.b.data,prod:
   alt:x=>csUltAlt(x.o),sit:x=>['programada','producao','concluida','pendente'].indexOf(od2Sit(x.o))};
 const OD_MK_CORES=['#B3261E','#1D6FE8','#D97706','#15803D','#6B21A8','#0E7490','#BE185D','#4B5563'];
 const odMarcadores=()=>(typeof CAD_MK_OP!=='undefined'&&CAD_MK_OP.length?CAD_MK_OP:[]);
+/* v5.9.7: lista de OPs paginada, 50 por pagina, numeros no rodape, como nas
+   demais listas do sistema. Carrega so a pagina mostrada. */
+const POR_PAG_OP=50;
+function od2BarraPag(pag,nPag){
+  if(nPag<=1) return '';
+  const vis=[],add=n=>{if(n>=1&&n<=nPag&&vis.indexOf(n)<0)vis.push(n);};
+  if(nPag<=9){for(let i=1;i<=nPag;i++)add(i);}
+  else{add(1);add(2);for(let i=pag-1;i<=pag+1;i++)add(i);add(nPag-1);add(nPag);}
+  vis.sort((a,b)=>a-b);
+  let btns='',ant=0;
+  vis.forEach(n=>{ if(ant&&n>ant+1) btns+='<span class="pgsep">&hellip;</span>';
+    btns+=`<button class="pgn${n===pag?' on':''}" data-odpg="${n}" type="button">${String(n).padStart(2,'0')}</button>`; ant=n; });
+  return `<div class="pgnav"><button class="pgs" data-odpg="${pag-1}" type="button" ${pag<=1?'disabled':''}>&lsaquo;</button>${btns}<button class="pgs" data-odpg="${pag+1}" type="button" ${pag>=nPag?'disabled':''}>&rsaquo;</button></div>`;
+}
 function gradeOrdens(){
   const el=M('odgrid');if(!el)return;
   if(OD_ABA==='excluidas')return gradeOrdensExcluidas(el);
@@ -15459,6 +15479,7 @@ function ligaOrdens(el,l){
   b1.addEventListener('input',e=>{OD_BUSCA=e.target.value;gradeOrdens();const x=M('odB');if(x){x.focus();x.setSelectionRange(x.value.length,x.value.length);}});
   M('odNova').onclick=()=>abrirOrdem(null);
   el.querySelectorAll('[data-odab]').forEach(b=>b.onclick=()=>{OD_ABA=b.dataset.odab;OD2.sel.clear();gradeOrdens();});
+  el.querySelectorAll('[data-odpg]').forEach(b=>b.onclick=()=>{const n=+b.dataset.odpg;if(!n||b.disabled)return;OD2.pag=n;gradeOrdens();try{el.scrollIntoView({block:'start',behavior:'smooth'});}catch(e){}});
   el.querySelectorAll('[data-ods]').forEach(h=>h.onclick=()=>{const k=h.dataset.ods;OD2.sort=OD2.sort.k===k?{k,dir:-OD2.sort.dir}:{k,dir:['prod','maq','tq'].includes(k)?1:-1};gradeOrdens();});
   el.querySelectorAll('[data-odrow]').forEach(r=>r.onclick=ev=>{if(ev.target.closest('[data-odck],[data-odmenu],[data-odtiny]'))return;OD_ABERTO=OD_ABERTO===r.dataset.odrow?null:r.dataset.odrow;gradeOrdens();});
   el.querySelectorAll('[data-odck]').forEach(c=>c.onclick=ev=>{ev.stopPropagation();const id=c.dataset.odck;OD2.sel.has(id)?OD2.sel.delete(id):OD2.sel.add(id);gradeOrdens();});
@@ -26716,6 +26737,13 @@ gradeOrdens=function(){
       <td class="m">${escAttr(String(b.lote||'—'))}</td><td>${[...new Set(fs.map(o=>o.maq).filter(Boolean))].join(', ')||'—'}</td><td>${b.tanque||'—'}</td>
       <td><span class="od2sel ${st}">${({producao:'Em produção',programada:'Programada',concluida:'Concluída',pendente:'Pendente'})[st]}</span></td><td><span class="od2ig">${csSeloLib(b)}${csSeloTinyMae(fs)}</span></td><td></td></tr>
       ${ab?g.filhas.map(linhaFilha).join(''):''}`;};
+  /* v5.9.7: a lista de OPs passa a ser paginada, 50 OPs mae por pagina, com os
+     numeros no rodape. Com 646 lotes a tela montava tudo de uma vez e demorava. */
+  const odK=[OD_ABA,OD_BUSCA,JSON.stringify(OD2.p||{}),OD2.sort.k,OD2.sort.dir].join('|');
+  if(OD2.pagK!==odK){OD2.pagK=odK;OD2.pag=1;}
+  const odNPag=Math.max(1,Math.ceil(grupos.length/POR_PAG_OP));
+  const odPag=Math.min(Math.max(1,OD2.pag||1),odNPag);
+  const gPag=grupos.slice((odPag-1)*POR_PAG_OP,(odPag-1)*POR_PAG_OP+POR_PAG_OP);
   el.innerHTML=`<div class="od2">
     <div class="od2top"><h2>Ordens de produção</h2></div>
     <div class="od2bar"><input type="text" id="odB" class="busca" placeholder="Nº da OP, produto ou lote" value="${escAttr(OD_BUSCA)}">
@@ -26728,8 +26756,8 @@ gradeOrdens=function(){
     <div class="od2abas">${OD2_ABAS.map(([k,r,c])=>`<button data-odab="${k}" class="${k===OD_ABA?'on':''}" style="--cor:${c}">${r}<b>${nf(conta(k))}</b></button>`).join('')}</div>
     ${l.length?`<div class="od2rol"><table class="od2t"><thead><tr><th style="width:30px"><span class="od2ck ${l.length&&l.every(x=>OD2.sel.has(x.o.id))?'on':''}" id="odCkT"></span></th><th style="width:34px"></th>
       ${col('num','Nº OP')}${col('data','Data')}${col('prod','Produto')}${col('lote','Lote')}${col('maq','Máquina')}${col('tq','Tanque')}${col('sit','Situação')}<th>Integração</th><th>Marcadores</th></tr></thead><tbody>
-      ${grupos.map(linhaMae).join('')}</tbody></table></div>
-      <div class="od2tot"><div class="acoes">${OD2.sel.size?`<span class="cnt">&#8593; ${String(OD2.sel.size).padStart(2,'0')}</span><button class="btn sm" id="odDes">Desmarcar</button>`:''}</div>
+      ${gPag.map(linhaMae).join('')}</tbody></table></div>
+      <div class="od2tot">${od2BarraPag(odPag,odNPag)}<div class="acoes">${OD2.sel.size?`<span class="cnt">&#8593; ${String(OD2.sel.size).padStart(2,'0')}</span><button class="btn sm" id="odDes">Desmarcar</button>`:''}</div>
         <div><b>${nf(grupos.length)}</b><span>OPs mãe (lotes)</span></div><div><b>${nf(l.length)}</b><span>OPs de envase</span></div><div><b>${nf(lit)}</b><span>litros</span></div><div><b>${Object.entries(cx).map(([u,v])=>nf(v)+' '+u).join(' · ')||'—'}</b><span>a envasar</span></div></div>`
     :'<div class="vazioc" style="padding:24px">Nenhuma OP neste período.</div>'}</div>`;
   ligaOrdens(el,l);
@@ -40378,13 +40406,17 @@ function csMp519(simular){
 .pcx-sl{font:800 9px system-ui;letter-spacing:.03em;text-transform:uppercase;padding:3px 9px;border-radius:999px;border:1px solid;white-space:nowrap;background:transparent}
 .pcx-sl.ok{color:#15803D;border-color:#86EFAC}.pcx-sl.cz{color:#64748B;border-color:#CBD5E1}.pcx-sl.amb{color:#B45309;border-color:#FCD34D}.pcx-sl.red{color:#B91C1C;border-color:#FCA5A5}
 .pcx-sl.mono{font-family:ui-monospace,monospace}
-.pcx-boxes{display:grid;gap:8px;margin-top:11px}
-.pcx-boxes.c3{grid-template-columns:1fr 1fr 1fr}.pcx-boxes.c4{grid-template-columns:repeat(4,1fr)}
+.pcx-boxes{display:grid;gap:6px;margin-top:9px}
+.pcx-boxes.c2{grid-template-columns:1fr 1fr}.pcx-boxes.c3{grid-template-columns:1fr 1fr 1fr}.pcx-boxes.c4{grid-template-columns:repeat(4,1fr)}.pcx-boxes.c5{grid-template-columns:repeat(3,1fr)}
 @media(max-width:560px){.pcx-boxes.c3,.pcx-boxes.c4{grid-template-columns:1fr 1fr}}
-.pcx-bx{border:1px solid var(--line,#DDE3EC);border-radius:8px;padding:6px 10px;min-width:0}
-.pcx-bx span{display:block;font:700 8px system-ui;letter-spacing:.04em;text-transform:uppercase;color:var(--ink3,#64748B)}
-.pcx-bx b{display:block;font:700 13px system-ui;color:var(--ink,#0F172A);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.pcx-bx b.mono{font-family:ui-monospace,monospace}.pcx-bx b .pct{color:var(--ink3,#64748B);font-weight:600;font-size:11px}
+/* v5.9.7: mesmo desenho dos numeros do envase (.cs5 .k5), para as tres telas
+   de producao falarem a mesma lingua: fundo claro, rotulo pequeno em cima,
+   numero da OP em azul. */
+.pcx-bx{background:#F4F6FA;border:1px solid var(--line,#DDE3EC);border-radius:9px;padding:4px 8px;min-width:0}
+.pcx-bx span{display:block;font:600 9.5px system-ui;letter-spacing:.03em;text-transform:none;color:#334155;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pcx-bx b{display:block;font:600 12.5px system-ui;color:var(--ink,#0F172A);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pcx-bx b.az{color:#2D4FA0}
+.pcx-bx b .pct{color:var(--ink3,#64748B);font-weight:600;font-size:11px}
 .pcx-prev{border:1px solid #FED7AA;background:#FFF7ED;border-radius:8px;padding:7px 11px;margin-top:9px;display:flex;align-items:center;gap:8px}
 .pcx-prev .k{font:700 9px system-ui;text-transform:uppercase;color:#B45309}.pcx-prev .v{font:800 13px ui-monospace,monospace;color:#B45309;margin-left:auto}
 .pcx-btns{display:flex;gap:8px;margin-top:11px}
@@ -40843,7 +40875,7 @@ function selos(o){
   if(o.status==='concluida') return '<span class="pcx-sl cz">Concluída</span>'+(o.noPrazo?'<span class="pcx-sl ok">★ No prazo</span>':'');
   return '<span class="pcx-sl cz">Programada</span>';
 }
-function boxes(arr){ return '<div class="pcx-boxes c'+arr.length+'">'+arr.map(function(b){ return '<div class="pcx-bx"><span>'+esc(b[0])+'</span><b'+(b[2]?' class="mono"':'')+'>'+b[1]+'</b></div>'; }).join('')+'</div>'; }
+function boxes(arr){ return '<div class="pcx-boxes c'+arr.length+'">'+arr.map(function(b){ return '<div class="pcx-bx"><span>'+esc(b[0])+'</span><b'+(b[2]==='az'?' class="az"':'')+'>'+b[1]+'</b></div>'; }).join('')+'</div>'; }
 function temposBloco(rows, foot, footCls){
   return '<div class="pcx-tempos"><div class="pcx-tr pcx-th"><span class="l">Tempos</span><span class="pp">Previsto</span><span class="pr">Realizado</span></div>'+
     rows.map(function(r){ return '<div class="pcx-tr row"><span class="lab">'+esc(r[0])+'</span><span class="pcol">'+r[1]+'</span><span class="rcol">'+r[2]+'</span></div>'; }).join('')+
@@ -40867,11 +40899,12 @@ function blocoPega(linhas, o){
     else if(typeof l[2]==='string') tag='<span class="pcx-pega-no">'+esc(l[2])+'</span>';
     return '<div class="pcx-pega-r"><span class="lb">'+esc(l[0])+'</span><b class="nm">'+esc(l[1])+'</b>'+tag+'</div>';
   }).join('');
-  return '<div class="pcx-pega">'+rows+
-    '<div class="pcx-pega-f"><span class="op">OP '+esc(o.num)+'</span>'+
-      '<span class="qt">'+nfx(o.qtdPrev)+' <small>un previstas</small></span></div></div>';
+  /* v5.9.7: o numero da OP e a quantidade sairam do rodape em letra miuda e
+     viraram blocos no mesmo desenho do envase, com o numero em azul. */
+  return '<div class="pcx-pega">'+rows+'</div>'+
+    boxes([['OP Nº', esc(o.num), 'az'],['QTD PREVISTA', nfx(o.qtdPrev)+' un']]);
 }
-function topo(o, extra){ return '<div class="pcx-top"><div class="pcx-ph">🧴</div><div class="pcx-nome">'+esc(o.titulo)+'</div><div class="pcx-seals">'+selos(o)+(extra||'')+'</div></div>'; }
+function topo(o, extra){ return '<div class="pcx-top"><div class="pcx-nome">'+esc(o.titulo)+'</div><div class="pcx-seals">'+selos(o)+(extra||'')+'</div></div>'; }
 function btnDesf(o){ return '<button class="pcx-b undo" data-ac="desfazer" data-op="'+o.id+'" title="Desfazer o último passo">↶ Desfazer</button>'; }
 function botoesSopro(o){
   if(o.status==='produzindo') return '<div class="pcx-btns"><button class="pcx-b go" data-ac="concluir" data-op="'+o.id+'">▶ Concluir sopro</button><button class="pcx-b pausar" data-ac="pausar" data-op="'+o.id+'">PAUSAR</button>'+btnDesf(o)+'</div>';
@@ -40890,8 +40923,8 @@ function cardSoproN(o, vez){
     var pct=o.qtdPrev?Math.round(o.boas/o.qtdPrev*1000)/10:0, qpct=o.qtdPrev?Math.round((o.quebra||0)/o.qtdPrev*1000)/10:0;
     return '<div class="pcx-card conc" data-op="'+o.id+'">'+
       (o.criadoData&&o.criadoData!==o.data?'<div class="pcx-comecou">OP '+esc(o.num)+' · começou em '+esc(o.criadoData)+'</div>':'')+
-      topo(o,'<span class="pcx-sl cz mono">'+esc(o.num)+'</span>')+
-      boxes([['Qtd prevista', nfx(o.qtdPrev)+' un', 1],['Qtd realizada', nfx(o.boas)+' <span class="pct">'+String(pct).replace('.',',')+'%</span>', 1],['Qtd quebra', nfx(o.quebra||0)+' <span class="pct">'+String(qpct).replace('.',',')+'%</span>', 1]])+
+      topo(o)+
+      boxes([['OP Nº', esc(o.num), 'az'],['QTD PREVISTA', nfx(o.qtdPrev)+' un'],['QTD REALIZADA', nfx(o.boas)+' <span class="pct">'+String(pct).replace('.',',')+'%</span>'],['QTD QUEBRA', nfx(o.quebra||0)+' <span class="pct">'+String(qpct).replace('.',',')+'%</span>']])+
       temposBloco([['Sopro', hhmm(o.iniPrev)+' → '+hhmm(o.fimPrev), (o.iniReal||'--:--')+' → '+(o.fimReal||'--:--')]],['OP '+esc(o.num),''],'')+'</div>';
   }
   var bx = blocoPega([['Preforma', nomeFull(o.preformaSku), saldoPCP(o.preformaSku)>0?true:'comprar']], o);
@@ -40910,7 +40943,7 @@ function cardRotuloN(o, vez){
     return '<div class="pcx-card conc" data-op="'+o.id+'">'+
       (o.criadoData&&o.criadoData!==o.data?'<div class="pcx-comecou">OP '+esc(o.num)+' · começou em '+esc(o.criadoData)+'</div>':'')+
       topo(o)+
-      boxes([['Qtd prevista', nfx(o.qtdPrev)+' un', 1],['Qtd realizada', nfx(o.boas)+' <span class="pct">'+String(pct).replace('.',',')+'%</span>', 1],['Quebra rótulo', nfx(o.quebraRotulo||0)+' <span class="pct">'+String(qr).replace('.',',')+'%</span>', 1],['Quebra frasco', nfx(o.quebraFrasco||0)+' <span class="pct">'+String(qf).replace('.',',')+'%</span>', 1]])+
+      boxes([['OP Nº', esc(o.num), 'az'],['QTD PREVISTA', nfx(o.qtdPrev)+' un'],['QTD REALIZADA', nfx(o.boas)+' <span class="pct">'+String(pct).replace('.',',')+'%</span>'],['QUEBRA RÓTULO', nfx(o.quebraRotulo||0)+' <span class="pct">'+String(qr).replace('.',',')+'%</span>'],['QUEBRA FRASCO', nfx(o.quebraFrasco||0)+' <span class="pct">'+String(qf).replace('.',',')+'%</span>']])+
       temposBloco([['Rotulagem', hhmm(o.iniPrev)+' → '+hhmm(o.fimPrev), (o.iniReal||'--:--')+' → '+(o.fimReal||'--:--')]],['Rótulo '+esc(nomeCurtoSku(o.rotuloSku)),''],'')+'</div>';
   }
   var bx = blocoPega([['Frasco', nomeFull(o.frascoSku), saldoPCP(o.frascoSku)>0?true:'soprar'],['Rótulo', nomeFull(o.rotuloSku), null]], o);
@@ -41973,12 +42006,12 @@ function pdfOP(o){
   if(typeof folha!=='function'||typeof campo!=='function'){ avisa('PDF indisponível.',true); return; }
   var maqs=isRot?rotuladoras():sopradoras();
   var p2=function(n){return (n<10?'0':'')+n;};
-  /* v5.8.8: apontamento hora a hora, para o operador anotar no papel e conferir com a contagem.
-     Vai da hora cheia do início previsto até as 17:30 (a última linha é 17:00 – 17:30).
-     OP que começa depois disso (hora extra) leva seis horas a partir do início. */
-  var h0=Math.floor((+o.iniPrev||300)/60), FIM=17*60+30, faixas=[];
-  if(h0*60<FIM){ for(var h=h0;h*60<FIM;h++){ var ate=Math.min((h+1)*60,FIM); faixas.push(p2(h)+':00 – '+p2(Math.floor(ate/60))+':'+p2(ate%60)); } }
-  else { for(var i=0;i<6&&h0+i<24;i++) faixas.push(p2(h0+i)+':00 – '+p2((h0+i+1)%24)+':00'); }
+  /* v5.9.7: o apontamento hora a hora comeca sempre as 05:00 e vai ate as 17:30,
+     a jornada inteira, para toda OP. Antes a grade comecava na hora do inicio
+     previsto: uma OP programada para a tarde saia com tres linhas e o operador
+     ficava sem onde anotar o resto do dia no mesmo papel. */
+  var INI=5, FIM=17*60+30, faixas=[];
+  for(var h=INI;h*60<FIM;h++){ var ate=Math.min((h+1)*60,FIM); faixas.push(p2(h)+':00 – '+p2(Math.floor(ate/60))+':'+p2(ate%60)); }
   var horaAHora='<table class="hah"><thead><tr><th style="width:21%">Horário</th><th style="width:19%">Produzido (un)</th><th style="width:15%">Quebra (un)</th><th style="width:25%">Operador(a)</th><th>Observação</th></tr></thead><tbody>'+
     faixas.map(function(f){ return '<tr><td class="hh">'+f+'</td><td></td><td></td><td></td><td></td></tr>'; }).join('')+
     '<tr class="tot"><td class="hh">Total</td><td></td><td></td><td colspan="2"></td></tr></tbody></table>'+

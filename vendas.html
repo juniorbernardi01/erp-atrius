@@ -402,6 +402,14 @@ input.sel4{width:120px;font-family:'Inter',monospace}
 .mk3 i{width:9px;height:9px;border-radius:50%;background:var(--c)}
 .dot3{width:10px;height:10px;border-radius:50%;display:inline-block;vertical-align:middle}
 .pagin{display:flex;gap:10px;align-items:center;justify-content:center;margin:10px 0;font-size:12.5px;color:var(--ink2)}
+/* v5.9.7: numeros de pagina no padrao do Tiny, dentro do rodape fixo, igual ao
+   controle de estoque. A lista rola por tras e os numeros ficam sempre a vista. */
+.pgnav{display:flex;align-items:center;gap:3px;flex-wrap:wrap}
+.pgn,.pgs{min-width:30px;height:30px;padding:0 7px;border:0;background:none;border-radius:8px;font:700 12.5px ui-monospace,monospace;color:var(--ink3);cursor:pointer}
+.pgn:hover,.pgs:hover:not(:disabled){background:#EFF3FA;color:var(--ink)}
+.pgn.on{background:var(--ink,#0F172A);color:#fff}
+.pgs:disabled{opacity:.3;cursor:default}
+.pgsep{color:var(--ink3);padding:0 2px}
 .totbar{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--line2);display:flex;justify-content:flex-end;align-items:flex-end;gap:26px;padding:10px 12px 8px;z-index:5}
 .totbar div{line-height:1.2;white-space:nowrap}.totbar b{display:block;font-size:14px;font-weight:500;color:var(--ink)}.totbar span{font-size:11px;color:var(--ink3)}
 .totbar .sel b{color:#1D6FE8}.totbar .acoes{display:flex;align-items:center;gap:6px;margin-right:auto}.totbar .acoes .cnt{font-size:15px;color:var(--ink2);margin-right:6px}
@@ -808,8 +816,7 @@ function desenhaLista(){
       <td>${esc(p.cidade||'')}</td><td>${esc(p.uf||'')}</td><td class="m">${esc(p.cliente_doc||'')}</td><td>${esc(p.vendedor||'—')}</td><td class="n">${nf(p.total,2)}</td><td class="m">${esc(p.numero_ecommerce||'')}</td>
       <td>${(p.marcadores||[]).map(m=>`<span class="mk3" style="--c:${esc(m.cor||'#8B93A1')}"><i></i>${esc(m.nome)}</span>`).join('')}</td>
       <td><span class="dot3" style="background:${s[2]}"></span> ${esc(s[1])}</td></tr>`;}).join('')}</tbody></table></div>
-    <div class="pagin">${V.pagina?'<button class="btn sm" id="pAnt">‹ anteriores</button>':''}<span>${nf(V.pagina*100+1)}–${nf(V.pagina*100+ps.length)} de ${nf(d.total)}</span>${(V.pagina+1)*100<d.total?'<button class="btn sm" id="pProx">próximos ›</button>':''}</div>
-    <div class="totbar"><div class="acoes">${V.sel.size?`<span class="cnt">↑ ${String(V.sel.size).padStart(2,'0')}</span><button class="btn" id="bDes">Desmarcar</button>`:''}</div>
+    <div class="totbar">${barraPag(d.total,V.pagina,100)}<div class="acoes">${V.sel.size?`<span class="cnt">↑ ${String(V.sel.size).padStart(2,'0')}</span><button class="btn" id="bDes">Desmarcar</button>`:''}</div>
       ${V.sel.size?`<div class="sel"><b>${nf(selV,2)}</b><span>selecionados (R$)</span></div>`:''}<div><b>${nf(d.total)}</b><span>quantidade</span></div><div><b>${d.soma!=null?nf(d.soma,2):'—'}</b><span>valor total (R$)</span></div></div>`
     :`<div class="vazio">${d.total===0&&V.aba==='todas'&&!V.q&&V.per.m==='sem'?'Nenhum pedido no ERP ainda. Comece a carga em <a href="#carga">Carga do Tiny</a>.':'Nenhum pedido com esses filtros.'}</div>`;
   l.querySelectorAll('[data-o]').forEach(h=>h.onclick=()=>{const k=h.dataset.o;V.dir=V.ordem===k&&V.dir==='desc'?'asc':'desc';V.ordem=k;V.pagina=0;carregar();});
@@ -819,8 +826,27 @@ function desenhaLista(){
   l.querySelectorAll('[data-ck]').forEach(c=>c.onclick=ev=>{ev.stopPropagation();const p=ps.find(x=>x.id===c.dataset.ck);V.sel.has(p.id)?V.sel.delete(p.id):V.sel.set(p.id,p);desenhaLista();});
   if($('ckT'))$('ckT').onclick=()=>{const todos=ps.every(p=>V.sel.has(p.id));ps.forEach(p=>todos?V.sel.delete(p.id):V.sel.set(p.id,p));desenhaLista();};
   if($('bDes'))$('bDes').onclick=()=>{V.sel.clear();desenhaLista();};
-  if($('pAnt'))$('pAnt').onclick=()=>{V.pagina--;carregar();};
-  if($('pProx'))$('pProx').onclick=()=>{V.pagina++;carregar();};
+  l.querySelectorAll('.pgnav [data-pg]').forEach(b=>b.onclick=()=>{
+    const n=+b.dataset.pg; if(!n||b.disabled) return;
+    V.pagina=n-1; V.sel.clear(); carregar();
+    try{window.scrollTo({top:0,behavior:'smooth'});}catch(e){}
+  });
+}
+/* v5.9.7: barra de numeros de pagina, no mesmo desenho das demais listas.
+   A pagina aqui e do servidor (V.pagina, de 100 em 100), entao o clique so
+   troca a pagina e manda recarregar. */
+function barraPag(total,pag,porPag){
+  const nPag=Math.max(1,Math.ceil((total||0)/porPag));
+  if(nPag<=1) return '';
+  const p=Math.min(Math.max(1,pag+1),nPag), vis=[];
+  const add=n=>{if(n>=1&&n<=nPag&&vis.indexOf(n)<0)vis.push(n);};
+  if(nPag<=9){for(let i=1;i<=nPag;i++)add(i);}
+  else{add(1);add(2);for(let i=p-1;i<=p+1;i++)add(i);add(nPag-1);add(nPag);}
+  vis.sort((a,b)=>a-b);
+  let btns='',ant=0;
+  vis.forEach(n=>{ if(ant&&n>ant+1) btns+='<span class="pgsep">…</span>';
+    btns+=`<button class="pgn${n===p?' on':''}" data-pg="${n}" type="button">${String(n).padStart(2,'0')}</button>`; ant=n; });
+  return `<div class="pgnav"><button class="pgs" data-pg="${p-1}" type="button" ${p<=1?'disabled':''}>‹</button>${btns}<button class="pgs" data-pg="${p+1}" type="button" ${p>=nPag?'disabled':''}>›</button></div>`;
 }
 /* colunas da lista, como no Tiny; as desligadas de fábrica ficam no painel */
 const COLS_V=['Nº','Data','Previsto','Faturado','Cliente','Cidade','UF','CNPJ / CPF','Vendedor','Total','Nº pedido','Marcadores','Situação'];

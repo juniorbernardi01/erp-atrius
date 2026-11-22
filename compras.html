@@ -467,6 +467,14 @@ select.st-h,select.st-a,select.st-b{border-radius:999px;font-weight:600}
 .perpop .pdois>div{min-width:0}.perpop .pdf input{width:100%}
 /* rodapé fixo das listas (padrão do sistema) */
 .rodfix{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid #E4E2DC;display:flex;justify-content:flex-end;align-items:flex-end;gap:22px;padding:6px 18px;z-index:20}
+/* v5.9.7: numeros de pagina no padrao do Tiny, dentro do rodape fixo. A lista
+   carrega so a pagina mostrada, entao a tela abre rapido mesmo com muitas ordens. */
+.pgnav{display:flex;align-items:center;gap:3px;flex-wrap:wrap;margin-right:auto}
+.pgn,.pgs{min-width:30px;height:30px;padding:0 7px;border:0;background:none;border-radius:8px;font:700 12.5px ui-monospace,monospace;color:#8B93A1;cursor:pointer}
+.pgn:hover,.pgs:hover:not(:disabled){background:#EFF3FA;color:#1A1D23}
+.pgn.on{background:#1A1D23;color:#fff}
+.pgs:disabled{opacity:.3;cursor:default}
+.pgsep{color:#8B93A1;padding:0 2px}
 .rodfix div{line-height:1.15;white-space:nowrap}.rodfix b{display:block;font-size:13px;font-weight:600}.rodfix span{font-size:10.5px;color:#8B93A1}.rodfix .sel b{color:#1D6FE8}
 #app{padding-bottom:56px}
 .colbt{display:inline-grid;place-items:center;width:34px;height:34px;border:1px solid #E4E2DC;border-radius:9px;background:#fff;color:#545C69;cursor:pointer;flex:none}
@@ -1178,6 +1186,19 @@ function iconesInteg(o){
 const IC_SYNC='<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 0 1-14.2 5M4 12a8 8 0 0 1 14.2-5"/><path d="M18.5 3v4h-4M5.5 21v-4h4"/></svg>';
 const IC_PTS='<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg>';
 
+/* v5.9.7: barra de numeros de pagina, igual a do controle de estoque. */
+const POR_PAG_OC=50;
+function barraPag(total,pag,nPag){
+  if(nPag<=1) return '';
+  const vis=[],add=n=>{if(n>=1&&n<=nPag&&vis.indexOf(n)<0)vis.push(n);};
+  if(nPag<=9){for(let i=1;i<=nPag;i++)add(i);}
+  else{add(1);add(2);for(let i=pag-1;i<=pag+1;i++)add(i);add(nPag-1);add(nPag);}
+  vis.sort((a,b)=>a-b);
+  let btns='',ant=0;
+  vis.forEach(n=>{ if(ant&&n>ant+1) btns+='<span class="pgsep">…</span>';
+    btns+=`<button class="pgn${n===pag?' on':''}" data-pg="${n}" type="button">${String(n).padStart(2,'0')}</button>`; ant=n; });
+  return `<div class="pgnav"><button class="pgs" data-pg="${pag-1}" type="button" ${pag<=1?'disabled':''}>‹</button>${btns}<button class="pgs" data-pg="${pag+1}" type="button" ${pag>=nPag?'disabled':''}>›</button></div>`;
+}
 function telaOrdens(){
   const base=ocsFiltradas();
   const cont=k=>k==='todas'?base.filter(o=>o.sit!=='can').length:base.filter(o=>o.sit===k).length;
@@ -1187,6 +1208,12 @@ function telaOrdens(){
     if(fa!==fb)return fa-fb;const pa=a.prev||'9999',pb=b.prev||'9999';
     if(pa!==pb)return fa===0?(pa<pb?-1:1):(pa>pb?-1:1);return (+b.num||0)-(+a.num||0);};
   const lista=base.filter(o=>LST.sit==='todas'?o.sit!=='can':o.sit===LST.sit).sort(s.k==='auto'?ordAuto:(a,b)=>{const x=fn(a),y=fn(b);return (x>y?1:x<y?-1:0)*s.dir;});
+  /* a pagina volta para a primeira sempre que o filtro, a busca ou a ordem mudam */
+  const pagK=[LST.q,LST.sit,JSON.stringify(LST.per||{}),JSON.stringify(LST.fil||{}),s.k,s.dir].join('|');
+  if(LST.pagK!==pagK){LST.pagK=pagK;LST.pag=1;}
+  const nPag=Math.max(1,Math.ceil(lista.length/POR_PAG_OC));
+  const pag=Math.min(Math.max(1,LST.pag||1),nPag);
+  const lPag=lista.slice((pag-1)*POR_PAG_OC,(pag-1)*POR_PAG_OC+POR_PAG_OC);
   const falhas=ocsComFalha();
   const comps=[...new Set(DB.ocs.map(o=>o.comprador).filter(Boolean))].sort();
   const p=LST.per,nsel=[...LST.sel].filter(id=>DB.ocs.some(o=>o.id===id)).length;
@@ -1207,7 +1234,7 @@ function telaOrdens(){
   <div class="bl"><span class="cont" id="blCont">${nsel?nsel+(nsel>1?' ordens marcadas':' ordem marcada'):'Marque as ordens para imprimir, salvar, enviar ou pôr marcadores em várias de uma vez'}</span><span style="flex:1"></span>
     <button class="btn ${nsel?'':'des'}" id="bLImp">⎙ Imprimir</button><button class="btn ${nsel?'':'des'}" id="bLPdf">⤓ Salvar PDF</button><button class="btn ${nsel?'':'des'}" id="bLEnv">✈ Marcar como enviada</button><button class="btn ${nsel?'':'des'}" id="bLMk">🏷 Marcadores</button></div>
   <div class="lo">${lista.length?`<div class="h"><span></span><span class="ck ckA" data-ckall="1" title="Selecionar ou limpar todas desta lista"></span>${col('num','Nº OC')}${col('data','Data')}${col('prev','Previsão')}${col('forn','Fornecedor')}${col('tot','Total','justify-content:flex-end')}${col('sit','Situação')}<span>Marcadores</span>${col('nf','NF')}<span>Integração</span></div>
-    ${lista.map(o=>{const t=contaOC(o);const atr=o.sit==='env'&&o.prev&&o.prev<hojeY();
+    ${lPag.map(o=>{const t=contaOC(o);const atr=o.sit==='env'&&o.prev&&o.prev<hojeY();
       return `<div class="r ${LST.sel.has(o.id)?'sel':''}" data-oc="${o.id}"><span class="mw"><button class="dots" data-menu="${o.id}">${IC_PTS}</button></span>
       <span class="ck ${LST.sel.has(o.id)?'on':''}" data-ck="${o.id}"></span><span class="num">${esc(o.num)}</span><span class="dt">${br(o.data)}</span>
       <span class="dt pr" style="${atr?'color:var(--danger)':''}">${br(o.prev)}${atr?'<small>atrasada</small>':''}</span>
@@ -1217,11 +1244,15 @@ function telaOrdens(){
     :`<div class="vazio">Nenhuma ordem ${LST.sit==='todas'?'':'nesta situação '}com esses filtros.</div>`}</div>
   <div class="leg"><b>Integração:</b> o símbolo azul diz que está tudo enviado ao Tiny; vermelho, que algo não foi (clique nele para tentar de novo).
   <b>E</b> aparece quando o estoque foi lançado e <b>C</b> quando as contas foram lançadas. Clique no título das colunas para ordenar.</div>
-  <div class="rodfix">${nsel?`<div class="sel"><b>${nf(DB.ocs.filter(o=>LST.sel.has(o.id)).reduce((s,o)=>s+contaOC(o).total,0),2)}</b><span>selecionadas (R$)</span></div>`:''}<div><b>${nf(lista.length)}</b><span>ordens</span></div><div><b>${nf(lista.reduce((s,o)=>s+contaOC(o).total,0),2)}</b><span>valor total (R$)</span></div></div>`;
+  <div class="rodfix">${barraPag(lista.length,pag,nPag)}${nsel?`<div class="sel"><b>${nf(DB.ocs.filter(o=>LST.sel.has(o.id)).reduce((s,o)=>s+contaOC(o).total,0),2)}</b><span>selecionadas (R$)</span></div>`:''}<div><b>${nf(lista.length)}</b><span>ordens</span></div><div><b>${nf(lista.reduce((s,o)=>s+contaOC(o).total,0),2)}</b><span>valor total (R$)</span></div></div>`;
   ligaLista(lista);
   /* colunas visíveis, como no Tiny: a grade encolhe junto */
   colsGrade(document.querySelector('.lo'),'compras',COLS_C_TRILHAS,[]);
   gradeArrasta(document.querySelector('.lo'),'compras',COLS_C_TRILHAS);
+  document.querySelectorAll('.rodfix [data-pg]').forEach(b=>b.onclick=()=>{
+    const n=+b.dataset.pg; if(!n||b.disabled) return;
+    LST.pag=n; telaOrdens(); try{window.scrollTo({top:0,behavior:'smooth'});}catch(e){}
+  });
   if($('bCols'))$('bCols').onclick=()=>colsPainel('compras',['Nº OC','Data','Previsão','Fornecedor','Total','Situação','Marcadores','NF','Integração'],[],['Nº OC','Fornecedor'],telaOrdens);
 }
 const COLS_C_TRILHAS=['40px','26px','70px','88px','96px','minmax(200px,1fr)','104px','170px','130px','70px','84px'];
