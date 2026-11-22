@@ -5584,7 +5584,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v594';const VERSAO_DATA='20/11/2026';
+const VERSAO_APP='v595';const VERSAO_DATA='20/11/2026';
 /* número que aparece na tela: v438 → v4.3.8 (por dentro continua v438, que é o que as versões comparam) */
 const csRotVer=v=>{const d=String(v||'').replace(/\D/g,'');return d.length>=3?'v'+d.slice(0,-2)+'.'+d.slice(-2,-1)+'.'+d.slice(-1):String(v||'');};
 const VERSAO_ROTULO=csRotVer(VERSAO_APP)+' · '+VERSAO_DATA;
@@ -43014,6 +43014,73 @@ try{window.__V585={obrig,obrigDe,embLinhas,numKg};}catch(e){}
   }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',liga); else liga();
   setTimeout(liga,1500); setTimeout(liga,4000);
+})();
+</script>
+<script>
+/* ===================== v5.9.5 · SALDO NÃO SE PERDE NA JUNÇÃO =====================
+   Quando dois gravam quase juntos (o servidor baixando uma nota fiscal e alguém
+   lançando no ERP), o sistema junta as duas versões em vez de jogar uma fora.
+   Para listas isso já funcionava: os lançamentos dos dois lados entram no razão.
+   Para um número solto, porém, a regra era "fica o do aparelho que acabou de
+   mexer", e saldo de estoque é número solto. Resultado: os dois lançamentos
+   apareciam no histórico e o saldo contava só um deles.
+
+   Exemplo real: saldo 938; o servidor baixa 90 de uma nota e, no mesmo minuto,
+   alguém lança 10 de entrada. O certo é 938 - 90 + 10 = 858. Antes ficava 948.
+
+   Saldo é contador, não é campo de texto: as duas mudanças somam. A conta é
+   "o que eu tinha quando li, mais o que eu mexi, mais o que o outro mexeu".
+   Vale para o saldo total (estoque.saldos.<item>) e para o saldo por depósito
+   (estoqueDep.sal.<depósito>.<item>). Fora desses dois caminhos nada muda.
+   ================================================================================= */
+(function(){
+  if(typeof csM3!=='function'||typeof csJ!=='function'||typeof csObj!=='function') return;
+  /* os dois lugares onde o valor é saldo de estoque */
+  const CONTA=/^(estoque\.saldos\.[^.]+|estoqueDep\.sal\.[^.]+\.[^.]+)$/;
+  const num=v=>typeof v==='number'&&isFinite(v);
+  function soma(b,l,r){
+    /* só soma quando os três são número: item novo dos dois lados fica na regra antiga */
+    if(!num(b)||!num(l)||!num(r)) return undefined;
+    const v=l+(r-b);
+    return Math.abs(v)<1e-9?0:Math.round(v*1e6)/1e6;
+  }
+  window.csM3=function csM3(b,l,r,cam){
+    cam=cam||'';
+    if(CONTA.test(cam)){ const s=soma(b,l,r); if(s!==undefined) return s; }
+    const jl=csJ(l),jr=csJ(r);if(jl===jr)return l;
+    const jb=csJ(b);if(jl===jb)return r;if(jr===jb)return l;
+    if(Array.isArray(l)&&Array.isArray(r)){
+      const bb=Array.isArray(b)?b:[],k=csChaveArr(bb,l,r);
+      if(k){
+        const mB=new Map(bb.map(e=>[String(e[k]),e])),mL=new Map(l.map(e=>[String(e[k]),e])),mR=new Map(r.map(e=>[String(e[k]),e]));
+        const ordem=[...r.map(e=>String(e[k])),...l.map(e=>String(e[k])).filter(x=>!mR.has(x))],out=[];
+        for(const id of ordem){
+          const inL=mL.has(id),inR=mR.has(id),inB=mB.has(id),bv=mB.get(id),lv=mL.get(id),rv=mR.get(id);
+          if(inL&&inR){out.push(csM3(bv,lv,rv,cam?cam+'.'+id:id));continue;}
+          /* sumiu de um lado: só sai se o outro lado não mexeu nele */
+          if(inL){if(inB&&csJ(lv)===csJ(bv))continue;out.push(lv);continue;}
+          if(inB&&csJ(rv)===csJ(bv))continue;out.push(rv);
+        }
+        return out;
+      }
+      /* lista sem chave (histórico da OP, registros): o que os dois têm, sem repetir */
+      const sb=new Set(bb.map(csJ)),visto=new Set(r.map(csJ)),out=r.slice();
+      l.forEach(e=>{const j=csJ(e);if(!visto.has(j)&&!sb.has(j)){out.push(e);visto.add(j);}});
+      return out;
+    }
+    if(csObj(l)&&csObj(r)){
+      const bo=csObj(b)?b:{},out={};
+      for(const k of new Set([...Object.keys(r),...Object.keys(l)])){
+        const inL=k in l,inR=k in r,inB=k in bo;
+        const sub=cam?cam+'.'+k:k;
+        if(inL&&inR){out[k]=csM3(bo[k],l[k],r[k],sub);continue;}
+        if(inL){if(inB&&csJ(l[k])===csJ(bo[k]))continue;out[k]=l[k];continue;}
+        if(inB&&csJ(r[k])===csJ(bo[k]))continue;out[k]=r[k];
+      }
+      return out;
+    }
+    return l;   /* o mesmo campo mudou nos dois: fica o deste aparelho, que acabou de mexer */
+  };
 })();
 </script>
 </body>
