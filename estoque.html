@@ -143,6 +143,22 @@ body.imprimindo #imp{display:block}.gaveta,.veu{display:none!important}}
 .k{color:var(--ink3);font-size:12px}.lkv{cursor:pointer;color:var(--ink3)}.lkv:hover{color:var(--selt);text-decoration:underline}
 .ikp{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
 .tv td small,.tv td .s{display:block;font-size:11px;color:var(--ink3);margin-top:2px}td.m{font-family:'Inter',monospace;font-size:12px;white-space:nowrap}
+/* v5.9.2 · barra de páginas e marco da conferência */
+.pagbar{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;padding:10px 2px 2px}
+.pgnav{display:flex;align-items:center;gap:3px;flex-wrap:wrap}
+.pgn,.pgs{min-width:30px;height:30px;padding:0 7px;border:0;background:none;border-radius:8px;font:700 12.5px ui-monospace,monospace;color:var(--ink3);cursor:pointer}
+.pgn:hover,.pgs:hover:not(:disabled){background:#EFF3FA;color:var(--ink)}
+.pgn.on{background:var(--ink,#0F172A);color:#fff}
+.pgs:disabled{opacity:.3;cursor:default}
+.pgsep{color:var(--ink3);padding:0 2px}
+.pgres{display:flex;gap:16px;font-size:12px;color:var(--ink3);margin-left:auto}
+.pgres b{color:var(--ink2,#334155);font-family:ui-monospace,monospace}
+.cortebar{display:flex;align-items:center;gap:11px;margin:0 0 10px;padding:10px 13px;border:1px solid #BBE2C8;background:#F2FBF5;border-radius:11px;font-size:12.5px}
+.cortebar.off{border-color:var(--line);background:#F7F8FA}
+.cortebar .cb-i{display:grid;place-items:center;width:22px;height:22px;border-radius:50%;background:#16A34A;color:#fff;font-size:12px;flex:none}
+.cortebar.off .cb-i{background:#94A3B8}
+.cortebar small{display:block;color:var(--ink3);font-size:11.5px;margin-top:1px}
+.cortebar button{margin-left:auto;flex:none}
 #tabI tbody tr:hover td{background:#F8FAFE}#tabI tr.ibal td{background:#F7F9FC}#tabI tr.ipend td{background:#FEFCE8}#tabI tr.imarca td{background:#EFF4FD!important}
 .dots{width:30px;height:28px;border-radius:7px;color:var(--ink2);font-weight:700;letter-spacing:1px}.dots:hover{background:var(--line3)}
 .emenu{position:absolute;z-index:70;background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 10px 28px rgba(20,24,33,.12);padding:5px;min-width:220px;max-width:300px}
@@ -812,7 +828,8 @@ const COD_NOME={OP:'abre a ordem de produção',C:'abre a ordem de compra',NF:'a
   INV:'abre o inventário',M:'lançamento manual',BAL:'balanço: o saldo do depósito passa a ser este',EST:'estorno da OP',PV:'pedido de venda'};
 const SIT_RES=['Em aberto','Aprovado','Preparando envio','Pronto para envio'];   /* os nomes do Tiny que ainda não faturaram */
 const SIT_NOME={'Em aberto':'Em aberto','Aprovado':'Aprovado','Preparando envio':'Em separação','Pronto para envio':'Separado'};
-const IT={id:'',aba:'est',deps:null,per:perNovo('sem'),tipos:new Set(['E','S','BAL','TR']),nf:{},res:{},marcaTr:null};
+const IT={id:'',aba:'est',deps:null,per:perNovo('sem'),tipos:new Set(['E','S','BAL','TR']),nf:{},res:{},marcaTr:null,tudo:false,pag:1,pagK:''};
+const POR_PAG=50;
 const itemDe=id=>{id=String(id||'');const sem=chaveEst;
   const p=N.produtos().find(p=>sem(p.tiny)===id);
   if(p)return {id,nome:p.descricao,cod:p.codigo,un:'',emb:embAcab(p),acabado:true,p};
@@ -825,8 +842,11 @@ const quandoEm=s=>{const [d,h]=String(s||'').split(' ');return d?d.split('-').re
 const agoraLocal=()=>{const d=new Date();return ymd(d)+'T'+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');};
 
 /* notas de saída e reservas: lidas uma vez por item e período */
-async function lerNF(it){
-  const fx=perFaixa(IT.per),de=fx.de||addDias(hojeY(),-120),ate=fx.ate||hojeY(),k=it.id+'|'+de+'|'+ate;
+async function lerNF(it,corte){
+  const fx=perFaixa(IT.per),ate=fx.ate||hojeY();
+  /* sem período escolhido, começa na conferência do item; sem conferência, 120 dias */
+  const de=fx.de||((corte&&!IT.tudo)?String(corte.em).slice(0,10):'')||addDias(hojeY(),-120);
+  const k=it.id+'|'+de+'|'+ate;
   if(IT.nf[k])return IT.nf[k];
   if(N.teste||!N.tiny)return IT.nf[k]={itens:[],aviso:'Versão de teste: as notas do Tiny não são lidas.'};
   IT.nf[k]={lendo:true,itens:[]};
@@ -860,27 +880,69 @@ async function lerRes(it){
   return IT.res[k];
 }
 
+/* v5.9.2 · barra de páginas, padrão para as listas do sistema.
+   Renderiza só a página pedida: a tabela não cresce junto com o histórico. */
+function barraPag(total,pag,nPag,resumo){
+  if(total<=POR_PAG&&pag===1) return resumo&&resumo.length?`<div class="pagbar"><div class="pgres">${resumo.map(([r,v])=>`<span><b>${nq(v)}</b> ${esc(r)}</span>`).join('')}</div></div>`:'';
+  const vis=[];const add=n=>{if(n>=1&&n<=nPag&&vis.indexOf(n)<0)vis.push(n);};
+  if(nPag<=9){for(let i=1;i<=nPag;i++)add(i);}
+  else{add(1);add(2);for(let i=pag-1;i<=pag+1;i++)add(i);add(nPag-1);add(nPag);}
+  vis.sort((a,b)=>a-b);
+  let btns='',ant=0;
+  vis.forEach(n=>{ if(ant&&n>ant+1) btns+='<span class="pgsep">…</span>';
+    btns+=`<button class="pgn${n===pag?' on':''}" data-pg="${n}" type="button">${String(n).padStart(2,'0')}</button>`; ant=n; });
+  return `<div class="pagbar">
+    <div class="pgnav"><button class="pgs" data-pg="${pag-1}" type="button" ${pag<=1?'disabled':''}>‹</button>${btns}<button class="pgs" data-pg="${pag+1}" type="button" ${pag>=nPag?'disabled':''}>›</button></div>
+    <div class="pgres">${(resumo||[]).map(([r,v])=>`<span><b>${nq(v)}</b> ${esc(r)}</span>`).join('')}</div></div>`;
+}
+function ligaPag(redesenha){
+  document.querySelectorAll('.pagbar [data-pg]').forEach(b=>b.onclick=()=>{
+    const n=+b.dataset.pg; if(!n||b.disabled) return;
+    IT.pag=n; redesenha();
+    try{const t=document.querySelector('.caixa.rolx');if(t)t.scrollIntoView({block:'nearest'});}catch(e){}
+  });
+}
+/* v5.9.2 · marco da conferência do item (último balanço/inventário) */
+function corteDe(itens){
+  let u=null;
+  (itens||[]).forEach(x=>{ if(x.tipo==='BAL'||x.cod==='BAL'){ if(!u||String(x.em)>String(u.em)) u=x; } });
+  return u;
+}
+function nfChave(it,fx,corte){
+  const de=fx.de||(corte&&!IT.tudo?String(corte.em).slice(0,10):'')||addDias(hojeY(),-120);
+  return it.id+'|'+de+'|'+(fx.ate||hojeY());
+}
 function telaItem(id){
   const it=itemDe(id);
   if(!it){$('app').innerHTML=`<div class="vazio">Item não encontrado. <button class="btn lk" id="iV">Voltar aos saldos</button></div>`;$('iV').onclick=()=>ir('saldos');return;}
-  if(IT.id!==it.id){IT.id=it.id;IT.aba='est';IT.deps=null;IT.marcaTr=null;}
+  if(IT.id!==it.id){IT.id=it.id;IT.aba='est';IT.deps=null;IT.marcaTr=null;IT.tudo=false;IT.pag=1;}
   /* sem filtro (null) = todos, inclusive um depósito criado depois */
   const deps=depsN();if(IT.deps)[...IT.deps].forEach(d=>{if(!deps.some(x=>x.id===d))IT.deps.delete(d);});
   const SEL=IT.deps||new Set(deps.map(d=>d.id));
   const r=N.movimentosDe(it.id),sd=r.deps||{tot:r.saldo,por:{}};
   const fx=perFaixa(IT.per),noPer=x=>{const d=String(x.em||'').slice(0,10);return (!fx.de||d>=fx.de)&&(!fx.ate||d<=fx.ate);};
-  const nfK=it.id+'|'+(fx.de||addDias(hojeY(),-120))+'|'+(fx.ate||hojeY()),NFI=it.acabado?IT.nf[nfK]:null;
-  if(it.acabado&&!NFI)lerNF(it).then(()=>{if(PAG==='item'&&IT.id===it.id)telaItem(it.id);});
+  /* v5.9.2 · o último balanço é o marco do item: dali pra trás a contagem já
+     resolveu, então a tela não lê nem cobra nota antiga do Tiny. */
+  const CORTE=corteDe(r.itens), corteDia=(CORTE&&!IT.tudo)?String(CORTE.em).slice(0,10):'';
+  const nfK=nfChave(it,fx,CORTE),NFI=it.acabado?IT.nf[nfK]:null;
+  if(it.acabado&&!NFI)lerNF(it,CORTE).then(()=>{if(PAG==='item'&&IT.id===it.id)telaItem(it.id);});
   const nfNoRazao=new Set((r.itens||[]).map(x=>String(x.chave||'')).filter(c=>/^nf\|/.test(c)).map(c=>c.split('|')[1]));
   const todos=[...(r.itens||[]),...((NFI&&NFI.itens)||[]).filter(x=>!nfNoRazao.has(String(x.nfId||'')))].sort((a,b)=>String(b.em).localeCompare(String(a.em)));
-  const l=todos.filter(x=>SEL.has(x.dep)&&IT.tipos.has(tipoF(x))&&noPer(x));
+  const noCorte=x=>!CORTE||IT.tudo||String(x.em)>=String(CORTE.em);
+  const lTodos=todos.filter(x=>SEL.has(x.dep)&&IT.tipos.has(tipoF(x))&&noPer(x));
+  const l=lTodos.filter(noCorte), escondidos=lTodos.length-l.length;
+  /* paginação: 50 por página, igual em todas as listas */
+  const pagK=[it.id,IT.aba,[...SEL].join(','),[...IT.tipos].join(','),JSON.stringify(IT.per),IT.tudo?1:0].join('|');
+  if(IT.pagK!==pagK){IT.pagK=pagK;IT.pag=1;}
+  const nPag=Math.max(1,Math.ceil(l.length/POR_PAG)), pag=Math.min(Math.max(1,IT.pag||1),nPag);
+  const iniPag=(pag-1)*POR_PAG, lPag=l.slice(iniPag,iniPag+POR_PAG);
   const vals=[...SEL].map(d=>sd.por[d]),sal=vals.some(v=>v==null)?null:vals.reduce((a,b)=>a+(+b||0),0);
   const conta=l.filter(x=>!x.pend);
   const ent=conta.filter(x=>x.tipo==='E').reduce((a,x)=>a+x.qtd,0),sai=conta.filter(x=>x.tipo==='S').reduce((a,x)=>a+x.qtd,0);
   const cfg=N.cfgVendas?N.cfgVendas():{reservaPor:'prev'};
   const resK=it.id+'|'+(it.acabado?(cfg.reservaPor==='ped'?'pedido':'prevista'):'')+'|'+fx.de+'|'+fx.ate;
   const RS=IT.res[resK];if(!RS)lerRes(it).then(()=>{if(PAG==='item'&&IT.id===it.id)telaItem(it.id);});
-  const resQ=RS?RS.tot:null,quandoP=IT.per.m==='sem'?(it.acabado?'últimos 120 dias':'todo o histórico'):perRotulo(IT.per);
+  const resQ=RS?RS.tot:null,quandoP=IT.per.m==='sem'?((CORTE&&!IT.tudo)?'desde a conferência · '+br(String(CORTE.em).slice(0,10)):(it.acabado?'últimos 120 dias':'todo o histórico')):perRotulo(IT.per);
   const podeL=pode('estoque.lanc','editar'),todosD=SEL.size===deps.length;
   const ddTxt=todosD?'Todos os depósitos':SEL.size?[...SEL].map(depNome).join(', '):'Nenhum depósito';
   const tpTxt=IT.tipos.size===4?'Todos os tipos':IT.tipos.size?[...IT.tipos].map(t=>TIPO_NOME[t]).join(', '):'Nenhum tipo';
@@ -902,15 +964,20 @@ function telaItem(id){
     ${IT.aba==='est'?`<div class="rel"><button class="btn" id="fTip" type="button">${esc(tpTxt)} ▾</button>
       <div class="npsit" id="pTip" hidden>${['E','S','BAL','TR'].map(t=>`<label class="chk3"><input type="checkbox" data-tp="${t}" ${IT.tipos.has(t)?'checked':''}> ${TIPO_NOME[t]}</label>`).join('')}</div></div>`:''}
     <button class="btn lk" id="fLimpa">⊖ limpar filtros</button></div>
-  ${IT.aba==='est'?`${NFI&&NFI.aviso?`<div class="aviso">⚠ <div>${esc(NFI.aviso)}</div></div>`:''}${NFI&&NFI.lendo?'<div class="k" style="margin-bottom:8px">Lendo as notas de saída…</div>':''}
+  ${IT.aba==='est'?`${CORTE?`<div class="cortebar${IT.tudo?' off':''}">
+      <span class="cb-i">✓</span>
+      <div><b>Conferido em ${esc(quandoEm(CORTE.em))}</b>${CORTE.quem?' por '+esc(CORTE.quem):''} · saldo do depósito ajustado para <b>${nq(CORTE.qtd)}</b>
+      <small>${IT.tudo?'Mostrando também o que veio antes da conferência.':'O saldo conta a partir daqui. O que é anterior não entra na conta e as notas do Tiny antes dessa data não são lidas.'+(escondidos?' '+escondidos+' lançamento'+(escondidos>1?'s':'')+' anterior'+(escondidos>1?'es':'')+'.':'')}</small></div>
+      <button class="btn sm" id="bTudo">${IT.tudo?'Ver só a partir da conferência':'Ver tudo'}</button></div>`:''}${NFI&&NFI.aviso?`<div class="aviso">⚠ <div>${esc(NFI.aviso)}</div></div>`:''}${NFI&&NFI.lendo?'<div class="k" style="margin-bottom:8px">Lendo as notas de saída…</div>':''}
   <div class="caixa rolx"><table class="tv" id="tabI" style="min-width:820px"><thead><tr><th style="width:40px"></th><th>Data e hora</th><th>Depósito</th><th class="n">Entrada</th><th class="n">Saída</th><th>Observação</th><th>Tipo</th></tr></thead><tbody>
-    ${l.map((x,i)=>`<tr data-i="${i}" class="${x.tr?'':x.tipo==='E'?'ient':x.tipo==='S'?'isai':''} ${x.tipo==='BAL'?'ibal':''} ${x.pend?'ipend':''} ${IT.marcaTr&&x.tr===IT.marcaTr?'imarca':''}" style="cursor:pointer">
+    ${lPag.map((x,jj)=>{const i=iniPag+jj;return `<tr data-i="${i}" class="${x.tr?'':x.tipo==='E'?'ient':x.tipo==='S'?'isai':''} ${x.tipo==='BAL'?'ibal':''} ${x.pend?'ipend':''} ${IT.marcaTr&&x.tr===IT.marcaTr?'imarca':''}" style="cursor:pointer">
       <td><button class="dots" data-mn="${i}" title="Ações">⋯</button></td><td class="m">${quandoEm(x.em)}</td><td>${esc(depNome(x.dep))}</td>
       <td class="n" style="color:var(--ok)">${x.tipo==='E'?nq(x.qtd):x.tipo==='BAL'?`<b title="o saldo do depósito passa a ser este">= ${nq(x.qtd)}</b>`:''}</td>
       <td class="n" style="color:var(--danger)">${x.tipo==='S'?nq(x.qtd):''}</td>
       <td>${esc(x.obs||x.origem||'')}${x.tipo==='BAL'?' <span class="pill p-ras">balanço · o saldo conta a partir daqui</span>':''}${x.editado?' <span class="pill p-par">editado</span>':''}${x.pend?` <span class="pill p-par">${x.pend==='falhou'?'falhou':'na fila do Tiny'}</span>`:''}<small class="s">${esc(x.quem||'')}</small></td>
-      <td><span class="itag t-${esc(x.cod||'M')}" data-or="${i}" title="${esc(COD_NOME[x.cod]||'')}"><span>${esc(x.cod==='BAL'?'INV':x.cod||'M')}</span>${esc(x.cod==='TR'?x.tr:x.ref||'')}</span></td></tr>`).join('')
+      <td><span class="itag t-${esc(x.cod||'M')}" data-or="${i}" title="${esc(COD_NOME[x.cod]||'')}"><span>${esc(x.cod==='BAL'?'INV':x.cod||'M')}</span>${esc(x.cod==='TR'?x.tr:x.ref||'')}</span></td></tr>`}).join('')
       ||'<tr><td colspan="7" class="vazio">Nenhum lançamento com esses filtros.</td></tr>'}</tbody></table></div>
+  ${barraPag(l.length,pag,nPag,[['lançamentos',l.length],['entradas',ent],['saídas',sai]])}
   <div class="leg"><b>Tipo</b> clicável: <b>OP</b> ordem de produção · <b>C</b> ordem de compra · <b>NF</b> nota fiscal de saída · <b>TR</b> transferência · <b>INV</b> inventário e balanço · <b>M</b> manual.
   O ⋯ tem <b>Editar</b> e <b>Remover lançamento</b>; os dois pedem o motivo e ficam no histórico. ${N.semTinyEstoque?'Os lançamentos ficam só no ERP; nada vai ao Tiny.'+(it.acabado?' As notas fiscais de saída dão baixa sozinhas (tipo NF).':''):it.acabado?'Produto acabado: o que for lançado, editado ou removido aqui também vai ao Tiny.':'Insumo: os lançamentos ficam só no ERP.'}</div>`
   :`${RS&&RS.erro?`<div class="aviso erro">⚠ <div>Não consegui ler os pedidos: ${esc(RS.erro)}</div></div>`:''}
@@ -922,6 +989,8 @@ function telaItem(id){
 }
 function ligaItem(it,l){
   $('iVolta').onclick=()=>ir('saldos');
+  if($('bTudo'))$('bTudo').onclick=()=>{IT.tudo=!IT.tudo;IT.pag=1;telaItem(it.id);};
+  ligaPag(()=>telaItem(it.id));
   document.querySelectorAll('[data-ia]').forEach(b=>b.onclick=()=>{IT.aba=b.dataset.ia;telaItem(it.id);});
   const pop=(bt,pn)=>{if(!$(bt))return;$(bt).onclick=ev=>{ev.stopPropagation();['pDep','pTip'].forEach(p=>{if(p!==pn&&$(p))$(p).hidden=true;});$(pn).hidden=!$(pn).hidden;};$(pn).onclick=ev=>ev.stopPropagation();};
   pop('fDep','pDep');pop('fTip','pTip');

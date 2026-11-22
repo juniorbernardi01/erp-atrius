@@ -1,6 +1,6 @@
 {
- "v": "v591",
- "versao": "5.9.1",
+ "v": "v592",
+ "versao": "5.9.2",
  "data": "22/11/2026",
- "o_que_mudou": "Sopro e Rotulagem: as maquinas agora ficam sempre lado a lado, qualquer que seja a quantidade cadastrada (antes o grid era fixo em duas colunas e a terceira caia pra baixo). Elas dividem a largura por igual e, se nao couber, a faixa rola de lado, igual aos tanques no Envase. A barra de cima (abas Sopro/Rotulagem, data, Programacao e Nova OP) ficou presa no topo e o conteudo passa por baixo, com sombra quando esta colada. O nome da maquina tambem acompanha a rolagem da coluna. Vale no Sopro e na Rotulagem. Mantem tudo da 5.9.0, inclusive a correcao da liberacao de lote."
+ "o_que_mudou": "1) Sopro e Rotulagem: a jornada da maquina aparece no titulo da coluna (abre as 05:00 e fecha as 20:00, por exemplo), valendo o cadastro do recurso, o calendario do dia e o ajuste feito para aquela maquina naquele dia, que aparece com o selo AJUSTADA; maquina parada no dia mostra NAO RODA HOJE. 2) Estoque, tela do item: o ultimo balanco/inventario do item virou o marco. A tela abre mostrando so do marco pra frente, as notas do Tiny anteriores nao sao mais lidas nem cobradas, e uma faixa verde diz quando foi conferido, por quem e para quanto. Tem o botao Ver tudo pra quem quiser o historico inteiro. 3) Estoque: a lista de lancamentos ficou paginada, 50 por pagina, com os numeros embaixo e o resumo de lancamentos, entradas e saidas, no lugar da rolagem infinita. Mantem tudo da 5.9.1 e da 5.9.0."
 }
