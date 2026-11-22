@@ -776,10 +776,13 @@ function telaPedidos(){
   <div class="topo"><h1>Pedidos de venda</h1><span class="salvo"></span><button class="btn pri" id="bAtu">⟳ Atualizar do Tiny</button></div>
   <div class="sync" id="sync">Lendo do Tiny · só leitura por enquanto.</div>
   <div class="barra"><div class="busca">⌕<input id="q" placeholder="Nº, cliente, CNPJ, cidade ou vendedor" value="${esc(V.q)}"></div>
-    ${perBotao('bPer',V.per)}</div>
+    ${perBotao('bPer',V.per)}
+    <button class="btn lk" id="bLimpa">&#8854; limpar filtros</button></div>
   <div class="sts" id="abas"></div>
   <div id="lista"><div class="vazio">Carregando…</div></div>`;
   $('bPer').onclick=ev=>{ev.stopPropagation();abrirPeriodo(ev.currentTarget,V.per,{prev:true,campos:[['pedido','Data do pedido'],['faturamento','Data do faturamento']]},st=>{V.per=st;V.pagina=0;telaPedidos();});};
+  /* v5.9.7: o filtro vale em todas as paginas; este botao e o jeito de tirar ele. */
+  $('bLimpa').onclick=()=>{V.q='';V.per={m:'sem'};V.aba='todas';V.pagina=0;V.sel.clear();telaPedidos();};
   $('bAtu').onclick=async()=>{$('bAtu').disabled=true;$('bAtu').textContent='Lendo o Tiny…';
     try{const r=await fn({acao:'vendas_atualizar'});toast(`${r.lidos||0} pedido(s) alterados lidos do Tiny.`);}catch(e){toast('Tiny: '+e.message,true);}
     $('bAtu').disabled=false;$('bAtu').textContent='⟳ Atualizar do Tiny';carregar();status();};

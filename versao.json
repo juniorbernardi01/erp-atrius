@@ -1,6 +1,6 @@
 {
- "v": "v597",
- "versao": "5.9.7",
+ "v": "v598",
+ "versao": "5.9.8",
  "data": "22/11/2026",
- "o_que_mudou": "Folha da OP de sopro e rotulagem: o apontamento hora a hora passa a comecar sempre as 05:00 e ir ate as 17:30, para qualquer ordem. Antes comecava na hora do inicio previsto, entao OP da tarde saia com tres linhas. Card do sopro e da rotulagem: saiu a imagem e o numero da OP e a quantidade viraram blocos no mesmo desenho do envase, com o numero em azul. Paginacao no padrao do Tiny, 50 por pagina com os numeros no rodape, agora tambem nas ordens de producao, nas ordens de compra e nos pedidos de venda. Mantem tudo da 5.9.6."
+ "o_que_mudou": "Botao 'limpar filtros' visivel nas ordens de compra e nos pedidos de venda, ao lado do periodo, como ja havia no controle de estoque e nas ordens de producao. O filtro continua valendo ao trocar de pagina; o botao e o jeito de tirar ele. Mantem tudo da 5.9.7."
 }

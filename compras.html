@@ -1223,6 +1223,7 @@ function telaOrdens(){
   <div class="barra"><div class="busca">⌕<input id="q" placeholder="Pesquise por fornecedor, Nº OC, NF, item ou marcador" value="${esc(LST.q)}"></div>
     ${perBotao('bPer',LST.per)}
     ${falhas.length?`<button class="pend" id="bPend"><i></i>${falhas.length} ${falhas.length>1?'ordens':'ordem'} com envio ao Tiny pendente · revisar</button>`:''}
+    <button class="btn lk" id="bLimpaT">&#8854; limpar filtros</button>
     <div class="pop-w"><button class="chip ${LST.fil.mk.length||LST.fil.comp?'ativo':''}" id="bFil">⚲ Filtros${LST.fil.mk.length||LST.fil.comp?' · '+(LST.fil.mk.length+(LST.fil.comp?1:0)):''}</button>
       <div class="pop" id="fpop" ${LST.fpop?'':'hidden'} style="width:300px;left:auto;right:0">
         <h4>Marcadores</h4><div class="ops">${DB.marcadores.map(m=>`<button data-fmk="${esc(m.nome)}" class="${LST.fil.mk.includes(m.nome)?'on':''}">${esc(m.nome)}</button>`).join('')||'<span style="font-size:12px;color:var(--ink3)">nenhum marcador</span>'}</div>
@@ -1271,6 +1272,8 @@ function ligaLista(lista){
   if($('bImpA'))$('bImpA').onclick=importarOCsTinyAPI;
   $('q').oninput=e=>{LST.q=e.target.value;clearTimeout(window._tq);window._tq=setTimeout(()=>{re();const i=$('q');i.focus();i.setSelectionRange(i.value.length,i.value.length);},250);};
   document.querySelectorAll('[data-sit]').forEach(b=>b.onclick=()=>{LST.sit=b.dataset.sit;re();});
+  /* v5.9.7: o filtro vale em todas as paginas; este botao e o jeito de tirar ele. */
+  if($('bLimpaT'))$('bLimpaT').onclick=()=>{LST.q='';LST.sit='todas';LST.per={m:'sem'};LST.fil={mk:[],comp:''};LST.pag=1;re();};
   document.querySelectorAll('[data-sort]').forEach(h=>h.onclick=()=>{const k=h.dataset.sort;LST.sort=LST.sort.k===k?{k,dir:-LST.sort.dir}:{k,dir:['forn'].includes(k)?1:-1};re();});
   document.querySelectorAll('.lo .r').forEach(r=>r.onclick=ev=>{if(ev.target.closest('.mw,.ck,.itg i.er,.mact'))return;abrirOC(r.dataset.oc);});
   const idsVis=()=>lista.map(o=>o.id);
