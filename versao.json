@@ -1,6 +1,6 @@
 {
- "v": "v598",
- "versao": "5.9.8",
+ "v": "v599",
+ "versao": "5.9.9",
  "data": "22/11/2026",
- "o_que_mudou": "Botao 'limpar filtros' visivel nas ordens de compra e nos pedidos de venda, ao lado do periodo, como ja havia no controle de estoque e nas ordens de producao. O filtro continua valendo ao trocar de pagina; o botao e o jeito de tirar ele. Mantem tudo da 5.9.7."
+ "o_que_mudou": "Tablet do sopro e da rotulagem: as maquinas ficam sempre lado a lado, como nas demais telas de producao. Antes, a partir da terceira maquina elas caiam para baixo e saiam da vista do operador. E o pe do card da OP deixou de mostrar so previsao e inicio: agora mostra a quantidade a produzir com a unidade, a hora em que comecou e ha quanto tempo a maquina esta rodando. Mantem tudo da 5.9.8."
 }
