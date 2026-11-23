@@ -5590,7 +5590,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v600';const VERSAO_DATA='22/11/2026';
+const VERSAO_APP='v607';const VERSAO_DATA='22/11/2026';
 /* número que aparece na tela: v438 → v4.3.8 (por dentro continua v438, que é o que as versões comparam) */
 const csRotVer=v=>{const d=String(v||'').replace(/\D/g,'');return d.length>=3?'v'+d.slice(0,-2)+'.'+d.slice(-2,-1)+'.'+d.slice(-1):String(v||'');};
 const VERSAO_ROTULO=csRotVer(VERSAO_APP)+' · '+VERSAO_DATA;
@@ -40404,7 +40404,7 @@ function csMp519(simular){
 .pcx-nome{font:800 15.5px system-ui;flex:1 1 55%;min-width:120px;line-height:1.2;margin-top:2px}
 .pcx-seals{display:flex;align-items:center;gap:7px;flex-wrap:wrap;justify-content:flex-end;max-width:160px}
 .pcx-sl{font:800 9px system-ui;letter-spacing:.03em;text-transform:uppercase;padding:3px 9px;border-radius:999px;border:1px solid;white-space:nowrap;background:transparent}
-.pcx-sl.ok{color:#15803D;border-color:#86EFAC}.pcx-sl.cz{color:#64748B;border-color:#CBD5E1}.pcx-sl.amb{color:#B45309;border-color:#FCD34D}.pcx-sl.red{color:#B91C1C;border-color:#FCA5A5}
+.pcx-sl.ok{color:#15803D;border-color:#86EFAC}.pcx-sl.cz{color:#64748B;border-color:#CBD5E1}.pcx-sl.amb{color:#B45309;border-color:#FCD34D}.pcx-sl.red{color:#B91C1C;border-color:#FCA5A5}.pcx-sl.az{color:#1D4ED8;border-color:#93B4FF}
 .pcx-sl.mono{font-family:ui-monospace,monospace}
 .pcx-boxes{display:grid;gap:6px;margin-top:9px}
 .pcx-boxes.c2{grid-template-columns:1fr 1fr}.pcx-boxes.c3{grid-template-columns:1fr 1fr 1fr}.pcx-boxes.c4{grid-template-columns:repeat(4,1fr)}.pcx-boxes.c5{grid-template-columns:repeat(3,1fr)}
@@ -40465,10 +40465,37 @@ function csMp519(simular){
 .odsr-tag{display:inline-block;font:800 9px system-ui;text-transform:uppercase;letter-spacing:.03em;padding:3px 9px;border-radius:999px;color:#fff}
 .odsr-tag.sp{background:#1D4ED8}.odsr-tag.rt{background:#7C3AED}
 /* --- tablet overlay --- */
+body.cs-tabon .mask{z-index:10050}
 .pcx-tab{position:fixed;inset:0;z-index:9999;background:#0b1120;color:#e8edf6;display:flex;flex-direction:column;font-family:Inter,system-ui,sans-serif}
 .pcx-tbar{display:flex;align-items:center;gap:14px;padding:14px 20px;background:#0E1B33;color:#fff}
 .pcx-tbar>b{font-size:17px}.pcx-tsair{margin-left:auto;background:rgba(255,255,255,.12);color:#fff;border:0;border-radius:8px;padding:9px 15px;font:700 13px system-ui;cursor:pointer}
 .pcx-tdate{display:flex;align-items:center;gap:12px;margin:0 auto}.pcx-tdate button{background:rgba(255,255,255,.12);color:#fff;border:0;border-radius:8px;width:34px;height:34px;font-size:18px;cursor:pointer}.pcx-tdate span{font:700 14px system-ui}
+/* v6.0.1: PIN e motivo dentro do tablet, com o mesmo teclado grande da entrada.
+   O modal branco do sistema e pequeno demais para quem esta de luva na maquina. */
+.pcx-tov{position:absolute;inset:0;background:rgba(5,9,18,.82);display:grid;place-items:center;z-index:5;padding:18px}
+.pcx-tov .cx{background:#111a2e;border:1px solid #243049;border-radius:18px;padding:22px;width:min(420px,94%);max-height:94%;overflow:auto}
+.pcx-tov .tt{font:800 19px system-ui;text-align:center}
+.pcx-tov .sb{font:600 12.5px system-ui;color:#93a1bb;text-align:center;margin-top:5px}
+.pcx-tov input.pn{width:100%;box-sizing:border-box;text-align:center;font:800 28px ui-monospace,monospace;letter-spacing:.3em;padding:13px;border-radius:12px;border:1px solid #243049;background:#0b1120;color:#fff;margin:16px 0 12px}
+.pcx-tov .kp{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+.pcx-tov .kp button{padding:17px;font:800 21px system-ui;border:1px solid #243049;background:#0b1120;color:#fff;border-radius:12px;cursor:pointer}
+.pcx-tov .mt{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:16px}
+.pcx-tov .mt button{padding:17px 12px;font:700 14.5px system-ui;border:1px solid #243049;background:#0b1120;color:#e8edf6;border-radius:12px;cursor:pointer;text-align:left}
+.pcx-tov .pe{display:flex;gap:9px;margin-top:14px}
+.pcx-tov .pe button{flex:1;padding:15px;font:800 15px system-ui;border:0;border-radius:12px;cursor:pointer}
+.pcx-tov .pe .ok{background:#16A34A;color:#fff}.pcx-tov .pe .vo{background:#0b1120;border:1px solid #243049;color:#cbd5e5}
+.pcx-tov .cx.lg{width:min(760px,96%)}
+.pcx-tov .co{display:grid;grid-template-columns:1fr 290px;gap:18px;align-items:start;margin-top:14px}
+.pcx-tov .co .hr{margin-top:0}.pcx-tov .co .cp{margin-top:10px}
+.pcx-tov .hr{text-align:center;font:600 13px system-ui;color:#8fd9b4;background:#0d2a1c;border:1px solid #1f7a44;border-radius:10px;padding:9px;margin-top:14px}
+.pcx-tov .cp{display:flex;flex-direction:column;gap:8px;margin-top:14px}
+.pcx-tov .cp button{display:flex;align-items:baseline;gap:10px;background:#0b1120;border:1px solid #243049;border-radius:12px;padding:13px 15px;cursor:pointer;text-align:left}
+.pcx-tov .cp button small{flex:1;font:700 11px system-ui;text-transform:uppercase;letter-spacing:.04em;color:#93a1bb}
+.pcx-tov .cp button b{font:800 24px system-ui;color:#e8edf6;font-variant-numeric:tabular-nums}
+.pcx-tov .cp button.sel{border-color:#2fd37a;background:#0d2a1c}.pcx-tov .cp button.sel small{color:#8fd9b4}.pcx-tov .cp button.sel b{color:#eafff3}
+.pcx-tov .rs{margin-top:14px;background:#0b1120;border:1px solid #243049;border-radius:12px;padding:12px 14px;font:600 12.5px system-ui;color:#cbd5e5;line-height:1.5}
+.pcx-tov .rs b{color:#e8edf6}.pcx-tov .rs i{font-style:normal;color:#93a1bb;display:block;font-size:11px;text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px}
+.pcx-tov .er{margin-top:11px;text-align:center;font:700 13px system-ui;color:#F6A94A;min-height:17px}
 .pcx-pin{flex:1;display:grid;place-items:center}
 .pcx-pin .box{background:#111a2e;border:1px solid #243049;border-radius:16px;padding:26px;width:300px;text-align:center}
 .pcx-pin .tt{font:800 15px system-ui;margin-bottom:14px}
@@ -40486,30 +40513,93 @@ function csMp519(simular){
 /* v5.10.0: desenho para o tablet de 10.1 deitado (1280x800). O card ocupa a
    coluna inteira: identificacao em cima, o numero do que produzir em destaque,
    os tempos no meio e a acao colada embaixo, no alcance do polegar. */
-.pcx-tmb{padding:14px;flex:1;display:flex;flex-direction:column;min-height:0}
+.pcx-tmb{padding:14px;flex:1;display:flex;flex-direction:column;min-height:0;overflow-y:auto}
 .pcx-tcard{flex:1;display:flex;flex-direction:column;min-height:0}
 .pcx-tacao{margin-top:auto;padding-top:12px}
-.pcx-ttmp{margin-top:10px}
+/* v6.0.1: cronometro no mesmo desenho do tablet do envase: ponto pulsando,
+   nome da etapa e o tempo correndo de segundo em segundo. */
+.pcx-tcrono{display:flex;align-items:center;gap:12px;flex-wrap:wrap;border:2px solid #1f7a44;background:#0d2a1c;border-radius:14px;padding:12px 16px;margin-bottom:10px}
+.pcx-tcrono .lb{display:flex;align-items:center;gap:9px;font:700 15px system-ui;text-transform:uppercase;letter-spacing:.04em;color:#5de39a}
+.pcx-tcrono .pt{width:11px;height:11px;border-radius:50%;background:currentColor;animation:csPulso 1.6s ease-in-out infinite}
+.pcx-tcrono .vl{margin-left:auto;font:700 32px ui-monospace,monospace;line-height:1;letter-spacing:-.02em;font-variant-numeric:tabular-nums;color:#eafff3}
+.pcx-tcrono .dd{width:100%;font-size:12.5px;color:#8fd9b4;margin-top:2px}
+.pcx-tcrtmp{width:100%;display:flex;align-items:center;gap:12px;margin-top:11px;padding-top:11px;border-top:1px solid rgba(255,255,255,.14)}
+.pcx-tcrtmp .tr{flex:1;height:10px;border-radius:999px;background:rgba(0,0,0,.4);overflow:hidden}
+.pcx-tcrtmp .tr i{display:block;height:100%;background:#2fd37a;border-radius:999px}
+.pcx-tcrtmp b{font:700 14px system-ui;color:#eafff3;white-space:nowrap}
+.pcx-tcrtmp.atr .tr i{background:#E8820C}.pcx-tcrtmp.atr b{color:#F6A94A}
+.pcx-tcrono.vaz{border-color:#243049;background:#0b1120}.pcx-tcrono.vaz .lb{color:#8aa0bf}
+.pcx-tcrono.stp{border-color:#1D4ED8;background:#0d1a3a}.pcx-tcrono.stp .lb{color:#8ab0ff}.pcx-tcrono.stp .vl{color:#e8f0ff}.pcx-tcrono.stp .dd{color:#9fb8e8}
+.pcx-tcrono.par{border-color:#8a6a1f;background:#2a230d}.pcx-tcrono.par .lb{color:#f3c969}.pcx-tcrono.par .vl{color:#fff6e3}.pcx-tcrono.par .dd{color:#d8bf85}
+/* consumo em duas linhas: o rotulo em cima e o frasco embaixo */
+.pcx-tcons{display:block;background:#0b1120;border-radius:10px;padding:8px 12px;margin-bottom:10px}.pcx-tcons .ln{display:flex;align-items:baseline;gap:10px;padding:4px 0;min-width:0}
+.pcx-tcons .ln+.ln{border-top:1px solid #1b2744;margin-top:2px;padding-top:7px}
+.pcx-tcons .ln small{flex:0 0 52px;font:700 9.5px system-ui;text-transform:uppercase;color:#93a1bb}
+.pcx-tcons .ln b{flex:1;min-width:0;font-size:14px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pcx-ts{display:block;width:100%;text-align:left;margin:12px 0 7px;padding:0;border:0;background:transparent;font:800 10.5px system-ui;text-transform:uppercase;letter-spacing:.06em;color:#93a1bb}
+.pcx-ts.co{cursor:pointer;display:flex;align-items:center;gap:7px}
+.pcx-ts.co em{margin-left:auto;font-style:normal;font-weight:700;font-size:9.5px;color:#6d7b93;text-transform:none;letter-spacing:0}
+.pcx-thistov .tgs,#pcxTGeral .tgs{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px}
+.pcx-thistov .tg,#pcxTGeral .tg{font:700 10.5px system-ui;padding:3px 8px;border-radius:999px;border:1px solid}
+.pcx-thistov .tg.ok,#pcxTGeral .tg.ok{color:#8fd9b4;border-color:#1f7a44;background:#0d2a1c}
+.pcx-thistov .tg.at,#pcxTGeral .tg.at{color:#F6A94A;border-color:#8a6a1f;background:#2a230d}
+.pcx-thistov .tg.qb,#pcxTGeral .tg.qb{color:#9fb8e8;border-color:#2c3a57;background:#0d1a3a}
+.pcx-tli{background:#0b1120;border:1px solid #1b2744;border-radius:11px;padding:10px 12px;margin-bottom:7px}
+.pcx-tli .tp{display:flex;align-items:baseline;gap:8px;min-width:0}
+.pcx-tli .tp .nm{flex:0 0 auto;font:700 10px ui-monospace,monospace;color:#93a1bb;letter-spacing:.06em}
+.pcx-tli .tp b{flex:1;min-width:0;font:700 13.5px system-ui;color:#e8edf6;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pcx-tli .bt{margin-top:3px;font:600 11.5px system-ui;color:#8296b4}
+.pcx-tli .tgs{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+.pcx-tli .tg{font:700 10.5px system-ui;padding:3px 8px;border-radius:999px;border:1px solid}
+.pcx-tli .tg.nn{color:#e8edf6;border-color:#2c3a57;background:#111a2e}
+.pcx-tli .tg.ok{color:#8fd9b4;border-color:#1f7a44;background:#0d2a1c}
+.pcx-tli .tg.at{color:#F6A94A;border-color:#8a6a1f;background:#2a230d}
+.pcx-tli .tg.qb{color:#9fb8e8;border-color:#2c3a57;background:#0d1a3a}
+.pcx-tprox{margin-top:10px;border-top:1px dashed #243049;padding-top:9px;display:flex;align-items:baseline;gap:9px;min-height:34px}
+.pcx-tprox i{font-style:normal;font:700 9.5px system-ui;text-transform:uppercase;letter-spacing:.05em;color:#93a1bb;flex:0 0 auto}
+.pcx-tprox b{font:700 13.5px system-ui;color:#e8edf6;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pcx-tprox b.vaz{color:#6d7b93;font-weight:600}
+.pcx-tprox span{margin-left:auto;font:600 12px system-ui;color:#93a1bb;white-space:nowrap}
+.pcx-tbar .pcx-tmenu{margin-left:auto}.pcx-tbar .pcx-tmenu+.pcx-tsair{margin-left:0}
+.pcx-tmenu{background:rgba(255,255,255,.12);color:#fff;border:0;border-radius:9px;width:38px;height:38px;font-size:19px;cursor:pointer;margin-left:10px}
+.pcx-tger,.pcx-tger thead,.pcx-tger tbody,.pcx-tger tfoot,.pcx-tger tr,.pcx-tger th,.pcx-tger td{background:transparent!important;box-shadow:none!important}
+/* o sistema e claro; dentro do tablet as bordas herdadas viram riscos brancos */
+.pcx-thistov .bd div,.pcx-thistov .bd table,.pcx-thistov .bd thead,.pcx-thistov .bd tbody,.pcx-thistov .bd tfoot,.pcx-thistov .bd tr,.pcx-thistov .bd th,.pcx-thistov .bd td{border-color:#243049}
+.pcx-thistov .bd>div.sec,.pcx-thistov .bd>table{border-top:0;border-bottom:0}
+.pcx-thistov .sec,#pcxTGeral .sec{font:800 11px system-ui;text-transform:uppercase;letter-spacing:.06em;color:#93a1bb;margin:14px 0 6px}
+.pcx-thistov .bd>.sec:first-child{margin-top:0}
+.pcx-tger .aq{color:#93a1bb}
+.pcx-tger{width:100%;border-collapse:collapse}
+.pcx-tmenuac{margin-top:14px;padding-top:13px;border-top:1px solid #243049;display:flex;gap:9px;align-items:center;flex-wrap:wrap}
+.pcx-tmenuac .qm{flex:1;min-width:140px;font:600 12.5px system-ui;color:#93a1bb}.pcx-tmenuac .qm b{color:#e8edf6}
+.pcx-tmenuac button{border:0;border-radius:10px;padding:13px 18px;font:700 14px system-ui;color:#fff;cursor:pointer}
+.pcx-tmenuac .tr{background:#1D4ED8}.pcx-tmenuac .sa{background:#0b1120;border:1px solid #243049;color:#cbd5e5}
+.pcx-tger th{font:700 10px system-ui;text-transform:uppercase;letter-spacing:.05em;color:#93a1bb;text-align:left;padding:6px 8px;border-bottom:1px solid #243049}
+.pcx-tger td{padding:9px 8px;border-bottom:1px solid #1b2744;font-size:14px}
+.pcx-tger td b{display:block;color:#e8edf6}.pcx-tger td{color:#e8edf6}.pcx-tger td small{display:block;color:#93a1bb;font-size:11.5px;margin-top:2px}
+.pcx-tger .n{text-align:right;font-variant-numeric:tabular-nums}
+.pcx-tger tfoot td{border-top:2px solid #243049;border-bottom:0;font-size:15px;color:#fff}
+.pcx-ttmp{margin-top:10px;min-height:35px}.pcx-ttmp.vaz{border:0}
 .pcx-ttmp .lb{display:flex;justify-content:space-between;align-items:baseline;font:600 10.5px system-ui;color:#93a1bb;margin-bottom:6px}
 .pcx-ttmp .lb b{font:700 13px system-ui;color:#e8edf6}
 .pcx-ttmp .tr{height:10px;border-radius:999px;background:#0b1120;border:1px solid #1b2744;overflow:hidden}
 .pcx-ttmp .tr i{display:block;height:100%;background:#16A34A;border-radius:999px}
 .pcx-ttmp.atr .tr i{background:#E8820C}.pcx-ttmp.atr .lb b{color:#F6A94A}
 .pcx-tvazio,.pcx-tfila{color:#93a1bb;font-size:13px;padding:10px 0}
+.pcx-tmb>.pcx-tvazio{flex:1}
 .pcx-tfila{border-top:1px dashed #243049;margin-top:10px;padding-bottom:0}
-.pcx-tcard .pcx-tnome{font:800 22px system-ui;line-height:1.15;letter-spacing:-.3px}
+.pcx-tnum{font:700 11px ui-monospace,monospace;letter-spacing:.08em;color:#93a1bb;margin-bottom:4px}
+.pcx-tcard .pcx-tnome{margin-bottom:12px;font:800 22px system-ui;line-height:1.15;letter-spacing:-.3px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:51px}
 .pcx-tseals{display:flex;gap:8px;align-items:center;margin:7px 0 12px}
 .pcx-tdest{background:#0b1120;border:1px solid #1b2744;border-radius:12px;padding:10px 14px 12px;margin-bottom:10px;display:flex;align-items:baseline;gap:10px}
 .pcx-tdest i{font-style:normal;font:600 10.5px system-ui;color:#93a1bb;text-transform:uppercase;letter-spacing:.04em}
 .pcx-tdest b{margin-left:auto;font:800 40px system-ui;line-height:1;letter-spacing:-1.5px}
 .pcx-tdest b small{font:600 14px system-ui;color:#93a1bb;margin-left:5px;letter-spacing:0}
-.pcx-tcons{display:flex;gap:16px;background:#0b1120;border-radius:10px;padding:10px 12px;margin-bottom:10px}
-.pcx-tcons small{display:block;font:700 9px system-ui;text-transform:uppercase;color:#93a1bb}.pcx-tcons b{font-size:13px}
-.pcx-tbig{width:100%;border:0;border-radius:12px;padding:22px;font:800 21px system-ui;color:#fff;cursor:pointer}.pcx-tbig.fim{background:#16A34A}.pcx-tbig.ret{background:#1D4ED8}
-.pcx-tsub{display:flex;gap:8px;margin-top:9px}.pcx-tsub button{flex:1;background:#0b1120;border:1px solid #243049;color:#e8edf6;border-radius:10px;padding:12px;font:700 13px system-ui;cursor:pointer}
+.pcx-tbig{width:100%;border:0;border-radius:14px;padding:28px 22px;font:800 26px system-ui;color:#fff;cursor:pointer}.pcx-tbig.fim{background:#16A34A}.pcx-tbig.ret{background:#1D4ED8}.pcx-tbig.ini{background:#1D4ED8}
+.pcx-tsub{display:flex;gap:8px;margin-top:10px}.pcx-tsub button{flex:1;background:#0b1120;border:1px solid #2c3a57;color:#e8edf6;border-radius:14px;padding:21px;font:800 19px system-ui;cursor:pointer}
 .pcx-tqt{display:flex;gap:8px;margin-top:0}.pcx-tqt>div{flex:1;min-width:0;background:#0b1120;border:1px solid #1b2744;border-radius:9px;padding:7px 10px}.pcx-tqt span{display:block;font:600 9.5px system-ui;color:#93a1bb;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.pcx-tqt b{display:block;font:700 17px system-ui;letter-spacing:-.2px;white-space:nowrap}.pcx-tqt b small{font-size:11px;font-weight:600;color:#93a1bb;margin-left:3px}
 .pcx-thistov{position:absolute;inset:0;background:rgba(0,0,0,.55);display:grid;place-items:center}
-.pcx-thistov .box{background:#111a2e;border:1px solid #243049;border-radius:14px;width:min(560px,92%);max-height:80%;display:flex;flex-direction:column;overflow:hidden}
+.pcx-thistov .box{background:#111a2e;border:1px solid #243049;border-radius:14px;width:min(760px,94%);max-height:80%;display:flex;flex-direction:column;overflow:hidden}
 .pcx-thistov .hh{display:flex;align-items:center;padding:13px 16px;background:#0E1B33}.pcx-thistov .hh b{flex:1}.pcx-thistov .hh button{background:rgba(255,255,255,.12);color:#fff;border:0;border-radius:8px;width:32px;height:32px;cursor:pointer}
 .pcx-thistov .bd{padding:12px 16px;overflow:auto}
 .pcx-thistov .pcx-he{border-color:#243049}.pcx-thistov .pcx-he .t{color:#93a1bb}
@@ -40887,6 +40977,7 @@ function prevFim(iniMin,qtd,cad){ if(!cad)return iniMin; return iniMin + Math.ro
    ====================================================================== */
 var SELO = {programada:['cz','Programada'],produzindo:['ok','SOPRANDO'],pausada:['amb','Pausada'],concluida:['cz','Concluída']};
 function selos(o){
+  if(o.status==='produzindo'&&o.emSetup) return '<span class="pcx-sl az">Em setup</span>';
   if(o.status==='produzindo') return '<span class="pcx-sl ok">'+(o.origem==='sopro'?'Soprando':'Rotulando')+'</span>';
   if(o.status==='pausada') return '<span class="pcx-sl amb">Pausada'+(o.pausaMotivo?' · '+esc(o.pausaMotivo):'')+'</span>';
   if(o.status==='concluida') return '<span class="pcx-sl cz">Concluída</span>'+(o.noPrazo?'<span class="pcx-sl ok">★ No prazo</span>':'');
@@ -41764,6 +41855,8 @@ function desfazerPasso(o){
     else if(o.status==='pausada'){ o.status='produzindo'; o.pausaMotivo=''; logar(o,'Desfez a pausa'); }
     else if(o.status==='produzindo'&&ut&&ut.tipo==='troca'){ var novo=o.operador||'', d2=desfazTrechoSR(o); o.operador=(d2&&d2.operador)||''; logar(o,'Desfez a troca de operador', novo+' → '+(o.operador||'—')); }
     else if(o.status==='produzindo'&&ut&&ut.tipo==='turno'){ delete ut.retomou; o.operador=ut.operador||o.operador; o.status='pausada'; o.pausaMotivo='Fim de turno'; logar(o,'Desfez a retomada'); }
+    else if(o.status==='produzindo'&&o.emSetup){ o.status='programada'; o.emSetup=false; o.setupIni=''; logar(o,'Desfez o início do setup'); }
+    else if(o.status==='produzindo'&&o.setupFim){ o.emSetup=true; o.setupFim=''; o.iniReal=''; logar(o,'Desfez o início da produção','voltou para o setup'); }
     else if(o.status==='produzindo'){ o.status='programada'; o.iniReal=''; logar(o,'Desfez o início'); }
     else { avisa('Nada para desfazer nessa OP.'); return; }
     salvar(); render(); avisa('Passo desfeito na OP '+o.num+'.');
@@ -41922,6 +42015,32 @@ function novaOP(origem, preSku){
   abrirMask();
 }
 
+/* v6.0.2: a conclusao de sopro e rotulagem agora acontece em dois lugares, no
+   modal do computador e no tablet da maquina. A regra de estoque fica aqui, uma
+   so, para os dois nao divergirem com o tempo. */
+function aplicaConclusaoSR(o, d){
+  var isRot=(o.origem==='rotulagem');
+  o.iniReal = d.ini || o.iniReal;
+  o.fimReal = d.fim || agora();
+  o.boas = +d.boas || 0;
+  o.operador = d.operador || o.operador || '';
+  o.status = 'concluida';
+  o.noPrazo = o.fimReal && hhmm(o.fimPrev) && hm(o.fimReal) <= o.fimPrev;
+  estornaOP(o.num); /* idempotente */
+  if(isRot){
+    o.quebraRotulo = +d.quebraRotulo || 0;
+    o.quebraFrasco = +d.quebraFrasco || 0;
+    lanca(o.itemSku,  'E', o.boas, o.num);
+    lanca(o.frascoSku,'S', o.boas + o.quebraFrasco, o.num);
+    lanca(o.rotuloSku,'S', o.boas + o.quebraRotulo, o.num);
+  } else {
+    o.quebra = +d.quebra || 0;
+    lanca(o.frascoSku,  'E', o.boas, o.num);
+    lanca(o.preformaSku,'S', o.boas + o.quebra, o.num);
+  }
+  logar(o,'Concluída', nfx(o.boas)+' boas');
+  salvar();
+}
 function abrirConcluir(o){
   if(!podeEd())return;
   var isRot=o.origem==='rotulagem';
@@ -41961,25 +42080,11 @@ function abrirConcluir(o){
   MM('cCancel').onclick=fecharModal;
   MM('cReabrir').onclick=function(){ o.status='produzindo'; estornaOP(o.num); relancaTurnosSR(o); logar(o,'Reaberta'); salvar(); fecharModal(); render(); avisa('OP reaberta · estoque estornado.'); };
   MM('cOK').onclick=function(){
-    var boas=+MM('cBoas').value||0;
-    o.iniReal=MM('cIni').value||o.iniReal; o.fimReal=MM('cFim').value||agora();
-    o.boas=boas; o.operador=MM('cOp').value||'';
-    o.status='concluida';
-    o.noPrazo = o.fimReal && hhmm(o.fimPrev) && hm(o.fimReal)<=o.fimPrev;
-    estornaOP(o.num); // idempotente
-    if(isRot){
-      var qr=+MM('cQR').value||0, qf=(MM('cHabFr')&&MM('cHabFr').checked)?(+MM('cQF').value||0):0;
-      o.quebraRotulo=qr; o.quebraFrasco=qf;
-      lanca(o.itemSku,'E',boas,o.num);
-      lanca(o.frascoSku,'S',boas+qf,o.num);
-      lanca(o.rotuloSku,'S',boas+qr,o.num);
-    } else {
-      var q=+MM('cQ').value||0; o.quebra=q;
-      lanca(o.frascoSku,'E',boas,o.num);
-      lanca(o.preformaSku,'S',boas+q,o.num);
-    }
-    logar(o,'Concluída', nfx(boas)+' boas');
-    salvar(); fecharModal(); render();
+    aplicaConclusaoSR(o, { ini:MM('cIni').value, fim:MM('cFim').value, boas:MM('cBoas').value,
+      operador:MM('cOp').value, quebra:(MM('cQ')?MM('cQ').value:0),
+      quebraRotulo:(MM('cQR')?MM('cQR').value:0),
+      quebraFrasco:((MM('cHabFr')&&MM('cHabFr').checked)?MM('cQF').value:0) });
+    fecharModal(); render();
     avisa('OP '+o.num+' concluída · estoque lançado no ERP.');
   };
   abrirMask();
@@ -42127,8 +42232,8 @@ function injetarOrdensSR(){
    ====================================================================== */
 var TAB={origem:null, data:null, pin:false, maq:null};
 function elTab(){ var e=MM('pcpTab'); if(!e){ e=document.createElement('div'); e.id='pcpTab'; e.className='pcx-tab'; e.hidden=true; document.body.appendChild(e); } return e; }
-function abrirTablet(origem){ TAB.origem=origem; TAB.data=dataRef(); TAB.pin=false; renderTablet(); elTab().hidden=false; document.documentElement.style.overflow='hidden'; }
-function fecharTablet(){ elTab().hidden=true; document.documentElement.style.overflow=''; }
+function abrirTablet(origem){ document.body.classList.add('cs-tabon'); TAB.origem=origem; TAB.data=dataRef(); TAB.pin=false; renderTablet(); elTab().hidden=false; document.documentElement.style.overflow='hidden'; }
+function fecharTablet(){ document.body.classList.remove('cs-tabon'); elTab().hidden=true; document.documentElement.style.overflow=''; }
 function renderTablet(){
   var e=elTab(); var isRot=TAB.origem==='rotulagem';
   if(!TAB.pin){
@@ -42144,75 +42249,339 @@ function renderTablet(){
     var ops = opsDoDia(TAB.origem, data);
     e.innerHTML='<div class="pcx-tbar"><b>Atrius · '+(isRot?'Rotulagem':'Sopro')+'</b>'+
       '<div class="pcx-tdate"><button data-tac="dprev">‹</button><span>'+esc((function(){try{return dLongo(data);}catch(x){return data;}})())+'</span><button data-tac="dnext">›</button></div>'+
-      '<button class="pcx-tsair" data-tac="sair">Sair ✕</button></div>'+
+      '<button class="pcx-tmenu" data-tac="geral" title="Menu">⋮</button></div>'+
       '<div class="pcx-tgrid">'+ maqs.map(function(m){
         var mo=ops.filter(function(o){return o.maq===m.id;});
         var cur=mo.filter(function(o){return o.status==='produzindo'||o.status==='pausada';})[0];
-        var prox=mo.filter(function(o){return o.status==='programada';});
+        /* v6.0.2: maquina parada mostra a proxima OP ja pronta para iniciar, em
+           vez de um card vazio. O operador nao precisa procurar nada. */
+        var prog=mo.filter(function(o){return o.status==='programada';});
+        var naTela=cur||prog[0], prox=(cur?prog:prog.slice(1));
         return '<div class="pcx-tmc"><div class="pcx-tmh"><b>'+esc(m.nome||m.id)+'</b><span>'+(m.cad?nfx(m.cad)+' un/h':'')+'</span><button class="pcx-tdots" data-thist="'+esc(m.id)+'">⋮</button></div>'+
-          '<div class="pcx-tmb">'+ (cur?cardTablet(cur):'<div class="pcx-tvazio">Sem OP ativa.</div>') +
-          (prox.length?'<div class="pcx-tfila">Na fila: '+prox.map(function(o){return esc(o.num)+' · '+nfx(o.qtdPrev)+' un';}).join(' · ')+'</div>':'')+
-          '</div></div>';
+          '<div class="pcx-tmb">'+ (naTela?cardTablet(naTela):'<div class="pcx-tvazio">Nada programado para hoje.</div>') +
+          /* v6.0.1: a faixa da proxima producao e fixa, aparece mesmo quando nao ha
+             nada na fila. Assim o operador sabe se acabou o dia ou se tem mais.
+             A lista inteira da fila e das concluidas fica nos tres pontinhos. */
+          '<div class="pcx-tprox"><i>Próxima</i>'+
+            (prox.length
+              ? '<b>'+esc(prox[0].titulo||prox[0].num)+'</b><span>'+esc(prox[0].num)+' · '+nfx(prox[0].qtdPrev)+' un'+(prox.length>1?' · +'+(prox.length-1)+' na fila':'')+'</span>'
+              : '<b class="vaz">nada programado</b>')+
+          '</div></div></div>';
       }).join('') +'</div>';
   }
   ligarTablet();
 }
+/* v6.0.3: as duas rotuladoras tem troca de formato antes de rodar, entao a OP
+   passa por setup. Para nao mexer no resto do sistema o status continua
+   'produzindo' desde o setup (a maquina esta ocupada com essa OP de verdade);
+   o que marca a fase e o par setupIni/emSetup. Quando o operador toca
+   "Iniciar rotulagem" fecha o setup e comeca a contar a producao em iniReal. */
+function temSetup(origem){ return origem==='rotulagem'; }
+function minDe(h){ var p=String(h||'').split(':'); return (+p[0]||0)*60+(+p[1]||0); }
+function durSetup(o){
+  if(!o.setupIni) return 0;
+  var fim=o.setupFim||agora();
+  return Math.max(0, minDe(fim)-minDe(o.setupIni));
+}
+/* v6.0.4: metricas de atendimento das OPs fechadas, usadas nos tres pontinhos. */
+function pctTxt(n){ return (Math.round(n*10)/10).toString().replace('.',',')+'%'; }
+function selosFim(o){
+  var prev=+o.qtdPrev||0, boas=+o.boas||0;
+  var q=(+o.quebraRotulo||0)+(+o.quebraFrasco||0)+(+o.quebra||0);
+  var atend=prev?(boas/prev*100):0;
+  var atraso=(o.fimReal&&o.fimPrev!=null)?(minDe(o.fimReal)-(+o.fimPrev||0)):null;
+  return '<div class="tgs">'+
+    (atraso==null?'':(atraso<=0?'<span class="tg ok">★ No prazo</span>':'<span class="tg at">'+hhmm(atraso)+' atrasada</span>'))+
+    (prev?'<span class="tg '+(atend>=100?'ok':'at')+'">'+pctTxt(atend)+' do previsto</span>':'')+
+    (q?'<span class="tg qb">quebra '+nfx(q)+(boas+q?' · '+pctTxt(q/(boas+q)*100):'')+'</span>':'')+
+  '</div>';
+}
 function cardTablet(o){
-  var isRot=o.origem==='rotulagem';
-  var st = o.status==='pausada'?'<span class="pcx-sl amb">Pausada</span>':'<span class="pcx-sl ok">'+(isRot?'Rotulando':'Soprando')+'</span>';
-  var btn = o.status==='pausada'
+  var isRot=(o.origem==='rotulagem'), pausada=(o.status==='pausada');
+  var emSetup=!!o.emSetup;
+  var btn = (o.status==='programada')
+    ? '<button class="pcx-tbig ini" data-tac="iniciar" data-op="'+o.id+'">▶ Iniciar '+(temSetup(o.origem)?'setup':'')+'</button>'
+    : pausada
     ? '<button class="pcx-tbig ret" data-tac="retomar" data-op="'+o.id+'">▶ Retomar</button>'
+    : emSetup
+    ? '<button class="pcx-tbig fim" data-tac="iniciarprod" data-op="'+o.id+'">▶ Iniciar '+(o.origem==='sopro'?'sopro':'rotulagem')+'</button><div class="pcx-tsub"><button data-tac="pausar" data-op="'+o.id+'">⏸ Pausar</button></div>'
     : '<button class="pcx-tbig fim" data-tac="concluir" data-op="'+o.id+'">✓ Concluir</button><div class="pcx-tsub"><button data-tac="pausar" data-op="'+o.id+'">⏸ Pausar</button></div>';
+  /* v6.0.1: consumo em duas linhas, o rotulo em cima e o frasco embaixo, que e
+     a ordem em que o operador confere na maquina. */
   var cons = isRot
-    ? '<div class="pcx-tcons"><div><small>Frasco</small><b>'+esc(nomeCurtoSku(o.frascoSku))+'</b></div><div><small>Rótulo</small><b>'+esc(nomeCurtoSku(o.rotuloSku))+'</b></div></div>'
-    : '<div class="pcx-tcons"><div><small>Preforma</small><b>'+esc(nomeCurtoSku(o.preformaSku))+'</b></div></div>';
-  /* v5.9.9: o pe do card responde as tres perguntas do operador: quanto tem
-     que fazer, desde quando esta rodando e quanto tempo ja passou. */
-  var dec='—';
-  try{ if(o.iniReal){ var pi=String(o.iniReal).split(':'), mi=(+pi[0])*60+(+pi[1]);
-    var ag=new Date(), am=ag.getHours()*60+ag.getMinutes(), d=am-mi;
-    if(d>=0) dec=(d>=60?Math.floor(d/60)+'h'+(d%60<10?'0':'')+(d%60):d+'min'); } }catch(e){}
-  /* v5.10.0: a barra diz de longe se a maquina esta no tempo. Verde enquanto
-     cabe no previsto, laranja quando passou, com quanto falta ou quanto passou. */
-  var barra='';
+    ? '<div class="pcx-tcons"><div class="ln"><small>Rótulo</small><b>'+esc(nomeCurtoSku(o.rotuloSku))+'</b></div>'+
+      '<div class="ln"><small>Frasco</small><b>'+esc(nomeCurtoSku(o.frascoSku))+'</b></div></div>'
+    : '<div class="pcx-tcons"><div class="ln"><small>Preforma</small><b>'+esc(nomeCurtoSku(o.preformaSku))+'</b></div></div>';
+  /* v6.0.1: tudo que e tempo mora numa caixa so. Antes o mesmo horario aparecia
+     em "desde" e em "Comecou", e a janela prevista aparecia de tres jeitos
+     (previsto ate, tempo previsto e faltam). Agora e uma linha de contexto e
+     uma barra: ha quanto tempo esta rodando, de quando ate quando, e o que falta. */
+  var tmp='';
   try{
     var durPrev=Math.max(1,(+o.fimPrev||0)-(+o.iniPrev||0));
     if(o.iniReal&&durPrev>1){
       var q=String(o.iniReal).split(':'), im=(+q[0])*60+(+q[1]);
-      var ago=new Date(), amin=ago.getHours()*60+ago.getMinutes(), pass=Math.max(0,amin-im);
+      var ag=new Date(), amin=ag.getHours()*60+ag.getMinutes(), pass=Math.max(0,amin-im);
       var pct=Math.min(100,Math.round(pass/durPrev*100)), falta=durPrev-pass, atr=falta<0;
-      var txt=atr?('passou '+hhmm(Math.abs(falta))):('faltam '+hhmm(falta));
-      barra='<div class="pcx-ttmp'+(atr?' atr':'')+'"><div class="lb"><span>Tempo previsto · '+hhmm(durPrev)+'</span><b>'+txt+'</b></div>'+
-        '<div class="tr"><i style="width:'+pct+'%"></i></div></div>';
+      tmp='<div class="pcx-tcrtmp'+(atr?' atr':'')+'">'+
+            '<div class="tr"><i style="width:'+pct+'%"></i></div>'+
+            '<b>'+(atr?('passou '+hhmm(Math.abs(falta))):('faltam '+hhmm(falta)))+'</b></div>';
     }
   }catch(e){}
+  var stp=(o.setupIni&&o.setupFim)?('setup '+hhmm(durSetup(o))+' · '):'';
+  var crono = emSetup
+    ? '<div class="pcx-tcrono stp">'+
+        '<div class="lb"><span class="pt"></span>Em setup</div>'+
+        '<div class="vl" data-desde="'+escAttr(o.setupIni||agora())+'">'+csCrono(o.setupIni||agora())+'</div>'+
+        '<div class="dd">setup começou '+esc(o.setupIni||'—')+' · produção prevista para '+esc(hhmm(o.iniPrev))+'</div></div>'
+    : o.iniReal
+    ? '<div class="pcx-tcrono'+(pausada?' par':'')+'">'+
+        '<div class="lb"><span class="pt"></span>'+(pausada?'Pausada':(isRot?'Rotulando':'Soprando'))+'</div>'+
+        '<div class="vl" data-desde="'+escAttr(o.iniReal)+'">'+csCrono(o.iniReal)+'</div>'+
+        '<div class="dd">'+stp+'começou '+esc(o.iniReal)+' · vai até '+esc(hhmm(o.fimPrev))+'</div>'+
+        tmp+'</div>'
+    : '<div class="pcx-tcrono vaz"><div class="lb">Ainda não começou</div>'+
+        '<div class="dd">previsto '+esc(hhmm(o.iniPrev))+' até '+esc(hhmm(o.fimPrev))+'</div></div>';
   return '<div class="pcx-tcard">'+
+    '<div class="pcx-tnum">'+esc(o.num)+'</div>'+
     '<div class="pcx-tnome">'+esc(o.titulo)+'</div>'+
-    '<div class="pcx-tseals">'+st+'<span class="pcx-sl cz mono">'+esc(o.num)+'</span></div>'+
     '<div class="pcx-tdest"><i>A produzir</i><b>'+nfx(o.qtdPrev)+'<small>un</small></b></div>'+
-    cons +
-    '<div class="pcx-tqt">'+
-      '<div><span>Começou</span><b>'+esc(o.iniReal||'—')+'</b></div>'+
-      '<div><span>Rodando há</span><b>'+dec+'</b></div>'+
-      '<div><span>Previsto até</span><b>'+esc(hhmm(o.fimPrev))+'</b></div></div>'+
-    barra +
+    cons + crono +
     '<div class="pcx-tacao">'+btn+'</div></div>';
 }
 function histTablet(maqId){
-  var isRot=TAB.origem==='rotulagem';
-  var ops=opsDe(TAB.origem).filter(function(o){return o.maq===maqId;}).sort(function(a,b){return (b.criadoEm||'').localeCompare(a.criadoEm||'');});
-  var linhas=ops.length?ops.map(function(o){
-    return '<div class="pcx-he"><span class="t">'+esc(o.num)+'</span><span>'+esc(o.titulo)+' · '+nfx(o.qtdPrev)+' un · '+esc(o.status)+(o.boas?' · '+nfx(o.boas)+' boas':'')+'</span></div>';
-  }).join(''):'<div class="pcx-vazio">Sem produções.</div>';
+  /* v6.0.3: os tres pontinhos da maquina mostram o dia dela: o que ja fechou,
+     com horas, setup, boas e quebra, e o que ainda esta na fila. Antes era uma
+     linha de texto corrido por OP, que nao dizia nada ao operador. */
+  var isRot=(TAB.origem==='rotulagem');
+  var ops=opsDoDia(TAB.origem, TAB.data).filter(function(o){return o.maq===maqId;});
+  var conc=ops.filter(function(o){return o.status==='concluida';});
+  var resto=ops.filter(function(o){return o.status!=='concluida';});
+  var tBoas=conc.reduce(function(a,o){return a+(+o.boas||0);},0);
+  var tQ=conc.reduce(function(a,o){return a+(+o.quebraRotulo||0)+(+o.quebraFrasco||0)+(+o.quebra||0);},0);
+  function linha(o){
+    var q=isRot?((+o.quebraRotulo||0)+(+o.quebraFrasco||0)):(+o.quebra||0);
+    var hr=o.status==='concluida'
+      ? esc(o.iniReal||'—')+' → '+esc(o.fimReal||'—')+(o.setupIni&&o.setupFim?' · setup '+hhmm(durSetup(o)):'')
+      : (o.emSetup?'em setup desde '+esc(o.setupIni||'—')
+        : o.iniReal?('desde '+esc(o.iniReal))
+        : 'previsto '+esc(hhmm(o.iniPrev))+' → '+esc(hhmm(o.fimPrev)));
+    return '<tr><td><b>'+esc(o.titulo)+'</b><small>'+esc(o.num)+' · '+hr+'</small>'+
+      (o.status==='concluida'?selosFim(o):'')+'</td>'+
+      '<td class="n">'+(o.status==='concluida'?nfx(+o.boas||0):'<span class="aq">'+nfx(+o.qtdPrev||0)+'</span>')+'</td>'+
+      '<td class="n">'+(o.status==='concluida'?nfx(q):'—')+'</td>'+
+      '<td class="n">'+esc(statusTxt(o))+'</td></tr>';
+  }
+  var corpo='';
+  if(conc.length) corpo+='<div class="sec">Concluídas hoje</div><table class="pcx-tger"><thead><tr><th>Ordem</th><th class="n">Boas</th><th class="n">Quebra</th><th class="n">Situação</th></tr></thead><tbody>'+conc.map(linha).join('')+'</tbody>'+
+    '<tfoot><tr><td><b>Total</b></td><td class="n"><b>'+nfx(tBoas)+'</b></td><td class="n"><b>'+nfx(tQ)+'</b></td><td></td></tr></tfoot></table>';
+  if(resto.length) corpo+='<div class="sec">Em andamento e na fila</div><table class="pcx-tger">'+
+    '<thead><tr><th>Ordem</th><th class="n">Previsto</th><th class="n">Quebra</th><th class="n">Situação</th></tr></thead>'+
+    '<tbody>'+resto.map(linha).join('')+'</tbody></table>';
+  if(!corpo) corpo='<div class="pcx-tvazio">Nada para esta máquina hoje.</div>';
   var e=elTab();
   var ov=document.createElement('div'); ov.className='pcx-thistov';
   var ativa=ops.filter(function(o){return o.status==='produzindo';})[0];
-  var acoes=ativa?'<div style="display:flex;gap:8px;padding:0 0 12px"><button class="btn" data-tmenu="turno">Fim de turno</button><button class="btn" data-tmenu="troca">Trocar operador</button></div>':'';
-  ov.innerHTML='<div class="box"><div class="hh"><b>'+esc(maqNome(maqId,isRot?rotuladoras():sopradoras()))+'</b><button data-tac="fh">✕</button></div><div class="bd">'+acoes+linhas+'</div></div>';
+  var acoes=ativa?'<div class="pcx-tmenuac" style="margin:0 0 14px;padding:0 0 13px;border-top:0;border-bottom:1px solid #243049">'+
+    '<div class="qm">Na máquina: <b>'+esc(ativa.operador||opNome()||'—')+'</b></div>'+
+    '<button class="tr" data-tmenu="turno">Fim de turno</button>'+
+    '<button class="sa" data-tmenu="troca">Trocar operador</button></div>':'';
+  ov.innerHTML='<div class="box"><div class="hh"><b>'+esc(maqNome(maqId,isRot?rotuladoras():sopradoras()))+'</b><button data-tac="fh">✕</button></div>'+
+    '<div class="bd">'+acoes+corpo+'</div></div>';
   e.appendChild(ov);
   ov.addEventListener('click',function(ev){ if(ev.target===ov||ev.target.getAttribute('data-tac')==='fh') ov.remove(); });
   ov.querySelectorAll('[data-tmenu]').forEach(function(b){ b.onclick=function(ev){ ev.stopPropagation(); ov.remove(); fecharTablet();
     if(b.getAttribute('data-tmenu')==='turno') abrirTurnoSR(ativa); else abrirTrocaSR(ativa); }; });
+}
+function statusTxt(o){
+  if(o.status==='concluida') return 'Concluída';
+  if(o.status==='pausada') return 'Pausada';
+  if(o.emSetup) return 'Em setup';
+  if(o.status==='produzindo') return o.origem==='sopro'?'Soprando':'Rotulando';
+  return 'Programada';
+}
+/* v6.0.1: tres pontinhos do topo, como no tablet dos tanques: a producao do
+   dia inteira numa olhada, maquina por maquina, sem sair da tela. */
+function geralTablet(){
+  var e=elTab(); if(!e) return;
+  var velho=document.getElementById('pcxTGeral'); if(velho) velho.remove();
+  var isRot=(TAB.origem==='rotulagem');
+  var maqs=(isRot?rotuladoras():sopradoras())||[];
+  var ops=opsDoDia(TAB.origem, TAB.data)||[];
+  var tFeito=0, tFalta=0;
+  var linhas=maqs.map(function(m){
+    var mo=ops.filter(function(o){return o.maq===m.id;});
+    var feito=mo.filter(function(o){return o.status==='concluida';}).reduce(function(a,o){return a+(+o.boas||0);},0);
+    var falta=mo.filter(function(o){return o.status!=='concluida';}).reduce(function(a,o){return a+(+o.qtdPrev||0);},0);
+    var cur=mo.filter(function(o){return o.status==='produzindo'||o.status==='pausada';})[0];
+    tFeito+=feito; tFalta+=falta;
+    return '<tr><td><b>'+esc(m.nome||m.id)+'</b><small>'+(cur?(statusTxt(cur)+' · '+esc(cur.titulo)):'parada')+'</small></td>'+
+      '<td class="n">'+nfx(feito)+'</td><td class="n">'+nfx(falta)+'</td>'+
+      '<td class="n">'+mo.filter(function(o){return o.status==='concluida';}).length+'</td></tr>';
+  }).join('');
+  var d=document.createElement('div');
+  d.id='pcxTGeral'; d.className='pcx-thistov';
+  d.innerHTML='<div class="box"><div class="hh"><b>Produção do dia</b><button data-tac="fechageral">✕</button></div>'+
+    '<div class="bd"><table class="pcx-tger"><thead><tr><th>Máquina</th><th class="n">Produzido</th><th class="n">A produzir</th><th class="n">OPs</th></tr></thead>'+
+    '<tbody>'+(linhas||'<tr><td colspan="4">Nenhuma máquina cadastrada.</td></tr>')+'</tbody>'+
+    '<tfoot><tr><td><b>Total</b></td><td class="n"><b>'+nfx(tFeito)+'</b></td><td class="n"><b>'+nfx(tFalta)+'</b></td><td class="n"><b>'+ops.filter(function(o){return o.status==='concluida';}).length+'</b></td></tr></tfoot></table>'+
+    (function(){
+      /* v6.0.3: o geral tambem lista o que fechou hoje, com hora e quebra. E a
+         pergunta que o encarregado faz ao passar na linha. */
+      var cs=ops.filter(function(x){return x.status==='concluida';});
+      if(!cs.length) return '<div class="sec">Concluídas hoje</div><div class="pcx-tvazio">Nenhuma OP fechada até agora.</div>';
+      return '<div class="sec">Concluídas hoje</div><table class="pcx-tger">'+
+        '<thead><tr><th>Ordem</th><th class="n">Boas</th><th class="n">Quebra</th></tr></thead><tbody>'+cs.map(function(x){
+        var q=(+x.quebraRotulo||0)+(+x.quebraFrasco||0)+(+x.quebra||0);
+        var mn=(maqs.filter(function(m){return m.id===x.maq;})[0]||{}).nome||x.maq;
+        return '<tr><td><b>'+esc(x.titulo)+'</b><small>'+esc(x.num)+' · '+esc(mn)+' · '+esc(x.iniReal||'—')+' → '+esc(x.fimReal||'—')+
+          (x.setupIni&&x.setupFim?' · setup '+hhmm(durSetup(x)):'')+'</small>'+selosFim(x)+'</td>'+
+          '<td class="n">'+nfx(+x.boas||0)+'</td><td class="n">'+(q?nfx(q):'—')+'</td></tr>';
+      }).join('')+'</tbody></table>';
+    })()+
+    '<div class="pcx-tmenuac">'+
+      '<div class="qm">Na máquina: <b>'+esc(opNome()||'—')+'</b></div>'+
+      '<button class="tr" data-tac="trocarop">Trocar de operador</button>'+
+      '<button class="sa" data-tac="sair">Sair do tablet</button>'+
+    '</div></div></div>';
+  d.onclick=function(ev){ if(ev.target===d) d.remove(); };
+  e.appendChild(d);
+  d.querySelectorAll('[data-tac="fechageral"]').forEach(function(b){ b.onclick=function(){ d.remove(); }; });
+}
+/* v6.0.1: o cronometro do tablet anda sozinho, sem redesenhar a tela inteira */
+setInterval(function(){
+  try{
+    var e=document.getElementById('pcpTab'); if(!e||e.hidden)return;
+    e.querySelectorAll('.pcx-tcrono .vl[data-desde]').forEach(function(f){
+      f.textContent=csCrono(f.dataset.desde);
+    });
+  }catch(x){}
+},1000);
+/* v6.0.1: todo toque que mexe na producao pede o PIN, e o PIN e pedido aqui
+   dentro, no mesmo teclado da entrada. Assim o operador que assina a acao e
+   sempre o que esta na maquina naquele momento, e nao quem logou de manha. */
+function tabFecharOv(){ var o=document.getElementById('pcxTov'); if(o) o.remove(); }
+function tabPede(titulo, sub, cb){
+  tabFecharOv();
+  var e=elTab(), d=document.createElement('div');
+  d.id='pcxTov'; d.className='pcx-tov';
+  d.innerHTML='<div class="cx"><div class="tt">'+esc(titulo)+'</div>'+
+    (sub?'<div class="sb">'+esc(sub)+'</div>':'')+
+    '<input class="pn" id="pcxTovPin" type="password" inputmode="numeric" maxlength="8" placeholder="• • • •" readonly>'+
+    '<div class="kp">'+[1,2,3,4,5,6,7,8,9,0].map(function(n){return '<button type="button" data-tk="'+n+'">'+n+'</button>';}).join('')+
+      '<button type="button" data-tk="x">←</button></div>'+
+    '<div class="er" id="pcxTovEr"></div>'+
+    '<div class="pe"><button type="button" class="vo" data-tk="sai">Voltar</button><button type="button" class="ok" data-tk="ok">Confirmar</button></div></div>';
+  e.appendChild(d);
+  var inp=d.querySelector('#pcxTovPin'), er=d.querySelector('#pcxTovEr');
+  function conf(){
+    var v=(inp.value||'').trim();
+    if(v.length<2){ er.textContent='Digite o PIN.'; return; }
+    var qp=null; try{ qp=(typeof quemPorCredencial==='function')?quemPorCredencial(v):null; }catch(x){}
+    if(!qp){ er.textContent='PIN não encontrado.'; inp.value=''; return; }
+    try{ OPERADOR=qp; }catch(x){}
+    tabFecharOv(); try{ cb(qp); }catch(x){}
+  }
+  d.querySelectorAll('[data-tk]').forEach(function(b){
+    b.onclick=function(ev){ ev.stopPropagation(); var k=b.getAttribute('data-tk');
+      if(k==='sai') return tabFecharOv();
+      if(k==='ok') return conf();
+      er.textContent='';
+      if(k==='x') inp.value=inp.value.slice(0,-1); else if(inp.value.length<8) inp.value+=k;
+      if(inp.value.length>=4) { /* deixa confirmar quando ja tem PIN completo */ }
+    };
+  });
+}
+function tabMotivo(o, cb){
+  /* v6.0.3: parar no setup nao e parar rodando. O sistema ja separa os motivos
+     por etapa, entao durante o setup a lista e a do setup. */
+  var ms=[];
+  try{
+    if(o.emSetup && typeof motivosDe==='function') ms=motivosDe('setup');
+    if(!ms.length) ms=(typeof motivosPausa==='function'?motivosPausa():[]);
+  }catch(e){ ms=(typeof motivosPausa==='function'?motivosPausa():[]); }
+  if(!ms.length){ cb(''); return; }
+  tabFecharOv();
+  var e=elTab(), d=document.createElement('div');
+  d.id='pcxTov'; d.className='pcx-tov';
+  d.innerHTML='<div class="cx"><div class="tt">'+(o.emSetup?'Por que o setup vai parar?':'Por que vai parar?')+'</div>'+
+    '<div class="sb">'+esc(o.num)+' · '+esc(o.titulo)+'</div>'+
+    '<div class="mt">'+ms.map(function(m){ return '<button type="button" data-tm="'+escAttr(m.nome)+'">'+esc(m.nome)+'</button>'; }).join('')+'</div>'+
+    '<div class="pe"><button type="button" class="vo" data-tm="">Voltar</button></div></div>';
+  e.appendChild(d);
+  d.querySelectorAll('[data-tm]').forEach(function(b){
+    b.onclick=function(ev){ ev.stopPropagation(); var m=b.getAttribute('data-tm');
+      tabFecharOv(); if(m) cb(m); };
+  });
+}
+/* v6.0.2: conclusao pelo tablet. O operador so informa o que ele sabe: quanto
+   saiu bom e quanto quebrou. As horas o sistema ja tem (inicio real e agora),
+   entao nao se pede duas vezes. O estoque sai pela mesma regra do computador. */
+function tabConcluir(o){
+  var isRot=(o.origem==='rotulagem');
+  var campos = isRot
+    ? [{k:'boas',t:'Produzidas boas',v:(+o.qtdPrev||0)},
+       {k:'quebraRotulo',t:'Quebra de rótulo',v:0},
+       {k:'quebraFrasco',t:'Quebra de frasco',v:0}]
+    : [{k:'boas',t:'Produzidas boas',v:(+o.qtdPrev||0)},
+       {k:'quebra',t:'Quebra',v:0}];
+  var sel=0, fim=agora();
+  tabFecharOv();
+  var e=elTab(), d=document.createElement('div');
+  d.id='pcxTov'; d.className='pcx-tov';
+  function resumo(){
+    var g=function(k){ var c=campos.filter(function(x){return x.k===k;})[0]; return c?(+c.v||0):0; };
+    var b=g('boas');
+    return isRot
+      ? '<i>Vai lançar no estoque do ERP</i>'+
+        '<b>+ '+nfx(b)+'</b> '+esc(nomeCurtoSku(o.itemSku))+'<br>'+
+        '<b>− '+nfx(b+g('quebraFrasco'))+'</b> '+esc(nomeCurtoSku(o.frascoSku))+'<br>'+
+        '<b>− '+nfx(b+g('quebraRotulo'))+'</b> '+esc(nomeCurtoSku(o.rotuloSku))
+      : '<i>Vai lançar no estoque do ERP</i>'+
+        '<b>+ '+nfx(b)+'</b> '+esc(nomeCurtoSku(o.frascoSku))+'<br>'+
+        '<b>− '+nfx(b+g('quebra'))+'</b> '+esc(nomeCurtoSku(o.preformaSku));
+  }
+  function pinta(){
+    d.querySelectorAll('.cp button').forEach(function(b,i){
+      b.className=(i===sel?'sel':'');
+      b.querySelector('b').textContent=nfx(+campos[i].v||0);
+    });
+    d.querySelector('.rs').innerHTML=resumo();
+  }
+  d.innerHTML='<div class="cx lg"><div class="tt">Concluir '+esc(o.num)+'</div>'+
+    '<div class="sb">'+esc(o.titulo)+'</div>'+
+    '<div class="co"><div>'+
+      '<div class="hr">das '+esc(o.iniReal||'—')+' às '+esc(fim)+'</div>'+
+      '<div class="cp">'+campos.map(function(c){ return '<button type="button"><small>'+esc(c.t)+'</small><b>0</b></button>'; }).join('')+'</div>'+
+    '</div><div>'+
+      '<div class="kp">'+[1,2,3,4,5,6,7,8,9,0].map(function(n){return '<button type="button" data-tk="'+n+'">'+n+'</button>';}).join('')+
+        '<button type="button" data-tk="x">←</button></div>'+
+    '</div></div>'+
+    '<div class="rs"></div>'+
+    '<div class="pe"><button type="button" class="vo" data-tk="sai">Voltar</button>'+
+      '<button type="button" class="ok" data-tk="ok">Concluir</button></div></div>';
+  e.appendChild(d);
+  d.querySelectorAll('.cp button').forEach(function(b,i){ b.onclick=function(ev){ ev.stopPropagation(); sel=i; pinta(); }; });
+  d.querySelectorAll('[data-tk]').forEach(function(b){
+    b.onclick=function(ev){ ev.stopPropagation(); var k=b.getAttribute('data-tk');
+      if(k==='sai') return tabFecharOv();
+      if(k==='ok'){
+        var dados={ ini:o.iniReal, fim:fim, operador:(opNome()||o.operador||'') };
+        campos.forEach(function(c){ dados[c.k]=+c.v||0; });
+        tabFecharOv(); aplicaConclusaoSR(o, dados); renderTablet();
+        avisa('OP '+o.num+' concluída · estoque lançado no ERP.');
+        return;
+      }
+      var c=campos[sel];
+      /* v6.0.2: o campo ja vem com o previsto preenchido. O primeiro numero que
+         o operador digita substitui esse valor, senao ele teria que apagar
+         digito por digito antes de lancar o que realmente saiu. */
+      var t=(c.tocado?String(+c.v||0):'');
+      if(k==='x'){ t=(c.tocado?t.slice(0,-1):''); } else { t=(t==='0'?'':t)+k; }
+      c.tocado=true; c.v=+t||0; pinta();
+    };
+  });
+  pinta();
 }
 function ligarTablet(){
   var e=elTab();
@@ -42222,6 +42591,9 @@ function ligarTablet(){
     b.onclick=function(ev){ ev.stopPropagation();
       var ac=b.getAttribute('data-tac'), id=b.getAttribute('data-op');
       if(ac==='sair') return fecharTablet();
+      if(ac==='geral') return geralTablet();
+      if(ac==='trocarop'){ var g0=document.getElementById('pcxTGeral'); if(g0)g0.remove(); TAB.pin=false; renderTablet(); return; }
+      if(ac==='fechageral'){ var g=document.getElementById('pcxTGeral'); if(g)g.remove(); return; }
       if(ac==='entrar'){ var v=((MM('pcpPin')||{}).value||'').trim(); if(v.length<2){ avisa('Informe o PIN.',true); return; }
         /* v5.8.8: só entra quem tem PIN no cadastro, e fica gravado o nome — não o número digitado */
         var qp=null; try{ qp=(typeof quemPorCredencial==='function')?quemPorCredencial(v):null; }catch(x){}
@@ -42230,9 +42602,23 @@ function ligarTablet(){
         TAB.pin=true; TAB.operador=qp.nome; renderTablet(); return; }
       if(ac==='dprev'||ac==='dnext'){ try{var d=new Date(TAB.data+'T12:00:00'); d.setDate(d.getDate()+(ac==='dnext'?1:-1)); TAB.data=ymd(d);}catch(x){} renderTablet(); return; }
       var o=opPorId(id); if(!o)return;
-      if(ac==='concluir'){ fecharTablet(); abrirConcluir(o); }
-      else if(ac==='pausar'){ acPausar(o); renderTablet(); }
-      else if(ac==='retomar'){ acRetomar(o); renderTablet(); }
+      if(ac==='iniciar'){ tabPede('Iniciar '+(temSetup(o.origem)?'o setup de ':'')+o.num, o.titulo, function(){
+          o.status='produzindo'; o.operador=opNome()||o.operador;
+          if(temSetup(o.origem)){ o.emSetup=true; o.setupIni=o.setupIni||agora(); logar(o,'Iniciou o setup'); avisa('Setup da OP '+o.num+' iniciado.'); }
+          else { o.iniReal=o.iniReal||agora(); logar(o,'Iniciou'); avisa('OP '+o.num+' iniciada.'); }
+          salvar(); renderTablet(); }); }
+      else if(ac==='iniciarprod'){ tabPede('Iniciar '+(o.origem==='sopro'?'o sopro':'a rotulagem')+' · '+o.num, o.titulo, function(){
+          o.emSetup=false; o.setupFim=agora(); o.iniReal=agora(); o.operador=opNome()||o.operador;
+          logar(o,'Iniciou a '+(o.origem==='sopro'?'produção':'rotulagem'), 'setup de '+hhmm(durSetup(o)));
+          salvar(); renderTablet(); avisa('OP '+o.num+' em produção.'); }); }
+      else if(ac==='concluir'){ tabPede('Concluir '+o.num, o.titulo, function(){ tabConcluir(o); }); }
+      else if(ac==='pausar'){ tabPede('Pausar '+o.num, o.titulo, function(){ tabMotivo(o, function(mot){
+          o.status='pausada'; o.pausaMotivo=mot||'Pausa'; logar(o,'Pausou', mot||''); salvar(); renderTablet(); avisa('OP '+o.num+' pausada.'); }); }); }
+      else if(ac==='retomar'){ tabPede('Retomar '+o.num, o.titulo, function(){
+          var eraTurno=(o.pausaMotivo==='Fim de turno'), ant=o.operador||'';
+          if(eraTurno){ o.operador=opNome()||o.operador; var t=turnosSR(o), u=t[t.length-1]; if(u&&!u.retomou) u.retomou=agora(); }
+          o.status='produzindo'; o.pausaMotivo=''; logar(o,'Retomou', eraTurno&&o.operador!==ant?('operador: '+(o.operador||'—')):null);
+          salvar(); renderTablet(); avisa('OP '+o.num+' retomada.'); }); }
     };
   });
 }
@@ -43160,6 +43546,127 @@ try{window.__V585={obrig,obrigDe,embLinhas,numKg};}catch(e){}
     }
     return l;   /* o mesmo campo mudou nos dois: fica o deste aparelho, que acabou de mexer */
   };
+})();
+</script>
+<script>
+/* ===================== v6.0.6 · A QUARENTENA VOLTOU A RECEBER O ENVASE =====================
+   O que sai do envase tem que entrar no depósito QUARENTENA e só ir para a
+   expedição quando o Ariel liberar. Isso parou de acontecer no dia 19/11 e
+   ninguém mexeu nesse código: o razão de estoque tem teto de 6.000 lançamentos
+   e naquele dia encheu. A rotina da quarentena descobria os lançamentos novos
+   comparando o TAMANHO da lista antes e depois ("cresceu, então o que veio
+   depois da posição n é novo"). Com a lista no teto ela para de crescer: entra
+   um no fim, sai um do começo, o tamanho continua 6.000. A conta "cresceu?"
+   passou a dar não para sempre, e a entrada do acabado ficou no depósito
+   principal, ou seja, direto na expedição.
+
+   Agora os lançamentos novos são achados pela identidade do objeto, não pelo
+   tamanho da lista. Funciona com o razão cheio, vazio ou no meio.
+   ============================================================================ */
+(function(){
+  if(typeof enviarDaFila!=='function'||typeof CS_ELOG==='undefined') return;
+  if(window.CS_QUAR606) return; window.CS_QUAR606=true;
+  const temQuar=()=>{try{return typeof csTemQuar==='function'?csTemQuar():CS_EDEP.deps.some(d=>d.id==='quar');}catch(e){return false;}};
+  const chave=v=>{v=String(v||'').trim();return /^ERP-/i.test(v)?v:v.replace(/\D/g,'');};
+  const _env=enviarDaFila;
+  enviarDaFila=async function(ch){
+    const antes=new Set(CS_ELOG);
+    const it=await _env.apply(this,arguments);
+    try{
+      if(temQuar()){
+        const novos=CS_ELOG.filter(x=>!antes.has(x));
+        if(novos.length){
+          const pa=new Set(PRODUTOS.map(p=>chave(p.tiny)).filter(Boolean));
+          const s=CS_EDEP.sal.quar||(CS_EDEP.sal.quar={});
+          let mud=0;
+          novos.forEach(x=>{
+            if(x.dep||!pa.has(String(x.id))||!/^OP /.test(String(x.origem||'')))return;
+            const q=+x.qtd||0; if(!(q>0))return;
+            if(x.tipo==='E'){x.dep='quar';s[x.id]=(+s[x.id]||0)+q;mud++;}
+            else if(x.tipo==='S'&&(+s[x.id]||0)>=q-1e-9){x.dep='quar';s[x.id]=(+s[x.id]||0)-q;if(Math.abs(s[x.id])<1e-9)delete s[x.id];mud++;}
+          });
+          if(mud){try{agendarSalvar();}catch(e){}}
+        }
+      }
+    }catch(e){console.warn('[v606] quarentena',e&&e.message);}
+    return it;
+  };
+})();
+</script>
+<script>
+/* ===================== v6.0.7 · O RAZÃO DE ESTOQUE NÃO SE PERDE MAIS =====================
+   O ERP inteiro mora numa linha só do banco. Por isso o razão de estoque tinha
+   teto de 6.000 lançamentos: passou disso, o mais antigo era jogado fora para a
+   linha não crescer sem parar. Com 206 lançamentos por dia, isso é 29 dias de
+   histórico; o resto sumia de vez, sem ninguém perceber.
+
+   Agora todo lançamento também é gravado numa TABELA PRÓPRIA no banco
+   (estoque_razao), que não tem teto. A janela de 6.000 continua existindo para
+   as telas de hoje funcionarem como funcionam, mas ela virou só uma janela: o
+   que sai dela já está guardado e não se perde.
+
+   Como funciona: depois de cada gravação, o que entrou de novo no razão é
+   mandado para a tabela. Cada lançamento tem uid próprio, então mandar duas
+   vezes não duplica. Se a internet cair, fica na fila e vai na próxima.
+   ======================================================================================= */
+(function(){
+  if(typeof SUPA==='undefined'||typeof CS_ELOG==='undefined') return;
+  if(window.CS_RAZAO607) return; window.CS_RAZAO607=true;
+
+  const ENVIADOS=new Set();      /* uid que já está na tabela */
+  let FILA=[], RODANDO=false, PRONTO=false;
+
+  const temNuvemOk=()=>{try{return !!(SUPA&&SUPA.url&&typeof cabecalhos==='function'&&(typeof temNuvem!=='function'||temNuvem()));}catch(e){return false;}};
+
+  async function rpc(fn,corpo){
+    const ir=()=>fetch(`${SUPA.url}/rest/v1/rpc/${fn}`,{method:'POST',headers:cabecalhos(),body:JSON.stringify(corpo||{})});
+    let r=await ir();
+    if(r.status===401&&typeof renovarSessao==='function'&&await renovarSessao()) r=await ir();
+    if(!r.ok){let m='erro '+r.status;try{const j=await r.json();m=j.message||m;}catch(e){}const e=new Error(m);e.status=r.status;throw e;}
+    const t=await r.text();return t?JSON.parse(t):null;
+  }
+
+  async function manda(linhas){
+    if(!linhas.length||!temNuvemOk())return false;
+    /* em blocos, para não mandar um corpo gigante de uma vez */
+    for(let i=0;i<linhas.length;i+=400){
+      await rpc('erp_razao_gravar',{p_linhas:linhas.slice(i,i+400)});
+      linhas.slice(i,i+400).forEach(x=>{if(x.uid)ENVIADOS.add(x.uid);});
+    }
+    return true;
+  }
+
+  async function roda(){
+    if(RODANDO||!FILA.length||!temNuvemOk())return;
+    RODANDO=true;
+    const lote=FILA; FILA=[];
+    try{ await manda(lote); }
+    catch(e){ FILA=lote.concat(FILA); console.warn('[v607] razão na fila',e&&e.message); }
+    finally{ RODANDO=false; }
+  }
+
+  function junta(){
+    try{ if(typeof csEUids==='function') csEUids(); }catch(e){}
+    const novos=CS_ELOG.filter(x=>x&&x.uid&&x.id&&!ENVIADOS.has(x.uid));
+    if(!novos.length)return;
+    const naFila=new Set(FILA.map(x=>x.uid));
+    novos.forEach(x=>{if(!naFila.has(x.uid))FILA.push(x);});
+    roda();
+  }
+
+  /* na entrada: manda tudo que a janela tem e que a tabela ainda não viu */
+  async function primeira(){
+    if(PRONTO||!temNuvemOk())return;
+    PRONTO=true;
+    try{ junta(); }catch(e){ console.warn('[v607] carga inicial',e&&e.message); }
+  }
+
+  /* depois de cada gravação, o que entrou vai junto */
+  try{const _ag=agendarSalvar;agendarSalvar=function(){const r=_ag.apply(this,arguments);setTimeout(junta,1200);return r;};}catch(e){}
+  try{if(typeof csNucleo==='object'&&csNucleo)csNucleo.razaoSubir=()=>{ENVIADOS.clear();junta();return FILA.length;};}catch(e){}
+
+  setTimeout(primeira, 6000);
+  setInterval(()=>{ if(document.visibilityState==='visible'){ junta(); } }, 5*60000);
 })();
 </script>
 </body>

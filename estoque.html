@@ -928,7 +928,9 @@ function telaItem(id){
   if(it.acabado&&!NFI)lerNF(it,CORTE).then(()=>{if(PAG==='item'&&IT.id===it.id)telaItem(it.id);});
   const nfNoRazao=new Set((r.itens||[]).map(x=>String(x.chave||'')).filter(c=>/^nf\|/.test(c)).map(c=>c.split('|')[1]));
   const todos=[...(r.itens||[]),...((NFI&&NFI.itens)||[]).filter(x=>!nfNoRazao.has(String(x.nfId||'')))].sort((a,b)=>String(b.em).localeCompare(String(a.em)));
-  const noCorte=x=>!CORTE||IT.tudo||String(x.em)>=String(CORTE.em);
+  /* v6.0.7: a tela mostra todo o razao que o sistema tem. O corte continua
+     valendo so para nao ir buscar nota antiga no Tiny. */
+  const noCorte=x=>true;
   const lTodos=todos.filter(x=>SEL.has(x.dep)&&IT.tipos.has(tipoF(x))&&noPer(x));
   const l=lTodos.filter(noCorte);
   /* paginação: 50 por página, igual em todas as listas */
@@ -942,7 +944,7 @@ function telaItem(id){
   const cfg=N.cfgVendas?N.cfgVendas():{reservaPor:'prev'};
   const resK=it.id+'|'+(it.acabado?(cfg.reservaPor==='ped'?'pedido':'prevista'):'')+'|'+fx.de+'|'+fx.ate;
   const RS=IT.res[resK];if(!RS)lerRes(it).then(()=>{if(PAG==='item'&&IT.id===it.id)telaItem(it.id);});
-  const resQ=RS?RS.tot:null,quandoP=IT.per.m==='sem'?((CORTE&&!IT.tudo)?'desde a conferência · '+br(String(CORTE.em).slice(0,10)):(it.acabado?'últimos 120 dias':'todo o histórico')):perRotulo(IT.per);
+  const resQ=RS?RS.tot:null,quandoP=IT.per.m==='sem'?(it.acabado?'últimos 120 dias':'todo o histórico'):perRotulo(IT.per);
   const podeL=pode('estoque.lanc','editar'),todosD=SEL.size===deps.length;
   const ddTxt=todosD?'Todos os depósitos':SEL.size?[...SEL].map(depNome).join(', '):'Nenhum depósito';
   const tpTxt=IT.tipos.size===4?'Todos os tipos':IT.tipos.size?[...IT.tipos].map(t=>TIPO_NOME[t]).join(', '):'Nenhum tipo';
@@ -964,10 +966,7 @@ function telaItem(id){
     ${IT.aba==='est'?`<div class="rel"><button class="btn" id="fTip" type="button">${esc(tpTxt)} ▾</button>
       <div class="npsit" id="pTip" hidden>${['E','S','BAL','TR'].map(t=>`<label class="chk3"><input type="checkbox" data-tp="${t}" ${IT.tipos.has(t)?'checked':''}> ${TIPO_NOME[t]}</label>`).join('')}</div></div>`:''}
     <button class="btn lk" id="fLimpa">⊖ limpar filtros</button></div>
-  ${IT.aba==='est'?`${CORTE?`<div class="cortebar">
-      <span class="cb-i">✓</span>
-      <div><b>Conferido em ${esc(quandoEm(CORTE.em))}</b>${CORTE.quem?' por '+esc(CORTE.quem):''} · saldo do depósito ajustado para <b>${nq(CORTE.qtd)}</b>
-      <small>O saldo conta a partir daqui. O que é anterior não entra na conta e as notas do Tiny antes dessa data não são lidas.</small></div></div>`:''}${NFI&&NFI.aviso?`<div class="aviso">⚠ <div>${esc(NFI.aviso)}</div></div>`:''}${NFI&&NFI.lendo?'<div class="k" style="margin-bottom:8px">Lendo as notas de saída…</div>':''}
+  ${IT.aba==='est'?`${NFI&&NFI.aviso?`<div class="aviso">⚠ <div>${esc(NFI.aviso)}</div></div>`:''}${NFI&&NFI.lendo?'<div class="k" style="margin-bottom:8px">Lendo as notas de saída…</div>':''}
   <div class="caixa rolx"><table class="tv" id="tabI" style="min-width:820px"><thead><tr><th style="width:40px"></th><th>Data e hora</th><th>Depósito</th><th class="n">Entrada</th><th class="n">Saída</th><th>Observação</th><th>Tipo</th></tr></thead><tbody>
     ${lPag.map((x,jj)=>{const i=iniPag+jj;return `<tr data-i="${i}" class="${x.tr?'':x.tipo==='E'?'ient':x.tipo==='S'?'isai':''} ${x.tipo==='BAL'?'ibal':''} ${x.pend||x.soTiny?'ipend':''} ${IT.marcaTr&&x.tr===IT.marcaTr?'imarca':''}" style="cursor:pointer">
       <td><button class="dots" data-mn="${i}" title="Ações">⋯</button></td><td class="m">${quandoEm(x.em)}</td><td>${esc(depNome(x.dep))}</td>
