@@ -5590,7 +5590,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v608';const VERSAO_DATA='22/11/2026';
+const VERSAO_APP='v609';const VERSAO_DATA='22/11/2026';
 /* número que aparece na tela: v438 → v4.3.8 (por dentro continua v438, que é o que as versões comparam) */
 const csRotVer=v=>{const d=String(v||'').replace(/\D/g,'');return d.length>=3?'v'+d.slice(0,-2)+'.'+d.slice(-2,-1)+'.'+d.slice(-1):String(v||'');};
 const VERSAO_ROTULO=csRotVer(VERSAO_APP)+' · '+VERSAO_DATA;
@@ -9623,16 +9623,61 @@ function gradeRT(){
   };
 }
 
+/* v6.0.9: setor do operador. A funcao diz o cargo; o setor diz onde a pessoa
+   trabalha, e e isso que filtra as listas de operador no sopro, na rotulagem e
+   no envase. Mais de um setor por pessoa, porque na pratica elas rodam. */
+const CS_SETOP=[
+  {id:'envase',   nome:'Envase'},
+  {id:'sopro',    nome:'Sopro'},
+  {id:'rotulo',   nome:'Rotulagem'},
+  {id:'tanque',   nome:'Mistura'},
+  {id:'tunel',    nome:'Túnel'},
+  {id:'kit',      nome:'Kit'},
+  {id:'lab',      nome:'Laboratório'},
+  {id:'expedicao',nome:'Expedição'}
+];
+function csSetorNome(id){const x=CS_SETOP.filter(s=>s.id===id)[0];return x?x.nome:id;}
+/* setores da pessoa. Quem ainda nao tem setor cadastrado herda da funcao, para
+   o sistema nao ficar cego ate alguem passar de um em um. */
+function csSetoresDe(o){
+  if(!o)return [];
+  if(Array.isArray(o.setores)&&o.setores.length)return o.setores;
+  const f=String(o.funcao||o.papel||'').trim().toLowerCase();
+  if(f.indexOf('sopro')>=0)return ['sopro'];
+  if(f.indexOf('rotul')>=0)return ['rotulo'];
+  if(f.indexOf('mistura')>=0)return ['tanque'];
+  if(f.indexOf('túnel')>=0||f.indexOf('tunel')>=0)return ['tunel'];
+  if(f.indexOf('kit')>=0)return ['kit'];
+  if(f.indexOf('laborat')>=0)return ['lab'];
+  if(f.indexOf('envase')>=0)return ['envase'];
+  return [];
+}
+function csSetoresTxt(o){
+  const l=csSetoresDe(o);
+  return l.length?l.map(csSetorNome).join(', '):'';
+}
+function csSetoresHTML(sel){
+  sel=Array.isArray(sel)?sel:[];
+  return '<div class="cs-set">'+CS_SETOP.map(x=>
+    `<label><input type="checkbox" data-set="${x.id}"${sel.indexOf(x.id)>=0?' checked':''}> ${x.nome}</label>`
+  ).join('')+'</div>';
+}
+(function(){try{const e=document.createElement('style');e.textContent=
+ `.cs-set{display:flex;flex-wrap:wrap;gap:6px 14px;padding:9px 11px;border:1px solid var(--bd,#E2E8F0);border-radius:10px}
+  .cs-set label{display:flex;align-items:center;gap:6px;font-size:13px;white-space:nowrap;cursor:pointer}
+  .cs-set input{margin:0}`;document.head.appendChild(e);}catch(e){}})();
+
 /* ---------- cadastro de operadores ---------- */
 function gradeOperadores(){
   const el=M('opgrid');if(!el)return;
   el.innerHTML=`
     ${OPERADORES.length?`<table class="tb"><thead><tr>
-      <th>Nome</th><th>Função</th><th>Linha</th><th class="n">PIN</th><th>Situação</th><th></th>
+      <th>Nome</th><th>Função</th><th>Setor</th><th>Linha</th><th class="n">PIN</th><th>Situação</th><th></th>
     </tr></thead><tbody>
     ${OPERADORES.map(o=>`<tr class="${o.ativo===false?'inat':''}">
       <td><b>${o.nome}</b></td>
       <td>${o.funcao||o.papel||'<span class="k">—</span>'}</td>
+      <td>${csSetoresTxt(o)||'<span class="k">—</span>'}</td>
       <td>${o.maq||'<span class="k">—</span>'}</td>
       <td class="n"><span class="sen">${o.pin}</span></td>
       <td>${o.ativo===false?'<span class="k">inativo</span>':'ativo'}</td>
@@ -9681,6 +9726,11 @@ function modalOperador(o){
           ?`<option selected>${o.funcao||o.papel}</option>`:''}
       </select>
       <button type="button" class="btn sm" id="opNovaF" style="margin-top:8px">+ Nova função</button></div>
+    <div class="fld"><label>Setor em que trabalha</label>
+      ${csSetoresHTML(novo?[]:csSetoresDe(o))}
+      <div class="hint" style="font-size:11.5px;color:var(--ink3);margin-top:4px">
+        Marque todos em que a pessoa trabalha. É isso que decide em quais listas
+        de operador ela aparece: sopro, rotulagem, envase e assim por diante.</div></div>
     <div class="fld"><label>Linha em que trabalha</label>
       <select id="opMaq">
         <option value="">Sem linha fixa</option>
@@ -9721,6 +9771,7 @@ function modalOperador(o){
     const alvo=novo?{id:'o'+Date.now().toString(36),turno:'—'}:o;
     alvo.nome=nome;alvo.funcao=M('opFunc').value.trim();alvo.papel=alvo.funcao;alvo.pin=p;
     alvo.maq=M('opMaq')?M('opMaq').value:'';
+    alvo.setores=[...M('mB').querySelectorAll('[data-set]:checked')].map(x=>x.dataset.set);
     alvo.ativo=novo?true:M('opAtivo').value==='1';
     if(novo)OPERADORES.push(alvo);
     agendarSalvar();fecharModal();gradeAdmin();
@@ -24463,6 +24514,7 @@ async function csTrazerFuncionarios(){
   M('mB').innerHTML=l.length?`<p class="adp">Marque quem trabalha na máquina. Cada um entra com um PIN livre (dá para trocar depois no ✎) e a função e a linha que você escolher aqui.</p>
     <div class="g2" style="margin:8px 0 12px"><div class="fld"><label>Função</label><select id="tfF">${FUNCOES.map(f=>`<option>${escAttr(f)}</option>`).join('')}</select></div>
       <div class="fld"><label>Linha em que trabalha</label><select id="tfM"><option value="">Sem linha fixa</option>${MAQUINAS.map(m=>`<option>${m}</option>`).join('')}</select></div></div>
+    <div class="fld" style="margin:0 0 12px"><label>Setor em que trabalham</label>${csSetoresHTML([])}</div>
     <div class="rolx" style="max-height:48vh"><table class="tb"><thead><tr><th style="width:34px"><input type="checkbox" id="tfT"></th><th>Nome</th><th>Função no cadastro</th><th>Setor</th></tr></thead><tbody>
     ${l.map((c,i)=>`<tr><td><input type="checkbox" data-tf="${i}"></td><td><b>${escAttr(c.nome)}</b></td><td>${escAttr(c.funcao||'—')}</td><td>${escAttr(c.setor||'—')}</td></tr>`).join('')}</tbody></table></div>`
     :`<div class="vazioc">Nenhum funcionário ativo no Cadastro que ainda não seja operador.<br><span class="k">Em Cadastros › Funcionários, use <b>Buscar no cadastro</b> (ou, em Clientes e fornecedores, marque as pessoas e use <b>Mandar para Funcionários</b>).</span></div>`;
@@ -24473,7 +24525,8 @@ async function csTrazerFuncionarios(){
     const esc=[...M('mB').querySelectorAll('[data-tf]:checked')].map(x=>l[+x.dataset.tf]);
     if(!esc.length)return toast('Marque pelo menos um funcionário.',true);
     const f=M('tfF').value,m=M('tfM').value;
-    esc.forEach(c=>OPERADORES.push({id:uid(),nome:c.nome,funcao:f,papel:f,maq:m,pin:pinLivre(),ativo:true,funcId:c.id,tinyId:c.tinyId||''}));
+    const st=[...M('mB').querySelectorAll('[data-set]:checked')].map(x=>x.dataset.set);
+    esc.forEach(c=>OPERADORES.push({id:uid(),nome:c.nome,funcao:f,papel:f,maq:m,setores:st,pin:pinLivre(),ativo:true,funcId:c.id,tinyId:c.tinyId||''}));
     agendarSalvar();fecharModal();try{gradeAdmin();}catch(e){}
     toast(`${esc.length} operador(es) trazido(s). Confira o PIN de cada um na lista.`);
   };
@@ -41877,29 +41930,37 @@ function opt(sel,val,txt){ return '<option value="'+esc(val)+'"'+(sel===val?' se
 /* v6.0.8: a lista de operador do sopro e da rotulagem traz so quem e daquele
    setor. Supervisor aparece sempre, e quem ainda esta sem funcao no cadastro
    tambem, senao alguem some da lista por falta de cadastro e trava a maquina. */
-var FUNC_SETOR={ sopro:['operador de sopro'],
-                 rotulagem:['operador de rotuladora','operador de rotulagem'] };
+/* v6.0.9: a lista de operador vai pelo SETOR cadastrado na pessoa, nao pela
+   funcao. Supervisor aparece em qualquer setor. Os nomes saem agrupados por
+   setor, entao a busca do campo tambem acha digitando "sopro", "rotulagem". */
+var SETOR_DA_ORIGEM={ sopro:'sopro', rotulagem:'rotulo', envase:'envase' };
 function operLista(atual, origem){
-  var alvo=FUNC_SETOR[String(origem||'')]||null, l=[];
-  try{
-    l=(typeof OPERADORES!=='undefined'?OPERADORES:[]).filter(function(x){
-      if(x.ativo===false) return false;
-      if(!alvo) return true;
-      var f=String(x.funcao||x.papel||'').trim().toLowerCase();
-      if(!f) return true;
-      if(f==='supervisor') return true;
-      return alvo.indexOf(f)>=0;
-    });
-  }catch(e){}
-  /* enquanto ninguem tiver a funcao do setor no cadastro, mostra todos e diz
-     por que: lista vazia travaria a maquina sem explicar o motivo. */
-  var aviso='';
-  if(alvo && !l.length){
-    aviso='<option value="" disabled>— ninguém com função de '+(origem==='sopro'?'sopro':'rotuladora')+' no cadastro, mostrando todos —</option>';
-    try{ l=OPERADORES.filter(function(x){return x.ativo!==false;}); }catch(e){}
-  }
+  var alvo=SETOR_DA_ORIGEM[String(origem||'')]||null, todos=[], l=[];
+  try{ todos=(typeof OPERADORES!=='undefined'?OPERADORES:[]).filter(function(x){return x.ativo!==false;}); }catch(e){}
+  var ehSup=function(x){ return String(x.funcao||x.papel||'').trim().toLowerCase()==='supervisor'; };
+  l = alvo ? todos.filter(function(x){
+        var st=(typeof csSetoresDe==='function')?csSetoresDe(x):[];
+        return ehSup(x) || st.indexOf(alvo)>=0;
+      }) : todos;
+  /* ninguem com o setor cadastrado: mostra todos e diz por que, senao a lista
+     fica vazia e a maquina trava sem explicacao. */
+  var semCad = alvo && !l.length;
+  if(semCad) l=todos;
+  var grupo=function(x){
+    var st=(typeof csSetoresDe==='function')?csSetoresDe(x):[];
+    if(ehSup(x)) return 'Supervisão';
+    if(!st.length) return 'Sem setor no cadastro';
+    return st.map(function(i){ return (typeof csSetorNome==='function')?csSetorNome(i):i; }).join(' · ');
+  };
+  var gs=[], por={};
+  l.forEach(function(x){ var g=grupo(x); if(!por[g]){por[g]=[];gs.push(g);} por[g].push(x); });
+  var corpo=gs.map(function(g){
+    return '<optgroup label="'+esc(g)+'">'+por[g].map(function(x){
+      return '<option value="'+esc(x.nome)+'"'+(atual===x.nome?' selected':'')+'>'+esc(x.nome)+'</option>';
+    }).join('')+'</optgroup>';
+  }).join('');
   var fora=(atual&&!l.some(function(x){return x.nome===atual;}))?'<option value="'+esc(atual)+'" selected>'+esc(atual)+' · fora do setor</option>':'';
-  return '<option value="">Selecione…</option>'+aviso+fora+l.map(function(x){ return '<option value="'+esc(x.nome)+'"'+(atual===x.nome?' selected':'')+'>'+esc(x.nome)+'</option>'; }).join('');
+  return '<option value="">'+(semCad?'Selecione… (ninguém com setor de '+esc(alvo==='rotulo'?'rotulagem':alvo)+' no cadastro)':'Selecione…')+'</option>'+fora+corpo;
 }
 try{ window.__operLista608=operLista; }catch(e){}
 function operDaMaqSR(maq){ try{ var d=(typeof operadorDaMaq==='function')?operadorDaMaq(maq):null; return d?d.nome:''; }catch(e){ return ''; } }

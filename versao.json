@@ -1,6 +1,6 @@
 {
- "v": "v608",
- "versao": "6.0.8",
+ "v": "v609",
+ "versao": "6.0.9",
  "data": "24/11/2026",
- "o_que_mudou": "Cadastro de operadores: 1) o campo Linha em que trabalha passou a oferecer todas as maquinas ativas, separadas por grupo (Envasadoras, Sopradoras, Rotuladoras, Tuneis, Tanques); antes so tinha MAQ 1, 2 e 3. 2) A janela de trazer funcionario ganhou busca pelo nome. 3) No sopro e na rotulagem a lista de operador traz so quem tem a funcao daquele setor, mais supervisores; enquanto ninguem tiver a funcao cadastrada, mostra todos e avisa."
+ "o_que_mudou": "Setor do operador. Na ficha de cada operador entrou o campo Setor em que trabalha, com Envase, Sopro, Rotulagem, Mistura, Tunel, Kit, Laboratorio e Expedicao; da para marcar mais de um. O setor tambem aparece na grade e pode ser lancado de uma vez ao trazer funcionarios. Com isso, a lista de operador do sopro e da rotulagem passa a mostrar so quem e daquele setor, mais os supervisores, e os nomes saem agrupados por setor, entao a busca acha digitando sopro ou rotulagem. Quem ainda nao tem setor cadastrado herda do nome da funcao."
 }
