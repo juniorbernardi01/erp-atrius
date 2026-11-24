@@ -5590,7 +5590,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v607';const VERSAO_DATA='22/11/2026';
+const VERSAO_APP='v608';const VERSAO_DATA='22/11/2026';
 /* número que aparece na tela: v438 → v4.3.8 (por dentro continua v438, que é o que as versões comparam) */
 const csRotVer=v=>{const d=String(v||'').replace(/\D/g,'');return d.length>=3?'v'+d.slice(0,-2)+'.'+d.slice(-2,-1)+'.'+d.slice(-1):String(v||'');};
 const VERSAO_ROTULO=csRotVer(VERSAO_APP)+' · '+VERSAO_DATA;
@@ -41874,11 +41874,34 @@ function opt(sel,val,txt){ return '<option value="'+esc(val)+'"'+(sel===val?' se
    máquina; o que a OP consome aparece com a mesma leitura da embalagem do
    envase: estoque físico · reservado · disponível · situação.
    ====================================================================== */
-function operLista(atual){
-  var l=[]; try{ l=(typeof OPERADORES!=='undefined'?OPERADORES:[]).filter(function(x){return x.ativo!==false;}); }catch(e){}
-  var fora=(atual&&!l.some(function(x){return x.nome===atual;}))?'<option value="'+esc(atual)+'" selected>'+esc(atual)+' · fora do cadastro</option>':'';
-  return '<option value="">Selecione…</option>'+fora+l.map(function(x){ return '<option value="'+esc(x.nome)+'"'+(atual===x.nome?' selected':'')+'>'+esc(x.nome)+'</option>'; }).join('');
+/* v6.0.8: a lista de operador do sopro e da rotulagem traz so quem e daquele
+   setor. Supervisor aparece sempre, e quem ainda esta sem funcao no cadastro
+   tambem, senao alguem some da lista por falta de cadastro e trava a maquina. */
+var FUNC_SETOR={ sopro:['operador de sopro'],
+                 rotulagem:['operador de rotuladora','operador de rotulagem'] };
+function operLista(atual, origem){
+  var alvo=FUNC_SETOR[String(origem||'')]||null, l=[];
+  try{
+    l=(typeof OPERADORES!=='undefined'?OPERADORES:[]).filter(function(x){
+      if(x.ativo===false) return false;
+      if(!alvo) return true;
+      var f=String(x.funcao||x.papel||'').trim().toLowerCase();
+      if(!f) return true;
+      if(f==='supervisor') return true;
+      return alvo.indexOf(f)>=0;
+    });
+  }catch(e){}
+  /* enquanto ninguem tiver a funcao do setor no cadastro, mostra todos e diz
+     por que: lista vazia travaria a maquina sem explicar o motivo. */
+  var aviso='';
+  if(alvo && !l.length){
+    aviso='<option value="" disabled>— ninguém com função de '+(origem==='sopro'?'sopro':'rotuladora')+' no cadastro, mostrando todos —</option>';
+    try{ l=OPERADORES.filter(function(x){return x.ativo!==false;}); }catch(e){}
+  }
+  var fora=(atual&&!l.some(function(x){return x.nome===atual;}))?'<option value="'+esc(atual)+'" selected>'+esc(atual)+' · fora do setor</option>':'';
+  return '<option value="">Selecione…</option>'+aviso+fora+l.map(function(x){ return '<option value="'+esc(x.nome)+'"'+(atual===x.nome?' selected':'')+'>'+esc(x.nome)+'</option>'; }).join('');
 }
+try{ window.__operLista608=operLista; }catch(e){}
 function operDaMaqSR(maq){ try{ var d=(typeof operadorDaMaq==='function')?operadorDaMaq(maq):null; return d?d.nome:''; }catch(e){ return ''; } }
 function operObrig(origem){ try{ return (window.__V585&&__V585.obrigDe)?__V585.obrigDe(origem,'operador'):true; }catch(e){ return true; } }
 /* o que a OP consome. Disponível = saldo na Fábrica menos o que as ordens que vêm ANTES desta
@@ -41942,7 +41965,7 @@ function progSRHTML(maqs,maqSel,oper,data,hora,origem){
        embaixo quando (data, início e pronto previsto) */
     '<div class="cs588-l1">'+
       '<div class="fld"><label>Máquina <b>*</b></label><select id="pcpMaq">'+maqs.map(function(m){return opt(maqSel||'', m.id, (m.nome||m.id)+(m.cad?' — '+nfx(m.cad)+' un/h':''));}).join('')+'</select></div>'+
-      '<div class="fld" id="pcpOperF"><label>Operador'+(operObrig(origem)?' <b>*</b>':'')+'<span class="cs585-lh" id="pcpOperH"></span></label><select id="pcpOper">'+operLista(oper||'')+'</select></div>'+
+      '<div class="fld" id="pcpOperF"><label>Operador'+(operObrig(origem)?' <b>*</b>':'')+'<span class="cs585-lh" id="pcpOperH"></span></label><select id="pcpOper">'+operLista(oper||'', origem)+'</select></div>'+
     '</div><div class="cs588-l2">'+
       '<div class="fld"><label>Data <b>*</b></label><input id="pcpData" type="date" value="'+esc(data)+'"></div>'+
       '<div class="fld"><label>Início <b>*</b></label><input id="pcpHora" type="time" step="300" value="'+esc(hora)+'"></div>'+
@@ -42055,8 +42078,8 @@ function abrirConcluir(o){
         ? '<div class="fld"><label>Quebra de rótulo (un)</label><input id="cQR" type="number" min="0" step="1" value="'+((o.turnos&&o.turnos.length)?(+o.quebraRotulo||0):0)+'"></div>'
         : '<div class="fld"><label>Quebra (un)</label><input id="cQ" type="number" min="0" step="1" value="'+((o.turnos&&o.turnos.length)?(+o.quebra||0):0)+'"></div>')+
     '</div>'+
-    (isRot? '<div class="g2"><div class="fld"><label><input type="checkbox" id="cHabFr"'+((o.turnos&&o.turnos.length&&+o.quebraFrasco)?' checked':'')+'> Lançar quebra de frasco</label><input id="cQF" type="number" min="0" step="1" value="'+((o.turnos&&o.turnos.length)?(+o.quebraFrasco||0):0)+'"'+((o.turnos&&o.turnos.length&&+o.quebraFrasco)?'':' disabled')+'></div><div class="fld"><label>Operador</label><select id="cOp">'+operLista(o.operador||'')+'</select></div></div>'
-           : '<div class="fld"><label>Operador</label><select id="cOp">'+operLista(o.operador||'')+'</select></div>')+
+    (isRot? '<div class="g2"><div class="fld"><label><input type="checkbox" id="cHabFr"'+((o.turnos&&o.turnos.length&&+o.quebraFrasco)?' checked':'')+'> Lançar quebra de frasco</label><input id="cQF" type="number" min="0" step="1" value="'+((o.turnos&&o.turnos.length)?(+o.quebraFrasco||0):0)+'"'+((o.turnos&&o.turnos.length&&+o.quebraFrasco)?'':' disabled')+'></div><div class="fld"><label>Operador</label><select id="cOp">'+operLista(o.operador||'', o.origem)+'</select></div></div>'
+           : '<div class="fld"><label>Operador</label><select id="cOp">'+operLista(o.operador||'', o.origem)+'</select></div>')+
     ((o.turnos&&o.turnos.length)?'<div class="alert blue" style="margin:10px 0 0">Os números acima são o <b>total da OP</b>. Os turnos já fechados lançaram <b>'+nfx(+o.boas||0)+' un</b>; a conclusão acerta o estoque pelo total.</div>':'')+
     '<div class="pcx-calc" id="cResumo"></div>';
   MM('mF').innerHTML='<div class="mfesq"><button class="btn warn sm" id="cReabrir">Reabrir</button></div><div class="mfdir" style="margin-left:auto;display:flex;gap:8px"><button class="btn" id="cCancel">Cancelar</button><button class="btn pri" id="cOK">Concluir e lançar estoque</button></div>';
@@ -43667,6 +43690,99 @@ try{window.__V585={obrig,obrigDe,embLinhas,numKg};}catch(e){}
 
   setTimeout(primeira, 6000);
   setInterval(()=>{ if(document.visibilityState==='visible'){ junta(); } }, 5*60000);
+})();
+</script>
+<script>
+/* ===================== v6.0.8 · CADASTRO DE OPERADORES =====================
+   Três coisas que o Junior apontou em 24/11:
+
+   1) "Linha em que trabalha" só oferecia MAQ 1, 2 e 3. Esse campo usava a lista
+      velha de envasadoras (MAQUINAS), de quando o sistema só tinha envase.
+      Agora oferece todos os recursos ativos, separados por grupo: Envasadoras,
+      Sopradoras, Rotuladoras, Túneis e Tanques.
+
+   2) Não achava a CATIELE na hora de trazer funcionário. Ela está lá, como
+      SILVANA CATIELE RICARDO, e a lista é ordenada pelo nome inteiro, então
+      ela cai lá embaixo no S. Com 29 nomes, procurar com o olho não funciona:
+      entrou um campo de busca que acha por qualquer pedaço do nome.
+
+   3) No sopro e na rotulagem a lista de operador trazia todo mundo. Agora traz
+      só quem tem a função daquele setor, mais os supervisores e quem ainda
+      está sem função no cadastro, para ninguém ficar de fora por engano.
+   =========================================================================== */
+(function(){
+  if(window.CS_OPER608) return; window.CS_OPER608=true;
+
+  /* --- 1) todas as máquinas, por grupo ------------------------------------ */
+  function linhasHTML(sel){
+    sel=String(sel||'');
+    var gr=[], por={};
+    try{
+      (RECURSOS||[]).forEach(function(r){
+        if(!r||r.ativo===false)return;
+        var g=r.grupo||'outros';
+        if(!por[g]){por[g]=[];gr.push(g);}
+        por[g].push(r);
+      });
+    }catch(e){ return ''; }
+    var nomeG=function(g){
+      try{var x=(GRUPOS_MAQ||[]).filter(function(y){return y.id===g;})[0];if(x&&x.nome)return x.nome;}catch(e){}
+      return g.charAt(0).toUpperCase()+g.slice(1);
+    };
+    var ordem=['envase','sopro','rotulo','tunel','tanque'];
+    gr.sort(function(a,b){var ia=ordem.indexOf(a),ib=ordem.indexOf(b);
+      return (ia<0?99:ia)-(ib<0?99:ib)||String(a).localeCompare(String(b));});
+    var h=gr.map(function(g){
+      return '<optgroup label="'+escAttr(nomeG(g))+'">'+por[g].map(function(r){
+        var rot=r.nome?(r.id+' · '+r.nome):r.id;
+        return '<option value="'+escAttr(r.id)+'"'+(sel===r.id?' selected':'')+'>'+escAttr(rot)+'</option>';
+      }).join('')+'</optgroup>';
+    }).join('');
+    /* linha que o operador tem gravada e que não existe mais no cadastro */
+    if(sel && !(RECURSOS||[]).some(function(r){return r.id===sel;}))
+      h='<option value="'+escAttr(sel)+'" selected>'+escAttr(sel)+' · fora do cadastro</option>'+h;
+    return h;
+  }
+
+  function arrumaSelect(id){
+    var s=M(id); if(!s||s.dataset.v608)return;
+    var atual=s.value;
+    s.innerHTML='<option value="">Sem linha fixa</option>'+linhasHTML(atual);
+    s.value=atual; s.dataset.v608='1';
+  }
+
+  /* --- 2) busca na janela de trazer funcionários -------------------------- */
+  function poeBusca(){
+    var alvo=M('tfT'); if(!alvo)return;
+    var tab=alvo.closest('table'); if(!tab)return;
+    var caixa=M('mB'); if(!caixa||caixa.querySelector('#tfQ'))return;
+    var rol=tab.closest('.rolx')||tab.parentNode;
+    var d=document.createElement('div');
+    d.className='fld'; d.style.margin='0 0 10px';
+    d.innerHTML='<input id="tfQ" type="search" placeholder="Buscar pelo nome (ex.: catiele)" autocomplete="off">'+
+      '<div class="hint" id="tfQn" style="font-size:11.5px;color:var(--ink3);margin-top:4px"></div>';
+    rol.parentNode.insertBefore(d, rol);
+    var q=M('tfQ'), cnt=M('tfQn');
+    var linhas=[].slice.call(tab.querySelectorAll('tbody tr'));
+    function filtra(){
+      var t=(q.value||'').trim().toLowerCase(), n=0;
+      linhas.forEach(function(tr){
+        var ok=!t||tr.textContent.toLowerCase().indexOf(t)>=0;
+        tr.hidden=!ok; if(ok)n++;
+      });
+      cnt.textContent=t?(n+' de '+linhas.length+' nome(s)'):'';
+    }
+    q.oninput=filtra;
+  }
+
+  /* as duas janelas montam o conteúdo e só então mostram a máscara */
+  try{
+    var _ab=abrirMask;
+    abrirMask=function(){ var r=_ab.apply(this,arguments);
+      setTimeout(function(){ try{ arrumaSelect('tfM'); arrumaSelect('opMaq'); poeBusca(); }catch(e){} },0);
+      return r; };
+  }catch(e){}
+
 })();
 </script>
 </body>

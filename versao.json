@@ -1,6 +1,6 @@
 {
- "v": "v607",
- "versao": "6.0.7",
- "data": "23/11/2026",
- "o_que_mudou": "1) O razao de estoque passou a ser gravado numa tabela propria no banco, sem teto. A janela de 6.000 lancamentos continua no pacote para as telas, mas o que sai dela ja esta guardado e nao se perde mais. 2) A tela do item mostra todos os lancamentos, nao so os de depois da contagem. 3) Saiu a tarja verde da conferencia de dentro do item; a contagem continua aparecendo como uma linha INV na lista. 4) Mantem a 6.0.6: o que sai do envase volta a entrar na QUARENTENA."
+ "v": "v608",
+ "versao": "6.0.8",
+ "data": "24/11/2026",
+ "o_que_mudou": "Cadastro de operadores: 1) o campo Linha em que trabalha passou a oferecer todas as maquinas ativas, separadas por grupo (Envasadoras, Sopradoras, Rotuladoras, Tuneis, Tanques); antes so tinha MAQ 1, 2 e 3. 2) A janela de trazer funcionario ganhou busca pelo nome. 3) No sopro e na rotulagem a lista de operador traz so quem tem a funcao daquele setor, mais supervisores; enquanto ninguem tiver a funcao cadastrada, mostra todos e avisa."
 }
