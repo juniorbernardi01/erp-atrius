@@ -5590,7 +5590,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v610';const VERSAO_DATA='22/11/2026';
+const VERSAO_APP='v611';const VERSAO_DATA='22/11/2026';
 /* número que aparece na tela: v438 → v4.3.8 (por dentro continua v438, que é o que as versões comparam) */
 const csRotVer=v=>{const d=String(v||'').replace(/\D/g,'');return d.length>=3?'v'+d.slice(0,-2)+'.'+d.slice(-2,-1)+'.'+d.slice(-1):String(v||'');};
 const VERSAO_ROTULO=csRotVer(VERSAO_APP)+' · '+VERSAO_DATA;
@@ -12076,11 +12076,22 @@ function abrirOrdem(o,pre){
                Campo livre deixava entrar nome escrito de três jeitos. */}
         <select id="fOper" ${dis}>
           <option value="">Selecione…</option>
-          ${(()=>{const at=V('operador','');
-            const l=(typeof OPERADORES!=='undefined'?OPERADORES:[]).filter(x=>x.ativo!==false);
-            const fora=at&&!l.some(x=>x.nome===at)?`<option value="${escAttr(at)}" selected>${at} · fora do cadastro</option>`:'';
-            return fora+l.map(x=>`<option value="${escAttr(x.nome)}" ${at===x.nome?'selected':''}>${
-              x.nome}${x.maq?` · ${x.maq}`:''}</option>`).join('');})()}
+          ${(()=>{/* v6.1.1: so quem e do envase, pelo setor da ficha. Supervisor
+                     entra em qualquer setor. Agrupado por setor, entao a busca
+                     do campo tambem acha digitando o setor. */
+            const at=V('operador','');
+            const todos=(typeof OPERADORES!=='undefined'?OPERADORES:[]).filter(x=>x.ativo!==false);
+            const sup=x=>String(x.funcao||x.papel||'').trim().toLowerCase()==='supervisor';
+            const setDe=x=>(typeof csSetoresDe==='function')?csSetoresDe(x):[];
+            let l=todos.filter(x=>sup(x)||setDe(x).indexOf('envase')>=0);
+            const semCad=!l.length; if(semCad)l=todos;
+            const rot=x=>sup(x)?'Supervisão':(setDe(x).length?setDe(x).map(i=>csSetorNome(i)).join(' · '):'Sem setor no cadastro');
+            const gs=[],por={};
+            l.forEach(x=>{const g=rot(x);if(!por[g]){por[g]=[];gs.push(g);}por[g].push(x);});
+            const fora=at&&!l.some(x=>x.nome===at)?`<option value="${escAttr(at)}" selected>${at} · fora do setor</option>`:'';
+            return fora+gs.map(g=>`<optgroup label="${escAttr(g)}">`+por[g].map(x=>
+              `<option value="${escAttr(x.nome)}" ${at===x.nome?'selected':''}>${x.nome}${x.maq?` · ${x.maq}`:''}</option>`
+            ).join('')+'</optgroup>').join('');})()}
         </select>
         <div class="hint" id="fOperHint" style="font-size:11.5px;color:var(--ink3);margin-top:4px"></div></div>
       <div class="fld"><label>Lote</label>
@@ -39512,7 +39523,10 @@ setTimeout(csCustos496,16000);setTimeout(csCustos496,38000);
           :'<div class="hint cskNo">Sem estoque deste produto na quarentena nem na expedição.</div>'}</div>`;}).join('');
     const blocoEmb=!p?'':`<table class="tb cskE"><thead><tr><th>Item</th><th class="n">Por caixa</th><th class="n">Precisa</th><th class="n">Estoque</th><th></th></tr></thead><tbody>${embs(p).map(f=>{const i=insP(f.sku);const pr=r3(cx*uc*(+f.qtd||0));const sl=salItem(f.sku);const fl=pr>sl+1e-9;
       return `<tr><td><b>${e_((i&&i.nome)||f.nome)}</b> <small style="color:var(--ink3)">${e_(f.sku)}</small></td><td class="n">${nq3(r3(uc*(+f.qtd||0)))}</td><td class="n">${nq3(pr)}</td><td class="n">${nf(sl)}</td><td class="n ${fl?'cskNo':'cskOk'}" style="font-weight:600">${fl?'falta '+nf(r3(pr-sl)):'tem'}</td></tr>`;}).join('')}</tbody></table>`;
-    const ops=(typeof OPERADORES!=='undefined'?OPERADORES:[]).filter(x=>x.ativo!==false&&/kit/i.test(String(x.funcao||x.papel||'')));
+    /* v6.1.1: pelo setor Kit da ficha, mantendo quem so tem a funcao escrita */
+    const ops=(typeof OPERADORES!=='undefined'?OPERADORES:[]).filter(x=>x.ativo!==false&&(
+      ((typeof csSetoresDe==='function'?csSetoresDe(x):[]).indexOf('kit')>=0) ||
+      /kit/i.test(String(x.funcao||x.papel||''))));
     M('mB').innerHTML=`
       ${k&&k.status==='concluida'?`<div class="alert ok">Concluída${k.fimEm?' em '+e_(k.fimEm):''} · <b>${nf(k.feitas)} caixas</b> montadas de ${nf(k.cx)}.</div>`:''}
       <div class="g4">

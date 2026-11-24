@@ -1,6 +1,6 @@
 {
- "v": "v610",
- "versao": "6.1.0",
+ "v": "v611",
+ "versao": "6.1.1",
  "data": "24/11/2026",
- "o_que_mudou": "Correcao: ao salvar a ficha do operador o sistema reclamava Escolha a funcao mesmo com a funcao escolhida. O botao Trazer dos funcionarios da grade e o campo Funcao da ficha tinham o mesmo id (opFunc), entao a validacao olhava o botao, que nao tem valor. O botao ganhou id proprio. Erro antigo, de antes da 5.9.9, que aparecia sempre que a ficha era aberta pela grade."
+ "o_que_mudou": "A lista de operador da OP de envase passou a mostrar so quem tem o setor Envase na ficha, mais os supervisores, agrupada por setor como no sopro e na rotulagem; a busca do campo tambem acha digitando o setor. A tela de kit passou a usar o setor Kit, mantendo quem so tem a funcao escrita. Quem ainda nao tem setor marcado herda do nome da funcao, e se ninguem tiver o setor a lista mostra todos para nao travar a maquina."
 }
