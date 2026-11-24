@@ -1,6 +1,6 @@
 {
- "v": "v609",
- "versao": "6.0.9",
+ "v": "v610",
+ "versao": "6.1.0",
  "data": "24/11/2026",
- "o_que_mudou": "Setor do operador. Na ficha de cada operador entrou o campo Setor em que trabalha, com Envase, Sopro, Rotulagem, Mistura, Tunel, Kit, Laboratorio e Expedicao; da para marcar mais de um. O setor tambem aparece na grade e pode ser lancado de uma vez ao trazer funcionarios. Com isso, a lista de operador do sopro e da rotulagem passa a mostrar so quem e daquele setor, mais os supervisores, e os nomes saem agrupados por setor, entao a busca acha digitando sopro ou rotulagem. Quem ainda nao tem setor cadastrado herda do nome da funcao."
+ "o_que_mudou": "Correcao: ao salvar a ficha do operador o sistema reclamava Escolha a funcao mesmo com a funcao escolhida. O botao Trazer dos funcionarios da grade e o campo Funcao da ficha tinham o mesmo id (opFunc), entao a validacao olhava o botao, que nao tem valor. O botao ganhou id proprio. Erro antigo, de antes da 5.9.9, que aparecia sempre que a ficha era aberta pela grade."
 }
