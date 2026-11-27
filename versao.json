@@ -1,6 +1,6 @@
 {
- "v": "v611",
- "versao": "6.1.1",
- "data": "24/11/2026",
- "o_que_mudou": "A lista de operador da OP de envase passou a mostrar so quem tem o setor Envase na ficha, mais os supervisores, agrupada por setor como no sopro e na rotulagem; a busca do campo tambem acha digitando o setor. A tela de kit passou a usar o setor Kit, mantendo quem so tem a funcao escrita. Quem ainda nao tem setor marcado herda do nome da funcao, e se ninguem tiver o setor a lista mostra todos para nao travar a maquina."
+ "v": "v612",
+ "versao": "6.1.2",
+ "data": "26/11/2026",
+ "o_que_mudou": "So vai para o banco o que o usuario fez. Em 26/11 as 9 OPs de sopro e rotulagem sumiram sem ninguem apagar: a rotina que sobe o trabalho feito sem internet comparou a copia guardada no navegador com a do banco e, por a copia estar atrasada, leu a falta das OPs como se o usuario as tivesse apagado. Tres travas: 1) essa rotina automatica nunca mais apaga, sobe so o que foi criado ou alterado; apagar continua valendo quando alguem clica. 2) copia do navegador mais velha que a do banco e descartada em vez de subir. 3) o modulo de sopro e rotulagem nunca grava vazio por cima de um banco que tem OPs. Testado reproduzindo o acidente: antes gerava 9 exclusoes, agora gera zero e as OPs ficam."
 }

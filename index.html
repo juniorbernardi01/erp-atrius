@@ -5590,7 +5590,7 @@ function faltaNoFrasco(oc){
 const M=id=>document.getElementById(id);
 /* Sem isto não há como saber, olhando a tela, se o que está no ar é o arquivo
    novo ou o cache antigo do navegador. Subiu versão: mude esta linha. */
-const VERSAO_APP='v611';const VERSAO_DATA='22/11/2026';
+const VERSAO_APP='v612';const VERSAO_DATA='22/11/2026';
 /* número que aparece na tela: v438 → v4.3.8 (por dentro continua v438, que é o que as versões comparam) */
 const csRotVer=v=>{const d=String(v||'').replace(/\D/g,'');return d.length>=3?'v'+d.slice(0,-2)+'.'+d.slice(-2,-1)+'.'+d.slice(-1):String(v||'');};
 const VERSAO_ROTULO=csRotVer(VERSAO_APP)+' · '+VERSAO_DATA;
@@ -27539,7 +27539,9 @@ try{const _ic64=iniciarComNuvem;iniciarComNuvem=async function(){
   const base=csBaseGet();let loc=null;try{if(base!=null)loc=localStorage.getItem(CHAVE);}catch(e){}
   const r=await _ic64.apply(this,arguments);
   try{if(ONLINE&&base!=null&&loc){
-    const ops=csDiff(csLimpo(base),csLimpo(loc),[],[]);
+    const baseL=csLimpo(base);
+    /* v6.1.2: pendência sobe só o que foi criado ou alterado, nunca exclusão */
+    const ops=(window.csSoOFeito||(x=>x))(csDiff(baseL,csLimpo(loc),[],[]),baseL);
     if(ops.length){const novo=csAplicaOps(csLimpo(corpoDados()),ops);
       RECEBENDO=true;try{aplicarEstado(JSON.stringify(novo));}finally{RECEBENDO=false;}
       agendarSalvar();try{render();}catch(e){}
@@ -27561,7 +27563,9 @@ try{csNucleo.versao='v364';}catch(e){}
     if(++n>600){clearInterval(t);return;}
     if(!(typeof PRONTO!=='undefined'&&PRONTO&&ONLINE)||salvando||RECEBENDO)return;
     clearInterval(t);
-    const ops=csDiff(csLimpo(window.CS_BASE0),csLimpo(window.CS_LOC0),[],[]);
+    const base0=csLimpo(window.CS_BASE0);
+    /* v6.1.2: idem — cópia guardada não manda apagar nada */
+    const ops=(window.csSoOFeito||(x=>x))(csDiff(base0,csLimpo(window.CS_LOC0),[],[]),base0);
     window.CS_BASE0=null;window.CS_LOC0=null;
     if(!ops.length){csBaseSet(null);return;}
     const novo=csAplicaOps(csLimpo(corpoDados()),ops);
@@ -43858,6 +43862,112 @@ try{window.__V585={obrig,obrigDe,embLinhas,numKg};}catch(e){}
       return r; };
   }catch(e){}
 
+})();
+</script>
+<script>
+/* ============ v6.1.2 · SÓ VAI PARA O BANCO O QUE O USUÁRIO FEZ ============
+   Em 26/11 as 9 OPs de sopro e rotulagem sumiram sem ninguém apagar nada.
+
+   Causa: existe uma rotina que roda sozinha quando a página abre. Ela compara
+   a última cópia que o navegador tinha do banco com a cópia guardada no
+   próprio navegador e conclui "a diferença é trabalho feito sem internet que
+   ainda não subiu". Então ela grava essa diferença.
+
+   Serve bem quando a cópia do navegador é mais NOVA. Quando é mais VELHA a
+   conta inverte: o que falta na cópia velha vira "o usuário apagou isso". Foi
+   o que aconteceu: a cópia local não tinha as 9 OPs e a rotina subiu nove
+   exclusões e dois contadores zerados, sem clique nenhum.
+
+   Três travas:
+   1) A rotina automática nunca mais apaga. Ela sobe só o que foi criado ou
+      alterado. Apagar continua existindo, mas só com alguém clicando.
+   2) Se a cópia do navegador for mais velha que a do banco, ela é descartada
+      inteira: cópia velha não é trabalho pendente.
+   3) O módulo de sopro e rotulagem nunca é gravado vazio por cima de um banco
+      que tem OPs. Nesse caso vale o que está no banco.
+   ========================================================================= */
+(function(){
+  if(window.CS_GRAVA612) return; window.CS_GRAVA612=true;
+
+  /* ---- 1) o replay automático só leva o que foi feito, nunca o que falta --- */
+  function soOFeito(ops, doBanco){
+    var fora=0, limpo=(ops||[]).filter(function(o){
+      if(!o||!o.p) return false;
+      /* exclusão nunca sobe por conta própria */
+      if(o.t==='del'){ fora++; return false; }
+      if(o.t==='set'){
+        var atual=null; try{ atual=valorEm(doBanco,o.p); }catch(e){}
+        /* lista que tinha coisa e viria vazia: é a cópia velha falando */
+        if(Array.isArray(o.v)&&!o.v.length&&Array.isArray(atual)&&atual.length){ fora++; return false; }
+        /* contador que andaria para trás */
+        if(typeof o.v==='number'&&typeof atual==='number'&&o.v<atual){ fora++; return false; }
+        /* objeto que viria vazio por cima de um com conteúdo */
+        if(o.v&&typeof o.v==='object'&&!Array.isArray(o.v)&&!Object.keys(o.v).length
+           &&atual&&typeof atual==='object'&&Object.keys(atual).length){ fora++; return false; }
+      }
+      return true;
+    });
+    if(fora) console.warn('[v612] barrei',fora,'mudança(s) que apagariam coisa que ninguém apagou');
+    return limpo;
+  }
+  window.csSoOFeito=soOFeito;
+  function valorEm(doc,p){
+    var d=doc;
+    for(var i=0;i<p.length&&d!=null;i++){
+      var s=p[i];
+      if(s&&typeof s==='object'){ d=Array.isArray(d)?d.filter(function(e){return e&&String(e[s.k])===String(s.id);})[0]:undefined; }
+      else d=d[s];
+    }
+    return d;
+  }
+
+  /* ---- 2) cópia do navegador mais velha que a do banco não é pendência ---- */
+  function copiaVelha(base, loc){
+    try{
+      var b=typeof base==='string'?JSON.parse(base):base;
+      var l=typeof loc==='string'?JSON.parse(loc):loc;
+      var vb=+(b&&b.versao)||0, vl=+(l&&l.versao)||0;
+      if(vb&&vl&&vl<vb) return true;
+      /* sem número de versão, olha a hora da última gravação */
+      var gb=String((b&&b.gravado)||''), gl=String((l&&l.gravado)||'');
+      if(gb&&gl&&gl<gb) return true;
+    }catch(e){}
+    return false;
+  }
+
+  /* o retrato tirado no topo da página: se for velho, nem compara */
+  try{
+    if(window.CS_BASE0&&window.CS_LOC0&&copiaVelha(window.CS_BASE0,window.CS_LOC0)){
+      console.warn('[v612] a cópia deste navegador está atrasada em relação ao banco; não vou subir nada dela');
+      window.CS_BASE0=null; window.CS_LOC0=null;
+      try{ csBaseSet(null); }catch(e){}
+    }
+  }catch(e){}
+
+  /* ---- 3) sopro e rotulagem nunca grava vazio por cima de banco com OPs ---- */
+  try{
+    var _est=estadoAtual;
+    estadoAtual=function(){
+      var s=_est.apply(this,arguments);
+      try{
+        var o=JSON.parse(s);
+        if(o&&o.pcp&&(!o.pcp.ops||!o.pcp.ops.length)){
+          var base=null; try{ base=JSON.parse(csBaseGet()||'null'); }catch(e){}
+          var noBanco=base&&base.pcp&&Array.isArray(base.pcp.ops)?base.pcp.ops:null;
+          if(noBanco&&noBanco.length){
+            console.warn('[v612] o sopro está vazio aqui e o banco tem',noBanco.length,'OPs: mantenho as do banco');
+            o.pcp.ops=noBanco;
+            if(base.pcp.seqSP!=null)  o.pcp.seqSP =Math.max(+o.pcp.seqSP||0, +base.pcp.seqSP||0);
+            if(base.pcp.seqROT!=null) o.pcp.seqROT=Math.max(+o.pcp.seqROT||0,+base.pcp.seqROT||0);
+            try{ if(typeof PCP==='object'&&PCP){ PCP.ops=noBanco.slice();
+                 PCP.seqSP=o.pcp.seqSP; PCP.seqROT=o.pcp.seqROT; } }catch(e){}
+            return JSON.stringify(o);
+          }
+        }
+      }catch(e){}
+      return s;
+    };
+  }catch(e){}
 })();
 </script>
 </body>
